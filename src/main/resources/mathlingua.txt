@@ -1,0 +1,413 @@
+
+[\set]
+Defines: X
+means:
+. "A well defined collection of objects"
+Metadata:
+. reference = "source: @AATA; page: 3"
+
+
+[a \in X]
+Represents:
+assuming: 'X is \set'
+that:
+. "$a$ is an element of $X$"
+Metadata:
+. reference = "source: @AATA; page: 4"
+
+
+[A \subset B]
+Represents:
+assuming: 'A, B is \set'
+that:
+. for: a
+  where: 'a \in A'
+  then: 'a \in B'
+Metadata:
+. reference = "source: @AATA; page: 4"
+
+
+[x \neq y]
+Represents:
+that: 'x != y'
+
+
+[A \proper.subset B]
+Represents:
+assuming: 'A, B is \set'
+that:
+. 'A \subset B'
+. 'A \neq B'
+Metadata:
+. reference = "source: @AATA; page: 4"
+
+
+[\empty.set]
+Refines: E
+means:
+. not:
+  . exists: x
+    suchThat: 'x \in E'
+Metadata:
+. reference = "source: @AATA; page: 4"
+
+
+[A \union B]
+Defines: C := {c}
+assuming: 'A, B is \set'
+means:
+. 'C is \set'
+. or:
+  . 'c \in A'
+  . 'c \in B'
+Metadata:
+. reference = "source: @AATA; page: 4"
+
+
+[A \intersect B]
+Defines: C := {c}
+assuming: 'A, B is \set'
+means:
+. 'C is \set'
+. 'c \in A'
+. 'c \in B'
+Metadata:
+. reference = "source: @AATA; page: 4"
+
+
+[\disjoint.set]
+Defines: (A, B)
+assuming: 'A, B is \set'
+means: '(A \intersect B) = \empty.set'
+Metadata:
+. reference = "source: @AATA; page: 5"
+
+
+[x \notin X]
+Represents:
+assuming: 'X is \set'
+that:
+. not:
+  . 'x \in X'
+
+
+
+[\complement:of{A}in{U}]
+Defines: X := {x}
+assuming: 'A, U is \set'
+means:
+. 'x \in U'
+. 'x \notin A'
+Metadata:
+. reference = "source: @AATA; page: 5"
+
+
+[A \set.difference B]
+Defines: C := {c}
+assuming: 'A, B is \set'
+means:
+. 'c \in A'
+. 'c \notin B'
+Metadata:
+. reference = "source: @AATA; page: 5"
+
+
+[A \set.cartesian.product B]
+Defines: C := {x,y}
+assuming: 'A, B is \set'
+means:
+. 'x \in A'
+. 'y \in B'
+Metadata:
+. reference = "source: @AATA; page: 6"
+
+
+[\function.domain:of{f}]
+Defines: X
+assuming:
+. for: A, B
+  where: 'A, B is \set'
+  then: 'f is \function:on{A}to{B}'
+means:
+. 'X := A'
+Metadata:
+. reference = "source: @AATA; page: 7"
+
+
+[\function.range:of{f}]
+Defines: X
+assuming: 'f is \function'
+means:
+. 'X = \set[x]{f(x)}{f \in \domain{f}}'
+Alias:
+. domain = "function.domain:of"
+Metadata:
+. reference = "source: @AATA; page: 7"
+
+
+[\surjective \function:on{A}to{B}]
+Refines: f
+means:
+. for: b
+  where: 'b \in B'
+  then:
+  . exists: a
+    suchThat:
+    . 'f(a) = b'
+Metadata:
+. reference = "source: @AATA; page: 8"
+
+
+[\injective \function:on{A}to{B}]
+Refines: f
+means:
+. for: a1, a2
+  where: 'a1, a2 \in A'
+  then:
+  . if: 'a1 \neq a2'
+    then: 'f(a1) \neq f(a2)'
+Metadata:
+. reference = "source: @AATA; page: 8"
+
+
+[\bijective \function]
+Refines: f
+means:
+. 'f \is \injective \surjective \function'
+Metadata:
+. reference = "source: @AATA; page: 8"
+
+
+[g \of f]
+Defines: h(x)
+assuming:
+. for: A, B, C
+  where: 'A, B, C is \set'
+  then:
+  . 'f is \function:on{A}to{B}'
+  . 'g is \function:on{B}to{C}'
+means:
+. 'h is \function:on{A}to{C}'
+. 'h(x) = g(f(x))'
+Metadata:
+. reference = "source: @AATA; page: 8"
+
+
+[\permutation:of{S}]
+Defines: f
+assuming: 'S is \set'
+means: 'f is \bijective \function:on{S}to{S}'
+Metadata:
+. reference = "source: @AATA; page: 9"
+
+
+[\identity.function:on{A}]
+Defines: f(x)
+assuming: 'A \in \set'
+means:
+. 'f is \function:on{A}to{A}'
+. for: x
+  then: 'f(x) = x'
+Metadata:
+. reference = "source: @AATA; page: 10"
+
+
+[\inverse.function:of{f}]
+Defines: g(x)
+assuming:
+. for: A, B
+  where: 'A, B is \set'
+  then: 'f is \function:on{A}to{B}'
+means:
+. 'g is \function:on{B}to{A}'
+. '(g \of f) = \identity.function:on{A}'
+Metadata:
+. reference = "source: @AATA; page: 10"
+
+
+[\equivalence.relation:on{X}]
+Defines: R := {a, b}
+assuming: 'X is \set'
+means:
+. 'R \subset (X \cross X)'
+. for: x
+  where: 'x \in X'
+  then: '(x, x) \in R'
+. for: x, y
+  where: 'x, y \in X'
+  then:
+  . if: '(x, y) \in R'
+    then: '(y, x) \in R'
+. for: x, y, z
+  where: 'x, y, z \in X'
+  then:
+  . if:
+    . '(x, y) \in R'
+    . '(y, z) \in R'
+    then:
+    . '(x, z) \in R'
+Alias:
+. cross = "set.cartesian.product"
+Metadata:
+. reference = "source: @AATA; page: 11"
+
+
+[\integer]
+Defines: n
+means: "$n$ is a whole number"
+
+
+[\positive.integer]
+Defines: n
+means:
+. 'n is \integer'
+. 'n > 0'
+
+
+[\nonzero]
+Defines: x
+means: 'x \neq 0'
+
+
+
+[x \binary.operation:on{G} y]
+Defines: *
+assuming: 'G is \set'
+means:
+. '* is \function:on{G \cross G}to{G}'
+Alias:
+. cross = "set.cartesian.product"
+Metadata:
+. reference = "source: @AATA; page: 33"
+
+
+[\group]
+Defines: G := (X, *)
+assuming:
+. 'X is \set'
+. '* is \binary.operator:on{X}'
+means:
+. for: a, b, c
+  where: 'a, b, c \in X'
+  then: '(a * b) * c = a * (b * c)'
+. exists: e
+  suchThat:
+  . 'e \in X'
+  . for: a
+    where: 'x \in X'
+    then: 'a * e = e * a = a'
+. for: a
+  where: 'a \in X'
+  then:
+  . exists: b
+    suchThat:
+    . 'b \in X'
+    . 'a * b = b * a = e'
+Metadata:
+. reference = "source: @AATA; page: 34"
+
+
+[\abelian \group]
+Refines: G := (X, *)
+means:
+. for: a, b
+  where: 'a, b \in X'
+  then:
+  . 'a * b = b * a'
+Metadata:
+. reference = "source: @AATA; page: 34"
+
+
+[\matrix{m, n}:over{F}]
+Defines: M
+assuming:
+. 'F is \set'
+. 'm, n is \positive \integer'
+means:
+. "an $m$ by $n$ grid of elements"
+
+
+[\identity \matrix{n}]
+Refines: M(i, j)
+assuming: 'i, j is \positive \integer'
+means:
+. if: 'i \neq j'
+  then: 'M(i, j) = 0'
+. 'M(i, i) = 1'
+Metadata:
+. reference = "source: @AATA; page: 35"
+
+
+[A * B]
+Defines: *
+means:
+. if: 'A, B is \matrix'
+  then: 'A * B is \matrix'
+
+
+[\invertible \matrix]
+Refines: M
+means:
+. exists: A
+  suchThat: 'M * A = \identity.matrix'
+Metadata:
+. reference = "source: @AATA; page: 35"
+
+
+[\general.linear.group{n}:over{F}]
+Defines: X
+assuming:
+. or:
+  . 'F = \reals'
+  . 'F = \complexes'
+. 'n is \integer'
+means:
+. 'X = \set[M]{M}{M is \invertible.matrix}'
+Metadata:
+. reference = "source: @AATA; page: 35"
+
+
+[\finite \set]
+Refines: X
+means:
+. "$X$ has a finite number of elements"
+Metadata:
+. reference = "source: @AATA; page: 36"
+
+
+[\infinite \set]
+Refines: X
+means:
+. not:
+  . 'X is \finite \set'
+Metadata:
+. reference = "source: @AATA; page: 36"
+
+
+[\set.cardinality:of{X}]
+Defines: n
+assuming: 'X is \set'
+means: "$n$ is the number of elements in $X$"
+
+
+[\finite \group]
+Refines: G := (X, *)
+means: 'X \is \finite \set'
+Metadata:
+. reference = "source: @AATA; page: 36"
+
+
+[\infinite \group]
+Refines: G := (X, *)
+means: 'X \is \infinite \set'
+Metadata:
+. reference = "source: @AATA; page: 36"
+
+
+[\group.order:of{G := (X, *)}]
+Defines: n
+assuming: 'G is \group'
+means: 'n = \set.cardinality:of{X}'
+Metadata:
+. reference = "source: @AATA; page: 36"
+

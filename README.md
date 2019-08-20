@@ -17,6 +17,8 @@ The structural parts of the result (written in an indented form with identifiers
 
 ChalkTalk is designed to have a very small number of forms (that describe for all, exists, implication, etc.) that can describe mathematics while TexTalk is designed to qualify objects with a syntax very similar to LaTeX.
 
+MathLingua (and its documentation) are still a work in progress.  More examples can be found in the [src/main/resources/mathlingua.txt](src/main/resources/mathlingua.txt) file.
+
 ## ChalkTalk
 
 ### Terminology

@@ -22,20 +22,20 @@ data class ParseError(override val message: String, val row: Int, val column: In
 
 class Validation<T> private constructor(val value: T?, val errors: List<ParseError>) {
 
-  val isSuccessful: Boolean
-    get() = this.value != null
+    val isSuccessful: Boolean
+        get() = this.value != null
 
-  companion object {
+    companion object {
 
-    fun <T> success(value: T): Validation<T> {
-      if (value == null) {
-        throw IllegalArgumentException("A successful validation cannot have a null value")
-      }
-      return Validation(value, ArrayList())
+        fun <T> success(value: T): Validation<T> {
+            if (value == null) {
+                throw IllegalArgumentException("A successful validation cannot have a null value")
+            }
+            return Validation(value, ArrayList())
+        }
+
+        fun <T> failure(errors: List<ParseError>): Validation<T> {
+            return Validation(null, errors)
+        }
     }
-
-    fun <T> failure(errors: List<ParseError>): Validation<T> {
-      return Validation(null, errors)
-    }
-  }
 }

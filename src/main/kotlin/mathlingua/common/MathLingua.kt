@@ -23,23 +23,23 @@ import mathlingua.chalktalk.phase2.ast.Document
 data class MathLinguaResult(val document: Document?, val errors: List<ParseError>)
 
 object MathLingua {
-  fun parse(input: String): MathLinguaResult {
-    val lexer = newChalkTalkLexer(input)
+    fun parse(input: String): MathLinguaResult {
+        val lexer = newChalkTalkLexer(input)
 
-    val allErrors = mutableListOf<ParseError>()
-    allErrors.addAll(lexer.errors())
+        val allErrors = mutableListOf<ParseError>()
+        allErrors.addAll(lexer.errors())
 
-    val parser = newChalkTalkParser()
-    val (root, errors) = parser.parse(lexer)
-    allErrors.addAll(errors)
+        val parser = newChalkTalkParser()
+        val (root, errors) = parser.parse(lexer)
+        allErrors.addAll(errors)
 
-    if (root == null) {
-      return MathLinguaResult(null, allErrors)
+        if (root == null) {
+            return MathLinguaResult(null, allErrors)
+        }
+
+        val documentValidation = Document.validate(root)
+        allErrors.addAll(documentValidation.errors)
+
+        return MathLinguaResult(documentValidation.value, allErrors)
     }
-
-    val documentValidation = Document.validate(root)
-    allErrors.addAll(documentValidation.errors)
-
-    return MathLinguaResult(documentValidation.value, allErrors)
-  }
 }

@@ -22,52 +22,52 @@ import mathlingua.common.ParseError
 import mathlingua.common.Validation
 
 data class MetaDataSection(val mappings: List<MappingNode>) : Phase2Node {
-  override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    mappings.forEach(fn)
-  }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        mappings.forEach(fn)
+    }
 
-  override fun toCode(isArg: Boolean, indent: Int): String {
-    val builder = StringBuilder()
-    builder.append(indentedString(isArg, indent, "Metadata:"))
-    builder.append('\n')
-    for (i in 0 until mappings.size) {
-      builder.append(mappings[i].toCode(true, indent + 2))
-      if (i != mappings.size - 1) {
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        val builder = StringBuilder()
+        builder.append(indentedString(isArg, indent, "Metadata:"))
         builder.append('\n')
-      }
-    }
-    return builder.toString()
-  }
-
-  companion object {
-    fun validate(section: Section): Validation<MetaDataSection> {
-      if (section.name.text != "Metadata") {
-        return Validation.failure(
-          listOf(
-            ParseError(
-              "Expected a 'Metadata' but found '${section.name.text}'",
-              AstUtils.getRow(section), AstUtils.getColumn(section)
-            )
-          )
-        )
-      }
-
-      val errors = mutableListOf<ParseError>()
-      val mappings = mutableListOf<MappingNode>()
-      for (arg in section.args) {
-        val validation = MappingNode.validate(arg)
-        if (validation.isSuccessful) {
-          mappings.add(validation.value!!)
-        } else {
-          errors.addAll(validation.errors)
+        for (i in 0 until mappings.size) {
+            builder.append(mappings[i].toCode(true, indent + 2))
+            if (i != mappings.size - 1) {
+                builder.append('\n')
+            }
         }
-      }
-
-      return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
-      } else {
-        Validation.success(MetaDataSection(mappings))
-      }
+        return builder.toString()
     }
-  }
+
+    companion object {
+        fun validate(section: Section): Validation<MetaDataSection> {
+            if (section.name.text != "Metadata") {
+                return Validation.failure(
+                    listOf(
+                        ParseError(
+                            "Expected a 'Metadata' but found '${section.name.text}'",
+                            AstUtils.getRow(section), AstUtils.getColumn(section)
+                        )
+                    )
+                )
+            }
+
+            val errors = mutableListOf<ParseError>()
+            val mappings = mutableListOf<MappingNode>()
+            for (arg in section.args) {
+                val validation = MappingNode.validate(arg)
+                if (validation.isSuccessful) {
+                    mappings.add(validation.value!!)
+                } else {
+                    errors.addAll(validation.errors)
+                }
+            }
+
+            return if (errors.isNotEmpty()) {
+                Validation.failure(errors)
+            } else {
+                Validation.success(MetaDataSection(mappings))
+            }
+        }
+    }
 }

@@ -27,86 +27,86 @@ data class TargetListSection(val targets: List<Target>)
 
 object TargetListValidator {
 
-  fun <T> validate(
-    rawNode: ChalkTalkNode,
-    expectedName: String,
-    builder: (targets: List<Target>) -> T
-  ): Validation<T> {
-    val node = rawNode.resolve()
+    fun <T> validate(
+        rawNode: ChalkTalkNode,
+        expectedName: String,
+        builder: (targets: List<Target>) -> T
+    ): Validation<T> {
+        val node = rawNode.resolve()
 
-    val validation =
-      validate(node, expectedName)
-    if (!validation.isSuccessful) {
-      return Validation.failure(validation.errors)
-    }
-
-    val targets = validation.value!!.targets
-    return Validation.success(builder(targets))
-  }
-
-  private fun validate(
-    node: ChalkTalkNode,
-    expectedName: String
-  ): Validation<TargetListSection> {
-    val errors = ArrayList<ParseError>()
-    if (node !is Section) {
-      errors.add(
-        ParseError(
-          "Expected a Section but found a " + node.javaClass.simpleName,
-          AstUtils.getRow(node), AstUtils.getColumn(node)
-        )
-      )
-    }
-
-    val (name1, args) = node as Section
-    val name = name1.text
-    if (name != expectedName) {
-      errors.add(
-        ParseError(
-          "Expected a Section with name " +
-            expectedName + " but found " + name,
-          AstUtils.getRow(node),
-          AstUtils.getColumn(node)
-        )
-      )
-    }
-
-    val targets = ArrayList<Target>()
-
-    if (args.isEmpty()) {
-      errors.add(
-        ParseError(
-          "Section '" + name1.text +
-            "' requires at least one argument.",
-          AstUtils.getRow(node),
-          AstUtils.getColumn(node)
-        )
-      )
-    }
-
-    for (arg in args) {
-      val clauseValidation = Clause.validate(arg)
-      if (clauseValidation.isSuccessful) {
-        val clause = clauseValidation.value
-        if (clause is Target) {
-          targets.add(clause)
-          continue
+        val validation =
+            validate(node, expectedName)
+        if (!validation.isSuccessful) {
+            return Validation.failure(validation.errors)
         }
-      } else {
-        errors.addAll(clauseValidation.errors)
-      }
 
-      errors.add(
-        ParseError(
-          "Expected an Target but found " +
-            arg.javaClass.simpleName, AstUtils.getRow(arg), AstUtils.getColumn(arg)
-        )
-      )
+        val targets = validation.value!!.targets
+        return Validation.success(builder(targets))
     }
 
-    return if (errors.isNotEmpty()) {
-      Validation.failure(errors)
-    } else Validation.success(TargetListSection(targets))
+    private fun validate(
+        node: ChalkTalkNode,
+        expectedName: String
+    ): Validation<TargetListSection> {
+        val errors = ArrayList<ParseError>()
+        if (node !is Section) {
+            errors.add(
+                ParseError(
+                    "Expected a Section but found a " + node.javaClass.simpleName,
+                    AstUtils.getRow(node), AstUtils.getColumn(node)
+                )
+            )
+        }
 
-  }
+        val (name1, args) = node as Section
+        val name = name1.text
+        if (name != expectedName) {
+            errors.add(
+                ParseError(
+                    "Expected a Section with name " +
+                        expectedName + " but found " + name,
+                    AstUtils.getRow(node),
+                    AstUtils.getColumn(node)
+                )
+            )
+        }
+
+        val targets = ArrayList<Target>()
+
+        if (args.isEmpty()) {
+            errors.add(
+                ParseError(
+                    "Section '" + name1.text +
+                        "' requires at least one argument.",
+                    AstUtils.getRow(node),
+                    AstUtils.getColumn(node)
+                )
+            )
+        }
+
+        for (arg in args) {
+            val clauseValidation = Clause.validate(arg)
+            if (clauseValidation.isSuccessful) {
+                val clause = clauseValidation.value
+                if (clause is Target) {
+                    targets.add(clause)
+                    continue
+                }
+            } else {
+                errors.addAll(clauseValidation.errors)
+            }
+
+            errors.add(
+                ParseError(
+                    "Expected an Target but found " +
+                        arg.javaClass.simpleName, AstUtils.getRow(arg), AstUtils.getColumn(arg)
+                )
+            )
+        }
+
+        return if (errors.isNotEmpty()) {
+            Validation.failure(errors)
+        } else Validation.success(TargetListSection(targets))
+
+    }
 }

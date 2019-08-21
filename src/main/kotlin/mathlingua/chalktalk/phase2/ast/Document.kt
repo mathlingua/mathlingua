@@ -83,9 +83,8 @@ data class Document(
 
   companion object {
 
-    fun validate(node: ChalkTalkNode): Validation<Document> {
-      var node = node
-      node = node.resolve()
+    fun validate(rawNode: ChalkTalkNode): Validation<Document> {
+      val node = rawNode.resolve()
 
       val errors = ArrayList<ParseError>()
       if (node !is Root) {

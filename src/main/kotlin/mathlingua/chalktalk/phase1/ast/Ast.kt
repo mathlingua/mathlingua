@@ -59,7 +59,27 @@ data class Argument(val chalkTalkTarget: ChalkTalkTarget) : ChalkTalkNode {
         buffer.append(chalkTalkTarget.text)
         buffer.append("\n")
       }
+      is Abstraction -> {
+        buffer.append(AstUtils.buildIndent(level, true))
+        buffer.append(chalkTalkTarget.toCode())
+        buffer.append("\n")
+      }
+      is Aggregate -> {
+        buffer.append(AstUtils.buildIndent(level, true))
+        buffer.append(chalkTalkTarget.toCode())
+        buffer.append("\n")
+      }
       is Assignment -> {
+        buffer.append(AstUtils.buildIndent(level, true))
+        buffer.append(chalkTalkTarget.toCode())
+        buffer.append("\n")
+      }
+      is Mapping -> {
+        buffer.append(AstUtils.buildIndent(level, true))
+        buffer.append(chalkTalkTarget.toCode())
+        buffer.append("\n")
+      }
+      is Tuple -> {
         buffer.append(AstUtils.buildIndent(level, true))
         buffer.append(chalkTalkTarget.toCode())
         buffer.append("\n")

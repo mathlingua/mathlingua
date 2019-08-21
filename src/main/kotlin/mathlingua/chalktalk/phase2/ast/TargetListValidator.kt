@@ -28,12 +28,11 @@ data class TargetListSection(val targets: List<Target>)
 object TargetListValidator {
 
   fun <T> validate(
-    node: ChalkTalkNode,
+    rawNode: ChalkTalkNode,
     expectedName: String,
     builder: (targets: List<Target>) -> T
   ): Validation<T> {
-    var node = node
-    node = node.resolve()
+    val node = rawNode.resolve()
 
     val validation =
       validate(node, expectedName)

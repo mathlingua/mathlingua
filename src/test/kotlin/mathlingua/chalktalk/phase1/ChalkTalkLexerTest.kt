@@ -22,13 +22,14 @@ import org.junit.Test
 
 internal class ChalkTalkLexerTest {
   @Test
-  fun `correctly identifies tokens`() {
+  fun `correctly idvarentifies tokens`() {
     val text = "someName:'some statement'\"some text\". [some id],:="
     val lexer = newChalkTalkLexer(text)
     val actual: MutableList<ChalkTalkToken> = ArrayList()
     while (lexer.hasNext()) {
       actual.add(lexer.next())
     }
+    /*
     val expected = listOf(
       ChalkTalkToken(text = "someName", type = ChalkTalkTokenType.Name, row = 0, column = 7),
       ChalkTalkToken(text = ":", type = ChalkTalkTokenType.Colon, row = 0, column = 8),
@@ -46,6 +47,7 @@ internal class ChalkTalkLexerTest {
       ChalkTalkToken(text = "(", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
       ChalkTalkToken(text = ")", type = ChalkTalkTokenType.End, row = 1, column = 0)
     )
+     */
 //        Assertions.assertIterableEquals(expected, actual)
 //        Assertions.assertEquals(0, lexer.errors().size)
   }
@@ -69,6 +71,7 @@ internal class ChalkTalkLexerTest {
     while (lexer.hasNext()) {
       actual.add(lexer.next())
     }
+    /*
     val expected = listOf(
       ChalkTalkToken(text = "x", type = ChalkTalkTokenType.Name, row = 0, column = 0),
       ChalkTalkToken(text = ":", type = ChalkTalkTokenType.Colon, row = 0, column = 1),
@@ -116,6 +119,7 @@ internal class ChalkTalkLexerTest {
       ChalkTalkToken(text = ")", type = ChalkTalkTokenType.End, row = 10, column = 0),
       ChalkTalkToken(text = ")", type = ChalkTalkTokenType.End, row = 10, column = 0)
     )
+     */
 //        Assertions.assertIterableEquals(expected, actual)
 //        Assertions.assertEquals(0, lexer.errors().size)
   }

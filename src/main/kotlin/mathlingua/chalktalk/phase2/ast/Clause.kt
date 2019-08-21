@@ -289,9 +289,8 @@ data class Statement(
       return node is ChalkTalkToken && node.type === ChalkTalkTokenType.Statement
     }
 
-    fun validate(node: ChalkTalkNode): Validation<Statement> {
-      var node = node
-      node = node.resolve()
+    fun validate(rawNode: ChalkTalkNode): Validation<Statement> {
+      val node = rawNode.resolve()
 
       val errors = ArrayList<ParseError>()
       if (node !is ChalkTalkToken) {
@@ -352,9 +351,8 @@ data class Text(val text: String) : Clause() {
       return node is ChalkTalkToken && node.type === ChalkTalkTokenType.String
     }
 
-    fun validate(node: ChalkTalkNode): Validation<Text> {
-      var node = node
-      node = node.resolve()
+    fun validate(rawNode: ChalkTalkNode): Validation<Text> {
+      val node = rawNode.resolve()
 
       val errors = ArrayList<ParseError>()
       if (node !is ChalkTalkToken) {
@@ -526,7 +524,7 @@ data class ForGroup(
           "for", "where?", "then"
         )
       } catch (e: ParseError) {
-        errors.add(ParseError(e.message!!, e.row, e.column))
+        errors.add(ParseError(e.message, e.row, e.column))
         return Validation.failure(errors)
       }
 
@@ -625,13 +623,12 @@ fun firstSectionMatchesName(node: ChalkTalkNode, name: String): Boolean {
 }
 
 fun <G, S> validateSingleSectionGroup(
-  node: ChalkTalkNode,
+  rawNode: ChalkTalkNode,
   sectionName: String,
   buildGroup: (sect: S) -> G,
   validateSection: (section: Section) -> Validation<S>
 ): Validation<G> {
-  var node = node
-  node = node.resolve()
+  val node = rawNode.resolve()
 
   val errors = ArrayList<ParseError>()
   if (node !is mathlingua.chalktalk.phase1.ast.Group) {
@@ -652,7 +649,7 @@ fun <G, S> validateSingleSectionGroup(
       sectionName
     )
   } catch (e: ParseError) {
-    errors.add(ParseError(e.message!!, e.row, e.column))
+    errors.add(ParseError(e.message, e.row, e.column))
     return Validation.failure(errors)
   }
 
@@ -699,7 +696,7 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
       sections, section1Name, section2Name
     )
   } catch (e: ParseError) {
-    errors.add(ParseError(e.message!!, e.row, e.column))
+    errors.add(ParseError(e.message, e.row, e.column))
     return Validation.failure(errors)
   }
 

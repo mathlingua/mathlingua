@@ -19,7 +19,6 @@ package mathlingua.chalktalk.phase2.ast
 import mathlingua.chalktalk.phase1.ast.*
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import java.util.*
 
 data class DefinesGroup(
   val id: Statement,
@@ -296,21 +295,19 @@ fun <G, S> validateResultLikeGroup(
 
   val sections = group.sections
 
-  val sectionMap: Map<String, Section>
+  val sectionMap: Map<String, Section?>
   try {
     sectionMap = SectionIdentifier.identifySections(
       sections, resultLikeName, "Alias?", "Metadata?"
     )
   } catch (e: ParseError) {
-    errors.add(ParseError(e.message!!, e.row, e.column))
+    errors.add(ParseError(e.message, e.row, e.column))
     return Validation.failure(errors)
   }
 
   val resultLike = sectionMap[resultLikeName]
-  val alias =
-    (sectionMap as java.util.Map<String, Section>).getOrDefault("Alias", null)
-  val metadata =
-    (sectionMap as java.util.Map<String, Section>).getOrDefault("Metadata", null)
+  val alias = sectionMap.getOrDefault("Alias", null)
+  val metadata = sectionMap.getOrDefault("Metadata", null)
 
   val resultLikeValidation = validateResultLikeSection(resultLike!!)
   var resultLikeSection: S? = null
@@ -386,25 +383,22 @@ fun <G, S, E> validateDefinesLikeGroup(
 
   val sections = group.sections
 
-  val sectionMap: Map<String, Section>
+  val sectionMap: Map<String, Section?>
   try {
     sectionMap = SectionIdentifier.identifySections(
       sections,
       definesLikeSectionName, "assuming?", endSectionName, "Alias?", "Metadata?"
     )
   } catch (e: ParseError) {
-    errors.add(ParseError(e.message!!, e.row, e.column))
+    errors.add(ParseError(e.message, e.row, e.column))
     return Validation.failure(errors)
   }
 
   val definesLike = sectionMap[definesLikeSectionName]
-  val assuming =
-    (sectionMap as java.util.Map<String, Section>).getOrDefault("assuming", null)
+  val assuming = sectionMap.getOrDefault("assuming", null)
   val end = sectionMap[endSectionName]
-  val alias =
-    (sectionMap as java.util.Map<String, Section>).getOrDefault("Alias", null)
-  val metadata =
-    (sectionMap as java.util.Map<String, Section>).getOrDefault("Metadata", null)
+  val alias = sectionMap.getOrDefault("Alias", null)
+  val metadata = sectionMap.getOrDefault("Metadata", null)
 
   val definesLikeValidation = validateDefinesLikeSection(definesLike!!)
   var definesLikeSection: S? = null

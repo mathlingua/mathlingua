@@ -28,11 +28,10 @@ data class ClauseListSection(val name: String, val clauses: List<Clause>)
 object ClauseListValidator {
 
   fun <T> validate(
-    node: ChalkTalkNode, expectedName: String,
+    rawNode: ChalkTalkNode, expectedName: String,
     builder: (clauses: List<Clause>) -> T
   ): Validation<T> {
-    var node = node
-    node = node.resolve()
+    val node = rawNode.resolve()
 
     val validation =
       validate(node, expectedName)

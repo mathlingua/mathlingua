@@ -17,16 +17,16 @@
 package mathlingua.chalktalk.phase2.ast
 
 fun indentedString(useDot: Boolean, indent: Int, line: String): String {
-  val builder = StringBuilder()
-  for (i in 0 until indent - 2) {
-    builder.append(' ')
-  }
-  if (indent - 2 >= 0) {
-    builder.append(if (useDot) '.' else ' ')
-  }
-  if (indent - 1 >= 0) {
-    builder.append(' ')
-  }
-  builder.append(line)
-  return builder.toString()
+    val builder = StringBuilder()
+    for (i in 0 until indent - 2) {
+        builder.append(' ')
+    }
+    if (indent - 2 >= 0) {
+        builder.append(if (useDot) '.' else ' ')
+    }
+    if (indent - 1 >= 0) {
+        builder.append(' ')
+    }
+    builder.append(line)
+    return builder.toString()
 }

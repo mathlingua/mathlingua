@@ -17,16 +17,16 @@
 package mathlingua.textalk
 
 internal class TexTalkParserTest {
-  /*
-  @Test
-  fun `correctly parses an identifier`() {
-      val text = "y"
-      val parser = newTexTalkParser()
-      val lexer = newTexTalkLexer(text)
-      val result = parser.parse(lexer)
-      Assertions.assertEquals(0, result.errors.size)
-      Assertions.assertEquals(ExpressionNode(
-          children=listOf(TextNode(type=NodeType.Identifier, text="y"))), result.root)
-  }
- */
+    /*
+    @Test
+    fun `correctly parses an identifier`() {
+        val text = "y"
+        val parser = newTexTalkParser()
+        val lexer = newTexTalkLexer(text)
+        val result = parser.parse(lexer)
+        Assertions.assertEquals(0, result.errors.size)
+        Assertions.assertEquals(ExpressionNode(
+            children=listOf(TextNode(type=NodeType.Identifier, text="y"))), result.root)
+    }
+   */
 }

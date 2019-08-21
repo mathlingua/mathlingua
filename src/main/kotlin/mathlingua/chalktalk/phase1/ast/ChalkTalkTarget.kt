@@ -17,23 +17,23 @@
 package mathlingua.chalktalk.phase1.ast
 
 enum class ChalkTalkTokenType {
-  DotSpace,
-  Name,
-  Colon,
-  String,
-  Statement,
-  Id,
-  Comma,
-  Begin,
-  End,
-  Linebreak,
-  Invalid,
-  Equals,
-  ColonEquals,
-  LParen,
-  RParen,
-  LCurly,
-  RCurly
+    DotSpace,
+    Name,
+    Colon,
+    String,
+    Statement,
+    Id,
+    Comma,
+    Begin,
+    End,
+    Linebreak,
+    Invalid,
+    Equals,
+    ColonEquals,
+    LParen,
+    RParen,
+    LCurly,
+    RCurly
 }
 
 sealed class ChalkTalkTarget : ChalkTalkNode
@@ -41,159 +41,159 @@ sealed class TupleItem : ChalkTalkTarget()
 sealed class AssignmentRhs : TupleItem()
 
 data class ChalkTalkToken(val text: String, val type: ChalkTalkTokenType, val row: Int, val column: Int) :
-  AssignmentRhs() {
+    AssignmentRhs() {
 
-  override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
-  }
+    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    }
 
-  override fun toCode(): String {
-    return text
-  }
+    override fun toCode(): String {
+        return text
+    }
 
-  override fun resolve(): ChalkTalkNode {
-    return this
-  }
+    override fun resolve(): ChalkTalkNode {
+        return this
+    }
 }
 
 data class Mapping(val lhs: ChalkTalkToken, val rhs: ChalkTalkToken) : ChalkTalkTarget() {
 
-  override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
-    fn(lhs)
-    fn(rhs)
-  }
+    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
 
-  override fun toCode(): String {
-    return lhs.toCode() + " = " + rhs.toCode()
-  }
+    override fun toCode(): String {
+        return lhs.toCode() + " = " + rhs.toCode()
+    }
 
-  override fun resolve(): ChalkTalkNode {
-    return this
-  }
+    override fun resolve(): ChalkTalkNode {
+        return this
+    }
 }
 
 data class Group(val sections: List<Section>, val id: ChalkTalkToken?) :
-  ChalkTalkTarget() {
+    ChalkTalkTarget() {
 
-  override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
-    if (id != null) {
-      fn(id)
+    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+        if (id != null) {
+            fn(id)
+        }
+        sections.forEach(fn)
     }
-    sections.forEach(fn)
-  }
 
-  fun print(buffer: StringBuilder, level: Int, fromArg: Boolean) {
-    if (id != null) {
-      buffer.append(id.text)
-      buffer.append("\n")
+    fun print(buffer: StringBuilder, level: Int, fromArg: Boolean) {
+        if (id != null) {
+            buffer.append(id.text)
+            buffer.append("\n")
+        }
+        var first = true
+        for (sect in sections) {
+            if (first) {
+                sect.print(buffer, level, fromArg && id == null)
+            } else {
+                sect.print(buffer, level, false)
+            }
+            first = false
+        }
     }
-    var first = true
-    for (sect in sections) {
-      if (first) {
-        sect.print(buffer, level, fromArg && id == null)
-      } else {
-        sect.print(buffer, level, false)
-      }
-      first = false
+
+    override fun toCode(): String {
+        val buffer = StringBuilder()
+        print(buffer, 0, false)
+        return buffer.toString()
     }
-  }
 
-  override fun toCode(): String {
-    val buffer = StringBuilder()
-    print(buffer, 0, false)
-    return buffer.toString()
-  }
-
-  override fun resolve(): ChalkTalkNode {
-    return this
-  }
+    override fun resolve(): ChalkTalkNode {
+        return this
+    }
 }
 
 data class Assignment(val lhs: ChalkTalkToken, val rhs: AssignmentRhs) : TupleItem() {
 
-  override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
-    fn(lhs)
-    fn(rhs)
-  }
+    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
 
-  override fun toCode(): String {
-    return lhs.toCode() + " := " + rhs.toCode()
-  }
+    override fun toCode(): String {
+        return lhs.toCode() + " := " + rhs.toCode()
+    }
 
-  override fun resolve(): ChalkTalkNode {
-    return this
-  }
+    override fun resolve(): ChalkTalkNode {
+        return this
+    }
 }
 
 data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
 
-  override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
-    items.forEach(fn)
-  }
-
-  override fun toCode(): String {
-    var builder = StringBuilder()
-    builder.append('(')
-    for (i in 0 until items.size) {
-      builder.append(items[i].toCode())
-      if (i != items.size - 1) {
-        builder.append(", ")
-      }
+    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+        items.forEach(fn)
     }
-    builder.append(')')
-    return builder.toString()
-  }
 
-  override fun resolve(): ChalkTalkNode {
-    return this
-  }
+    override fun toCode(): String {
+        var builder = StringBuilder()
+        builder.append('(')
+        for (i in 0 until items.size) {
+            builder.append(items[i].toCode())
+            if (i != items.size - 1) {
+                builder.append(", ")
+            }
+        }
+        builder.append(')')
+        return builder.toString()
+    }
+
+    override fun resolve(): ChalkTalkNode {
+        return this
+    }
 }
 
 data class Abstraction(val name: ChalkTalkToken, val params: List<ChalkTalkToken>) : TupleItem() {
 
-  override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
-    fn(name)
-    params.forEach(fn)
-  }
-
-  override fun toCode(): String {
-    val builder = StringBuilder()
-    builder.append(name.toCode())
-    builder.append('(')
-    for (i in 0 until params.size) {
-      builder.append(params[i].toCode())
-      if (i != params.size - 1) {
-        builder.append(", ")
-      }
+    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+        fn(name)
+        params.forEach(fn)
     }
-    builder.append(')')
-    return builder.toString()
-  }
 
-  override fun resolve(): ChalkTalkNode {
-    return this
-  }
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        builder.append(name.toCode())
+        builder.append('(')
+        for (i in 0 until params.size) {
+            builder.append(params[i].toCode())
+            if (i != params.size - 1) {
+                builder.append(", ")
+            }
+        }
+        builder.append(')')
+        return builder.toString()
+    }
+
+    override fun resolve(): ChalkTalkNode {
+        return this
+    }
 }
 
 data class Aggregate(val params: List<ChalkTalkToken>) : AssignmentRhs() {
 
-  override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
-    params.forEach(fn)
-  }
-
-  override fun toCode(): String {
-    val builder = StringBuilder()
-    builder.append('{')
-    for (i in 0 until params.size) {
-      builder.append(params[i].toCode())
-      if (i != params.size - 1) {
-        builder.append(", ")
-      }
+    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+        params.forEach(fn)
     }
-    builder.append('}')
-    return builder.toString()
-  }
 
-  override fun resolve(): ChalkTalkNode {
-    return this
-  }
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        builder.append('{')
+        for (i in 0 until params.size) {
+            builder.append(params[i].toCode())
+            if (i != params.size - 1) {
+                builder.append(", ")
+            }
+        }
+        builder.append('}')
+        return builder.toString()
+    }
+
+    override fun resolve(): ChalkTalkNode {
+        return this
+    }
 }

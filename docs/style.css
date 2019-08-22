@@ -42,3 +42,8 @@ body {
 .plain {
   text-decoration: none !important;
 }
+
+.search-form {
+    margin: auto;
+    max-width:50%;
+}

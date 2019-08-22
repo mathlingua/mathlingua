@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast
+package mathlingua.chalktalk.phase2
 
 import mathlingua.chalktalk.phase1.ast.AstUtils
 import mathlingua.chalktalk.phase1.ast.ChalkTalkNode
@@ -161,7 +161,16 @@ data class Document(
 
             return if (!errors.isEmpty()) {
                 Validation.failure(errors)
-            } else Validation.success(Document(defines, refines, represents, results, axioms, conjectures))
+            } else Validation.success(
+                Document(
+                    defines,
+                    refines,
+                    represents,
+                    results,
+                    axioms,
+                    conjectures
+                )
+            )
         }
     }
 }

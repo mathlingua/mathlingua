@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast
+package mathlingua.chalktalk.phase2
 
 import mathlingua.chalktalk.phase1.ast.AstUtils
 import mathlingua.chalktalk.phase1.ast.ChalkTalkNode

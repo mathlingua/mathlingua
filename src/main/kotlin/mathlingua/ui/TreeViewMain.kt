@@ -19,9 +19,9 @@ package mathlingua.ui
 import mathlingua.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
-import mathlingua.chalktalk.phase2.ast.Document
-import mathlingua.chalktalk.phase2.ast.Phase2Node
-import mathlingua.chalktalk.phase2.ast.Statement
+import mathlingua.chalktalk.phase2.Document
+import mathlingua.chalktalk.phase2.Phase2Node
+import mathlingua.chalktalk.phase2.Statement
 import mathlingua.textalk.Node
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants

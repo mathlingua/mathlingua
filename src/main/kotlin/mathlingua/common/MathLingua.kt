@@ -18,7 +18,7 @@ package mathlingua.common
 
 import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
-import mathlingua.chalktalk.phase2.ast.Document
+import mathlingua.chalktalk.phase2.Document
 
 data class MathLinguaResult(val document: Document?, val errors: List<ParseError>)
 

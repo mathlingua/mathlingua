@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast
+package mathlingua.chalktalk.phase2
 
 fun indentedString(useDot: Boolean, indent: Int, line: String): String {
     val builder = StringBuilder()

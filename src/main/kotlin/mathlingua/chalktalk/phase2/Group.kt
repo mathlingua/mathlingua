@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast
+package mathlingua.chalktalk.phase2
 
 import mathlingua.chalktalk.phase1.ast.*
 import mathlingua.common.ParseError
@@ -42,7 +42,15 @@ data class DefinesGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, id, definesSection, assumingSection, meansSection, metaDataSection)
+        return toCode(
+            isArg,
+            indent,
+            id,
+            definesSection,
+            assumingSection,
+            meansSection,
+            metaDataSection
+        )
     }
 
     companion object {
@@ -86,7 +94,16 @@ data class RefinesGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, id, id, refinesSection, assumingSection, meansSection, metaDataSection)
+        return toCode(
+            isArg,
+            indent,
+            id,
+            id,
+            refinesSection,
+            assumingSection,
+            meansSection,
+            metaDataSection
+        )
     }
 
     companion object {
@@ -130,7 +147,15 @@ data class RepresentsGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, id, representsSection, assumingSection, thatSection, metaDataSection)
+        return toCode(
+            isArg,
+            indent,
+            id,
+            representsSection,
+            assumingSection,
+            thatSection,
+            metaDataSection
+        )
     }
 
     companion object {

@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast
+package mathlingua.chalktalk.phase2
 
 import mathlingua.chalktalk.phase1.ast.AstUtils
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
 
-data class MetaDataSection(val mappings: List<MappingNode>) : Phase2Node {
+data class MetaDataSection(val mappings: List<MappingNode>) :
+    Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
     }

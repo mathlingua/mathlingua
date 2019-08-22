@@ -16,8 +16,8 @@
 
 package mathlingua.ui
 
-import mathlingua.chalktalk.phase2.ast.MetaDataSection
-import mathlingua.chalktalk.phase2.ast.Phase2Node
+import mathlingua.chalktalk.phase2.MetaDataSection
+import mathlingua.chalktalk.phase2.Phase2Node
 import mathlingua.common.MathLingua
 
 object HtmlDataGenerator {

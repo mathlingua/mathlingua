@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package mathlingua.common
+package mathlingua
 
 import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.chalktalk.phase2.Document
+import mathlingua.common.ParseError
 
 data class MathLinguaResult(val document: Document?, val errors: List<ParseError>)
 

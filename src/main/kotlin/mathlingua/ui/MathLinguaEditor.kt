@@ -16,7 +16,7 @@
 
 package mathlingua.ui
 
-import mathlingua.common.MathLingua
+import mathlingua.MathLingua
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane

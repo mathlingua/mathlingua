@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase1
+package mathlingua.chalktalk.phase2
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import mathlingua.chalktalk.phase1.newChalkTalkLexer
+import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.loadTestCases
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
@@ -26,12 +28,12 @@ import java.nio.file.Paths
 
 internal class ChalkTalkParserTest {
     @TestFactory
-    fun `Golden Phase 1 Parse Tests`(): Collection<DynamicTest> {
+    fun `Golden Validation Tests`(): Collection<DynamicTest> {
         val goldenFile = Paths.get("src", "test", "resources", "golden.txt").toFile()
         val testCases = loadTestCases(goldenFile)
 
         return testCases.map {
-            DynamicTest.dynamicTest("ChalkTalk Parser: ${it.name}") {
+            DynamicTest.dynamicTest("ChalkTalk Validation: ${it.name}") {
                 val lexer = newChalkTalkLexer(it.input)
                 assertThat(lexer.errors().size).isEqualTo(0)
 
@@ -40,7 +42,12 @@ internal class ChalkTalkParserTest {
                 assertThat(result.errors.size).isEqualTo(0)
                 assertThat(result.root).isNotNull()
 
-                assertThat(result.root!!.toCode()).isEqualTo(it.expectedOutput)
+                val validation = Document.validate(result.root!!)
+                assertThat(validation.errors.size).isEqualTo(0)
+                assertThat(validation.value).isNotNull()
+
+                val doc = validation.value!!
+                assertThat(doc.toCode(false, 0).trim()).isEqualTo(it.expectedOutput.trim())
             }
         }
     }

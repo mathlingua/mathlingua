@@ -16,9 +16,9 @@
 
 package mathlingua.ui
 
+import mathlingua.MathLingua
 import mathlingua.chalktalk.phase2.MetaDataSection
 import mathlingua.chalktalk.phase2.Phase2Node
-import mathlingua.common.MathLingua
 
 object HtmlDataGenerator {
     @JvmStatic

@@ -39,6 +39,7 @@ object HtmlDataGenerator {
             val result = MathLingua.parse(part)
             val keywords = mutableSetOf<String>()
             var href: String? = null
+            var mobileHref: String? = null
             if (result.document != null) {
                 findKeywords(keywords, result.document)
                 val metadata: MetaDataSection?
@@ -82,12 +83,16 @@ object HtmlDataGenerator {
                             }
 
                             if (map.containsKey("source") && map.get("source") == "@aata") {
-                                href = "http://abstract.ups.edu/download/aata-20190710-print.pdf"
+                                val ref = "http://abstract.ups.edu/download/aata-20190710-print.pdf"
+                                href = ref
+                                mobileHref = ref
                                 if (map.containsKey("page")) {
                                     val pageNum = Integer.parseInt(map.get("page"))
                                     // the page labeled 1 in the pdf is the 15th page of
                                     // the pdf document
                                     href += "#page=${pageNum + 14}"
+                                    // mobile browsers expect no "=" to be present
+                                    mobileHref += "#page${pageNum + 14}"
                                 }
                             }
                         }
@@ -111,6 +116,7 @@ object HtmlDataGenerator {
                                  .replace("\"", "\\\"")}",
                   "keywords": $builder,
                   "href": "$href",
+                  "mobileHref": "$mobileHref"
                 },
             """.trimIndent())
         }

@@ -43,7 +43,8 @@ function search(keywordText) {
     if (foundAll) {
       found.push({
         text: item.text,
-        href: item.href
+        href: item.href,
+        mobileHref: item.mobileHref
       });
     }
   }
@@ -53,11 +54,16 @@ function search(keywordText) {
   }
 
   for (const res of found) {
-    resultsNode.appendChild(createResultDiv(res.text, res.href));
+    resultsNode.appendChild(createResultDiv(res.text, res.href, res.mobileHref));
   }
 }
 
-function createResultDiv(text, href) {
+function isOnMobile() {
+    return (typeof window.orientation !== 'undefined') &&
+           (navigator.userAgent.toLowerCase().indexOf('iemobile') !== -1);
+}
+
+function createResultDiv(text, href, mobileHref) {
   const codeBlock = document.createElement('code');
   codeBlock.className = 'yaml';
   codeBlock.appendChild(document.createTextNode(text));
@@ -73,8 +79,12 @@ function createResultDiv(text, href) {
   const anchor = document.createElement('a');
   anchor.className = 'plain';
   anchor.setAttribute('target', '_');
-  if (href) {
+  const onMobile = isOnMobile();
+  if (!onMobile && href) {
     anchor.setAttribute('href', href);
+  }
+  else if (onMobile && mobileHref) {
+    anchor.setAttribute('href', mobileHref);
   }
   anchor.appendChild(centeredDiv);
 

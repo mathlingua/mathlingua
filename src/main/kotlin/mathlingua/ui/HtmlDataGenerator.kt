@@ -28,12 +28,14 @@ object HtmlDataGenerator {
             .map { it.trim() }
             .filter { it.isNotBlank() }
 
-        println("""
+        println(
+            """
             define(() => {
               return {
                 getData: () => {
                   return [
-        """.trimIndent())
+        """.trimIndent()
+        )
 
         for (part in parts) {
             val result = MathLingua.parse(part)
@@ -45,23 +47,17 @@ object HtmlDataGenerator {
                 val metadata: MetaDataSection?
                 if (result.document.defines.isNotEmpty()) {
                     metadata = result.document.defines.first().metaDataSection
-                }
-                else if (result.document.refines.isNotEmpty()) {
+                } else if (result.document.refines.isNotEmpty()) {
                     metadata = result.document.refines.first().metaDataSection
-                }
-                else if (result.document.represents.isNotEmpty()) {
+                } else if (result.document.represents.isNotEmpty()) {
                     metadata = result.document.represents.first().metaDataSection
-                }
-                else if (result.document.results.isNotEmpty()) {
+                } else if (result.document.results.isNotEmpty()) {
                     metadata = result.document.results.first().metaDataSection
-                }
-                else if (result.document.axioms.isNotEmpty()) {
+                } else if (result.document.axioms.isNotEmpty()) {
                     metadata = result.document.axioms.first().metaDataSection
-                }
-                else if (result.document.conjectures.isNotEmpty()) {
+                } else if (result.document.conjectures.isNotEmpty()) {
                     metadata = result.document.conjectures.first().metaDataSection
-                }
-                else {
+                } else {
                     metadata = null
                 }
                 if (metadata != null) {
@@ -71,9 +67,9 @@ object HtmlDataGenerator {
                             val rhs = mapping.mapping.rhs
                             // the rhs is of the form "..."
                             // so remove the leading and trailing "
-                            val parts = rhs.text.substring(1, rhs.text.length-1).split(";")
+                            val rhsParts = rhs.text.substring(1, rhs.text.length - 1).split(";")
                             val map = mutableMapOf<String, String>()
-                            for (part in parts) {
+                            for (rhsPart in rhsParts) {
                                 val keyValue = part.split(":")
                                 if (keyValue.size == 2) {
                                     val key = keyValue[0].trim().toLowerCase()
@@ -109,24 +105,28 @@ object HtmlDataGenerator {
                 }
             }
             builder.append("]")
-            println("""
+            println(
+                """
                 {
                   "text": "${part.replace("\\", "\\\\")
-                                 .replace("\n", "\\n")
-                                 .replace("\"", "\\\"")}",
+                    .replace("\n", "\\n")
+                    .replace("\"", "\\\"")}",
                   "keywords": $builder,
                   "href": "$href",
                   "mobileHref": "$mobileHref"
                 },
-            """.trimIndent())
+            """.trimIndent()
+            )
         }
 
-        println("""
+        println(
+            """
                   ];
                 }
               };
             });
-        """.trimIndent())
+        """.trimIndent()
+        )
     }
 
     fun findKeywords(keywords: MutableSet<String>, node: Phase2Node) {

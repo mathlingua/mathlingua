@@ -1,0 +1,96 @@
+
+-- Test: parses single argument on same line
+-- Input:
+Result: x
+-- Output:
+Result:
+. x
+-- End;
+
+
+-- Test: parses single argument indented
+-- Input:
+Result:
+. x
+-- Output:
+Result:
+. x
+-- End;
+
+
+-- Test: parses multiple arguments single line
+-- Input:
+Result: a, b, c
+-- Output:
+Result:
+. a
+. b
+. c
+-- End;
+
+
+-- Test: parses multiple arguments indented
+-- Input:
+Result:
+. a
+. b
+. c
+-- Output:
+Result:
+. a
+. b
+. c
+-- End;
+
+
+-- Test: parses multiple arguments mixed indented
+-- Input:
+Result: a, b
+. c
+. d, e
+. f
+-- Output:
+Result:
+. a
+. b
+. c
+. d
+. e
+. f
+-- End;
+
+
+-- Test: parses text identifiers
+-- Input:
+Result: x
+-- Output:
+Result:
+. x
+-- End;
+
+
+-- Test: parses operator identifiers
+-- Input:
+Result: *
+-- Output:
+Result:
+. *
+-- End;
+
+
+-- Test: parses single var abstractions
+-- Input:
+Result: f(x)
+-- Output:
+Result:
+. f(x)
+-- End;
+
+
+-- Test: parses multi var abstractions
+-- Input:
+Result: f(x, y, z)
+-- Output:
+Result:
+. f(x, y, z)
+-- End;

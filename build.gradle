@@ -14,15 +14,6 @@
  * limitations under the License.
  */
 
-apply plugin: 'kotlin'
-apply plugin: 'application'
-
-group = 'mathlingua'
-version = '1.0-SNAPSHOT'
-sourceCompatibility = '1.8'
-
-mainClassName = 'mathlingua.MainKt'
-
 buildscript {
     ext.kotlin_version = '1.3.41'
     repositories {
@@ -33,15 +24,31 @@ buildscript {
     }
 }
 
+plugins {
+    // for improved test output
+    id "com.adarshr.test-logger" version "1.7.0"
+}
+
+apply plugin: 'kotlin'
+apply plugin: 'application'
+
+group = 'mathlingua'
+version = '1.0-SNAPSHOT'
+sourceCompatibility = '1.8'
+
+mainClassName = 'mathlingua.MainKt'
+
 repositories {
     mavenCentral()
 }
 
 dependencies {
     compile 'com.fifesoft:rsyntaxtextarea:3.0.3'
-    testCompile 'junit:junit:4.12'
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    testCompile "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testCompile 'com.willowtreeapps.assertk:assertk-jvm:0.19'
+    testCompile 'org.jetbrains.kotlin:kotlin-reflect:1.3.41'
+    testImplementation('org.junit.jupiter:junit-jupiter-api:5.5.1')
+    testRuntime('org.junit.jupiter:junit-jupiter-engine:5.5.1')
 }
 
 jar {
@@ -53,4 +60,13 @@ jar {
             it.isDirectory() ? it : zipTree(it)
         }
     }
+}
+
+test {
+    useJUnitPlatform()
+}
+
+// test output configuration
+testlogger {
+    theme 'mocha'
 }

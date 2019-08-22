@@ -59,7 +59,7 @@ function search(keywordText) {
 }
 
 function isOnMobile() {
-    return (typeof window.orientation !== 'undefined') &&
+    return (typeof window.orientation !== 'undefined') ||
            (navigator.userAgent.toLowerCase().indexOf('iemobile') !== -1);
 }
 

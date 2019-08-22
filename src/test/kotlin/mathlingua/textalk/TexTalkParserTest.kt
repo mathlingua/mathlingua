@@ -16,17 +16,23 @@
 
 package mathlingua.textalk
 
+import assertk.assertThat
+import assertk.assertions.isDataClassEqualTo
+import assertk.assertions.isEqualTo
+import org.junit.jupiter.api.Test
+
 internal class TexTalkParserTest {
-    /*
     @Test
     fun `correctly parses an identifier`() {
         val text = "y"
         val parser = newTexTalkParser()
         val lexer = newTexTalkLexer(text)
         val result = parser.parse(lexer)
-        Assertions.assertEquals(0, result.errors.size)
-        Assertions.assertEquals(ExpressionNode(
-            children=listOf(TextNode(type=NodeType.Identifier, text="y"))), result.root)
+        assertThat(result.errors.size).isEqualTo(0)
+        assertThat(result.root).isDataClassEqualTo(
+            ExpressionNode(
+                children = listOf(TextNode(type = NodeType.Identifier, text = "y"))
+            )
+        )
     }
-   */
 }

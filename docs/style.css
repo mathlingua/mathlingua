@@ -16,7 +16,11 @@
 
 body {
   background: #eeeeee;
-  font-family: Arial;
+  font-family: Georgia;
+}
+
+.title {
+  text-align: center;
 }
 
 .centered {
@@ -33,4 +37,8 @@ body {
 
 .all-padded {
   padding: 10px;
+}
+
+.plain {
+  text-decoration: none !important;
 }

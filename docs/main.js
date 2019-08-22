@@ -41,7 +41,10 @@ function search(keywordText) {
     }
 
     if (foundAll) {
-      found.push(item.text);
+      found.push({
+        text: item.text,
+        href: item.href
+      });
     }
   }
 
@@ -49,12 +52,12 @@ function search(keywordText) {
     resultsNode.removeChild(resultsNode.firstChild);
   }
 
-  for (const text of found) {
-    resultsNode.appendChild(createResultDiv(text));
+  for (const res of found) {
+    resultsNode.appendChild(createResultDiv(res.text, res.href));
   }
 }
 
-function createResultDiv(text) {
+function createResultDiv(text, href) {
   const codeBlock = document.createElement('code');
   codeBlock.className = 'yaml';
   codeBlock.appendChild(document.createTextNode(text));
@@ -67,7 +70,15 @@ function createResultDiv(text) {
   centeredDiv.className = 'centered';
   centeredDiv.appendChild(paddedPre);
 
+  const anchor = document.createElement('a');
+  anchor.className = 'plain';
+  anchor.setAttribute('target', '_');
+  if (href) {
+    anchor.setAttribute('href', href);
+  }
+  anchor.appendChild(centeredDiv);
+
   hljs.highlightBlock(codeBlock);
 
-  return centeredDiv;
+  return anchor;
 }

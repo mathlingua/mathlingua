@@ -16,6 +16,7 @@
 
 package mathlingua.ui
 
+import mathlingua.chalktalk.phase2.ast.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.MathLingua
 
@@ -37,8 +38,61 @@ object HtmlDataGenerator {
         for (part in parts) {
             val result = MathLingua.parse(part)
             val keywords = mutableSetOf<String>()
+            var href: String? = null
             if (result.document != null) {
                 findKeywords(keywords, result.document)
+                val metadata: MetaDataSection?
+                if (result.document.defines.isNotEmpty()) {
+                    metadata = result.document.defines.first().metaDataSection
+                }
+                else if (result.document.refines.isNotEmpty()) {
+                    metadata = result.document.refines.first().metaDataSection
+                }
+                else if (result.document.represents.isNotEmpty()) {
+                    metadata = result.document.represents.first().metaDataSection
+                }
+                else if (result.document.results.isNotEmpty()) {
+                    metadata = result.document.results.first().metaDataSection
+                }
+                else if (result.document.axioms.isNotEmpty()) {
+                    metadata = result.document.axioms.first().metaDataSection
+                }
+                else if (result.document.conjectures.isNotEmpty()) {
+                    metadata = result.document.conjectures.first().metaDataSection
+                }
+                else {
+                    metadata = null
+                }
+                if (metadata != null) {
+                    for (mapping in metadata.mappings) {
+                        val lhs = mapping.mapping.lhs
+                        if (lhs.text == "reference") {
+                            val rhs = mapping.mapping.rhs
+                            // the rhs is of the form "..."
+                            // so remove the leading and trailing "
+                            val parts = rhs.text.substring(1, rhs.text.length-1).split(";")
+                            val map = mutableMapOf<String, String>()
+                            for (part in parts) {
+                                val keyValue = part.split(":")
+                                if (keyValue.size == 2) {
+                                    val key = keyValue[0].trim().toLowerCase()
+                                    val value = keyValue[1].trim().toLowerCase()
+                                    map.put(key, value)
+                                }
+                            }
+
+                            if (map.containsKey("source") && map.get("source") == "@aata") {
+                                href = "http://abstract.ups.edu/download/aata-20190710-print.pdf"
+                                if (map.containsKey("page")) {
+                                    val pageNum = Integer.parseInt(map.get("page"))
+                                    // the page labeled 1 in the pdf is the 15th page of
+                                    // the pdf document
+                                    href += "#page=${pageNum + 14}"
+                                }
+                            }
+                        }
+                    }
+                }
             }
             val keywordList = keywords.toList()
             val builder = StringBuilder()
@@ -56,6 +110,7 @@ object HtmlDataGenerator {
                                  .replace("\n", "\\n")
                                  .replace("\"", "\\\"")}",
                   "keywords": $builder,
+                  "href": "$href",
                 },
             """.trimIndent())
         }

@@ -29,7 +29,7 @@ import java.nio.file.Paths
 internal class ChalkTalkParserTest {
     @TestFactory
     fun `Golden Validation Tests`(): Collection<DynamicTest> {
-        val goldenFile = Paths.get("src", "test", "resources", "golden.txt").toFile()
+        val goldenFile = Paths.get("src", "test", "resources", "golden-chalktalk.txt").toFile()
         val testCases = loadTestCases(goldenFile)
 
         return testCases.map {

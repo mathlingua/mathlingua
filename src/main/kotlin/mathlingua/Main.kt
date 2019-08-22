@@ -16,7 +16,6 @@
 
 package mathlingua
 
-import mathlingua.common.MathLingua
 import mathlingua.common.ParseError
 import java.io.File
 import kotlin.system.exitProcess

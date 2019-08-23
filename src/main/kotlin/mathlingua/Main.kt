@@ -53,7 +53,7 @@ fun main(args: Array<String>) {
         if (arg == "--json") {
             printJson = true
         } else {
-            files.addAll(findFiles(File(arg), ".yaml"))
+            files.addAll(findFiles(File(arg), ".txt"))
         }
     }
 

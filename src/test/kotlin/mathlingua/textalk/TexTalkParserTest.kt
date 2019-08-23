@@ -17,22 +17,31 @@
 package mathlingua.textalk
 
 import assertk.assertThat
-import assertk.assertions.isDataClassEqualTo
 import assertk.assertions.isEqualTo
-import org.junit.jupiter.api.Test
+import assertk.assertions.isNotNull
+import mathlingua.loadTestCases
+import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.TestFactory
+import java.nio.file.Paths
 
 internal class TexTalkParserTest {
-    @Test
-    fun `correctly parses an identifier`() {
-        val text = "y"
-        val parser = newTexTalkParser()
-        val lexer = newTexTalkLexer(text)
-        val result = parser.parse(lexer)
-        assertThat(result.errors.size).isEqualTo(0)
-        assertThat(result.root).isDataClassEqualTo(
-            ExpressionNode(
-                children = listOf(TextNode(type = NodeType.Identifier, text = "y"))
-            )
-        )
+    @TestFactory
+    fun `Golden TexTalk Tests`(): Collection<DynamicTest> {
+        val goldenFile = Paths.get("src", "test", "resources", "golden-textalk.txt").toFile()
+        val testCases = loadTestCases(goldenFile)
+
+        return testCases.map {
+            DynamicTest.dynamicTest("TexTalk Parser: ${it.name}") {
+                val lexer = newTexTalkLexer(it.input)
+                assertThat(lexer.errors.size).isEqualTo(0)
+
+                val parser = newTexTalkParser()
+                val result = parser.parse(lexer)
+                assertThat(result.errors.size).isEqualTo(0)
+                assertThat(result.root).isNotNull()
+
+                assertThat(result.root.toCode().trim()).isEqualTo(it.expectedOutput.trim())
+            }
+        }
     }
 }

@@ -1,0 +1,159 @@
+
+-- Test: parses identifiers
+-- Input:
+abc
+-- Output:
+abc
+-- End;
+
+
+-- Test: parses operators
+-- Input:
+**
+-- Output:
+**
+-- End;
+
+
+-- Test: parses single name command
+-- Input:
+\cos
+-- Output:
+\cos
+-- End;
+
+
+-- Test: parses single name command with {}
+-- Input:
+\cos{x}
+-- Output:
+\cos{x}
+-- End;
+
+
+-- Test: parses single name command with ()
+-- Input:
+\cos(x)
+-- Output:
+\cos(x)
+-- End;
+
+
+-- Test: parses single name command with {} and multi args
+-- Input:
+\cos{x, y, z}
+-- Output:
+\cos{x, y, z}
+-- End;
+
+
+-- Test: parses single name command with []
+-- Input:
+\cos[x]
+-- Output:
+\cos[x]
+-- End;
+
+
+-- Test: parses single name command with [] and multi args
+-- Input:
+\cos[x, y, z]
+-- Output:
+\cos[x, y, z]
+-- End;
+
+
+-- Test: parses single name command with [] and multi args and sub-sup
+-- Input:
+\cos[x, y, z]_{a}^{b}
+-- Output:
+\cos[x, y, z]_{a}^{b}
+-- End;
+
+
+-- Test: parses single name command with [] and multi args and sub-sup and {}
+-- Input:
+\cos[x, y, z]_{a}^{b}{x}
+-- Output:
+\cos[x, y, z]_{a}^{b}{x}
+-- End;
+
+
+-- Test: parses single name command with [] and multi args and sub-sup and ()
+-- Input:
+\cos[x, y, z]_{a}^{b}(x)
+-- Output:
+\cos[x, y, z]_{a}^{b}(x)
+-- End;
+
+
+-- Test: parses single name command with [] and multi args and sub-sup and () and multi args
+-- Input:
+\cos[x, y, z]_{a}^{b}(x, y, z)
+-- Output:
+\cos[x, y, z]_{a}^{b}(x, y, z)
+-- End;
+
+
+-- Test: parses compound name command
+-- Input:
+\some.compound.name
+-- Output:
+\some.compound.name
+-- End;
+
+
+-- Test: parses complex compound name
+-- Input:
+\some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}
+-- Output:
+\some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}
+-- End;
+
+
+-- Test: parses simple is statements
+-- Input:
+a is b
+-- Output:
+a is b
+-- End;
+
+
+-- Test: parses multi is statements
+-- Input:
+a, b, c is x, y, z
+-- Output:
+a, b, c is x, y, z
+-- End;
+
+
+-- Test: parses is statements with commands
+-- Input:
+x is \set
+-- Output:
+x is \set
+-- End;
+
+
+-- Test: parses is statements with multi commands
+-- Input:
+x is \compact \convex \set
+-- Output:
+x is \compact \convex \set
+-- End;
+
+
+-- Test: parses expressions
+-- Input:
+a + b^2 + \sin(x) - \frac{x}{y}
+-- Output:
+a + b ^ 2 + \sin(x) - \frac{x}{y}
+-- End;
+
+
+-- Test: parses expressions with parens
+-- Input:
+f(x + 2*(x + y)^2) + (a + b)/2
+-- Output:
+f (x + 2 * (x + y) ^ 2) + (a + b) / 2
+-- End;

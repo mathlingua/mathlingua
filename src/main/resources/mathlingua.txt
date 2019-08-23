@@ -8,7 +8,7 @@ Metadata:
 
 
 [a \in X]
-Represents:
+represents:
 assuming: 'X is \set'
 that:
 . "$a$ is an element of $X$"
@@ -78,7 +78,7 @@ Metadata:
 [\disjoint.set]
 Defines: (A, B)
 assuming: 'A, B is \set'
-means: '(A \intersect B) = \empty.set'
+implies: '(A \intersect B) = \empty.set'
 Metadata:
 . reference = "source: @AATA; page: 5"
 

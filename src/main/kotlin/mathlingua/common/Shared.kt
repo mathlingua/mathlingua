@@ -16,8 +16,6 @@
 
 package mathlingua.common
 
-import java.util.*
-
 data class ParseError(override val message: String, val row: Int, val column: Int) : RuntimeException(message)
 
 class Validation<T> private constructor(val value: T?, val errors: List<ParseError>) {

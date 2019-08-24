@@ -15,6 +15,7 @@
  */
 
 body {
+  margin: 0;
   background: #eeeeee;
   font-family: Georgia;
 }
@@ -36,7 +37,10 @@ body {
 }
 
 .all-padded {
-  padding: 10px;
+  padding-top: 10px;
+  padding-bottom: 10px;
+  padding-left: 20px;
+  padding-right: 20px
 }
 
 .plain {
@@ -44,6 +48,57 @@ body {
 }
 
 .search-form {
-    margin: auto;
-    max-width:50%;
+  margin: auto;
+  max-width:50%;
+}
+
+#editor {
+  height: 250px;
+  width: 100%;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #dddddd;
+}
+
+.header {
+  overflow: hidden;
+  background-color: #444444;
+}
+
+.header a {
+  float: left;
+  color: #f2f2f2;
+  text-align: center;
+  padding: 14px;
+  text-decoration: none;
+}
+
+.header a.active {
+  font-weight: bold;
+  color: white;
+}
+
+.output {
+  font-family: 'Monospace';
+  padding: 5px;
+}
+
+.error {
+  font-family: 'Monospace';
+  padding: 5px;
+  color: #b22222;
+}
+
+.button {
+  background: #eeeeee;
+  padding: 3px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #aaaaaa;
+  text-decoration: none;
+  color: #000000;
+}
+
+.float-right {
+  float: right;
 }

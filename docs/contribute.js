@@ -17,6 +17,13 @@
 'use strict';
 
 const editor = ace.edit("editor");
+editor.setOptions({
+  highlightActiveLine: false,
+  useSoftTabs: true,
+  tabSize: 2,
+  showPrintMargin: false,
+  showFoldWidgets: false
+});
 editor.session.setMode("ace/mode/yaml");
 
 editor.on('change', () => {
@@ -31,7 +38,8 @@ editor.on('change', () => {
         for (const item of result.errors['array_hd7ov6$_0']) {
             const message = item['message_8yp7un$_0'];
             if (!allMessages.has(message)) {
-              errorText += 'Error: ' + message.replace(/\n/g, '<br/>') + '<br/>';
+              errorText += 'Error(' + (item.row + 1) + ', ' + (item.column + 1) + '): ' +
+                message.replace(/\n/g, '<br/>') + '<br/>';
               allMessages.add(message);
             }
         }

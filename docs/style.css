@@ -52,6 +52,11 @@ body {
   max-width:50%;
 }
 
+.search-field {
+  padding: 2px;
+  width: 60%;
+}
+
 #editor {
   height: 250px;
   width: 100%;

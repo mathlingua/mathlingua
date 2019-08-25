@@ -34,7 +34,7 @@ fun newChalkTalkLexer(text: String): ChalkTalkLexer {
 }
 
 private class ChalkTalkLexerImpl(private var text: String) :
-    ChalkTalkLexer {
+        ChalkTalkLexer {
 
     private val errors: MutableList<ParseError>
     private var chalkTalkTokens: MutableList<ChalkTalkToken>? = null
@@ -87,33 +87,33 @@ private class ChalkTalkLexerImpl(private var text: String) :
             column++
             if (c == '=') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("=", ChalkTalkTokenType.Equals, line, column)
+                        ChalkTalkToken("=", ChalkTalkTokenType.Equals, line, column)
                 )
             } else if (c == '(') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("(", ChalkTalkTokenType.LParen, line, column)
+                        ChalkTalkToken("(", ChalkTalkTokenType.LParen, line, column)
                 )
             } else if (c == ')') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken(")", ChalkTalkTokenType.RParen, line, column)
+                        ChalkTalkToken(")", ChalkTalkTokenType.RParen, line, column)
                 )
             } else if (c == '{') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("{", ChalkTalkTokenType.LCurly, line, column)
+                        ChalkTalkToken("{", ChalkTalkTokenType.LCurly, line, column)
                 )
             } else if (c == '}') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("}", ChalkTalkTokenType.RCurly, line, column)
+                        ChalkTalkToken("}", ChalkTalkTokenType.RCurly, line, column)
                 )
             } else if (c == ':') {
                 if (i < text.length && text[i] == '=') {
                     this.chalkTalkTokens!!.add(
-                        ChalkTalkToken(
-                            ":=",
-                            ChalkTalkTokenType.ColonEquals,
-                            line,
-                            column
-                        )
+                            ChalkTalkToken(
+                                    ":=",
+                                    ChalkTalkTokenType.ColonEquals,
+                                    line,
+                                    column
+                            )
                     )
                     i++ // move past the =
                 } else {
@@ -138,21 +138,21 @@ private class ChalkTalkLexerImpl(private var text: String) :
                         line++
                     }
                     this.chalkTalkTokens!!.add(
-                        ChalkTalkToken(
-                            "-",
-                            ChalkTalkTokenType.Linebreak,
-                            line,
-                            column
-                        )
+                            ChalkTalkToken(
+                                    "-",
+                                    ChalkTalkTokenType.Linebreak,
+                                    line,
+                                    column
+                            )
                     )
                     continue
                 }
 
                 var indentCount = 0
                 while (i < text.length
-                    && i + 1 < text.length
-                    && text[i] == ' '
-                    && text[i + 1] == ' '
+                        && i + 1 < text.length
+                        && text[i] == ' '
+                        && text[i + 1] == ' '
                 ) {
                     indentCount++
                     i += 2
@@ -161,9 +161,9 @@ private class ChalkTalkLexerImpl(private var text: String) :
 
                 // treat '. ' like another indent
                 if (i < text.length
-                    && text[i] == '.'
-                    && i + 1 < text.length
-                    && text[i + 1] == ' '
+                        && text[i] == '.'
+                        && i + 1 < text.length
+                        && text[i + 1] == ' '
                 ) {
                     indentCount++
                 }
@@ -206,7 +206,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
                 if (i == text.length) {
                     errors.add(
-                        ParseError("Expected a terminating \"", line, column)
+                            ParseError("Expected a terminating \"", line, column)
                     )
                     str += "\""
                 } else {
@@ -223,7 +223,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
                 if (i == text.length) {
                     errors.add(
-                        ParseError("Expected a terminating '", line, column)
+                            ParseError("Expected a terminating '", line, column)
                     )
                     stmt += "'"
                 } else {
@@ -240,7 +240,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
                 if (i == text.length) {
                     errors.add(
-                        ParseError("Expected a terminating ]", line, column)
+                            ParseError("Expected a terminating ]", line, column)
                     )
                     id += "]"
                 } else {
@@ -251,9 +251,9 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 this.chalkTalkTokens!!.add(ChalkTalkToken(id, ChalkTalkTokenType.Id, line, column))
             } else if (c != ' ') { // spaces are ignored
                 errors.add(
-                    ParseError(
-                        "Unrecognized character $c", line, column
-                    )
+                        ParseError(
+                                "Unrecognized character $c", line, column
+                        )
                 )
             }
         }

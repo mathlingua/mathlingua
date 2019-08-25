@@ -50,7 +50,7 @@ object SectionIdentifier {
 
             val isOptional = maybeName.endsWith("?")
             val trueName =
-                if (isOptional) maybeName.substring(0, maybeName.length - 1) else maybeName
+                    if (isOptional) maybeName.substring(0, maybeName.length - 1) else maybeName
             if (nextSection.name.text == trueName) {
                 result[trueName] = nextSection
                 // the expected name and Section have booth been used so move past them
@@ -65,9 +65,9 @@ object SectionIdentifier {
                 expectedQueue.poll()
             } else {
                 throw ParseError(
-                    "For pattern:\n\n" + pattern +
-                        "\nExpected '" + trueName + "' but found '" + nextSection.name.text + "'",
-                    AstUtils.getRow(nextSection), AstUtils.getColumn(nextSection)
+                        "For pattern:\n\n" + pattern +
+                                "\nExpected '" + trueName + "' but found '" + nextSection.name.text + "'",
+                        AstUtils.getRow(nextSection), AstUtils.getColumn(nextSection)
                 )
             }
         }
@@ -75,9 +75,9 @@ object SectionIdentifier {
         if (!sectionQueue.isEmpty()) {
             val peek = sectionQueue.peek()
             throw ParseError(
-                "For pattern:\n\n" + pattern +
-                    "\nUnexpected Section '" + peek.name.text + "'",
-                AstUtils.getRow(peek), AstUtils.getColumn(peek)
+                    "For pattern:\n\n" + pattern +
+                            "\nUnexpected Section '" + peek.name.text + "'",
+                    AstUtils.getRow(peek), AstUtils.getColumn(peek)
             )
         }
 
@@ -100,8 +100,8 @@ object SectionIdentifier {
 
         if (nextExpected != null) {
             throw ParseError(
-                "For pattern:\n\n" + pattern +
-                    "\nExpected a " + nextExpected, startRow, startColumn
+                    "For pattern:\n\n" + pattern +
+                            "\nExpected a " + nextExpected, startRow, startColumn
             )
         }
 

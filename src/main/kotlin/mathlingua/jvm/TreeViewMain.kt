@@ -65,7 +65,7 @@ object TreeViewMain {
         outputArea.highlightCurrentLine = false
         outputArea.font = font
         outputArea.syntaxScheme
-            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
         val inputArea = RSyntaxTextArea(20, 60)
         inputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
@@ -73,7 +73,7 @@ object TreeViewMain {
         inputArea.highlightCurrentLine = false
         inputArea.font = font
         inputArea.syntaxScheme
-            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
         inputArea.addKeyListener(object : KeyListener {
             override fun keyTyped(keyEvent: KeyEvent) {}
 

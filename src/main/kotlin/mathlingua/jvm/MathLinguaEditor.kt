@@ -58,7 +58,7 @@ object MathLinguaEditor {
         inputArea.highlightCurrentLine = false
         inputArea.font = font
         inputArea.syntaxScheme
-            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
         val scrollPane = RTextScrollPane(inputArea)
         scrollPane.lineNumbersEnabled = true

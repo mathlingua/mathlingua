@@ -22,7 +22,7 @@ import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.Section
 
 data class MetaDataSection(val mappings: List<MappingNode>) :
-    Phase2Node {
+        Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
     }
@@ -44,12 +44,12 @@ data class MetaDataSection(val mappings: List<MappingNode>) :
         fun validate(section: Section): Validation<MetaDataSection> {
             if (section.name.text != "Metadata") {
                 return Validation.failure(
-                    listOf(
-                        ParseError(
-                            "Expected a 'Metadata' but found '${section.name.text}'",
-                            AstUtils.getRow(section), AstUtils.getColumn(section)
+                        listOf(
+                                ParseError(
+                                        "Expected a 'Metadata' but found '${section.name.text}'",
+                                        AstUtils.getRow(section), AstUtils.getColumn(section)
+                                )
                         )
-                    )
                 )
             }
 

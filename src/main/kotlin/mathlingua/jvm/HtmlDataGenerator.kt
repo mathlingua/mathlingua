@@ -25,15 +25,12 @@ object HtmlDataGenerator {
     fun main(args: Array<String>) {
         val text = SOURCE_FILE.readText()
         val parts = text.split("\n\n")
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
+                .map { it.trim() }
+                .filter { it.isNotBlank() }
 
         println(
-            """
-            define(() => {
-              return {
-                getData: () => {
-                  return [
+                """
+            window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
         """.trimIndent()
         )
 
@@ -42,8 +39,12 @@ object HtmlDataGenerator {
             val keywords = mutableSetOf<String>()
             var href: String? = null
             var mobileHref: String? = null
+            var signature: String? = null
             if (result.document != null) {
                 findKeywords(keywords, result.document)
+                if (result.document.defines.isNotEmpty()) {
+                    signature = result.document.defines.first().signature
+                }
                 val metadata: MetaDataSection?
                 if (result.document.defines.isNotEmpty()) {
                     metadata = result.document.defines.first().metaDataSection
@@ -106,27 +107,20 @@ object HtmlDataGenerator {
             }
             builder.append("]")
             println(
-                """
+                    """
                 {
                   "text": "${part.replace("\\", "\\\\")
-                    .replace("\n", "\\n")
-                    .replace("\"", "\\\"")}",
+                            .replace("\n", "\\n")
+                            .replace("\"", "\\\"")}",
                   "keywords": $builder,
                   "href": "$href",
-                  "mobileHref": "$mobileHref"
+                  "mobileHref": "$mobileHref",
+                  "signature": ${if (signature == null) null else "\"${signature.replace("\\", "\\\\")}\""}
                 },
             """.trimIndent()
             )
         }
-
-        println(
-            """
-                  ];
-                }
-              };
-            });
-        """.trimIndent()
-        )
+        println("];")
     }
 
     fun findKeywords(keywords: MutableSet<String>, node: Phase2Node) {
@@ -138,25 +132,25 @@ object HtmlDataGenerator {
 
         if (!hasChildren) {
             val code = node.toCode(false, 0)
-                .trim()
-                .toLowerCase()
-                .replace("\"", " ")
-                .replace("'", " ")
-                .replace("$", " ")
-                .replace("\\", " ")
-                .replace(".", " ")
-                .replace(",", " ")
-                .replace(":", " ")
-                .replace(";", " ")
-                .replace("^", " ")
-                .replace("_", " ")
-                .replace("{", " ")
-                .replace("}", " ")
-                .replace("[", " ")
-                .replace("]", " ")
-                .replace("(", " ")
-                .replace(")", " ")
-                .replace("@", " ")
+                    .trim()
+                    .toLowerCase()
+                    .replace("\"", " ")
+                    .replace("'", " ")
+                    .replace("$", " ")
+                    .replace("\\", " ")
+                    .replace(".", " ")
+                    .replace(",", " ")
+                    .replace(":", " ")
+                    .replace(";", " ")
+                    .replace("^", " ")
+                    .replace("_", " ")
+                    .replace("{", " ")
+                    .replace("}", " ")
+                    .replace("[", " ")
+                    .replace("]", " ")
+                    .replace("(", " ")
+                    .replace(")", " ")
+                    .replace("@", " ")
             for (word in code.split(" ")) {
                 if (word.isNotBlank()) {
                     keywords.add(word)

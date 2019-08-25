@@ -58,11 +58,11 @@ data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
 }
 
 data class CommandPart(
-    val name: TextNode,
-    val square: GroupNode?,
-    val subSup: SubSupNode?,
-    val groups: List<GroupNode>,
-    val namedGroups: List<NamedGroupNode>
+        val name: TextNode,
+        val square: GroupNode?,
+        val subSup: SubSupNode?,
+        val groups: List<GroupNode>,
+        val namedGroups: List<NamedGroupNode>
 ) : Node {
     override val type: NodeType
         get() = NodeType.CommandPart
@@ -210,8 +210,8 @@ data class GroupNode(override val type: NodeType, val parameters: ParametersNode
 }
 
 data class NamedGroupNode(
-    val name: TextNode,
-    val group: GroupNode
+        val name: TextNode,
+        val group: GroupNode
 ) : Node {
 
     override val type: NodeType
@@ -231,8 +231,8 @@ data class NamedGroupNode(
 }
 
 data class SubSupNode(
-    val sub: GroupNode?,
-    val sup: GroupNode?
+        val sub: GroupNode?,
+        val sup: GroupNode?
 ) : Node {
 
     override val type: NodeType
@@ -273,10 +273,10 @@ data class TextNode(override val type: NodeType, val text: String) : Node {
 }
 
 data class TexTalkToken(
-    val text: String,
-    val tokenType: TexTalkTokenType,
-    val row: Int,
-    val column: Int
+        val text: String,
+        val tokenType: TexTalkTokenType,
+        val row: Int,
+        val column: Int
 ) : Node {
     override val type: NodeType
         get() = NodeType.Token

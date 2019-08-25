@@ -22,7 +22,9 @@ editor.setOptions({
   useSoftTabs: true,
   tabSize: 2,
   showPrintMargin: false,
-  showFoldWidgets: false
+  showFoldWidgets: false,
+  enableBasicAutocompletion: true,
+  enableLiveAutocompletion: false
 });
 editor.session.setMode("ace/mode/yaml");
 
@@ -45,6 +47,42 @@ editor.on('change', () => {
         }
         document.getElementById('error').innerHTML = errorText;
     }
+});
+
+const CHALK_TALK_COMPLETIONS = [
+    { name: 'Result:', value: 'Result:\nAlias:\nMetadata:' },
+    { name: 'Axiom:', value: 'Axiom:\nAlias:\nMetadata:' },
+    { name: 'Conjecture:', value: 'Conjecture:\nAlias:\nMetadata:' },
+    { name: 'Defines:', value: 'Defines:\nassuming:\nmeans:\nAlias:\nMetadata:' },
+    { name: 'Refines:', value: 'Refines:\nassuming:\nmeans:\nAlias:\nMetadata:' },
+    { name: 'Represents:', value: 'Represents:\nassuming:\nthat:\nAlias:\nMetadata:' },
+    { name: 'for:', value: 'for:\nwhere:\nthen:' },
+    { name: 'exists:', value: 'exists:\nsuchThat:' },
+    { name: 'if:', value: 'if:\nthen:' },
+    { name: 'iff:', value: 'iff:\nthen:' },
+    { name: 'not:', value: 'not:' },
+    { name: 'or:', value: 'or:' }
+];
+
+const langTools = ace.require("ace/ext/language_tools");
+langTools.setCompleters();
+langTools.addCompleter({
+   getCompletions: (editor, session, pos, prefix, callback) => {
+       if (prefix.length === 0) {
+           return callback(null, []);
+       }
+       const column = pos.column;
+       let indent = '\n';
+       for (let i = 0; i < (column - prefix.length); i++) {
+           indent += ' ';
+       }
+       callback(null, CHALK_TALK_COMPLETIONS.map(item => {
+           return {
+               name: item.name,
+               value: item.value.replace(/\n/g, indent)
+           };
+       }));
+   }
 });
 
 const link = document.getElementById('email');

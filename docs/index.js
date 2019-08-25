@@ -16,11 +16,6 @@
 
 'use strict';
 
-let data;
-requirejs(['data'], (d) => {
-  data = d.getData();
-});
-
 function search(keywordText) {
   const resultsNode = document.getElementById('results');
 
@@ -30,7 +25,7 @@ function search(keywordText) {
                               .map(item => item.toLowerCase());
 
   const found = [];
-  for (const item of data) {
+  for (const item of window.MATHLINGUA_DATA) {
     const itemKeywords = new Set(item.keywords);
     var foundAll = true;
     for (const kw of keywords) {

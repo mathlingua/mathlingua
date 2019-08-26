@@ -3879,12 +3879,16 @@ var bundle = function (_, Kotlin) {
       return null;
     }
     var expressionNode = ensureNotNull(rootValidation.value);
+    var commandParts = ArrayList_init();
     tmp$ = expressionNode.children.iterator();
     while (tmp$.hasNext()) {
       var child = tmp$.next();
       if (Kotlin.isType(child, Command)) {
-        return getCommandSignature(child).toCode();
+        commandParts.addAll_brywnq$(child.parts);
       }
+    }
+    if (!commandParts.isEmpty()) {
+      return getCommandSignature(new Command(commandParts)).toCode();
     }
     return null;
   }

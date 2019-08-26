@@ -293,6 +293,6 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["group", "order", "of", "g", "=", "x", "*", "n", "is", "set", "cardinality", "reference", "source", "aata", "page", "36"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=50",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page50",
-  "signature": null
+  "signature": "\\group.order:of{?}"
 },
 ];

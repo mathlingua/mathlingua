@@ -44,7 +44,13 @@ object HtmlDataGenerator {
                 findKeywords(keywords, result.document)
                 if (result.document.defines.isNotEmpty()) {
                     signature = result.document.defines.first().signature
+                } else if (result.document.refines.isNotEmpty()) {
+                    signature = result.document.refines.first().signature
                 }
+                else if (result.document.represents.isNotEmpty()) {
+                    signature = result.document.represents.first().signature
+                }
+
                 val metadata: MetaDataSection?
                 if (result.document.defines.isNotEmpty()) {
                     metadata = result.document.defines.first().metaDataSection

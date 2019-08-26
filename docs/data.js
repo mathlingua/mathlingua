@@ -27,35 +27,35 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["a", "in", "x", "represents", "is", "set", "an", "element", "of", "reference", "=", "source", "aata", "page", "4"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\in"
 },
 {
   "text": "[A \\subset B]\nRepresents:\nassuming: 'A, B is \\set'\nthat:\n. for: a\n  where: 'a \\in A'\n  then: 'a \\in B'\nMetadata:\n. reference = \"source: @AATA; page: 4\"",
   "keywords": ["a", "subset", "b", "represents", "is", "set", "in", "reference", "=", "source", "aata", "page", "4"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\subset"
 },
 {
   "text": "[x \\neq y]\nRepresents:\nthat: 'x != y'",
   "keywords": ["x", "neq", "y", "represents", "!="],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\neq"
 },
 {
   "text": "[A \\proper.subset B]\nRepresents:\nassuming: 'A, B is \\set'\nthat:\n. 'A \\subset B'\n. 'A \\neq B'\nMetadata:\n. reference = \"source: @AATA; page: 4\"",
   "keywords": ["a", "proper", "subset", "b", "represents", "is", "set", "neq", "reference", "=", "source", "aata", "page", "4"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\proper.subset"
 },
 {
   "text": "[\\empty.set]\nRefines: E\nmeans:\n. not:\n  . exists: x\n    suchThat: 'x \\in E'\nMetadata:\n. reference = \"source: @AATA; page: 4\"",
   "keywords": ["empty", "set", "e", "x", "in", "reference", "=", "source", "aata", "page", "4"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\empty.set"
 },
 {
   "text": "[A \\union B]\nDefines: C := {c}\nassuming: 'A, B is \\set'\nmeans:\n. 'C is \\set'\n. or:\n  . 'c \\in A'\n  . 'c \\in B'\nMetadata:\n. reference = \"source: @AATA; page: 4\"",
@@ -83,7 +83,7 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["x", "notin", "represents", "is", "set", "in"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\notin"
 },
 {
   "text": "[\\complement:of{A}in{U}]\nDefines: X := {x}\nassuming: 'A, U is \\set'\nmeans:\n. 'x \\in U'\n. 'x \\notin A'\nMetadata:\n. reference = \"source: @AATA; page: 5\"",
@@ -125,21 +125,21 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["surjective", "function", "on", "a", "to", "b", "f", "in", "=", "reference", "source", "aata", "page", "8"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\surjective.function:on{?}to{?}"
 },
 {
   "text": "[\\injective \\function:on{A}to{B}]\nRefines: f\nmeans:\n. for: a1, a2\n  where: 'a1, a2 \\in A'\n  then:\n  . if: 'a1 \\neq a2'\n    then: 'f(a1) \\neq f(a2)'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
   "keywords": ["injective", "function", "on", "a", "to", "b", "f", "a1", "a2", "in", "neq", "reference", "=", "source", "aata", "page", "8"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\injective.function:on{?}to{?}"
 },
 {
   "text": "[\\bijective \\function]\nRefines: f\nmeans:\n. 'f \\is \\injective \\surjective \\function'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
   "keywords": ["bijective", "function", "f", "is", "injective", "surjective", "reference", "=", "source", "aata", "page", "8"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\bijective.function"
 },
 {
   "text": "[g \\of f]\nDefines: h(x)\nassuming:\n. for: A, B, C\n  where: 'A, B, C is \\set'\n  then:\n  . 'f is \\function:on{A}to{B}'\n  . 'g is \\function:on{B}to{C}'\nmeans:\n. 'h is \\function:on{A}to{C}'\n. 'h(x) = g(f(x))'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
@@ -216,7 +216,7 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["abelian", "group", "g", "=", "x", "*", "a", "b", "in", "reference", "source", "aata", "page", "34"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\abelian.group"
 },
 {
   "text": "[\\matrix{m, n}:over{F}]\nDefines: M\nassuming:\n. 'F is \\set'\n. 'm, n is \\positive \\integer'\nmeans:\n. \"an $m$ by $n$ grid of elements\"",
@@ -230,7 +230,7 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["identity", "matrix", "n", "m", "i", "j", "is", "positive", "integer", "neq", "=", "0", "1", "reference", "source", "aata", "page", "35"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\identity.matrix{?}"
 },
 {
   "text": "[A * B]\nDefines: *\nmeans:\n. if: 'A, B is \\matrix'\n  then: 'A * B is \\matrix'",
@@ -244,7 +244,7 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["invertible", "matrix", "m", "a", "*", "=", "identity", "reference", "source", "aata", "page", "35"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\invertible.matrix"
 },
 {
   "text": "[\\general.linear.group{n}:over{F}]\nDefines: X\nassuming:\n. or:\n  . 'F = \\reals'\n  . 'F = \\complexes'\n. 'n is \\integer'\nmeans:\n. 'X = \\set[M]{M}{M is \\invertible.matrix}'\nMetadata:\n. reference = \"source: @AATA; page: 35\"",
@@ -258,14 +258,14 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["finite", "set", "x", "has", "a", "number", "of", "elements", "reference", "=", "source", "aata", "page", "36"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\finite.set"
 },
 {
   "text": "[\\infinite \\set]\nRefines: X\nmeans:\n. not:\n  . 'X is \\finite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
   "keywords": ["infinite", "set", "x", "is", "finite", "reference", "=", "source", "aata", "page", "36"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\infinite.set"
 },
 {
   "text": "[\\set.cardinality:of{X}]\nDefines: n\nassuming: 'X is \\set'\nmeans: \"$n$ is the number of elements in $X$\"",
@@ -279,14 +279,14 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "keywords": ["finite", "group", "g", "=", "x", "*", "is", "set", "reference", "source", "aata", "page", "36"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\finite.group"
 },
 {
   "text": "[\\infinite \\group]\nRefines: G := (X, *)\nmeans: 'X \\is \\infinite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
   "keywords": ["infinite", "group", "g", "=", "x", "*", "is", "set", "reference", "source", "aata", "page", "36"],
   "href": "null",
   "mobileHref": "null",
-  "signature": null
+  "signature": "\\infinite.group"
 },
 {
   "text": "[\\group.order:of{G := (X, *)}]\nDefines: n\nassuming: 'G is \\group'\nmeans: 'n = \\set.cardinality:of{X}'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",

@@ -77,7 +77,7 @@ object HtmlDataGenerator {
                             val rhsParts = rhs.text.substring(1, rhs.text.length - 1).split(";")
                             val map = mutableMapOf<String, String>()
                             for (rhsPart in rhsParts) {
-                                val keyValue = part.split(":")
+                                val keyValue = rhsPart.split(":")
                                 if (keyValue.size == 2) {
                                     val key = keyValue[0].trim().toLowerCase()
                                     val value = keyValue[1].trim().toLowerCase()

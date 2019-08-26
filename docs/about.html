@@ -1,0 +1,228 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <link rel="stylesheet"
+          href="style.css">
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/styles/atom-one-light.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/highlight.min.js"></script>
+    <script charset="UTF-8"
+            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.9/languages/yaml.min.js"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <style type="text/css" media="screen">
+        p {
+            margin-bottom: 1.2em;
+        }
+    </style>
+    <title>About</title>
+</head>
+<body>
+
+<div class="header">
+    <a href="index.html">Home</a>
+    <a href="contribute.html">Contribute</a>
+    <a class="active" href="about.html">About</a>
+    <a target="_" href="https://github.com/DominicKramer/mathlingua" style="float:right;">GitHub</a>
+</div>
+&nbsp;
+<div class="centered">
+    <div class="all-padded">
+        <h1 class="title">
+            MathLingua
+        </h1>
+        <h2>The Problem </h2>
+        <p>
+            Theorems, definitions, axioms, and conjectures are the tools
+            of mathematics.  However, they are recorded in books, papers,
+            and websites spread across the internet, and can be difficult to
+            find.
+        </p>
+        <p>
+            To find, for example, what theorems are known that describe when a
+            Group is solvable, one can do a keyword search to find articles and
+            papers and, after some digging, find Burnside's theorem.
+        </p>
+        <p>
+            However, is that the only theorem that describes when a group is solvable?
+            Does Burnside's theorem have alternate forms?
+        </p>
+        <p>
+            Why does one need to search for articles, related to the theorem, and
+            read through the articles hoping to find the theorem?  Why does one need to
+            know that name of the theorem to find it?
+        </p>
+        <h2>The Solution</h2>
+        <p>
+            Wouldn't it be better if there was a central place, open for everyone,
+            everywhere, to search directly for theorems and definitions by not just
+            their name or author but by their content, meaning, and structure.
+        </p>
+        <p>
+            That is, a place where one doesn't look for an article in the hope of
+            finding the desired theorem/definition, but a place to search for the
+            theorem/definition directly.
+        </p>
+        <p>
+            If there was a system that aggregated the theorems and definitions of
+            mathematics encoded in a way both computers could understand, the system
+            could allow one to find math results by their content and structure.
+        </p>
+        <p>
+            It could expand definitions inline in a result to make the result easier to
+            understand.  It could find similarities between results.  It could have
+            direct links from a theorem/definition, back to the books, articles, and
+            papers that talk about it.
+        </p>
+        <p>
+            It could make it easier for everyone to find the work mathematicians have
+            done, use the tools they created, and cite their work.
+        </p>
+        <p>
+            This system is the MathLingua system, and the MathLingua language is the
+            language used to encode mathematics in a form that is easy to read and
+            write by both people and computers.
+        </p>
+        <h2>How You Can Help</h2>
+        <p>
+            The MathLingua system is a community driven effort to populate the system
+            with mathematical statements.  By encoding your work, or the work of others
+            in the system, everyone can more easily find the work along with links
+            to the original paper or book.  This will help people find each others work
+            so that they can use them, build on them, and cite them.
+        </p>
+        <p>
+            Visit the Contribute page to contribute to the MathLingua system.
+        </p>
+        <h1>The MathLingua Language</h1>
+        <h2>An Example</h2>
+        <p>
+            To understand the MathLingua language, we start with an example of
+            encoding the version of the Heine-Borel theorem that states that a
+            subset of the real numbers is compact if and only if it is closed
+            and bounded.
+        </p>
+<pre><code class="yaml">
+Result:
+. for: X
+  where:
+  . 'X \subset \reals'
+  then:
+  . iff:
+    . 'X is \real.compact \set'
+    then:
+    . 'X is \real.closed \real.bounded \set'
+Metadata:
+. name = "Heine-Borel Theorem"
+</code></pre>
+        <h3>The General Structure</h3>
+        <p>
+            This example demonstrates the main syntax of the MathLingua language.
+            First, the syntax for encoding the structure of the theorem is through
+            the use of indentation with groups consisting of sections with names
+            followed by a colon, where each section has zero or more arguments.
+        </p>
+        <p>
+            That, is the outermost group is:
+        </p>
+<pre><code class="yaml">
+Result:
+Metadata:
+</code></pre>
+        <p>
+            Consisting of the sections <b>Result:</b> and <b>Metadata:</b>.  The
+            <b>Result:</b> section has a single argument, indicated by the period
+            (.) and indentation.  This argument is the group:
+        </p>
+<pre><code class="yaml">
+for:
+where:
+then:
+</code></pre>
+        <p>
+            This group has sections <b>for:</b>, <b>where:</b>, and <b>then:</b>.
+            The only argument for the <b>for:</b> section is the identifier <i>X</i>.
+            The only argument for the <b>where:</b> section is the statement
+            <i>'X \subset \reals'</i>.
+        </p>
+        <p>
+            This group specifies that for the given identifiers(s) specified in the
+            <b>for:</b> section, where those identifiers satisfy the conditions in
+            the <b>where:</b> section, then the items in the <b>then:</b> section
+            hold.
+        </p>
+        <p>
+            Note that argument(s) for a section can appear on the same line of a
+            the section separated by commas (as illustrated in the <b>for:</b> section),
+            or on separated lines with a period and space (`. `) prefix (as
+            illustrated in the <b>where:</b> section).
+        </p>
+        <p>
+            The <b>then:</b> section has a single element, which is the following group:
+        </p>
+<pre><code class="yaml">
+iff:
+then:
+</code></pre>
+        <p>
+            The <b>iff:</b> section only has a single argument, which is the statement
+            <i>'X is \real.compact \set'</i>, and the <b>then:</b> section only has a
+            single argument which is the statement
+            <i>'X is \real.closed \real.bounded \set'</i>.
+        </p>
+        <p>
+            This group specifies that the items in the <b>iff:</b> section all hold
+            if and only if the items in the <b>then:</b> section hold.
+        </p>
+        <h3>The Statement Structure</h3>
+        <p>
+            Note that many of the arguments to section in the above example are
+            <i>statements</i> that are enclosed in single quotes.  An example is the
+            statement <i>'X is \real.closed \real.bounded \set'</i>.
+        </p>
+        <p>
+            MathLingua is designed to use a indentation type syntax to specify the
+            structure of a mathematical result, while a distinct LaTeX like syntax
+            is used to describe statements inside single quotes.
+        </p>
+        <p>
+            This statement language is inspired by but not a superset of LaTeX.
+            In particular, commands are specified as starting with a backslash (\)
+            like in LaTeX, but the use of periods (.) show similarities and differences to
+            related commands.
+        </p>
+        <p>
+            For example, a <i>\real.set</i> and a <i>\complex.set</i> are related but
+            unique and the (.) serves to make fully qualified names to identify a command.
+        </p>
+        <p>
+            Further, the <i>is</i> keyword is a special keyword used to state that the
+            identifiers on the left side of the <i>is</i> satisfy the items on the
+            right side of the <i>is</i>.
+        </p>
+        <p>
+            In addition, the <i>is</i> keyword special in that multiple commands on the
+            right side of an <i>is</i> are interpreted as being automatically "glued" to
+            the rightmost command.
+        </p>
+        <p>
+            That is, saying that the statement <i>'X is \real.closed \real.bounded \set'</i> is
+            true is the same as saying both <i>'X is \real.closed.set'</i> <b>and</b>
+            <i>'X is \real.bounded.set'</i> are true.
+        </p>
+        <p>
+            This allows one to succinctly describe that an identifier simultaneously
+            multiple conditions similar to how mathematics is typically written.
+        </p>
+        <h2>To Be Continued</h2>
+        This document is a work in progress and will be updated soon, but to find more
+        information of MathLingua or look at the source code, visit
+        the project's GitHub page at
+        <a href="https://github.com/DominicKramer/mathlingua">DominicKramer/mathlingua</a>.
+        <br/><br/>
+    </div>
+</div>
+</body>
+</html>

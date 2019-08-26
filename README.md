@@ -143,7 +143,8 @@ assuming?: <clause>+
 means: <clause>+
 ```
 ```yaml
-Means: <clause>+
+Represents:
+that: <clause>+
 ```
 
 #### Structural Groups

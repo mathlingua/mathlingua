@@ -5387,6 +5387,7 @@ var bundle = function (_, Kotlin) {
     NodeType$Parameters_instance = new NodeType('Parameters', 11);
     NodeType$Comma_instance = new NodeType('Comma', 12);
     NodeType$Is_instance = new NodeType('Is', 13);
+    NodeType$ColonEquals_instance = new NodeType('ColonEquals', 14);
   }
   var NodeType$Token_instance;
   function NodeType$Token_getInstance() {
@@ -5458,13 +5459,18 @@ var bundle = function (_, Kotlin) {
     NodeType_initFields();
     return NodeType$Is_instance;
   }
+  var NodeType$ColonEquals_instance;
+  function NodeType$ColonEquals_getInstance() {
+    NodeType_initFields();
+    return NodeType$ColonEquals_instance;
+  }
   NodeType.$metadata$ = {
     kind: Kind_CLASS,
     simpleName: 'NodeType',
     interfaces: [Enum]
   };
   function NodeType$values() {
-    return [NodeType$Token_getInstance(), NodeType$Identifier_getInstance(), NodeType$Operator_getInstance(), NodeType$ParenGroup_getInstance(), NodeType$SquareGroup_getInstance(), NodeType$CurlyGroup_getInstance(), NodeType$NamedGroup_getInstance(), NodeType$Command_getInstance(), NodeType$CommandPart_getInstance(), NodeType$Expression_getInstance(), NodeType$SubSup_getInstance(), NodeType$Parameters_getInstance(), NodeType$Comma_getInstance(), NodeType$Is_getInstance()];
+    return [NodeType$Token_getInstance(), NodeType$Identifier_getInstance(), NodeType$Operator_getInstance(), NodeType$ParenGroup_getInstance(), NodeType$SquareGroup_getInstance(), NodeType$CurlyGroup_getInstance(), NodeType$NamedGroup_getInstance(), NodeType$Command_getInstance(), NodeType$CommandPart_getInstance(), NodeType$Expression_getInstance(), NodeType$SubSup_getInstance(), NodeType$Parameters_getInstance(), NodeType$Comma_getInstance(), NodeType$Is_getInstance(), NodeType$ColonEquals_getInstance()];
   }
   NodeType.values = NodeType$values;
   function NodeType$valueOf(name) {
@@ -5497,6 +5503,8 @@ var bundle = function (_, Kotlin) {
         return NodeType$Comma_getInstance();
       case 'Is':
         return NodeType$Is_getInstance();
+      case 'ColonEquals':
+        return NodeType$ColonEquals_getInstance();
       default:throwISE('No enum constant mathlingua.common.textalk.NodeType.' + name);
     }
   }
@@ -5552,6 +5560,52 @@ var bundle = function (_, Kotlin) {
     return result;
   };
   IsNode.prototype.equals = function (other) {
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.lhs, other.lhs) && Kotlin.equals(this.rhs, other.rhs)))));
+  };
+  function ColonEqualsNode(lhs, rhs) {
+    this.lhs = lhs;
+    this.rhs = rhs;
+  }
+  Object.defineProperty(ColonEqualsNode.prototype, 'type', {
+    get: function () {
+      return NodeType$ColonEquals_getInstance();
+    }
+  });
+  ColonEqualsNode.prototype.toCode = function () {
+    var builder = StringBuilder_init();
+    builder.append_gw00v9$(this.lhs.toCode());
+    builder.append_gw00v9$(' := ');
+    builder.append_gw00v9$(this.rhs.toCode());
+    return builder.toString();
+  };
+  ColonEqualsNode.prototype.forEach_r5tgu3$ = function (fn) {
+    fn(this.lhs);
+    fn(this.rhs);
+  };
+  ColonEqualsNode.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'ColonEqualsNode',
+    interfaces: [Node]
+  };
+  ColonEqualsNode.prototype.component1 = function () {
+    return this.lhs;
+  };
+  ColonEqualsNode.prototype.component2 = function () {
+    return this.rhs;
+  };
+  ColonEqualsNode.prototype.copy_g7o2dw$ = function (lhs, rhs) {
+    return new ColonEqualsNode(lhs === void 0 ? this.lhs : lhs, rhs === void 0 ? this.rhs : rhs);
+  };
+  ColonEqualsNode.prototype.toString = function () {
+    return 'ColonEqualsNode(lhs=' + Kotlin.toString(this.lhs) + (', rhs=' + Kotlin.toString(this.rhs)) + ')';
+  };
+  ColonEqualsNode.prototype.hashCode = function () {
+    var result = 0;
+    result = result * 31 + Kotlin.hashCode(this.lhs) | 0;
+    result = result * 31 + Kotlin.hashCode(this.rhs) | 0;
+    return result;
+  };
+  ColonEqualsNode.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.lhs, other.lhs) && Kotlin.equals(this.rhs, other.rhs)))));
   };
   function CommandPart(name, square, subSup, groups, namedGroups) {
@@ -6074,7 +6128,9 @@ var bundle = function (_, Kotlin) {
     TexTalkTokenType$Colon_instance = new TexTalkTokenType('Colon', 11);
     TexTalkTokenType$Underscore_instance = new TexTalkTokenType('Underscore', 12);
     TexTalkTokenType$Caret_instance = new TexTalkTokenType('Caret', 13);
-    TexTalkTokenType$Invalid_instance = new TexTalkTokenType('Invalid', 14);
+    TexTalkTokenType$ColonEquals_instance = new TexTalkTokenType('ColonEquals', 14);
+    TexTalkTokenType$Is_instance = new TexTalkTokenType('Is', 15);
+    TexTalkTokenType$Invalid_instance = new TexTalkTokenType('Invalid', 16);
   }
   var TexTalkTokenType$Backslash_instance;
   function TexTalkTokenType$Backslash_getInstance() {
@@ -6146,6 +6202,16 @@ var bundle = function (_, Kotlin) {
     TexTalkTokenType_initFields();
     return TexTalkTokenType$Caret_instance;
   }
+  var TexTalkTokenType$ColonEquals_instance;
+  function TexTalkTokenType$ColonEquals_getInstance() {
+    TexTalkTokenType_initFields();
+    return TexTalkTokenType$ColonEquals_instance;
+  }
+  var TexTalkTokenType$Is_instance;
+  function TexTalkTokenType$Is_getInstance() {
+    TexTalkTokenType_initFields();
+    return TexTalkTokenType$Is_instance;
+  }
   var TexTalkTokenType$Invalid_instance;
   function TexTalkTokenType$Invalid_getInstance() {
     TexTalkTokenType_initFields();
@@ -6157,7 +6223,7 @@ var bundle = function (_, Kotlin) {
     interfaces: [Enum]
   };
   function TexTalkTokenType$values() {
-    return [TexTalkTokenType$Backslash_getInstance(), TexTalkTokenType$LParen_getInstance(), TexTalkTokenType$RParen_getInstance(), TexTalkTokenType$LSquare_getInstance(), TexTalkTokenType$RSquare_getInstance(), TexTalkTokenType$LCurly_getInstance(), TexTalkTokenType$RCurly_getInstance(), TexTalkTokenType$Operator_getInstance(), TexTalkTokenType$Identifier_getInstance(), TexTalkTokenType$Comma_getInstance(), TexTalkTokenType$Period_getInstance(), TexTalkTokenType$Colon_getInstance(), TexTalkTokenType$Underscore_getInstance(), TexTalkTokenType$Caret_getInstance(), TexTalkTokenType$Invalid_getInstance()];
+    return [TexTalkTokenType$Backslash_getInstance(), TexTalkTokenType$LParen_getInstance(), TexTalkTokenType$RParen_getInstance(), TexTalkTokenType$LSquare_getInstance(), TexTalkTokenType$RSquare_getInstance(), TexTalkTokenType$LCurly_getInstance(), TexTalkTokenType$RCurly_getInstance(), TexTalkTokenType$Operator_getInstance(), TexTalkTokenType$Identifier_getInstance(), TexTalkTokenType$Comma_getInstance(), TexTalkTokenType$Period_getInstance(), TexTalkTokenType$Colon_getInstance(), TexTalkTokenType$Underscore_getInstance(), TexTalkTokenType$Caret_getInstance(), TexTalkTokenType$ColonEquals_getInstance(), TexTalkTokenType$Is_getInstance(), TexTalkTokenType$Invalid_getInstance()];
   }
   TexTalkTokenType.values = TexTalkTokenType$values;
   function TexTalkTokenType$valueOf(name) {
@@ -6190,6 +6256,10 @@ var bundle = function (_, Kotlin) {
         return TexTalkTokenType$Underscore_getInstance();
       case 'Caret':
         return TexTalkTokenType$Caret_getInstance();
+      case 'ColonEquals':
+        return TexTalkTokenType$ColonEquals_getInstance();
+      case 'Is':
+        return TexTalkTokenType$Is_getInstance();
       case 'Invalid':
         return TexTalkTokenType$Invalid_getInstance();
       default:throwISE('No enum constant mathlingua.common.textalk.TexTalkTokenType.' + name);
@@ -6226,6 +6296,16 @@ var bundle = function (_, Kotlin) {
       }
        else if (c === 92) {
         this.tokens_0.add_11rb$(new TexTalkToken('' + String.fromCharCode(toBoxedChar(c)), TexTalkTokenType$Backslash_getInstance(), line, column));
+      }
+       else if (c === 105 && i < text.length && text.charCodeAt(i) === 115) {
+        this.tokens_0.add_11rb$(new TexTalkToken('is', TexTalkTokenType$Is_getInstance(), line, column));
+        i = i + 1 | 0;
+        column = column + 1 | 0;
+      }
+       else if (c === 58 && i < text.length && text.charCodeAt(i) === 61) {
+        this.tokens_0.add_11rb$(new TexTalkToken(':=', TexTalkTokenType$ColonEquals_getInstance(), line, column));
+        i = i + 1 | 0;
+        column = column + 1 | 0;
       }
        else if (c === 58) {
         this.tokens_0.add_11rb$(new TexTalkToken('' + String.fromCharCode(toBoxedChar(c)), TexTalkTokenType$Colon_getInstance(), line, column));
@@ -6371,9 +6451,9 @@ var bundle = function (_, Kotlin) {
     return this.errors_0;
   };
   TexTalkParserImpl$ParserWorker.prototype.parse = function () {
-    var tmp$;
-    var exp = this.expression_0(null);
-    return Kotlin.isType(tmp$ = this.resolveIsNode_0(exp != null ? exp : new ExpressionNode(emptyList())), ExpressionNode) ? tmp$ : throwCCE();
+    var tmp$, tmp$_0;
+    var exp = (tmp$ = this.expression_0(null)) != null ? tmp$ : new ExpressionNode(emptyList());
+    return Kotlin.isType(tmp$_0 = this.resolveColonEqualsNode_0(this.resolveIsNode_0(exp)), ExpressionNode) ? tmp$_0 : throwCCE();
   };
   TexTalkParserImpl$ParserWorker.prototype.resolveIsNode_0 = function (node) {
     var tmp$;
@@ -6384,7 +6464,7 @@ var bundle = function (_, Kotlin) {
     tmp$ = node.children.size;
     for (var i = 0; i < tmp$; i++) {
       var child = node.children.get_za3lpa$(i);
-      if (Kotlin.isType(child, TextNode) && equals(child.text, 'is')) {
+      if (Kotlin.isType(child, TextNode) && child.type === NodeType$Is_getInstance()) {
         if (isIndex < 0) {
           isIndex = i;
         }
@@ -6399,6 +6479,31 @@ var bundle = function (_, Kotlin) {
     var lhs = this.parameters_0(node.children, 0, isIndex);
     var rhs = this.parameters_0(node.children, isIndex + 1 | 0, node.children.size);
     return new ExpressionNode(listOf(new IsNode(lhs, rhs)));
+  };
+  TexTalkParserImpl$ParserWorker.prototype.resolveColonEqualsNode_0 = function (node) {
+    var tmp$;
+    if (!Kotlin.isType(node, ExpressionNode)) {
+      return node;
+    }
+    var colonEqualsIndex = -1;
+    tmp$ = node.children.size;
+    for (var i = 0; i < tmp$; i++) {
+      var child = node.children.get_za3lpa$(i);
+      if (Kotlin.isType(child, TextNode) && child.type === NodeType$ColonEquals_getInstance()) {
+        if (colonEqualsIndex < 0) {
+          colonEqualsIndex = i;
+        }
+         else {
+          this.errors_0.add_11rb$(new ParseError("A statement can only contain one ':='", -1, -1));
+        }
+      }
+    }
+    if (colonEqualsIndex < 0) {
+      return node;
+    }
+    var lhs = this.parameters_0(node.children, 0, colonEqualsIndex);
+    var rhs = this.parameters_0(node.children, colonEqualsIndex + 1 | 0, node.children.size);
+    return new ExpressionNode(listOf(new ColonEqualsNode(lhs, rhs)));
   };
   TexTalkParserImpl$ParserWorker.prototype.parameters_0 = function (nodes, startInc, endEx) {
     var tmp$;
@@ -6619,10 +6724,10 @@ var bundle = function (_, Kotlin) {
     return tmp$;
   };
   TexTalkParserImpl$ParserWorker.prototype.expression_0 = function (terminators) {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7, tmp$_8;
     var nodes = ArrayList_init();
     while (this.texTalkLexer_0.hasNext() && (terminators == null || !terminators.contains_11rb$(this.texTalkLexer_0.peek().tokenType))) {
-      var child = (tmp$_5 = (tmp$_4 = (tmp$_3 = (tmp$_2 = (tmp$_1 = (tmp$_0 = (tmp$ = this.command_0()) != null ? tmp$ : this.group_0(NodeType$ParenGroup_getInstance())) != null ? tmp$_0 : this.group_0(NodeType$CurlyGroup_getInstance())) != null ? tmp$_1 : this.text_0(TexTalkTokenType$Identifier_getInstance(), NodeType$Identifier_getInstance())) != null ? tmp$_2 : this.text_0(TexTalkTokenType$Operator_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_3 : this.text_0(TexTalkTokenType$Comma_getInstance(), NodeType$Comma_getInstance())) != null ? tmp$_4 : this.text_0(TexTalkTokenType$Caret_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_5 : this.text_0(TexTalkTokenType$Underscore_getInstance(), NodeType$Operator_getInstance());
+      var child = (tmp$_7 = (tmp$_6 = (tmp$_5 = (tmp$_4 = (tmp$_3 = (tmp$_2 = (tmp$_1 = (tmp$_0 = (tmp$ = this.command_0()) != null ? tmp$ : this.group_0(NodeType$ParenGroup_getInstance())) != null ? tmp$_0 : this.group_0(NodeType$CurlyGroup_getInstance())) != null ? tmp$_1 : this.text_0(TexTalkTokenType$Is_getInstance(), NodeType$Is_getInstance())) != null ? tmp$_2 : this.text_0(TexTalkTokenType$Identifier_getInstance(), NodeType$Identifier_getInstance())) != null ? tmp$_3 : this.text_0(TexTalkTokenType$Operator_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_4 : this.text_0(TexTalkTokenType$Comma_getInstance(), NodeType$Comma_getInstance())) != null ? tmp$_5 : this.text_0(TexTalkTokenType$Caret_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_6 : this.text_0(TexTalkTokenType$Underscore_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_7 : this.text_0(TexTalkTokenType$ColonEquals_getInstance(), NodeType$ColonEquals_getInstance());
       if (child == null) {
         var peek = this.texTalkLexer_0.peek();
         this.errors_0.add_11rb$(new ParseError('Unexpected token ' + peek.text, peek.row, peek.column));
@@ -6633,11 +6738,11 @@ var bundle = function (_, Kotlin) {
       }
     }
     if (nodes.isEmpty()) {
-      tmp$_6 = null;
+      tmp$_8 = null;
     }
      else
-      tmp$_6 = new ExpressionNode(nodes);
-    return tmp$_6;
+      tmp$_8 = new ExpressionNode(nodes);
+    return tmp$_8;
   };
   TexTalkParserImpl$ParserWorker.prototype.expect_0 = function (tokenType) {
     var tmp$;
@@ -6993,10 +7098,14 @@ var bundle = function (_, Kotlin) {
   Object.defineProperty(NodeType, 'Is', {
     get: NodeType$Is_getInstance
   });
+  Object.defineProperty(NodeType, 'ColonEquals', {
+    get: NodeType$ColonEquals_getInstance
+  });
   var package$textalk = package$common.textalk || (package$common.textalk = {});
   package$textalk.NodeType = NodeType;
   package$textalk.Node = Node;
   package$textalk.IsNode = IsNode;
+  package$textalk.ColonEqualsNode = ColonEqualsNode;
   package$textalk.CommandPart = CommandPart;
   package$textalk.Command = Command;
   package$textalk.ExpressionNode = ExpressionNode;
@@ -7047,6 +7156,12 @@ var bundle = function (_, Kotlin) {
   });
   Object.defineProperty(TexTalkTokenType, 'Caret', {
     get: TexTalkTokenType$Caret_getInstance
+  });
+  Object.defineProperty(TexTalkTokenType, 'ColonEquals', {
+    get: TexTalkTokenType$ColonEquals_getInstance
+  });
+  Object.defineProperty(TexTalkTokenType, 'Is', {
+    get: TexTalkTokenType$Is_getInstance
   });
   Object.defineProperty(TexTalkTokenType, 'Invalid', {
     get: TexTalkTokenType$Invalid_getInstance

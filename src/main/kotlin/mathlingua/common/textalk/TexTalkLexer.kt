@@ -61,6 +61,16 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 column = 0
             } else if (c == '\\') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Backslash, line, column))
+            } else if (c == 'i' && i < text.length && text[i] == 's') {
+                this.tokens.add(TexTalkToken("is", TexTalkTokenType.Is, line, column))
+                // skip the 's'
+                i++
+                column++
+            } else if (c == ':' && i < text.length && text[i] == '=') {
+                this.tokens.add(TexTalkToken(":=", TexTalkTokenType.ColonEquals, line, column))
+                // skip the =
+                i++
+                column++
             } else if (c == ':') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Colon, line, column))
             } else if (c == '.') {

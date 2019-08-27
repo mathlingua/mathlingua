@@ -52,8 +52,8 @@ class TexTalkParserImpl : TexTalkParser {
         }
 
         fun parse(): ExpressionNode {
-            val exp = expression(null)
-            return resolveIsNode(exp ?: ExpressionNode(emptyList())) as ExpressionNode
+            val exp = expression(null) ?: ExpressionNode(emptyList())
+            return resolveColonEqualsNode(resolveIsNode(exp)) as ExpressionNode
         }
 
         private fun resolveIsNode(node: Node): Node {
@@ -64,7 +64,7 @@ class TexTalkParserImpl : TexTalkParser {
             var isIndex = -1
             for (i in 0 until node.children.size) {
                 val child = node.children[i]
-                if (child is TextNode && child.text == "is") {
+                if (child is TextNode && child.type == NodeType.Is) {
                     if (isIndex < 0) {
                         isIndex = i
                     } else {
@@ -85,6 +85,37 @@ class TexTalkParserImpl : TexTalkParser {
             val lhs = parameters(node.children, 0, isIndex)
             val rhs = parameters(node.children, isIndex + 1, node.children.size)
             return ExpressionNode(listOf(IsNode(lhs, rhs)))
+        }
+
+        private fun resolveColonEqualsNode(node: Node): Node {
+            if (node !is ExpressionNode) {
+                return node
+            }
+
+            var colonEqualsIndex = -1
+            for (i in 0 until node.children.size) {
+                val child = node.children[i]
+                if (child is TextNode && child.type == NodeType.ColonEquals) {
+                    if (colonEqualsIndex < 0) {
+                        colonEqualsIndex = i
+                    } else {
+                        errors.add(
+                            ParseError(
+                                "A statement can only contain one ':='",
+                                -1, -1
+                            )
+                        )
+                    }
+                }
+            }
+
+            if (colonEqualsIndex < 0) {
+                return node
+            }
+
+            val lhs = parameters(node.children, 0, colonEqualsIndex)
+            val rhs = parameters(node.children, colonEqualsIndex + 1, node.children.size)
+            return ExpressionNode(listOf(ColonEqualsNode(lhs, rhs)))
         }
 
         private fun parameters(nodes: List<Node>, startInc: Int, endEx: Int): ParametersNode {
@@ -362,11 +393,13 @@ class TexTalkParserImpl : TexTalkParser {
                 val child = command()
                         ?: group(NodeType.ParenGroup)
                         ?: group(NodeType.CurlyGroup)
+                        ?: text(TexTalkTokenType.Is, NodeType.Is)
                         ?: text(TexTalkTokenType.Identifier, NodeType.Identifier)
                         ?: text(TexTalkTokenType.Operator, NodeType.Operator)
                         ?: text(TexTalkTokenType.Comma, NodeType.Comma)
                         ?: text(TexTalkTokenType.Caret, NodeType.Operator)
                         ?: text(TexTalkTokenType.Underscore, NodeType.Operator)
+                        ?: text(TexTalkTokenType.ColonEquals, NodeType.ColonEquals)
 
                 if (child == null) {
                     val peek = this.texTalkLexer.peek()

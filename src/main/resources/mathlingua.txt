@@ -282,7 +282,7 @@ Metadata:
 
 
 [\group]
-Defines: G := (X, *)
+Defines: G := (X, *, e)
 assuming:
 . 'X is \set'
 . '* is \binary.operator:on{X}'
@@ -290,12 +290,10 @@ means:
 . for: a, b, c
   where: 'a, b, c \in X'
   then: '(a * b) * c = a * (b * c)'
-. exists: e
-  suchThat:
-  . 'e \in X'
-  . for: a
-    where: 'x \in X'
-    then: 'a * e = e * a = a'
+. 'e \in X'
+. for: a
+  where: 'x \in X'
+  then: 'a * e = e * a = a'
 . for: a
   where: 'a \in X'
   then:
@@ -308,7 +306,7 @@ Metadata:
 
 
 [\abelian \group]
-Refines: G := (X, *)
+Refines: G := (X, *, e)
 means:
 . for: a, b
   where: 'a, b \in X'
@@ -391,14 +389,14 @@ means: "$n$ is the number of elements in $X$"
 
 
 [\finite \group]
-Refines: G := (X, *)
+Refines: G := (X, *, e)
 means: 'X \is \finite \set'
 Metadata:
 . reference = "source: @AATA; page: 36"
 
 
 [\infinite \group]
-Refines: G := (X, *)
+Refines: G := (X, *, e)
 means: 'X \is \infinite \set'
 Metadata:
 . reference = "source: @AATA; page: 36"
@@ -410,4 +408,103 @@ assuming: 'G is \group'
 means: 'n = \set.cardinality:of{X}'
 Metadata:
 . reference = "source: @AATA; page: 36"
+
+
+
+[\nonempty \set]
+Refines: X
+means:
+. exists: x
+  suchThat: 'x \in X'
+
+
+[\ring]
+Defines: R := (X, +, *, 0)
+assuming:
+. 'X is \nonempty \set'
+. '+, * is \binary.operation:on{X}'
+means:
+. '(X, +, 0) is \abelian.group'
+. for: a, b, c
+  where: 'a, b, c \in X'
+  then: '(a*b)*c = a*(b*c)'
+. for: a, b, c
+  where: 'a, b, c \in X'
+  then:
+  . 'a*(b + c) = a*b + a*c'
+  . '(a + b)*c = a*c + b*c'
+Metadata:
+. reference = "source: @AATA; page: 199"
+
+
+[\with.unity \ring]
+Refines: R := (X, +, *, 0, 1)
+means:
+. for: x
+  where: 'x \in X'
+  then: '1*x = x*1 = x'
+Metadata:
+. reference = "source: @AATA; page: 199"
+
+
+[\commutative \ring]
+Refines: R := (X, +, *, 0)
+means:
+. for: x, y
+  where: 'x, y \in X'
+  then: 'x*y = y*x'
+Metadata:
+. reference = "source: @AATA; page: 199"
+
+
+[\integral.domain]
+Defines: R := (X, +, *, 0, 1)
+means:
+. '(X, +, *, 0) is \commutative \ring'
+. '(X, +, *, 0, 1) is \with.unity \ring'
+. for: x, y
+  where: 'x, y \in X'
+  then:
+  . if: 'x*y = 0'
+    then:
+    . or:
+      . 'x = 0'
+      . 'y = 0'
+Metadata:
+. reference = "source: @AATA; page: 200"
+
+
+[\ring.unit:in{R := (X, +, *, 0, 1)}]
+Defines: u
+assuming: 'R is \with.identity.ring'
+means:
+. 'u \neq 0'
+. exists: b
+  suchThat:
+  . 'b is \unique'
+  . 'u*b = b*u = 1'
+Metadata:
+. reference = "source: @AATA; page: 200"
+
+
+[\division \with.identity.ring]
+Refines: R := (X, +, *, 0, 1)
+means:
+. for: x
+  where:
+  . 'x \in X'
+  . 'x \neq 0'
+  then:
+  . 'x is \ring.unit:in{R}'
+Metadata:
+. reference = "source: @AATA; page: 200"
+
+
+[\field]
+Defines: F := (X, +, *, 0, 1)
+means:
+. '(X, +, *, 0) is \commutative \ring'
+. '(X, +, *, 0, 1) is \division \with.identity.ring'
+Metadata:
+. reference = "source: @AATA; page: 200"
 

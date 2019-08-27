@@ -205,6 +205,9 @@ object TreeViewMain {
             visited = true
             if (it is Statement) {
                 val root = it.texTalkRoot.value
+                for (err in it.texTalkRoot.errors) {
+                    println(err)
+                }
                 if (root != null) {
                     result.add(toTreeNode(root))
                 } else {

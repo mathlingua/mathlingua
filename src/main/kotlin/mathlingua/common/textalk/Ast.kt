@@ -30,7 +30,8 @@ enum class NodeType {
     SubSup,
     Parameters,
     Comma,
-    Is
+    Is,
+    ColonEquals
 }
 
 interface Node {
@@ -47,6 +48,24 @@ data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
         val builder = StringBuilder()
         builder.append(lhs.toCode())
         builder.append(" is ")
+        builder.append(rhs.toCode())
+        return builder.toString()
+    }
+
+    override fun forEach(fn: (node: Node) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
+}
+
+data class ColonEqualsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
+    override val type: NodeType
+        get() = NodeType.ColonEquals
+
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        builder.append(lhs.toCode())
+        builder.append(" := ")
         builder.append(rhs.toCode())
         return builder.toString()
     }
@@ -304,5 +323,7 @@ enum class TexTalkTokenType {
     Colon,
     Underscore,
     Caret,
+    ColonEquals,
+    Is,
     Invalid
 }

@@ -16,7 +16,7 @@
 
 'use strict';
 
-function search(keywordText) {
+function filter(keywordText) {
   const resultsNode = document.getElementById('results');
 
   const keywords = keywordText.replace(/:/g, ' ')

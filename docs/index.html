@@ -29,7 +29,7 @@
   <script>hljs.initHighlightingOnLoad();</script>
   <title>MathLingua</title>
 </head>
-<body>
+<body onload="filter('')">
 
 <div class="header">
   <a class="active" href="index.html">Home</a>
@@ -53,12 +53,12 @@
       results that can be searched by, contributed to, and built on by anyone anywhere.
     </p>
     <p>
-      Search for keywords to find what is already encoded in MathLingua.  For example,
-      search for "group".
+      Filter by keywords to find what is already encoded in MathLingua.  For example,
+      filter using the keyword "group".
     </p>
-    <form action="javascript:search(keywords.value)" class="search-form">
+    <form action="javascript:filter(keywords.value)" class="search-form">
       <input class="search-field" type="text" id="keywords" placeholder="Enter keywords..."/>
-      <button class="button" type="submit">Search</button>
+      <button class="button" type="submit">Filter</button>
     </form>
   </div>
 </div>

@@ -74,60 +74,6 @@ data class DefinesGroup(
     }
 }
 
-data class RefinesGroup(
-    val signature: String?,
-    val id: Statement,
-    val refinesSection: RefinesSection,
-    val assumingSection: AssumingSection?,
-    val meansSection: MeansSection,
-    val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?
-) : Phase2Node {
-
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(id)
-        fn(refinesSection)
-        if (assumingSection != null) {
-            fn(assumingSection)
-        }
-        fn(meansSection)
-        if (metaDataSection != null) {
-            fn(metaDataSection)
-        }
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(
-            isArg,
-            indent,
-            id,
-            id,
-            refinesSection,
-            assumingSection,
-            meansSection,
-            metaDataSection
-        )
-    }
-
-    companion object {
-
-        fun isRefinesGroup(node: ChalkTalkNode): Boolean {
-            return firstSectionMatchesName(node, "Refines")
-        }
-
-        fun validate(groupNode: Group): Validation<RefinesGroup> {
-            return validateDefinesLikeGroup(
-                groupNode,
-                "Refines",
-                RefinesSection.Companion::validate,
-                "means",
-                MeansSection.Companion::validate,
-                ::RefinesGroup
-            )
-        }
-    }
-}
-
 data class RepresentsGroup(
     val signature: String?,
     val id: Statement,

@@ -30,7 +30,7 @@ import java.io.IOException
 import java.nio.file.Paths
 import javax.swing.*
 
-val SOURCE_FILE = Paths.get("src", "main", "resources", "mathlingua.txt").toFile()
+val MATHLINGUA_SOURCE_FILE = Paths.get("src", "main", "resources", "mathlingua.txt").toFile()
 
 object MathLinguaEditor {
     @JvmStatic
@@ -79,7 +79,7 @@ object MathLinguaEditor {
         frame.isVisible = true
 
         try {
-            inputArea.text = String(SOURCE_FILE.readBytes())
+            inputArea.text = String(MATHLINGUA_SOURCE_FILE.readBytes())
         } catch (e: FileNotFoundException) {
             // don't worry if the source file does not exist
         }
@@ -107,7 +107,7 @@ object MathLinguaEditor {
                     SwingUtilities.invokeLater {
                         frame.title = "Saving"
                         try {
-                            SOURCE_FILE.writeBytes(inputArea.text.toByteArray())
+                            MATHLINGUA_SOURCE_FILE.writeBytes(inputArea.text.toByteArray())
                             frame.title = "Saved"
                         } catch (e: IOException) {
                             frame.title = "Failed to save: ${e.message}"

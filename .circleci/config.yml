@@ -16,9 +16,6 @@ jobs:
       - run:
           name: Run tests
           command: ./gradlew test
-      - run:
-          name: Validate mathlingua.txt
-          command: ./gradlew assemble && java -jar build/libs/mathlingua-1.0-SNAPSHOT.jar src/main/resources/mathlingua.txt
       - save_cache:
           paths:
             - ~/.gradle/wrapper

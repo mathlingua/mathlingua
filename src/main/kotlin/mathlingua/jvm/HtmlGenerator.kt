@@ -19,7 +19,7 @@ package mathlingua.jvm
 object HtmlGenerator {
     @JvmStatic
     fun main(args: Array<String>) {
-        val text = SOURCE_FILE.readText()
+        val text = MATHLINGUA_SOURCE_FILE.readText()
         val parts = text.split("\n\n")
                 .map { it.trim() }
                 .filter { it.isNotBlank() }

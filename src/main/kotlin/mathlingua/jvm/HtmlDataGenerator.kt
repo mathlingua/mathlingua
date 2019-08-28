@@ -23,7 +23,7 @@ import mathlingua.common.chalktalk.phase2.Phase2Node
 object HtmlDataGenerator {
     @JvmStatic
     fun main(args: Array<String>) {
-        val text = SOURCE_FILE.readText()
+        val text = MATHLINGUA_SOURCE_FILE.readText()
         val parts = text.split("\n\n")
                 .map { it.trim() }
                 .filter { it.isNotBlank() }
@@ -44,18 +44,13 @@ object HtmlDataGenerator {
                 findKeywords(keywords, result.document)
                 if (result.document.defines.isNotEmpty()) {
                     signature = result.document.defines.first().signature
-                } else if (result.document.refines.isNotEmpty()) {
-                    signature = result.document.refines.first().signature
-                }
-                else if (result.document.represents.isNotEmpty()) {
+                } else if (result.document.represents.isNotEmpty()) {
                     signature = result.document.represents.first().signature
                 }
 
                 val metadata: MetaDataSection?
                 if (result.document.defines.isNotEmpty()) {
                     metadata = result.document.defines.first().metaDataSection
-                } else if (result.document.refines.isNotEmpty()) {
-                    metadata = result.document.refines.first().metaDataSection
                 } else if (result.document.represents.isNotEmpty()) {
                     metadata = result.document.represents.first().metaDataSection
                 } else if (result.document.results.isNotEmpty()) {

@@ -2968,10 +2968,9 @@ var bundle = function (_, Kotlin) {
     simpleName: 'Phase2Node',
     interfaces: []
   };
-  function Document(defines, refines, represents, results, axioms, conjectures) {
+  function Document(defines, represents, results, axioms, conjectures) {
     Document$Companion_getInstance();
     this.defines = defines;
-    this.refines = refines;
     this.represents = represents;
     this.results = results;
     this.axioms = axioms;
@@ -2985,38 +2984,32 @@ var bundle = function (_, Kotlin) {
       fn(element);
     }
     var tmp$_0;
-    tmp$_0 = this.refines.iterator();
+    tmp$_0 = this.represents.iterator();
     while (tmp$_0.hasNext()) {
       var element_0 = tmp$_0.next();
       fn(element_0);
     }
     var tmp$_1;
-    tmp$_1 = this.represents.iterator();
+    tmp$_1 = this.results.iterator();
     while (tmp$_1.hasNext()) {
       var element_1 = tmp$_1.next();
       fn(element_1);
     }
     var tmp$_2;
-    tmp$_2 = this.results.iterator();
+    tmp$_2 = this.axioms.iterator();
     while (tmp$_2.hasNext()) {
       var element_2 = tmp$_2.next();
       fn(element_2);
     }
     var tmp$_3;
-    tmp$_3 = this.axioms.iterator();
+    tmp$_3 = this.conjectures.iterator();
     while (tmp$_3.hasNext()) {
       var element_3 = tmp$_3.next();
       fn(element_3);
     }
-    var tmp$_4;
-    tmp$_4 = this.conjectures.iterator();
-    while (tmp$_4.hasNext()) {
-      var element_4 = tmp$_4.next();
-      fn(element_4);
-    }
   };
   Document.prototype.toCode_eltk6l$ = function (isArg, indent) {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3;
     var builder = StringBuilder_init();
     tmp$ = this.defines.iterator();
     while (tmp$.hasNext()) {
@@ -3024,34 +3017,28 @@ var bundle = function (_, Kotlin) {
       builder.append_gw00v9$(grp.toCode_eltk6l$(false, 0));
       builder.append_gw00v9$('\n\n\n');
     }
-    tmp$_0 = this.refines.iterator();
+    tmp$_0 = this.represents.iterator();
     while (tmp$_0.hasNext()) {
       var grp_0 = tmp$_0.next();
       builder.append_gw00v9$(grp_0.toCode_eltk6l$(false, 0));
       builder.append_gw00v9$('\n\n\n');
     }
-    tmp$_1 = this.represents.iterator();
+    tmp$_1 = this.axioms.iterator();
     while (tmp$_1.hasNext()) {
       var grp_1 = tmp$_1.next();
       builder.append_gw00v9$(grp_1.toCode_eltk6l$(false, 0));
       builder.append_gw00v9$('\n\n\n');
     }
-    tmp$_2 = this.axioms.iterator();
+    tmp$_2 = this.conjectures.iterator();
     while (tmp$_2.hasNext()) {
       var grp_2 = tmp$_2.next();
       builder.append_gw00v9$(grp_2.toCode_eltk6l$(false, 0));
       builder.append_gw00v9$('\n\n\n');
     }
-    tmp$_3 = this.conjectures.iterator();
+    tmp$_3 = this.results.iterator();
     while (tmp$_3.hasNext()) {
       var grp_3 = tmp$_3.next();
       builder.append_gw00v9$(grp_3.toCode_eltk6l$(false, 0));
-      builder.append_gw00v9$('\n\n\n');
-    }
-    tmp$_4 = this.results.iterator();
-    while (tmp$_4.hasNext()) {
-      var grp_4 = tmp$_4.next();
-      builder.append_gw00v9$(grp_4.toCode_eltk6l$(false, 0));
       builder.append_gw00v9$('\n\n\n');
     }
     return builder.toString();
@@ -3068,7 +3055,6 @@ var bundle = function (_, Kotlin) {
       return Validation$Companion_getInstance().failure_rg4ulb$(errors);
     }
     var defines = ArrayList_init();
-    var refines = ArrayList_init();
     var represents = ArrayList_init();
     var results = ArrayList_init();
     var axioms = ArrayList_init();
@@ -3113,15 +3099,6 @@ var bundle = function (_, Kotlin) {
           errors.addAll_brywnq$(definesValidation.errors);
         }
       }
-       else if (RefinesGroup$Companion_getInstance().isRefinesGroup_rk66c5$(group)) {
-        var refinesValidation = RefinesGroup$Companion_getInstance().validate_hzi7mn$(group);
-        if (refinesValidation.isSuccessful) {
-          refines.add_11rb$(ensureNotNull(refinesValidation.value));
-        }
-         else {
-          errors.addAll_brywnq$(refinesValidation.errors);
-        }
-      }
        else if (RepresentsGroup$Companion_getInstance().isRepresentsGroup_rk66c5$(group)) {
         var representsValidation = RepresentsGroup$Companion_getInstance().validate_hzi7mn$(group);
         if (representsValidation.isSuccessful) {
@@ -3139,7 +3116,7 @@ var bundle = function (_, Kotlin) {
       tmp$_0 = Validation$Companion_getInstance().failure_rg4ulb$(errors);
     }
      else
-      tmp$_0 = Validation$Companion_getInstance().success_mh5how$(new Document(defines, refines, represents, results, axioms, conjectures));
+      tmp$_0 = Validation$Companion_getInstance().success_mh5how$(new Document(defines, represents, results, axioms, conjectures));
     return tmp$_0;
   };
   Document$Companion.$metadata$ = {
@@ -3163,30 +3140,26 @@ var bundle = function (_, Kotlin) {
     return this.defines;
   };
   Document.prototype.component2 = function () {
-    return this.refines;
-  };
-  Document.prototype.component3 = function () {
     return this.represents;
   };
-  Document.prototype.component4 = function () {
+  Document.prototype.component3 = function () {
     return this.results;
   };
-  Document.prototype.component5 = function () {
+  Document.prototype.component4 = function () {
     return this.axioms;
   };
-  Document.prototype.component6 = function () {
+  Document.prototype.component5 = function () {
     return this.conjectures;
   };
-  Document.prototype.copy_fe4bxk$ = function (defines, refines, represents, results, axioms, conjectures) {
-    return new Document(defines === void 0 ? this.defines : defines, refines === void 0 ? this.refines : refines, represents === void 0 ? this.represents : represents, results === void 0 ? this.results : results, axioms === void 0 ? this.axioms : axioms, conjectures === void 0 ? this.conjectures : conjectures);
+  Document.prototype.copy_e3tw37$ = function (defines, represents, results, axioms, conjectures) {
+    return new Document(defines === void 0 ? this.defines : defines, represents === void 0 ? this.represents : represents, results === void 0 ? this.results : results, axioms === void 0 ? this.axioms : axioms, conjectures === void 0 ? this.conjectures : conjectures);
   };
   Document.prototype.toString = function () {
-    return 'Document(defines=' + Kotlin.toString(this.defines) + (', refines=' + Kotlin.toString(this.refines)) + (', represents=' + Kotlin.toString(this.represents)) + (', results=' + Kotlin.toString(this.results)) + (', axioms=' + Kotlin.toString(this.axioms)) + (', conjectures=' + Kotlin.toString(this.conjectures)) + ')';
+    return 'Document(defines=' + Kotlin.toString(this.defines) + (', represents=' + Kotlin.toString(this.represents)) + (', results=' + Kotlin.toString(this.results)) + (', axioms=' + Kotlin.toString(this.axioms)) + (', conjectures=' + Kotlin.toString(this.conjectures)) + ')';
   };
   Document.prototype.hashCode = function () {
     var result = 0;
     result = result * 31 + Kotlin.hashCode(this.defines) | 0;
-    result = result * 31 + Kotlin.hashCode(this.refines) | 0;
     result = result * 31 + Kotlin.hashCode(this.represents) | 0;
     result = result * 31 + Kotlin.hashCode(this.results) | 0;
     result = result * 31 + Kotlin.hashCode(this.axioms) | 0;
@@ -3194,7 +3167,7 @@ var bundle = function (_, Kotlin) {
     return result;
   };
   Document.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.defines, other.defines) && Kotlin.equals(this.refines, other.refines) && Kotlin.equals(this.represents, other.represents) && Kotlin.equals(this.results, other.results) && Kotlin.equals(this.axioms, other.axioms) && Kotlin.equals(this.conjectures, other.conjectures)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.defines, other.defines) && Kotlin.equals(this.represents, other.represents) && Kotlin.equals(this.results, other.results) && Kotlin.equals(this.axioms, other.axioms) && Kotlin.equals(this.conjectures, other.conjectures)))));
   };
   function DefinesGroup(signature, id, definesSection, assumingSection, meansSection, aliasSection, metaDataSection) {
     DefinesGroup$Companion_getInstance();
@@ -3292,103 +3265,6 @@ var bundle = function (_, Kotlin) {
   };
   DefinesGroup.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.signature, other.signature) && Kotlin.equals(this.id, other.id) && Kotlin.equals(this.definesSection, other.definesSection) && Kotlin.equals(this.assumingSection, other.assumingSection) && Kotlin.equals(this.meansSection, other.meansSection) && Kotlin.equals(this.aliasSection, other.aliasSection) && Kotlin.equals(this.metaDataSection, other.metaDataSection)))));
-  };
-  function RefinesGroup(signature, id, refinesSection, assumingSection, meansSection, aliasSection, metaDataSection) {
-    RefinesGroup$Companion_getInstance();
-    this.signature = signature;
-    this.id = id;
-    this.refinesSection = refinesSection;
-    this.assumingSection = assumingSection;
-    this.meansSection = meansSection;
-    this.aliasSection = aliasSection;
-    this.metaDataSection = metaDataSection;
-  }
-  RefinesGroup.prototype.forEach_ye21ev$ = function (fn) {
-    fn(this.id);
-    fn(this.refinesSection);
-    if (this.assumingSection != null) {
-      fn(this.assumingSection);
-    }
-    fn(this.meansSection);
-    if (this.metaDataSection != null) {
-      fn(this.metaDataSection);
-    }
-  };
-  RefinesGroup.prototype.toCode_eltk6l$ = function (isArg, indent) {
-    return toCode_1(isArg, indent, this.id, [this.id, this.refinesSection, this.assumingSection, this.meansSection, this.metaDataSection]);
-  };
-  function RefinesGroup$Companion() {
-    RefinesGroup$Companion_instance = this;
-  }
-  RefinesGroup$Companion.prototype.isRefinesGroup_rk66c5$ = function (node) {
-    return firstSectionMatchesName(node, 'Refines');
-  };
-  RefinesGroup$Companion.prototype.validate_hzi7mn$ = function (groupNode) {
-    return validateDefinesLikeGroup(groupNode, 'Refines', getCallableRef('validate', function ($receiver, node) {
-      return $receiver.validate_rk66c5$(node);
-    }.bind(null, RefinesSection$Companion_getInstance())), 'means', getCallableRef('validate', function ($receiver, node) {
-      return $receiver.validate_rk66c5$(node);
-    }.bind(null, MeansSection$Companion_getInstance())), getCallableRef('RefinesGroup', function (signature, id, refinesSection, assumingSection, meansSection, aliasSection, metaDataSection) {
-      return new RefinesGroup(signature, id, refinesSection, assumingSection, meansSection, aliasSection, metaDataSection);
-    }));
-  };
-  RefinesGroup$Companion.$metadata$ = {
-    kind: Kind_OBJECT,
-    simpleName: 'Companion',
-    interfaces: []
-  };
-  var RefinesGroup$Companion_instance = null;
-  function RefinesGroup$Companion_getInstance() {
-    if (RefinesGroup$Companion_instance === null) {
-      new RefinesGroup$Companion();
-    }
-    return RefinesGroup$Companion_instance;
-  }
-  RefinesGroup.$metadata$ = {
-    kind: Kind_CLASS,
-    simpleName: 'RefinesGroup',
-    interfaces: [Phase2Node]
-  };
-  RefinesGroup.prototype.component1 = function () {
-    return this.signature;
-  };
-  RefinesGroup.prototype.component2 = function () {
-    return this.id;
-  };
-  RefinesGroup.prototype.component3 = function () {
-    return this.refinesSection;
-  };
-  RefinesGroup.prototype.component4 = function () {
-    return this.assumingSection;
-  };
-  RefinesGroup.prototype.component5 = function () {
-    return this.meansSection;
-  };
-  RefinesGroup.prototype.component6 = function () {
-    return this.aliasSection;
-  };
-  RefinesGroup.prototype.component7 = function () {
-    return this.metaDataSection;
-  };
-  RefinesGroup.prototype.copy_j0edky$ = function (signature, id, refinesSection, assumingSection, meansSection, aliasSection, metaDataSection) {
-    return new RefinesGroup(signature === void 0 ? this.signature : signature, id === void 0 ? this.id : id, refinesSection === void 0 ? this.refinesSection : refinesSection, assumingSection === void 0 ? this.assumingSection : assumingSection, meansSection === void 0 ? this.meansSection : meansSection, aliasSection === void 0 ? this.aliasSection : aliasSection, metaDataSection === void 0 ? this.metaDataSection : metaDataSection);
-  };
-  RefinesGroup.prototype.toString = function () {
-    return 'RefinesGroup(signature=' + Kotlin.toString(this.signature) + (', id=' + Kotlin.toString(this.id)) + (', refinesSection=' + Kotlin.toString(this.refinesSection)) + (', assumingSection=' + Kotlin.toString(this.assumingSection)) + (', meansSection=' + Kotlin.toString(this.meansSection)) + (', aliasSection=' + Kotlin.toString(this.aliasSection)) + (', metaDataSection=' + Kotlin.toString(this.metaDataSection)) + ')';
-  };
-  RefinesGroup.prototype.hashCode = function () {
-    var result = 0;
-    result = result * 31 + Kotlin.hashCode(this.signature) | 0;
-    result = result * 31 + Kotlin.hashCode(this.id) | 0;
-    result = result * 31 + Kotlin.hashCode(this.refinesSection) | 0;
-    result = result * 31 + Kotlin.hashCode(this.assumingSection) | 0;
-    result = result * 31 + Kotlin.hashCode(this.meansSection) | 0;
-    result = result * 31 + Kotlin.hashCode(this.aliasSection) | 0;
-    result = result * 31 + Kotlin.hashCode(this.metaDataSection) | 0;
-    return result;
-  };
-  RefinesGroup.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.signature, other.signature) && Kotlin.equals(this.id, other.id) && Kotlin.equals(this.refinesSection, other.refinesSection) && Kotlin.equals(this.assumingSection, other.assumingSection) && Kotlin.equals(this.meansSection, other.meansSection) && Kotlin.equals(this.aliasSection, other.aliasSection) && Kotlin.equals(this.metaDataSection, other.metaDataSection)))));
   };
   function RepresentsGroup(signature, id, representsSection, assumingSection, thatSection, aliasSection, metaDataSection) {
     RepresentsGroup$Companion_getInstance();
@@ -6944,10 +6820,6 @@ var bundle = function (_, Kotlin) {
     get: DefinesGroup$Companion_getInstance
   });
   package$phase2.DefinesGroup = DefinesGroup;
-  Object.defineProperty(RefinesGroup, 'Companion', {
-    get: RefinesGroup$Companion_getInstance
-  });
-  package$phase2.RefinesGroup = RefinesGroup;
   Object.defineProperty(RepresentsGroup, 'Companion', {
     get: RepresentsGroup$Companion_getInstance
   });

@@ -51,8 +51,8 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\proper.subset"
 },
 {
-  "text": "[\\empty.set]\nRefines: E\nmeans:\n. not:\n  . exists: x\n    suchThat: 'x \\in E'\nMetadata:\n. reference = \"source: @AATA; page: 4\"",
-  "keywords": ["empty", "set", "e", "x", "in", "reference", "=", "source", "aata", "page", "4"],
+  "text": "[\\empty.set]\nDefines: E\nmeans:\n. 'E is \\set'\n. not:\n  . exists: x\n    suchThat: 'x \\in E'\nMetadata:\n. reference = \"source: @AATA; page: 4\"",
+  "keywords": ["empty", "set", "e", "is", "x", "in", "reference", "=", "source", "aata", "page", "4"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=18",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page18",
   "signature": "\\empty.set"
@@ -121,21 +121,21 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\function.range:of{?}"
 },
 {
-  "text": "[\\surjective \\function:on{A}to{B}]\nRefines: f\nmeans:\n. for: b\n  where: 'b \\in B'\n  then:\n  . exists: a\n    suchThat:\n    . 'f(a) = b'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
-  "keywords": ["surjective", "function", "on", "a", "to", "b", "f", "in", "=", "reference", "source", "aata", "page", "8"],
+  "text": "[\\surjective \\function:on{A}to{B}]\nDefines: f\nmeans:\n. 'f is \\function:on{A}to{B}'\n. for: b\n  where: 'b \\in B'\n  then:\n  . exists: a\n    suchThat:\n    . 'f(a) = b'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
+  "keywords": ["surjective", "function", "on", "a", "to", "b", "f", "is", "in", "=", "reference", "source", "aata", "page", "8"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=22",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page22",
   "signature": "\\surjective.function:on{?}to{?}"
 },
 {
-  "text": "[\\injective \\function:on{A}to{B}]\nRefines: f\nmeans:\n. for: a1, a2\n  where: 'a1, a2 \\in A'\n  then:\n  . if: 'a1 \\neq a2'\n    then: 'f(a1) \\neq f(a2)'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
-  "keywords": ["injective", "function", "on", "a", "to", "b", "f", "a1", "a2", "in", "neq", "reference", "=", "source", "aata", "page", "8"],
+  "text": "[\\injective \\function:on{A}to{B}]\nDefines: f\nmeans:\n. 'f is \\function:on{A}to{B}'\n. for: a1, a2\n  where: 'a1, a2 \\in A'\n  then:\n  . if: 'a1 \\neq a2'\n    then: 'f(a1) \\neq f(a2)'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
+  "keywords": ["injective", "function", "on", "a", "to", "b", "f", "is", "a1", "a2", "in", "neq", "reference", "=", "source", "aata", "page", "8"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=22",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page22",
   "signature": "\\injective.function:on{?}to{?}"
 },
 {
-  "text": "[\\bijective \\function]\nRefines: f\nmeans:\n. 'f \\is \\injective \\surjective \\function'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
+  "text": "[\\bijective \\function]\nDefines: f\nmeans:\n. 'f \\is \\injective \\surjective \\function'\nMetadata:\n. reference = \"source: @AATA; page: 8\"",
   "keywords": ["bijective", "function", "f", "is", "injective", "surjective", "reference", "=", "source", "aata", "page", "8"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=22",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page22",
@@ -212,8 +212,8 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\group"
 },
 {
-  "text": "[\\abelian \\group]\nRefines: G := (X, *, e)\nmeans:\n. for: a, b\n  where: 'a, b \\in X'\n  then:\n  . 'a * b = b * a'\nMetadata:\n. reference = \"source: @AATA; page: 34\"",
-  "keywords": ["abelian", "group", "g", "=", "x", "*", "e", "a", "b", "in", "reference", "source", "aata", "page", "34"],
+  "text": "[\\abelian \\group]\nDefines: G := (X, *, e)\nmeans:\n. 'G is \\group'\n. for: a, b\n  where: 'a, b \\in X'\n  then:\n  . 'a * b = b * a'\nMetadata:\n. reference = \"source: @AATA; page: 34\"",
+  "keywords": ["abelian", "group", "g", "=", "x", "*", "e", "is", "a", "b", "in", "reference", "source", "aata", "page", "34"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=48",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page48",
   "signature": "\\abelian.group"
@@ -226,7 +226,7 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\matrix{?, ?}:over{?}"
 },
 {
-  "text": "[\\identity \\matrix{n}]\nRefines: M(i, j)\nassuming: 'i, j is \\positive \\integer'\nmeans:\n. if: 'i \\neq j'\n  then: 'M(i, j) = 0'\n. 'M(i, i) = 1'\nMetadata:\n. reference = \"source: @AATA; page: 35\"",
+  "text": "[\\identity \\matrix{n}]\nDefines: M(i, j)\nassuming: 'i, j is \\positive \\integer'\nmeans:\n. 'M is \\matrix'\n. if: 'i \\neq j'\n  then: 'M(i, j) = 0'\n. 'M(i, i) = 1'\nMetadata:\n. reference = \"source: @AATA; page: 35\"",
   "keywords": ["identity", "matrix", "n", "m", "i", "j", "is", "positive", "integer", "neq", "=", "0", "1", "reference", "source", "aata", "page", "35"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=49",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page49",
@@ -240,8 +240,8 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": null
 },
 {
-  "text": "[\\invertible \\matrix]\nRefines: M\nmeans:\n. exists: A\n  suchThat: 'M * A = \\identity.matrix'\nMetadata:\n. reference = \"source: @AATA; page: 35\"",
-  "keywords": ["invertible", "matrix", "m", "a", "*", "=", "identity", "reference", "source", "aata", "page", "35"],
+  "text": "[\\invertible \\matrix]\nDefines: M\nmeans:\n. 'M is \\matrix'\n. exists: A\n  suchThat: 'M * A = \\identity.matrix'\nMetadata:\n. reference = \"source: @AATA; page: 35\"",
+  "keywords": ["invertible", "matrix", "m", "is", "a", "*", "=", "identity", "reference", "source", "aata", "page", "35"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=49",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page49",
   "signature": "\\invertible.matrix"
@@ -254,14 +254,14 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\general.linear.group{?}:over{?}"
 },
 {
-  "text": "[\\finite \\set]\nRefines: X\nmeans:\n. \"$X$ has a finite number of elements\"\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
-  "keywords": ["finite", "set", "x", "has", "a", "number", "of", "elements", "reference", "=", "source", "aata", "page", "36"],
+  "text": "[\\finite \\set]\nDefines: X\nmeans:\n. 'X is \\set'\n. \"$X$ has a finite number of elements\"\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
+  "keywords": ["finite", "set", "x", "is", "has", "a", "number", "of", "elements", "reference", "=", "source", "aata", "page", "36"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=50",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page50",
   "signature": "\\finite.set"
 },
 {
-  "text": "[\\infinite \\set]\nRefines: X\nmeans:\n. not:\n  . 'X is \\finite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
+  "text": "[\\infinite \\set]\nDefines: X\nmeans:\n. 'X is \\set'\n. not:\n  . 'X is \\finite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
   "keywords": ["infinite", "set", "x", "is", "finite", "reference", "=", "source", "aata", "page", "36"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=50",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page50",
@@ -275,14 +275,14 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\set.cardinality:of{?}"
 },
 {
-  "text": "[\\finite \\group]\nRefines: G := (X, *, e)\nmeans: 'X \\is \\finite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
+  "text": "[\\finite \\group]\nDefines: G := (X, *, e)\nmeans:\n. 'G is \\group'\n. 'X \\is \\finite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
   "keywords": ["finite", "group", "g", "=", "x", "*", "e", "is", "set", "reference", "source", "aata", "page", "36"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=50",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page50",
   "signature": "\\finite.group"
 },
 {
-  "text": "[\\infinite \\group]\nRefines: G := (X, *, e)\nmeans: 'X \\is \\infinite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
+  "text": "[\\infinite \\group]\nDefines: G := (X, *, e)\nmeans:\n. 'G is \\group'\n. 'X \\is \\infinite \\set'\nMetadata:\n. reference = \"source: @AATA; page: 36\"",
   "keywords": ["infinite", "group", "g", "=", "x", "*", "e", "is", "set", "reference", "source", "aata", "page", "36"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=50",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page50",
@@ -296,8 +296,8 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\group.order:of{?}"
 },
 {
-  "text": "[\\nonempty \\set]\nRefines: X\nmeans:\n. exists: x\n  suchThat: 'x \\in X'",
-  "keywords": ["nonempty", "set", "x", "in"],
+  "text": "[\\nonempty \\set]\nDefines: X\nmeans:\n. 'X is \\set'\n. exists: x\n  suchThat: 'x \\in X'",
+  "keywords": ["nonempty", "set", "x", "is", "in"],
   "href": "null",
   "mobileHref": "null",
   "signature": "\\nonempty.set"
@@ -310,15 +310,15 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\ring"
 },
 {
-  "text": "[\\with.unity \\ring]\nRefines: R := (X, +, *, 0, 1)\nmeans:\n. for: x\n  where: 'x \\in X'\n  then: '1*x = x*1 = x'\nMetadata:\n. reference = \"source: @AATA; page: 199\"",
-  "keywords": ["with", "unity", "ring", "r", "=", "x", "+", "*", "0", "1", "in", "1*x", "x*1", "reference", "source", "aata", "page", "199"],
+  "text": "[\\with.unity \\ring]\nDefines: R := (X, +, *, 0, 1)\nmeans:\n. 'R is \\ring'\n. for: x\n  where: 'x \\in X'\n  then: '1*x = x*1 = x'\nMetadata:\n. reference = \"source: @AATA; page: 199\"",
+  "keywords": ["with", "unity", "ring", "r", "=", "x", "+", "*", "0", "1", "is", "in", "1*x", "x*1", "reference", "source", "aata", "page", "199"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=213",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page213",
   "signature": "\\with.unity.ring"
 },
 {
-  "text": "[\\commutative \\ring]\nRefines: R := (X, +, *, 0)\nmeans:\n. for: x, y\n  where: 'x, y \\in X'\n  then: 'x*y = y*x'\nMetadata:\n. reference = \"source: @AATA; page: 199\"",
-  "keywords": ["commutative", "ring", "r", "=", "x", "+", "*", "0", "y", "in", "x*y", "y*x", "reference", "source", "aata", "page", "199"],
+  "text": "[\\commutative \\ring]\nDefines: R := (X, +, *, 0)\nmeans:\n. 'R is \\ring'\n. for: x, y\n  where: 'x, y \\in X'\n  then: 'x*y = y*x'\nMetadata:\n. reference = \"source: @AATA; page: 199\"",
+  "keywords": ["commutative", "ring", "r", "=", "x", "+", "*", "0", "is", "y", "in", "x*y", "y*x", "reference", "source", "aata", "page", "199"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=213",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page213",
   "signature": "\\commutative.ring"
@@ -338,8 +338,8 @@ window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
   "signature": "\\ring.unit:in{?}"
 },
 {
-  "text": "[\\division \\with.identity.ring]\nRefines: R := (X, +, *, 0, 1)\nmeans:\n. for: x\n  where:\n  . 'x \\in X'\n  . 'x \\neq 0'\n  then:\n  . 'x is \\ring.unit:in{R}'\nMetadata:\n. reference = \"source: @AATA; page: 200\"",
-  "keywords": ["division", "with", "identity", "ring", "r", "=", "x", "+", "*", "0", "1", "in", "neq", "is", "unit", "reference", "source", "aata", "page", "200"],
+  "text": "[\\division \\with.identity.ring]\nDefines: R := (X, +, *, 0, 1)\nmeans:\n. 'R is \\ring'\n. for: x\n  where:\n  . 'x \\in X'\n  . 'x \\neq 0'\n  then:\n  . 'x is \\ring.unit:in{R}'\nMetadata:\n. reference = \"source: @AATA; page: 200\"",
+  "keywords": ["division", "with", "identity", "ring", "r", "=", "x", "+", "*", "0", "1", "is", "in", "neq", "unit", "reference", "source", "aata", "page", "200"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=214",
   "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page214",
   "signature": "\\division.with.identity.ring"

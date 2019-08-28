@@ -29,7 +29,6 @@ interface Phase2Node {
 
 data class Document(
         val defines: List<DefinesGroup>,
-        val refines: List<RefinesGroup>,
         val represents: List<RepresentsGroup>,
         val results: List<ResultGroup>,
         val axioms: List<AxiomGroup>,
@@ -38,7 +37,6 @@ data class Document(
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         defines.forEach(fn)
-        refines.forEach(fn)
         represents.forEach(fn)
         results.forEach(fn)
         axioms.forEach(fn)
@@ -49,11 +47,6 @@ data class Document(
         val builder = StringBuilder()
 
         for (grp in defines) {
-            builder.append(grp.toCode(false, 0))
-            builder.append("\n\n\n")
-        }
-
-        for (grp in refines) {
             builder.append(grp.toCode(false, 0))
             builder.append("\n\n\n")
         }
@@ -99,7 +92,6 @@ data class Document(
             }
 
             val defines = ArrayList<DefinesGroup>()
-            val refines = ArrayList<RefinesGroup>()
             val represents = ArrayList<RepresentsGroup>()
             val results = ArrayList<ResultGroup>()
             val axioms = ArrayList<AxiomGroup>()
@@ -135,13 +127,6 @@ data class Document(
                     } else {
                         errors.addAll(definesValidation.errors)
                     }
-                } else if (RefinesGroup.isRefinesGroup(group)) {
-                    val refinesValidation = RefinesGroup.validate(group)
-                    if (refinesValidation.isSuccessful) {
-                        refines.add(refinesValidation.value!!)
-                    } else {
-                        errors.addAll(refinesValidation.errors)
-                    }
                 } else if (RepresentsGroup.isRepresentsGroup(group)) {
                     val representsValidation = RepresentsGroup.validate(group)
                     if (representsValidation.isSuccessful) {
@@ -164,7 +149,6 @@ data class Document(
             } else Validation.success(
                     Document(
                             defines,
-                            refines,
                             represents,
                             results,
                             axioms,

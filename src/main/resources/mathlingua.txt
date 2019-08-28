@@ -43,8 +43,9 @@ Metadata:
 
 
 [\empty.set]
-Refines: E
+Defines: E
 means:
+. 'E is \set'
 . not:
   . exists: x
     suchThat: 'x \in E'
@@ -146,8 +147,9 @@ Metadata:
 
 
 [\surjective \function:on{A}to{B}]
-Refines: f
+Defines: f
 means:
+. 'f is \function:on{A}to{B}'
 . for: b
   where: 'b \in B'
   then:
@@ -159,8 +161,9 @@ Metadata:
 
 
 [\injective \function:on{A}to{B}]
-Refines: f
+Defines: f
 means:
+. 'f is \function:on{A}to{B}'
 . for: a1, a2
   where: 'a1, a2 \in A'
   then:
@@ -171,7 +174,7 @@ Metadata:
 
 
 [\bijective \function]
-Refines: f
+Defines: f
 means:
 . 'f \is \injective \surjective \function'
 Metadata:
@@ -306,8 +309,9 @@ Metadata:
 
 
 [\abelian \group]
-Refines: G := (X, *, e)
+Defines: G := (X, *, e)
 means:
+. 'G is \group'
 . for: a, b
   where: 'a, b \in X'
   then:
@@ -326,9 +330,10 @@ means:
 
 
 [\identity \matrix{n}]
-Refines: M(i, j)
+Defines: M(i, j)
 assuming: 'i, j is \positive \integer'
 means:
+. 'M is \matrix'
 . if: 'i \neq j'
   then: 'M(i, j) = 0'
 . 'M(i, i) = 1'
@@ -344,8 +349,9 @@ means:
 
 
 [\invertible \matrix]
-Refines: M
+Defines: M
 means:
+. 'M is \matrix'
 . exists: A
   suchThat: 'M * A = \identity.matrix'
 Metadata:
@@ -366,16 +372,18 @@ Metadata:
 
 
 [\finite \set]
-Refines: X
+Defines: X
 means:
+. 'X is \set'
 . "$X$ has a finite number of elements"
 Metadata:
 . reference = "source: @AATA; page: 36"
 
 
 [\infinite \set]
-Refines: X
+Defines: X
 means:
+. 'X is \set'
 . not:
   . 'X is \finite \set'
 Metadata:
@@ -389,15 +397,19 @@ means: "$n$ is the number of elements in $X$"
 
 
 [\finite \group]
-Refines: G := (X, *, e)
-means: 'X \is \finite \set'
+Defines: G := (X, *, e)
+means:
+. 'G is \group'
+. 'X \is \finite \set'
 Metadata:
 . reference = "source: @AATA; page: 36"
 
 
 [\infinite \group]
-Refines: G := (X, *, e)
-means: 'X \is \infinite \set'
+Defines: G := (X, *, e)
+means:
+. 'G is \group'
+. 'X \is \infinite \set'
 Metadata:
 . reference = "source: @AATA; page: 36"
 
@@ -412,8 +424,9 @@ Metadata:
 
 
 [\nonempty \set]
-Refines: X
+Defines: X
 means:
+. 'X is \set'
 . exists: x
   suchThat: 'x \in X'
 
@@ -438,8 +451,9 @@ Metadata:
 
 
 [\with.unity \ring]
-Refines: R := (X, +, *, 0, 1)
+Defines: R := (X, +, *, 0, 1)
 means:
+. 'R is \ring'
 . for: x
   where: 'x \in X'
   then: '1*x = x*1 = x'
@@ -448,8 +462,9 @@ Metadata:
 
 
 [\commutative \ring]
-Refines: R := (X, +, *, 0)
+Defines: R := (X, +, *, 0)
 means:
+. 'R is \ring'
 . for: x, y
   where: 'x, y \in X'
   then: 'x*y = y*x'
@@ -488,8 +503,9 @@ Metadata:
 
 
 [\division \with.identity.ring]
-Refines: R := (X, +, *, 0, 1)
+Defines: R := (X, +, *, 0, 1)
 means:
+. 'R is \ring'
 . for: x
   where:
   . 'x \in X'

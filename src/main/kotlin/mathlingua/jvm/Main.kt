@@ -22,11 +22,11 @@ import java.io.File
 import kotlin.system.exitProcess
 
 data class ErrorInfo(
-        val file: String,
-        val message: String,
-        val failedLine: String,
-        val row: Int,
-        val column: Int
+    val file: String,
+    val message: String,
+    val failedLine: String,
+    val row: Int,
+    val column: Int
 ) {
     fun toString(json: Boolean): String {
         val builder = StringBuilder()
@@ -102,10 +102,10 @@ fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>): ErrorIn
     lineBuilder.append("^\n")
 
     return ErrorInfo(
-            file.absolutePath,
-            err.message,
-            lineBuilder.toString(),
-            err.row, err.column
+        file.absolutePath,
+        err.message,
+        lineBuilder.toString(),
+        err.row, err.column
     )
 }
 

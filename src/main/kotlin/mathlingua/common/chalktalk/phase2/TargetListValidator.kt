@@ -27,14 +27,14 @@ data class TargetListSection(val targets: List<Target>)
 object TargetListValidator {
 
     fun <T> validate(
-            rawNode: ChalkTalkNode,
-            expectedName: String,
-            builder: (targets: List<Target>) -> T
+        rawNode: ChalkTalkNode,
+        expectedName: String,
+        builder: (targets: List<Target>) -> T
     ): Validation<T> {
         val node = rawNode.resolve()
 
         val validation =
-                validate(node, expectedName)
+            validate(node, expectedName)
         if (!validation.isSuccessful) {
             return Validation.failure(validation.errors)
         }
@@ -44,16 +44,16 @@ object TargetListValidator {
     }
 
     private fun validate(
-            node: ChalkTalkNode,
-            expectedName: String
+        node: ChalkTalkNode,
+        expectedName: String
     ): Validation<TargetListSection> {
         val errors = ArrayList<ParseError>()
         if (node !is Section) {
             errors.add(
-                    ParseError(
-                            "Expected a Section",
-                            AstUtils.getRow(node), AstUtils.getColumn(node)
-                    )
+                ParseError(
+                    "Expected a Section",
+                    AstUtils.getRow(node), AstUtils.getColumn(node)
+                )
             )
         }
 
@@ -61,12 +61,12 @@ object TargetListValidator {
         val name = name1.text
         if (name != expectedName) {
             errors.add(
-                    ParseError(
-                            "Expected a Section with name " +
-                                    expectedName + " but found " + name,
-                            AstUtils.getRow(node),
-                            AstUtils.getColumn(node)
-                    )
+                ParseError(
+                    "Expected a Section with name " +
+                        expectedName + " but found " + name,
+                    AstUtils.getRow(node),
+                    AstUtils.getColumn(node)
+                )
             )
         }
 
@@ -74,12 +74,12 @@ object TargetListValidator {
 
         if (args.isEmpty()) {
             errors.add(
-                    ParseError(
-                            "Section '" + name1.text +
-                                    "' requires at least one argument.",
-                            AstUtils.getRow(node),
-                            AstUtils.getColumn(node)
-                    )
+                ParseError(
+                    "Section '" + name1.text +
+                        "' requires at least one argument.",
+                    AstUtils.getRow(node),
+                    AstUtils.getColumn(node)
+                )
             )
         }
 
@@ -96,16 +96,15 @@ object TargetListValidator {
             }
 
             errors.add(
-                    ParseError(
-                            "Expected an Target",
-                            AstUtils.getRow(arg), AstUtils.getColumn(arg)
-                    )
+                ParseError(
+                    "Expected an Target",
+                    AstUtils.getRow(arg), AstUtils.getColumn(arg)
+                )
             )
         }
 
         return if (errors.isNotEmpty()) {
             Validation.failure(errors)
         } else Validation.success(TargetListSection(targets))
-
     }
 }

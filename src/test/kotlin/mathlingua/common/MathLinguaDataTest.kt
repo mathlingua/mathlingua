@@ -30,7 +30,8 @@ internal class MathLinguaDataTest {
         val builder = StringBuilder()
         for (err in result.errors) {
             builder.append(
-                "ERROR: (${err.row+1}, ${err.column+1}) ${err.message}\n")
+                "ERROR: (${err.row + 1}, ${err.column + 1}) ${err.message}\n"
+            )
         }
         // The test should fail if there any errors.
         // This assertThat() is used so that the parse

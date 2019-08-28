@@ -28,11 +28,11 @@ interface Phase2Node {
 }
 
 data class Document(
-        val defines: List<DefinesGroup>,
-        val represents: List<RepresentsGroup>,
-        val results: List<ResultGroup>,
-        val axioms: List<AxiomGroup>,
-        val conjectures: List<ConjectureGroup>
+    val defines: List<DefinesGroup>,
+    val represents: List<RepresentsGroup>,
+    val results: List<ResultGroup>,
+    val axioms: List<AxiomGroup>,
+    val conjectures: List<ConjectureGroup>
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -82,11 +82,11 @@ data class Document(
             val errors = ArrayList<ParseError>()
             if (node !is Root) {
                 errors.add(
-                        ParseError(
-                                "Expected a Root",
-                                AstUtils.getRow(node),
-                                AstUtils.getColumn(node)
-                        )
+                    ParseError(
+                        "Expected a Root",
+                        AstUtils.getRow(node),
+                        AstUtils.getColumn(node)
+                    )
                 )
                 return Validation.failure(errors)
             }
@@ -136,10 +136,10 @@ data class Document(
                     }
                 } else {
                     errors.add(
-                            ParseError(
-                                    "Expected a Result or Defines but found " + group.toCode(),
-                                    AstUtils.getRow(group), AstUtils.getColumn(group)
-                            )
+                        ParseError(
+                            "Expected a Result or Defines but found " + group.toCode(),
+                            AstUtils.getRow(group), AstUtils.getColumn(group)
+                        )
                     )
                 }
             }
@@ -147,13 +147,13 @@ data class Document(
             return if (!errors.isEmpty()) {
                 Validation.failure(errors)
             } else Validation.success(
-                    Document(
-                            defines,
-                            represents,
-                            results,
-                            axioms,
-                            conjectures
-                    )
+                Document(
+                    defines,
+                    represents,
+                    results,
+                    axioms,
+                    conjectures
+                )
             )
         }
     }

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package mathlingua.common;
+package mathlingua.common
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mathlingua.jvm.MATHLINGUA_SOURCE_FILE
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Test
 import java.nio.file.Files
 
 internal class MathLinguaDataTest {

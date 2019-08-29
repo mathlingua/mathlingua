@@ -124,4 +124,3 @@ data class Section(val name: ChalkTalkToken, val args: List<Argument>) : ChalkTa
         return this
     }
 }
-

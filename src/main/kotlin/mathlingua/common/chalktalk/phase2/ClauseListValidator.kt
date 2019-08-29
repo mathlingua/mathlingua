@@ -27,7 +27,8 @@ data class ClauseListSection(val name: String, val clauses: List<Clause>)
 object ClauseListValidator {
 
     fun <T> validate(
-        rawNode: ChalkTalkNode, expectedName: String,
+        rawNode: ChalkTalkNode,
+        expectedName: String,
         builder: (clauses: List<Clause>) -> T
     ): Validation<T> {
         val node = rawNode.resolve()

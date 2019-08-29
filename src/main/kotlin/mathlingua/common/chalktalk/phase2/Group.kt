@@ -338,9 +338,13 @@ fun <G, S, E> validateDefinesLikeGroup(
     endSectionName: String,
     validateEndSection: (section: Section) -> Validation<E>,
     buildGroup: (
-        signature: String?, id: Statement, definesLike: S,
-        assuming: AssumingSection?, end: E,
-        alias: AliasSection?, metadata: MetaDataSection?
+        signature: String?,
+        id: Statement,
+        definesLike: S,
+        assuming: AssumingSection?,
+        end: E,
+        alias: AliasSection?,
+        metadata: MetaDataSection?
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()

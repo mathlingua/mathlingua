@@ -349,10 +349,10 @@ class TexTalkParserImpl : TexTalkParser {
         }
 
         private fun namedGroup(): NamedGroupNode? {
-            val isNamedGroup = (this.texTalkLexer.hasNext()
-                && this.texTalkLexer.hasNextNext()
-                && this.texTalkLexer.peek().tokenType === TexTalkTokenType.Identifier
-                && this.texTalkLexer.peekPeek().tokenType === TexTalkTokenType.LCurly)
+            val isNamedGroup = (this.texTalkLexer.hasNext() &&
+                this.texTalkLexer.hasNextNext() &&
+                this.texTalkLexer.peek().tokenType === TexTalkTokenType.Identifier &&
+                this.texTalkLexer.peekPeek().tokenType === TexTalkTokenType.LCurly)
             if (!isNamedGroup) {
                 return null
             }

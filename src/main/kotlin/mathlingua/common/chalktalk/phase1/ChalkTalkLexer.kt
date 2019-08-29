@@ -149,10 +149,10 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
 
                 var indentCount = 0
-                while (i < text.length
-                    && i + 1 < text.length
-                    && text[i] == ' '
-                    && text[i + 1] == ' '
+                while (i < text.length &&
+                    i + 1 < text.length &&
+                    text[i] == ' ' &&
+                    text[i + 1] == ' '
                 ) {
                     indentCount++
                     i += 2
@@ -160,10 +160,10 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
 
                 // treat '. ' like another indent
-                if (i < text.length
-                    && text[i] == '.'
-                    && i + 1 < text.length
-                    && text[i + 1] == ' '
+                if (i < text.length &&
+                    text[i] == '.' &&
+                    i + 1 < text.length &&
+                    text[i + 1] == ' '
                 ) {
                     indentCount++
                 }

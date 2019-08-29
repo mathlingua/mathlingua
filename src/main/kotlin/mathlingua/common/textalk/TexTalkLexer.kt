@@ -140,8 +140,8 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
     }
 
     private fun isOpChar(c: Char): Boolean {
-        return (c == '!' || c == '@' || c == '%' || c == '&' || c == '*' || c == '-' || c == '+'
-            || c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
+        return (c == '!' || c == '@' || c == '%' || c == '&' || c == '*' || c == '-' || c == '+' ||
+            c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
     }
 
     private fun isLetterOrDigit(c: Char): Boolean {

@@ -21,15 +21,15 @@ import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.Section
 
-data class AliasSection(val mappings: List<MappingNode>) :
-        Phase2Node {
+data class MetaDataSection(val mappings: List<MappingNode>) :
+    Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Alias:"))
+        builder.append(indentedString(isArg, indent, "Metadata:"))
         builder.append('\n')
         for (i in 0 until mappings.size) {
             builder.append(mappings[i].toCode(true, indent + 2))
@@ -41,15 +41,15 @@ data class AliasSection(val mappings: List<MappingNode>) :
     }
 
     companion object {
-        fun validate(section: Section): Validation<AliasSection> {
-            if (section.name.text != "Alias") {
+        fun validate(section: Section): Validation<MetaDataSection> {
+            if (section.name.text != "Metadata") {
                 return Validation.failure(
-                        listOf(
-                                ParseError(
-                                        "Expected a 'Alias' but found '${section.name.text}'",
-                                        AstUtils.getRow(section), AstUtils.getColumn(section)
-                                )
+                    listOf(
+                        ParseError(
+                            "Expected a 'Metadata' but found '${section.name.text}'",
+                            AstUtils.getRow(section), AstUtils.getColumn(section)
                         )
+                    )
                 )
             }
 
@@ -67,7 +67,7 @@ data class AliasSection(val mappings: List<MappingNode>) :
             return if (errors.isNotEmpty()) {
                 Validation.failure(errors)
             } else {
-                Validation.success(AliasSection(mappings))
+                Validation.success(MetaDataSection(mappings))
             }
         }
     }

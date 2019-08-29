@@ -25,11 +25,11 @@ object HtmlDataGenerator {
     fun main(args: Array<String>) {
         val text = MATHLINGUA_SOURCE_FILE.readText()
         val parts = text.split("\n\n")
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
 
         println(
-                """
+            """
             window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
         """.trimIndent()
         )
@@ -108,11 +108,11 @@ object HtmlDataGenerator {
             }
             builder.append("]")
             println(
-                    """
+                """
                 {
                   "text": "${part.replace("\\", "\\\\")
-                            .replace("\n", "\\n")
-                            .replace("\"", "\\\"")}",
+                    .replace("\n", "\\n")
+                    .replace("\"", "\\\"")}",
                   "keywords": $builder,
                   "href": "$href",
                   "mobileHref": "$mobileHref",
@@ -133,25 +133,25 @@ object HtmlDataGenerator {
 
         if (!hasChildren) {
             val code = node.toCode(false, 0)
-                    .trim()
-                    .toLowerCase()
-                    .replace("\"", " ")
-                    .replace("'", " ")
-                    .replace("$", " ")
-                    .replace("\\", " ")
-                    .replace(".", " ")
-                    .replace(",", " ")
-                    .replace(":", " ")
-                    .replace(";", " ")
-                    .replace("^", " ")
-                    .replace("_", " ")
-                    .replace("{", " ")
-                    .replace("}", " ")
-                    .replace("[", " ")
-                    .replace("]", " ")
-                    .replace("(", " ")
-                    .replace(")", " ")
-                    .replace("@", " ")
+                .trim()
+                .toLowerCase()
+                .replace("\"", " ")
+                .replace("'", " ")
+                .replace("$", " ")
+                .replace("\\", " ")
+                .replace(".", " ")
+                .replace(",", " ")
+                .replace(":", " ")
+                .replace(";", " ")
+                .replace("^", " ")
+                .replace("_", " ")
+                .replace("{", " ")
+                .replace("}", " ")
+                .replace("[", " ")
+                .replace("]", " ")
+                .replace("(", " ")
+                .replace(")", " ")
+                .replace("@", " ")
             for (word in code.split(" ")) {
                 if (word.isNotBlank()) {
                     keywords.add(word)

@@ -28,7 +28,14 @@ import java.awt.event.KeyListener
 import java.io.FileNotFoundException
 import java.io.IOException
 import java.nio.file.Paths
-import javax.swing.*
+import javax.swing.JFrame
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JSplitPane
+import javax.swing.JTextArea
+import javax.swing.SwingUtilities
+import javax.swing.UIManager
+import javax.swing.WindowConstants
 
 val MATHLINGUA_SOURCE_FILE = Paths.get("src", "main", "resources", "mathlingua.txt").toFile()
 
@@ -58,7 +65,7 @@ object MathLinguaEditor {
         inputArea.highlightCurrentLine = false
         inputArea.font = font
         inputArea.syntaxScheme
-                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
         val scrollPane = RTextScrollPane(inputArea)
         scrollPane.lineNumbersEnabled = true

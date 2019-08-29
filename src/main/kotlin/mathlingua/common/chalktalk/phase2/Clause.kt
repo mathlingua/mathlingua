@@ -18,69 +18,79 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.*
+import mathlingua.common.chalktalk.phase1.ast.Abstraction
+import mathlingua.common.chalktalk.phase1.ast.Aggregate
+import mathlingua.common.chalktalk.phase1.ast.Assignment
+import mathlingua.common.chalktalk.phase1.ast.AstUtils
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.common.chalktalk.phase1.ast.Group
+import mathlingua.common.chalktalk.phase1.ast.Mapping
+import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.Tuple
 import mathlingua.common.textalk.ExpressionNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
 
 private data class ValidationPair<T>(
-        val matches: (node: ChalkTalkNode) -> Boolean,
-        val validate: (node: ChalkTalkNode) -> Validation<T>
+    val matches: (node: ChalkTalkNode) -> Boolean,
+    val validate: (node: ChalkTalkNode) -> Validation<T>
 )
 
 private val CLAUSE_VALIDATORS = listOf(
-        ValidationPair(
-                AbstractionNode.Companion::isAbstraction,
-                AbstractionNode.Companion::validate
-        ),
-        ValidationPair(
-                AggregateNode.Companion::isAggregate,
-                AggregateNode.Companion::validate
-        ),
-        ValidationPair(
-                TupleNode.Companion::isTuple,
-                TupleNode.Companion::validate
-        ),
-        ValidationPair(
-                AssignmentNode.Companion::isAssignment,
-                AssignmentNode.Companion::validate
-        ),
-        ValidationPair(
-                Identifier.Companion::isIdentifier,
-                Identifier.Companion::validate
-        ),
-        ValidationPair(
-                Statement.Companion::isStatement,
-                Statement.Companion::validate
-        ),
-        ValidationPair(
-                Text.Companion::isText,
-                Text.Companion::validate
-        ),
-        ValidationPair(
-                ForGroup.Companion::isForGroup,
-                ForGroup.Companion::validate
-        ),
-        ValidationPair(
-                ExistsGroup.Companion::isExistsGroup,
-                ExistsGroup.Companion::validate
-        ),
-        ValidationPair(
-                NotGroup.Companion::isNotGroup,
-                NotGroup.Companion::validate
-        ),
-        ValidationPair(
-                OrGroup.Companion::isOrGroup,
-                OrGroup.Companion::validate
-        ),
-        ValidationPair(
-                IfGroup.Companion::isIfGroup,
-                IfGroup.Companion::validate
-        ),
-        ValidationPair(
-                IffGroup.Companion::isIffGroup,
-                IffGroup.Companion::validate
-        )
+    ValidationPair(
+        AbstractionNode.Companion::isAbstraction,
+        AbstractionNode.Companion::validate
+    ),
+    ValidationPair(
+        AggregateNode.Companion::isAggregate,
+        AggregateNode.Companion::validate
+    ),
+    ValidationPair(
+        TupleNode.Companion::isTuple,
+        TupleNode.Companion::validate
+    ),
+    ValidationPair(
+        AssignmentNode.Companion::isAssignment,
+        AssignmentNode.Companion::validate
+    ),
+    ValidationPair(
+        Identifier.Companion::isIdentifier,
+        Identifier.Companion::validate
+    ),
+    ValidationPair(
+        Statement.Companion::isStatement,
+        Statement.Companion::validate
+    ),
+    ValidationPair(
+        Text.Companion::isText,
+        Text.Companion::validate
+    ),
+    ValidationPair(
+        ForGroup.Companion::isForGroup,
+        ForGroup.Companion::validate
+    ),
+    ValidationPair(
+        ExistsGroup.Companion::isExistsGroup,
+        ExistsGroup.Companion::validate
+    ),
+    ValidationPair(
+        NotGroup.Companion::isNotGroup,
+        NotGroup.Companion::validate
+    ),
+    ValidationPair(
+        OrGroup.Companion::isOrGroup,
+        OrGroup.Companion::validate
+    ),
+    ValidationPair(
+        IfGroup.Companion::isIfGroup,
+        IfGroup.Companion::validate
+    ),
+    ValidationPair(
+        IffGroup.Companion::isIffGroup,
+        IffGroup.Companion::validate
+    )
 )
 
 sealed class Clause : Phase2Node {
@@ -100,12 +110,12 @@ sealed class Clause : Phase2Node {
             }
 
             return Validation.failure(
-                    listOf(
-                            ParseError(
-                                    "Expected a Target",
-                                    AstUtils.getRow(node), AstUtils.getColumn(node)
-                            )
+                listOf(
+                    ParseError(
+                        "Expected a Target",
+                        AstUtils.getRow(node), AstUtils.getColumn(node)
                     )
+                )
             )
         }
     }
@@ -128,9 +138,9 @@ data class AbstractionNode(val abstraction: Abstraction) : Target() {
 
         fun validate(node: ChalkTalkNode): Validation<AbstractionNode> {
             return validateWrappedNode(node,
-                    "AbstractionNode",
-                    { it as? Abstraction },
-                    { AbstractionNode(it) })
+                "AbstractionNode",
+                { it as? Abstraction },
+                { AbstractionNode(it) })
         }
     }
 }
@@ -150,9 +160,9 @@ data class AggregateNode(val aggregate: Aggregate) : Target() {
 
         fun validate(node: ChalkTalkNode): Validation<AggregateNode> {
             return validateWrappedNode(node,
-                    "AggregateNode",
-                    { it as? Aggregate },
-                    { AggregateNode(it) })
+                "AggregateNode",
+                { it as? Aggregate },
+                { AggregateNode(it) })
         }
     }
 }
@@ -172,9 +182,9 @@ data class TupleNode(val tuple: Tuple) : Target() {
 
         fun validate(node: ChalkTalkNode): Validation<TupleNode> {
             return validateWrappedNode(node,
-                    "TupleNode",
-                    { it as? Tuple },
-                    { TupleNode(it) })
+                "TupleNode",
+                { it as? Tuple },
+                { TupleNode(it) })
         }
     }
 }
@@ -194,10 +204,10 @@ data class AssignmentNode(val assignment: Assignment) : Target() {
 
         fun validate(node: ChalkTalkNode): Validation<AssignmentNode> {
             return validateWrappedNode(
-                    node,
-                    "AssignmentNode",
-                    { it as? Assignment },
-                    ::AssignmentNode
+                node,
+                "AssignmentNode",
+                { it as? Assignment },
+                ::AssignmentNode
             )
         }
     }
@@ -218,10 +228,10 @@ data class MappingNode(val mapping: Mapping) : Phase2Node {
 
         fun validate(node: ChalkTalkNode): Validation<MappingNode> {
             return validateWrappedNode(
-                    node,
-                    "MappingNode",
-                    { it as? Mapping },
-                    ::MappingNode
+                node,
+                "MappingNode",
+                { it as? Mapping },
+                ::MappingNode
             )
         }
     }
@@ -247,10 +257,10 @@ data class Identifier(val name: String) : Target() {
             val errors = ArrayList<ParseError>()
             if (node !is ChalkTalkToken) {
                 errors.add(
-                        ParseError(
-                                "Cannot convert to a ChalkTalkToken",
-                                AstUtils.getRow(node), AstUtils.getColumn(node)
-                        )
+                    ParseError(
+                        "Cannot convert to a ChalkTalkToken",
+                        AstUtils.getRow(node), AstUtils.getColumn(node)
+                    )
                 )
                 return Validation.failure(errors)
             }
@@ -258,10 +268,10 @@ data class Identifier(val name: String) : Target() {
             val (text, type, row, column) = node
             if (type !== ChalkTalkTokenType.Name) {
                 errors.add(
-                        ParseError(
-                                "A token of type $type is not an identifier",
-                                row, column
-                        )
+                    ParseError(
+                        "A token of type $type is not an identifier",
+                        row, column
+                    )
                 )
                 return Validation.failure(errors)
             }
@@ -272,8 +282,8 @@ data class Identifier(val name: String) : Target() {
 }
 
 data class Statement(
-        val text: String,
-        val texTalkRoot: Validation<ExpressionNode>
+    val text: String,
+    val texTalkRoot: Validation<ExpressionNode>
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
@@ -294,20 +304,20 @@ data class Statement(
             val errors = ArrayList<ParseError>()
             if (node !is ChalkTalkToken) {
                 errors.add(
-                        ParseError(
-                                "Cannot convert a to a ChalkTalkToken",
-                                AstUtils.getRow(node), AstUtils.getColumn(node)
-                        )
+                    ParseError(
+                        "Cannot convert a to a ChalkTalkToken",
+                        AstUtils.getRow(node), AstUtils.getColumn(node)
+                    )
                 )
             }
 
             val (rawText, type, row, column) = node as ChalkTalkToken
             if (type !== ChalkTalkTokenType.Statement) {
                 errors.add(
-                        ParseError(
-                                "Cannot convert a " + node.toCode() + " to a Statement",
-                                row, column
-                        )
+                    ParseError(
+                        "Cannot convert a " + node.toCode() + " to a Statement",
+                        row, column
+                    )
                 )
                 return Validation.failure(errors)
             }
@@ -355,20 +365,20 @@ data class Text(val text: String) : Clause() {
             val errors = ArrayList<ParseError>()
             if (node !is ChalkTalkToken) {
                 errors.add(
-                        ParseError(
-                                "Cannot convert a to a ChalkTalkToken",
-                                AstUtils.getRow(node), AstUtils.getColumn(node)
-                        )
+                    ParseError(
+                        "Cannot convert a to a ChalkTalkToken",
+                        AstUtils.getRow(node), AstUtils.getColumn(node)
+                    )
                 )
             }
 
             val (text, type, row, column) = node as ChalkTalkToken
             if (type !== ChalkTalkTokenType.String) {
                 errors.add(
-                        ParseError(
-                                "Cannot convert a " + node.toCode() + " to Text",
-                                row, column
-                        )
+                    ParseError(
+                        "Cannot convert a " + node.toCode() + " to Text",
+                        row, column
+                    )
                 )
                 return Validation.failure(errors)
             }
@@ -379,8 +389,8 @@ data class Text(val text: String) : Clause() {
 }
 
 data class ExistsGroup(
-        val existsSection: ExistsSection,
-        val suchThatSection: SuchThatSection
+    val existsSection: ExistsSection,
+    val suchThatSection: SuchThatSection
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(existsSection)
@@ -399,20 +409,20 @@ data class ExistsGroup(
 
         fun validate(node: ChalkTalkNode): Validation<ExistsGroup> {
             return validateDoubleSectionGroup(
-                    node,
-                    "exists",
-                    ExistsSection.Companion::validate,
-                    "suchThat",
-                    SuchThatSection.Companion::validate,
-                    ::ExistsGroup
+                node,
+                "exists",
+                ExistsSection.Companion::validate,
+                "suchThat",
+                SuchThatSection.Companion::validate,
+                ::ExistsGroup
             )
         }
     }
 }
 
 data class IfGroup(
-        val ifSection: IfSection,
-        val thenSection: ThenSection
+    val ifSection: IfSection,
+    val thenSection: ThenSection
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(ifSection)
@@ -431,20 +441,20 @@ data class IfGroup(
 
         fun validate(node: ChalkTalkNode): Validation<IfGroup> {
             return validateDoubleSectionGroup(
-                    node,
-                    "if",
-                    IfSection.Companion::validate,
-                    "then",
-                    ThenSection.Companion::validate,
-                    ::IfGroup
+                node,
+                "if",
+                IfSection.Companion::validate,
+                "then",
+                ThenSection.Companion::validate,
+                ::IfGroup
             )
         }
     }
 }
 
 data class IffGroup(
-        val iffSection: IffSection,
-        val thenSection: ThenSection
+    val iffSection: IffSection,
+    val thenSection: ThenSection
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(iffSection)
@@ -463,22 +473,21 @@ data class IffGroup(
 
         fun validate(node: ChalkTalkNode): Validation<IffGroup> {
             return validateDoubleSectionGroup(
-                    node,
-                    "iff",
-                    IffSection.Companion::validate,
-                    "then",
-                    ThenSection.Companion::validate,
-                    ::IffGroup
+                node,
+                "iff",
+                IffSection.Companion::validate,
+                "then",
+                ThenSection.Companion::validate,
+                ::IffGroup
             )
         }
     }
 }
 
-
 data class ForGroup(
-        val forSection: ForSection,
-        val whereSection: WhereSection?,
-        val thenSection: ThenSection
+    val forSection: ForSection,
+    val whereSection: WhereSection?,
+    val thenSection: ThenSection
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(forSection)
@@ -504,10 +513,10 @@ data class ForGroup(
             val errors = ArrayList<ParseError>()
             if (node !is Group) {
                 errors.add(
-                        ParseError(
-                                "Expected a Group",
-                                AstUtils.getRow(node), AstUtils.getColumn(node)
-                        )
+                    ParseError(
+                        "Expected a Group",
+                        AstUtils.getRow(node), AstUtils.getColumn(node)
+                    )
                 )
                 return Validation.failure(errors)
             }
@@ -517,8 +526,8 @@ data class ForGroup(
             val sectionMap: Map<String, Section>
             try {
                 sectionMap = SectionIdentifier.identifySections(
-                        sections,
-                        "for", "where?", "then"
+                    sections,
+                    "for", "where?", "then"
                 )
             } catch (e: ParseError) {
                 errors.add(ParseError(e.message, e.row, e.column))
@@ -557,7 +566,6 @@ data class ForGroup(
             return if (!errors.isEmpty()) {
                 Validation.failure(errors)
             } else Validation.success(ForGroup(forSection!!, whereSection, thenSection!!))
-
         }
     }
 }
@@ -578,8 +586,8 @@ data class NotGroup(val notSection: NotSection) : Clause() {
 
         fun validate(node: ChalkTalkNode): Validation<NotGroup> {
             return validateSingleSectionGroup(
-                    node, "not", ::NotGroup,
-                    NotSection.Companion::validate
+                node, "not", ::NotGroup,
+                NotSection.Companion::validate
             )
         }
     }
@@ -601,8 +609,8 @@ data class OrGroup(val orSection: OrSection) : Clause() {
 
         fun validate(node: ChalkTalkNode): Validation<OrGroup> {
             return validateSingleSectionGroup(
-                    node, "or", ::OrGroup,
-                    OrSection.Companion::validate
+                node, "or", ::OrGroup,
+                OrSection.Companion::validate
             )
         }
     }
@@ -620,20 +628,20 @@ fun firstSectionMatchesName(node: ChalkTalkNode, name: String): Boolean {
 }
 
 fun <G, S> validateSingleSectionGroup(
-        rawNode: ChalkTalkNode,
-        sectionName: String,
-        buildGroup: (sect: S) -> G,
-        validateSection: (section: Section) -> Validation<S>
+    rawNode: ChalkTalkNode,
+    sectionName: String,
+    buildGroup: (sect: S) -> G,
+    validateSection: (section: Section) -> Validation<S>
 ): Validation<G> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
     if (node !is Group) {
         errors.add(
-                ParseError(
-                        "Expected a Group",
-                        AstUtils.getRow(node), AstUtils.getColumn(node)
-                )
+            ParseError(
+                "Expected a Group",
+                AstUtils.getRow(node), AstUtils.getColumn(node)
+            )
         )
         return Validation.failure(errors)
     }
@@ -642,8 +650,8 @@ fun <G, S> validateSingleSectionGroup(
     val sectionMap: Map<String, Section>
     try {
         sectionMap = SectionIdentifier.identifySections(
-                sections,
-                sectionName
+            sections,
+            sectionName
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -665,22 +673,22 @@ fun <G, S> validateSingleSectionGroup(
 }
 
 private fun <G, S1, S2> validateDoubleSectionGroup(
-        rawNode: ChalkTalkNode,
-        section1Name: String,
-        validateSection1: (section: Section) -> Validation<S1>,
-        section2Name: String,
-        validateSection2: (section: Section) -> Validation<S2>,
-        buildGroup: (sect1: S1, sect2: S2) -> G
+    rawNode: ChalkTalkNode,
+    section1Name: String,
+    validateSection1: (section: Section) -> Validation<S1>,
+    section2Name: String,
+    validateSection2: (section: Section) -> Validation<S2>,
+    buildGroup: (sect1: S1, sect2: S2) -> G
 ): Validation<G> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
     if (node !is Group) {
         errors.add(
-                ParseError(
-                        "Expected a Group",
-                        AstUtils.getRow(node), AstUtils.getColumn(node)
-                )
+            ParseError(
+                "Expected a Group",
+                AstUtils.getRow(node), AstUtils.getColumn(node)
+            )
         )
         return Validation.failure(errors)
     }
@@ -690,7 +698,7 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
     val sectionMap: Map<String, Section>
     try {
         sectionMap = SectionIdentifier.identifySections(
-                sections, section1Name, section2Name
+            sections, section1Name, section2Name
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -721,22 +729,22 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
 }
 
 private fun <Wrapped, Base> validateWrappedNode(
-        rawNode: ChalkTalkNode,
-        expectedType: String,
-        checkType: (node: ChalkTalkNode) -> Base?,
-        build: (base: Base) -> Wrapped
+    rawNode: ChalkTalkNode,
+    expectedType: String,
+    checkType: (node: ChalkTalkNode) -> Base?,
+    build: (base: Base) -> Wrapped
 ): Validation<Wrapped> {
     val node = rawNode.resolve()
 
     val base = checkType(node)
     if (base == null) {
         return Validation.failure(
-                listOf(
-                        ParseError(
-                                "Cannot convert to a $expectedType",
-                                AstUtils.getRow(node), AstUtils.getColumn(node)
-                        )
+            listOf(
+                ParseError(
+                    "Cannot convert to a $expectedType",
+                    AstUtils.getRow(node), AstUtils.getColumn(node)
                 )
+            )
         )
     }
 

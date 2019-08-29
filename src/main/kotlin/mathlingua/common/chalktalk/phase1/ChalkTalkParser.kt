@@ -17,7 +17,19 @@
 package mathlingua.common.chalktalk.phase1
 
 import mathlingua.common.ParseError
-import mathlingua.common.chalktalk.phase1.ast.*
+import mathlingua.common.chalktalk.phase1.ast.Abstraction
+import mathlingua.common.chalktalk.phase1.ast.Aggregate
+import mathlingua.common.chalktalk.phase1.ast.Argument
+import mathlingua.common.chalktalk.phase1.ast.Assignment
+import mathlingua.common.chalktalk.phase1.ast.AssignmentRhs
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.common.chalktalk.phase1.ast.Group
+import mathlingua.common.chalktalk.phase1.ast.Mapping
+import mathlingua.common.chalktalk.phase1.ast.Root
+import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.Tuple
+import mathlingua.common.chalktalk.phase1.ast.TupleItem
 
 interface ChalkTalkParser {
     fun parse(chalkTalkLexer: ChalkTalkLexer): ChalkTalkParseResult
@@ -56,9 +68,9 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             while (this.chalkTalkLexer.hasNext()) {
                 val next = this.chalkTalkLexer.next()
                 this.errors.add(
-                        ParseError(
-                                "Unrecognized token '" + next.text, next.row, next.column
-                        )
+                    ParseError(
+                        "Unrecognized token '" + next.text, next.row, next.column
+                    )
                 )
             }
 
@@ -85,14 +97,13 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             }
 
             return if (sections.isEmpty()) null else Group(sections, id)
-
         }
 
         private fun section(): Section? {
-            val isSec = (this.chalkTalkLexer.hasNext()
-                    && this.chalkTalkLexer.hasNextNext()
-                    && this.chalkTalkLexer.peek().type === ChalkTalkTokenType.Name
-                    && this.chalkTalkLexer.peekPeek().type === ChalkTalkTokenType.Colon)
+            val isSec = (this.chalkTalkLexer.hasNext() &&
+                this.chalkTalkLexer.hasNextNext() &&
+                this.chalkTalkLexer.peek().type === ChalkTalkTokenType.Name &&
+                this.chalkTalkLexer.peekPeek().type === ChalkTalkTokenType.Colon)
             if (!isSec) {
                 return null
             }
@@ -164,7 +175,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
         private fun argument(): Argument? {
             val literal = token(ChalkTalkTokenType.Statement)
-                    ?: token(ChalkTalkTokenType.String)
+                ?: token(ChalkTalkTokenType.String)
             if (literal != null) {
                 return Argument(literal)
             }
@@ -177,10 +188,10 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             val target = tupleItem()
             if (target == null) {
                 errors.add(
-                        ParseError(
-                                "Expected a name, abstraction, tuple, aggregate, or assignment",
-                                -1, -1
-                        )
+                    ParseError(
+                        "Expected a name, abstraction, tuple, aggregate, or assignment",
+                        -1, -1
+                    )
                 )
                 val tok = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
                 return Argument(tok)
@@ -198,10 +209,10 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             var rhs: ChalkTalkToken?
             if (!this.chalkTalkLexer.hasNext()) {
                 errors.add(
-                        ParseError(
-                                "A = must be followed by an argument",
-                                equals.row, equals.column
-                        )
+                    ParseError(
+                        "A = must be followed by an argument",
+                        equals.row, equals.column
+                    )
                 )
                 rhs = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
             } else {
@@ -210,8 +221,8 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                     rhs = maybeRhs
                 } else {
                     ParseError(
-                            "The right hand side of a = must be a string",
-                            equals.row, equals.column
+                        "The right hand side of a = must be a string",
+                        equals.row, equals.column
                     )
                     rhs = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
                 }
@@ -229,10 +240,10 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             var rhs = assignmentRhs()
             if (rhs == null) {
                 errors.add(
-                        ParseError(
-                                "A := must be followed by a argument",
-                                colonEquals.row, colonEquals.column
-                        )
+                    ParseError(
+                        "A := must be followed by a argument",
+                        colonEquals.row, colonEquals.column
+                    )
                 )
                 rhs = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
             }
@@ -268,7 +279,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 if (this.chalkTalkLexer.hasNext()) {
                     val peek = this.chalkTalkLexer.next()
                     this.errors.add(
-                            ParseError("Expected a name, but found ${peek.text}", peek.row, peek.column)
+                        ParseError("Expected a name, but found ${peek.text}", peek.row, peek.column)
                     )
                 } else {
                     this.errors.add(ParseError("Expected a name, but found the end of input", -1, -1))
@@ -287,7 +298,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
             val leftParen = expect(ChalkTalkTokenType.LParen)
             while (this.chalkTalkLexer.hasNext() &&
-                    this.chalkTalkLexer.peek().type != ChalkTalkTokenType.RParen
+                this.chalkTalkLexer.peek().type != ChalkTalkTokenType.RParen
             ) {
                 if (items.isNotEmpty()) {
                     expect(ChalkTalkTokenType.Comma)
@@ -296,10 +307,10 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 val item = tupleItem()
                 if (item == null) {
                     this.errors.add(
-                            ParseError(
-                                    "Encountered a non-tuple item in a tuple",
-                                    leftParen.row, leftParen.column
-                            )
+                        ParseError(
+                            "Encountered a non-tuple item in a tuple",
+                            leftParen.row, leftParen.column
+                        )
                     )
                 } else {
                     items.add(item)
@@ -328,7 +339,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
                 if (!this.chalkTalkLexer.hasNext()) {
                     this.errors.add(
-                            ParseError("Expected a name to follow a comma", comma!!.row, comma.column)
+                        ParseError("Expected a name to follow a comma", comma!!.row, comma.column)
                     )
                     break
                 }
@@ -338,7 +349,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                     names.add(tok)
                 } else {
                     this.errors.add(
-                            ParseError("Expected a name but found '${tok.text}'", tok.row, tok.column)
+                        ParseError("Expected a name but found '${tok.text}'", tok.row, tok.column)
                     )
                 }
             }
@@ -351,7 +362,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
         private fun hasHas(type: ChalkTalkTokenType, thenType: ChalkTalkTokenType): Boolean {
             return has(type) &&
-                    this.chalkTalkLexer.hasNextNext() && this.chalkTalkLexer.peekPeek().type == thenType
+                this.chalkTalkLexer.hasNextNext() && this.chalkTalkLexer.peekPeek().type == thenType
         }
 
         private fun expect(type: ChalkTalkTokenType): ChalkTalkToken {
@@ -362,13 +373,13 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                     ChalkTalkToken("", ChalkTalkTokenType.Invalid, -1, -1)
                 }
                 errors.add(
-                        ParseError(
-                                "Expected a token of type "
-                                        + type
-                                        + " but "
-                                        + "found "
-                                        + peek.type, peek.row, peek.column
-                        )
+                    ParseError(
+                        "Expected a token of type " +
+                            type +
+                            " but " +
+                            "found " +
+                            peek.type, peek.row, peek.column
+                    )
                 )
                 return ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
             }

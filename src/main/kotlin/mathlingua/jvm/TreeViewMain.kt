@@ -29,7 +29,16 @@ import java.awt.BorderLayout
 import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
-import javax.swing.*
+import javax.swing.JFrame
+import javax.swing.JPanel
+import javax.swing.JScrollPane
+import javax.swing.JSplitPane
+import javax.swing.JTabbedPane
+import javax.swing.JTextArea
+import javax.swing.JTree
+import javax.swing.SwingUtilities
+import javax.swing.UIManager
+import javax.swing.WindowConstants
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
@@ -65,7 +74,7 @@ object TreeViewMain {
         outputArea.highlightCurrentLine = false
         outputArea.font = font
         outputArea.syntaxScheme
-                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
         val inputArea = RSyntaxTextArea(20, 60)
         inputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
@@ -73,7 +82,7 @@ object TreeViewMain {
         inputArea.highlightCurrentLine = false
         inputArea.font = font
         inputArea.syntaxScheme
-                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
         inputArea.addKeyListener(object : KeyListener {
             override fun keyTyped(keyEvent: KeyEvent) {}
 

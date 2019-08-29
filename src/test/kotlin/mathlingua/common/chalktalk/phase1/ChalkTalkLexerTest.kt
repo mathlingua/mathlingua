@@ -43,7 +43,7 @@ internal class ChalkTalkLexerTest {
             ),
             ChalkTalkToken(text = "\"some text\"", type = ChalkTalkTokenType.String, row = 0, column = 35),
             ChalkTalkToken(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 0, column = 36),
-            ChalkTalkToken(text = "[some id]", type = ChalkTalkTokenType.Id, row = 0, column = 46),
+            ChalkTalkToken(text = "[some id]", type = ChalkTalkTokenType.Id, row = 0, column = 38),
             ChalkTalkToken(text = ",", type = ChalkTalkTokenType.Comma, row = 0, column = 47),
             ChalkTalkToken(text = ":=", type = ChalkTalkTokenType.ColonEquals, row = 0, column = 48),
             ChalkTalkToken(text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
@@ -120,6 +120,44 @@ internal class ChalkTalkLexerTest {
             ChalkTalkToken(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 10, column = 0),
             ChalkTalkToken(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 10, column = 0),
             ChalkTalkToken(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 10, column = 0)
+        )
+
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors().size).isEqualTo(0)
+    }
+
+    @Test
+    fun `correctly handles ids with square braces`() {
+        val text = "[\\f[x, y]{a, b}]"
+        val lexer = newChalkTalkLexer(text)
+        val actual: MutableList<ChalkTalkToken> = ArrayList()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected = listOf(
+            ChalkTalkToken(text = "[\\f[x, y]{a, b}]", type = ChalkTalkTokenType.Id, row = 0, column = 0),
+            ChalkTalkToken(text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
+            ChalkTalkToken(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 1, column = 0)
+        )
+
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors().size).isEqualTo(0)
+    }
+
+    @Test
+    fun `correctly handles ids without square braces`() {
+        val text = "[abc]"
+        val lexer = newChalkTalkLexer(text)
+        val actual: MutableList<ChalkTalkToken> = ArrayList()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected = listOf(
+            ChalkTalkToken(text = "[abc]", type = ChalkTalkTokenType.Id, row = 0, column = 0),
+            ChalkTalkToken(text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
+            ChalkTalkToken(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 1, column = 0)
         )
 
         assertThat(actual).isEqualTo(expected)

@@ -55,11 +55,27 @@ abc
 -- End;
 
 
+-- Test: parses single name command with [] and {}
+-- Input:
+\cos[x]{a}
+-- Output:
+\cos[x]{a}
+-- End;
+
+
 -- Test: parses single name command with [] and multi args
 -- Input:
 \cos[x, y, z]
 -- Output:
 \cos[x, y, z]
+-- End;
+
+
+-- Test: parses single name command with [] and {} and multi args
+-- Input:
+\cos[x, y, z]{a, b, c}
+-- Output:
+\cos[x, y, z]{a, b, c}
 -- End;
 
 

@@ -16,6 +16,9 @@ jobs:
       - run:
           name: Run tests
           command: ./gradlew test
+      - run:
+          name: Check formatting
+          command: ./gradlew ktlintCheck
       - save_cache:
           paths:
             - ~/.gradle/wrapper

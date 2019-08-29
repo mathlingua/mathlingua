@@ -233,22 +233,34 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
                 this.chalkTalkTokens!!.add(ChalkTalkToken(stmt, ChalkTalkTokenType.Statement, line, column))
             } else if (c == '[') {
+                val startLine = line
+                val startColumn = column
+
                 var id = "" + c
-                while (i < text.length && text[i] != ']') {
-                    id += text[i++]
+                var braceCount = 1
+                while (i < text.length && text[i] != '\n') {
+                    val next = text[i++]
+                    id += next
                     column++
+
+                    if (next == '[') {
+                        braceCount++
+                    } else if (next == ']') {
+                        braceCount--
+                    }
+
+                    if (braceCount == 0) {
+                        break
+                    }
                 }
+
                 if (i == text.length) {
                     errors.add(
                         ParseError("Expected a terminating ]", line, column)
                     )
                     id += "]"
-                } else {
-                    // include the terminating ]
-                    id += text[i++]
-                    column++
                 }
-                this.chalkTalkTokens!!.add(ChalkTalkToken(id, ChalkTalkTokenType.Id, line, column))
+                this.chalkTalkTokens!!.add(ChalkTalkToken(id, ChalkTalkTokenType.Id, startLine, startColumn))
             } else if (c != ' ') { // spaces are ignored
                 errors.add(
                     ParseError(

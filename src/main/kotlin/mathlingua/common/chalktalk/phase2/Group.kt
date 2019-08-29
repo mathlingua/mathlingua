@@ -18,8 +18,21 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.*
-import mathlingua.common.textalk.*
+import mathlingua.common.chalktalk.phase1.ast.AstUtils
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.common.chalktalk.phase1.ast.Group
+import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.CommandPart
+import mathlingua.common.textalk.ExpressionNode
+import mathlingua.common.textalk.GroupNode
+import mathlingua.common.textalk.NamedGroupNode
+import mathlingua.common.textalk.NodeType
+import mathlingua.common.textalk.ParametersNode
+import mathlingua.common.textalk.SubSupNode
+import mathlingua.common.textalk.TextNode
 
 data class DefinesGroup(
     val signature: String?,
@@ -325,9 +338,13 @@ fun <G, S, E> validateDefinesLikeGroup(
     endSectionName: String,
     validateEndSection: (section: Section) -> Validation<E>,
     buildGroup: (
-        signature: String?, id: Statement, definesLike: S,
-        assuming: AssumingSection?, end: E,
-        alias: AliasSection?, metadata: MetaDataSection?
+        signature: String?,
+        id: Statement,
+        definesLike: S,
+        assuming: AssumingSection?,
+        end: E,
+        alias: AliasSection?,
+        metadata: MetaDataSection?
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()

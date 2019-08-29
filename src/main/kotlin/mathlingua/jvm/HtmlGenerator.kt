@@ -21,11 +21,11 @@ object HtmlGenerator {
     fun main(args: Array<String>) {
         val text = MATHLINGUA_SOURCE_FILE.readText()
         val parts = text.split("\n\n")
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
 
         println(
-                """
+            """
                 <!doctype html>
                 <html lang="en">
                 <head>
@@ -61,7 +61,7 @@ object HtmlGenerator {
 
         for (part in parts) {
             println(
-                    """
+                """
   <div class="centered">
     <pre class="padded">
         <code class="yaml">
@@ -74,7 +74,7 @@ $part
         }
 
         println(
-                """
+            """
             </body>
             </html>
         """.trimIndent()

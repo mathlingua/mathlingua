@@ -1,4 +1,3 @@
-
 <!doctype html>
 <html lang="en">
 <head>
@@ -10,6 +9,7 @@
       gtag('js', new Date());
 
       gtag('config', 'UA-146435719-1');
+
     </script>
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -25,6 +25,7 @@
         p {
             margin-bottom: 1.2em;
         }
+
     </style>
     <title>About</title>
 </head>
@@ -45,7 +46,7 @@
         <h2>The Problem </h2>
         <p>
             Theorems, definitions, axioms, and conjectures are the tools
-            of mathematics.  However, they are recorded in books, papers,
+            of mathematics. However, they are recorded in books, papers,
             and websites spread across the internet, and can be difficult to
             find.
         </p>
@@ -60,7 +61,7 @@
         </p>
         <p>
             Why does one need to search for articles, related to the theorem, and
-            read through the articles hoping to find the theorem?  Why does one need to
+            read through the articles hoping to find the theorem? Why does one need to
             know that name of the theorem to find it?
         </p>
         <h2>The Solution</h2>
@@ -81,7 +82,7 @@
         </p>
         <p>
             It could expand definitions inline in a result to make the result easier to
-            understand.  It could find similarities between results.  It could have
+            understand. It could find similarities between results. It could have
             direct links from a theorem/definition, back to the books, articles, and
             papers that talk about it.
         </p>
@@ -97,9 +98,9 @@
         <h2>How You Can Help</h2>
         <p>
             The MathLingua system is a community driven effort to populate the system
-            with mathematical statements.  By encoding your work, or the work of others
+            with mathematical statements. By encoding your work, or the work of others
             in the system, everyone can more easily find the work along with links
-            to the original paper or book.  This will help people find each others work
+            to the original paper or book. This will help people find each others work
             so that they can use them, build on them, and cite them.
         </p>
         <p>
@@ -113,7 +114,7 @@
             subset of the real numbers is compact if and only if it is closed
             and bounded.
         </p>
-<pre><code class="yaml">Result:
+        <pre><code class="yaml">Result:
 . for: X
   where:
   . 'X \subset \reals'
@@ -135,15 +136,15 @@ Metadata:
         <p>
             That, is the outermost group is:
         </p>
-<pre><code class="yaml">Result:
+        <pre><code class="yaml">Result:
 Metadata:
 </code></pre>
         <p>
-            Consisting of the sections <b>Result:</b> and <b>Metadata:</b>.  The
+            Consisting of the sections <b>Result:</b> and <b>Metadata:</b>. The
             <b>Result:</b> section has a single argument, indicated by the period
-            (.) and indentation.  This argument is the group:
+            (.) and indentation. This argument is the group:
         </p>
-<pre><code class="yaml">for:
+        <pre><code class="yaml">for:
 where:
 then:
 </code></pre>
@@ -168,7 +169,7 @@ then:
         <p>
             The <b>then:</b> section has a single element, which is the following group:
         </p>
-<pre><code class="yaml">iff:
+        <pre><code class="yaml">iff:
 then:
 </code></pre>
         <p>
@@ -184,7 +185,7 @@ then:
         <h3>The Statement Structure</h3>
         <p>
             Note that many of the arguments to section in the above example are
-            <i>statements</i> that are enclosed in single quotes.  An example is the
+            <i>statements</i> that are enclosed in single quotes. An example is the
             statement <i>'X is \real.closed \real.bounded \set'</i>.
         </p>
         <p>

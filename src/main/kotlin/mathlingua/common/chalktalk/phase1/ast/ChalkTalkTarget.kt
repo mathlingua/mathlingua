@@ -41,7 +41,7 @@ sealed class TupleItem : ChalkTalkTarget()
 sealed class AssignmentRhs : TupleItem()
 
 data class ChalkTalkToken(val text: String, val type: ChalkTalkTokenType, val row: Int, val column: Int) :
-        AssignmentRhs() {
+    AssignmentRhs() {
 
     override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
     }
@@ -72,7 +72,7 @@ data class Mapping(val lhs: ChalkTalkToken, val rhs: ChalkTalkToken) : ChalkTalk
 }
 
 data class Group(val sections: List<Section>, val id: ChalkTalkToken?) :
-        ChalkTalkTarget() {
+    ChalkTalkTarget() {
 
     override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
         if (id != null) {

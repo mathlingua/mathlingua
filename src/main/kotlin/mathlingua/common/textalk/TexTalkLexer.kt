@@ -109,9 +109,9 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 this.tokens.add(TexTalkToken(op.toString(), TexTalkTokenType.Operator, line, column))
             } else if (c != ' ') {
                 this.errors.add(
-                        ParseError(
-                                "Unrecognized character $c", line, column
-                        )
+                    ParseError(
+                        "Unrecognized character $c", line, column
+                    )
                 )
             }
         }
@@ -140,8 +140,8 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
     }
 
     private fun isOpChar(c: Char): Boolean {
-        return (c == '!' || c == '@' || c == '%' || c == '&' || c == '*' || c == '-' || c == '+'
-                || c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
+        return (c == '!' || c == '@' || c == '%' || c == '&' || c == '*' || c == '-' || c == '+' ||
+            c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
     }
 
     private fun isLetterOrDigit(c: Char): Boolean {

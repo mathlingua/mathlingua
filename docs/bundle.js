@@ -4,7 +4,10 @@ if (typeof kotlin === 'undefined') {
 var bundle = function (_, Kotlin) {
   'use strict';
   var Kind_CLASS = Kotlin.Kind.CLASS;
+  var Unit = Kotlin.kotlin.Unit;
   var ArrayList_init = Kotlin.kotlin.collections.ArrayList_init_287e2$;
+  var LinkedHashSet_init = Kotlin.kotlin.collections.LinkedHashSet_init_287e2$;
+  var copyToArray = Kotlin.kotlin.collections.copyToArray;
   var RuntimeException_init = Kotlin.kotlin.RuntimeException_init_pdl1vj$;
   var RuntimeException = Kotlin.kotlin.RuntimeException;
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
@@ -18,13 +21,14 @@ var bundle = function (_, Kotlin) {
   var listOf = Kotlin.kotlin.collections.listOf_mh5how$;
   var toString = Kotlin.toString;
   var StringBuilder_init = Kotlin.kotlin.text.StringBuilder_init;
-  var Unit = Kotlin.kotlin.Unit;
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
   var equals = Kotlin.equals;
   var getCallableRef = Kotlin.getCallableRef;
   var listOf_0 = Kotlin.kotlin.collections.listOf_i5x0yv$;
   var throwCCE = Kotlin.throwCCE;
+  var first = Kotlin.kotlin.collections.first_7wnvza$;
+  var emptySet = Kotlin.kotlin.collections.emptySet_287e2$;
   var collectionSizeOrDefault = Kotlin.kotlin.collections.collectionSizeOrDefault_ba2ldo$;
   var ArrayList_init_0 = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
   var HashMap_init = Kotlin.kotlin.collections.HashMap_init_q3lmfv$;
@@ -134,11 +138,29 @@ var bundle = function (_, Kotlin) {
     allErrors.addAll_brywnq$(documentValidation.errors);
     return new MathLinguaResult(documentValidation.value, allErrors);
   };
+  MathLingua.prototype.findAllSignatures_mu0sga$ = function (node) {
+    var signatures = LinkedHashSet_init();
+    findAllSignaturesImpl(node, signatures);
+    return copyToArray(signatures);
+  };
   MathLingua.$metadata$ = {
     kind: Kind_CLASS,
     simpleName: 'MathLingua',
     interfaces: []
   };
+  function findAllSignaturesImpl$lambda(closure$signatures) {
+    return function (it) {
+      findAllSignaturesImpl(it, closure$signatures);
+      return Unit;
+    };
+  }
+  function findAllSignaturesImpl(node, signatures) {
+    if (Kotlin.isType(node, Statement)) {
+      var sigs = findAllStatementSignatures(node);
+      signatures.addAll_brywnq$(sigs);
+    }
+    node.forEach_ye21ev$(findAllSignaturesImpl$lambda(signatures));
+  }
   function ParseError(message, row, column) {
     RuntimeException_init(message, this);
     this.message_rj2t0z$_0 = message;
@@ -245,7 +267,7 @@ var bundle = function (_, Kotlin) {
     }
   };
   ChalkTalkLexerImpl.prototype.initialize_0 = function () {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7, tmp$_8, tmp$_9, tmp$_10, tmp$_11, tmp$_12, tmp$_13, tmp$_14, tmp$_15, tmp$_16, tmp$_17, tmp$_18, tmp$_19, tmp$_20, tmp$_21, tmp$_22, tmp$_23, tmp$_24, tmp$_25, tmp$_26, tmp$_27, tmp$_28, tmp$_29, tmp$_30, tmp$_31;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7, tmp$_8, tmp$_9, tmp$_10, tmp$_11, tmp$_12, tmp$_13, tmp$_14, tmp$_15, tmp$_16, tmp$_17, tmp$_18, tmp$_19, tmp$_20, tmp$_21, tmp$_22, tmp$_23, tmp$_24, tmp$_25;
     this.chalkTalkTokens_0 = ArrayList_init();
     if (!endsWith(this.text_0, '\n')) {
       this.text_0 = this.text_0 + '\n';
@@ -406,26 +428,29 @@ var bundle = function (_, Kotlin) {
         ensureNotNull(this.chalkTalkTokens_0).add_11rb$(new ChalkTalkToken(stmt, ChalkTalkTokenType$Statement_getInstance(), line, column));
       }
        else if (c === 91) {
+        var startLine = line;
+        var startColumn = column;
         var id = '' + String.fromCharCode(toBoxedChar(c));
-        while (i < this.text_0.length && this.text_0.charCodeAt(i) !== 93) {
-          tmp$_27 = id;
-          tmp$_26 = this.text_0;
-          tmp$_25 = (tmp$_24 = i, i = tmp$_24 + 1 | 0, tmp$_24);
-          id = tmp$_27 + String.fromCharCode(tmp$_26.charCodeAt(tmp$_25));
+        var braceCount = 1;
+        while (i < this.text_0.length && this.text_0.charCodeAt(i) !== 10) {
+          var next = this.text_0.charCodeAt((tmp$_24 = i, i = tmp$_24 + 1 | 0, tmp$_24));
+          id += String.fromCharCode(next);
           column = column + 1 | 0;
+          if (next === 91) {
+            braceCount = braceCount + 1 | 0;
+          }
+           else if (next === 93) {
+            tmp$_25 = braceCount, braceCount = tmp$_25 - 1 | 0;
+          }
+          if (braceCount === 0) {
+            break;
+          }
         }
         if (i === this.text_0.length) {
           this.errors_0.add_11rb$(new ParseError('Expected a terminating ]', line, column));
           id += ']';
         }
-         else {
-          tmp$_31 = id;
-          tmp$_30 = this.text_0;
-          tmp$_29 = (tmp$_28 = i, i = tmp$_28 + 1 | 0, tmp$_28);
-          id = tmp$_31 + String.fromCharCode(tmp$_30.charCodeAt(tmp$_29));
-          column = column + 1 | 0;
-        }
-        ensureNotNull(this.chalkTalkTokens_0).add_11rb$(new ChalkTalkToken(id, ChalkTalkTokenType$Id_getInstance(), line, column));
+        ensureNotNull(this.chalkTalkTokens_0).add_11rb$(new ChalkTalkToken(id, ChalkTalkTokenType$Id_getInstance(), startLine, startColumn));
       }
        else if (c !== 32) {
         this.errors_0.add_11rb$(new ParseError('Unrecognized character ' + String.fromCharCode(c), line, column));
@@ -3750,11 +3775,50 @@ var bundle = function (_, Kotlin) {
   }
   function getSignature(stmt) {
     var tmp$;
+    var sigs = findAllStatementSignatures(stmt);
+    if (sigs.size === 1) {
+      tmp$ = first(sigs);
+    }
+     else
+      tmp$ = null;
+    return tmp$;
+  }
+  function findAllStatementSignatures(stmt) {
     var rootValidation = stmt.texTalkRoot;
     if (!rootValidation.isSuccessful) {
-      return null;
+      return emptySet();
     }
     var expressionNode = ensureNotNull(rootValidation.value);
+    var signatures = LinkedHashSet_init();
+    findAllSignaturesImpl_0(expressionNode, signatures);
+    return signatures;
+  }
+  function findAllSignaturesImpl$lambda_0(closure$signatures) {
+    return function (it) {
+      findAllSignaturesImpl_0(it, closure$signatures);
+      return Unit;
+    };
+  }
+  function findAllSignaturesImpl_0(node, signatures) {
+    var tmp$;
+    if (Kotlin.isType(node, IsNode)) {
+      tmp$ = node.rhs.items.iterator();
+      while (tmp$.hasNext()) {
+        var expNode = tmp$.next();
+        var sig = getMergedCommandSignature(expNode);
+        if (sig != null) {
+          signatures.add_11rb$(sig);
+        }
+      }
+    }
+     else if (Kotlin.isType(node, Command)) {
+      var sig_0 = getCommandSignature(node).toCode();
+      signatures.add_11rb$(sig_0);
+    }
+    node.forEach_r5tgu3$(findAllSignaturesImpl$lambda_0(signatures));
+  }
+  function getMergedCommandSignature(expressionNode) {
+    var tmp$;
     var commandParts = ArrayList_init();
     tmp$ = expressionNode.children.iterator();
     while (tmp$.hasNext()) {
@@ -6654,6 +6718,7 @@ var bundle = function (_, Kotlin) {
   var package$common = package$mathlingua.common || (package$mathlingua.common = {});
   package$common.MathLinguaResult = MathLinguaResult;
   package$common.MathLingua = MathLingua;
+  package$common.findAllSignaturesImpl_paasgs$ = findAllSignaturesImpl;
   package$common.ParseError = ParseError;
   Object.defineProperty(Validation, 'Companion', {
     get: Validation$Companion_getInstance
@@ -6841,6 +6906,8 @@ var bundle = function (_, Kotlin) {
   package$phase2.validateDefinesLikeGroup_yceizu$ = validateDefinesLikeGroup;
   package$phase2.getOrNull_t9ocha$ = getOrNull;
   package$phase2.getSignature_c9m4n2$ = getSignature;
+  package$phase2.findAllStatementSignatures_c9m4n2$ = findAllStatementSignatures;
+  package$phase2.getMergedCommandSignature_pafvx0$ = getMergedCommandSignature;
   package$phase2.getCommandSignature_mwzhn3$ = getCommandSignature;
   package$phase2.callOrNull_h43q6c$ = callOrNull;
   Object.defineProperty(MetaDataSection, 'Companion', {

@@ -39,14 +39,8 @@ object HtmlDataGenerator {
             val keywords = mutableSetOf<String>()
             var href: String? = null
             var mobileHref: String? = null
-            var signature: String? = null
             if (result.document != null) {
                 findKeywords(keywords, result.document)
-                if (result.document.defines.isNotEmpty()) {
-                    signature = result.document.defines.first().signature
-                } else if (result.document.represents.isNotEmpty()) {
-                    signature = result.document.represents.first().signature
-                }
 
                 val metadata: MetaDataSection?
                 if (result.document.defines.isNotEmpty()) {
@@ -116,7 +110,6 @@ object HtmlDataGenerator {
                   "keywords": $builder,
                   "href": "$href",
                   "mobileHref": "$mobileHref",
-                  "signature": ${if (signature == null) null else "\"${signature.replace("\\", "\\\\")}\""}
                 },
             """.trimIndent()
             )

@@ -30,12 +30,9 @@ let BASE_COMPLETIONS = [
     { name: 'not:', value: 'not:' },
     { name: 'or:', value: 'or:' }
 ];
-for (const item of window.MATHLINGUA_DATA) {
-    const signature = item.signature;
-    if (signature) {
-        const val = signature.replace(/\\/, '');
-        BASE_COMPLETIONS.push({ name: val, value: val });
-    }
+for (const signature of window.MATHLINGUA_AUTOCOMPLETIONS) {
+    const val = signature.replace(/\\/, '');
+    BASE_COMPLETIONS.push({ name: val, value: val });
 }
 
 let COMPLETIONS = Array.from(BASE_COMPLETIONS);
@@ -75,20 +72,20 @@ function parse(input) {
 
 editor.on('change', () => {
     const ml = new bundle.mathlingua.common.MathLingua();
-    const result = ml['parse_61zpoe$'](editor.getValue());
+    const parse = ml['parse_61zpoe$'];
+    const findAllSignatures = ml['findAllSignatures_mu0sga$'];
+    const result = parse(editor.getValue());
 
     if (result.document) {
         // update the completions
-        const defines = result.document.defines['array_hd7ov6$_0']
         COMPLETIONS = Array.from(BASE_COMPLETIONS);
-        for (const def of defines) {
-            if (def.signature) {
-                const val = def.signature.replace(/\\/, '');
-                COMPLETIONS.push({
-                    name: val,
-                    value: val
-                });
-            }
+        const signatures = findAllSignatures(result.document);
+        for (const sig of signatures) {
+            const val = sig.replace(/\\/, '');
+            COMPLETIONS.push({
+                name: val,
+                value: val
+            });
         }
     }
 

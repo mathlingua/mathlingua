@@ -28,7 +28,9 @@ import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionNode
 import mathlingua.common.textalk.GroupNode
+import mathlingua.common.textalk.IsNode
 import mathlingua.common.textalk.NamedGroupNode
+import mathlingua.common.textalk.Node
 import mathlingua.common.textalk.NodeType
 import mathlingua.common.textalk.ParametersNode
 import mathlingua.common.textalk.SubSupNode
@@ -457,12 +459,41 @@ fun <K, V> Map<K, V>.getOrNull(key: K): V? {
 }
 
 fun getSignature(stmt: Statement): String? {
+    val sigs = findAllStatementSignatures(stmt)
+    return if (sigs.size == 1) {
+        sigs.first()
+    } else null
+}
+
+fun findAllStatementSignatures(stmt: Statement): Set<String> {
     val rootValidation = stmt.texTalkRoot
     if (!rootValidation.isSuccessful) {
-        return null
+        return emptySet()
     }
 
     val expressionNode = rootValidation.value!!
+    val signatures = mutableSetOf<String>()
+    findAllSignaturesImpl(expressionNode, signatures)
+    return signatures
+}
+
+private fun findAllSignaturesImpl(node: Node, signatures: MutableSet<String>) {
+    if (node is IsNode) {
+        for (expNode in node.rhs.items) {
+            val sig = getMergedCommandSignature(expNode)
+            if (sig != null) {
+                signatures.add(sig)
+            }
+        }
+    } else if (node is Command) {
+        val sig = getCommandSignature(node).toCode()
+        signatures.add(sig);
+    }
+
+    node.forEach { findAllSignaturesImpl(it, signatures) }
+}
+
+fun getMergedCommandSignature(expressionNode: ExpressionNode): String? {
     val commandParts = mutableListOf<CommandPart>()
     for (child in expressionNode.children) {
         if (child is Command) {

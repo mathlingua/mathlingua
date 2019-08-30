@@ -58,9 +58,12 @@ fun main(args: Array<String>) {
         }
     }
 
+    val allSignatures = mutableSetOf<String>()
+    val defSignatures = mutableSetOf<String>()
+
     val allErrorInfo = mutableListOf<ErrorInfo>()
     for (f in files) {
-        allErrorInfo.addAll(processFile(f))
+        allErrorInfo.addAll(processFile(f, allSignatures, defSignatures))
     }
 
     if (printJson) {
@@ -82,6 +85,16 @@ fun main(args: Array<String>) {
         } else {
             println("FAILURE: Found ${allErrorInfo.size} errors from ${files.size} files")
         }
+    }
+
+    val notDefinedSignatures = allSignatures.minus(defSignatures)
+    if (notDefinedSignatures.isNotEmpty()) {
+        println("WARNING: The following ${notDefinedSignatures.size} " +
+            "signatures are used but not defined:")
+    }
+
+    for (sig in notDefinedSignatures) {
+        println("  $sig")
     }
 
     exitProcess(if (allErrorInfo.isEmpty()) 0 else 1)
@@ -109,11 +122,25 @@ fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>): ErrorIn
     )
 }
 
-fun processFile(file: File): List<ErrorInfo> {
+fun processFile(file: File, allSignatures: MutableSet<String>, defSignatures: MutableSet<String>): List<ErrorInfo> {
     val input = String(file.readBytes())
     val inputLines = input.split("\n")
 
     val result = MathLingua().parse(input)
+
+    if (result.document != null) {
+        val ml = MathLingua()
+        allSignatures.addAll(ml.findAllSignatures(result.document))
+
+        for (def in result.document.defines) {
+            defSignatures.addAll(ml.findAllSignatures(def))
+        }
+
+        for (rep in result.document.represents) {
+            defSignatures.addAll(ml.findAllSignatures(rep))
+        }
+    }
+
     return result.errors.map {
         getErrorInfo(it, file, inputLines)
     }

@@ -487,7 +487,7 @@ private fun findAllSignaturesImpl(node: Node, signatures: MutableSet<String>) {
         }
     } else if (node is Command) {
         val sig = getCommandSignature(node).toCode()
-        signatures.add(sig);
+        signatures.add(sig)
     }
 
     node.forEach { findAllSignaturesImpl(it, signatures) }

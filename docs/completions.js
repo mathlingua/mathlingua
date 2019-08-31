@@ -53,7 +53,6 @@ window.MATHLINGUA_AUTOCOMPLETIONS = window.MATHLINGUA_AUTOCOMPLETIONS || [
 "\\binary.operator:on{?}",
 "\\abelian",
 "\\matrix{?, ?}:over{?}",
-"\\positive",
 "\\identity",
 "\\matrix{?}",
 "\\matrix",

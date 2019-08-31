@@ -6221,7 +6221,7 @@ var bundle = function (_, Kotlin) {
     this.errors_rts390$_0 = null;
     this.tokens_0 = null;
     this.index_0 = 0;
-    var tmp$, tmp$_0, tmp$_1;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2;
     this.errors_rts390$_0 = ArrayList_init();
     this.tokens_0 = ArrayList_init();
     this.index_0 = 0;
@@ -6281,10 +6281,17 @@ var bundle = function (_, Kotlin) {
        else if (c === 44) {
         this.tokens_0.add_11rb$(new TexTalkToken('' + String.fromCharCode(toBoxedChar(c)), TexTalkTokenType$Comma_getInstance(), line, column));
       }
+       else if (c === 63) {
+        this.tokens_0.add_11rb$(new TexTalkToken(String.fromCharCode(c), TexTalkTokenType$Identifier_getInstance(), line, column));
+      }
        else if (this.isLetterOrDigit_0(c)) {
         var id = new StringBuilder('' + String.fromCharCode(toBoxedChar(c)));
         while (i < text.length && this.isLetterOrDigit_0(text.charCodeAt(i))) {
           id.append_s8itvh$(text.charCodeAt((tmp$_0 = i, i = tmp$_0 + 1 | 0, tmp$_0)));
+          column = column + 1 | 0;
+        }
+        if (i < text.length && text.charCodeAt(i) === 63) {
+          id.append_s8itvh$(text.charCodeAt((tmp$_1 = i, i = tmp$_1 + 1 | 0, tmp$_1)));
           column = column + 1 | 0;
         }
         this.tokens_0.add_11rb$(new TexTalkToken(id.toString(), TexTalkTokenType$Identifier_getInstance(), line, column));
@@ -6292,7 +6299,7 @@ var bundle = function (_, Kotlin) {
        else if (this.isOpChar_0(c)) {
         var op = new StringBuilder('' + String.fromCharCode(toBoxedChar(c)));
         while (i < text.length && this.isOpChar_0(text.charCodeAt(i))) {
-          op.append_s8itvh$(text.charCodeAt((tmp$_1 = i, i = tmp$_1 + 1 | 0, tmp$_1)));
+          op.append_s8itvh$(text.charCodeAt((tmp$_2 = i, i = tmp$_2 + 1 | 0, tmp$_2)));
           column = column + 1 | 0;
         }
         this.tokens_0.add_11rb$(new TexTalkToken(op.toString(), TexTalkTokenType$Operator_getInstance(), line, column));

@@ -17,13 +17,56 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.common.chalktalk.phase1.ast.Mapping
+import mathlingua.common.chalktalk.phase2.MappingNode
 import mathlingua.common.chalktalk.phase2.MetaDataSection
 import mathlingua.common.chalktalk.phase2.Phase2Node
+import java.lang.NumberFormatException
 
 object HtmlDataGenerator {
     @JvmStatic
     fun main(args: Array<String>) {
         val text = MATHLINGUA_SOURCE_FILE.readText()
+
+        val resultForSources = MathLingua().parse(text)
+        val srcIdToUrlMap = mutableMapOf<String, String>()
+        val srcIdToOffsetMap = mutableMapOf<String, Int>()
+        if (resultForSources.document != null) {
+            for (src in resultForSources.document.sources) {
+                var offset = 0
+                var url: String? = null
+                for (mapping in src.sourceSection.mappings) {
+                    if (mapping.mapping.lhs.text == "offset") {
+                        val rawText = mapping.mapping.rhs.text
+                        // the rawText is of the form "..."
+                        // so the " and " need to be removed
+                        val numText = rawText.substring(1, rawText.length - 1)
+                        try {
+                            offset = Integer.parseInt(numText)
+                        } catch (err: NumberFormatException) {
+                            throw NumberFormatException("Invalid offset '$numText'.  Expected an integer.")
+                        }
+                    }
+
+                    if (mapping.mapping.lhs.text == "url") {
+                        val rawText = mapping.mapping.rhs.text
+                        // the text is of the form "..."
+                        // so the " and " need to be removed
+                        url = rawText.substring(1, rawText.length - 1)
+                    }
+                }
+
+                val key = "@${src.id}"
+                srcIdToOffsetMap[key] = offset
+
+                if (url != null) {
+                    srcIdToUrlMap[key] = url
+                }
+            }
+        }
+
         val parts = text.split("\n\n")
             .map { it.trim() }
             .filter { it.isNotBlank() }
@@ -53,6 +96,22 @@ object HtmlDataGenerator {
                     metadata = result.document.axioms.first().metaDataSection
                 } else if (result.document.conjectures.isNotEmpty()) {
                     metadata = result.document.conjectures.first().metaDataSection
+                } else if (result.document.sources.isNotEmpty()) {
+                    // make a fake metadata section for sources so that
+                    // they have an href that points to the first page of
+                    // the source
+                    val src = result.document.sources.first()
+                    val key = "@${src.id}"
+                    if (srcIdToUrlMap.containsKey(key)) {
+                        metadata = MetaDataSection(listOf(
+                            MappingNode(Mapping(
+                                ChalkTalkToken("reference", ChalkTalkTokenType.String, -1, -1),
+                                ChalkTalkToken("\"source: $key; page: 1\"", ChalkTalkTokenType.String, -1, -1)
+                            ))
+                        ))
+                    } else {
+                        metadata = null
+                    }
                 } else {
                     metadata = null
                 }
@@ -68,23 +127,25 @@ object HtmlDataGenerator {
                             for (rhsPart in rhsParts) {
                                 val keyValue = rhsPart.split(":")
                                 if (keyValue.size == 2) {
-                                    val key = keyValue[0].trim().toLowerCase()
-                                    val value = keyValue[1].trim().toLowerCase()
-                                    map.put(key, value)
+                                    val key = keyValue[0].trim()
+                                    val value = keyValue[1].trim()
+                                    map[key] = value
                                 }
                             }
 
-                            if (map.containsKey("source") && map.get("source") == "@aata") {
-                                val ref = "http://abstract.ups.edu/download/aata-20190710-print.pdf"
+                            if (map.containsKey("source") && srcIdToUrlMap.containsKey(map["source"])) {
+                                val srcKey = map["source"]
+                                val ref = srcIdToUrlMap[srcKey]
                                 href = ref
                                 mobileHref = ref
                                 if (map.containsKey("page")) {
-                                    val pageNum = Integer.parseInt(map.get("page"))
+                                    val offset = srcIdToOffsetMap[srcKey]!!
+                                    val pageNum = Integer.parseInt(map["page"])
                                     // the page labeled 1 in the pdf is the 15th page of
                                     // the pdf document
-                                    href += "#page=${pageNum + 14}"
+                                    href += "#page=${pageNum + offset}"
                                     // mobile browsers expect no "=" to be present
-                                    mobileHref += "#page${pageNum + 14}"
+                                    mobileHref += "#page${pageNum + offset}"
                                 }
                             }
                         }

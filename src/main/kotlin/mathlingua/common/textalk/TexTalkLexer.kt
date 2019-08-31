@@ -93,9 +93,15 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Caret, line, column))
             } else if (c == ',') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Comma, line, column))
+            } else if (c == '?') {
+                this.tokens.add(TexTalkToken("$c", TexTalkTokenType.Identifier, line, column))
             } else if (isLetterOrDigit(c)) {
                 val id = StringBuilder("" + c)
                 while (i < text.length && isLetterOrDigit(text[i])) {
+                    id.append(text[i++])
+                    column++
+                }
+                if (i < text.length && text[i] == '?') {
                     id.append(text[i++])
                     column++
                 }

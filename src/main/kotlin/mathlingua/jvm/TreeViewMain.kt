@@ -16,6 +16,7 @@
 
 package mathlingua.jvm
 
+import mathlingua.common.MathLingua
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
@@ -54,7 +55,7 @@ object TreeViewMain {
             println("Could not set the look and feel to Nimbus: $e")
         }
 
-        val fontSize = 22
+        val fontSize = 16
         val fontName = "Brass Mono"
         val font = Font(fontName, Font.PLAIN, fontSize)
         val boldFont = Font(fontName, Font.BOLD, fontSize)
@@ -64,6 +65,9 @@ object TreeViewMain {
 
         val tokenList = JTextArea(20, 20)
         tokenList.font = font
+
+        val signaturesList = JTextArea(20, 20)
+        signaturesList.font = font
 
         val errorArea = JTextArea()
         errorArea.font = font
@@ -148,8 +152,17 @@ object TreeViewMain {
 
                     if (doc == null) {
                         outputArea.text = ""
+                        signaturesList.text = ""
                         phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
                     } else {
+                        val sigBuilder = StringBuilder()
+                        val ml = MathLingua()
+                        for (sig in ml.findAllSignatures(doc)) {
+                            sigBuilder.append(sig)
+                            sigBuilder.append('\n')
+                        }
+                        signaturesList.text = sigBuilder.toString()
+
                         outputArea.text = doc.toCode(false, 0)
                         phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
                         val numRows = phase2Tree.rowCount
@@ -178,6 +191,7 @@ object TreeViewMain {
         treeTabbedPane.addTab("Phase2", JScrollPane(phase2Tree))
         treeTabbedPane.addTab("Phase1", JScrollPane(phase1Tree))
         treeTabbedPane.addTab("Tokens", JScrollPane(tokenList))
+        treeTabbedPane.addTab("Signatures", JScrollPane(signaturesList))
 
         val treePane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
         treePane.dividerLocation = 900

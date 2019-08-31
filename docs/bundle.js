@@ -27,6 +27,7 @@ var bundle = function (_, Kotlin) {
   var getCallableRef = Kotlin.getCallableRef;
   var listOf_0 = Kotlin.kotlin.collections.listOf_i5x0yv$;
   var throwCCE = Kotlin.throwCCE;
+  var emptyList = Kotlin.kotlin.collections.emptyList_287e2$;
   var first = Kotlin.kotlin.collections.first_7wnvza$;
   var emptySet = Kotlin.kotlin.collections.emptySet_287e2$;
   var collectionSizeOrDefault = Kotlin.kotlin.collections.collectionSizeOrDefault_ba2ldo$;
@@ -34,7 +35,6 @@ var bundle = function (_, Kotlin) {
   var HashMap_init = Kotlin.kotlin.collections.HashMap_init_q3lmfv$;
   var Iterable = Kotlin.kotlin.collections.Iterable;
   var StringBuilder = Kotlin.kotlin.text.StringBuilder;
-  var emptyList = Kotlin.kotlin.collections.emptyList_287e2$;
   var HashSet_init = Kotlin.kotlin.collections.HashSet_init_287e2$;
   ParseError.prototype = Object.create(RuntimeException.prototype);
   ParseError.prototype.constructor = ParseError;
@@ -2993,13 +2993,14 @@ var bundle = function (_, Kotlin) {
     simpleName: 'Phase2Node',
     interfaces: []
   };
-  function Document(defines, represents, results, axioms, conjectures) {
+  function Document(defines, represents, results, axioms, conjectures, sources) {
     Document$Companion_getInstance();
     this.defines = defines;
     this.represents = represents;
     this.results = results;
     this.axioms = axioms;
     this.conjectures = conjectures;
+    this.sources = sources;
   }
   Document.prototype.forEach_ye21ev$ = function (fn) {
     var tmp$;
@@ -3032,9 +3033,15 @@ var bundle = function (_, Kotlin) {
       var element_3 = tmp$_3.next();
       fn(element_3);
     }
+    var tmp$_4;
+    tmp$_4 = this.sources.iterator();
+    while (tmp$_4.hasNext()) {
+      var element_4 = tmp$_4.next();
+      fn(element_4);
+    }
   };
   Document.prototype.toCode_eltk6l$ = function (isArg, indent) {
-    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4;
     var builder = StringBuilder_init();
     tmp$ = this.defines.iterator();
     while (tmp$.hasNext()) {
@@ -3066,6 +3073,12 @@ var bundle = function (_, Kotlin) {
       builder.append_gw00v9$(grp_3.toCode_eltk6l$(false, 0));
       builder.append_gw00v9$('\n\n\n');
     }
+    tmp$_4 = this.sources.iterator();
+    while (tmp$_4.hasNext()) {
+      var src = tmp$_4.next();
+      builder.append_gw00v9$(src.toCode_eltk6l$(false, 0));
+      builder.append_gw00v9$('\n\n\n');
+    }
     return builder.toString();
   };
   function Document$Companion() {
@@ -3084,6 +3097,7 @@ var bundle = function (_, Kotlin) {
     var results = ArrayList_init();
     var axioms = ArrayList_init();
     var conjectures = ArrayList_init();
+    var sources = ArrayList_init();
     var groups = node.component1();
     tmp$ = groups.iterator();
     while (tmp$.hasNext()) {
@@ -3133,15 +3147,24 @@ var bundle = function (_, Kotlin) {
           errors.addAll_brywnq$(representsValidation.errors);
         }
       }
+       else if (SourceGroup$Companion_getInstance().isSourceGroup_rk66c5$(group)) {
+        var sourceValidation = SourceGroup$Companion_getInstance().validate_hzi7mn$(group);
+        if (sourceValidation.isSuccessful) {
+          sources.add_11rb$(ensureNotNull(sourceValidation.value));
+        }
+         else {
+          errors.addAll_brywnq$(sourceValidation.errors);
+        }
+      }
        else {
-        errors.add_11rb$(new ParseError('Expected a Result or Defines but found ' + group.toCode(), AstUtils_getInstance().getRow_rk66c5$(group), AstUtils_getInstance().getColumn_rk66c5$(group)));
+        errors.add_11rb$(new ParseError('Expected a top level group but found ' + group.toCode(), AstUtils_getInstance().getRow_rk66c5$(group), AstUtils_getInstance().getColumn_rk66c5$(group)));
       }
     }
     if (!errors.isEmpty()) {
       tmp$_0 = Validation$Companion_getInstance().failure_rg4ulb$(errors);
     }
      else
-      tmp$_0 = Validation$Companion_getInstance().success_mh5how$(new Document(defines, represents, results, axioms, conjectures));
+      tmp$_0 = Validation$Companion_getInstance().success_mh5how$(new Document(defines, represents, results, axioms, conjectures, sources));
     return tmp$_0;
   };
   Document$Companion.$metadata$ = {
@@ -3176,11 +3199,14 @@ var bundle = function (_, Kotlin) {
   Document.prototype.component5 = function () {
     return this.conjectures;
   };
-  Document.prototype.copy_e3tw37$ = function (defines, represents, results, axioms, conjectures) {
-    return new Document(defines === void 0 ? this.defines : defines, represents === void 0 ? this.represents : represents, results === void 0 ? this.results : results, axioms === void 0 ? this.axioms : axioms, conjectures === void 0 ? this.conjectures : conjectures);
+  Document.prototype.component6 = function () {
+    return this.sources;
+  };
+  Document.prototype.copy_91x5o1$ = function (defines, represents, results, axioms, conjectures, sources) {
+    return new Document(defines === void 0 ? this.defines : defines, represents === void 0 ? this.represents : represents, results === void 0 ? this.results : results, axioms === void 0 ? this.axioms : axioms, conjectures === void 0 ? this.conjectures : conjectures, sources === void 0 ? this.sources : sources);
   };
   Document.prototype.toString = function () {
-    return 'Document(defines=' + Kotlin.toString(this.defines) + (', represents=' + Kotlin.toString(this.represents)) + (', results=' + Kotlin.toString(this.results)) + (', axioms=' + Kotlin.toString(this.axioms)) + (', conjectures=' + Kotlin.toString(this.conjectures)) + ')';
+    return 'Document(defines=' + Kotlin.toString(this.defines) + (', represents=' + Kotlin.toString(this.represents)) + (', results=' + Kotlin.toString(this.results)) + (', axioms=' + Kotlin.toString(this.axioms)) + (', conjectures=' + Kotlin.toString(this.conjectures)) + (', sources=' + Kotlin.toString(this.sources)) + ')';
   };
   Document.prototype.hashCode = function () {
     var result = 0;
@@ -3189,10 +3215,90 @@ var bundle = function (_, Kotlin) {
     result = result * 31 + Kotlin.hashCode(this.results) | 0;
     result = result * 31 + Kotlin.hashCode(this.axioms) | 0;
     result = result * 31 + Kotlin.hashCode(this.conjectures) | 0;
+    result = result * 31 + Kotlin.hashCode(this.sources) | 0;
     return result;
   };
   Document.prototype.equals = function (other) {
-    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.defines, other.defines) && Kotlin.equals(this.represents, other.represents) && Kotlin.equals(this.results, other.results) && Kotlin.equals(this.axioms, other.axioms) && Kotlin.equals(this.conjectures, other.conjectures)))));
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.defines, other.defines) && Kotlin.equals(this.represents, other.represents) && Kotlin.equals(this.results, other.results) && Kotlin.equals(this.axioms, other.axioms) && Kotlin.equals(this.conjectures, other.conjectures) && Kotlin.equals(this.sources, other.sources)))));
+  };
+  function SourceGroup(id, sourceSection) {
+    SourceGroup$Companion_getInstance();
+    this.id = id;
+    this.sourceSection = sourceSection;
+  }
+  SourceGroup.prototype.forEach_ye21ev$ = function (fn) {
+    fn(this.sourceSection);
+  };
+  SourceGroup.prototype.toCode_eltk6l$ = function (isArg, indent) {
+    return toCode_1(isArg, indent, new Statement(this.id, Validation$Companion_getInstance().failure_rg4ulb$(emptyList())), [this.sourceSection]);
+  };
+  function SourceGroup$Companion() {
+    SourceGroup$Companion_instance = this;
+  }
+  SourceGroup$Companion.prototype.isSourceGroup_rk66c5$ = function (node) {
+    return firstSectionMatchesName(node, 'Source');
+  };
+  SourceGroup$Companion.prototype.validate_hzi7mn$ = function (groupNode) {
+    var id = groupNode.id;
+    if (id == null) {
+      return Validation$Companion_getInstance().failure_rg4ulb$(listOf(new ParseError('A Source group must have an id', AstUtils_getInstance().getRow_rk66c5$(groupNode), AstUtils_getInstance().getColumn_rk66c5$(groupNode))));
+    }
+    var $receiver = id.text;
+    var endIndex = id.text.length - 1 | 0;
+    var idText = $receiver.substring(1, endIndex);
+    var errors = ArrayList_init();
+    if (!Regex_init('[a-zA-Z0-9]+').matches_6bul2c$(idText)) {
+      errors.add_11rb$(new ParseError('A source id can only contain numbers and letters', AstUtils_getInstance().getRow_rk66c5$(groupNode), AstUtils_getInstance().getColumn_rk66c5$(groupNode)));
+    }
+    var sections = groupNode.sections;
+    if (sections.size !== 1) {
+      errors.add_11rb$(new ParseError('Expected a singe section but found ' + sections.size, AstUtils_getInstance().getRow_rk66c5$(groupNode), AstUtils_getInstance().getColumn_rk66c5$(groupNode)));
+    }
+    var section = sections.get_za3lpa$(0);
+    var validation = SourceSection$Companion_getInstance().validate_3fjnpj$(section);
+    errors.addAll_brywnq$(validation.errors);
+    if (!errors.isEmpty()) {
+      return Validation$Companion_getInstance().failure_rg4ulb$(errors);
+    }
+    return Validation$Companion_getInstance().success_mh5how$(new SourceGroup(idText, ensureNotNull(validation.value)));
+  };
+  SourceGroup$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var SourceGroup$Companion_instance = null;
+  function SourceGroup$Companion_getInstance() {
+    if (SourceGroup$Companion_instance === null) {
+      new SourceGroup$Companion();
+    }
+    return SourceGroup$Companion_instance;
+  }
+  SourceGroup.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'SourceGroup',
+    interfaces: [Phase2Node]
+  };
+  SourceGroup.prototype.component1 = function () {
+    return this.id;
+  };
+  SourceGroup.prototype.component2 = function () {
+    return this.sourceSection;
+  };
+  SourceGroup.prototype.copy_eesg3d$ = function (id, sourceSection) {
+    return new SourceGroup(id === void 0 ? this.id : id, sourceSection === void 0 ? this.sourceSection : sourceSection);
+  };
+  SourceGroup.prototype.toString = function () {
+    return 'SourceGroup(id=' + Kotlin.toString(this.id) + (', sourceSection=' + Kotlin.toString(this.sourceSection)) + ')';
+  };
+  SourceGroup.prototype.hashCode = function () {
+    var result = 0;
+    result = result * 31 + Kotlin.hashCode(this.id) | 0;
+    result = result * 31 + Kotlin.hashCode(this.sourceSection) | 0;
+    return result;
+  };
+  SourceGroup.prototype.equals = function (other) {
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.id, other.id) && Kotlin.equals(this.sourceSection, other.sourceSection)))));
   };
   function DefinesGroup(signature, id, definesSection, assumingSection, meansSection, aliasSection, metaDataSection) {
     DefinesGroup$Companion_getInstance();
@@ -5217,6 +5323,95 @@ var bundle = function (_, Kotlin) {
     simpleName: 'Queue',
     interfaces: [Iterable]
   };
+  function SourceSection(mappings) {
+    SourceSection$Companion_getInstance();
+    this.mappings = mappings;
+  }
+  SourceSection.prototype.forEach_ye21ev$ = function (fn) {
+    var tmp$;
+    tmp$ = this.mappings.iterator();
+    while (tmp$.hasNext()) {
+      var element = tmp$.next();
+      fn(element);
+    }
+  };
+  SourceSection.prototype.toCode_eltk6l$ = function (isArg, indent) {
+    var tmp$;
+    var builder = StringBuilder_init();
+    builder.append_gw00v9$(indentedString(isArg, indent, 'Source:'));
+    builder.append_s8itvh$(10);
+    tmp$ = this.mappings.size;
+    for (var i = 0; i < tmp$; i++) {
+      builder.append_gw00v9$(this.mappings.get_za3lpa$(i).toCode_eltk6l$(true, indent + 2 | 0));
+      if (i !== (this.mappings.size - 1 | 0)) {
+        builder.append_s8itvh$(10);
+      }
+    }
+    return builder.toString();
+  };
+  function SourceSection$Companion() {
+    SourceSection$Companion_instance = this;
+  }
+  SourceSection$Companion.prototype.validate_3fjnpj$ = function (section) {
+    var tmp$, tmp$_0;
+    if (!equals(section.name.text, 'Source')) {
+      return Validation$Companion_getInstance().failure_rg4ulb$(listOf(new ParseError("Expected a 'Source' but found '" + section.name.text + "'", AstUtils_getInstance().getRow_rk66c5$(section), AstUtils_getInstance().getColumn_rk66c5$(section))));
+    }
+    var errors = ArrayList_init();
+    var mappings = ArrayList_init();
+    tmp$ = section.args.iterator();
+    while (tmp$.hasNext()) {
+      var arg = tmp$.next();
+      var validation = MappingNode$Companion_getInstance().validate_rk66c5$(arg);
+      if (validation.isSuccessful) {
+        mappings.add_11rb$(ensureNotNull(validation.value));
+      }
+       else {
+        errors.addAll_brywnq$(validation.errors);
+      }
+    }
+    if (!errors.isEmpty()) {
+      tmp$_0 = Validation$Companion_getInstance().failure_rg4ulb$(errors);
+    }
+     else {
+      tmp$_0 = Validation$Companion_getInstance().success_mh5how$(new SourceSection(mappings));
+    }
+    return tmp$_0;
+  };
+  SourceSection$Companion.$metadata$ = {
+    kind: Kind_OBJECT,
+    simpleName: 'Companion',
+    interfaces: []
+  };
+  var SourceSection$Companion_instance = null;
+  function SourceSection$Companion_getInstance() {
+    if (SourceSection$Companion_instance === null) {
+      new SourceSection$Companion();
+    }
+    return SourceSection$Companion_instance;
+  }
+  SourceSection.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'SourceSection',
+    interfaces: [Phase2Node]
+  };
+  SourceSection.prototype.component1 = function () {
+    return this.mappings;
+  };
+  SourceSection.prototype.copy_rz3npo$ = function (mappings) {
+    return new SourceSection(mappings === void 0 ? this.mappings : mappings);
+  };
+  SourceSection.prototype.toString = function () {
+    return 'SourceSection(mappings=' + Kotlin.toString(this.mappings) + ')';
+  };
+  SourceSection.prototype.hashCode = function () {
+    var result = 0;
+    result = result * 31 + Kotlin.hashCode(this.mappings) | 0;
+    return result;
+  };
+  SourceSection.prototype.equals = function (other) {
+    return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && Kotlin.equals(this.mappings, other.mappings))));
+  };
   function TargetListSection(targets) {
     this.targets = targets;
   }
@@ -6889,6 +7084,10 @@ var bundle = function (_, Kotlin) {
     get: Document$Companion_getInstance
   });
   package$phase2.Document = Document;
+  Object.defineProperty(SourceGroup, 'Companion', {
+    get: SourceGroup$Companion_getInstance
+  });
+  package$phase2.SourceGroup = SourceGroup;
   Object.defineProperty(DefinesGroup, 'Companion', {
     get: DefinesGroup$Companion_getInstance
   });
@@ -6999,6 +7198,10 @@ var bundle = function (_, Kotlin) {
   Object.defineProperty(package$phase2, 'SectionIdentifier', {
     get: SectionIdentifier_getInstance
   });
+  Object.defineProperty(SourceSection, 'Companion', {
+    get: SourceSection$Companion_getInstance
+  });
+  package$phase2.SourceSection = SourceSection;
   package$phase2.TargetListSection = TargetListSection;
   Object.defineProperty(package$phase2, 'TargetListValidator', {
     get: TargetListValidator_getInstance

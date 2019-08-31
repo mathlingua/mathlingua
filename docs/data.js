@@ -16,6 +16,18 @@
 
 window.MATHLINGUA_DATA = window.MATHLINGUA_DATA || [
 {
+  "text": "[AATA]\nSource:\n. name = \"Abstract Algebra Theory and Applications\"\n. author = \"Thomas W. Judson\"\n. date = \"July 10, 2019\"\n. url = \"http://abstract.ups.edu/download/aata-20190710-print.pdf\"\n. offset = \"14\"",
+  "keywords": ["name", "=", "abstract", "algebra", "theory", "and", "applications", "author", "thomas", "w", "judson", "date", "july", "10", "2019", "url", "http", "//abstract", "ups", "edu/download/aata-20190710-print", "pdf", "offset", "14"],
+  "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=15",
+  "mobileHref": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page15",
+},
+{
+  "text": "[TrenchRealAnalysis]\nSource:\n. name = \"Introduction to Real Analysis\"\n. author = \"William F. Trench\"\n. date = \"December 2013\"\n. url = \"https://digitalcommons.trinity.edu/cgi/viewcontent.cgi?article=1006&context=mono\"\n. offset = \"9\"",
+  "keywords": ["name", "=", "introduction", "to", "real", "analysis", "author", "william", "f", "trench", "date", "december", "2013", "url", "https", "//digitalcommons", "trinity", "edu/cgi/viewcontent", "cgi?article=1006&context=mono", "offset", "9"],
+  "href": "https://digitalcommons.trinity.edu/cgi/viewcontent.cgi?article=1006&context=mono#page=10",
+  "mobileHref": "https://digitalcommons.trinity.edu/cgi/viewcontent.cgi?article=1006&context=mono#page10",
+},
+{
   "text": "[\\set]\nDefines: X\nmeans:\n. \"A well defined collection of objects\"\nMetadata:\n. reference = \"source: @AATA; page: 3\"",
   "keywords": ["set", "x", "a", "well", "defined", "collection", "of", "objects", "reference", "=", "source", "aata", "page", "3"],
   "href": "http://abstract.ups.edu/download/aata-20190710-print.pdf#page=17",

@@ -36,6 +36,63 @@ import mathlingua.common.textalk.ParametersNode
 import mathlingua.common.textalk.SubSupNode
 import mathlingua.common.textalk.TextNode
 
+data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(sourceSection)
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        return toCode(isArg, indent, Statement(id, Validation.failure(emptyList())), sourceSection)
+    }
+
+    companion object {
+
+        fun isSourceGroup(node: ChalkTalkNode): Boolean {
+            return firstSectionMatchesName(node, "Source")
+        }
+
+        fun validate(groupNode: Group): Validation<SourceGroup> {
+            val id = groupNode.id
+            if (id == null) {
+                return Validation.failure(listOf(
+                    ParseError("A Source group must have an id",
+                        AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+                ))
+            }
+
+            // id.text is of the form [...]
+            // The [ and ] need to be removed.
+            val idText = id.text.substring(1, id.text.length - 1)
+
+            val errors = mutableListOf<ParseError>()
+            if (!Regex("[a-zA-Z0-9]+").matches(idText)) {
+                errors.add(
+                    ParseError("A source id can only contain numbers and letters",
+                        AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+                )
+            }
+
+            val sections = groupNode.sections
+            if (sections.size != 1) {
+                errors.add(
+                    ParseError("Expected a singe section but found ${sections.size}",
+                        AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+                )
+            }
+
+            val section = sections[0]
+            val validation = SourceSection.validate(section)
+            errors.addAll(validation.errors)
+
+            if (errors.isNotEmpty()) {
+                return Validation.failure(errors)
+            }
+
+            return Validation.success(SourceGroup(idText, validation.value!!))
+        }
+    }
+}
+
 data class DefinesGroup(
     val signature: String?,
     val id: Statement,

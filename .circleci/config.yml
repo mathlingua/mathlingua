@@ -14,11 +14,8 @@ jobs:
       - restore_cache:
           key: v1-gradle-cache-{{ checksum "build.gradle" }}
       - run:
-          name: Run tests
-          command: ./gradlew test
-      - run:
-          name: Check formatting
-          command: ./gradlew ktlintCheck
+          name: Run 'gradlew check'
+          command: ./gradlew check
       - save_cache:
           paths:
             - ~/.gradle/wrapper

@@ -3810,6 +3810,7 @@ var bundle = function (_, Kotlin) {
           signatures.add_11rb$(sig);
         }
       }
+      return;
     }
      else if (Kotlin.isType(node, Command)) {
       var sig_0 = getCommandSignature(node).toCode();

@@ -17,6 +17,10 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.common.chalktalk.phase1.ast.Mapping
+import mathlingua.common.chalktalk.phase2.MappingNode
 import mathlingua.common.chalktalk.phase2.MetaDataSection
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import java.lang.NumberFormatException
@@ -92,6 +96,22 @@ object HtmlDataGenerator {
                     metadata = result.document.axioms.first().metaDataSection
                 } else if (result.document.conjectures.isNotEmpty()) {
                     metadata = result.document.conjectures.first().metaDataSection
+                } else if (result.document.sources.isNotEmpty()) {
+                    // make a fake metadata section for sources so that
+                    // they have an href that points to the first page of
+                    // the source
+                    val src = result.document.sources.first()
+                    val key = "@${src.id}"
+                    if (srcIdToUrlMap.containsKey(key)) {
+                        metadata = MetaDataSection(listOf(
+                            MappingNode(Mapping(
+                                ChalkTalkToken("reference", ChalkTalkTokenType.String, -1, -1),
+                                ChalkTalkToken("\"source: $key; page: 1\"", ChalkTalkTokenType.String, -1, -1)
+                            ))
+                        ))
+                    } else {
+                        metadata = null
+                    }
                 } else {
                     metadata = null
                 }

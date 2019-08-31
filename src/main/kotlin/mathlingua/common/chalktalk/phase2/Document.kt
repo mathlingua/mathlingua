@@ -32,7 +32,8 @@ data class Document(
     val represents: List<RepresentsGroup>,
     val results: List<ResultGroup>,
     val axioms: List<AxiomGroup>,
-    val conjectures: List<ConjectureGroup>
+    val conjectures: List<ConjectureGroup>,
+    val sources: List<SourceGroup>
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -41,6 +42,7 @@ data class Document(
         results.forEach(fn)
         axioms.forEach(fn)
         conjectures.forEach(fn)
+        sources.forEach(fn)
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
@@ -71,6 +73,11 @@ data class Document(
             builder.append("\n\n\n")
         }
 
+        for (src in sources) {
+            builder.append(src.toCode(false, 0))
+            builder.append("\n\n\n")
+        }
+
         return builder.toString()
     }
 
@@ -96,6 +103,7 @@ data class Document(
             val results = ArrayList<ResultGroup>()
             val axioms = ArrayList<AxiomGroup>()
             val conjectures = ArrayList<ConjectureGroup>()
+            val sources = ArrayList<SourceGroup>()
 
             val (groups) = node
             for (group in groups) {
@@ -134,10 +142,17 @@ data class Document(
                     } else {
                         errors.addAll(representsValidation.errors)
                     }
+                } else if (SourceGroup.isSourceGroup(group)) {
+                    val sourceValidation = SourceGroup.validate(group)
+                    if (sourceValidation.isSuccessful) {
+                        sources.add(sourceValidation.value!!)
+                    } else {
+                        errors.addAll(sourceValidation.errors)
+                    }
                 } else {
                     errors.add(
                         ParseError(
-                            "Expected a Result or Defines but found " + group.toCode(),
+                            "Expected a top level group but found " + group.toCode(),
                             AstUtils.getRow(group), AstUtils.getColumn(group)
                         )
                     )
@@ -152,7 +167,8 @@ data class Document(
                     represents,
                     results,
                     axioms,
-                    conjectures
+                    conjectures,
+                    sources
                 )
             )
         }

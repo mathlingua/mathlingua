@@ -542,3 +542,141 @@ means:
 Metadata:
 . reference = "source: @AATA; page: 200"
 
+
+[\transitive.relation:on{X}]
+Defines: <
+assuming: 'X is \set'
+means:
+. '< is \binary.operation:on{X}'
+. for: a, b, c
+  where: 'a, b, c \in X'
+  then:
+  . if:
+    . 'a < b'
+    . 'b < c'
+    then:
+    . 'a < c'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[\order.relation:on{F := (X, +, *, 0, 1)}]
+Defines: <
+assuming: 'F is \field'
+means:
+. '< is \binary.operation:on{X}'
+. '< is \transitive.relation:on{X}'
+. for: a, b
+  where: 'a, b \in X'
+  then:
+  . or:
+    . 'a = b'
+    . 'a < b'
+    . 'b < a'
+. for: a, b, c
+  where: 'a, b, c \in X'
+  then:
+  . if: 'a < b'
+    then: 'a + c < b + c'
+. for: a, b, c
+  where:
+  . 'a, b, c \in X'
+  . '0 < c'
+  then:
+  . if: 'a < b'
+    then: 'a * c < b * c'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[\ordered.field]
+Defines: (X, +, *, 0, 1, <)
+means:
+. for: F
+  where: 'F := (X, +, *, 0, 1)'
+  then:
+  . 'F is \field'
+  . '< is \order.relation:on{F}'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[\real.field]
+Defines: R := (X, +, *, 0, 1, <)
+means: 'R is \ordered.field'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[\reals]
+Defines: R
+means:
+. for: Rb := (X, +, *, 0, 1, <)
+  where: 'Rb is \real.field'
+  then: 'R := X'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[\real]
+Defines: r
+means: 'r \in \reals'
+
+
+[\real.order]
+Defines: op
+means:
+. for: R := (X, +, *, 0, 1, <)
+  where: 'R is \real.field'
+  then: 'op := <'
+
+
+[a < b]
+Defines: <
+means:
+. if:
+  . 'a, b is \real'
+  then:
+  . '< := \real.order'
+
+
+[a \lt b]
+Defines: lt
+means: 'lt := <'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[a > b]
+Defines: >
+means: 'b < a'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[a \gt b]
+Defines: gt
+means: 'gt := >'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[a <= b]
+Defines: <=
+means:
+. or:
+  . 'a < b'
+  . 'a = b'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+
+
+[a >= b]
+Defines: >=
+means:
+. or:
+  . 'a > b'
+  . 'a = b'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 2"
+

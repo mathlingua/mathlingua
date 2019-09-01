@@ -462,7 +462,7 @@ var bundle = function (_, Kotlin) {
     }
   };
   ChalkTalkLexerImpl.prototype.isOperatorChar_0 = function (c) {
-    return contains('~!@#%^&*-+<>\\/', c);
+    return contains('~!@#%^&*-+<>\\/=', c);
   };
   ChalkTalkLexerImpl.prototype.hasNext = function () {
     this.ensureInitialized_0();

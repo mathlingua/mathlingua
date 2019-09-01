@@ -281,7 +281,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
     }
 
     private fun isOperatorChar(c: Char): Boolean {
-        return "~!@#%^&*-+<>\\/".contains(c)
+        return "~!@#%^&*-+<>\\/=".contains(c)
     }
 
     override fun hasNext(): Boolean {

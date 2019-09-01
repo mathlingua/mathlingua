@@ -81,4 +81,12 @@ window.MATHLINGUA_AUTOCOMPLETIONS = window.MATHLINGUA_AUTOCOMPLETIONS || [
 "\\unique",
 "\\division",
 "\\field",
-"\\division.with.identity.ring"];
+"\\division.with.identity.ring",
+"\\transitive.relation:on{?}",
+"\\order.relation:on{?}",
+"\\ordered.field",
+"\\real.field",
+"\\real",
+"\\real.order",
+"\\lt",
+"\\gt"];

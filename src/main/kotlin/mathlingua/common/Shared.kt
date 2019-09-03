@@ -57,3 +57,27 @@ class Stack<T> {
         return data.isEmpty()
     }
 }
+
+class Queue<T> : Iterable<T> {
+    private val data = ArrayList<T>()
+
+    fun offer(item: T) {
+        data.add(0, item)
+    }
+
+    fun poll(): T {
+        return data.removeAt(0)
+    }
+
+    fun peek(): T {
+        return data.elementAt(0)
+    }
+
+    fun isEmpty(): Boolean {
+        return data.isEmpty()
+    }
+
+    override fun iterator(): Iterator<T> {
+        return data.iterator()
+    }
+}

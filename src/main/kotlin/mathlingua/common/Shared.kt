@@ -37,3 +37,23 @@ class Validation<T> private constructor(val value: T?, val errors: List<ParseErr
         }
     }
 }
+
+class Stack<T> {
+    private val data = mutableListOf<T>()
+
+    fun push(item: T) {
+        data.add(item)
+    }
+
+    fun pop(): T {
+        return data.removeAt(data.size - 1)
+    }
+
+    fun peek(): T {
+        return data.elementAt(data.size - 1)
+    }
+
+    fun isEmpty(): Boolean {
+        return data.isEmpty()
+    }
+}

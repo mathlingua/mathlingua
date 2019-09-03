@@ -12,6 +12,7 @@ var bundle = function (_, Kotlin) {
   var RuntimeException = Kotlin.kotlin.RuntimeException;
   var IllegalArgumentException_init = Kotlin.kotlin.IllegalArgumentException_init_pdl1vj$;
   var Kind_OBJECT = Kotlin.Kind.OBJECT;
+  var Iterable = Kotlin.kotlin.collections.Iterable;
   var Kind_INTERFACE = Kotlin.Kind.INTERFACE;
   var endsWith = Kotlin.kotlin.text.endsWith_7epoxm$;
   var ensureNotNull = Kotlin.ensureNotNull;
@@ -19,7 +20,6 @@ var bundle = function (_, Kotlin) {
   var contains = Kotlin.kotlin.text.contains_sgbm27$;
   var Regex_init = Kotlin.kotlin.text.Regex_init_61zpoe$;
   var listOf = Kotlin.kotlin.collections.listOf_mh5how$;
-  var toString = Kotlin.toString;
   var StringBuilder_init = Kotlin.kotlin.text.StringBuilder_init;
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
@@ -33,7 +33,6 @@ var bundle = function (_, Kotlin) {
   var collectionSizeOrDefault = Kotlin.kotlin.collections.collectionSizeOrDefault_ba2ldo$;
   var ArrayList_init_0 = Kotlin.kotlin.collections.ArrayList_init_ww73n8$;
   var HashMap_init = Kotlin.kotlin.collections.HashMap_init_q3lmfv$;
-  var Iterable = Kotlin.kotlin.collections.Iterable;
   var StringBuilder = Kotlin.kotlin.text.StringBuilder;
   var HashSet_init = Kotlin.kotlin.collections.HashSet_init_287e2$;
   ParseError.prototype = Object.create(RuntimeException.prototype);
@@ -242,6 +241,51 @@ var bundle = function (_, Kotlin) {
     simpleName: 'Validation',
     interfaces: []
   };
+  function Stack() {
+    this.data_0 = ArrayList_init();
+  }
+  Stack.prototype.push_11rb$ = function (item) {
+    this.data_0.add_11rb$(item);
+  };
+  Stack.prototype.pop = function () {
+    return this.data_0.removeAt_za3lpa$(this.data_0.size - 1 | 0);
+  };
+  Stack.prototype.peek = function () {
+    var $receiver = this.data_0;
+    var index = this.data_0.size - 1 | 0;
+    return $receiver.get_za3lpa$(index);
+  };
+  Stack.prototype.isEmpty = function () {
+    return this.data_0.isEmpty();
+  };
+  Stack.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'Stack',
+    interfaces: []
+  };
+  function Queue() {
+    this.data_0 = ArrayList_init();
+  }
+  Queue.prototype.offer_11rb$ = function (item) {
+    this.data_0.add_wxm5ur$(0, item);
+  };
+  Queue.prototype.poll = function () {
+    return this.data_0.removeAt_za3lpa$(0);
+  };
+  Queue.prototype.peek = function () {
+    return this.data_0.get_za3lpa$(0);
+  };
+  Queue.prototype.isEmpty = function () {
+    return this.data_0.isEmpty();
+  };
+  Queue.prototype.iterator = function () {
+    return this.data_0.iterator();
+  };
+  Queue.$metadata$ = {
+    kind: Kind_CLASS,
+    simpleName: 'Queue',
+    interfaces: [Iterable]
+  };
   function ChalkTalkLexer() {
   }
   ChalkTalkLexer.$metadata$ = {
@@ -254,9 +298,6 @@ var bundle = function (_, Kotlin) {
   }
   function ChalkTalkLexerImpl(text) {
     this.text_0 = text;
-    this.errors_0 = null;
-    this.chalkTalkTokens_0 = null;
-    this.index_0 = 0;
     this.errors_0 = ArrayList_init();
     this.chalkTalkTokens_0 = null;
     this.index_0 = 0;
@@ -464,6 +505,9 @@ var bundle = function (_, Kotlin) {
   ChalkTalkLexerImpl.prototype.isOperatorChar_0 = function (c) {
     return contains('~!@#%^&*-+<>\\/=', c);
   };
+  ChalkTalkLexerImpl.prototype.isLetterOrDigit_0 = function (c) {
+    return Regex_init('[a-zA-Z0-9]+').matches_6bul2c$(String.fromCharCode(c));
+  };
   ChalkTalkLexerImpl.prototype.hasNext = function () {
     this.ensureInitialized_0();
     return this.index_0 < ensureNotNull(this.chalkTalkTokens_0).size;
@@ -489,35 +533,10 @@ var bundle = function (_, Kotlin) {
   ChalkTalkLexerImpl.prototype.errors = function () {
     return this.errors_0;
   };
-  ChalkTalkLexerImpl.prototype.isLetterOrDigit_0 = function (c) {
-    return Regex_init('[a-zA-Z0-9]+').matches_6bul2c$(String.fromCharCode(c));
-  };
   ChalkTalkLexerImpl.$metadata$ = {
     kind: Kind_CLASS,
     simpleName: 'ChalkTalkLexerImpl',
     interfaces: [ChalkTalkLexer]
-  };
-  function Stack() {
-    this.data_0 = ArrayList_init();
-  }
-  Stack.prototype.push_11rb$ = function (item) {
-    this.data_0.add_11rb$(item);
-  };
-  Stack.prototype.pop = function () {
-    return this.data_0.removeAt_za3lpa$(this.data_0.size - 1 | 0);
-  };
-  Stack.prototype.peek = function () {
-    var $receiver = this.data_0;
-    var index = this.data_0.size - 1 | 0;
-    return $receiver.get_za3lpa$(index);
-  };
-  Stack.prototype.isEmpty = function () {
-    return this.data_0.isEmpty();
-  };
-  Stack.$metadata$ = {
-    kind: Kind_CLASS,
-    simpleName: 'Stack',
-    interfaces: []
   };
   function ChalkTalkParser() {
   }
@@ -559,6 +578,7 @@ var bundle = function (_, Kotlin) {
   function newChalkTalkParser() {
     return new ChalkTalkParserImpl();
   }
+  var INVALID;
   function ChalkTalkParserImpl() {
   }
   ChalkTalkParserImpl.prototype.parse_khrmll$ = function (chalkTalkLexer) {
@@ -569,35 +589,34 @@ var bundle = function (_, Kotlin) {
   };
   function ChalkTalkParserImpl$ParserWorker(chalkTalkLexer) {
     this.chalkTalkLexer_0 = chalkTalkLexer;
-    this.errors = null;
     this.errors = ArrayList_init();
   }
   ChalkTalkParserImpl$ParserWorker.prototype.root = function () {
     var groups = ArrayList_init();
-    while (true) {
+    while (this.hasNext_0()) {
       var grp = this.group_0();
       if (grp == null)
         break;
       groups.add_11rb$(grp);
     }
-    while (this.chalkTalkLexer_0.hasNext()) {
-      var next = this.chalkTalkLexer_0.next();
-      this.errors.add_11rb$(new ParseError("Unrecognized token '" + next.text, next.row, next.column));
+    while (this.hasNext_0()) {
+      var next = this.next_0();
+      this.addError_0("Unrecognized token '" + next.text, next);
     }
     return new Root(groups);
   };
   ChalkTalkParserImpl$ParserWorker.prototype.group_0 = function () {
-    if (this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type === ChalkTalkTokenType$Linebreak_getInstance()) {
-      this.chalkTalkLexer_0.next();
+    if (this.has_0(ChalkTalkTokenType$Linebreak_getInstance())) {
+      this.next_0();
     }
     var id = null;
-    if (this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type === ChalkTalkTokenType$Id_getInstance()) {
-      id = this.chalkTalkLexer_0.next();
+    if (this.has_0(ChalkTalkTokenType$Id_getInstance())) {
+      id = this.next_0();
       this.expect_0(ChalkTalkTokenType$Begin_getInstance());
       this.expect_0(ChalkTalkTokenType$End_getInstance());
     }
     var sections = ArrayList_init();
-    while (true) {
+    while (this.hasNext_0()) {
       var sec = this.section_0();
       if (sec == null)
         break;
@@ -606,24 +625,23 @@ var bundle = function (_, Kotlin) {
     return sections.isEmpty() ? null : new Group(sections, id);
   };
   ChalkTalkParserImpl$ParserWorker.prototype.section_0 = function () {
-    var isSec = this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.hasNextNext() && this.chalkTalkLexer_0.peek().type === ChalkTalkTokenType$Name_getInstance() && this.chalkTalkLexer_0.peekPeek().type === ChalkTalkTokenType$Colon_getInstance();
-    if (!isSec) {
+    if (!this.hasHas_0(ChalkTalkTokenType$Name_getInstance(), ChalkTalkTokenType$Colon_getInstance())) {
       return null;
     }
     var name = this.expect_0(ChalkTalkTokenType$Name_getInstance());
     this.expect_0(ChalkTalkTokenType$Colon_getInstance());
     var args = ArrayList_init();
-    while (this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type !== ChalkTalkTokenType$Begin_getInstance()) {
+    while (this.hasNext_0() && !this.has_0(ChalkTalkTokenType$Begin_getInstance())) {
       var arg = this.argument_0();
       if (arg == null)
         break;
       args.add_11rb$(arg);
-      if (this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type !== ChalkTalkTokenType$Begin_getInstance()) {
+      if (this.hasNext_0() && !this.has_0(ChalkTalkTokenType$Begin_getInstance())) {
         this.expect_0(ChalkTalkTokenType$Comma_getInstance());
       }
     }
     this.expect_0(ChalkTalkTokenType$Begin_getInstance());
-    while (true) {
+    while (this.hasNext_0()) {
       var argList = this.argumentList_0();
       if (argList == null)
         break;
@@ -633,7 +651,7 @@ var bundle = function (_, Kotlin) {
     return new Section(name, args);
   };
   ChalkTalkParserImpl$ParserWorker.prototype.argumentList_0 = function () {
-    if (!this.chalkTalkLexer_0.hasNext() || this.chalkTalkLexer_0.peek().type !== ChalkTalkTokenType$DotSpace_getInstance()) {
+    if (!this.hasNext_0() || !this.has_0(ChalkTalkTokenType$DotSpace_getInstance())) {
       return null;
     }
     this.expect_0(ChalkTalkTokenType$DotSpace_getInstance());
@@ -645,8 +663,8 @@ var bundle = function (_, Kotlin) {
     var valueArg = this.argument_0();
     if (valueArg != null) {
       argList.add_11rb$(valueArg);
-      while (this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type === ChalkTalkTokenType$Comma_getInstance()) {
-        this.chalkTalkLexer_0.next();
+      while (this.has_0(ChalkTalkTokenType$Comma_getInstance())) {
+        this.next_0();
         var v = this.argument_0();
         if (v == null)
           break;
@@ -660,7 +678,7 @@ var bundle = function (_, Kotlin) {
   ChalkTalkParserImpl$ParserWorker.prototype.token_0 = function (type) {
     var tmp$;
     if (this.has_0(type)) {
-      tmp$ = this.chalkTalkLexer_0.next();
+      tmp$ = this.next_0();
     }
      else {
       tmp$ = null;
@@ -679,45 +697,45 @@ var bundle = function (_, Kotlin) {
     }
     var target = this.tupleItem_0();
     if (target == null) {
-      this.errors.add_11rb$(new ParseError('Expected a name, abstraction, tuple, aggregate, or assignment', -1, -1));
-      var tok = new ChalkTalkToken('INVALID', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
-      return new Argument(tok);
+      this.addError_0('Expected a name, abstraction, tuple, aggregate, or assignment');
+      return new Argument(INVALID);
     }
     return new Argument(target);
   };
   ChalkTalkParserImpl$ParserWorker.prototype.mapping_0 = function () {
+    var tmp$;
     if (!this.hasHas_0(ChalkTalkTokenType$Name_getInstance(), ChalkTalkTokenType$Equals_getInstance())) {
       return null;
     }
-    var name = this.chalkTalkLexer_0.next();
-    var equals = this.chalkTalkLexer_0.next();
-    var rhs;
-    if (!this.chalkTalkLexer_0.hasNext()) {
-      this.errors.add_11rb$(new ParseError('A = must be followed by an argument', equals.row, equals.column));
-      rhs = new ChalkTalkToken('INVALID', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
+    var name = this.next_0();
+    var equals = this.next_0();
+    if (!this.hasNext_0()) {
+      this.addError_0('A = must be followed by an argument', equals);
+      tmp$ = INVALID;
     }
      else {
-      var maybeRhs = this.chalkTalkLexer_0.next();
+      var maybeRhs = this.next_0();
       if (maybeRhs.type === ChalkTalkTokenType$String_getInstance()) {
-        rhs = maybeRhs;
+        tmp$ = maybeRhs;
       }
        else {
-        new ParseError('The right hand side of a = must be a string', equals.row, equals.column);
-        rhs = new ChalkTalkToken('INVALID', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
+        this.addError_0('The right hand side of a = must be a string', equals);
+        tmp$ = INVALID;
       }
     }
+    var rhs = tmp$;
     return new Mapping(name, rhs);
   };
   ChalkTalkParserImpl$ParserWorker.prototype.assignment_0 = function () {
     if (!this.hasHas_0(ChalkTalkTokenType$Name_getInstance(), ChalkTalkTokenType$ColonEquals_getInstance())) {
       return null;
     }
-    var name = this.chalkTalkLexer_0.next();
-    var colonEquals = this.chalkTalkLexer_0.next();
+    var name = this.next_0();
+    var colonEquals = this.next_0();
     var rhs = this.assignmentRhs_0();
     if (rhs == null) {
-      this.errors.add_11rb$(new ParseError('A := must be followed by a argument', colonEquals.row, colonEquals.column));
-      rhs = new ChalkTalkToken('INVALID', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
+      this.addError_0('A := must be followed by a argument', colonEquals);
+      rhs = INVALID;
     }
     return new Assignment(name, rhs);
   };
@@ -742,16 +760,16 @@ var bundle = function (_, Kotlin) {
   };
   ChalkTalkParserImpl$ParserWorker.prototype.name_0 = function () {
     if (!this.has_0(ChalkTalkTokenType$Name_getInstance())) {
-      if (this.chalkTalkLexer_0.hasNext()) {
-        var peek = this.chalkTalkLexer_0.next();
-        this.errors.add_11rb$(new ParseError('Expected a name, but found ' + peek.text, peek.row, peek.column));
+      if (this.hasNext_0()) {
+        var peek = this.next_0();
+        this.addError_0('Expected a name, but found ' + peek.text, peek);
       }
        else {
-        this.errors.add_11rb$(new ParseError('Expected a name, but found the end of input', -1, -1));
+        this.addError_0('Expected a name, but found the end of input');
       }
-      return new ChalkTalkToken('', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
+      return INVALID;
     }
-    return this.chalkTalkLexer_0.next();
+    return this.next_0();
   };
   ChalkTalkParserImpl$ParserWorker.prototype.tuple_0 = function () {
     if (!this.has_0(ChalkTalkTokenType$LParen_getInstance())) {
@@ -759,13 +777,13 @@ var bundle = function (_, Kotlin) {
     }
     var items = ArrayList_init();
     var leftParen = this.expect_0(ChalkTalkTokenType$LParen_getInstance());
-    while (this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type !== ChalkTalkTokenType$RParen_getInstance()) {
+    while (this.hasNext_0() && !this.has_0(ChalkTalkTokenType$RParen_getInstance())) {
       if (!items.isEmpty()) {
         this.expect_0(ChalkTalkTokenType$Comma_getInstance());
       }
       var item = this.tupleItem_0();
       if (item == null) {
-        this.errors.add_11rb$(new ParseError('Encountered a non-tuple item in a tuple', leftParen.row, leftParen.column));
+        this.addError_0('Encountered a non-tuple item in a tuple', leftParen);
       }
        else {
         items.add_11rb$(item);
@@ -782,47 +800,61 @@ var bundle = function (_, Kotlin) {
     var tmp$, tmp$_0;
     return (tmp$_0 = (tmp$ = this.assignment_0()) != null ? tmp$ : this.abstraction_0()) != null ? tmp$_0 : this.assignmentRhs_0();
   };
+  ChalkTalkParserImpl$ParserWorker.prototype.hasNext_0 = function () {
+    return this.chalkTalkLexer_0.hasNext();
+  };
+  ChalkTalkParserImpl$ParserWorker.prototype.next_0 = function () {
+    return this.chalkTalkLexer_0.next();
+  };
+  ChalkTalkParserImpl$ParserWorker.prototype.addError_0 = function (message, token) {
+    if (token === void 0)
+      token = null;
+    var tmp$, tmp$_0;
+    var row = (tmp$ = token != null ? token.row : null) != null ? tmp$ : -1;
+    var column = (tmp$_0 = token != null ? token.column : null) != null ? tmp$_0 : -1;
+    this.errors.add_11rb$(new ParseError(message, row, column));
+  };
   ChalkTalkParserImpl$ParserWorker.prototype.nameList_0 = function (stopType) {
     var names = ArrayList_init();
-    while (this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type !== stopType) {
+    while (this.hasNext_0() && !this.has_0(stopType)) {
       var comma = null;
       if (!names.isEmpty()) {
         comma = this.expect_0(ChalkTalkTokenType$Comma_getInstance());
       }
-      if (!this.chalkTalkLexer_0.hasNext()) {
-        this.errors.add_11rb$(new ParseError('Expected a name to follow a comma', ensureNotNull(comma).row, comma.column));
+      if (!this.hasNext_0()) {
+        this.addError_0('Expected a name to follow a comma', comma);
         break;
       }
-      var tok = this.chalkTalkLexer_0.next();
+      var tok = this.next_0();
       if (tok.type === ChalkTalkTokenType$Name_getInstance()) {
         names.add_11rb$(tok);
       }
        else {
-        this.errors.add_11rb$(new ParseError("Expected a name but found '" + tok.text + "'", tok.row, tok.column));
+        this.addError_0("Expected a name but found '" + tok.text + "'", tok);
       }
     }
     return names;
   };
   ChalkTalkParserImpl$ParserWorker.prototype.has_0 = function (type) {
-    return this.chalkTalkLexer_0.hasNext() && this.chalkTalkLexer_0.peek().type === type;
+    return this.hasNext_0() && this.chalkTalkLexer_0.peek().type === type;
   };
   ChalkTalkParserImpl$ParserWorker.prototype.hasHas_0 = function (type, thenType) {
     return this.has_0(type) && this.chalkTalkLexer_0.hasNextNext() && this.chalkTalkLexer_0.peekPeek().type === thenType;
   };
   ChalkTalkParserImpl$ParserWorker.prototype.expect_0 = function (type) {
     var tmp$;
-    if (!this.chalkTalkLexer_0.hasNext() || this.chalkTalkLexer_0.peek().type !== type) {
-      if (this.chalkTalkLexer_0.hasNext()) {
+    if (!this.hasNext_0() || this.chalkTalkLexer_0.peek().type !== type) {
+      if (this.hasNext_0()) {
         tmp$ = this.chalkTalkLexer_0.peek();
       }
        else {
-        tmp$ = new ChalkTalkToken('', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
+        tmp$ = INVALID;
       }
       var peek = tmp$;
-      this.errors.add_11rb$(new ParseError('Expected a token of type ' + toString(type) + ' but ' + 'found ' + toString(peek.type), peek.row, peek.column));
-      return new ChalkTalkToken('INVALID', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
+      this.addError_0('Expected a token of type ' + type + ' but found ' + peek.type, peek);
+      return INVALID;
     }
-    return this.chalkTalkLexer_0.next();
+    return this.next_0();
   };
   ChalkTalkParserImpl$ParserWorker.$metadata$ = {
     kind: Kind_CLASS,
@@ -5300,29 +5332,6 @@ var bundle = function (_, Kotlin) {
     }
     return SectionIdentifier_instance;
   }
-  function Queue() {
-    this.data_0 = ArrayList_init();
-  }
-  Queue.prototype.offer_11rb$ = function (item) {
-    this.data_0.add_wxm5ur$(0, item);
-  };
-  Queue.prototype.poll = function () {
-    return this.data_0.removeAt_za3lpa$(0);
-  };
-  Queue.prototype.peek = function () {
-    return this.data_0.get_za3lpa$(0);
-  };
-  Queue.prototype.isEmpty = function () {
-    return this.data_0.isEmpty();
-  };
-  Queue.prototype.iterator = function () {
-    return this.data_0.iterator();
-  };
-  Queue.$metadata$ = {
-    kind: Kind_CLASS,
-    simpleName: 'Queue',
-    interfaces: [Iterable]
-  };
   function SourceSection(mappings) {
     SourceSection$Companion_getInstance();
     this.mappings = mappings;
@@ -6413,13 +6422,10 @@ var bundle = function (_, Kotlin) {
     return new TexTalkLexerImpl(text);
   }
   function TexTalkLexerImpl(text) {
-    this.errors_rts390$_0 = null;
-    this.tokens_0 = null;
-    this.index_0 = 0;
-    var tmp$, tmp$_0, tmp$_1, tmp$_2;
     this.errors_rts390$_0 = ArrayList_init();
     this.tokens_0 = ArrayList_init();
     this.index_0 = 0;
+    var tmp$, tmp$_0, tmp$_1, tmp$_2;
     var i = 0;
     var line = 0;
     var column = -1;
@@ -6577,6 +6583,7 @@ var bundle = function (_, Kotlin) {
   function newTexTalkParser() {
     return new TexTalkParserImpl();
   }
+  var INVALID_0;
   function TexTalkParserImpl() {
   }
   TexTalkParserImpl.prototype.parse_2mg13h$ = function (texTalkLexer) {
@@ -6587,7 +6594,6 @@ var bundle = function (_, Kotlin) {
   };
   function TexTalkParserImpl$ParserWorker(texTalkLexer) {
     this.texTalkLexer_0 = texTalkLexer;
-    this.errors_0 = null;
     this.errors_0 = ArrayList_init();
   }
   TexTalkParserImpl$ParserWorker.prototype.getErrors = function () {
@@ -6604,15 +6610,15 @@ var bundle = function (_, Kotlin) {
       return node;
     }
     var isIndex = -1;
-    tmp$ = node.children.size;
-    for (var i = 0; i < tmp$; i++) {
+    tmp$ = node.children;
+    for (var i = 0; i !== tmp$.size; ++i) {
       var child = node.children.get_za3lpa$(i);
       if (Kotlin.isType(child, TextNode) && child.type === NodeType$Is_getInstance()) {
         if (isIndex < 0) {
           isIndex = i;
         }
          else {
-          this.errors_0.add_11rb$(new ParseError("A statement can only contain one 'is' statement", -1, -1));
+          this.addError_0("A statement can only contain one 'is' statement");
         }
       }
     }
@@ -6629,15 +6635,15 @@ var bundle = function (_, Kotlin) {
       return node;
     }
     var colonEqualsIndex = -1;
-    tmp$ = node.children.size;
-    for (var i = 0; i < tmp$; i++) {
+    tmp$ = node.children;
+    for (var i = 0; i !== tmp$.size; ++i) {
       var child = node.children.get_za3lpa$(i);
       if (Kotlin.isType(child, TextNode) && child.type === NodeType$ColonEquals_getInstance()) {
         if (colonEqualsIndex < 0) {
           colonEqualsIndex = i;
         }
          else {
-          this.errors_0.add_11rb$(new ParseError("A statement can only contain one ':='", -1, -1));
+          this.addError_0("A statement can only contain one ':='");
         }
       }
     }
@@ -6658,9 +6664,11 @@ var bundle = function (_, Kotlin) {
         items.add_11rb$(this.resolveIsNode_0(nodes.get_za3lpa$((tmp$ = i, i = tmp$ + 1 | 0, tmp$))));
       }
       if (i < endEx && nodes.get_za3lpa$(i).type !== NodeType$Comma_getInstance()) {
-        throw RuntimeException_init('Expected a Comma but found ' + nodes.get_za3lpa$(i).type);
+        this.addError_0('Expected a Comma but found ' + nodes.get_za3lpa$(i).type);
       }
-      i = i + 1 | 0;
+       else {
+        i = i + 1 | 0;
+      }
       parts.add_11rb$(new ExpressionNode(items));
     }
     return new ParametersNode(parts);
@@ -6671,10 +6679,10 @@ var bundle = function (_, Kotlin) {
     }
     var backSlash = this.expect_0(TexTalkTokenType$Backslash_getInstance());
     var parts = ArrayList_init();
-    while (this.texTalkLexer_0.hasNext()) {
+    while (this.hasNext_0()) {
       var part = this.commandPart_0();
       if (part == null) {
-        this.errors_0.add_11rb$(new ParseError('Missing a command part', backSlash.row, backSlash.column));
+        this.addError_1('Missing a command part', backSlash);
       }
        else {
         parts.add_11rb$(part);
@@ -6687,7 +6695,7 @@ var bundle = function (_, Kotlin) {
       }
     }
     if (parts.isEmpty()) {
-      this.errors_0.add_11rb$(new ParseError('Expected at least one command part', backSlash.row, backSlash.column));
+      this.addError_1('Expected at least one command part', backSlash);
     }
     return new Command(parts);
   };
@@ -6712,22 +6720,20 @@ var bundle = function (_, Kotlin) {
     }
     if (startGroup != null) {
       groups.add_11rb$(startGroup);
-      while (this.texTalkLexer_0.hasNext()) {
+      while (this.hasNext_0()) {
         var grp = this.group_0(startGroup.type);
-        if (grp == null) {
+        if (grp == null)
           break;
-        }
         groups.add_11rb$(grp);
       }
     }
     var namedGroups = ArrayList_init();
     if (this.has_0(TexTalkTokenType$Colon_getInstance())) {
       this.expect_0(TexTalkTokenType$Colon_getInstance());
-      while (this.texTalkLexer_0.hasNext()) {
+      while (this.hasNext_0()) {
         var namedGrp = this.namedGroup_0();
-        if (namedGrp == null) {
+        if (namedGrp == null)
           break;
-        }
         namedGroups.add_11rb$(namedGrp);
       }
     }
@@ -6763,7 +6769,7 @@ var bundle = function (_, Kotlin) {
       }
     }
     if (grp == null) {
-      this.errors_0.add_11rb$(new ParseError('Expected a value with an underscore', row, column));
+      this.addError_2('Expected a value with an underscore', row, column);
       grp = new GroupNode(NodeType$CurlyGroup_getInstance(), new ParametersNode(emptyList()));
     }
     return grp;
@@ -6787,7 +6793,7 @@ var bundle = function (_, Kotlin) {
       }
     }
     if (grp == null) {
-      this.errors_0.add_11rb$(new ParseError('Expected a value with a caret', row, column));
+      this.addError_2('Expected a value with a caret', row, column);
       grp = new GroupNode(NodeType$CurlyGroup_getInstance(), new ParametersNode(emptyList()));
     }
     return grp;
@@ -6823,7 +6829,7 @@ var bundle = function (_, Kotlin) {
       expressions.add_11rb$(firstExp);
     }
     while (this.has_0(TexTalkTokenType$Comma_getInstance())) {
-      this.texTalkLexer_0.next();
+      this.next_0();
       var exp = this.expression_0(terminators);
       if (exp == null)
         break;
@@ -6833,28 +6839,28 @@ var bundle = function (_, Kotlin) {
     return new GroupNode(nodeType, new ParametersNode(expressions));
   };
   TexTalkParserImpl$ParserWorker.prototype.namedGroup_0 = function () {
-    var isNamedGroup = this.texTalkLexer_0.hasNext() && this.texTalkLexer_0.hasNextNext() && this.texTalkLexer_0.peek().tokenType === TexTalkTokenType$Identifier_getInstance() && this.texTalkLexer_0.peekPeek().tokenType === TexTalkTokenType$LCurly_getInstance();
-    if (!isNamedGroup) {
+    var tmp$, tmp$_0;
+    if (!this.hasHas_0(TexTalkTokenType$Identifier_getInstance(), TexTalkTokenType$LCurly_getInstance())) {
       return null;
     }
     var rawText = this.text_0(TexTalkTokenType$Identifier_getInstance(), NodeType$Identifier_getInstance());
-    var text;
     if (rawText != null) {
-      text = rawText;
+      tmp$ = rawText;
     }
      else {
-      this.errors_0.add_11rb$(new ParseError('Expected an identifier in a named group', -1, -1));
-      text = new TextNode(NodeType$Identifier_getInstance(), 'INVALID');
+      this.addError_0('Expected an identifier in a named group');
+      tmp$ = new TextNode(NodeType$Identifier_getInstance(), 'INVALID');
     }
+    var text = tmp$;
     var rawGroup = this.group_0(NodeType$CurlyGroup_getInstance());
-    var group;
     if (rawGroup != null) {
-      group = rawGroup;
+      tmp$_0 = rawGroup;
     }
      else {
-      this.errors_0.add_11rb$(new ParseError('Expected a group in a named group', -1, -1));
-      group = new GroupNode(NodeType$CurlyGroup_getInstance(), new ParametersNode(emptyList()));
+      this.addError_0('Expected a group in a named group');
+      tmp$_0 = new GroupNode(NodeType$CurlyGroup_getInstance(), new ParametersNode(emptyList()));
     }
+    var group = tmp$_0;
     return new NamedGroupNode(text, group);
   };
   TexTalkParserImpl$ParserWorker.prototype.text_0 = function (tokenType, nodeType) {
@@ -6863,18 +6869,18 @@ var bundle = function (_, Kotlin) {
       tmp$ = null;
     }
      else
-      tmp$ = new TextNode(nodeType, this.texTalkLexer_0.next().text);
+      tmp$ = new TextNode(nodeType, this.next_0().text);
     return tmp$;
   };
   TexTalkParserImpl$ParserWorker.prototype.expression_0 = function (terminators) {
     var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7, tmp$_8;
     var nodes = ArrayList_init();
-    while (this.texTalkLexer_0.hasNext() && (terminators == null || !terminators.contains_11rb$(this.texTalkLexer_0.peek().tokenType))) {
+    while (this.hasNext_0() && (terminators == null || !terminators.contains_11rb$(this.texTalkLexer_0.peek().tokenType))) {
       var child = (tmp$_7 = (tmp$_6 = (tmp$_5 = (tmp$_4 = (tmp$_3 = (tmp$_2 = (tmp$_1 = (tmp$_0 = (tmp$ = this.command_0()) != null ? tmp$ : this.group_0(NodeType$ParenGroup_getInstance())) != null ? tmp$_0 : this.group_0(NodeType$CurlyGroup_getInstance())) != null ? tmp$_1 : this.text_0(TexTalkTokenType$Is_getInstance(), NodeType$Is_getInstance())) != null ? tmp$_2 : this.text_0(TexTalkTokenType$Identifier_getInstance(), NodeType$Identifier_getInstance())) != null ? tmp$_3 : this.text_0(TexTalkTokenType$Operator_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_4 : this.text_0(TexTalkTokenType$Comma_getInstance(), NodeType$Comma_getInstance())) != null ? tmp$_5 : this.text_0(TexTalkTokenType$Caret_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_6 : this.text_0(TexTalkTokenType$Underscore_getInstance(), NodeType$Operator_getInstance())) != null ? tmp$_7 : this.text_0(TexTalkTokenType$ColonEquals_getInstance(), NodeType$ColonEquals_getInstance());
       if (child == null) {
         var peek = this.texTalkLexer_0.peek();
-        this.errors_0.add_11rb$(new ParseError('Unexpected token ' + peek.text, peek.row, peek.column));
-        this.texTalkLexer_0.next();
+        this.addError_1('Unexpected token ' + peek.text, peek);
+        this.next_0();
       }
        else {
         nodes.add_11rb$(child);
@@ -6890,22 +6896,40 @@ var bundle = function (_, Kotlin) {
   TexTalkParserImpl$ParserWorker.prototype.expect_0 = function (tokenType) {
     var tmp$;
     if (this.has_0(tokenType)) {
-      return this.texTalkLexer_0.next();
+      return this.next_0();
     }
      else {
-      if (this.texTalkLexer_0.hasNext()) {
-        tmp$ = "Expected a token of type '" + toString(tokenType) + "' but " + "found type '" + toString(this.texTalkLexer_0.peek().type) + "' for text '" + this.texTalkLexer_0.peek().text + "' (Line: " + toString(this.texTalkLexer_0.peek().row + 1 | 0) + ', Column: ' + toString(this.texTalkLexer_0.peek().column + 1 | 0) + ')';
+      if (this.hasNext_0()) {
+        tmp$ = "Expected a token of type '" + tokenType + "' but found type " + ("'" + this.texTalkLexer_0.peek().type + "' for text '" + this.texTalkLexer_0.peek().text + "' ") + ('(Line: ' + (this.texTalkLexer_0.peek().row + 1 | 0) + ', Column: ' + (this.texTalkLexer_0.peek().column + 1 | 0) + ')');
       }
        else {
         tmp$ = 'Expected a token of type ' + tokenType + ' but found the end of input';
       }
       var message = tmp$;
-      this.errors_0.add_11rb$(new ParseError(message, -1, -1));
-      return new TexTalkToken('INVALID', TexTalkTokenType$Invalid_getInstance(), -1, -1);
+      this.addError_0(message);
+      return INVALID_0;
     }
   };
+  TexTalkParserImpl$ParserWorker.prototype.hasNext_0 = function () {
+    return this.texTalkLexer_0.hasNext();
+  };
+  TexTalkParserImpl$ParserWorker.prototype.next_0 = function () {
+    return this.texTalkLexer_0.next();
+  };
   TexTalkParserImpl$ParserWorker.prototype.has_0 = function (tokenType) {
-    return this.texTalkLexer_0.hasNext() && this.texTalkLexer_0.peek().tokenType === tokenType;
+    return this.hasNext_0() && this.texTalkLexer_0.peek().tokenType === tokenType;
+  };
+  TexTalkParserImpl$ParserWorker.prototype.hasHas_0 = function (tokenType1, tokenType2) {
+    return this.has_0(tokenType1) && this.texTalkLexer_0.hasNextNext() && this.texTalkLexer_0.peekPeek().tokenType === tokenType2;
+  };
+  TexTalkParserImpl$ParserWorker.prototype.addError_1 = function (message, token) {
+    this.addError_2(message, token.row, token.column);
+  };
+  TexTalkParserImpl$ParserWorker.prototype.addError_0 = function (message) {
+    this.addError_2(message, -1, -1);
+  };
+  TexTalkParserImpl$ParserWorker.prototype.addError_2 = function (message, row, column) {
+    this.errors_0.add_11rb$(new ParseError(message, row, column));
   };
   TexTalkParserImpl$ParserWorker.$metadata$ = {
     kind: Kind_CLASS,
@@ -6927,6 +6951,8 @@ var bundle = function (_, Kotlin) {
     get: Validation$Companion_getInstance
   });
   package$common.Validation = Validation;
+  package$common.Stack = Stack;
+  package$common.Queue = Queue;
   var package$chalktalk = package$common.chalktalk || (package$common.chalktalk = {});
   var package$phase1 = package$chalktalk.phase1 || (package$chalktalk.phase1 = {});
   package$phase1.ChalkTalkLexer = ChalkTalkLexer;
@@ -7323,6 +7349,7 @@ var bundle = function (_, Kotlin) {
   package$textalk.TexTalkParseResult = TexTalkParseResult;
   package$textalk.newTexTalkParser = newTexTalkParser;
   package$textalk.TexTalkParserImpl = TexTalkParserImpl;
+  INVALID = new ChalkTalkToken('INVALID', ChalkTalkTokenType$Invalid_getInstance(), -1, -1);
   CLAUSE_VALIDATORS = listOf_0([new ValidationPair(getCallableRef('isAbstraction', function ($receiver, node) {
     return $receiver.isAbstraction_rk66c5$(node);
   }.bind(null, AbstractionNode$Companion_getInstance())), getCallableRef('validate', function ($receiver, node) {
@@ -7376,6 +7403,7 @@ var bundle = function (_, Kotlin) {
   }.bind(null, IffGroup$Companion_getInstance())), getCallableRef('validate', function ($receiver, node) {
     return $receiver.validate_rk66c5$(node);
   }.bind(null, IffGroup$Companion_getInstance())))]);
+  INVALID_0 = new TexTalkToken('INVALID', TexTalkTokenType$Invalid_getInstance(), -1, -1);
   Kotlin.defineModule('bundle', _);
   return _;
 }(typeof bundle === 'undefined' ? {} : bundle, kotlin);

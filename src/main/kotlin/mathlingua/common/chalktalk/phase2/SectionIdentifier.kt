@@ -17,6 +17,7 @@
 package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
+import mathlingua.common.Queue
 import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.Section
 
@@ -106,29 +107,5 @@ object SectionIdentifier {
         }
 
         return result
-    }
-}
-
-private class Queue<T> : Iterable<T> {
-    private val data = ArrayList<T>()
-
-    fun offer(item: T) {
-        data.add(0, item)
-    }
-
-    fun poll(): T {
-        return data.removeAt(0)
-    }
-
-    fun peek(): T {
-        return data.elementAt(0)
-    }
-
-    fun isEmpty(): Boolean {
-        return data.isEmpty()
-    }
-
-    override fun iterator(): Iterator<T> {
-        return data.iterator()
     }
 }

@@ -37,3 +37,47 @@ class Validation<T> private constructor(val value: T?, val errors: List<ParseErr
         }
     }
 }
+
+class Stack<T> {
+    private val data = mutableListOf<T>()
+
+    fun push(item: T) {
+        data.add(item)
+    }
+
+    fun pop(): T {
+        return data.removeAt(data.size - 1)
+    }
+
+    fun peek(): T {
+        return data.elementAt(data.size - 1)
+    }
+
+    fun isEmpty(): Boolean {
+        return data.isEmpty()
+    }
+}
+
+class Queue<T> : Iterable<T> {
+    private val data = ArrayList<T>()
+
+    fun offer(item: T) {
+        data.add(0, item)
+    }
+
+    fun poll(): T {
+        return data.removeAt(0)
+    }
+
+    fun peek(): T {
+        return data.elementAt(0)
+    }
+
+    fun isEmpty(): Boolean {
+        return data.isEmpty()
+    }
+
+    override fun iterator(): Iterator<T> {
+        return data.iterator()
+    }
+}

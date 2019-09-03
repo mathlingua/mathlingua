@@ -17,6 +17,7 @@
 package mathlingua.common.chalktalk.phase1
 
 import mathlingua.common.ParseError
+import mathlingua.common.Stack
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 
@@ -36,15 +37,9 @@ fun newChalkTalkLexer(text: String): ChalkTalkLexer {
 private class ChalkTalkLexerImpl(private var text: String) :
     ChalkTalkLexer {
 
-    private val errors: MutableList<ParseError>
+    private val errors = mutableListOf<ParseError>()
     private var chalkTalkTokens: MutableList<ChalkTalkToken>? = null
-    private var index: Int = 0
-
-    init {
-        this.errors = ArrayList()
-        this.chalkTalkTokens = null
-        this.index = 0
-    }
+    private var index = 0
 
     private fun ensureInitialized() {
         if (this.chalkTalkTokens == null) {
@@ -53,7 +48,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
     }
 
     private fun initialize() {
-        this.chalkTalkTokens = ArrayList()
+        this.chalkTalkTokens = mutableListOf()
 
         if (!this.text.endsWith("\n")) {
             this.text += "\n"
@@ -284,6 +279,10 @@ private class ChalkTalkLexerImpl(private var text: String) :
         return "~!@#%^&*-+<>\\/=".contains(c)
     }
 
+    private fun isLetterOrDigit(c: Char): Boolean {
+        return Regex("[a-zA-Z0-9]+").matches("$c")
+    }
+
     override fun hasNext(): Boolean {
         ensureInitialized()
         return this.index < this.chalkTalkTokens!!.size
@@ -313,29 +312,5 @@ private class ChalkTalkLexerImpl(private var text: String) :
 
     override fun errors(): List<ParseError> {
         return this.errors
-    }
-
-    private fun isLetterOrDigit(c: Char): Boolean {
-        return Regex("[a-zA-Z0-9]+").matches("$c")
-    }
-}
-
-private class Stack<T> {
-    private val data = ArrayList<T>()
-
-    fun push(item: T) {
-        data.add(item)
-    }
-
-    fun pop(): T {
-        return data.removeAt(data.size - 1)
-    }
-
-    fun peek(): T {
-        return data.elementAt(data.size - 1)
-    }
-
-    fun isEmpty(): Boolean {
-        return data.isEmpty()
     }
 }

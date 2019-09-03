@@ -41,6 +41,8 @@ fun newChalkTalkParser(): ChalkTalkParser {
     return ChalkTalkParserImpl()
 }
 
+private val INVALID = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
+
 private class ChalkTalkParserImpl : ChalkTalkParser {
 
     override fun parse(chalkTalkLexer: ChalkTalkLexer): ChalkTalkParseResult {
@@ -51,46 +53,38 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
     }
 
     private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
-        val errors: MutableList<ParseError>
-
-        init {
-            this.errors = ArrayList()
-        }
+        val errors = mutableListOf<ParseError>()
 
         fun root(): Root {
-            val groups = ArrayList<Group>()
-            while (true) {
+            val groups = mutableListOf<Group>()
+            while (hasNext()) {
                 val grp = group()
                 grp ?: break
                 groups.add(grp)
             }
 
-            while (this.chalkTalkLexer.hasNext()) {
-                val next = this.chalkTalkLexer.next()
-                this.errors.add(
-                    ParseError(
-                        "Unrecognized token '" + next.text, next.row, next.column
-                    )
-                )
+            while (hasNext()) {
+                val next = next()
+                addError("Unrecognized token '" + next.text, next)
             }
 
             return Root(groups)
         }
 
         private fun group(): Group? {
-            if (this.chalkTalkLexer.hasNext() && this.chalkTalkLexer.peek().type === ChalkTalkTokenType.Linebreak) {
-                this.chalkTalkLexer.next() // absorb the line break
+            if (has(ChalkTalkTokenType.Linebreak)) {
+                next() // absorb the line break
             }
 
             var id: ChalkTalkToken? = null
-            if (this.chalkTalkLexer.hasNext() && this.chalkTalkLexer.peek().type === ChalkTalkTokenType.Id) {
-                id = this.chalkTalkLexer.next()
+            if (has(ChalkTalkTokenType.Id)) {
+                id = next()
                 expect(ChalkTalkTokenType.Begin)
                 expect(ChalkTalkTokenType.End)
             }
 
-            val sections = ArrayList<Section>()
-            while (true) {
+            val sections = mutableListOf<Section>()
+            while (hasNext()) {
                 val sec = section()
                 sec ?: break
                 sections.add(sec)
@@ -100,31 +94,27 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
         }
 
         private fun section(): Section? {
-            val isSec = (this.chalkTalkLexer.hasNext() &&
-                this.chalkTalkLexer.hasNextNext() &&
-                this.chalkTalkLexer.peek().type === ChalkTalkTokenType.Name &&
-                this.chalkTalkLexer.peekPeek().type === ChalkTalkTokenType.Colon)
-            if (!isSec) {
+            if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)) {
                 return null
             }
 
             val name = expect(ChalkTalkTokenType.Name)
             expect(ChalkTalkTokenType.Colon)
 
-            val args = ArrayList<Argument>()
-            while (this.chalkTalkLexer.hasNext() && this.chalkTalkLexer.peek().type !== ChalkTalkTokenType.Begin) {
+            val args = mutableListOf<Argument>()
+            while (hasNext() && !has(ChalkTalkTokenType.Begin)) {
                 val arg = argument()
                 arg ?: break
                 args.add(arg)
 
-                if (this.chalkTalkLexer.hasNext() && this.chalkTalkLexer.peek().type !== ChalkTalkTokenType.Begin) {
+                if (hasNext() && !has(ChalkTalkTokenType.Begin)) {
                     expect(ChalkTalkTokenType.Comma)
                 }
             }
 
             expect(ChalkTalkTokenType.Begin)
 
-            while (true) {
+            while (hasNext()) {
                 val argList = argumentList()
                 argList ?: break
                 args.addAll(argList)
@@ -136,7 +126,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
         }
 
         private fun argumentList(): List<Argument>? {
-            if (!this.chalkTalkLexer.hasNext() || this.chalkTalkLexer.peek().type !== ChalkTalkTokenType.DotSpace) {
+            if (!hasNext() || !has(ChalkTalkTokenType.DotSpace)) {
                 return null
             }
 
@@ -147,13 +137,13 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 return listOf(Argument(grp))
             }
 
-            val argList = ArrayList<Argument>()
+            val argList = mutableListOf<Argument>()
             val valueArg = argument()
             if (valueArg != null) {
                 argList.add(valueArg)
 
-                while (this.chalkTalkLexer.hasNext() && this.chalkTalkLexer.peek().type === ChalkTalkTokenType.Comma) {
-                    this.chalkTalkLexer.next() // absorb the comma
+                while (has(ChalkTalkTokenType.Comma)) {
+                    next() // absorb the comma
                     val v = argument()
                     v ?: break
                     argList.add(v)
@@ -167,7 +157,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
         private fun token(type: ChalkTalkTokenType): ChalkTalkToken? {
             return if (has(type)) {
-                this.chalkTalkLexer.next()
+                next()
             } else {
                 null
             }
@@ -187,14 +177,8 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
             val target = tupleItem()
             if (target == null) {
-                errors.add(
-                    ParseError(
-                        "Expected a name, abstraction, tuple, aggregate, or assignment",
-                        -1, -1
-                    )
-                )
-                val tok = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
-                return Argument(tok)
+                addError("Expected a name, abstraction, tuple, aggregate, or assignment")
+                return Argument(INVALID)
             }
             return Argument(target)
         }
@@ -204,27 +188,18 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 return null
             }
 
-            val name = this.chalkTalkLexer.next()
-            val equals = this.chalkTalkLexer.next()
-            var rhs: ChalkTalkToken?
-            if (!this.chalkTalkLexer.hasNext()) {
-                errors.add(
-                    ParseError(
-                        "A = must be followed by an argument",
-                        equals.row, equals.column
-                    )
-                )
-                rhs = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
+            val name = next()
+            val equals = next()
+            val rhs = if (!hasNext()) {
+                addError("A = must be followed by an argument", equals)
+                INVALID
             } else {
-                val maybeRhs = this.chalkTalkLexer.next()
+                val maybeRhs = next()
                 if (maybeRhs.type == ChalkTalkTokenType.String) {
-                    rhs = maybeRhs
+                    maybeRhs
                 } else {
-                    ParseError(
-                        "The right hand side of a = must be a string",
-                        equals.row, equals.column
-                    )
-                    rhs = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
+                    addError("The right hand side of a = must be a string", equals)
+                    INVALID
                 }
             }
             return Mapping(name, rhs)
@@ -235,17 +210,12 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 return null
             }
 
-            val name = this.chalkTalkLexer.next()
-            val colonEquals = this.chalkTalkLexer.next()
+            val name = next()
+            val colonEquals = next()
             var rhs = assignmentRhs()
             if (rhs == null) {
-                errors.add(
-                    ParseError(
-                        "A := must be followed by a argument",
-                        colonEquals.row, colonEquals.column
-                    )
-                )
-                rhs = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
+                addError("A := must be followed by a argument", colonEquals)
+                rhs = INVALID
             }
             return Assignment(name, rhs)
         }
@@ -276,17 +246,15 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
         private fun name(): ChalkTalkToken {
             if (!has(ChalkTalkTokenType.Name)) {
-                if (this.chalkTalkLexer.hasNext()) {
-                    val peek = this.chalkTalkLexer.next()
-                    this.errors.add(
-                        ParseError("Expected a name, but found ${peek.text}", peek.row, peek.column)
-                    )
+                if (hasNext()) {
+                    val peek = next()
+                    addError("Expected a name, but found ${peek.text}", peek)
                 } else {
-                    this.errors.add(ParseError("Expected a name, but found the end of input", -1, -1))
+                    addError("Expected a name, but found the end of input")
                 }
-                return ChalkTalkToken("", ChalkTalkTokenType.Invalid, -1, -1)
+                return INVALID
             }
-            return this.chalkTalkLexer.next()
+            return next()
         }
 
         private fun tuple(): Tuple? {
@@ -294,24 +262,17 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 return null
             }
 
-            val items = ArrayList<TupleItem>()
+            val items = mutableListOf<TupleItem>()
 
             val leftParen = expect(ChalkTalkTokenType.LParen)
-            while (this.chalkTalkLexer.hasNext() &&
-                this.chalkTalkLexer.peek().type != ChalkTalkTokenType.RParen
-            ) {
+            while (hasNext() && !has(ChalkTalkTokenType.RParen)) {
                 if (items.isNotEmpty()) {
                     expect(ChalkTalkTokenType.Comma)
                 }
 
                 val item = tupleItem()
                 if (item == null) {
-                    this.errors.add(
-                        ParseError(
-                            "Encountered a non-tuple item in a tuple",
-                            leftParen.row, leftParen.column
-                        )
-                    )
+                    addError("Encountered a non-tuple item in a tuple", leftParen)
                 } else {
                     items.add(item)
                 }
@@ -329,61 +290,59 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             return assignment() ?: abstraction() ?: assignmentRhs()
         }
 
+        private fun hasNext() = chalkTalkLexer.hasNext()
+
+        private fun next() = chalkTalkLexer.next()
+
+        private fun addError(message: String, token: ChalkTalkToken? = null) {
+            val row = token?.row ?: -1
+            val column = token?.column ?: -1
+            errors.add(ParseError(message, row, column))
+        }
+
         private fun nameList(stopType: ChalkTalkTokenType): List<ChalkTalkToken> {
-            val names = ArrayList<ChalkTalkToken>()
-            while (this.chalkTalkLexer.hasNext() && this.chalkTalkLexer.peek().type != stopType) {
+            val names = mutableListOf<ChalkTalkToken>()
+            while (hasNext() && !has(stopType)) {
                 var comma: ChalkTalkToken? = null
                 if (names.isNotEmpty()) {
                     comma = expect(ChalkTalkTokenType.Comma)
                 }
 
-                if (!this.chalkTalkLexer.hasNext()) {
-                    this.errors.add(
-                        ParseError("Expected a name to follow a comma", comma!!.row, comma.column)
-                    )
+                if (!hasNext()) {
+                    addError("Expected a name to follow a comma", comma)
                     break
                 }
 
-                val tok = this.chalkTalkLexer.next()
+                val tok = next()
                 if (tok.type == ChalkTalkTokenType.Name) {
                     names.add(tok)
                 } else {
-                    this.errors.add(
-                        ParseError("Expected a name but found '${tok.text}'", tok.row, tok.column)
-                    )
+                    addError("Expected a name but found '${tok.text}'", tok)
                 }
             }
             return names
         }
 
         private fun has(type: ChalkTalkTokenType): Boolean {
-            return this.chalkTalkLexer.hasNext() && this.chalkTalkLexer.peek().type == type
+            return hasNext() && chalkTalkLexer.peek().type == type
         }
 
         private fun hasHas(type: ChalkTalkTokenType, thenType: ChalkTalkTokenType): Boolean {
             return has(type) &&
-                this.chalkTalkLexer.hasNextNext() && this.chalkTalkLexer.peekPeek().type == thenType
+                chalkTalkLexer.hasNextNext() && chalkTalkLexer.peekPeek().type == thenType
         }
 
         private fun expect(type: ChalkTalkTokenType): ChalkTalkToken {
-            if (!this.chalkTalkLexer.hasNext() || this.chalkTalkLexer.peek().type !== type) {
-                val peek = if (this.chalkTalkLexer.hasNext()) {
-                    this.chalkTalkLexer.peek()
+            if (!hasNext() || chalkTalkLexer.peek().type !== type) {
+                val peek = if (hasNext()) {
+                    chalkTalkLexer.peek()
                 } else {
-                    ChalkTalkToken("", ChalkTalkTokenType.Invalid, -1, -1)
+                    INVALID
                 }
-                errors.add(
-                    ParseError(
-                        "Expected a token of type " +
-                            type +
-                            " but " +
-                            "found " +
-                            peek.type, peek.row, peek.column
-                    )
-                )
-                return ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
+                addError("Expected a token of type $type but found ${peek.type}", peek)
+                return INVALID
             }
-            return this.chalkTalkLexer.next()
+            return next()
         }
     }
 }

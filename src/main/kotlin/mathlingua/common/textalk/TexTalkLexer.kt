@@ -19,18 +19,12 @@ package mathlingua.common.textalk
 import mathlingua.common.ParseError
 
 interface TexTalkLexer {
-
-    val errors: List<ParseError>
-
-    operator fun hasNext(): Boolean
-
+    fun hasNext(): Boolean
     fun hasNextNext(): Boolean
-
     fun peek(): TexTalkToken
-
     fun peekPeek(): TexTalkToken
-
-    operator fun next(): TexTalkToken
+    fun next(): TexTalkToken
+    val errors: List<ParseError>
 }
 
 fun newTexTalkLexer(text: String): TexTalkLexer {
@@ -38,16 +32,11 @@ fun newTexTalkLexer(text: String): TexTalkLexer {
 }
 
 private class TexTalkLexerImpl(text: String) : TexTalkLexer {
-
-    override val errors: MutableList<ParseError>
-    private val tokens: MutableList<TexTalkToken>
-    private var index: Int = 0
+    override val errors = mutableListOf<ParseError>()
+    private val tokens = mutableListOf<TexTalkToken>()
+    private var index = 0
 
     init {
-        this.errors = ArrayList()
-        this.tokens = ArrayList()
-        this.index = 0
-
         var i = 0
 
         var line = 0

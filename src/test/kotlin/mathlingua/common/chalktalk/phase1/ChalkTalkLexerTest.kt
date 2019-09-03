@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test
 
 internal class ChalkTalkLexerTest {
     @Test
-    fun `correctly identfies tokens`() {
+    fun `correctly identifies tokens`() {
         val text = "someName:'some statement'\"some text\". [some id],:="
         val lexer = newChalkTalkLexer(text)
         val actual: MutableList<ChalkTalkToken> = ArrayList()

@@ -42,55 +42,53 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, Statement(id, Validation.failure(emptyList())), sourceSection)
+        return toCode(isArg, indent,
+            Statement(id, Validation.failure(emptyList())), sourceSection)
+    }
+}
+
+fun isSourceGroup(node: ChalkTalkNode): Boolean {
+    return firstSectionMatchesName(node, "Source")
+}
+
+fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
+    val id = groupNode.id
+    if (id == null) {
+        return Validation.failure(listOf(
+            ParseError("A Source group must have an id",
+                AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+        ))
     }
 
-    companion object {
+    // id.text is of the form [...]
+    // The [ and ] need to be removed.
+    val idText = id.text.substring(1, id.text.length - 1)
 
-        fun isSourceGroup(node: ChalkTalkNode): Boolean {
-            return firstSectionMatchesName(node, "Source")
-        }
-
-        fun validate(groupNode: Group): Validation<SourceGroup> {
-            val id = groupNode.id
-            if (id == null) {
-                return Validation.failure(listOf(
-                    ParseError("A Source group must have an id",
-                        AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
-                ))
-            }
-
-            // id.text is of the form [...]
-            // The [ and ] need to be removed.
-            val idText = id.text.substring(1, id.text.length - 1)
-
-            val errors = mutableListOf<ParseError>()
-            if (!Regex("[a-zA-Z0-9]+").matches(idText)) {
-                errors.add(
-                    ParseError("A source id can only contain numbers and letters",
-                        AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
-                )
-            }
-
-            val sections = groupNode.sections
-            if (sections.size != 1) {
-                errors.add(
-                    ParseError("Expected a singe section but found ${sections.size}",
-                        AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
-                )
-            }
-
-            val section = sections[0]
-            val validation = SourceSection.validate(section)
-            errors.addAll(validation.errors)
-
-            if (errors.isNotEmpty()) {
-                return Validation.failure(errors)
-            }
-
-            return Validation.success(SourceGroup(idText, validation.value!!))
-        }
+    val errors = mutableListOf<ParseError>()
+    if (!Regex("[a-zA-Z0-9]+").matches(idText)) {
+        errors.add(
+            ParseError("A source id can only contain numbers and letters",
+                AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+        )
     }
+
+    val sections = groupNode.sections
+    if (sections.size != 1) {
+        errors.add(
+            ParseError("Expected a singe section but found ${sections.size}",
+                AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+        )
+    }
+
+    val section = sections[0]
+    val validation = validateSourceSection(section)
+    errors.addAll(validation.errors)
+
+    if (errors.isNotEmpty()) {
+        return Validation.failure(errors)
+    }
+
+    return Validation.success(SourceGroup(idText, validation.value!!))
 }
 
 data class DefinesGroup(
@@ -126,24 +124,21 @@ data class DefinesGroup(
             metaDataSection
         )
     }
+}
 
-    companion object {
+fun isDefinesGroup(node: ChalkTalkNode): Boolean {
+    return firstSectionMatchesName(node, "Defines")
+}
 
-        fun isDefinesGroup(node: ChalkTalkNode): Boolean {
-            return firstSectionMatchesName(node, "Defines")
-        }
-
-        fun validate(groupNode: Group): Validation<DefinesGroup> {
-            return validateDefinesLikeGroup(
-                groupNode,
-                "Defines",
-                DefinesSection.Companion::validate,
-                "means",
-                MeansSection.Companion::validate,
-                ::DefinesGroup
-            )
-        }
-    }
+fun validateDefinesGroup(groupNode: Group): Validation<DefinesGroup> {
+    return validateDefinesLikeGroup(
+        groupNode,
+        "Defines",
+        ::validateDefinesSection,
+        "means",
+        ::validateMeansSection,
+        ::DefinesGroup
+    )
 }
 
 data class RepresentsGroup(
@@ -179,24 +174,21 @@ data class RepresentsGroup(
             metaDataSection
         )
     }
+}
 
-    companion object {
+fun isRepresentsGroup(node: ChalkTalkNode): Boolean {
+    return firstSectionMatchesName(node, "Represents")
+}
 
-        fun isRepresentsGroup(node: ChalkTalkNode): Boolean {
-            return firstSectionMatchesName(node, "Represents")
-        }
-
-        fun validate(groupNode: Group): Validation<RepresentsGroup> {
-            return validateDefinesLikeGroup(
-                groupNode,
-                "Represents",
-                RepresentsSection.Companion::validate,
-                "that",
-                ThatSection.Companion::validate,
-                ::RepresentsGroup
-            )
-        }
-    }
+fun validateRepresentsGroup(groupNode: Group): Validation<RepresentsGroup> {
+    return validateDefinesLikeGroup(
+        groupNode,
+        "Represents",
+        ::validateRepresentsSection,
+        "that",
+        ::validateThatSection,
+        ::RepresentsGroup
+    )
 }
 
 data class ResultGroup(
@@ -215,22 +207,19 @@ data class ResultGroup(
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, null, resultSection, metaDataSection)
     }
+}
 
-    companion object {
+fun isResultGroup(node: ChalkTalkNode): Boolean {
+    return firstSectionMatchesName(node, "Result")
+}
 
-        fun isResultGroup(node: ChalkTalkNode): Boolean {
-            return firstSectionMatchesName(node, "Result")
-        }
-
-        fun validate(groupNode: Group): Validation<ResultGroup> {
-            return validateResultLikeGroup(
-                groupNode,
-                "Result",
-                ResultSection.Companion::validate,
-                ::ResultGroup
-            )
-        }
-    }
+fun validateResultGroup(groupNode: Group): Validation<ResultGroup> {
+    return validateResultLikeGroup(
+        groupNode,
+        "Result",
+        ::validateResultSection,
+        ::ResultGroup
+    )
 }
 
 data class AxiomGroup(
@@ -249,22 +238,19 @@ data class AxiomGroup(
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, null, axiomSection, metaDataSection)
     }
+}
 
-    companion object {
+fun isAxiomGroup(node: ChalkTalkNode): Boolean {
+    return firstSectionMatchesName(node, "Axiom")
+}
 
-        fun isAxiomGroup(node: ChalkTalkNode): Boolean {
-            return firstSectionMatchesName(node, "Axiom")
-        }
-
-        fun validate(groupNode: Group): Validation<AxiomGroup> {
-            return validateResultLikeGroup(
-                groupNode,
-                "Axiom",
-                AxiomSection.Companion::validate,
-                ::AxiomGroup
-            )
-        }
-    }
+fun validateAxiomGroup(groupNode: Group): Validation<AxiomGroup> {
+    return validateResultLikeGroup(
+        groupNode,
+        "Axiom",
+        ::validateAxiomSection,
+        ::AxiomGroup
+    )
 }
 
 data class ConjectureGroup(
@@ -283,22 +269,19 @@ data class ConjectureGroup(
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, null, conjectureSection, metaDataSection)
     }
+}
 
-    companion object {
+fun isConjectureGroup(node: ChalkTalkNode): Boolean {
+    return firstSectionMatchesName(node, "Conjecture")
+}
 
-        fun isConjectureGroup(node: ChalkTalkNode): Boolean {
-            return firstSectionMatchesName(node, "Conjecture")
-        }
-
-        fun validate(groupNode: Group): Validation<ConjectureGroup> {
-            return validateResultLikeGroup(
-                groupNode,
-                "Conjecture",
-                ConjectureSection.Companion::validate,
-                ::ConjectureGroup
-            )
-        }
-    }
+fun validateConjectureGroup(groupNode: Group): Validation<ConjectureGroup> {
+    return validateResultLikeGroup(
+        groupNode,
+        "Conjecture",
+        ::validateConjectureSection,
+        ::ConjectureGroup
+    )
 }
 
 fun toCode(isArg: Boolean, indent: Int, id: Statement?, vararg sections: Phase2Node?): String {
@@ -344,7 +327,7 @@ fun <G, S> validateResultLikeGroup(
 
     val sectionMap: Map<String, Section?>
     try {
-        sectionMap = SectionIdentifier.identifySections(
+        sectionMap = identifySections(
             sections, resultLikeName, "Alias?", "Metadata?"
         )
     } catch (e: ParseError) {
@@ -366,7 +349,7 @@ fun <G, S> validateResultLikeGroup(
 
     var metaDataSection: MetaDataSection? = null
     if (metadata != null) {
-        val metaDataValidation = MetaDataSection.validate(metadata)
+        val metaDataValidation = validateMetaDataSection(metadata)
         if (metaDataValidation.isSuccessful) {
             metaDataSection = metaDataValidation.value!!
         } else {
@@ -376,7 +359,7 @@ fun <G, S> validateResultLikeGroup(
 
     var aliasSection: AliasSection? = null
     if (alias != null) {
-        val aliasValidation = AliasSection.validate(alias)
+        val aliasValidation = validateAliasSection(alias)
         if (aliasValidation.isSuccessful) {
             aliasSection = aliasValidation.value!!
         } else {
@@ -418,7 +401,7 @@ fun <G, S, E> validateDefinesLikeGroup(
             statementText, ChalkTalkTokenType.Statement,
             row, column
         )
-        val idValidation = Statement.validate(stmtToken)
+        val idValidation = validateStatement(stmtToken)
         if (idValidation.isSuccessful) {
             id = idValidation.value
         } else {
@@ -437,7 +420,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     val sectionMap: Map<String, Section?>
     try {
-        sectionMap = SectionIdentifier.identifySections(
+        sectionMap = identifySections(
             sections,
             definesLikeSectionName, "assuming?", endSectionName, "Alias?", "Metadata?"
         )
@@ -462,7 +445,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     var assumingSection: AssumingSection? = null
     if (assuming != null) {
-        val assumingValidation = AssumingSection.validate(assuming)
+        val assumingValidation = validateAssumingSection(assuming)
         if (assumingValidation.isSuccessful) {
             assumingSection = assumingValidation.value!!
         } else {
@@ -480,7 +463,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     var aliasSection: AliasSection? = null
     if (alias != null) {
-        val aliasValidation = AliasSection.validate(alias)
+        val aliasValidation = validateAliasSection(alias)
         if (aliasValidation.isSuccessful) {
             aliasSection = aliasValidation.value!!
         } else {
@@ -490,7 +473,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     var metaDataSection: MetaDataSection? = null
     if (metadata != null) {
-        val metaDataValidation = MetaDataSection.validate(metadata)
+        val metaDataValidation = validateMetaDataSection(metadata)
         if (metaDataValidation.isSuccessful) {
             metaDataSection = metaDataValidation.value!!
         } else {

@@ -21,8 +21,7 @@ import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.Section
 
-data class SourceSection(val mappings: List<MappingNode>) :
-    Phase2Node {
+data class SourceSection(val mappings: List<MappingNode>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
     }
@@ -31,7 +30,7 @@ data class SourceSection(val mappings: List<MappingNode>) :
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Source:"))
         builder.append('\n')
-        for (i in 0 until mappings.size) {
+        for (i in mappings.indices) {
             builder.append(mappings[i].toCode(true, indent + 2))
             if (i != mappings.size - 1) {
                 builder.append('\n')
@@ -39,36 +38,34 @@ data class SourceSection(val mappings: List<MappingNode>) :
         }
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(section: Section): Validation<SourceSection> {
-            if (section.name.text != "Source") {
-                return Validation.failure(
-                    listOf(
-                        ParseError(
-                            "Expected a 'Source' but found '${section.name.text}'",
-                            AstUtils.getRow(section), AstUtils.getColumn(section)
-                        )
-                    )
+fun validateSourceSection(section: Section): Validation<SourceSection> {
+    if (section.name.text != "Source") {
+        return Validation.failure(
+            listOf(
+                ParseError(
+                    "Expected a 'Source' but found '${section.name.text}'",
+                    AstUtils.getRow(section), AstUtils.getColumn(section)
                 )
-            }
+            )
+        )
+    }
 
-            val errors = mutableListOf<ParseError>()
-            val mappings = mutableListOf<MappingNode>()
-            for (arg in section.args) {
-                val validation = MappingNode.validate(arg)
-                if (validation.isSuccessful) {
-                    mappings.add(validation.value!!)
-                } else {
-                    errors.addAll(validation.errors)
-                }
-            }
-
-            return if (errors.isNotEmpty()) {
-                Validation.failure(errors)
-            } else {
-                Validation.success(SourceSection(mappings))
-            }
+    val errors = mutableListOf<ParseError>()
+    val mappings = mutableListOf<MappingNode>()
+    for (arg in section.args) {
+        val validation = validateMappingNode(arg)
+        if (validation.isSuccessful) {
+            mappings.add(validation.value!!)
+        } else {
+            errors.addAll(validation.errors)
         }
+    }
+
+    return if (errors.isNotEmpty()) {
+        Validation.failure(errors)
+    } else {
+        Validation.success(SourceSection(mappings))
     }
 }

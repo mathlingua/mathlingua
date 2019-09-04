@@ -22,6 +22,7 @@ import mathlingua.common.chalktalk.phase2.Document
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.findAllStatementSignatures
+import mathlingua.common.chalktalk.phase2.validateDocument
 
 data class MathLinguaResult(val document: Document?, val errors: List<ParseError>)
 
@@ -40,7 +41,7 @@ class MathLingua {
             return MathLinguaResult(null, allErrors)
         }
 
-        val documentValidation = Document.validate(root)
+        val documentValidation = validateDocument(root)
         allErrors.addAll(documentValidation.errors)
 
         return MathLinguaResult(documentValidation.value, allErrors)

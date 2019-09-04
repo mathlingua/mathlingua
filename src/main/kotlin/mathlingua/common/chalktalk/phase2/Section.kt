@@ -22,8 +22,8 @@ import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.Section
 
-fun appendClauseArgs(builder: StringBuilder, clauses: List<Clause>, indent: Int) {
-    for (i in 0 until clauses.size) {
+private fun appendClauseArgs(builder: StringBuilder, clauses: List<Clause>, indent: Int) {
+    for (i in clauses.indices) {
         builder.append(clauses[i].toCode(true, indent))
         if (i != clauses.size - 1) {
             builder.append('\n')
@@ -31,8 +31,8 @@ fun appendClauseArgs(builder: StringBuilder, clauses: List<Clause>, indent: Int)
     }
 }
 
-fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, indent: Int) {
-    for (i in 0 until targets.size) {
+private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, indent: Int) {
+    for (i in targets.indices) {
         builder.append(targets[i].toCode(true, indent))
         if (i != targets.size - 1) {
             builder.append('\n')
@@ -40,20 +40,9 @@ fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, indent: Int)
     }
 }
 
-data class AssumingSection(val clauses: List<Clause>) :
-    Phase2Node {
-
+data class AssumingSection(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
-    }
-
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<AssumingSection> {
-            return ClauseListValidator.validate(
-                node,
-                "assuming"
-            ) { AssumingSection(it) }
-        }
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
@@ -65,8 +54,14 @@ data class AssumingSection(val clauses: List<Clause>) :
     }
 }
 
-data class DefinesSection(val targets: List<Target>) :
-    Phase2Node {
+fun validateAssumingSection(node: ChalkTalkNode): Validation<AssumingSection> {
+    return validateClauseList(
+        node,
+        "assuming"
+    ) { AssumingSection(it) }
+}
+
+data class DefinesSection(val targets: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         targets.forEach(fn)
     }
@@ -78,15 +73,13 @@ data class DefinesSection(val targets: List<Target>) :
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<DefinesSection> {
-            return TargetListValidator.validate(
-                node,
-                "Defines"
-            ) { DefinesSection(it) }
-        }
-    }
+fun validateDefinesSection(node: ChalkTalkNode): Validation<DefinesSection> {
+    return validateTargetList(
+        node,
+        "Defines"
+    ) { DefinesSection(it) }
 }
 
 data class RefinesSection(val targets: List<Target>) :
@@ -102,15 +95,13 @@ data class RefinesSection(val targets: List<Target>) :
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<RefinesSection> {
-            return TargetListValidator.validate(
-                node,
-                "Refines"
-            ) { RefinesSection(it) }
-        }
-    }
+fun validateRefinesSection(node: ChalkTalkNode): Validation<RefinesSection> {
+    return validateTargetList(
+        node,
+        "Refines"
+    ) { RefinesSection(it) }
 }
 
 class RepresentsSection : Phase2Node {
@@ -120,49 +111,46 @@ class RepresentsSection : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         return indentedString(isArg, indent, "Represents:")
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<RepresentsSection> {
-            val errors = ArrayList<ParseError>()
-            if (node !is Section) {
-                errors.add(
-                    ParseError(
-                        "Expected a RepresentsSection",
-                        AstUtils.getRow(node), AstUtils.getColumn(node)
-                    )
-                )
-            }
+fun validateRepresentsSection(node: ChalkTalkNode): Validation<RepresentsSection> {
+    val errors = ArrayList<ParseError>()
+    if (node !is Section) {
+        errors.add(
+            ParseError(
+                "Expected a RepresentsSection",
+                AstUtils.getRow(node), AstUtils.getColumn(node)
+            )
+        )
+    }
 
-            val sect = node as Section
-            if (sect.args.isNotEmpty()) {
-                errors.add(
-                    ParseError(
-                        "A Represents cannot have any arguments",
-                        AstUtils.getRow(node), AstUtils.getColumn(node)
-                    )
-                )
-            }
+    val sect = node as Section
+    if (sect.args.isNotEmpty()) {
+        errors.add(
+            ParseError(
+                "A Represents cannot have any arguments",
+                AstUtils.getRow(node), AstUtils.getColumn(node)
+            )
+        )
+    }
 
-            if (sect.name.text != "Represents") {
-                errors.add(
-                    ParseError(
-                        "Expected a section named Represents",
-                        AstUtils.getRow(node), AstUtils.getColumn(node)
-                    )
-                )
-            }
+    if (sect.name.text != "Represents") {
+        errors.add(
+            ParseError(
+                "Expected a section named Represents",
+                AstUtils.getRow(node), AstUtils.getColumn(node)
+            )
+        )
+    }
 
-            return if (errors.isNotEmpty()) {
-                Validation.failure(errors)
-            } else {
-                Validation.success(RepresentsSection())
-            }
-        }
+    return if (errors.isNotEmpty()) {
+        Validation.failure(errors)
+    } else {
+        Validation.success(RepresentsSection())
     }
 }
 
-data class ExistsSection(val identifiers: List<Target>) :
-    Phase2Node {
+data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         identifiers.forEach(fn)
     }
@@ -174,15 +162,13 @@ data class ExistsSection(val identifiers: List<Target>) :
         appendTargetArgs(builder, identifiers, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<ExistsSection> {
-            return TargetListValidator.validate(
-                node,
-                "exists"
-            ) { ExistsSection(it) }
-        }
-    }
+fun validateExistsSection(node: ChalkTalkNode): Validation<ExistsSection> {
+    return validateTargetList(
+        node,
+        "exists"
+    ) { ExistsSection(it) }
 }
 
 data class ForSection(val targets: List<Target>) : Phase2Node {
@@ -197,19 +183,16 @@ data class ForSection(val targets: List<Target>) : Phase2Node {
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
     }
-
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<ForSection> {
-            return TargetListValidator.validate(
-                node,
-                "for"
-            ) { ForSection(it) }
-        }
-    }
 }
 
-data class MeansSection(val clauses: List<Clause>) :
-    Phase2Node {
+fun validateForSection(node: ChalkTalkNode): Validation<ForSection> {
+    return validateTargetList(
+        node,
+        "for"
+    ) { ForSection(it) }
+}
+
+data class MeansSection(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -221,19 +204,16 @@ data class MeansSection(val clauses: List<Clause>) :
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
-
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<MeansSection> {
-            return ClauseListValidator.validate(
-                node,
-                "means"
-            ) { MeansSection(it) }
-        }
-    }
 }
 
-data class ResultSection(val clauses: List<Clause>) :
-    Phase2Node {
+fun validateMeansSection(node: ChalkTalkNode): Validation<MeansSection> {
+    return validateClauseList(
+        node,
+        "means"
+    ) { MeansSection(it) }
+}
+
+data class ResultSection(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -245,19 +225,16 @@ data class ResultSection(val clauses: List<Clause>) :
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
-
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<ResultSection> {
-            return ClauseListValidator.validate(
-                node,
-                "Result"
-            ) { ResultSection(it) }
-        }
-    }
 }
 
-data class AxiomSection(val clauses: List<Clause>) :
-    Phase2Node {
+fun validateResultSection(node: ChalkTalkNode): Validation<ResultSection> {
+    return validateClauseList(
+        node,
+        "Result"
+    ) { ResultSection(it) }
+}
+
+data class AxiomSection(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -269,19 +246,16 @@ data class AxiomSection(val clauses: List<Clause>) :
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
-
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<AxiomSection> {
-            return ClauseListValidator.validate(
-                node,
-                "Axiom"
-            ) { AxiomSection(it) }
-        }
-    }
 }
 
-data class ConjectureSection(val clauses: List<Clause>) :
-    Phase2Node {
+fun validateAxiomSection(node: ChalkTalkNode): Validation<AxiomSection> {
+    return validateClauseList(
+        node,
+        "Axiom"
+    ) { AxiomSection(it) }
+}
+
+data class ConjectureSection(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -293,19 +267,16 @@ data class ConjectureSection(val clauses: List<Clause>) :
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
-
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<ConjectureSection> {
-            return ClauseListValidator.validate(
-                node,
-                "Conjecture"
-            ) { ConjectureSection(it) }
-        }
-    }
 }
 
-data class SuchThatSection(val clauses: List<Clause>) :
-    Phase2Node {
+fun validateConjectureSection(node: ChalkTalkNode): Validation<ConjectureSection> {
+    return validateClauseList(
+        node,
+        "Conjecture"
+    ) { ConjectureSection(it) }
+}
+
+data class SuchThatSection(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -317,15 +288,13 @@ data class SuchThatSection(val clauses: List<Clause>) :
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<SuchThatSection> {
-            return ClauseListValidator.validate(
-                node,
-                "suchThat"
-            ) { SuchThatSection(it) }
-        }
-    }
+fun validateSuchThatSection(node: ChalkTalkNode): Validation<SuchThatSection> {
+    return validateClauseList(
+        node,
+        "suchThat"
+    ) { SuchThatSection(it) }
 }
 
 data class ThatSection(val clauses: List<Clause>) : Phase2Node {
@@ -340,15 +309,13 @@ data class ThatSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<ThatSection> {
-            return ClauseListValidator.validate(
-                node,
-                "that"
-            ) { ThatSection(it) }
-        }
-    }
+fun validateThatSection(node: ChalkTalkNode): Validation<ThatSection> {
+    return validateClauseList(
+        node,
+        "that"
+    ) { ThatSection(it) }
 }
 
 data class IfSection(val clauses: List<Clause>) : Phase2Node {
@@ -363,15 +330,13 @@ data class IfSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<IfSection> {
-            return ClauseListValidator.validate(
-                node,
-                "if"
-            ) { IfSection(it) }
-        }
-    }
+fun validateIfSection(node: ChalkTalkNode): Validation<IfSection> {
+    return validateClauseList(
+        node,
+        "if"
+    ) { IfSection(it) }
 }
 
 data class IffSection(val clauses: List<Clause>) : Phase2Node {
@@ -386,15 +351,13 @@ data class IffSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<IffSection> {
-            return ClauseListValidator.validate(
-                node,
-                "iff"
-            ) { IffSection(it) }
-        }
-    }
+fun validateIffSection(node: ChalkTalkNode): Validation<IffSection> {
+    return validateClauseList(
+        node,
+        "iff"
+    ) { IffSection(it) }
 }
 
 data class ThenSection(val clauses: List<Clause>) : Phase2Node {
@@ -409,19 +372,16 @@ data class ThenSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
-
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<ThenSection> {
-            return ClauseListValidator.validate(
-                node,
-                "then"
-            ) { ThenSection(it) }
-        }
-    }
 }
 
-data class WhereSection(val clauses: List<Clause>) :
-    Phase2Node {
+fun validateThenSection(node: ChalkTalkNode): Validation<ThenSection> {
+    return validateClauseList(
+        node,
+        "then"
+    ) { ThenSection(it) }
+}
+
+data class WhereSection(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -433,15 +393,13 @@ data class WhereSection(val clauses: List<Clause>) :
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<WhereSection> {
-            return ClauseListValidator.validate(
-                node,
-                "where"
-            ) { WhereSection(it) }
-        }
-    }
+fun validateWhereSection(node: ChalkTalkNode): Validation<WhereSection> {
+    return validateClauseList(
+        node,
+        "where"
+    ) { WhereSection(it) }
 }
 
 data class NotSection(val clauses: List<Clause>) : Phase2Node {
@@ -456,15 +414,13 @@ data class NotSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<NotSection> {
-            return ClauseListValidator.validate(
-                node,
-                "not"
-            ) { NotSection(it) }
-        }
-    }
+fun validateNotSection(node: ChalkTalkNode): Validation<NotSection> {
+    return validateClauseList(
+        node,
+        "not"
+    ) { NotSection(it) }
 }
 
 data class OrSection(val clauses: List<Clause>) : Phase2Node {
@@ -479,13 +435,11 @@ data class OrSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+}
 
-    companion object {
-        fun validate(node: ChalkTalkNode): Validation<OrSection> {
-            return ClauseListValidator.validate(
-                node,
-                "or"
-            ) { OrSection(it) }
-        }
-    }
+fun validateOrSection(node: ChalkTalkNode): Validation<OrSection> {
+    return validateClauseList(
+        node,
+        "or"
+    ) { OrSection(it) }
 }

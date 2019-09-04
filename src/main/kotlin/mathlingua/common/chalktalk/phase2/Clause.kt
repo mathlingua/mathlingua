@@ -21,7 +21,6 @@ import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.Abstraction
 import mathlingua.common.chalktalk.phase1.ast.Aggregate
 import mathlingua.common.chalktalk.phase1.ast.Assignment
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
@@ -29,6 +28,8 @@ import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Mapping
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.Tuple
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.textalk.ExpressionNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
@@ -113,7 +114,7 @@ fun validateClause(rawNode: ChalkTalkNode): Validation<Clause> {
         listOf(
             ParseError(
                 "Expected a Target",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     )
@@ -246,7 +247,7 @@ fun validateIdentifier(rawNode: ChalkTalkNode): Validation<Identifier> {
         errors.add(
             ParseError(
                 "Cannot convert to a ChalkTalkToken",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
         return Validation.failure(errors)
@@ -290,7 +291,7 @@ fun validateStatement(rawNode: ChalkTalkNode): Validation<Statement> {
         errors.add(
             ParseError(
                 "Cannot convert a to a ChalkTalkToken",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }
@@ -348,7 +349,7 @@ fun validateText(rawNode: ChalkTalkNode): Validation<Text> {
         errors.add(
             ParseError(
                 "Cannot convert a to a ChalkTalkToken",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }
@@ -484,7 +485,7 @@ fun validateForGroup(rawNode: ChalkTalkNode): Validation<ForGroup> {
         errors.add(
             ParseError(
                 "Expected a Group",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
         return Validation.failure(errors)
@@ -603,7 +604,7 @@ fun <G, S> validateSingleSectionGroup(
         errors.add(
             ParseError(
                 "Expected a Group",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
         return Validation.failure(errors)
@@ -650,7 +651,7 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
         errors.add(
             ParseError(
                 "Expected a Group",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
         return Validation.failure(errors)
@@ -705,7 +706,7 @@ private fun <Wrapped, Base> validateWrappedNode(
             listOf(
                 ParseError(
                     "Cannot convert to a $expectedType",
-                    AstUtils.getRow(node), AstUtils.getColumn(node)
+                    getRow(node), getColumn(node)
                 )
             )
         )

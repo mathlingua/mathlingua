@@ -18,9 +18,10 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 data class ClauseListSection(val name: String, val clauses: List<Clause>)
 
@@ -47,7 +48,7 @@ private fun validate(node: ChalkTalkNode, expectedName: String): Validation<Clau
         errors.add(
             ParseError(
                 "Expected a Section",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }
@@ -58,7 +59,7 @@ private fun validate(node: ChalkTalkNode, expectedName: String): Validation<Clau
             ParseError(
                 "Expected a Section with name " +
                     expectedName + " but found " + name.text,
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }
@@ -67,7 +68,7 @@ private fun validate(node: ChalkTalkNode, expectedName: String): Validation<Clau
         errors.add(
             ParseError(
                 "Section '" + name.text + "' requires at least one argument.",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }

@@ -18,8 +18,9 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Queue
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 fun identifySections(sections: List<Section>, vararg expected: String): Map<String, Section> {
     val patternBuilder = StringBuilder()
@@ -66,7 +67,7 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
             throw ParseError(
                 "For pattern:\n\n" + pattern +
                     "\nExpected '" + trueName + "' but found '" + nextSection.name.text + "'",
-                AstUtils.getRow(nextSection), AstUtils.getColumn(nextSection)
+                getRow(nextSection), getColumn(nextSection)
             )
         }
     }
@@ -76,7 +77,7 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         throw ParseError(
             "For pattern:\n\n" + pattern +
                 "\nUnexpected Section '" + peek.name.text + "'",
-            AstUtils.getRow(peek), AstUtils.getColumn(peek)
+            getRow(peek), getColumn(peek)
         )
     }
 
@@ -91,10 +92,10 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
 
     var startRow = -1
     var startColumn = -1
-    if (!sections.isEmpty()) {
+    if (sections.isNotEmpty()) {
         val sect = sections[0]
-        startRow = AstUtils.getRow(sect)
-        startColumn = AstUtils.getColumn(sect)
+        startRow = getRow(sect)
+        startColumn = getColumn(sect)
     }
 
     if (nextExpected != null) {

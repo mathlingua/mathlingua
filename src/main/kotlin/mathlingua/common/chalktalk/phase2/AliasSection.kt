@@ -18,8 +18,9 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 data class AliasSection(val mappings: List<MappingNode>) :
     Phase2Node {
@@ -47,7 +48,7 @@ fun validateAliasSection(section: Section): Validation<AliasSection> {
             listOf(
                 ParseError(
                     "Expected a 'Alias' but found '${section.name.text}'",
-                    AstUtils.getRow(section), AstUtils.getColumn(section)
+                    getRow(section), getColumn(section)
                 )
             )
         )

@@ -18,9 +18,10 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.Root
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 interface Phase2Node {
     fun forEach(fn: (node: Phase2Node) -> Unit)
@@ -90,8 +91,8 @@ fun validateDocument(rawNode: ChalkTalkNode): Validation<Document> {
         errors.add(
             ParseError(
                 "Expected a Root",
-                AstUtils.getRow(node),
-                AstUtils.getColumn(node)
+                getRow(node),
+                getColumn(node)
             )
         )
         return Validation.failure(errors)
@@ -152,7 +153,7 @@ fun validateDocument(rawNode: ChalkTalkNode): Validation<Document> {
             errors.add(
                 ParseError(
                     "Expected a top level group but found " + group.toCode(),
-                    AstUtils.getRow(group), AstUtils.getColumn(group)
+                    getRow(group), getColumn(group)
                 )
             )
         }

@@ -18,12 +18,13 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionNode
@@ -56,7 +57,7 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     if (id == null) {
         return Validation.failure(listOf(
             ParseError("A Source group must have an id",
-                AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+                getRow(groupNode), getColumn(groupNode))
         ))
     }
 
@@ -68,7 +69,8 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     if (!Regex("[a-zA-Z0-9]+").matches(idText)) {
         errors.add(
             ParseError("A source id can only contain numbers and letters",
-                AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+                getRow(groupNode), getColumn(groupNode)
+            )
         )
     }
 
@@ -76,7 +78,7 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     if (sections.size != 1) {
         errors.add(
             ParseError("Expected a singe section but found ${sections.size}",
-                AstUtils.getRow(groupNode), AstUtils.getColumn(groupNode))
+                getRow(groupNode), getColumn(groupNode))
         )
     }
 
@@ -318,7 +320,7 @@ fun <G, S> validateResultLikeGroup(
         errors.add(
             ParseError(
                 "A result, axiom, or conjecture cannot have an Id",
-                AstUtils.getRow(group), AstUtils.getColumn(group)
+                getRow(group), getColumn(group)
             )
         )
     }
@@ -411,7 +413,7 @@ fun <G, S, E> validateDefinesLikeGroup(
         errors.add(
             ParseError(
                 "A definition must have an Id",
-                AstUtils.getRow(group), AstUtils.getColumn(group)
+                getRow(group), getColumn(group)
             )
         )
     }

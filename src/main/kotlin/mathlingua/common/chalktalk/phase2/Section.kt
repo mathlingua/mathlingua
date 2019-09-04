@@ -18,9 +18,10 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 private fun appendClauseArgs(builder: StringBuilder, clauses: List<Clause>, indent: Int) {
     for (i in clauses.indices) {
@@ -119,7 +120,7 @@ fun validateRepresentsSection(node: ChalkTalkNode): Validation<RepresentsSection
         errors.add(
             ParseError(
                 "Expected a RepresentsSection",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }
@@ -129,7 +130,7 @@ fun validateRepresentsSection(node: ChalkTalkNode): Validation<RepresentsSection
         errors.add(
             ParseError(
                 "A Represents cannot have any arguments",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }
@@ -138,7 +139,7 @@ fun validateRepresentsSection(node: ChalkTalkNode): Validation<RepresentsSection
         errors.add(
             ParseError(
                 "Expected a section named Represents",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }

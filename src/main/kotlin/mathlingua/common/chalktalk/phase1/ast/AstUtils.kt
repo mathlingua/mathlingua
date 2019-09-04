@@ -16,61 +16,58 @@
 
 package mathlingua.common.chalktalk.phase1.ast
 
-object AstUtils {
+private fun max(val1: Int, val2: Int): Int {
+    return if (val1 >= val2) val1 else val2
+}
 
-    private fun max(val1: Int, val2: Int): Int {
-        return if (val1 >= val2) val1 else val2
+fun buildIndent(level: Int, isArg: Boolean): String {
+    val buffer = StringBuilder()
+    val numSpaces = if (isArg) 2 * max(level - 1, 0) else 2 * level
+    for (i in 0 until numSpaces) {
+        buffer.append(' ')
     }
-
-    fun buildIndent(level: Int, isArg: Boolean): String {
-        val buffer = StringBuilder()
-        val numSpaces = if (isArg) 2 * max(level - 1, 0) else 2 * level
-        for (i in 0 until numSpaces) {
-            buffer.append(' ')
-        }
-        if (isArg) {
-            buffer.append(". ")
-        }
-        return buffer.toString()
+    if (isArg) {
+        buffer.append(". ")
     }
+    return buffer.toString()
+}
 
-    fun getIndent(size: Int): String {
-        val buffer = StringBuilder()
-        for (i in 0 until size) {
-            buffer.append(' ')
-        }
-        return buffer.toString()
+fun getIndent(size: Int): String {
+    val buffer = StringBuilder()
+    for (i in 0 until size) {
+        buffer.append(' ')
     }
+    return buffer.toString()
+}
 
-    fun getRow(node: ChalkTalkNode): Int {
-        if (node is ChalkTalkToken) {
-            return node.row
-        }
-        var rowResult = -1
-        node.forEach {
-            if (rowResult == -1) {
-                val row = getRow(it)
-                if (row >= 0) {
-                    rowResult = row
-                }
+fun getRow(node: ChalkTalkNode): Int {
+    if (node is ChalkTalkToken) {
+        return node.row
+    }
+    var rowResult = -1
+    node.forEach {
+        if (rowResult == -1) {
+            val row = getRow(it)
+            if (row >= 0) {
+                rowResult = row
             }
         }
-        return rowResult
     }
+    return rowResult
+}
 
-    fun getColumn(node: ChalkTalkNode): Int {
-        if (node is ChalkTalkToken) {
-            return node.column
-        }
-        var colResult = -1
-        node.forEach {
-            if (colResult == -1) {
-                val col = getColumn(it)
-                if (col >= 0) {
-                    colResult = col
-                }
+fun getColumn(node: ChalkTalkNode): Int {
+    if (node is ChalkTalkToken) {
+        return node.column
+    }
+    var colResult = -1
+    node.forEach {
+        if (colResult == -1) {
+            val col = getColumn(it)
+            if (col >= 0) {
+                colResult = col
             }
         }
-        return colResult
     }
+    return colResult
 }

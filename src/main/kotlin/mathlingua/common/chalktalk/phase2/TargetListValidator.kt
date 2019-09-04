@@ -18,9 +18,10 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 data class TargetListSection(val targets: List<Target>)
 
@@ -50,7 +51,7 @@ private fun validate(
         errors.add(
             ParseError(
                 "Expected a Section",
-                AstUtils.getRow(node), AstUtils.getColumn(node)
+                getRow(node), getColumn(node)
             )
         )
     }
@@ -62,8 +63,8 @@ private fun validate(
             ParseError(
                 "Expected a Section with name " +
                     expectedName + " but found " + name,
-                AstUtils.getRow(node),
-                AstUtils.getColumn(node)
+                getRow(node),
+                getColumn(node)
             )
         )
     }
@@ -75,8 +76,8 @@ private fun validate(
             ParseError(
                 "Section '" + name1.text +
                     "' requires at least one argument.",
-                AstUtils.getRow(node),
-                AstUtils.getColumn(node)
+                getRow(node),
+                getColumn(node)
             )
         )
     }
@@ -96,7 +97,7 @@ private fun validate(
         errors.add(
             ParseError(
                 "Expected an Target",
-                AstUtils.getRow(arg), AstUtils.getColumn(arg)
+                getRow(arg), getColumn(arg)
             )
         )
     }

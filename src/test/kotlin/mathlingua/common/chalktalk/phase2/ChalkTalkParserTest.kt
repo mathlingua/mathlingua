@@ -42,7 +42,7 @@ internal class ChalkTalkParserTest {
                 assertThat(result.errors.size).isEqualTo(0)
                 assertThat(result.root).isNotNull()
 
-                val validation = Document.validate(result.root!!)
+                val validation = validateDocument(result.root!!)
                 assertThat(validation.errors.size).isEqualTo(0)
                 assertThat(validation.value).isNotNull()
 

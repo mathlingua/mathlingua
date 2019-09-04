@@ -28,7 +28,7 @@ data class Root(val groups: List<Group>) : ChalkTalkNode {
         groups.forEach(fn)
     }
 
-    fun print(buffer: StringBuilder) {
+    private fun print(buffer: StringBuilder) {
         for (grp in groups) {
             grp.print(buffer, 0, false)
         }
@@ -55,32 +55,32 @@ data class Argument(val chalkTalkTarget: ChalkTalkTarget) : ChalkTalkNode {
         when (chalkTalkTarget) {
             is Group -> chalkTalkTarget.print(buffer, level, true)
             is ChalkTalkToken -> {
-                buffer.append(AstUtils.buildIndent(level, true))
+                buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.text)
                 buffer.append("\n")
             }
             is Abstraction -> {
-                buffer.append(AstUtils.buildIndent(level, true))
+                buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
             is Aggregate -> {
-                buffer.append(AstUtils.buildIndent(level, true))
+                buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
             is Assignment -> {
-                buffer.append(AstUtils.buildIndent(level, true))
+                buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
             is Mapping -> {
-                buffer.append(AstUtils.buildIndent(level, true))
+                buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
             is Tuple -> {
-                buffer.append(AstUtils.buildIndent(level, true))
+                buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
@@ -106,7 +106,7 @@ data class Section(val name: ChalkTalkToken, val args: List<Argument>) : ChalkTa
     }
 
     fun print(buffer: StringBuilder, level: Int, fromArg: Boolean) {
-        buffer.append(AstUtils.buildIndent(level, fromArg))
+        buffer.append(buildIndent(level, fromArg))
         buffer.append(name.text)
         buffer.append(":\n")
         for (arg in args) {

@@ -159,7 +159,7 @@ data class Abstraction(val name: ChalkTalkToken, val params: List<ChalkTalkToken
         val builder = StringBuilder()
         builder.append(name.toCode())
         builder.append('(')
-        for (i in 0 until params.size) {
+        for (i in params.indices) {
             builder.append(params[i].toCode())
             if (i != params.size - 1) {
                 builder.append(", ")
@@ -183,7 +183,7 @@ data class Aggregate(val params: List<ChalkTalkToken>) : AssignmentRhs() {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append('{')
-        for (i in 0 until params.size) {
+        for (i in params.indices) {
             builder.append(params[i].toCode())
             if (i != params.size - 1) {
                 builder.append(", ")

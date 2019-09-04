@@ -23,6 +23,7 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.Document
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
+import mathlingua.common.chalktalk.phase2.validateDocument
 import mathlingua.common.textalk.Node
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
@@ -130,7 +131,7 @@ object TreeViewMain {
                                 phase1Tree.expandRow(numPhase1Rows - 1)
                             }
 
-                            val documentValidation = Document.validate(root)
+                            val documentValidation = validateDocument(root)
                             if (!documentValidation.isSuccessful) {
                                 for ((message, row, column) in documentValidation.errors) {
                                     errorBuilder.append(message)

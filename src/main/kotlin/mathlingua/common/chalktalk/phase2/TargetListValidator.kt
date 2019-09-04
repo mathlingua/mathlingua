@@ -18,93 +18,91 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 data class TargetListSection(val targets: List<Target>)
 
-object TargetListValidator {
+fun <T> validateTargetList(
+    rawNode: ChalkTalkNode,
+    expectedName: String,
+    builder: (targets: List<Target>) -> T
+): Validation<T> {
+    val node = rawNode.resolve()
 
-    fun <T> validate(
-        rawNode: ChalkTalkNode,
-        expectedName: String,
-        builder: (targets: List<Target>) -> T
-    ): Validation<T> {
-        val node = rawNode.resolve()
-
-        val validation =
-            validate(node, expectedName)
-        if (!validation.isSuccessful) {
-            return Validation.failure(validation.errors)
-        }
-
-        val targets = validation.value!!.targets
-        return Validation.success(builder(targets))
+    val validation =
+        validate(node, expectedName)
+    if (!validation.isSuccessful) {
+        return Validation.failure(validation.errors)
     }
 
-    private fun validate(
-        node: ChalkTalkNode,
-        expectedName: String
-    ): Validation<TargetListSection> {
-        val errors = ArrayList<ParseError>()
-        if (node !is Section) {
-            errors.add(
-                ParseError(
-                    "Expected a Section",
-                    AstUtils.getRow(node), AstUtils.getColumn(node)
-                )
+    val targets = validation.value!!.targets
+    return Validation.success(builder(targets))
+}
+
+private fun validate(
+    node: ChalkTalkNode,
+    expectedName: String
+): Validation<TargetListSection> {
+    val errors = ArrayList<ParseError>()
+    if (node !is Section) {
+        errors.add(
+            ParseError(
+                "Expected a Section",
+                getRow(node), getColumn(node)
             )
-        }
+        )
+    }
 
-        val (name1, args) = node as Section
-        val name = name1.text
-        if (name != expectedName) {
-            errors.add(
-                ParseError(
-                    "Expected a Section with name " +
-                        expectedName + " but found " + name,
-                    AstUtils.getRow(node),
-                    AstUtils.getColumn(node)
-                )
+    val (name1, args) = node as Section
+    val name = name1.text
+    if (name != expectedName) {
+        errors.add(
+            ParseError(
+                "Expected a Section with name " +
+                    expectedName + " but found " + name,
+                getRow(node),
+                getColumn(node)
             )
-        }
+        )
+    }
 
-        val targets = ArrayList<Target>()
+    val targets = ArrayList<Target>()
 
-        if (args.isEmpty()) {
-            errors.add(
-                ParseError(
-                    "Section '" + name1.text +
-                        "' requires at least one argument.",
-                    AstUtils.getRow(node),
-                    AstUtils.getColumn(node)
-                )
+    if (args.isEmpty()) {
+        errors.add(
+            ParseError(
+                "Section '" + name1.text +
+                    "' requires at least one argument.",
+                getRow(node),
+                getColumn(node)
             )
-        }
+        )
+    }
 
-        for (arg in args) {
-            val clauseValidation = Clause.validate(arg)
-            if (clauseValidation.isSuccessful) {
-                val clause = clauseValidation.value
-                if (clause is Target) {
-                    targets.add(clause)
-                    continue
-                }
-            } else {
-                errors.addAll(clauseValidation.errors)
+    for (arg in args) {
+        val clauseValidation = validateClause(arg)
+        if (clauseValidation.isSuccessful) {
+            val clause = clauseValidation.value
+            if (clause is Target) {
+                targets.add(clause)
+                continue
             }
-
-            errors.add(
-                ParseError(
-                    "Expected an Target",
-                    AstUtils.getRow(arg), AstUtils.getColumn(arg)
-                )
-            )
+        } else {
+            errors.addAll(clauseValidation.errors)
         }
 
-        return if (errors.isNotEmpty()) {
-            Validation.failure(errors)
-        } else Validation.success(TargetListSection(targets))
+        errors.add(
+            ParseError(
+                "Expected an Target",
+                getRow(arg), getColumn(arg)
+            )
+        )
     }
+
+    return if (errors.isNotEmpty()) {
+        Validation.failure(errors)
+    } else Validation.success(TargetListSection(targets))
 }

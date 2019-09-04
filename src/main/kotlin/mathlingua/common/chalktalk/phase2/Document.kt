@@ -18,9 +18,10 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.AstUtils
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.Root
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 
 interface Phase2Node {
     fun forEach(fn: (node: Phase2Node) -> Unit)
@@ -80,97 +81,94 @@ data class Document(
 
         return builder.toString()
     }
+}
 
-    companion object {
+fun validateDocument(rawNode: ChalkTalkNode): Validation<Document> {
+    val node = rawNode.resolve()
 
-        fun validate(rawNode: ChalkTalkNode): Validation<Document> {
-            val node = rawNode.resolve()
+    val errors = ArrayList<ParseError>()
+    if (node !is Root) {
+        errors.add(
+            ParseError(
+                "Expected a Root",
+                getRow(node),
+                getColumn(node)
+            )
+        )
+        return Validation.failure(errors)
+    }
 
-            val errors = ArrayList<ParseError>()
-            if (node !is Root) {
-                errors.add(
-                    ParseError(
-                        "Expected a Root",
-                        AstUtils.getRow(node),
-                        AstUtils.getColumn(node)
-                    )
-                )
-                return Validation.failure(errors)
+    val defines = ArrayList<DefinesGroup>()
+    val represents = ArrayList<RepresentsGroup>()
+    val results = ArrayList<ResultGroup>()
+    val axioms = ArrayList<AxiomGroup>()
+    val conjectures = ArrayList<ConjectureGroup>()
+    val sources = ArrayList<SourceGroup>()
+
+    val (groups) = node
+    for (group in groups) {
+        if (isResultGroup(group)) {
+            val resultValidation = validateResultGroup(group)
+            if (resultValidation.isSuccessful) {
+                results.add(resultValidation.value!!)
+            } else {
+                errors.addAll(resultValidation.errors)
             }
-
-            val defines = ArrayList<DefinesGroup>()
-            val represents = ArrayList<RepresentsGroup>()
-            val results = ArrayList<ResultGroup>()
-            val axioms = ArrayList<AxiomGroup>()
-            val conjectures = ArrayList<ConjectureGroup>()
-            val sources = ArrayList<SourceGroup>()
-
-            val (groups) = node
-            for (group in groups) {
-                if (ResultGroup.isResultGroup(group)) {
-                    val resultValidation = ResultGroup.validate(group)
-                    if (resultValidation.isSuccessful) {
-                        results.add(resultValidation.value!!)
-                    } else {
-                        errors.addAll(resultValidation.errors)
-                    }
-                } else if (AxiomGroup.isAxiomGroup(group)) {
-                    val axiomValidation = AxiomGroup.validate(group)
-                    if (axiomValidation.isSuccessful) {
-                        axioms.add(axiomValidation.value!!)
-                    } else {
-                        errors.addAll(axiomValidation.errors)
-                    }
-                } else if (ConjectureGroup.isConjectureGroup(group)) {
-                    val conjectureValidation = ConjectureGroup.validate(group)
-                    if (conjectureValidation.isSuccessful) {
-                        conjectures.add(conjectureValidation.value!!)
-                    } else {
-                        errors.addAll(conjectureValidation.errors)
-                    }
-                } else if (DefinesGroup.isDefinesGroup(group)) {
-                    val definesValidation = DefinesGroup.validate(group)
-                    if (definesValidation.isSuccessful) {
-                        defines.add(definesValidation.value!!)
-                    } else {
-                        errors.addAll(definesValidation.errors)
-                    }
-                } else if (RepresentsGroup.isRepresentsGroup(group)) {
-                    val representsValidation = RepresentsGroup.validate(group)
-                    if (representsValidation.isSuccessful) {
-                        represents.add(representsValidation.value!!)
-                    } else {
-                        errors.addAll(representsValidation.errors)
-                    }
-                } else if (SourceGroup.isSourceGroup(group)) {
-                    val sourceValidation = SourceGroup.validate(group)
-                    if (sourceValidation.isSuccessful) {
-                        sources.add(sourceValidation.value!!)
-                    } else {
-                        errors.addAll(sourceValidation.errors)
-                    }
-                } else {
-                    errors.add(
-                        ParseError(
-                            "Expected a top level group but found " + group.toCode(),
-                            AstUtils.getRow(group), AstUtils.getColumn(group)
-                        )
-                    )
-                }
+        } else if (isAxiomGroup(group)) {
+            val axiomValidation = validateAxiomGroup(group)
+            if (axiomValidation.isSuccessful) {
+                axioms.add(axiomValidation.value!!)
+            } else {
+                errors.addAll(axiomValidation.errors)
             }
-
-            return if (!errors.isEmpty()) {
-                Validation.failure(errors)
-            } else Validation.success(
-                Document(
-                    defines,
-                    represents,
-                    results,
-                    axioms,
-                    conjectures,
-                    sources
+        } else if (isConjectureGroup(group)) {
+            val conjectureValidation = validateConjectureGroup(group)
+            if (conjectureValidation.isSuccessful) {
+                conjectures.add(conjectureValidation.value!!)
+            } else {
+                errors.addAll(conjectureValidation.errors)
+            }
+        } else if (isDefinesGroup(group)) {
+            val definesValidation = validateDefinesGroup(group)
+            if (definesValidation.isSuccessful) {
+                defines.add(definesValidation.value!!)
+            } else {
+                errors.addAll(definesValidation.errors)
+            }
+        } else if (isRepresentsGroup(group)) {
+            val representsValidation = validateRepresentsGroup(group)
+            if (representsValidation.isSuccessful) {
+                represents.add(representsValidation.value!!)
+            } else {
+                errors.addAll(representsValidation.errors)
+            }
+        } else if (isSourceGroup(group)) {
+            val sourceValidation = validateSourceGroup(group)
+            if (sourceValidation.isSuccessful) {
+                sources.add(sourceValidation.value!!)
+            } else {
+                errors.addAll(sourceValidation.errors)
+            }
+        } else {
+            errors.add(
+                ParseError(
+                    "Expected a top level group but found " + group.toCode(),
+                    getRow(group), getColumn(group)
                 )
             )
         }
     }
+
+    return if (errors.isNotEmpty()) {
+        Validation.failure(errors)
+    } else Validation.success(
+        Document(
+            defines,
+            represents,
+            results,
+            axioms,
+            conjectures,
+            sources
+        )
+    )
 }

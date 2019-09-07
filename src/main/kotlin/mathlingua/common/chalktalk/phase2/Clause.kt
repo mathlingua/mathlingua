@@ -129,6 +129,12 @@ data class AbstractionNode(val abstraction: Abstraction) : Target() {
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, abstraction)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return AbstractionNode(
+            abstraction = abstraction.renameVars(map) as Abstraction
+        )
+    }
 }
 
 fun isAbstraction(node: ChalkTalkNode): Boolean {
@@ -148,6 +154,12 @@ data class AggregateNode(val aggregate: Aggregate) : Target() {
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, aggregate)
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return AggregateNode(
+            aggregate = aggregate.renameVars(map) as Aggregate
+        )
     }
 }
 
@@ -169,6 +181,12 @@ data class TupleNode(val tuple: Tuple) : Target() {
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, tuple)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return TupleNode(
+            tuple = tuple.renameVars(map) as Tuple
+        )
+    }
 }
 
 fun isTuple(node: ChalkTalkNode): Boolean {
@@ -188,6 +206,12 @@ data class AssignmentNode(val assignment: Assignment) : Target() {
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, assignment)
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return AssignmentNode(
+            assignment = assignment.renameVars(map) as Assignment
+        )
     }
 }
 
@@ -211,6 +235,12 @@ data class MappingNode(val mapping: Mapping) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, mapping)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return MappingNode(
+            mapping = mapping.renameVars(map) as Mapping
+        )
+    }
 }
 
 fun isMapping(node: ChalkTalkNode): Boolean {
@@ -232,6 +262,12 @@ data class Identifier(val name: String) : Target() {
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return indentedString(isArg, indent, name)
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return Identifier(
+            name = map.getOrDefault(name, name)
+        )
     }
 }
 
@@ -276,6 +312,18 @@ data class Statement(
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return indentedString(isArg, indent, "'$text'")
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return if (texTalkRoot.isSuccessful) {
+            val root = texTalkRoot.value!!.renameVars(map) as ExpressionNode
+            Statement(
+                text = root.toCode(),
+                texTalkRoot = Validation.success(root)
+            )
+        } else {
+            this
+        }
     }
 }
 
@@ -335,6 +383,12 @@ data class Text(val text: String) : Clause() {
     override fun toCode(isArg: Boolean, indent: Int): String {
         return indentedString(isArg, indent, text)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return Text(
+            text = map.getOrDefault(text, text)
+        )
+    }
 }
 
 fun isText(node: ChalkTalkNode): Boolean {
@@ -380,6 +434,13 @@ data class ExistsGroup(
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, existsSection, suchThatSection)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ExistsGroup(
+            existsSection = existsSection.renameVars(map) as ExistsSection,
+            suchThatSection = suchThatSection.renameVars(map) as SuchThatSection
+        )
+    }
 }
 
 fun isExistsGroup(node: ChalkTalkNode): Boolean {
@@ -409,6 +470,13 @@ data class IfGroup(
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, ifSection, thenSection)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return IfGroup(
+            ifSection = ifSection.renameVars(map) as IfSection,
+            thenSection = thenSection.renameVars(map) as ThenSection
+        )
+    }
 }
 
 fun isIfGroup(node: ChalkTalkNode): Boolean {
@@ -437,6 +505,13 @@ data class IffGroup(
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, iffSection, thenSection)
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return IffGroup(
+            iffSection = iffSection.renameVars(map) as IffSection,
+            thenSection = thenSection.renameVars(map) as ThenSection
+        )
     }
 }
 
@@ -470,6 +545,14 @@ data class ForGroup(
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, forSection, whereSection, thenSection)
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ForGroup(
+            forSection = forSection.renameVars(map) as ForSection,
+            whereSection = whereSection?.renameVars(map) as WhereSection,
+            thenSection = thenSection.renameVars(map) as ThenSection
+        )
     }
 }
 
@@ -546,6 +629,12 @@ data class NotGroup(val notSection: NotSection) : Clause() {
     override fun toCode(isArg: Boolean, indent: Int): String {
         return notSection.toCode(isArg, indent)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return NotGroup(
+            notSection = notSection.renameVars(map) as NotSection
+        )
+    }
 }
 
 fun isNotGroup(node: ChalkTalkNode): Boolean {
@@ -566,6 +655,12 @@ data class OrGroup(val orSection: OrSection) : Clause() {
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return orSection.toCode(isArg, indent)
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return OrGroup(
+            orSection = orSection.renameVars(map) as OrSection
+        )
     }
 }
 

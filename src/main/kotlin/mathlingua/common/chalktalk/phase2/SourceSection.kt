@@ -39,6 +39,10 @@ data class SourceSection(val mappings: List<MappingNode>) : Phase2Node {
         }
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return this
+    }
 }
 
 fun validateSourceSection(section: Section): Validation<SourceSection> {

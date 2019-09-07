@@ -46,6 +46,13 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
         return toCode(isArg, indent,
             Statement(id, Validation.failure(emptyList())), sourceSection)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return SourceGroup(
+            id = id,
+            sourceSection = sourceSection.renameVars(map) as SourceSection
+        )
+    }
 }
 
 fun isSourceGroup(node: ChalkTalkNode): Boolean {
@@ -126,6 +133,18 @@ data class DefinesGroup(
             metaDataSection
         )
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return DefinesGroup(
+            signature = signature,
+            id = id.renameVars(map) as Statement,
+            definesSection = definesSection.renameVars(map) as DefinesSection,
+            assumingSection = assumingSection?.renameVars(map) as AssumingSection?,
+            meansSection = meansSection.renameVars(map) as MeansSection,
+            aliasSection = aliasSection?.renameVars(map) as AliasSection?,
+            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection?
+        )
+    }
 }
 
 fun isDefinesGroup(node: ChalkTalkNode): Boolean {
@@ -176,6 +195,18 @@ data class RepresentsGroup(
             metaDataSection
         )
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return RepresentsGroup(
+            signature = signature,
+            id = id.renameVars(map) as Statement,
+            representsSection = representsSection.renameVars(map) as RepresentsSection,
+            assumingSection = assumingSection?.renameVars(map) as AssumingSection,
+            thatSection = thatSection.renameVars(map) as ThatSection,
+            aliasSection = aliasSection?.renameVars(map) as AliasSection,
+            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection
+        )
+    }
 }
 
 fun isRepresentsGroup(node: ChalkTalkNode): Boolean {
@@ -209,6 +240,14 @@ data class ResultGroup(
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, null, resultSection, metaDataSection)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ResultGroup(
+            resultSection = resultSection.renameVars(map) as ResultSection,
+            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection,
+            aliasSection = aliasSection?.renameVars(map) as AliasSection
+        )
+    }
 }
 
 fun isResultGroup(node: ChalkTalkNode): Boolean {
@@ -240,6 +279,14 @@ data class AxiomGroup(
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, null, axiomSection, metaDataSection)
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return AxiomGroup(
+            axiomSection = axiomSection.renameVars(map) as AxiomSection,
+            aliasSection = aliasSection?.renameVars(map) as AliasSection,
+            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection
+        )
+    }
 }
 
 fun isAxiomGroup(node: ChalkTalkNode): Boolean {
@@ -270,6 +317,14 @@ data class ConjectureGroup(
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent, null, conjectureSection, metaDataSection)
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ConjectureGroup(
+            conjectureSection = conjectureSection.renameVars(map) as ConjectureSection,
+            aliasSection = aliasSection?.renameVars(map) as AliasSection,
+            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection
+        )
     }
 }
 

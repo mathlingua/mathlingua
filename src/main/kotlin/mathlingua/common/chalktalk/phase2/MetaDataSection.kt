@@ -39,6 +39,12 @@ data class MetaDataSection(val mappings: List<MappingNode>) : Phase2Node {
         }
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return MetaDataSection(
+            mappings = mappings.map { it.renameVars(map) as MappingNode }
+        )
+    }
 }
 
 fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {

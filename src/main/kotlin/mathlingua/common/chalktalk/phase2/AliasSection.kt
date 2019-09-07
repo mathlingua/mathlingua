@@ -40,6 +40,12 @@ data class AliasSection(val mappings: List<MappingNode>) :
         }
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return AliasSection(
+            mappings = mappings.map { it.renameVars(map) as MappingNode }
+        )
+    }
 }
 
 fun validateAliasSection(section: Section): Validation<AliasSection> {

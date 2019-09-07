@@ -38,6 +38,7 @@ interface Node {
     val type: NodeType
     fun toCode(): String
     fun forEach(fn: (node: Node) -> Unit)
+    fun renameVars(map: Map<String, String>): Node
 }
 
 data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
@@ -56,6 +57,13 @@ data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
         fn(lhs)
         fn(rhs)
     }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return IsNode(
+            lhs = lhs.renameVars(map) as ParametersNode,
+            rhs = rhs.renameVars(map) as ParametersNode
+        )
+    }
 }
 
 data class ColonEqualsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
@@ -73,6 +81,13 @@ data class ColonEqualsNode(val lhs: ParametersNode, val rhs: ParametersNode) : N
     override fun forEach(fn: (node: Node) -> Unit) {
         fn(lhs)
         fn(rhs)
+    }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return ColonEqualsNode(
+            lhs = lhs.renameVars(map) as ParametersNode,
+            rhs = rhs.renameVars(map) as ParametersNode
+        )
     }
 }
 
@@ -126,6 +141,16 @@ data class CommandPart(
         groups.forEach(fn)
         namedGroups.forEach(fn)
     }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return CommandPart(
+            name = name.renameVars(map) as TextNode,
+            square = square?.renameVars(map) as GroupNode?,
+            subSup = subSup?.renameVars(map) as SubSupNode?,
+            groups = groups.map { it.renameVars(map) as GroupNode },
+            namedGroups = namedGroups.map { it.renameVars(map) as NamedGroupNode }
+        )
+    }
 }
 
 data class Command(val parts: List<CommandPart>) : Node {
@@ -145,6 +170,12 @@ data class Command(val parts: List<CommandPart>) : Node {
 
     override fun forEach(fn: (node: Node) -> Unit) {
         parts.forEach(fn)
+    }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return Command(
+            parts = parts.map { it.renameVars(map) as CommandPart }
+        )
     }
 }
 
@@ -169,6 +200,12 @@ data class ExpressionNode(val children: List<Node>) : Node {
     override fun forEach(fn: (node: Node) -> Unit) {
         children.forEach(fn)
     }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return ExpressionNode(
+            children = children.map { it.renameVars(map) }
+        )
+    }
 }
 
 data class ParametersNode(val items: List<ExpressionNode>) : Node {
@@ -192,6 +229,12 @@ data class ParametersNode(val items: List<ExpressionNode>) : Node {
 
     override fun forEach(fn: (node: Node) -> Unit) {
         items.forEach(fn)
+    }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return ParametersNode(
+            items = items.map { it.renameVars(map) as ExpressionNode }
+        )
     }
 }
 
@@ -226,6 +269,13 @@ data class GroupNode(override val type: NodeType, val parameters: ParametersNode
     override fun forEach(fn: (node: Node) -> Unit) {
         fn(parameters)
     }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return GroupNode(
+            type = type,
+            parameters = parameters.renameVars(map) as ParametersNode
+        )
+    }
 }
 
 data class NamedGroupNode(
@@ -246,6 +296,13 @@ data class NamedGroupNode(
     override fun forEach(fn: (node: Node) -> Unit) {
         fn(name)
         fn(group)
+    }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return NamedGroupNode(
+            name = name.renameVars(map) as TextNode,
+            group = group.renameVars(map) as GroupNode
+        )
     }
 }
 
@@ -280,6 +337,13 @@ data class SubSupNode(
             fn(sup)
         }
     }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return SubSupNode(
+            sub = sub?.renameVars(map) as GroupNode?,
+            sup = sup?.renameVars(map) as GroupNode?
+        )
+    }
 }
 
 data class TextNode(override val type: NodeType, val text: String) : Node {
@@ -288,6 +352,10 @@ data class TextNode(override val type: NodeType, val text: String) : Node {
     }
 
     override fun forEach(fn: (node: Node) -> Unit) {
+    }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return copy(text = map.getOrDefault(text, text))
     }
 }
 
@@ -305,6 +373,10 @@ data class TexTalkToken(
     }
 
     override fun forEach(fn: (node: Node) -> Unit) {
+    }
+
+    override fun renameVars(map: Map<String, String>): Node {
+        return copy(text = map.getOrDefault(text, text))
     }
 }
 

@@ -26,6 +26,7 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 interface Phase2Node {
     fun forEach(fn: (node: Phase2Node) -> Unit)
     fun toCode(isArg: Boolean, indent: Int): String
+    fun renameVars(map: Map<String, String>): Phase2Node
 }
 
 data class Document(
@@ -80,6 +81,17 @@ data class Document(
         }
 
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return Document(
+            defines = defines.map { it.renameVars(map) as DefinesGroup },
+            axioms = axioms.map { it.renameVars(map) as AxiomGroup },
+            conjectures = conjectures.map { it.renameVars(map) as ConjectureGroup },
+            represents = represents.map { it.renameVars(map) as RepresentsGroup },
+            results = results.map { it.renameVars(map) as ResultGroup },
+            sources = sources.map { it.renameVars(map) as SourceGroup }
+        )
     }
 }
 

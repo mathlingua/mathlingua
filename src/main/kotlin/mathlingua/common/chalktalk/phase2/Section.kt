@@ -53,6 +53,12 @@ data class AssumingSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return AssumingSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
+    }
 }
 
 fun validateAssumingSection(node: ChalkTalkNode): Validation<AssumingSection> {
@@ -73,6 +79,12 @@ data class DefinesSection(val targets: List<Target>) : Phase2Node {
         builder.append('\n')
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return DefinesSection(
+            targets = targets.map { it.renameVars(map) as Target }
+        )
     }
 }
 
@@ -96,6 +108,12 @@ data class RefinesSection(val targets: List<Target>) :
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return RefinesSection(
+            targets = targets.map { it.renameVars(map) as Target }
+        )
+    }
 }
 
 fun validateRefinesSection(node: ChalkTalkNode): Validation<RefinesSection> {
@@ -111,6 +129,10 @@ class RepresentsSection : Phase2Node {
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return indentedString(isArg, indent, "Represents:")
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return this
     }
 }
 
@@ -163,6 +185,12 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
         appendTargetArgs(builder, identifiers, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ExistsSection(
+            identifiers = identifiers.map { it.renameVars(map) as Target }
+        )
+    }
 }
 
 fun validateExistsSection(node: ChalkTalkNode): Validation<ExistsSection> {
@@ -183,6 +211,12 @@ data class ForSection(val targets: List<Target>) : Phase2Node {
         builder.append('\n')
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ForSection(
+            targets = targets.map { it.renameVars(map) as Target }
+        )
     }
 }
 
@@ -205,6 +239,12 @@ data class MeansSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return MeansSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
+    }
 }
 
 fun validateMeansSection(node: ChalkTalkNode): Validation<MeansSection> {
@@ -225,6 +265,12 @@ data class ResultSection(val clauses: List<Clause>) : Phase2Node {
         builder.append('\n')
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ResultSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
     }
 }
 
@@ -247,6 +293,12 @@ data class AxiomSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return AxiomSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
+    }
 }
 
 fun validateAxiomSection(node: ChalkTalkNode): Validation<AxiomSection> {
@@ -267,6 +319,12 @@ data class ConjectureSection(val clauses: List<Clause>) : Phase2Node {
         builder.append('\n')
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ConjectureSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
     }
 }
 
@@ -289,6 +347,12 @@ data class SuchThatSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return SuchThatSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
+    }
 }
 
 fun validateSuchThatSection(node: ChalkTalkNode): Validation<SuchThatSection> {
@@ -309,6 +373,12 @@ data class ThatSection(val clauses: List<Clause>) : Phase2Node {
         builder.append('\n')
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ThatSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
     }
 }
 
@@ -331,6 +401,12 @@ data class IfSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return IfSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
+    }
 }
 
 fun validateIfSection(node: ChalkTalkNode): Validation<IfSection> {
@@ -351,6 +427,12 @@ data class IffSection(val clauses: List<Clause>) : Phase2Node {
         builder.append('\n')
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return IffSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
     }
 }
 
@@ -373,6 +455,12 @@ data class ThenSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return ThenSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
+    }
 }
 
 fun validateThenSection(node: ChalkTalkNode): Validation<ThenSection> {
@@ -393,6 +481,12 @@ data class WhereSection(val clauses: List<Clause>) : Phase2Node {
         builder.append('\n')
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return WhereSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
     }
 }
 
@@ -415,6 +509,12 @@ data class NotSection(val clauses: List<Clause>) : Phase2Node {
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
     }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return NotSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
+    }
 }
 
 fun validateNotSection(node: ChalkTalkNode): Validation<NotSection> {
@@ -435,6 +535,12 @@ data class OrSection(val clauses: List<Clause>) : Phase2Node {
         builder.append('\n')
         appendClauseArgs(builder, clauses, indent + 2)
         return builder.toString()
+    }
+
+    override fun renameVars(map: Map<String, String>): Phase2Node {
+        return OrSection(
+            clauses = clauses.map { it.renameVars(map) as Clause }
+        )
     }
 }
 

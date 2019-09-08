@@ -31,7 +31,15 @@ fun newTexTalkParser(): TexTalkParser {
     return TexTalkParserImpl()
 }
 
-private val INVALID = TexTalkToken("INVALID", TexTalkTokenType.Invalid, -1, -1)
+fun <T : TexTalkNode> populateParents(node: T): T {
+    node.forEach {
+        it.parent = node
+        populateParents(it)
+    }
+    return node
+}
+
+private val INVALID = TexTalkToken(null, "INVALID", TexTalkTokenType.Invalid, -1, -1)
 
 class TexTalkParserImpl : TexTalkParser {
 
@@ -50,8 +58,10 @@ class TexTalkParserImpl : TexTalkParser {
         }
 
         fun parse(): ExpressionTexTalkNode {
-            val exp = expression(null) ?: ExpressionTexTalkNode(emptyList())
-            return resolveColonEqualsNode(resolveIsNode(exp)) as ExpressionTexTalkNode
+            val exp = expression(null) ?: ExpressionTexTalkNode(null, emptyList())
+            val result = resolveColonEqualsNode(resolveIsNode(exp)) as ExpressionTexTalkNode
+            populateParents(result)
+            return result
         }
 
         private fun resolveIsNode(texTalkNode: TexTalkNode): TexTalkNode {
@@ -77,7 +87,7 @@ class TexTalkParserImpl : TexTalkParser {
 
             val lhs = parameters(texTalkNode.children, 0, isIndex)
             val rhs = parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
-            return ExpressionTexTalkNode(listOf(IsTexTalkNode(lhs, rhs)))
+            return ExpressionTexTalkNode(null, listOf(IsTexTalkNode(null, lhs, rhs)))
         }
 
         private fun resolveColonEqualsNode(texTalkNode: TexTalkNode): TexTalkNode {
@@ -103,7 +113,7 @@ class TexTalkParserImpl : TexTalkParser {
 
             val lhs = parameters(texTalkNode.children, 0, colonEqualsIndex)
             val rhs = parameters(texTalkNode.children, colonEqualsIndex + 1, texTalkNode.children.size)
-            return ExpressionTexTalkNode(listOf(ColonEqualsTexTalkNode(lhs, rhs)))
+            return ExpressionTexTalkNode(null, listOf(ColonEqualsTexTalkNode(null, lhs, rhs)))
         }
 
         private fun parameters(texTalkNodes: List<TexTalkNode>, startInc: Int, endEx: Int): ParametersTexTalkNode {
@@ -119,9 +129,9 @@ class TexTalkParserImpl : TexTalkParser {
                 } else {
                     i++ // move past the comma
                 }
-                parts.add(ExpressionTexTalkNode(items))
+                parts.add(ExpressionTexTalkNode(null, items))
             }
-            return ParametersTexTalkNode(parts)
+            return ParametersTexTalkNode(null, parts)
         }
 
         private fun command(): Command? {
@@ -150,7 +160,7 @@ class TexTalkParserImpl : TexTalkParser {
                 addError("Expected at least one command part", backSlash)
             }
 
-            return Command(parts)
+            return Command(null, parts)
         }
 
         private fun commandPart(): CommandPart? {
@@ -197,6 +207,7 @@ class TexTalkParserImpl : TexTalkParser {
             }
 
             return CommandPart(
+                null,
                 name!!,
                 square,
                 subSup,
@@ -210,7 +221,7 @@ class TexTalkParserImpl : TexTalkParser {
             val sup = sup()
             return if (sub == null && sup == null) {
                 null
-            } else SubSupTexTalkNode(sub, sup)
+            } else SubSupTexTalkNode(null, sub, sup)
         }
 
         private fun sub(): GroupTexTalkNode? {
@@ -218,7 +229,7 @@ class TexTalkParserImpl : TexTalkParser {
                 return null
             }
 
-            val (_, _, row, column) = expect(TexTalkTokenType.Underscore)
+            val (_, _, _, row, column) = expect(TexTalkTokenType.Underscore)
 
             var grp: GroupTexTalkNode? = null
             val curly = group(TexTalkNodeType.CurlyGroup)
@@ -235,7 +246,7 @@ class TexTalkParserImpl : TexTalkParser {
 
             if (grp == null) {
                 addError("Expected a value with an underscore", row, column)
-                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()))
+                grp = GroupTexTalkNode(null, TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(null, emptyList()))
             }
 
             return grp
@@ -246,7 +257,7 @@ class TexTalkParserImpl : TexTalkParser {
                 return null
             }
 
-            val (_, _, row, column) = expect(TexTalkTokenType.Caret)
+            val (_, _, _, row, column) = expect(TexTalkTokenType.Caret)
             var grp: GroupTexTalkNode? = null
 
             val curly = group(TexTalkNodeType.CurlyGroup)
@@ -263,7 +274,7 @@ class TexTalkParserImpl : TexTalkParser {
 
             if (grp == null) {
                 addError("Expected a value with a caret", row, column)
-                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()))
+                grp = GroupTexTalkNode(null, TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(null, emptyList()))
             }
 
             return grp
@@ -312,7 +323,7 @@ class TexTalkParserImpl : TexTalkParser {
             }
 
             expect(endType)
-            return GroupTexTalkNode(nodeType, ParametersTexTalkNode(expressions))
+            return GroupTexTalkNode(null, nodeType, ParametersTexTalkNode(null, expressions))
         }
 
         private fun namedGroup(): NamedGroupTexTalkNode? {
@@ -325,7 +336,7 @@ class TexTalkParserImpl : TexTalkParser {
                 rawText
             } else {
                 addError("Expected an identifier in a named group")
-                TextTexTalkNode(TexTalkNodeType.Identifier, "INVALID")
+                TextTexTalkNode(null, TexTalkNodeType.Identifier, "INVALID")
             }
 
             val rawGroup = group(TexTalkNodeType.CurlyGroup)
@@ -333,15 +344,15 @@ class TexTalkParserImpl : TexTalkParser {
                 rawGroup
             } else {
                 addError("Expected a group in a named group")
-                GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()))
+                GroupTexTalkNode(null, TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(null, emptyList()))
             }
-            return NamedGroupTexTalkNode(text, group)
+            return NamedGroupTexTalkNode(null, text, group)
         }
 
         private fun text(tokenType: TexTalkTokenType, nodeType: TexTalkNodeType): TextTexTalkNode? {
             return if (!has(tokenType)) {
                 null
-            } else TextTexTalkNode(nodeType, next().text)
+            } else TextTexTalkNode(null, nodeType, next().text)
         }
 
         private fun expression(terminators: Set<TexTalkTokenType>?): ExpressionTexTalkNode? {
@@ -371,7 +382,7 @@ class TexTalkParserImpl : TexTalkParser {
 
             return if (nodes.isEmpty()) {
                 null
-            } else ExpressionTexTalkNode(nodes)
+            } else ExpressionTexTalkNode(null, nodes)
         }
 
         private fun expect(tokenType: TexTalkTokenType): TexTalkToken {

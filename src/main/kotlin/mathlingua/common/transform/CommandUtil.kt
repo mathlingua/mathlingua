@@ -24,6 +24,7 @@ import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
+import mathlingua.common.textalk.populateParents
 
 fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     val commands = mutableListOf<Command>()
@@ -34,7 +35,7 @@ fun findCommands(texTalkNode: TexTalkNode): List<Command> {
 fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: String): TexTalkNode {
     return texTalkNode.transform {
         if (it is Command && getCommandSignature(it).toCode() == signature) {
-            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
+            TextTexTalkNode(parent = it.parent, type = TexTalkNodeType.Identifier, text = replacement)
         } else {
             texTalkNode
         }
@@ -73,7 +74,7 @@ fun replaceCommands(
     sigsFound: MutableSet<String>,
     shouldProcess: (node: TexTalkNode) -> Boolean
 ): TexTalkNode {
-    return texTalkNode.transform {
+    return populateParents(texTalkNode).transform {
         if (!shouldProcess(it) || it !is Command) {
             it
         } else {
@@ -83,7 +84,7 @@ fun replaceCommands(
             } else {
                 sigsFound.add(sig)
                 val name = sigToReplacement[sig]
-                TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!)
+                TextTexTalkNode(parent = it.parent, type = TexTalkNodeType.Identifier, text = name!!)
             }
         }
     }

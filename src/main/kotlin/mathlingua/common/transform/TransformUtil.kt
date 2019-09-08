@@ -38,6 +38,19 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
+import mathlingua.common.textalk.populateParents
+
+private fun hasIsNodeParent(node: TexTalkNode?): Boolean {
+    if (node == null) {
+        return false
+    }
+
+    if (node is IsTexTalkNode) {
+        return true
+    }
+
+    return hasIsNodeParent(node.parent)
+}
 
 fun moveInlineCommandsToIsNode(
     node: Clause,
@@ -49,8 +62,16 @@ fun moveInlineCommandsToIsNode(
         return node
     }
 
+    fun shouldProcessTexNodes(node: TexTalkNode): Boolean {
+        if (!shouldProcessTex(node)) {
+            return false
+        }
+
+        return !hasIsNodeParent(node)
+    }
+
     val sigsFound = mutableSetOf<String>()
-    val newNode = replaceCommands(node, sigToName, sigsFound, shouldProcessChalk, shouldProcessTex) as Clause
+    val newNode = replaceCommands(node, sigToName, sigsFound, shouldProcessChalk, ::shouldProcessTexNodes) as Clause
 
     if (sigsFound.isEmpty()) {
         return node
@@ -64,11 +85,15 @@ fun moveInlineCommandsToIsNode(
             clauses = ClauseListNode(
                 clauses = sigsFound.map {
                     val isNode = IsTexTalkNode(
+                        parent = null,
                         lhs = ParametersTexTalkNode(
+                            parent = null,
                             items = listOf(
                                 ExpressionTexTalkNode(
+                                    parent = null,
                                     children = listOf(
                                         TextTexTalkNode(
+                                            parent = null,
                                             type = TexTalkNodeType.Identifier,
                                             text = sigToName[it]!!
                                         )
@@ -77,10 +102,13 @@ fun moveInlineCommandsToIsNode(
                             )
                         ),
                         rhs = ParametersTexTalkNode(
+                            parent = null,
                             items = listOf(
                                 ExpressionTexTalkNode(
+                                    parent = null,
                                     children = listOf(
                                         TextTexTalkNode(
+                                            parent = null,
                                             type = TexTalkNodeType.Identifier,
                                             text = it
                                         )
@@ -92,9 +120,14 @@ fun moveInlineCommandsToIsNode(
 
                     Statement(
                         text = isNode.toCode(),
-                        texTalkRoot = Validation.success(ExpressionTexTalkNode(
-                            children = listOf(isNode)
-                        ))
+                        texTalkRoot = Validation.success(
+                            populateParents(
+                                ExpressionTexTalkNode(
+                                    parent = null,
+                                   children = listOf(isNode)
+                                )
+                            )
+                        )
                     )
                 }
             )

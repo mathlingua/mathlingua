@@ -31,6 +31,7 @@ import mathlingua.common.chalktalk.phase1.ast.Tuple
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.textalk.ExpressionNode
+import mathlingua.common.textalk.Node
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
 
@@ -130,10 +131,8 @@ data class AbstractionNode(val abstraction: Abstraction) : Target() {
         return toCode(isArg, indent, abstraction)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return AbstractionNode(
-            abstraction = abstraction.renameVars(map) as Abstraction
-        )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -156,10 +155,8 @@ data class AggregateNode(val aggregate: Aggregate) : Target() {
         return toCode(isArg, indent, aggregate)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return AggregateNode(
-            aggregate = aggregate.renameVars(map) as Aggregate
-        )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -182,10 +179,8 @@ data class TupleNode(val tuple: Tuple) : Target() {
         return toCode(isArg, indent, tuple)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return TupleNode(
-            tuple = tuple.renameVars(map) as Tuple
-        )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -208,10 +203,8 @@ data class AssignmentNode(val assignment: Assignment) : Target() {
         return toCode(isArg, indent, assignment)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return AssignmentNode(
-            assignment = assignment.renameVars(map) as Assignment
-        )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -236,10 +229,8 @@ data class MappingNode(val mapping: Mapping) : Phase2Node {
         return toCode(isArg, indent, mapping)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return MappingNode(
-            mapping = mapping.renameVars(map) as Mapping
-        )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -264,10 +255,8 @@ data class Identifier(val name: String) : Target() {
         return indentedString(isArg, indent, name)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return Identifier(
-            name = map.getOrDefault(name, name)
-        )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -314,16 +303,8 @@ data class Statement(
         return indentedString(isArg, indent, "'$text'")
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return if (texTalkRoot.isSuccessful) {
-            val root = texTalkRoot.value!!.renameVars(map) as ExpressionNode
-            Statement(
-                text = root.toCode(),
-                texTalkRoot = Validation.success(root)
-            )
-        } else {
-            this
-        }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -384,10 +365,8 @@ data class Text(val text: String) : Clause() {
         return indentedString(isArg, indent, text)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return Text(
-            text = map.getOrDefault(text, text)
-        )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 
@@ -435,10 +414,10 @@ data class ExistsGroup(
         return toCode(isArg, indent, existsSection, suchThatSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return ExistsGroup(
-            existsSection = existsSection.renameVars(map) as ExistsSection,
-            suchThatSection = suchThatSection.renameVars(map) as SuchThatSection
+            existsSection = existsSection.transform(chalkTransformer, texTransformer) as ExistsSection,
+            suchThatSection = suchThatSection.transform(chalkTransformer, texTransformer) as SuchThatSection
         )
     }
 }
@@ -471,10 +450,10 @@ data class IfGroup(
         return toCode(isArg, indent, ifSection, thenSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return IfGroup(
-            ifSection = ifSection.renameVars(map) as IfSection,
-            thenSection = thenSection.renameVars(map) as ThenSection
+            ifSection = ifSection.transform(chalkTransformer, texTransformer) as IfSection,
+            thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
         )
     }
 }
@@ -507,10 +486,10 @@ data class IffGroup(
         return toCode(isArg, indent, iffSection, thenSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return IffGroup(
-            iffSection = iffSection.renameVars(map) as IffSection,
-            thenSection = thenSection.renameVars(map) as ThenSection
+            iffSection = iffSection.transform(chalkTransformer, texTransformer) as IffSection,
+            thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
         )
     }
 }
@@ -547,11 +526,11 @@ data class ForGroup(
         return toCode(isArg, indent, forSection, whereSection, thenSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return ForGroup(
-            forSection = forSection.renameVars(map) as ForSection,
-            whereSection = whereSection?.renameVars(map) as WhereSection,
-            thenSection = thenSection.renameVars(map) as ThenSection
+            forSection = forSection.transform(chalkTransformer, texTransformer) as ForSection,
+            whereSection = whereSection?.transform(chalkTransformer, texTransformer) as WhereSection?,
+            thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
         )
     }
 }
@@ -630,9 +609,9 @@ data class NotGroup(val notSection: NotSection) : Clause() {
         return notSection.toCode(isArg, indent)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return NotGroup(
-            notSection = notSection.renameVars(map) as NotSection
+            notSection = notSection.transform(chalkTransformer, texTransformer) as NotSection
         )
     }
 }
@@ -657,9 +636,9 @@ data class OrGroup(val orSection: OrSection) : Clause() {
         return orSection.toCode(isArg, indent)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return OrGroup(
-            orSection = orSection.renameVars(map) as OrSection
+            orSection = orSection.transform(chalkTransformer, texTransformer) as OrSection
         )
     }
 }
@@ -822,7 +801,7 @@ fun toCode(isArg: Boolean, indent: Int, vararg sections: Phase2Node?): String {
     for (i in sections.indices) {
         val sect = sections[i]
         if (sect != null) {
-            builder.append(sect.toCode(isArg, indent))
+            builder.append(sect.toCode(isArg && i == 0, indent))
             if (i != sections.size - 1) {
                 builder.append('\n')
             }

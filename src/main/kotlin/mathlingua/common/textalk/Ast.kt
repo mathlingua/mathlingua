@@ -38,7 +38,7 @@ interface Node {
     val type: NodeType
     fun toCode(): String
     fun forEach(fn: (node: Node) -> Unit)
-    fun renameVars(map: Map<String, String>): Node
+    fun transform(transformer: (node: Node) -> Node): Node
 }
 
 data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
@@ -58,10 +58,10 @@ data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
         fn(rhs)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return IsNode(
-            lhs = lhs.renameVars(map) as ParametersNode,
-            rhs = rhs.renameVars(map) as ParametersNode
+            lhs = lhs.transform(transformer) as ParametersNode,
+            rhs = rhs.transform(transformer) as ParametersNode
         )
     }
 }
@@ -83,10 +83,10 @@ data class ColonEqualsNode(val lhs: ParametersNode, val rhs: ParametersNode) : N
         fn(rhs)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return ColonEqualsNode(
-            lhs = lhs.renameVars(map) as ParametersNode,
-            rhs = rhs.renameVars(map) as ParametersNode
+            lhs = lhs.transform(transformer) as ParametersNode,
+            rhs = rhs.transform(transformer) as ParametersNode
         )
     }
 }
@@ -142,13 +142,13 @@ data class CommandPart(
         namedGroups.forEach(fn)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return CommandPart(
-            name = name.renameVars(map) as TextNode,
-            square = square?.renameVars(map) as GroupNode?,
-            subSup = subSup?.renameVars(map) as SubSupNode?,
-            groups = groups.map { it.renameVars(map) as GroupNode },
-            namedGroups = namedGroups.map { it.renameVars(map) as NamedGroupNode }
+            name = name.transform(transformer) as TextNode,
+            square = square?.transform(transformer) as GroupNode?,
+            subSup = subSup?.transform(transformer) as SubSupNode?,
+            groups = groups.map { it.transform(transformer) as GroupNode },
+            namedGroups = namedGroups.map { it.transform(transformer) as NamedGroupNode }
         )
     }
 }
@@ -172,9 +172,9 @@ data class Command(val parts: List<CommandPart>) : Node {
         parts.forEach(fn)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return Command(
-            parts = parts.map { it.renameVars(map) as CommandPart }
+            parts = parts.map { it.transform(transformer) as CommandPart }
         )
     }
 }
@@ -201,9 +201,9 @@ data class ExpressionNode(val children: List<Node>) : Node {
         children.forEach(fn)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return ExpressionNode(
-            children = children.map { it.renameVars(map) }
+            children = children.map { it.transform(transformer) }
         )
     }
 }
@@ -231,9 +231,9 @@ data class ParametersNode(val items: List<ExpressionNode>) : Node {
         items.forEach(fn)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return ParametersNode(
-            items = items.map { it.renameVars(map) as ExpressionNode }
+            items = items.map { it.transform(transformer) as ExpressionNode }
         )
     }
 }
@@ -270,10 +270,10 @@ data class GroupNode(override val type: NodeType, val parameters: ParametersNode
         fn(parameters)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return GroupNode(
             type = type,
-            parameters = parameters.renameVars(map) as ParametersNode
+            parameters = parameters.transform(transformer) as ParametersNode
         )
     }
 }
@@ -298,10 +298,10 @@ data class NamedGroupNode(
         fn(group)
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return NamedGroupNode(
-            name = name.renameVars(map) as TextNode,
-            group = group.renameVars(map) as GroupNode
+            name = name.transform(transformer) as TextNode,
+            group = group.transform(transformer) as GroupNode
         )
     }
 }
@@ -338,10 +338,10 @@ data class SubSupNode(
         }
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
+    override fun transform(transformer: (node: Node) -> Node): Node {
         return SubSupNode(
-            sub = sub?.renameVars(map) as GroupNode?,
-            sup = sup?.renameVars(map) as GroupNode?
+            sub = sub?.transform(transformer) as GroupNode?,
+            sup = sup?.transform(transformer) as GroupNode?
         )
     }
 }
@@ -354,8 +354,8 @@ data class TextNode(override val type: NodeType, val text: String) : Node {
     override fun forEach(fn: (node: Node) -> Unit) {
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
-        return copy(text = map.getOrDefault(text, text))
+    override fun transform(transformer: (node: Node) -> Node): Node {
+        return transformer(this)
     }
 }
 
@@ -375,8 +375,8 @@ data class TexTalkToken(
     override fun forEach(fn: (node: Node) -> Unit) {
     }
 
-    override fun renameVars(map: Map<String, String>): Node {
-        return copy(text = map.getOrDefault(text, text))
+    override fun transform(transformer: (node: Node) -> Node): Node {
+        return transformer(this)
     }
 }
 

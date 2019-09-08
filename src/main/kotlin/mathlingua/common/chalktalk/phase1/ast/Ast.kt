@@ -20,7 +20,7 @@ interface ChalkTalkNode {
     fun forEach(fn: (node: ChalkTalkNode) -> Unit)
     fun toCode(): String
     fun resolve(): ChalkTalkNode
-    fun renameVars(map: Map<String, String>): ChalkTalkNode
+    fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode
 }
 
 data class Root(val groups: List<Group>) : ChalkTalkNode {
@@ -45,9 +45,9 @@ data class Root(val groups: List<Group>) : ChalkTalkNode {
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Root(
-            groups = groups.map { it.renameVars(map) as Group }
+            groups = groups.map { it.transform(transformer) as Group }
         )
     }
 }
@@ -104,9 +104,9 @@ data class Argument(val chalkTalkTarget: ChalkTalkTarget) : ChalkTalkNode {
         return chalkTalkTarget.resolve()
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Argument(
-            chalkTalkTarget = chalkTalkTarget.renameVars(map) as ChalkTalkTarget
+            chalkTalkTarget = chalkTalkTarget.transform(transformer) as ChalkTalkTarget
         )
     }
 }
@@ -137,10 +137,10 @@ data class Section(val name: ChalkTalkToken, val args: List<Argument>) : ChalkTa
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Section(
-            name = name.renameVars(map) as ChalkTalkToken,
-            args = args.map { it.renameVars(map) as Argument }
+            name = name.transform(transformer) as ChalkTalkToken,
+            args = args.map { it.transform(transformer) as Argument }
         )
     }
 }

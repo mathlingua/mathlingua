@@ -1,88 +1,182 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
 import mathlingua.common.chalktalk.phase2.AbstractionNode
 import mathlingua.common.chalktalk.phase2.AggregateNode
 import mathlingua.common.chalktalk.phase2.AssignmentNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
+import mathlingua.common.chalktalk.phase2.ForGroup
+import mathlingua.common.chalktalk.phase2.ForSection
 import mathlingua.common.chalktalk.phase2.Identifier
 import mathlingua.common.chalktalk.phase2.IfGroup
 import mathlingua.common.chalktalk.phase2.IfSection
 import mathlingua.common.chalktalk.phase2.MeansSection
 import mathlingua.common.chalktalk.phase2.Phase2Node
+import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.ThenSection
 import mathlingua.common.chalktalk.phase2.TupleNode
+import mathlingua.common.chalktalk.phase2.getCommandSignature
+import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.ExpressionNode
 import mathlingua.common.textalk.Node
 import mathlingua.common.textalk.ParametersNode
 import mathlingua.common.textalk.TextNode
+
+var count = 1
+fun nextVar(): String {
+    return "\$${count++}"
+}
 
 object SignatureTestBed {
     @JvmStatic
     fun main(args: Array<String>) {
         val text = """
-            [\something{y}]
-            Defines: x
-            assuming:
-            . 'y is \A'
-            . 'y is \B'
-            . '\somethingElse'
+            [\function:on{A}]
+            Defines: f
+            assuming: 'A is \set'
             means:
-            . 'x is \B'
-            . '\somethingMore'
-            . 'x + y = 0'
-
+            . 'f is \mapping:on{A}'
 
             Result:
-            . 'x is \something'
-            . '\notSomething'
-            . '\something'
-            . 'x + \something'
+            . for: g, B
+              where: 'g is \function:on{B}'
+              then:
+              . '\function:on{B}'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
             println(err)
         }
 
-        val def = result.document!!.defines[0]
-        println(canonicalForm(def).toCode(false, 0))
+        println(text)
+        println("----------------------------------------")
 
-        println("Direct vars:")
-        println(getDefinesDirectVars(def))
+        val defMap = mutableMapOf<String, DefinesGroup>()
+        for (def in result.document!!.defines) {
+            val sig = def.signature
+            if (sig != null) {
+                defMap[sig] = def
+            }
+        }
 
-        println("Indirect vars:")
-        println(getDefinesIndirectVars(def))
+        fun chalkTransformer(node: Phase2Node): Phase2Node {
+            return if (node is Statement) {
+                if (node.texTalkRoot.isSuccessful &&
+                    node.texTalkRoot.value!!.children.size == 1 &&
+                    node.texTalkRoot.value.children[0] is Command) {
+                    val cmd = node.texTalkRoot.value.children[0]
+                    val sig = getCommandSignature(cmd as Command).toCode()
+                    if (defMap.containsKey(sig)) {
+                        val def = defMap[sig]
+                        val cmdVars = getVars(cmd)
+                        val defIndirectVars = getDefinesIndirectVars(def!!)
+                        val defDirectVars = getDefinesDirectVars(def)
 
-        println(def.renameVars(mapOf(
-            "x" to "X",
-            "y" to "Y"
-        )).toCode(false, 0))
+                        val map = mutableMapOf<String, String>()
+                        for (i in cmdVars.indices) {
+                            map[defIndirectVars[i]] = cmdVars[i]
+                        }
+
+                        for (v in defDirectVars) {
+                            map[v] = nextVar()
+                        }
+
+                        val ifGroup = buildIfForDef(def)
+                        renameVars(ForGroup(
+                            forSection = ForSection(
+                                defDirectVars.map { Identifier(name = it) }
+                            ),
+                            whereSection = null,
+                            thenSection = ThenSection(
+                                listOf(ifGroup)
+                            )
+                        ), map)
+                    } else {
+                        node
+                    }
+                } else {
+                    node
+                }
+            } else {
+                node
+            }
+        }
+
+        fun texTransformer(node: Node): Node {
+            return node
+        }
+
+        val res = result.document.results[0]
+        println(res.transform(::chalkTransformer, ::texTransformer).toCode(false, 0))
     }
 }
 
-var count = 0
-fun nextVar(): String {
-    return "var${count++}"
+fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
+    fun chalkTransformer(node: Phase2Node): Phase2Node {
+        return if (node is Identifier) {
+            node.copy(name = map.getOrDefault(node.name, node.name))
+        } else if (node is Statement) {
+            if (node.texTalkRoot.isSuccessful) {
+                val root = renameVars(node.texTalkRoot.value!!, map) as ExpressionNode
+                Statement(
+                    text = root.toCode(),
+                    texTalkRoot = Validation.success(root)
+                )
+            } else {
+                node
+            }
+        } else {
+            node
+        }
+    }
+
+    fun texTransformer(node: Node): Node {
+        return if (node is TextNode) {
+            node.copy(text = map.getOrDefault(node.text, node.text))
+        } else {
+            node
+        }
+    }
+
+    return root.transform(::chalkTransformer, ::texTransformer)
 }
 
-fun getDefinesDirectVars(def: DefinesGroup): Set<String> {
-    val vars = mutableSetOf<String>()
+fun renameVars(node: Node, map: Map<String, String>): Node {
+    return node.transform {
+        if (it is TextNode) {
+            it.copy(text = map.getOrDefault(it.text, it.text))
+        } else {
+            it
+        }
+    }
+}
+
+fun getDefinesDirectVars(def: DefinesGroup): List<String> {
+    val vars = mutableListOf<String>()
     for (target in def.definesSection.targets) {
         getVarsImpl(target, vars)
     }
     return vars
 }
 
-fun getDefinesIndirectVars(def: DefinesGroup): Set<String> {
-    val vars = mutableSetOf<String>()
+fun getDefinesIndirectVars(def: DefinesGroup): List<String> {
+    val vars = mutableListOf<String>()
     if (def.id.texTalkRoot.isSuccessful) {
         getDefinesIndirectVarsImpl(def.id.texTalkRoot.value!!, vars, false)
     }
     return vars
 }
 
-private fun getDefinesIndirectVarsImpl(node: Node, vars: MutableSet<String>, inParams: Boolean) {
+private fun getVars(node: Node): List<String> {
+    val vars = mutableListOf<String>()
+    getDefinesIndirectVarsImpl(node, vars, false)
+    return vars
+}
+
+private fun getDefinesIndirectVarsImpl(node: Node, vars: MutableList<String>, inParams: Boolean) {
     if (inParams && node is TextNode) {
         vars.add(node.text)
     } else if (node is ParametersNode) {
@@ -92,7 +186,7 @@ private fun getDefinesIndirectVarsImpl(node: Node, vars: MutableSet<String>, inP
     }
 }
 
-private fun getVarsImpl(node: Phase2Node, vars: MutableSet<String>) {
+private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>) {
     if (node is Identifier) {
         vars.add(node.name)
     } else if (node is TupleNode) {
@@ -109,7 +203,13 @@ private fun getVarsImpl(node: Phase2Node, vars: MutableSet<String>) {
     }
 }
 
-private fun getVarsImpl(node: ChalkTalkNode, vars: MutableSet<String>) {
+private fun getVars(node: ChalkTalkNode): List<String> {
+    val vars = mutableListOf<String>()
+    getVarsImpl(node, vars)
+    return vars
+}
+
+private fun getVarsImpl(node: ChalkTalkNode, vars: MutableList<String>) {
     if (node is ChalkTalkToken) {
         vars.add(node.text)
     } else {

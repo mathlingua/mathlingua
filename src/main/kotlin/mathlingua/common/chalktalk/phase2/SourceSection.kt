@@ -21,6 +21,7 @@ import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.textalk.Node
 
 data class SourceSection(val mappings: List<MappingNode>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -40,8 +41,11 @@ data class SourceSection(val mappings: List<MappingNode>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
-        return this
+    override fun transform(
+        chalkTransformer: (node: Phase2Node) -> Phase2Node,
+        texTransformer: (node: Node) -> Node
+    ): Phase2Node {
+        return chalkTransformer(this)
     }
 }
 

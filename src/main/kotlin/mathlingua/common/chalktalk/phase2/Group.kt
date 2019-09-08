@@ -47,10 +47,10 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
             Statement(id, Validation.failure(emptyList())), sourceSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return SourceGroup(
             id = id,
-            sourceSection = sourceSection.renameVars(map) as SourceSection
+            sourceSection = sourceSection.transform(chalkTransformer, texTransformer) as SourceSection
         )
     }
 }
@@ -134,15 +134,15 @@ data class DefinesGroup(
         )
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return DefinesGroup(
             signature = signature,
-            id = id.renameVars(map) as Statement,
-            definesSection = definesSection.renameVars(map) as DefinesSection,
-            assumingSection = assumingSection?.renameVars(map) as AssumingSection?,
-            meansSection = meansSection.renameVars(map) as MeansSection,
-            aliasSection = aliasSection?.renameVars(map) as AliasSection?,
-            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection?
+            id = id.transform(chalkTransformer, texTransformer) as Statement,
+            definesSection = definesSection.transform(chalkTransformer, texTransformer) as DefinesSection,
+            assumingSection = assumingSection?.transform(chalkTransformer, texTransformer) as AssumingSection?,
+            meansSection = meansSection.transform(chalkTransformer, texTransformer) as MeansSection,
+            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection?,
+            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection?
         )
     }
 }
@@ -196,15 +196,15 @@ data class RepresentsGroup(
         )
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return RepresentsGroup(
             signature = signature,
-            id = id.renameVars(map) as Statement,
-            representsSection = representsSection.renameVars(map) as RepresentsSection,
-            assumingSection = assumingSection?.renameVars(map) as AssumingSection,
-            thatSection = thatSection.renameVars(map) as ThatSection,
-            aliasSection = aliasSection?.renameVars(map) as AliasSection,
-            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection
+            id = id.transform(chalkTransformer, texTransformer) as Statement,
+            representsSection = representsSection.transform(chalkTransformer, texTransformer) as RepresentsSection,
+            assumingSection = assumingSection?.transform(chalkTransformer, texTransformer) as AssumingSection,
+            thatSection = thatSection.transform(chalkTransformer, texTransformer) as ThatSection,
+            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection
         )
     }
 }
@@ -241,11 +241,11 @@ data class ResultGroup(
         return toCode(isArg, indent, null, resultSection, metaDataSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return ResultGroup(
-            resultSection = resultSection.renameVars(map) as ResultSection,
-            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection,
-            aliasSection = aliasSection?.renameVars(map) as AliasSection
+            resultSection = resultSection.transform(chalkTransformer, texTransformer) as ResultSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection?,
+            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection?
         )
     }
 }
@@ -280,11 +280,11 @@ data class AxiomGroup(
         return toCode(isArg, indent, null, axiomSection, metaDataSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return AxiomGroup(
-            axiomSection = axiomSection.renameVars(map) as AxiomSection,
-            aliasSection = aliasSection?.renameVars(map) as AliasSection,
-            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection
+            axiomSection = axiomSection.transform(chalkTransformer, texTransformer) as AxiomSection,
+            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection
         )
     }
 }
@@ -319,11 +319,11 @@ data class ConjectureGroup(
         return toCode(isArg, indent, null, conjectureSection, metaDataSection)
     }
 
-    override fun renameVars(map: Map<String, String>): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
         return ConjectureGroup(
-            conjectureSection = conjectureSection.renameVars(map) as ConjectureSection,
-            aliasSection = aliasSection?.renameVars(map) as AliasSection,
-            metaDataSection = metaDataSection?.renameVars(map) as MetaDataSection
+            conjectureSection = conjectureSection.transform(chalkTransformer, texTransformer) as ConjectureSection,
+            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection
         )
     }
 }

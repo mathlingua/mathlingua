@@ -54,8 +54,8 @@ data class ChalkTalkToken(val text: String, val type: ChalkTalkTokenType, val ro
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
-        return copy(text = map.getOrDefault(text, text))
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
+        return transformer(this)
     }
 }
 
@@ -74,10 +74,10 @@ data class Mapping(val lhs: ChalkTalkToken, val rhs: ChalkTalkToken) : ChalkTalk
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Mapping(
-            lhs = lhs.renameVars(map) as ChalkTalkToken,
-            rhs = rhs.renameVars(map) as ChalkTalkToken
+            lhs = lhs.transform(transformer) as ChalkTalkToken,
+            rhs = rhs.transform(transformer) as ChalkTalkToken
         )
     }
 }
@@ -118,10 +118,10 @@ data class Group(val sections: List<Section>, val id: ChalkTalkToken?) :
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Group(
-            sections = sections.map { it.renameVars(map) as Section },
-            id = id?.renameVars(map) as ChalkTalkToken
+            sections = sections.map { it.transform(transformer) as Section },
+            id = id?.transform(transformer) as ChalkTalkToken
         )
     }
 }
@@ -141,10 +141,10 @@ data class Assignment(val lhs: ChalkTalkToken, val rhs: AssignmentRhs) : TupleIt
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Assignment(
-            lhs = lhs.renameVars(map) as ChalkTalkToken,
-            rhs = rhs.renameVars(map) as ChalkTalkToken
+            lhs = lhs.transform(transformer) as ChalkTalkToken,
+            rhs = rhs.transform(transformer) as ChalkTalkToken
         )
     }
 }
@@ -172,9 +172,9 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Tuple(
-            items = items.map { it.renameVars(map) as TupleItem }
+            items = items.map { it.transform(transformer) as TupleItem }
         )
     }
 }
@@ -204,10 +204,10 @@ data class Abstraction(val name: ChalkTalkToken, val params: List<ChalkTalkToken
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Abstraction(
-            name = name.renameVars(map) as ChalkTalkToken,
-            params = params.map { it.renameVars(map) as ChalkTalkToken }
+            name = name.transform(transformer) as ChalkTalkToken,
+            params = params.map { it.transform(transformer) as ChalkTalkToken }
         )
     }
 }
@@ -235,9 +235,9 @@ data class Aggregate(val params: List<ChalkTalkToken>) : AssignmentRhs() {
         return this
     }
 
-    override fun renameVars(map: Map<String, String>): ChalkTalkNode {
+    override fun transform(transformer: (node: ChalkTalkNode) -> ChalkTalkNode): ChalkTalkNode {
         return Aggregate(
-            params = params.map { it.renameVars(map) as ChalkTalkToken }
+            params = params.map { it.transform(transformer) as ChalkTalkToken }
         )
     }
 }

@@ -42,7 +42,7 @@ object SignatureTestBed {
         println(ResultGroup(
             resultSection = ResultSection(
                 clauses = res.resultSection.clauses.map {
-                    moveInlineCommandsToIsNode(it, mapOf("\\A{?}" to "Q"))
+                    moveInlineCommandsToIsNode(it, mapOf("\\A{?}" to "Q"), {true}, {true})
                 }
             ),
             aliasSection = null,

@@ -34,12 +34,20 @@ import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.IsTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode
+import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
 
-fun moveInlineCommandsToIsNode(node: Clause, sigToName: Map<String, String>): Clause {
+fun moveInlineCommandsToIsNode(node: Clause,
+                               sigToName: Map<String, String>,
+                               shouldProcessChalk: (node: Phase2Node) -> Boolean,
+                               shouldProcessTex: (node: TexTalkNode) -> Boolean): Clause {
+    if (!shouldProcessChalk(node)) {
+        return node
+    }
+
     val sigsFound = mutableSetOf<String>()
-    val newNode = replaceCommands(node, sigToName, sigsFound) as Clause
+    val newNode = replaceCommands(node, sigToName, sigsFound, shouldProcessChalk, shouldProcessTex) as Clause
     return ForGroup(
         forSection = ForSection(
             targets = sigsFound.map { Identifier(name = sigToName[it]!!) }
@@ -87,7 +95,9 @@ fun moveInlineCommandsToIsNode(node: Clause, sigToName: Map<String, String>): Cl
     )
 }
 
-fun replaceRepresents(node: Phase2Node, represents: List<RepresentsGroup>): Phase2Node {
+fun replaceRepresents(node: Phase2Node,
+                      represents: List<RepresentsGroup>,
+                      filter: (node: Phase2Node) -> Boolean = { true }): Phase2Node {
     val repMap = mutableMapOf<String, RepresentsGroup>()
     for (rep in represents) {
         val sig = rep.signature
@@ -97,6 +107,10 @@ fun replaceRepresents(node: Phase2Node, represents: List<RepresentsGroup>): Phas
     }
 
     fun chalkTransformer(node: Phase2Node): Phase2Node {
+        if (!filter(node)) {
+            return node
+        }
+
         if (node !is Statement) {
             return node
         }

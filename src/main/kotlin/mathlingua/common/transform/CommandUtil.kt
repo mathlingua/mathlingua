@@ -41,9 +41,12 @@ fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: 
     }
 }
 
-fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>, sigsFound: MutableSet<String>): Phase2Node {
+fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>,
+                    sigsFound: MutableSet<String>,
+                    shouldProcessChalk: (node: Phase2Node) -> Boolean,
+                    shouldProcessTex: (node: TexTalkNode) -> Boolean): Phase2Node {
     return node.transform {
-        if (it !is Statement) {
+        if (!shouldProcessChalk(it) || it !is Statement) {
             it
         } else {
             val validation = it.texTalkRoot
@@ -51,7 +54,7 @@ fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>, sig
                 it
             } else {
                 val root = it.texTalkRoot.value!!
-                val newRoot = replaceCommands(root, sigToReplacement, sigsFound) as ExpressionTexTalkNode
+                val newRoot = replaceCommands(root, sigToReplacement, sigsFound, shouldProcessTex) as ExpressionTexTalkNode
                 Statement(
                     text = newRoot.toCode(),
                     texTalkRoot = Validation.success(newRoot)
@@ -61,9 +64,12 @@ fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>, sig
     }
 }
 
-fun replaceCommands(texTalkNode: TexTalkNode, sigToReplacement: Map<String, String>, sigsFound: MutableSet<String>): TexTalkNode {
+fun replaceCommands(texTalkNode: TexTalkNode,
+                    sigToReplacement: Map<String, String>,
+                    sigsFound: MutableSet<String>,
+                    shouldProcess: (node: TexTalkNode) -> Boolean): TexTalkNode {
     return texTalkNode.transform {
-        if (it !is Command) {
+        if (!shouldProcess(it) || it !is Command) {
             it
         } else {
             val sig = getCommandSignature(it).toCode()

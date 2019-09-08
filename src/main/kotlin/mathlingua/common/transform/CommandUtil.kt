@@ -35,7 +35,7 @@ fun findCommands(texTalkNode: TexTalkNode): List<Command> {
 fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: String): TexTalkNode {
     return texTalkNode.transform {
         if (it is Command && getCommandSignature(it).toCode() == signature) {
-            TextTexTalkNode(parent = it.parent, type = TexTalkNodeType.Identifier, text = replacement)
+            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
         } else {
             texTalkNode
         }
@@ -84,7 +84,7 @@ fun replaceCommands(
                 it
             } else {
                 val name = sigToReplacement[sig]
-                TextTexTalkNode(parent = it.parent, type = TexTalkNodeType.Identifier, text = name!!)
+                TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!)
             }
         }
     }

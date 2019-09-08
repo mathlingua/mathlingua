@@ -58,7 +58,7 @@ fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
     }
 
     if (commandParts.isNotEmpty()) {
-        return getCommandSignature(Command(parent = null, parts = commandParts)).toCode()
+        return getCommandSignature(Command(parts = commandParts)).toCode()
     }
 
     return null
@@ -66,7 +66,6 @@ fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
 
 fun getCommandSignature(command: Command): Command {
     return Command(
-        parent = null,
         parts = command.parts.map { getCommandPartForSignature(it) }
     )
 }
@@ -109,7 +108,6 @@ private fun <T> callOrNull(input: T?, fn: (t: T) -> T): T? {
 
 private fun getCommandPartForSignature(node: CommandPart): CommandPart {
     return CommandPart(
-        parent = null,
         name = node.name,
         square = callOrNull(node.square, ::getGroupNodeForSignature),
         subSup = callOrNull(node.subSup, ::getSubSupForSignature),
@@ -120,7 +118,6 @@ private fun getCommandPartForSignature(node: CommandPart): CommandPart {
 
 private fun getSubSupForSignature(node: SubSupTexTalkNode): SubSupTexTalkNode {
     return SubSupTexTalkNode(
-        parent = null,
         sub = callOrNull(node.sub, ::getGroupNodeForSignature),
         sup = callOrNull(node.sup, ::getGroupNodeForSignature)
     )
@@ -128,7 +125,6 @@ private fun getSubSupForSignature(node: SubSupTexTalkNode): SubSupTexTalkNode {
 
 private fun getGroupNodeForSignature(node: GroupTexTalkNode): GroupTexTalkNode {
     return GroupTexTalkNode(
-        parent = null,
         type = node.type,
         parameters = getParametersNodeForSignature(node.parameters)
     )
@@ -136,13 +132,10 @@ private fun getGroupNodeForSignature(node: GroupTexTalkNode): GroupTexTalkNode {
 
 private fun getParametersNodeForSignature(node: ParametersTexTalkNode): ParametersTexTalkNode {
     return ParametersTexTalkNode(
-        parent = null,
         items = node.items.map {
             ExpressionTexTalkNode(
-                parent = null,
                 children = listOf(
                     TextTexTalkNode(
-                        parent = null,
                         type = TexTalkNodeType.Identifier,
                         text = "?"
                     )
@@ -154,7 +147,6 @@ private fun getParametersNodeForSignature(node: ParametersTexTalkNode): Paramete
 
 private fun getNamedGroupNodeForSignature(node: NamedGroupTexTalkNode): NamedGroupTexTalkNode {
     return NamedGroupTexTalkNode(
-        parent = null,
         name = node.name,
         group = getGroupNodeForSignature(node.group)
     )

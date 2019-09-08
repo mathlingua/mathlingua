@@ -99,15 +99,11 @@ fun moveInlineCommandsToIsNode(
             clauses = ClauseListNode(
                 clauses = distinctCommands.map {
                     val isNode = IsTexTalkNode(
-                        parent = null,
                         lhs = ParametersTexTalkNode(
-                            parent = null,
                             items = listOf(
                                 ExpressionTexTalkNode(
-                                    parent = null,
                                     children = listOf(
                                         TextTexTalkNode(
-                                            parent = null,
                                             type = TexTalkNodeType.Identifier,
                                             text = sigToName[getCommandSignature(it).toCode()]!!
                                         )
@@ -116,10 +112,8 @@ fun moveInlineCommandsToIsNode(
                             )
                         ),
                         rhs = ParametersTexTalkNode(
-                            parent = null,
                             items = listOf(
                                 ExpressionTexTalkNode(
-                                    parent = null,
                                     children = listOf(it)
                                 )
                             )
@@ -131,7 +125,6 @@ fun moveInlineCommandsToIsNode(
                         texTalkRoot = Validation.success(
                             populateParents(
                                 ExpressionTexTalkNode(
-                                    parent = null,
                                     children = listOf(isNode)
                                 )
                             )

@@ -49,41 +49,41 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 line++
                 column = 0
             } else if (c == '\\') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.Backslash, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Backslash, line, column))
             } else if (c == 'i' && i < text.length && text[i] == 's') {
-                this.tokens.add(TexTalkToken(null, "is", TexTalkTokenType.Is, line, column))
+                this.tokens.add(TexTalkToken("is", TexTalkTokenType.Is, line, column))
                 // skip the 's'
                 i++
                 column++
             } else if (c == ':' && i < text.length && text[i] == '=') {
-                this.tokens.add(TexTalkToken(null, ":=", TexTalkTokenType.ColonEquals, line, column))
+                this.tokens.add(TexTalkToken(":=", TexTalkTokenType.ColonEquals, line, column))
                 // skip the =
                 i++
                 column++
             } else if (c == ':') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.Colon, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Colon, line, column))
             } else if (c == '.') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.Period, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Period, line, column))
             } else if (c == '(') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.LParen, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.LParen, line, column))
             } else if (c == ')') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.RParen, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.RParen, line, column))
             } else if (c == '[') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.LSquare, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.LSquare, line, column))
             } else if (c == ']') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.RSquare, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.RSquare, line, column))
             } else if (c == '{') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.LCurly, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.LCurly, line, column))
             } else if (c == '}') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.RCurly, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.RCurly, line, column))
             } else if (c == '_') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.Underscore, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Underscore, line, column))
             } else if (c == '^') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.Caret, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Caret, line, column))
             } else if (c == ',') {
-                this.tokens.add(TexTalkToken(null, "" + c, TexTalkTokenType.Comma, line, column))
+                this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Comma, line, column))
             } else if (c == '?') {
-                this.tokens.add(TexTalkToken(null, "$c", TexTalkTokenType.Identifier, line, column))
+                this.tokens.add(TexTalkToken("$c", TexTalkTokenType.Identifier, line, column))
             } else if (isLetterOrDigit(c)) {
                 val id = StringBuilder("" + c)
                 while (i < text.length && isLetterOrDigit(text[i])) {
@@ -94,14 +94,14 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                     id.append(text[i++])
                     column++
                 }
-                this.tokens.add(TexTalkToken(null, id.toString(), TexTalkTokenType.Identifier, line, column))
+                this.tokens.add(TexTalkToken(id.toString(), TexTalkTokenType.Identifier, line, column))
             } else if (isOpChar(c)) {
                 val op = StringBuilder("" + c)
                 while (i < text.length && isOpChar(text[i])) {
                     op.append(text[i++])
                     column++
                 }
-                this.tokens.add(TexTalkToken(null, op.toString(), TexTalkTokenType.Operator, line, column))
+                this.tokens.add(TexTalkToken(op.toString(), TexTalkTokenType.Operator, line, column))
             } else if (c != ' ') {
                 this.errors.add(
                     ParseError(

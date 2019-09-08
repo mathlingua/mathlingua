@@ -55,9 +55,9 @@ data class AssumingSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return AssumingSection(
+        return chalkTransformer(AssumingSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -82,9 +82,9 @@ data class DefinesSection(val targets: List<Target>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return DefinesSection(
+        return chalkTransformer(DefinesSection(
             targets = targets.map { it.transform(chalkTransformer) as Target }
-        )
+        ))
     }
 }
 
@@ -110,9 +110,9 @@ data class RefinesSection(val targets: List<Target>) :
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return RefinesSection(
+        return chalkTransformer(RefinesSection(
             targets = targets.map { it.transform(chalkTransformer) as Target }
-        )
+        ))
     }
 }
 
@@ -132,7 +132,7 @@ class RepresentsSection : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return this
+        return chalkTransformer(this)
     }
 }
 
@@ -187,9 +187,9 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ExistsSection(
+        return chalkTransformer(ExistsSection(
             identifiers = identifiers.map { it.transform(chalkTransformer) as Target }
-        )
+        ))
     }
 }
 
@@ -214,9 +214,9 @@ data class ForSection(val targets: List<Target>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ForSection(
+        return chalkTransformer(ForSection(
             targets = targets.map { it.transform(chalkTransformer) as Target }
-        )
+        ))
     }
 }
 
@@ -241,9 +241,9 @@ data class MeansSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return MeansSection(
+        return chalkTransformer(MeansSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -268,9 +268,9 @@ data class ResultSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ResultSection(
+        return chalkTransformer(ResultSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -295,9 +295,9 @@ data class AxiomSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return AxiomSection(
+        return chalkTransformer(AxiomSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -322,9 +322,9 @@ data class ConjectureSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ConjectureSection(
+        return chalkTransformer(ConjectureSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -349,9 +349,9 @@ data class SuchThatSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return SuchThatSection(
+        return chalkTransformer(SuchThatSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -376,9 +376,9 @@ data class ThatSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ThatSection(
+        return chalkTransformer(ThatSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -403,9 +403,9 @@ data class IfSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return IfSection(
+        return chalkTransformer(IfSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -430,9 +430,9 @@ data class IffSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return IffSection(
+        return chalkTransformer(IffSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -457,9 +457,9 @@ data class ThenSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ThenSection(
+        return chalkTransformer(ThenSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -484,9 +484,9 @@ data class WhereSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return WhereSection(
+        return chalkTransformer(WhereSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -511,9 +511,9 @@ data class NotSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return NotSection(
+        return chalkTransformer(NotSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 
@@ -538,9 +538,9 @@ data class OrSection(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return OrSection(
+        return chalkTransformer(OrSection(
             clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        )
+        ))
     }
 }
 

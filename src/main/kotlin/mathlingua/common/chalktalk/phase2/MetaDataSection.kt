@@ -41,9 +41,9 @@ data class MetaDataSection(val mappings: List<MappingNode>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return MetaDataSection(
+        return chalkTransformer(MetaDataSection(
             mappings = mappings.map { it.transform(chalkTransformer) as MappingNode }
-        )
+        ))
     }
 }
 

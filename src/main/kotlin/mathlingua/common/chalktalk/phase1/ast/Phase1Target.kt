@@ -75,10 +75,10 @@ data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() 
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Mapping(
+        return transformer(Mapping(
             lhs = lhs.transform(transformer) as Phase1Token,
             rhs = rhs.transform(transformer) as Phase1Token
-        )
+        ))
     }
 }
 
@@ -119,10 +119,10 @@ data class Group(val sections: List<Section>, val id: Phase1Token?) :
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Group(
+        return transformer(Group(
             sections = sections.map { it.transform(transformer) as Section },
             id = id?.transform(transformer) as Phase1Token
-        )
+        ))
     }
 }
 
@@ -142,10 +142,10 @@ data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem(
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Assignment(
+        return transformer(Assignment(
             lhs = lhs.transform(transformer) as Phase1Token,
             rhs = rhs.transform(transformer) as Phase1Token
-        )
+        ))
     }
 }
 
@@ -173,9 +173,9 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Tuple(
+        return transformer(Tuple(
             items = items.map { it.transform(transformer) as TupleItem }
-        )
+        ))
     }
 }
 
@@ -205,10 +205,10 @@ data class Abstraction(val name: Phase1Token, val params: List<Phase1Token>) : T
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Abstraction(
+        return transformer(Abstraction(
             name = name.transform(transformer) as Phase1Token,
             params = params.map { it.transform(transformer) as Phase1Token }
-        )
+        ))
     }
 }
 
@@ -236,8 +236,8 @@ data class Aggregate(val params: List<Phase1Token>) : AssignmentRhs() {
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Aggregate(
+        return transformer(Aggregate(
             params = params.map { it.transform(transformer) as Phase1Token }
-        )
+        ))
     }
 }

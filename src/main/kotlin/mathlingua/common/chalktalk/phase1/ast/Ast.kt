@@ -46,9 +46,9 @@ data class Root(val groups: List<Group>) : Phase1Node {
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Root(
+        return transformer(Root(
             groups = groups.map { it.transform(transformer) as Group }
-        )
+        ))
     }
 }
 
@@ -105,9 +105,9 @@ data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Argument(
+        return transformer(Argument(
             chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target
-        )
+        ))
     }
 }
 
@@ -138,9 +138,9 @@ data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node
     }
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return Section(
+        return transformer(Section(
             name = name.transform(transformer) as Phase1Token,
             args = args.map { it.transform(transformer) as Argument }
-        )
+        ))
     }
 }

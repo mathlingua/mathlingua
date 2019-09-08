@@ -42,9 +42,9 @@ data class AliasSection(val mappings: List<MappingNode>) :
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return AliasSection(
+        return chalkTransformer(AliasSection(
             mappings = mappings.map { it.transform(chalkTransformer) as MappingNode }
-        )
+        ))
     }
 }
 

@@ -14,8 +14,8 @@ object SignatureTestBed {
             Defines: a
             assuming: 'x is \X'
             means: 'a + x = 0'
-            
-            
+
+
             Result:
             . for: y, z
               then:

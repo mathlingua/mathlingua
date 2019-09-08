@@ -38,10 +38,10 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return SourceGroup(
+        return chalkTransformer(SourceGroup(
             id = id,
             sourceSection = sourceSection.transform(chalkTransformer) as SourceSection
-        )
+        ))
     }
 }
 
@@ -125,7 +125,7 @@ data class DefinesGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return DefinesGroup(
+        return chalkTransformer(DefinesGroup(
             signature = signature,
             id = id.transform(chalkTransformer) as Statement,
             definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
@@ -133,7 +133,7 @@ data class DefinesGroup(
             meansSection = meansSection.transform(chalkTransformer) as MeansSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
-        )
+        ))
     }
 }
 
@@ -187,7 +187,7 @@ data class RepresentsGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return RepresentsGroup(
+        return chalkTransformer(RepresentsGroup(
             signature = signature,
             id = id.transform(chalkTransformer) as Statement,
             representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
@@ -195,7 +195,7 @@ data class RepresentsGroup(
             thatSection = thatSection.transform(chalkTransformer) as ThatSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
-        )
+        ))
     }
 }
 
@@ -232,11 +232,11 @@ data class ResultGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ResultGroup(
+        return chalkTransformer(ResultGroup(
             resultSection = resultSection.transform(chalkTransformer) as ResultSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
-        )
+        ))
     }
 }
 
@@ -271,11 +271,11 @@ data class AxiomGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return AxiomGroup(
+        return chalkTransformer(AxiomGroup(
             axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
-        )
+        ))
     }
 }
 
@@ -310,11 +310,11 @@ data class ConjectureGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ConjectureGroup(
+        return chalkTransformer(ConjectureGroup(
             conjectureSection = conjectureSection.transform(chalkTransformer) as ConjectureSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
-        )
+        ))
     }
 }
 

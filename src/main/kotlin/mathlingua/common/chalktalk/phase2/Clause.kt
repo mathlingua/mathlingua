@@ -415,10 +415,10 @@ data class ExistsGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ExistsGroup(
+        return chalkTransformer(ExistsGroup(
             existsSection = existsSection.transform(chalkTransformer) as ExistsSection,
             suchThatSection = suchThatSection.transform(chalkTransformer) as SuchThatSection
-        )
+        ))
     }
 }
 
@@ -451,10 +451,10 @@ data class IfGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return IfGroup(
+        return chalkTransformer(IfGroup(
             ifSection = ifSection.transform(chalkTransformer) as IfSection,
             thenSection = thenSection.transform(chalkTransformer) as ThenSection
-        )
+        ))
     }
 }
 
@@ -487,10 +487,10 @@ data class IffGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return IffGroup(
+        return chalkTransformer(IffGroup(
             iffSection = iffSection.transform(chalkTransformer) as IffSection,
             thenSection = thenSection.transform(chalkTransformer) as ThenSection
-        )
+        ))
     }
 }
 
@@ -527,11 +527,11 @@ data class ForGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return ForGroup(
+        return chalkTransformer(ForGroup(
             forSection = forSection.transform(chalkTransformer) as ForSection,
             whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
             thenSection = thenSection.transform(chalkTransformer) as ThenSection
-        )
+        ))
     }
 }
 
@@ -610,9 +610,9 @@ data class NotGroup(val notSection: NotSection) : Clause() {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return NotGroup(
+        return chalkTransformer(NotGroup(
             notSection = notSection.transform(chalkTransformer) as NotSection
-        )
+        ))
     }
 }
 
@@ -637,9 +637,9 @@ data class OrGroup(val orSection: OrSection) : Clause() {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return OrGroup(
+        return chalkTransformer(OrGroup(
             orSection = orSection.transform(chalkTransformer) as OrSection
-        )
+        ))
     }
 }
 

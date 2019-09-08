@@ -3,30 +3,18 @@ package mathlingua.jvm
 /*
 import mathlingua.common.MathLingua
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase1.ast.Phase1Token
-import mathlingua.common.chalktalk.phase2.AbstractionNode
-import mathlingua.common.chalktalk.phase2.AggregateNode
-import mathlingua.common.chalktalk.phase2.AssignmentNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ForGroup
 import mathlingua.common.chalktalk.phase2.ForSection
 import mathlingua.common.chalktalk.phase2.Identifier
-import mathlingua.common.chalktalk.phase2.IfGroup
-import mathlingua.common.chalktalk.phase2.IfSection
-import mathlingua.common.chalktalk.phase2.MeansSection
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.ThenSection
-import mathlingua.common.chalktalk.phase2.TupleNode
 import mathlingua.common.chalktalk.phase2.WhereSection
 import mathlingua.common.chalktalk.phase2.getCommandSignature
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
-import mathlingua.common.textalk.TexTalkNodeType
-import mathlingua.common.textalk.ParametersTexTalkNode
-import mathlingua.common.textalk.TextTexTalkNode
 
 var count = 1
 fun nextVar(): String {
@@ -188,94 +176,5 @@ object SignatureTestBed {
         val res = result.document.results[0]
         println(res.transform(::chalkTransformer, ::texTransformer).toCode(false, 0))
     }
-}
-
-fun replaceCommands(texTalkNode: TexTalkNode, sigToReplacement: Map<String, String>): TexTalkNode {
-    return texTalkNode.transform {
-        if (it !is Command) {
-            it
-        } else {
-            val sig = getCommandSignature(it).toCode()
-            if (!sigToReplacement.containsKey(sig)) {
-                it
-            } else {
-                val name = sigToReplacement[sig]
-                TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!)
-            }
-        }
-    }
-}
-
-fun findCommands(texTalkNode: TexTalkNode): List<Command> {
-    val commands = mutableListOf<Command>()
-    findCommandsImpl(texTalkNode, commands)
-    return commands.distinct()
-}
-
-private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Command>) {
-    if (texTalkNode is Command) {
-        commands.add(texTalkNode)
-    }
-
-    texTalkNode.forEach { findCommandsImpl(it, commands) }
-}
-
-
-fun replaceSignature(texTalkNode: TexTalkNode, signature: String, replacement: String): TexTalkNode {
-    return texTalkNode.transform {
-        if (it is Command && getCommandSignature(it).toCode() == signature) {
-            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
-        } else {
-            texTalkNode
-        }
-    }
-}
-
-fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
-    fun chalkTransformer(node: Phase2Node): Phase2Node {
-        return if (node is Identifier) {
-            node.copy(name = map.getOrDefault(node.name, node.name))
-        } else if (node is Statement) {
-            if (node.texTalkRoot.isSuccessful) {
-                val root = renameVars(node.texTalkRoot.value!!, map) as ExpressionTexTalkNode
-                Statement(
-                    text = root.toCode(),
-                    texTalkRoot = Validation.success(root)
-                )
-            } else {
-                node
-            }
-        } else {
-            node
-        }
-    }
-
-    fun texTransformer(texTalkNode: TexTalkNode): TexTalkNode {
-        return if (texTalkNode is TextTexTalkNode) {
-            texTalkNode.copy(text = map.getOrDefault(texTalkNode.text, texTalkNode.text))
-        } else {
-            texTalkNode
-        }
-    }
-
-    return root.transform(::chalkTransformer, ::texTransformer)
-}
-
-
-
-fun getDefinesDirectVars(def: DefinesGroup): List<String> {
-    val vars = mutableListOf<String>()
-    for (target in def.definesSection.targets) {
-        getVarsImpl(target, vars)
-    }
-    return vars
-}
-
-fun getDefinesIndirectVars(def: DefinesGroup): List<String> {
-    val vars = mutableListOf<String>()
-    if (def.id.texTalkRoot.isSuccessful) {
-        getDefinesIndirectVarsImpl(def.id.texTalkRoot.value!!, vars, false)
-    }
-    return vars
 }
 */

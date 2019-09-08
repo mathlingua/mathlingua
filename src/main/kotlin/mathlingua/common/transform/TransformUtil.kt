@@ -46,3 +46,19 @@ fun buildIfThen(def: DefinesGroup): IfGroup {
         )
     )
 }
+
+fun getDefinesDirectVars(def: DefinesGroup): List<String> {
+    val vars = mutableListOf<String>()
+    for (target in def.definesSection.targets) {
+        vars.addAll(getVars(target))
+    }
+    return vars
+}
+
+fun getDefinesIdVars(def: DefinesGroup): List<String> {
+    val vars = mutableListOf<String>()
+    if (def.id.texTalkRoot.isSuccessful) {
+        vars.addAll(getVars(def.id.texTalkRoot.value!!))
+    }
+    return vars
+}

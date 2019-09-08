@@ -18,10 +18,12 @@ import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.ThenSection
 import mathlingua.common.chalktalk.phase2.TupleNode
+import mathlingua.common.chalktalk.phase2.WhereSection
 import mathlingua.common.chalktalk.phase2.getCommandSignature
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionNode
 import mathlingua.common.textalk.Node
+import mathlingua.common.textalk.NodeType
 import mathlingua.common.textalk.ParametersNode
 import mathlingua.common.textalk.TextNode
 
@@ -34,17 +36,26 @@ object SignatureTestBed {
     @JvmStatic
     fun main(args: Array<String>) {
         val text = """
-            [\function:on{A}]
-            Defines: f
-            assuming: 'A is \set'
+            [\A]
+            Defines: a
+            assuming: 'a is \someA'
             means:
-            . 'f is \mapping:on{A}'
+            . 'a is \someAA'
+
+            [\B]
+            Defines: b
+            assuming: 'b is \someB'
+            means:
+            . 'b is \someBB'
 
             Result:
-            . for: g, B
-              where: 'g is \function:on{B}'
+            . for: x, y
+              where:
+              . 'x is \A'
+              . 'y is \B'
               then:
-              . '\function:on{B}'
+              . 'x + y is \A + \B'
+              . 'x * y = 0'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -63,6 +74,70 @@ object SignatureTestBed {
         }
 
         fun chalkTransformer(node: Phase2Node): Phase2Node {
+            if (node !is Statement) {
+                return node
+            }
+
+            val validation = node.texTalkRoot
+            if (!validation.isSuccessful) {
+                return node
+            }
+
+            val root = validation.value!!
+            val commands = findCommands(root)
+            val signatures = commands.map {
+                getCommandSignature(it).toCode()
+            }.filter {
+                defMap.containsKey(it)
+            }
+
+            val sigToReplacement = mutableMapOf<String, String>()
+            for (sig in signatures) {
+                sigToReplacement[sig] = nextVar()
+            }
+
+            val newRoot = replaceCommands(root, sigToReplacement)
+            return ForGroup(
+                forSection = ForSection(
+                    targets = sigToReplacement.values.map { Identifier(name = it) }
+                ),
+                whereSection = WhereSection(
+                    clauses = commands.filter {
+                        sigToReplacement.containsKey(getCommandSignature(it).toCode())
+                    }.map {
+                        val sig = getCommandSignature(it).toCode()
+                        val def = defMap[sig]!!
+                        val directVars = getDefinesDirectVars(def)
+                        val indirectVars = getDefinesIndirectVars(def)
+                        val cmdVars = getVars(it)
+
+                        val nameMap = mutableMapOf<String, String>()
+                        for (v in directVars) {
+                            nameMap[v] = nextVar()
+                        }
+
+                        assert(indirectVars.size == cmdVars.size)
+
+                        for (i in indirectVars.indices) {
+                            nameMap[indirectVars[i]] = cmdVars[i]
+                        }
+
+                        val newDef = renameVars(def, nameMap) as DefinesGroup
+                        buildIfForDef(newDef)
+                    }
+                ),
+                thenSection = ThenSection(
+                    clauses = listOf(
+                        Statement(
+                            text = newRoot.toCode(),
+                            texTalkRoot = Validation.success(newRoot as ExpressionNode)
+                        )
+                    )
+                )
+            )
+        }
+
+        fun __chalkTransformer(node: Phase2Node): Phase2Node {
             return if (node is Statement) {
                 if (node.texTalkRoot.isSuccessful &&
                     node.texTalkRoot.value!!.children.size == 1 &&
@@ -111,6 +186,47 @@ object SignatureTestBed {
 
         val res = result.document.results[0]
         println(res.transform(::chalkTransformer, ::texTransformer).toCode(false, 0))
+    }
+}
+
+fun replaceCommands(node: Node, sigToReplacement: Map<String, String>): Node {
+    return node.transform {
+        if (it !is Command) {
+            it
+        } else {
+            val sig = getCommandSignature(it).toCode()
+            if (!sigToReplacement.containsKey(sig)) {
+                it
+            } else {
+                val name = sigToReplacement[sig]
+                TextNode(type = NodeType.Identifier, text = name!!)
+            }
+        }
+    }
+}
+
+fun findCommands(node: Node): List<Command> {
+    val commands = mutableListOf<Command>()
+    findCommandsImpl(node, commands)
+    return commands.distinct()
+}
+
+private fun findCommandsImpl(node: Node, commands: MutableList<Command>) {
+    if (node is Command) {
+        commands.add(node)
+    }
+
+    node.forEach { findCommandsImpl(it, commands) }
+}
+
+
+fun replaceSignature(node: Node, signature: String, replacement: String): Node {
+    return node.transform {
+        if (it is Command && getCommandSignature(it).toCode() == signature) {
+            TextNode(type = NodeType.Identifier, text = replacement)
+        } else {
+            node
+        }
     }
 }
 

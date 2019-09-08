@@ -47,10 +47,10 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
             Statement(id, Validation.failure(emptyList())), sourceSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return SourceGroup(
             id = id,
-            sourceSection = sourceSection.transform(chalkTransformer, texTransformer) as SourceSection
+            sourceSection = sourceSection.transform(chalkTransformer) as SourceSection
         )
     }
 }
@@ -134,15 +134,15 @@ data class DefinesGroup(
         )
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return DefinesGroup(
             signature = signature,
-            id = id.transform(chalkTransformer, texTransformer) as Statement,
-            definesSection = definesSection.transform(chalkTransformer, texTransformer) as DefinesSection,
-            assumingSection = assumingSection?.transform(chalkTransformer, texTransformer) as AssumingSection?,
-            meansSection = meansSection.transform(chalkTransformer, texTransformer) as MeansSection,
-            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection?
+            id = id.transform(chalkTransformer) as Statement,
+            definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
+            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
+            meansSection = meansSection.transform(chalkTransformer) as MeansSection,
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
         )
     }
 }
@@ -196,15 +196,15 @@ data class RepresentsGroup(
         )
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return RepresentsGroup(
             signature = signature,
-            id = id.transform(chalkTransformer, texTransformer) as Statement,
-            representsSection = representsSection.transform(chalkTransformer, texTransformer) as RepresentsSection,
-            assumingSection = assumingSection?.transform(chalkTransformer, texTransformer) as AssumingSection,
-            thatSection = thatSection.transform(chalkTransformer, texTransformer) as ThatSection,
-            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection
+            id = id.transform(chalkTransformer) as Statement,
+            representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
+            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection,
+            thatSection = thatSection.transform(chalkTransformer) as ThatSection,
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
         )
     }
 }
@@ -241,11 +241,11 @@ data class ResultGroup(
         return toCode(isArg, indent, null, resultSection, metaDataSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return ResultGroup(
-            resultSection = resultSection.transform(chalkTransformer, texTransformer) as ResultSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection?,
-            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection?
+            resultSection = resultSection.transform(chalkTransformer) as ResultSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
         )
     }
 }
@@ -280,11 +280,11 @@ data class AxiomGroup(
         return toCode(isArg, indent, null, axiomSection, metaDataSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return AxiomGroup(
-            axiomSection = axiomSection.transform(chalkTransformer, texTransformer) as AxiomSection,
-            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection
+            axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
         )
     }
 }
@@ -319,11 +319,11 @@ data class ConjectureGroup(
         return toCode(isArg, indent, null, conjectureSection, metaDataSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return ConjectureGroup(
-            conjectureSection = conjectureSection.transform(chalkTransformer, texTransformer) as ConjectureSection,
-            aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection
+            conjectureSection = conjectureSection.transform(chalkTransformer) as ConjectureSection,
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
         )
     }
 }

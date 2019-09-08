@@ -131,7 +131,7 @@ data class AbstractionNode(val abstraction: Abstraction) : Target() {
         return toCode(isArg, indent, abstraction)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -155,7 +155,7 @@ data class AggregateNode(val aggregate: Aggregate) : Target() {
         return toCode(isArg, indent, aggregate)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -179,7 +179,7 @@ data class TupleNode(val tuple: Tuple) : Target() {
         return toCode(isArg, indent, tuple)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -203,7 +203,7 @@ data class AssignmentNode(val assignment: Assignment) : Target() {
         return toCode(isArg, indent, assignment)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -229,7 +229,7 @@ data class MappingNode(val mapping: Mapping) : Phase2Node {
         return toCode(isArg, indent, mapping)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -255,7 +255,7 @@ data class Identifier(val name: String) : Target() {
         return indentedString(isArg, indent, name)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -303,7 +303,7 @@ data class Statement(
         return indentedString(isArg, indent, "'$text'")
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -365,7 +365,7 @@ data class Text(val text: String) : Clause() {
         return indentedString(isArg, indent, text)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
@@ -414,10 +414,10 @@ data class ExistsGroup(
         return toCode(isArg, indent, existsSection, suchThatSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return ExistsGroup(
-            existsSection = existsSection.transform(chalkTransformer, texTransformer) as ExistsSection,
-            suchThatSection = suchThatSection.transform(chalkTransformer, texTransformer) as SuchThatSection
+            existsSection = existsSection.transform(chalkTransformer) as ExistsSection,
+            suchThatSection = suchThatSection.transform(chalkTransformer) as SuchThatSection
         )
     }
 }
@@ -450,10 +450,10 @@ data class IfGroup(
         return toCode(isArg, indent, ifSection, thenSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return IfGroup(
-            ifSection = ifSection.transform(chalkTransformer, texTransformer) as IfSection,
-            thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
+            ifSection = ifSection.transform(chalkTransformer) as IfSection,
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection
         )
     }
 }
@@ -486,10 +486,10 @@ data class IffGroup(
         return toCode(isArg, indent, iffSection, thenSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return IffGroup(
-            iffSection = iffSection.transform(chalkTransformer, texTransformer) as IffSection,
-            thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
+            iffSection = iffSection.transform(chalkTransformer) as IffSection,
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection
         )
     }
 }
@@ -526,11 +526,11 @@ data class ForGroup(
         return toCode(isArg, indent, forSection, whereSection, thenSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return ForGroup(
-            forSection = forSection.transform(chalkTransformer, texTransformer) as ForSection,
-            whereSection = whereSection?.transform(chalkTransformer, texTransformer) as WhereSection?,
-            thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
+            forSection = forSection.transform(chalkTransformer) as ForSection,
+            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection
         )
     }
 }
@@ -609,9 +609,9 @@ data class NotGroup(val notSection: NotSection) : Clause() {
         return notSection.toCode(isArg, indent)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return NotGroup(
-            notSection = notSection.transform(chalkTransformer, texTransformer) as NotSection
+            notSection = notSection.transform(chalkTransformer) as NotSection
         )
     }
 }
@@ -636,9 +636,9 @@ data class OrGroup(val orSection: OrSection) : Clause() {
         return orSection.toCode(isArg, indent)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return OrGroup(
-            orSection = orSection.transform(chalkTransformer, texTransformer) as OrSection
+            orSection = orSection.transform(chalkTransformer) as OrSection
         )
     }
 }

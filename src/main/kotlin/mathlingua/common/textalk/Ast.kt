@@ -43,10 +43,11 @@ interface TexTalkNode {
 }
 
 data class IsTexTalkNode(
-    override var parent: TexTalkNode?,
     val lhs: ParametersTexTalkNode,
     val rhs: ParametersTexTalkNode
 ) : TexTalkNode {
+    override var parent: TexTalkNode? = null
+
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Is
 
@@ -66,13 +67,14 @@ data class IsTexTalkNode(
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(IsTexTalkNode(
             lhs = lhs.transform(transformer) as ParametersTexTalkNode,
-            rhs = rhs.transform(transformer) as ParametersTexTalkNode,
-            parent = parent
+            rhs = rhs.transform(transformer) as ParametersTexTalkNode
         ))
     }
 }
 
-data class ColonEqualsTexTalkNode(override var parent: TexTalkNode?, val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) : TexTalkNode {
+data class ColonEqualsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) : TexTalkNode {
+    override var parent: TexTalkNode? = null
+
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.ColonEquals
 
@@ -92,20 +94,20 @@ data class ColonEqualsTexTalkNode(override var parent: TexTalkNode?, val lhs: Pa
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(ColonEqualsTexTalkNode(
             lhs = lhs.transform(transformer) as ParametersTexTalkNode,
-            rhs = rhs.transform(transformer) as ParametersTexTalkNode,
-            parent = parent
+            rhs = rhs.transform(transformer) as ParametersTexTalkNode
         ))
     }
 }
 
 data class CommandPart(
-    override var parent: TexTalkNode?,
     val name: TextTexTalkNode,
     val square: GroupTexTalkNode?,
     val subSup: SubSupTexTalkNode?,
     val groups: List<GroupTexTalkNode>,
     val namedGroups: List<NamedGroupTexTalkNode>
 ) : TexTalkNode {
+    override var parent: TexTalkNode? = null
+
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.CommandPart
 
@@ -156,13 +158,14 @@ data class CommandPart(
             square = square?.transform(transformer) as GroupTexTalkNode?,
             subSup = subSup?.transform(transformer) as SubSupTexTalkNode?,
             groups = groups.map { it.transform(transformer) as GroupTexTalkNode },
-            namedGroups = namedGroups.map { it.transform(transformer) as NamedGroupTexTalkNode },
-            parent = parent
+            namedGroups = namedGroups.map { it.transform(transformer) as NamedGroupTexTalkNode }
         ))
     }
 }
 
-data class Command(override var parent: TexTalkNode?, val parts: List<CommandPart>) : TexTalkNode {
+data class Command(val parts: List<CommandPart>) : TexTalkNode {
+    override var parent: TexTalkNode? = null
+
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Command
 
@@ -183,13 +186,13 @@ data class Command(override var parent: TexTalkNode?, val parts: List<CommandPar
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(Command(
-            parts = parts.map { it.transform(transformer) as CommandPart },
-            parent = parent
+            parts = parts.map { it.transform(transformer) as CommandPart }
         ))
     }
 }
 
-data class ExpressionTexTalkNode(override var parent: TexTalkNode?, val children: List<TexTalkNode>) : TexTalkNode {
+data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode {
+    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Expression
@@ -213,13 +216,14 @@ data class ExpressionTexTalkNode(override var parent: TexTalkNode?, val children
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(ExpressionTexTalkNode(
-            children = children.map { it.transform(transformer) },
-            parent = parent
+            children = children.map { it.transform(transformer) }
         ))
     }
 }
 
-data class ParametersTexTalkNode(override var parent: TexTalkNode?, val items: List<ExpressionTexTalkNode>) : TexTalkNode {
+data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTalkNode {
+    override var parent: TexTalkNode? = null
+
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Parameters
 
@@ -244,13 +248,13 @@ data class ParametersTexTalkNode(override var parent: TexTalkNode?, val items: L
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(ParametersTexTalkNode(
-            items = items.map { it.transform(transformer) as ExpressionTexTalkNode },
-            parent = parent
+            items = items.map { it.transform(transformer) as ExpressionTexTalkNode }
         ))
     }
 }
 
-data class GroupTexTalkNode(override var parent: TexTalkNode?, override val type: TexTalkNodeType, val parameters: ParametersTexTalkNode) : TexTalkNode {
+data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: ParametersTexTalkNode) : TexTalkNode {
+    override var parent: TexTalkNode? = null
 
     override fun toCode(): String {
         val prefix: String
@@ -285,17 +289,16 @@ data class GroupTexTalkNode(override var parent: TexTalkNode?, override val type
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(GroupTexTalkNode(
             type = type,
-            parameters = parameters.transform(transformer) as ParametersTexTalkNode,
-            parent = parent
+            parameters = parameters.transform(transformer) as ParametersTexTalkNode
         ))
     }
 }
 
 data class NamedGroupTexTalkNode(
-    override var parent: TexTalkNode?,
     val name: TextTexTalkNode,
     val group: GroupTexTalkNode
 ) : TexTalkNode {
+    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.NamedGroup
@@ -315,17 +318,16 @@ data class NamedGroupTexTalkNode(
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(NamedGroupTexTalkNode(
             name = name.transform(transformer) as TextTexTalkNode,
-            group = group.transform(transformer) as GroupTexTalkNode,
-            parent = parent
+            group = group.transform(transformer) as GroupTexTalkNode
         ))
     }
 }
 
 data class SubSupTexTalkNode(
-    override var parent: TexTalkNode?,
     val sub: GroupTexTalkNode?,
     val sup: GroupTexTalkNode?
 ) : TexTalkNode {
+    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.SubSup
@@ -357,13 +359,14 @@ data class SubSupTexTalkNode(
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
         return transformer(SubSupTexTalkNode(
             sub = sub?.transform(transformer) as GroupTexTalkNode?,
-            sup = sup?.transform(transformer) as GroupTexTalkNode?,
-            parent = parent
+            sup = sup?.transform(transformer) as GroupTexTalkNode?
         ))
     }
 }
 
-data class TextTexTalkNode(override var parent: TexTalkNode?, override val type: TexTalkNodeType, val text: String) : TexTalkNode {
+data class TextTexTalkNode(override val type: TexTalkNodeType, val text: String) : TexTalkNode {
+    override var parent: TexTalkNode? = null
+
     override fun toCode(): String {
         return text
     }
@@ -377,12 +380,13 @@ data class TextTexTalkNode(override var parent: TexTalkNode?, override val type:
 }
 
 data class TexTalkToken(
-    override var parent: TexTalkNode?,
     val text: String,
     val tokenType: TexTalkTokenType,
     val row: Int,
     val column: Int
 ) : TexTalkNode {
+    override var parent: TexTalkNode? = null
+
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Token
 

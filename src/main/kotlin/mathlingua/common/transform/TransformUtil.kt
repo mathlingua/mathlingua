@@ -201,7 +201,6 @@ fun replaceRepresents(
 fun replaceIsNodes(
     node: Phase2Node,
     defs: List<DefinesGroup>,
-    nextVar: () -> String,
     filter: (node: Phase2Node) -> Boolean = { true }
 ): Phase2Node {
     val defMap = mutableMapOf<String, DefinesGroup>()
@@ -247,27 +246,25 @@ fun replaceIsNodes(
         val defDirectVars = getDefinesDirectVars(def)
         val defIndirectVars = getDefinesIdVars(def)
 
+        if (cmdVars.size != defIndirectVars.size) {
+            return node
+        }
+
         val map = mutableMapOf<String, String>()
         for (i in cmdVars.indices) {
             map[defIndirectVars[i]] = cmdVars[i]
         }
 
-        for (v in defDirectVars) {
-            map[v] = nextVar()
+        val lhsVars = getVars(isNode.lhs)
+        if (lhsVars.size != defDirectVars.size) {
+            return node
         }
 
-        val ifGroup = buildIfThen(def)
-        return renameVars(ForGroup(
-            forSection = ForSection(
-                targets = defDirectVars.map { Identifier(name = it) }
-            ),
-            whereSection = null,
-            thenSection = ThenSection(
-                clauses = ClauseListNode(
-                    clauses = listOf(ifGroup)
-                )
-            )
-        ), map)
+        for (i in lhsVars.indices) {
+            map[defDirectVars[i]] = lhsVars[i]
+        }
+
+        return renameVars(buildIfThen(def), map)
     }
 
     return node.transform(::chalkTransformer)

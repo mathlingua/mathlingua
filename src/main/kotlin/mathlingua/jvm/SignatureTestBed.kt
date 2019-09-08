@@ -50,6 +50,6 @@ object SignatureTestBed {
             return "#${count++}"
         }
 
-        println(replaceIsNodes(res, defs, ::nextVar, { true }).toCode(false, 0))
+        println(replaceIsNodes(res, defs) { true }.toCode(false, 0))
     }
 }

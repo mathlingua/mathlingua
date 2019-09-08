@@ -1,5 +1,6 @@
 package mathlingua.jvm
 
+/*
 import mathlingua.common.MathLingua
 import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
@@ -260,15 +261,7 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
     return root.transform(::chalkTransformer, ::texTransformer)
 }
 
-fun renameVars(texTalkNode: TexTalkNode, map: Map<String, String>): TexTalkNode {
-    return texTalkNode.transform {
-        if (it is TextTexTalkNode) {
-            it.copy(text = map.getOrDefault(it.text, it.text))
-        } else {
-            it
-        }
-    }
-}
+
 
 fun getDefinesDirectVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()
@@ -285,75 +278,4 @@ fun getDefinesIndirectVars(def: DefinesGroup): List<String> {
     }
     return vars
 }
-
-private fun getVars(texTalkNode: TexTalkNode): List<String> {
-    val vars = mutableListOf<String>()
-    getDefinesIndirectVarsImpl(texTalkNode, vars, false)
-    return vars
-}
-
-private fun getDefinesIndirectVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>, inParams: Boolean) {
-    if (inParams && texTalkNode is TextTexTalkNode) {
-        vars.add(texTalkNode.text)
-    } else if (texTalkNode is ParametersTexTalkNode) {
-        texTalkNode.forEach { getDefinesIndirectVarsImpl(it, vars, true) }
-    } else {
-        texTalkNode.forEach { getDefinesIndirectVarsImpl(it, vars, inParams) }
-    }
-}
-
-private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>) {
-    if (node is Identifier) {
-        vars.add(node.name)
-    } else if (node is TupleNode) {
-        getVarsImpl(node.tuple, vars)
-    } else if (node is AggregateNode) {
-        getVarsImpl(node.aggregate, vars)
-    } else if (node is AbstractionNode) {
-        getVarsImpl(node.abstraction, vars)
-    } else if (node is AssignmentNode) {
-        vars.add(node.assignment.lhs.text)
-        getVarsImpl(node.assignment.rhs, vars)
-    } else {
-        node.forEach { getVarsImpl(it, vars) }
-    }
-}
-
-private fun getVars(node: Phase1Node): List<String> {
-    val vars = mutableListOf<String>()
-    getVarsImpl(node, vars)
-    return vars
-}
-
-private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
-    if (node is Phase1Token) {
-        vars.add(node.text)
-    } else {
-        node.forEach { getVarsImpl(it, vars) }
-    }
-}
-
-fun buildIfForDef(def: DefinesGroup): IfGroup {
-    return IfGroup(
-        ifSection = IfSection(
-            clauses = def.assumingSection?.clauses ?: emptyList()
-        ),
-        thenSection = ThenSection(
-            clauses = def.meansSection.clauses
-        )
-    )
-}
-
-fun canonicalForm(def: DefinesGroup): DefinesGroup {
-    return DefinesGroup(
-        signature = def.signature,
-        id = def.id,
-        definesSection = def.definesSection,
-        assumingSection = null,
-        meansSection = MeansSection(
-            clauses = listOf(buildIfForDef(def))
-        ),
-        aliasSection = def.aliasSection,
-        metaDataSection = def.metaDataSection
-    )
-}
+*/

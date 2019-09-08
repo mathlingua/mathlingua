@@ -84,7 +84,6 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
     return root.transform(::chalkTransformer)
 }
 
-
 private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
     if (node is Phase1Token) {
         vars.add(node.text)

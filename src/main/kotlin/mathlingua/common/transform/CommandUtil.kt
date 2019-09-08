@@ -41,10 +41,13 @@ fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: 
     }
 }
 
-fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>,
-                    sigsFound: MutableSet<String>,
-                    shouldProcessChalk: (node: Phase2Node) -> Boolean,
-                    shouldProcessTex: (node: TexTalkNode) -> Boolean): Phase2Node {
+fun replaceCommands(
+    node: Phase2Node,
+    sigToReplacement: Map<String, String>,
+    sigsFound: MutableSet<String>,
+    shouldProcessChalk: (node: Phase2Node) -> Boolean,
+    shouldProcessTex: (node: TexTalkNode) -> Boolean
+): Phase2Node {
     return node.transform {
         if (!shouldProcessChalk(it) || it !is Statement) {
             it
@@ -64,10 +67,12 @@ fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>,
     }
 }
 
-fun replaceCommands(texTalkNode: TexTalkNode,
-                    sigToReplacement: Map<String, String>,
-                    sigsFound: MutableSet<String>,
-                    shouldProcess: (node: TexTalkNode) -> Boolean): TexTalkNode {
+fun replaceCommands(
+    texTalkNode: TexTalkNode,
+    sigToReplacement: Map<String, String>,
+    sigsFound: MutableSet<String>,
+    shouldProcess: (node: TexTalkNode) -> Boolean
+): TexTalkNode {
     return texTalkNode.transform {
         if (!shouldProcess(it) || it !is Command) {
             it

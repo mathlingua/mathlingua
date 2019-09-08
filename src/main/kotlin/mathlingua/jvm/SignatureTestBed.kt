@@ -44,7 +44,7 @@ object SignatureTestBed {
             resultSection = ResultSection(
                 clauses = ClauseListNode(
                     clauses = res.resultSection.clauses.clauses.map {
-                        moveInlineCommandsToIsNode(it, mapOf("\\A{?}" to "Q"), {true}, {true})
+                        moveInlineCommandsToIsNode(it, mapOf("\\A{?}" to "Q"), { true }, { true })
                     }
                 )
             ),

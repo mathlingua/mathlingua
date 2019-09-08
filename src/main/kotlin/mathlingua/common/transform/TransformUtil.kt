@@ -39,10 +39,12 @@ import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
 
-fun moveInlineCommandsToIsNode(node: Clause,
-                               sigToName: Map<String, String>,
-                               shouldProcessChalk: (node: Phase2Node) -> Boolean,
-                               shouldProcessTex: (node: TexTalkNode) -> Boolean): Clause {
+fun moveInlineCommandsToIsNode(
+    node: Clause,
+    sigToName: Map<String, String>,
+    shouldProcessChalk: (node: Phase2Node) -> Boolean,
+    shouldProcessTex: (node: TexTalkNode) -> Boolean
+): Clause {
     if (!shouldProcessChalk(node)) {
         return node
     }
@@ -100,9 +102,11 @@ fun moveInlineCommandsToIsNode(node: Clause,
     )
 }
 
-fun replaceRepresents(node: Phase2Node,
-                      represents: List<RepresentsGroup>,
-                      filter: (node: Phase2Node) -> Boolean = { true }): Phase2Node {
+fun replaceRepresents(
+    node: Phase2Node,
+    represents: List<RepresentsGroup>,
+    filter: (node: Phase2Node) -> Boolean = { true }
+): Phase2Node {
     val repMap = mutableMapOf<String, RepresentsGroup>()
     for (rep in represents) {
         val sig = rep.signature

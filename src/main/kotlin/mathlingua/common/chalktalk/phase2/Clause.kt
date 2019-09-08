@@ -31,7 +31,6 @@ import mathlingua.common.chalktalk.phase1.ast.Tuple
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.textalk.ExpressionTexTalkNode
-import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
 

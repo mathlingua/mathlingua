@@ -20,7 +20,6 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.Document
 import mathlingua.common.chalktalk.phase2.Phase2Node
-import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.validateDocument
 
 data class MathLinguaResult(val document: Document?, val errors: List<ParseError>)

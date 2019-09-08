@@ -51,6 +51,11 @@ fun moveInlineCommandsToIsNode(
 
     val sigsFound = mutableSetOf<String>()
     val newNode = replaceCommands(node, sigToName, sigsFound, shouldProcessChalk, shouldProcessTex) as Clause
+
+    if (sigsFound.isEmpty()) {
+        return node
+    }
+
     return ForGroup(
         forSection = ForSection(
             targets = sigsFound.map { Identifier(name = sigToName[it]!!) }

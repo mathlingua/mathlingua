@@ -70,20 +70,34 @@ fun moveInlineCommandsToIsNode(
         return !hasIsNodeParent(node)
     }
 
-    val sigsFound = mutableSetOf<String>()
-    val newNode = replaceCommands(node, sigToName, sigsFound, shouldProcessChalk, ::shouldProcessTexNodes) as Clause
+    val commandsFound = mutableListOf<Command>()
+    val newNode = replaceCommands(node, sigToName, commandsFound, shouldProcessChalk, ::shouldProcessTexNodes) as Clause
 
-    if (sigsFound.isEmpty()) {
+    if (commandsFound.isEmpty()) {
         return node
+    }
+
+    val uniqueSignatures = commandsFound.map {
+        getCommandSignature(it).toCode()
+    }.distinct()
+
+    val tmp = mutableSetOf<String>()
+    val distinctCommands = mutableListOf<Command>()
+    for (cmd in commandsFound) {
+        val code = cmd.toCode()
+        if (!tmp.contains(code)) {
+            distinctCommands.add(cmd)
+            tmp.add(code)
+        }
     }
 
     return ForGroup(
         forSection = ForSection(
-            targets = sigsFound.map { Identifier(name = sigToName[it]!!) }
+            targets = uniqueSignatures.map { Identifier(name = sigToName[it]!!) }
         ),
         whereSection = WhereSection(
             clauses = ClauseListNode(
-                clauses = sigsFound.map {
+                clauses = distinctCommands.map {
                     val isNode = IsTexTalkNode(
                         parent = null,
                         lhs = ParametersTexTalkNode(
@@ -95,7 +109,7 @@ fun moveInlineCommandsToIsNode(
                                         TextTexTalkNode(
                                             parent = null,
                                             type = TexTalkNodeType.Identifier,
-                                            text = sigToName[it]!!
+                                            text = sigToName[getCommandSignature(it).toCode()]!!
                                         )
                                     )
                                 )
@@ -106,13 +120,7 @@ fun moveInlineCommandsToIsNode(
                             items = listOf(
                                 ExpressionTexTalkNode(
                                     parent = null,
-                                    children = listOf(
-                                        TextTexTalkNode(
-                                            parent = null,
-                                            type = TexTalkNodeType.Identifier,
-                                            text = it
-                                        )
-                                    )
+                                    children = listOf(it)
                                 )
                             )
                         )

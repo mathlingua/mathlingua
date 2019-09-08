@@ -19,9 +19,9 @@ object SignatureTestBed {
 
             Result:
             . for: y, z
-              where: 'w is \A{y}'
               then:
-              . 'x + 1 = 0'
+              . '\A{y} + 1 = 0'
+              . '\A{y} + 2 = 1'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {

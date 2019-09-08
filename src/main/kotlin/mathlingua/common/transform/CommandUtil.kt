@@ -45,7 +45,7 @@ fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: 
 fun replaceCommands(
     node: Phase2Node,
     sigToReplacement: Map<String, String>,
-    sigsFound: MutableSet<String>,
+    commandsFound: MutableList<Command>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (node: TexTalkNode) -> Boolean
 ): Phase2Node {
@@ -58,7 +58,7 @@ fun replaceCommands(
                 it
             } else {
                 val root = it.texTalkRoot.value!!
-                val newRoot = replaceCommands(root, sigToReplacement, sigsFound, shouldProcessTex) as ExpressionTexTalkNode
+                val newRoot = replaceCommands(root, sigToReplacement, commandsFound, shouldProcessTex) as ExpressionTexTalkNode
                 Statement(
                     text = newRoot.toCode(),
                     texTalkRoot = Validation.success(newRoot)
@@ -71,18 +71,18 @@ fun replaceCommands(
 fun replaceCommands(
     texTalkNode: TexTalkNode,
     sigToReplacement: Map<String, String>,
-    sigsFound: MutableSet<String>,
+    commandsFound: MutableList<Command>,
     shouldProcess: (node: TexTalkNode) -> Boolean
 ): TexTalkNode {
     return populateParents(texTalkNode).transform {
         if (!shouldProcess(it) || it !is Command) {
             it
         } else {
+            commandsFound.add(it)
             val sig = getCommandSignature(it).toCode()
             if (!sigToReplacement.containsKey(sig)) {
                 it
             } else {
-                sigsFound.add(sig)
                 val name = sigToReplacement[sig]
                 TextTexTalkNode(parent = it.parent, type = TexTalkNodeType.Identifier, text = name!!)
             }

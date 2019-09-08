@@ -21,8 +21,8 @@ import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.Abstraction
 import mathlingua.common.chalktalk.phase1.ast.Aggregate
 import mathlingua.common.chalktalk.phase1.ast.Assignment
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Mapping
@@ -30,14 +30,14 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.Tuple
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
-import mathlingua.common.textalk.ExpressionNode
-import mathlingua.common.textalk.Node
+import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
 
 private data class ValidationPair<T>(
-    val matches: (node: ChalkTalkNode) -> Boolean,
-    val validate: (node: ChalkTalkNode) -> Validation<T>
+    val matches: (node: Phase1Node) -> Boolean,
+    val validate: (node: Phase1Node) -> Validation<T>
 )
 
 private val CLAUSE_VALIDATORS = listOf(
@@ -97,7 +97,7 @@ private val CLAUSE_VALIDATORS = listOf(
 
 sealed class Clause : Phase2Node
 
-fun validateClause(rawNode: ChalkTalkNode): Validation<Clause> {
+fun validateClause(rawNode: Phase1Node): Validation<Clause> {
     val node = rawNode.resolve()
 
     for (pair in CLAUSE_VALIDATORS) {
@@ -131,16 +131,16 @@ data class AbstractionNode(val abstraction: Abstraction) : Target() {
         return toCode(isArg, indent, abstraction)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isAbstraction(node: ChalkTalkNode): Boolean {
+fun isAbstraction(node: Phase1Node): Boolean {
     return node is Abstraction
 }
 
-fun validateAbstractionNode(node: ChalkTalkNode): Validation<AbstractionNode> {
+fun validateAbstractionNode(node: Phase1Node): Validation<AbstractionNode> {
     return validateWrappedNode(node,
         "AbstractionNode",
         { it as? Abstraction },
@@ -155,16 +155,16 @@ data class AggregateNode(val aggregate: Aggregate) : Target() {
         return toCode(isArg, indent, aggregate)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isAggregate(node: ChalkTalkNode): Boolean {
+fun isAggregate(node: Phase1Node): Boolean {
     return node is Aggregate
 }
 
-fun validateAggregateNode(node: ChalkTalkNode): Validation<AggregateNode> {
+fun validateAggregateNode(node: Phase1Node): Validation<AggregateNode> {
     return validateWrappedNode(node,
         "AggregateNode",
         { it as? Aggregate },
@@ -179,16 +179,16 @@ data class TupleNode(val tuple: Tuple) : Target() {
         return toCode(isArg, indent, tuple)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isTuple(node: ChalkTalkNode): Boolean {
+fun isTuple(node: Phase1Node): Boolean {
     return node is Tuple
 }
 
-fun validateTupleNode(node: ChalkTalkNode): Validation<TupleNode> {
+fun validateTupleNode(node: Phase1Node): Validation<TupleNode> {
     return validateWrappedNode(node,
         "TupleNode",
         { it as? Tuple },
@@ -203,16 +203,16 @@ data class AssignmentNode(val assignment: Assignment) : Target() {
         return toCode(isArg, indent, assignment)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isAssignment(node: ChalkTalkNode): Boolean {
+fun isAssignment(node: Phase1Node): Boolean {
     return node is Assignment
 }
 
-fun validateAssignmentNode(node: ChalkTalkNode): Validation<AssignmentNode> {
+fun validateAssignmentNode(node: Phase1Node): Validation<AssignmentNode> {
     return validateWrappedNode(
         node,
         "AssignmentNode",
@@ -229,16 +229,16 @@ data class MappingNode(val mapping: Mapping) : Phase2Node {
         return toCode(isArg, indent, mapping)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isMapping(node: ChalkTalkNode): Boolean {
+fun isMapping(node: Phase1Node): Boolean {
     return node is Mapping
 }
 
-fun validateMappingNode(node: ChalkTalkNode): Validation<MappingNode> {
+fun validateMappingNode(node: Phase1Node): Validation<MappingNode> {
     return validateWrappedNode(
         node,
         "MappingNode",
@@ -255,20 +255,20 @@ data class Identifier(val name: String) : Target() {
         return indentedString(isArg, indent, name)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isIdentifier(node: ChalkTalkNode): Boolean {
-    return node is ChalkTalkToken && node.type === ChalkTalkTokenType.Name
+fun isIdentifier(node: Phase1Node): Boolean {
+    return node is Phase1Token && node.type === ChalkTalkTokenType.Name
 }
 
-fun validateIdentifier(rawNode: ChalkTalkNode): Validation<Identifier> {
+fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
-    if (node !is ChalkTalkToken) {
+    if (node !is Phase1Token) {
         errors.add(
             ParseError(
                 "Cannot convert to a ChalkTalkToken",
@@ -294,7 +294,7 @@ fun validateIdentifier(rawNode: ChalkTalkNode): Validation<Identifier> {
 
 data class Statement(
     val text: String,
-    val texTalkRoot: Validation<ExpressionNode>
+    val texTalkRoot: Validation<ExpressionTexTalkNode>
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
@@ -303,20 +303,20 @@ data class Statement(
         return indentedString(isArg, indent, "'$text'")
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isStatement(node: ChalkTalkNode): Boolean {
-    return node is ChalkTalkToken && node.type === ChalkTalkTokenType.Statement
+fun isStatement(node: Phase1Node): Boolean {
+    return node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 }
 
-fun validateStatement(rawNode: ChalkTalkNode): Validation<Statement> {
+fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
-    if (node !is ChalkTalkToken) {
+    if (node !is Phase1Token) {
         errors.add(
             ParseError(
                 "Cannot convert a to a ChalkTalkToken",
@@ -325,7 +325,7 @@ fun validateStatement(rawNode: ChalkTalkNode): Validation<Statement> {
         )
     }
 
-    val (rawText, type, row, column) = node as ChalkTalkToken
+    val (rawText, type, row, column) = node as Phase1Token
     if (type !== ChalkTalkTokenType.Statement) {
         errors.add(
             ParseError(
@@ -365,20 +365,20 @@ data class Text(val text: String) : Clause() {
         return indentedString(isArg, indent, text)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-fun isText(node: ChalkTalkNode): Boolean {
-    return node is ChalkTalkToken && node.type === ChalkTalkTokenType.String
+fun isText(node: Phase1Node): Boolean {
+    return node is Phase1Token && node.type === ChalkTalkTokenType.String
 }
 
-fun validateText(rawNode: ChalkTalkNode): Validation<Text> {
+fun validateText(rawNode: Phase1Node): Validation<Text> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
-    if (node !is ChalkTalkToken) {
+    if (node !is Phase1Token) {
         errors.add(
             ParseError(
                 "Cannot convert a to a ChalkTalkToken",
@@ -387,7 +387,7 @@ fun validateText(rawNode: ChalkTalkNode): Validation<Text> {
         )
     }
 
-    val (text, type, row, column) = node as ChalkTalkToken
+    val (text, type, row, column) = node as Phase1Token
     if (type !== ChalkTalkTokenType.String) {
         errors.add(
             ParseError(
@@ -414,7 +414,7 @@ data class ExistsGroup(
         return toCode(isArg, indent, existsSection, suchThatSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ExistsGroup(
             existsSection = existsSection.transform(chalkTransformer, texTransformer) as ExistsSection,
             suchThatSection = suchThatSection.transform(chalkTransformer, texTransformer) as SuchThatSection
@@ -422,11 +422,11 @@ data class ExistsGroup(
     }
 }
 
-fun isExistsGroup(node: ChalkTalkNode): Boolean {
+fun isExistsGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "exists")
 }
 
-fun validateExistsGroup(node: ChalkTalkNode): Validation<ExistsGroup> {
+fun validateExistsGroup(node: Phase1Node): Validation<ExistsGroup> {
     return validateDoubleSectionGroup(
         node,
         "exists",
@@ -450,7 +450,7 @@ data class IfGroup(
         return toCode(isArg, indent, ifSection, thenSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return IfGroup(
             ifSection = ifSection.transform(chalkTransformer, texTransformer) as IfSection,
             thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
@@ -458,11 +458,11 @@ data class IfGroup(
     }
 }
 
-fun isIfGroup(node: ChalkTalkNode): Boolean {
+fun isIfGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "if")
 }
 
-fun validateIfGroup(node: ChalkTalkNode): Validation<IfGroup> {
+fun validateIfGroup(node: Phase1Node): Validation<IfGroup> {
     return validateDoubleSectionGroup(
         node,
         "if",
@@ -486,7 +486,7 @@ data class IffGroup(
         return toCode(isArg, indent, iffSection, thenSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return IffGroup(
             iffSection = iffSection.transform(chalkTransformer, texTransformer) as IffSection,
             thenSection = thenSection.transform(chalkTransformer, texTransformer) as ThenSection
@@ -494,11 +494,11 @@ data class IffGroup(
     }
 }
 
-fun isIffGroup(node: ChalkTalkNode): Boolean {
+fun isIffGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "iff")
 }
 
-fun validateIffGroup(node: ChalkTalkNode): Validation<IffGroup> {
+fun validateIffGroup(node: Phase1Node): Validation<IffGroup> {
     return validateDoubleSectionGroup(
         node,
         "iff",
@@ -526,7 +526,7 @@ data class ForGroup(
         return toCode(isArg, indent, forSection, whereSection, thenSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ForGroup(
             forSection = forSection.transform(chalkTransformer, texTransformer) as ForSection,
             whereSection = whereSection?.transform(chalkTransformer, texTransformer) as WhereSection?,
@@ -535,11 +535,11 @@ data class ForGroup(
     }
 }
 
-fun isForGroup(node: ChalkTalkNode): Boolean {
+fun isForGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "for")
 }
 
-fun validateForGroup(rawNode: ChalkTalkNode): Validation<ForGroup> {
+fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
@@ -609,18 +609,18 @@ data class NotGroup(val notSection: NotSection) : Clause() {
         return notSection.toCode(isArg, indent)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return NotGroup(
             notSection = notSection.transform(chalkTransformer, texTransformer) as NotSection
         )
     }
 }
 
-fun isNotGroup(node: ChalkTalkNode): Boolean {
+fun isNotGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "not")
 }
 
-fun validateNotGroup(node: ChalkTalkNode): Validation<NotGroup> {
+fun validateNotGroup(node: Phase1Node): Validation<NotGroup> {
     return validateSingleSectionGroup(
         node, "not", ::NotGroup,
         ::validateNotSection
@@ -636,25 +636,25 @@ data class OrGroup(val orSection: OrSection) : Clause() {
         return orSection.toCode(isArg, indent)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return OrGroup(
             orSection = orSection.transform(chalkTransformer, texTransformer) as OrSection
         )
     }
 }
 
-fun isOrGroup(node: ChalkTalkNode): Boolean {
+fun isOrGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "or")
 }
 
-fun validateOrGroup(node: ChalkTalkNode): Validation<OrGroup> {
+fun validateOrGroup(node: Phase1Node): Validation<OrGroup> {
     return validateSingleSectionGroup(
         node, "or", ::OrGroup,
         ::validateOrSection
     )
 }
 
-fun firstSectionMatchesName(node: ChalkTalkNode, name: String): Boolean {
+fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     if (node !is Group) {
         return false
     }
@@ -666,7 +666,7 @@ fun firstSectionMatchesName(node: ChalkTalkNode, name: String): Boolean {
 }
 
 fun <G, S> validateSingleSectionGroup(
-    rawNode: ChalkTalkNode,
+    rawNode: Phase1Node,
     sectionName: String,
     buildGroup: (sect: S) -> G,
     validateSection: (section: Section) -> Validation<S>
@@ -711,7 +711,7 @@ fun <G, S> validateSingleSectionGroup(
 }
 
 private fun <G, S1, S2> validateDoubleSectionGroup(
-    rawNode: ChalkTalkNode,
+    rawNode: Phase1Node,
     section1Name: String,
     validateSection1: (section: Section) -> Validation<S1>,
     section2Name: String,
@@ -767,9 +767,9 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
 }
 
 private fun <Wrapped, Base> validateWrappedNode(
-    rawNode: ChalkTalkNode,
+    rawNode: Phase1Node,
     expectedType: String,
-    checkType: (node: ChalkTalkNode) -> Base?,
+    checkType: (node: Phase1Node) -> Base?,
     build: (base: Base) -> Wrapped
 ): Validation<Wrapped> {
     val node = rawNode.resolve()
@@ -789,10 +789,10 @@ private fun <Wrapped, Base> validateWrappedNode(
     return Validation.success(build(base))
 }
 
-fun toCode(isArg: Boolean, indent: Int, chalkTalkNode: ChalkTalkNode): String {
+fun toCode(isArg: Boolean, indent: Int, phase1Node: Phase1Node): String {
     val builder = StringBuilder()
     builder.append(indentedString(isArg, indent, ""))
-    builder.append(chalkTalkNode.toCode())
+    builder.append(phase1Node.toCode())
     return builder.toString()
 }
 

@@ -22,7 +22,7 @@ import mathlingua.common.chalktalk.phase1.ast.Aggregate
 import mathlingua.common.chalktalk.phase1.ast.Argument
 import mathlingua.common.chalktalk.phase1.ast.Assignment
 import mathlingua.common.chalktalk.phase1.ast.AssignmentRhs
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Mapping
@@ -41,7 +41,7 @@ fun newChalkTalkParser(): ChalkTalkParser {
     return ChalkTalkParserImpl()
 }
 
-private val INVALID = ChalkTalkToken("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
+private val INVALID = Phase1Token("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
 
 private class ChalkTalkParserImpl : ChalkTalkParser {
 
@@ -76,7 +76,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 next() // absorb the line break
             }
 
-            var id: ChalkTalkToken? = null
+            var id: Phase1Token? = null
             if (has(ChalkTalkTokenType.Id)) {
                 id = next()
                 expect(ChalkTalkTokenType.Begin)
@@ -155,7 +155,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             return if (argList.isNotEmpty()) argList else null
         }
 
-        private fun token(type: ChalkTalkTokenType): ChalkTalkToken? {
+        private fun token(type: ChalkTalkTokenType): Phase1Token? {
             return if (has(type)) {
                 next()
             } else {
@@ -244,7 +244,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             return Abstraction(id, names)
         }
 
-        private fun name(): ChalkTalkToken {
+        private fun name(): Phase1Token {
             if (!has(ChalkTalkTokenType.Name)) {
                 if (hasNext()) {
                     val peek = next()
@@ -294,16 +294,16 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
         private fun next() = chalkTalkLexer.next()
 
-        private fun addError(message: String, token: ChalkTalkToken? = null) {
+        private fun addError(message: String, token: Phase1Token? = null) {
             val row = token?.row ?: -1
             val column = token?.column ?: -1
             errors.add(ParseError(message, row, column))
         }
 
-        private fun nameList(stopType: ChalkTalkTokenType): List<ChalkTalkToken> {
-            val names = mutableListOf<ChalkTalkToken>()
+        private fun nameList(stopType: ChalkTalkTokenType): List<Phase1Token> {
+            val names = mutableListOf<Phase1Token>()
             while (hasNext() && !has(stopType)) {
-                var comma: ChalkTalkToken? = null
+                var comma: Phase1Token? = null
                 if (names.isNotEmpty()) {
                     comma = expect(ChalkTalkTokenType.Comma)
                 }
@@ -332,7 +332,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 chalkTalkLexer.hasNextNext() && chalkTalkLexer.peekPeek().type == thenType
         }
 
-        private fun expect(type: ChalkTalkTokenType): ChalkTalkToken {
+        private fun expect(type: ChalkTalkTokenType): Phase1Token {
             if (!hasNext() || chalkTalkLexer.peek().type !== type) {
                 val peek = if (hasNext()) {
                     chalkTalkLexer.peek()

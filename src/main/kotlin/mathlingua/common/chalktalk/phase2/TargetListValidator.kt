@@ -18,7 +18,7 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -26,7 +26,7 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 data class TargetListSection(val targets: List<Target>)
 
 fun <T> validateTargetList(
-    rawNode: ChalkTalkNode,
+    rawNode: Phase1Node,
     expectedName: String,
     builder: (targets: List<Target>) -> T
 ): Validation<T> {
@@ -43,7 +43,7 @@ fun <T> validateTargetList(
 }
 
 private fun validate(
-    node: ChalkTalkNode,
+    node: Phase1Node,
     expectedName: String
 ): Validation<TargetListSection> {
     val errors = ArrayList<ParseError>()

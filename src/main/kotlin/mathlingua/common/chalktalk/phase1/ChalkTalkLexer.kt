@@ -18,15 +18,15 @@ package mathlingua.common.chalktalk.phase1
 
 import mathlingua.common.ParseError
 import mathlingua.common.Stack
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 
 interface ChalkTalkLexer {
     fun hasNext(): Boolean
     fun hasNextNext(): Boolean
-    fun peek(): ChalkTalkToken
-    fun peekPeek(): ChalkTalkToken
-    fun next(): ChalkTalkToken
+    fun peek(): Phase1Token
+    fun peekPeek(): Phase1Token
+    fun next(): Phase1Token
     fun errors(): List<ParseError>
 }
 
@@ -38,7 +38,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
     ChalkTalkLexer {
 
     private val errors = mutableListOf<ParseError>()
-    private var chalkTalkTokens: MutableList<ChalkTalkToken>? = null
+    private var chalkTalkTokens: MutableList<Phase1Token>? = null
     private var index = 0
 
     private fun ensureInitialized() {
@@ -82,28 +82,28 @@ private class ChalkTalkLexerImpl(private var text: String) :
             column++
             if (c == '=') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("=", ChalkTalkTokenType.Equals, line, column)
+                    Phase1Token("=", ChalkTalkTokenType.Equals, line, column)
                 )
             } else if (c == '(') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("(", ChalkTalkTokenType.LParen, line, column)
+                    Phase1Token("(", ChalkTalkTokenType.LParen, line, column)
                 )
             } else if (c == ')') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken(")", ChalkTalkTokenType.RParen, line, column)
+                    Phase1Token(")", ChalkTalkTokenType.RParen, line, column)
                 )
             } else if (c == '{') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("{", ChalkTalkTokenType.LCurly, line, column)
+                    Phase1Token("{", ChalkTalkTokenType.LCurly, line, column)
                 )
             } else if (c == '}') {
                 this.chalkTalkTokens!!.add(
-                    ChalkTalkToken("}", ChalkTalkTokenType.RCurly, line, column)
+                    Phase1Token("}", ChalkTalkTokenType.RCurly, line, column)
                 )
             } else if (c == ':') {
                 if (i < text.length && text[i] == '=') {
                     this.chalkTalkTokens!!.add(
-                        ChalkTalkToken(
+                        Phase1Token(
                             ":=",
                             ChalkTalkTokenType.ColonEquals,
                             line,
@@ -112,12 +112,12 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     )
                     i++ // move past the =
                 } else {
-                    this.chalkTalkTokens!!.add(ChalkTalkToken(":", ChalkTalkTokenType.Colon, line, column))
+                    this.chalkTalkTokens!!.add(Phase1Token(":", ChalkTalkTokenType.Colon, line, column))
                 }
             } else if (c == ',') {
-                this.chalkTalkTokens!!.add(ChalkTalkToken(",", ChalkTalkTokenType.Comma, line, column))
+                this.chalkTalkTokens!!.add(Phase1Token(",", ChalkTalkTokenType.Comma, line, column))
             } else if (c == '.' && i < text.length && text[i] == ' ') {
-                this.chalkTalkTokens!!.add(ChalkTalkToken(". ", ChalkTalkTokenType.DotSpace, line, column))
+                this.chalkTalkTokens!!.add(Phase1Token(". ", ChalkTalkTokenType.DotSpace, line, column))
                 i++ // move past space
                 column++
             } else if (c == '\n') {
@@ -133,7 +133,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                         line++
                     }
                     this.chalkTalkTokens!!.add(
-                        ChalkTalkToken(
+                        Phase1Token(
                             "-",
                             ChalkTalkTokenType.Linebreak,
                             line,
@@ -163,13 +163,13 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     indentCount++
                 }
 
-                this.chalkTalkTokens!!.add(ChalkTalkToken("<Indent>", ChalkTalkTokenType.Begin, line, column))
+                this.chalkTalkTokens!!.add(Phase1Token("<Indent>", ChalkTalkTokenType.Begin, line, column))
                 numOpen++
 
                 val level = levStack.peek()
                 if (indentCount <= level) {
                     while (numOpen > 0 && !levStack.isEmpty() && indentCount <= levStack.peek()) {
-                        this.chalkTalkTokens!!.add(ChalkTalkToken("<Unindent>", ChalkTalkTokenType.End, line, column))
+                        this.chalkTalkTokens!!.add(Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, column))
                         numOpen--
                         levStack.pop()
                     }
@@ -185,14 +185,14 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     name += text[i++]
                     column++
                 }
-                this.chalkTalkTokens!!.add(ChalkTalkToken(name, ChalkTalkTokenType.Name, line, column))
+                this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, line, column))
             } else if (isLetterOrDigit(c)) {
                 var name = "" + c
                 while (i < text.length && isLetterOrDigit(text[i])) {
                     name += text[i++]
                     column++
                 }
-                this.chalkTalkTokens!!.add(ChalkTalkToken(name, ChalkTalkTokenType.Name, line, column))
+                this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, line, column))
             } else if (c == '"') {
                 var str = "" + c
                 while (i < text.length && text[i] != '"') {
@@ -209,7 +209,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     str += text[i++]
                     column++
                 }
-                this.chalkTalkTokens!!.add(ChalkTalkToken(str, ChalkTalkTokenType.String, line, column))
+                this.chalkTalkTokens!!.add(Phase1Token(str, ChalkTalkTokenType.String, line, column))
             } else if (c == '\'') {
                 var stmt = "" + c
                 while (i < text.length && text[i] != '\'') {
@@ -226,7 +226,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     stmt += text[i++]
                     column++
                 }
-                this.chalkTalkTokens!!.add(ChalkTalkToken(stmt, ChalkTalkTokenType.Statement, line, column))
+                this.chalkTalkTokens!!.add(Phase1Token(stmt, ChalkTalkTokenType.Statement, line, column))
             } else if (c == '[') {
                 val startLine = line
                 val startColumn = column
@@ -255,7 +255,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     )
                     id += "]"
                 }
-                this.chalkTalkTokens!!.add(ChalkTalkToken(id, ChalkTalkTokenType.Id, startLine, startColumn))
+                this.chalkTalkTokens!!.add(Phase1Token(id, ChalkTalkTokenType.Id, startLine, startColumn))
             } else if (c != ' ') { // spaces are ignored
                 errors.add(
                     ParseError(
@@ -270,7 +270,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
         // the levStack is empty in the above code, it is re-initialized to
         // contain a level of 0
         while (numOpen > 0) {
-            this.chalkTalkTokens!!.add(ChalkTalkToken("<Unindent>", ChalkTalkTokenType.End, line, column))
+            this.chalkTalkTokens!!.add(Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, column))
             numOpen--
         }
     }
@@ -293,17 +293,17 @@ private class ChalkTalkLexerImpl(private var text: String) :
         return this.index + 1 < this.chalkTalkTokens!!.size
     }
 
-    override fun peek(): ChalkTalkToken {
+    override fun peek(): Phase1Token {
         ensureInitialized()
         return this.chalkTalkTokens!![this.index]
     }
 
-    override fun peekPeek(): ChalkTalkToken {
+    override fun peekPeek(): Phase1Token {
         ensureInitialized()
         return this.chalkTalkTokens!![this.index + 1]
     }
 
-    override fun next(): ChalkTalkToken {
+    override fun next(): Phase1Token {
         ensureInitialized()
         val tok = peek()
         this.index++

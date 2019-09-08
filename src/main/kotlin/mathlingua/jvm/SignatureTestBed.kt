@@ -2,8 +2,8 @@ package mathlingua.jvm
 
 import mathlingua.common.MathLingua
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase2.AbstractionNode
 import mathlingua.common.chalktalk.phase2.AggregateNode
 import mathlingua.common.chalktalk.phase2.AssignmentNode
@@ -21,11 +21,11 @@ import mathlingua.common.chalktalk.phase2.TupleNode
 import mathlingua.common.chalktalk.phase2.WhereSection
 import mathlingua.common.chalktalk.phase2.getCommandSignature
 import mathlingua.common.textalk.Command
-import mathlingua.common.textalk.ExpressionNode
-import mathlingua.common.textalk.Node
-import mathlingua.common.textalk.NodeType
-import mathlingua.common.textalk.ParametersNode
-import mathlingua.common.textalk.TextNode
+import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.TexTalkNode
+import mathlingua.common.textalk.TexTalkNodeType
+import mathlingua.common.textalk.ParametersTexTalkNode
+import mathlingua.common.textalk.TextTexTalkNode
 
 var count = 1
 fun nextVar(): String {
@@ -54,8 +54,8 @@ object SignatureTestBed {
               . 'x is \A'
               . 'y is \B'
               then:
-              . 'x + y is \A + \B'
-              . 'x * y = 0'
+              . '\A'
+              . '\B'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -73,7 +73,7 @@ object SignatureTestBed {
             }
         }
 
-        fun chalkTransformer(node: Phase2Node): Phase2Node {
+        fun __chalkTransformer(node: Phase2Node): Phase2Node {
             if (node !is Statement) {
                 return node
             }
@@ -130,14 +130,14 @@ object SignatureTestBed {
                     clauses = listOf(
                         Statement(
                             text = newRoot.toCode(),
-                            texTalkRoot = Validation.success(newRoot as ExpressionNode)
+                            texTalkRoot = Validation.success(newRoot as ExpressionTexTalkNode)
                         )
                     )
                 )
             )
         }
 
-        fun __chalkTransformer(node: Phase2Node): Phase2Node {
+        fun chalkTransformer(node: Phase2Node): Phase2Node {
             return if (node is Statement) {
                 if (node.texTalkRoot.isSuccessful &&
                     node.texTalkRoot.value!!.children.size == 1 &&
@@ -180,8 +180,8 @@ object SignatureTestBed {
             }
         }
 
-        fun texTransformer(node: Node): Node {
-            return node
+        fun texTransformer(texTalkNode: TexTalkNode): TexTalkNode {
+            return texTalkNode
         }
 
         val res = result.document.results[0]
@@ -189,8 +189,8 @@ object SignatureTestBed {
     }
 }
 
-fun replaceCommands(node: Node, sigToReplacement: Map<String, String>): Node {
-    return node.transform {
+fun replaceCommands(texTalkNode: TexTalkNode, sigToReplacement: Map<String, String>): TexTalkNode {
+    return texTalkNode.transform {
         if (it !is Command) {
             it
         } else {
@@ -199,33 +199,33 @@ fun replaceCommands(node: Node, sigToReplacement: Map<String, String>): Node {
                 it
             } else {
                 val name = sigToReplacement[sig]
-                TextNode(type = NodeType.Identifier, text = name!!)
+                TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!)
             }
         }
     }
 }
 
-fun findCommands(node: Node): List<Command> {
+fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     val commands = mutableListOf<Command>()
-    findCommandsImpl(node, commands)
+    findCommandsImpl(texTalkNode, commands)
     return commands.distinct()
 }
 
-private fun findCommandsImpl(node: Node, commands: MutableList<Command>) {
-    if (node is Command) {
-        commands.add(node)
+private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Command>) {
+    if (texTalkNode is Command) {
+        commands.add(texTalkNode)
     }
 
-    node.forEach { findCommandsImpl(it, commands) }
+    texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
 
-fun replaceSignature(node: Node, signature: String, replacement: String): Node {
-    return node.transform {
+fun replaceSignature(texTalkNode: TexTalkNode, signature: String, replacement: String): TexTalkNode {
+    return texTalkNode.transform {
         if (it is Command && getCommandSignature(it).toCode() == signature) {
-            TextNode(type = NodeType.Identifier, text = replacement)
+            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
         } else {
-            node
+            texTalkNode
         }
     }
 }
@@ -236,7 +236,7 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
             node.copy(name = map.getOrDefault(node.name, node.name))
         } else if (node is Statement) {
             if (node.texTalkRoot.isSuccessful) {
-                val root = renameVars(node.texTalkRoot.value!!, map) as ExpressionNode
+                val root = renameVars(node.texTalkRoot.value!!, map) as ExpressionTexTalkNode
                 Statement(
                     text = root.toCode(),
                     texTalkRoot = Validation.success(root)
@@ -249,20 +249,20 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
         }
     }
 
-    fun texTransformer(node: Node): Node {
-        return if (node is TextNode) {
-            node.copy(text = map.getOrDefault(node.text, node.text))
+    fun texTransformer(texTalkNode: TexTalkNode): TexTalkNode {
+        return if (texTalkNode is TextTexTalkNode) {
+            texTalkNode.copy(text = map.getOrDefault(texTalkNode.text, texTalkNode.text))
         } else {
-            node
+            texTalkNode
         }
     }
 
     return root.transform(::chalkTransformer, ::texTransformer)
 }
 
-fun renameVars(node: Node, map: Map<String, String>): Node {
-    return node.transform {
-        if (it is TextNode) {
+fun renameVars(texTalkNode: TexTalkNode, map: Map<String, String>): TexTalkNode {
+    return texTalkNode.transform {
+        if (it is TextTexTalkNode) {
             it.copy(text = map.getOrDefault(it.text, it.text))
         } else {
             it
@@ -286,19 +286,19 @@ fun getDefinesIndirectVars(def: DefinesGroup): List<String> {
     return vars
 }
 
-private fun getVars(node: Node): List<String> {
+private fun getVars(texTalkNode: TexTalkNode): List<String> {
     val vars = mutableListOf<String>()
-    getDefinesIndirectVarsImpl(node, vars, false)
+    getDefinesIndirectVarsImpl(texTalkNode, vars, false)
     return vars
 }
 
-private fun getDefinesIndirectVarsImpl(node: Node, vars: MutableList<String>, inParams: Boolean) {
-    if (inParams && node is TextNode) {
-        vars.add(node.text)
-    } else if (node is ParametersNode) {
-        node.forEach { getDefinesIndirectVarsImpl(it, vars, true) }
+private fun getDefinesIndirectVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>, inParams: Boolean) {
+    if (inParams && texTalkNode is TextTexTalkNode) {
+        vars.add(texTalkNode.text)
+    } else if (texTalkNode is ParametersTexTalkNode) {
+        texTalkNode.forEach { getDefinesIndirectVarsImpl(it, vars, true) }
     } else {
-        node.forEach { getDefinesIndirectVarsImpl(it, vars, inParams) }
+        texTalkNode.forEach { getDefinesIndirectVarsImpl(it, vars, inParams) }
     }
 }
 
@@ -319,14 +319,14 @@ private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>) {
     }
 }
 
-private fun getVars(node: ChalkTalkNode): List<String> {
+private fun getVars(node: Phase1Node): List<String> {
     val vars = mutableListOf<String>()
     getVarsImpl(node, vars)
     return vars
 }
 
-private fun getVarsImpl(node: ChalkTalkNode, vars: MutableList<String>) {
-    if (node is ChalkTalkToken) {
+private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
+    if (node is Phase1Token) {
         vars.add(node.text)
     } else {
         node.forEach { getVarsImpl(it, vars) }

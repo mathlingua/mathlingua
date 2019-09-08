@@ -18,8 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Section
@@ -27,15 +27,15 @@ import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
-import mathlingua.common.textalk.ExpressionNode
-import mathlingua.common.textalk.GroupNode
-import mathlingua.common.textalk.IsNode
-import mathlingua.common.textalk.NamedGroupNode
-import mathlingua.common.textalk.Node
-import mathlingua.common.textalk.NodeType
-import mathlingua.common.textalk.ParametersNode
-import mathlingua.common.textalk.SubSupNode
-import mathlingua.common.textalk.TextNode
+import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.GroupTexTalkNode
+import mathlingua.common.textalk.IsTexTalkNode
+import mathlingua.common.textalk.NamedGroupTexTalkNode
+import mathlingua.common.textalk.TexTalkNode
+import mathlingua.common.textalk.TexTalkNodeType
+import mathlingua.common.textalk.ParametersTexTalkNode
+import mathlingua.common.textalk.SubSupTexTalkNode
+import mathlingua.common.textalk.TextTexTalkNode
 
 data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -47,7 +47,7 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
             Statement(id, Validation.failure(emptyList())), sourceSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return SourceGroup(
             id = id,
             sourceSection = sourceSection.transform(chalkTransformer, texTransformer) as SourceSection
@@ -55,7 +55,7 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
     }
 }
 
-fun isSourceGroup(node: ChalkTalkNode): Boolean {
+fun isSourceGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "Source")
 }
 
@@ -134,7 +134,7 @@ data class DefinesGroup(
         )
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return DefinesGroup(
             signature = signature,
             id = id.transform(chalkTransformer, texTransformer) as Statement,
@@ -147,7 +147,7 @@ data class DefinesGroup(
     }
 }
 
-fun isDefinesGroup(node: ChalkTalkNode): Boolean {
+fun isDefinesGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "Defines")
 }
 
@@ -196,7 +196,7 @@ data class RepresentsGroup(
         )
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return RepresentsGroup(
             signature = signature,
             id = id.transform(chalkTransformer, texTransformer) as Statement,
@@ -209,7 +209,7 @@ data class RepresentsGroup(
     }
 }
 
-fun isRepresentsGroup(node: ChalkTalkNode): Boolean {
+fun isRepresentsGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "Represents")
 }
 
@@ -241,7 +241,7 @@ data class ResultGroup(
         return toCode(isArg, indent, null, resultSection, metaDataSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ResultGroup(
             resultSection = resultSection.transform(chalkTransformer, texTransformer) as ResultSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer, texTransformer) as MetaDataSection?,
@@ -250,7 +250,7 @@ data class ResultGroup(
     }
 }
 
-fun isResultGroup(node: ChalkTalkNode): Boolean {
+fun isResultGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "Result")
 }
 
@@ -280,7 +280,7 @@ data class AxiomGroup(
         return toCode(isArg, indent, null, axiomSection, metaDataSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return AxiomGroup(
             axiomSection = axiomSection.transform(chalkTransformer, texTransformer) as AxiomSection,
             aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
@@ -289,7 +289,7 @@ data class AxiomGroup(
     }
 }
 
-fun isAxiomGroup(node: ChalkTalkNode): Boolean {
+fun isAxiomGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "Axiom")
 }
 
@@ -319,7 +319,7 @@ data class ConjectureGroup(
         return toCode(isArg, indent, null, conjectureSection, metaDataSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ConjectureGroup(
             conjectureSection = conjectureSection.transform(chalkTransformer, texTransformer) as ConjectureSection,
             aliasSection = aliasSection?.transform(chalkTransformer, texTransformer) as AliasSection,
@@ -328,7 +328,7 @@ data class ConjectureGroup(
     }
 }
 
-fun isConjectureGroup(node: ChalkTalkNode): Boolean {
+fun isConjectureGroup(node: Phase1Node): Boolean {
     return firstSectionMatchesName(node, "Conjecture")
 }
 
@@ -454,7 +454,7 @@ fun <G, S, E> validateDefinesLikeGroup(
         // The id token is of type Id and the text is of the form "[...]"
         // Convert it to look like a statement.
         val statementText = "'" + rawText.substring(1, rawText.length - 1) + "'"
-        val stmtToken = ChalkTalkToken(
+        val stmtToken = Phase1Token(
             statementText, ChalkTalkTokenType.Statement,
             row, column
         )
@@ -574,24 +574,24 @@ fun findAllStatementSignatures(stmt: Statement): Set<String> {
     return signatures
 }
 
-private fun findAllSignaturesImpl(node: Node, signatures: MutableSet<String>) {
-    if (node is IsNode) {
-        for (expNode in node.rhs.items) {
+private fun findAllSignaturesImpl(texTalkNode: TexTalkNode, signatures: MutableSet<String>) {
+    if (texTalkNode is IsTexTalkNode) {
+        for (expNode in texTalkNode.rhs.items) {
             val sig = getMergedCommandSignature(expNode)
             if (sig != null) {
                 signatures.add(sig)
             }
         }
         return
-    } else if (node is Command) {
-        val sig = getCommandSignature(node).toCode()
+    } else if (texTalkNode is Command) {
+        val sig = getCommandSignature(texTalkNode).toCode()
         signatures.add(sig)
     }
 
-    node.forEach { findAllSignaturesImpl(it, signatures) }
+    texTalkNode.forEach { findAllSignaturesImpl(it, signatures) }
 }
 
-fun getMergedCommandSignature(expressionNode: ExpressionNode): String? {
+fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
     val commandParts = mutableListOf<CommandPart>()
     for (child in expressionNode.children) {
         if (child is Command) {
@@ -626,28 +626,28 @@ private fun getCommandPartForSignature(node: CommandPart): CommandPart {
     )
 }
 
-private fun getSubSupForSignature(node: SubSupNode): SubSupNode {
-    return SubSupNode(
+private fun getSubSupForSignature(node: SubSupTexTalkNode): SubSupTexTalkNode {
+    return SubSupTexTalkNode(
         sub = callOrNull(node.sub, ::getGroupNodeForSignature),
         sup = callOrNull(node.sup, ::getGroupNodeForSignature)
     )
 }
 
-private fun getGroupNodeForSignature(node: GroupNode): GroupNode {
-    return GroupNode(
+private fun getGroupNodeForSignature(node: GroupTexTalkNode): GroupTexTalkNode {
+    return GroupTexTalkNode(
         type = node.type,
         parameters = getParametersNodeForSignature(node.parameters)
     )
 }
 
-private fun getParametersNodeForSignature(node: ParametersNode): ParametersNode {
-    return ParametersNode(
-        items = node.items.map { ExpressionNode(listOf(TextNode(NodeType.Identifier, "?"))) }
+private fun getParametersNodeForSignature(node: ParametersTexTalkNode): ParametersTexTalkNode {
+    return ParametersTexTalkNode(
+        items = node.items.map { ExpressionTexTalkNode(listOf(TextTexTalkNode(TexTalkNodeType.Identifier, "?"))) }
     )
 }
 
-private fun getNamedGroupNodeForSignature(node: NamedGroupNode): NamedGroupNode {
-    return NamedGroupNode(
+private fun getNamedGroupNodeForSignature(node: NamedGroupTexTalkNode): NamedGroupTexTalkNode {
+    return NamedGroupTexTalkNode(
         name = node.name,
         group = getGroupNodeForSignature(node.group)
     )

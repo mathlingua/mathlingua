@@ -18,11 +18,11 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
-import mathlingua.common.textalk.Node
+import mathlingua.common.textalk.TexTalkNode
 
 private fun appendClauseArgs(builder: StringBuilder, clauses: List<Clause>, indent: Int) {
     for (i in clauses.indices) {
@@ -55,14 +55,14 @@ data class AssumingSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return AssumingSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateAssumingSection(node: ChalkTalkNode): Validation<AssumingSection> {
+fun validateAssumingSection(node: Phase1Node): Validation<AssumingSection> {
     return validateClauseList(
         node,
         "assuming"
@@ -82,14 +82,14 @@ data class DefinesSection(val targets: List<Target>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return DefinesSection(
             targets = targets.map { it.transform(chalkTransformer, texTransformer) as Target }
         )
     }
 }
 
-fun validateDefinesSection(node: ChalkTalkNode): Validation<DefinesSection> {
+fun validateDefinesSection(node: Phase1Node): Validation<DefinesSection> {
     return validateTargetList(
         node,
         "Defines"
@@ -110,14 +110,14 @@ data class RefinesSection(val targets: List<Target>) :
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return RefinesSection(
             targets = targets.map { it.transform(chalkTransformer, texTransformer) as Target }
         )
     }
 }
 
-fun validateRefinesSection(node: ChalkTalkNode): Validation<RefinesSection> {
+fun validateRefinesSection(node: Phase1Node): Validation<RefinesSection> {
     return validateTargetList(
         node,
         "Refines"
@@ -132,12 +132,12 @@ class RepresentsSection : Phase2Node {
         return indentedString(isArg, indent, "Represents:")
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return this
     }
 }
 
-fun validateRepresentsSection(node: ChalkTalkNode): Validation<RepresentsSection> {
+fun validateRepresentsSection(node: Phase1Node): Validation<RepresentsSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
         errors.add(
@@ -187,14 +187,14 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ExistsSection(
             identifiers = identifiers.map { it.transform(chalkTransformer, texTransformer) as Target }
         )
     }
 }
 
-fun validateExistsSection(node: ChalkTalkNode): Validation<ExistsSection> {
+fun validateExistsSection(node: Phase1Node): Validation<ExistsSection> {
     return validateTargetList(
         node,
         "exists"
@@ -214,14 +214,14 @@ data class ForSection(val targets: List<Target>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ForSection(
             targets = targets.map { it.transform(chalkTransformer, texTransformer) as Target }
         )
     }
 }
 
-fun validateForSection(node: ChalkTalkNode): Validation<ForSection> {
+fun validateForSection(node: Phase1Node): Validation<ForSection> {
     return validateTargetList(
         node,
         "for"
@@ -241,14 +241,14 @@ data class MeansSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return MeansSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateMeansSection(node: ChalkTalkNode): Validation<MeansSection> {
+fun validateMeansSection(node: Phase1Node): Validation<MeansSection> {
     return validateClauseList(
         node,
         "means"
@@ -268,14 +268,14 @@ data class ResultSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ResultSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateResultSection(node: ChalkTalkNode): Validation<ResultSection> {
+fun validateResultSection(node: Phase1Node): Validation<ResultSection> {
     return validateClauseList(
         node,
         "Result"
@@ -295,14 +295,14 @@ data class AxiomSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return AxiomSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateAxiomSection(node: ChalkTalkNode): Validation<AxiomSection> {
+fun validateAxiomSection(node: Phase1Node): Validation<AxiomSection> {
     return validateClauseList(
         node,
         "Axiom"
@@ -322,14 +322,14 @@ data class ConjectureSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ConjectureSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateConjectureSection(node: ChalkTalkNode): Validation<ConjectureSection> {
+fun validateConjectureSection(node: Phase1Node): Validation<ConjectureSection> {
     return validateClauseList(
         node,
         "Conjecture"
@@ -349,14 +349,14 @@ data class SuchThatSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return SuchThatSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateSuchThatSection(node: ChalkTalkNode): Validation<SuchThatSection> {
+fun validateSuchThatSection(node: Phase1Node): Validation<SuchThatSection> {
     return validateClauseList(
         node,
         "suchThat"
@@ -376,14 +376,14 @@ data class ThatSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ThatSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateThatSection(node: ChalkTalkNode): Validation<ThatSection> {
+fun validateThatSection(node: Phase1Node): Validation<ThatSection> {
     return validateClauseList(
         node,
         "that"
@@ -403,14 +403,14 @@ data class IfSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return IfSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateIfSection(node: ChalkTalkNode): Validation<IfSection> {
+fun validateIfSection(node: Phase1Node): Validation<IfSection> {
     return validateClauseList(
         node,
         "if"
@@ -430,14 +430,14 @@ data class IffSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return IffSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateIffSection(node: ChalkTalkNode): Validation<IffSection> {
+fun validateIffSection(node: Phase1Node): Validation<IffSection> {
     return validateClauseList(
         node,
         "iff"
@@ -457,14 +457,14 @@ data class ThenSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return ThenSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateThenSection(node: ChalkTalkNode): Validation<ThenSection> {
+fun validateThenSection(node: Phase1Node): Validation<ThenSection> {
     return validateClauseList(
         node,
         "then"
@@ -484,14 +484,14 @@ data class WhereSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return WhereSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateWhereSection(node: ChalkTalkNode): Validation<WhereSection> {
+fun validateWhereSection(node: Phase1Node): Validation<WhereSection> {
     return validateClauseList(
         node,
         "where"
@@ -511,14 +511,14 @@ data class NotSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return NotSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateNotSection(node: ChalkTalkNode): Validation<NotSection> {
+fun validateNotSection(node: Phase1Node): Validation<NotSection> {
     return validateClauseList(
         node,
         "not"
@@ -538,14 +538,14 @@ data class OrSection(val clauses: List<Clause>) : Phase2Node {
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (node: Node) -> Node): Phase2Node {
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node, texTransformer: (texTalkNode: TexTalkNode) -> TexTalkNode): Phase2Node {
         return OrSection(
             clauses = clauses.map { it.transform(chalkTransformer, texTransformer) as Clause }
         )
     }
 }
 
-fun validateOrSection(node: ChalkTalkNode): Validation<OrSection> {
+fun validateOrSection(node: Phase1Node): Validation<OrSection> {
     return validateClauseList(
         node,
         "or"

@@ -17,14 +17,14 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.Document
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.validateDocument
-import mathlingua.common.textalk.Node
+import mathlingua.common.textalk.TexTalkNode
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import java.awt.BorderLayout
@@ -209,7 +209,7 @@ object TreeViewMain {
         frame.isVisible = true
     }
 
-    private fun toTreeNode(phase1Node: ChalkTalkNode): DefaultMutableTreeNode {
+    private fun toTreeNode(phase1Node: Phase1Node): DefaultMutableTreeNode {
         val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName)
         var visited = false
         phase1Node.forEach {
@@ -247,15 +247,15 @@ object TreeViewMain {
         return result
     }
 
-    private fun toTreeNode(node: Node): DefaultMutableTreeNode {
-        val result = DefaultMutableTreeNode(node.javaClass.simpleName)
+    private fun toTreeNode(texTalkNode: TexTalkNode): DefaultMutableTreeNode {
+        val result = DefaultMutableTreeNode(texTalkNode.javaClass.simpleName)
         var visited = false
-        node.forEach {
+        texTalkNode.forEach {
             visited = true
             result.add(toTreeNode(it))
         }
         if (!visited) {
-            result.add(DefaultMutableTreeNode(node.toCode()))
+            result.add(DefaultMutableTreeNode(texTalkNode.toCode()))
         }
         return result
     }

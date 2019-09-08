@@ -25,17 +25,7 @@ import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
-import mathlingua.common.textalk.Command
-import mathlingua.common.textalk.CommandPart
-import mathlingua.common.textalk.ExpressionTexTalkNode
-import mathlingua.common.textalk.GroupTexTalkNode
-import mathlingua.common.textalk.IsTexTalkNode
-import mathlingua.common.textalk.NamedGroupTexTalkNode
-import mathlingua.common.textalk.TexTalkNode
-import mathlingua.common.textalk.TexTalkNodeType
-import mathlingua.common.textalk.ParametersTexTalkNode
-import mathlingua.common.textalk.SubSupTexTalkNode
-import mathlingua.common.textalk.TextTexTalkNode
+import mathlingua.common.transform.getSignature
 
 data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -551,104 +541,6 @@ fun <G, S, E> validateDefinesLikeGroup(
         )
 }
 
-fun <K, V> Map<K, V>.getOrNull(key: K): V? {
+private fun <K, V> Map<K, V>.getOrNull(key: K): V? {
     return if (this.containsKey(key)) this.get(key) else null
-}
-
-fun getSignature(stmt: Statement): String? {
-    val sigs = findAllStatementSignatures(stmt)
-    return if (sigs.size == 1) {
-        sigs.first()
-    } else null
-}
-
-fun findAllStatementSignatures(stmt: Statement): Set<String> {
-    val rootValidation = stmt.texTalkRoot
-    if (!rootValidation.isSuccessful) {
-        return emptySet()
-    }
-
-    val expressionNode = rootValidation.value!!
-    val signatures = mutableSetOf<String>()
-    findAllSignaturesImpl(expressionNode, signatures)
-    return signatures
-}
-
-private fun findAllSignaturesImpl(texTalkNode: TexTalkNode, signatures: MutableSet<String>) {
-    if (texTalkNode is IsTexTalkNode) {
-        for (expNode in texTalkNode.rhs.items) {
-            val sig = getMergedCommandSignature(expNode)
-            if (sig != null) {
-                signatures.add(sig)
-            }
-        }
-        return
-    } else if (texTalkNode is Command) {
-        val sig = getCommandSignature(texTalkNode).toCode()
-        signatures.add(sig)
-    }
-
-    texTalkNode.forEach { findAllSignaturesImpl(it, signatures) }
-}
-
-fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
-    val commandParts = mutableListOf<CommandPart>()
-    for (child in expressionNode.children) {
-        if (child is Command) {
-            commandParts.addAll(child.parts)
-        }
-    }
-
-    if (commandParts.isNotEmpty()) {
-        return getCommandSignature(Command(commandParts)).toCode()
-    }
-
-    return null
-}
-
-fun getCommandSignature(command: Command): Command {
-    return Command(
-        parts = command.parts.map { getCommandPartForSignature(it) }
-    )
-}
-
-fun <T> callOrNull(input: T?, fn: (t: T) -> T): T? {
-    return if (input == null) null else fn(input)
-}
-
-private fun getCommandPartForSignature(node: CommandPart): CommandPart {
-    return CommandPart(
-        name = node.name,
-        square = callOrNull(node.square, ::getGroupNodeForSignature),
-        subSup = callOrNull(node.subSup, ::getSubSupForSignature),
-        groups = node.groups.map { getGroupNodeForSignature(it) },
-        namedGroups = node.namedGroups.map { getNamedGroupNodeForSignature(it) }
-    )
-}
-
-private fun getSubSupForSignature(node: SubSupTexTalkNode): SubSupTexTalkNode {
-    return SubSupTexTalkNode(
-        sub = callOrNull(node.sub, ::getGroupNodeForSignature),
-        sup = callOrNull(node.sup, ::getGroupNodeForSignature)
-    )
-}
-
-private fun getGroupNodeForSignature(node: GroupTexTalkNode): GroupTexTalkNode {
-    return GroupTexTalkNode(
-        type = node.type,
-        parameters = getParametersNodeForSignature(node.parameters)
-    )
-}
-
-private fun getParametersNodeForSignature(node: ParametersTexTalkNode): ParametersTexTalkNode {
-    return ParametersTexTalkNode(
-        items = node.items.map { ExpressionTexTalkNode(listOf(TextTexTalkNode(TexTalkNodeType.Identifier, "?"))) }
-    )
-}
-
-private fun getNamedGroupNodeForSignature(node: NamedGroupTexTalkNode): NamedGroupTexTalkNode {
-    return NamedGroupTexTalkNode(
-        name = node.name,
-        group = getGroupNodeForSignature(node.group)
-    )
 }

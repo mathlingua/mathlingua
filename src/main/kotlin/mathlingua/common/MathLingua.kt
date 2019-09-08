@@ -21,7 +21,6 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.Document
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
-import mathlingua.common.chalktalk.phase2.findAllStatementSignatures
 import mathlingua.common.chalktalk.phase2.validateDocument
 
 data class MathLinguaResult(val document: Document?, val errors: List<ParseError>)
@@ -48,17 +47,6 @@ class MathLingua {
     }
 
     fun findAllSignatures(node: Phase2Node): Array<String> {
-        val signatures = mutableSetOf<String>()
-        findAllSignaturesImpl(node, signatures)
-        return signatures.toTypedArray()
+        return findAllSignatures(node).toList().toTypedArray()
     }
-}
-
-fun findAllSignaturesImpl(node: Phase2Node, signatures: MutableSet<String>) {
-    if (node is Statement) {
-        val sigs = findAllStatementSignatures(node)
-        signatures.addAll(sigs)
-    }
-
-    node.forEach { findAllSignaturesImpl(it, signatures) }
 }

@@ -16,7 +16,6 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.chalktalk.phase2.getCommandSignature
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType

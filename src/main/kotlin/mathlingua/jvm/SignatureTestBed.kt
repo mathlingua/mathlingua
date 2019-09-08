@@ -1,27 +1,30 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ResultGroup
-import mathlingua.common.chalktalk.phase2.ResultSection
-import mathlingua.common.transform.moveInlineCommandsToIsNode
+import mathlingua.common.transform.replaceIsNodes
 
 object SignatureTestBed {
     @JvmStatic
     fun main(args: Array<String>) {
         val text = """
-            [\A{x}]
-            Defines: a
-            assuming: 'x is \X'
-            means: 'a + x = 0'
+            [\continuous.function:on{X}]
+            Defines: f
+            assuming: 'f is \function'
+            means:
+            . for: x
+              where: 'x \in X'
+              then:
+              . '\limit[t]_{x}{f(t)} = f(x)'
 
 
             Result:
-            . for: y, z
+            . for: g, A
+              where:
+              . 'A is \set'
+              . 'g is \differentiable.function:on{A}'
               then:
-              . '\A{y} + 1 = 0'
-              . '\A{y} + 2 = 1'
+              . 'g is \continuous.function:on{A}'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -32,7 +35,8 @@ object SignatureTestBed {
         println("----------------------------------------")
 
         val defMap = mutableMapOf<String, DefinesGroup>()
-        for (def in result.document!!.defines) {
+        val defs = result.document!!.defines
+        for (def in defs) {
             val sig = def.signature
             if (sig != null) {
                 defMap[sig] = def
@@ -41,16 +45,11 @@ object SignatureTestBed {
 
         val res = result.document!!.results[0]
 
-        println(ResultGroup(
-            resultSection = ResultSection(
-                clauses = ClauseListNode(
-                    clauses = res.resultSection.clauses.clauses.map {
-                        moveInlineCommandsToIsNode(it, mapOf("\\A{?}" to "Q"), { true }, { true })
-                    }
-                )
-            ),
-            aliasSection = null,
-            metaDataSection = null
-        ).toCode(false, 0))
+        var count = 1
+        fun nextVar(): String {
+            return "#${count++}"
+        }
+
+        println(replaceIsNodes(res, defs, ::nextVar, { true }).toCode(false, 0))
     }
 }

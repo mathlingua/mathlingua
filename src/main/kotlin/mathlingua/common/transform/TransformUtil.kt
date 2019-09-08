@@ -198,6 +198,81 @@ fun replaceRepresents(
     return node.transform(::chalkTransformer)
 }
 
+fun replaceIsNodes(
+    node: Phase2Node,
+    defs: List<DefinesGroup>,
+    nextVar: () -> String,
+    filter: (node: Phase2Node) -> Boolean = { true }
+): Phase2Node {
+    val defMap = mutableMapOf<String, DefinesGroup>()
+    for (def in defs) {
+        val sig = def.signature
+        if (sig != null) {
+            defMap[sig] = def
+        }
+    }
+
+    fun chalkTransformer(node: Phase2Node): Phase2Node {
+        if (!filter(node)) {
+            return node
+        }
+
+        if (node !is Statement) {
+            return node
+        }
+
+        if (!node.texTalkRoot.isSuccessful ||
+            node.texTalkRoot.value!!.children.size != 1 ||
+            node.texTalkRoot.value.children[0] !is IsTexTalkNode) {
+            return node
+        }
+
+        val isNode = node.texTalkRoot.value.children[0] as IsTexTalkNode
+        if (isNode.rhs.items.size != 1 ||
+            isNode.rhs.items[0].children.size != 1 ||
+            isNode.rhs.items[0].children[0] !is Command) {
+            return node
+        }
+
+        val command = isNode.rhs.items[0].children[0] as Command
+        val sig = getCommandSignature(command).toCode()
+
+        if (!defMap.containsKey(sig)) {
+            return node
+        }
+
+        val def = defMap[sig]!!
+        val cmdVars = getVars(command)
+
+        val defDirectVars = getDefinesDirectVars(def)
+        val defIndirectVars = getDefinesIdVars(def)
+
+        val map = mutableMapOf<String, String>()
+        for (i in cmdVars.indices) {
+            map[defIndirectVars[i]] = cmdVars[i]
+        }
+
+        for (v in defDirectVars) {
+            map[v] = nextVar()
+        }
+
+        val ifGroup = buildIfThen(def)
+        return renameVars(ForGroup(
+            forSection = ForSection(
+                targets = defDirectVars.map { Identifier(name = it) }
+            ),
+            whereSection = null,
+            thenSection = ThenSection(
+                clauses = ClauseListNode(
+                    clauses = listOf(ifGroup)
+                )
+            )
+        ), map)
+    }
+
+    return node.transform(::chalkTransformer)
+}
+
 fun toCanonicalForm(def: DefinesGroup): DefinesGroup {
     return DefinesGroup(
         signature = def.signature,

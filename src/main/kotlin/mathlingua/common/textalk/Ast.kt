@@ -42,9 +42,11 @@ interface TexTalkNode {
     fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode
 }
 
-data class IsTexTalkNode(override var parent: TexTalkNode?,
-                         val lhs: ParametersTexTalkNode,
-                         val rhs: ParametersTexTalkNode) : TexTalkNode {
+data class IsTexTalkNode(
+    override var parent: TexTalkNode?,
+    val lhs: ParametersTexTalkNode,
+    val rhs: ParametersTexTalkNode
+) : TexTalkNode {
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Is
 

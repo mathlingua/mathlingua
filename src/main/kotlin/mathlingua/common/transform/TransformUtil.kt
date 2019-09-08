@@ -132,7 +132,7 @@ fun moveInlineCommandsToIsNode(
                             populateParents(
                                 ExpressionTexTalkNode(
                                     parent = null,
-                                   children = listOf(isNode)
+                                    children = listOf(isNode)
                                 )
                             )
                         )

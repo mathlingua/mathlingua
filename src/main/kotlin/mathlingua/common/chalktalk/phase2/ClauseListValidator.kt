@@ -28,7 +28,7 @@ data class ClauseListSection(val name: String, val clauses: List<Clause>)
 fun <T> validateClauseList(
     rawNode: Phase1Node,
     expectedName: String,
-    builder: (clauses: List<Clause>) -> T
+    builder: (clauses: ClauseListNode) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
 
@@ -39,7 +39,7 @@ fun <T> validateClauseList(
     }
 
     val clauses = validation.value!!.clauses
-    return Validation.success(builder(clauses))
+    return Validation.success(builder(ClauseListNode(clauses)))
 }
 
 private fun validate(node: Phase1Node, expectedName: String): Validation<ClauseListSection> {

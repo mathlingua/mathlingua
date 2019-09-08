@@ -1,6 +1,7 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ResultGroup
 import mathlingua.common.chalktalk.phase2.ResultSection
@@ -41,9 +42,11 @@ object SignatureTestBed {
 
         println(ResultGroup(
             resultSection = ResultSection(
-                clauses = res.resultSection.clauses.map {
-                    moveInlineCommandsToIsNode(it, mapOf("\\A{?}" to "Q"), {true}, {true})
-                }
+                clauses = ClauseListNode(
+                    clauses = res.resultSection.clauses.clauses.map {
+                        moveInlineCommandsToIsNode(it, mapOf("\\A{?}" to "Q"), {true}, {true})
+                    }
+                )
             ),
             aliasSection = null,
             metaDataSection = null

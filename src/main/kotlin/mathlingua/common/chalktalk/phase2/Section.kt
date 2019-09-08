@@ -23,15 +23,6 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
-private fun appendClauseArgs(builder: StringBuilder, clauses: List<Clause>, indent: Int) {
-    for (i in clauses.indices) {
-        builder.append(clauses[i].toCode(true, indent))
-        if (i != clauses.size - 1) {
-            builder.append('\n')
-        }
-    }
-}
-
 private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, indent: Int) {
     for (i in targets.indices) {
         builder.append(targets[i].toCode(true, indent))
@@ -41,7 +32,7 @@ private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, inde
     }
 }
 
-data class AssumingSection(val clauses: List<Clause>) : Phase2Node {
+data class AssumingSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -50,13 +41,13 @@ data class AssumingSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "assuming:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(AssumingSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -227,22 +218,22 @@ fun validateForSection(node: Phase1Node): Validation<ForSection> {
     ) { ForSection(it) }
 }
 
-data class MeansSection(val clauses: List<Clause>) : Phase2Node {
+data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        clauses.forEach(fn)
+        fn(clauses)
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "means:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(MeansSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -254,7 +245,7 @@ fun validateMeansSection(node: Phase1Node): Validation<MeansSection> {
     ) { MeansSection(it) }
 }
 
-data class ResultSection(val clauses: List<Clause>) : Phase2Node {
+data class ResultSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -263,13 +254,13 @@ data class ResultSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Result:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ResultSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -281,7 +272,7 @@ fun validateResultSection(node: Phase1Node): Validation<ResultSection> {
     ) { ResultSection(it) }
 }
 
-data class AxiomSection(val clauses: List<Clause>) : Phase2Node {
+data class AxiomSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -290,13 +281,13 @@ data class AxiomSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Axiom:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(AxiomSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -308,7 +299,7 @@ fun validateAxiomSection(node: Phase1Node): Validation<AxiomSection> {
     ) { AxiomSection(it) }
 }
 
-data class ConjectureSection(val clauses: List<Clause>) : Phase2Node {
+data class ConjectureSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -317,13 +308,13 @@ data class ConjectureSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Conjecture:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ConjectureSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -335,7 +326,7 @@ fun validateConjectureSection(node: Phase1Node): Validation<ConjectureSection> {
     ) { ConjectureSection(it) }
 }
 
-data class SuchThatSection(val clauses: List<Clause>) : Phase2Node {
+data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -344,13 +335,13 @@ data class SuchThatSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "suchThat:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(SuchThatSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -362,7 +353,7 @@ fun validateSuchThatSection(node: Phase1Node): Validation<SuchThatSection> {
     ) { SuchThatSection(it) }
 }
 
-data class ThatSection(val clauses: List<Clause>) : Phase2Node {
+data class ThatSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -371,13 +362,13 @@ data class ThatSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "that:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ThatSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -389,7 +380,7 @@ fun validateThatSection(node: Phase1Node): Validation<ThatSection> {
     ) { ThatSection(it) }
 }
 
-data class IfSection(val clauses: List<Clause>) : Phase2Node {
+data class IfSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -398,13 +389,13 @@ data class IfSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "if:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(IfSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -416,7 +407,7 @@ fun validateIfSection(node: Phase1Node): Validation<IfSection> {
     ) { IfSection(it) }
 }
 
-data class IffSection(val clauses: List<Clause>) : Phase2Node {
+data class IffSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -425,13 +416,13 @@ data class IffSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "iff:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(IffSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -443,7 +434,7 @@ fun validateIffSection(node: Phase1Node): Validation<IffSection> {
     ) { IffSection(it) }
 }
 
-data class ThenSection(val clauses: List<Clause>) : Phase2Node {
+data class ThenSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -452,13 +443,13 @@ data class ThenSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "then:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ThenSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -470,7 +461,7 @@ fun validateThenSection(node: Phase1Node): Validation<ThenSection> {
     ) { ThenSection(it) }
 }
 
-data class WhereSection(val clauses: List<Clause>) : Phase2Node {
+data class WhereSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -479,13 +470,13 @@ data class WhereSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "where:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(WhereSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -497,7 +488,7 @@ fun validateWhereSection(node: Phase1Node): Validation<WhereSection> {
     ) { WhereSection(it) }
 }
 
-data class NotSection(val clauses: List<Clause>) : Phase2Node {
+data class NotSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -506,13 +497,13 @@ data class NotSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "not:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(NotSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }
@@ -524,7 +515,7 @@ fun validateNotSection(node: Phase1Node): Validation<NotSection> {
     ) { NotSection(it) }
 }
 
-data class OrSection(val clauses: List<Clause>) : Phase2Node {
+data class OrSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -533,13 +524,13 @@ data class OrSection(val clauses: List<Clause>) : Phase2Node {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "or:"))
         builder.append('\n')
-        appendClauseArgs(builder, clauses, indent + 2)
+        builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(OrSection(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause }
+            clauses = chalkTransformer(clauses) as ClauseListNode
         ))
     }
 }

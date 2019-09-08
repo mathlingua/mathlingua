@@ -18,6 +18,7 @@ package mathlingua.common.transform
 
 import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase2.Clause
+import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ForGroup
 import mathlingua.common.chalktalk.phase2.ForSection
@@ -53,44 +54,48 @@ fun moveInlineCommandsToIsNode(node: Clause,
             targets = sigsFound.map { Identifier(name = sigToName[it]!!) }
         ),
         whereSection = WhereSection(
-            clauses = sigsFound.map {
-                val isNode = IsTexTalkNode(
-                    lhs = ParametersTexTalkNode(
-                        items = listOf(
-                            ExpressionTexTalkNode(
-                                children = listOf(
-                                    TextTexTalkNode(
-                                        type = TexTalkNodeType.Identifier,
-                                        text = sigToName[it]!!
+            clauses = ClauseListNode(
+                clauses = sigsFound.map {
+                    val isNode = IsTexTalkNode(
+                        lhs = ParametersTexTalkNode(
+                            items = listOf(
+                                ExpressionTexTalkNode(
+                                    children = listOf(
+                                        TextTexTalkNode(
+                                            type = TexTalkNodeType.Identifier,
+                                            text = sigToName[it]!!
+                                        )
                                     )
                                 )
                             )
-                        )
-                    ),
-                    rhs = ParametersTexTalkNode(
-                        items = listOf(
-                            ExpressionTexTalkNode(
-                                children = listOf(
-                                    TextTexTalkNode(
-                                        type = TexTalkNodeType.Identifier,
-                                        text = it
+                        ),
+                        rhs = ParametersTexTalkNode(
+                            items = listOf(
+                                ExpressionTexTalkNode(
+                                    children = listOf(
+                                        TextTexTalkNode(
+                                            type = TexTalkNodeType.Identifier,
+                                            text = it
+                                        )
                                     )
                                 )
                             )
                         )
                     )
-                )
 
-                Statement(
-                    text = isNode.toCode(),
-                    texTalkRoot = Validation.success(ExpressionTexTalkNode(
-                        children = listOf(isNode)
-                    ))
-                )
-            }
+                    Statement(
+                        text = isNode.toCode(),
+                        texTalkRoot = Validation.success(ExpressionTexTalkNode(
+                            children = listOf(isNode)
+                        ))
+                    )
+                }
+            )
         ),
         thenSection = ThenSection(
-            clauses = listOf(newNode)
+            clauses = ClauseListNode(
+                clauses = listOf(newNode)
+            )
         )
     )
 }
@@ -150,7 +155,9 @@ fun toCanonicalForm(def: DefinesGroup): DefinesGroup {
         definesSection = def.definesSection,
         assumingSection = null,
         meansSection = MeansSection(
-            clauses = listOf(buildIfThen(def))
+            clauses = ClauseListNode(
+                clauses = listOf(buildIfThen(def))
+            )
         ),
         aliasSection = def.aliasSection,
         metaDataSection = def.metaDataSection
@@ -160,7 +167,7 @@ fun toCanonicalForm(def: DefinesGroup): DefinesGroup {
 fun buildIfThen(def: DefinesGroup): IfGroup {
     return IfGroup(
         ifSection = IfSection(
-            clauses = def.assumingSection?.clauses ?: emptyList()
+            clauses = def.assumingSection?.clauses ?: ClauseListNode(emptyList())
         ),
         thenSection = ThenSection(
             clauses = def.meansSection.clauses
@@ -171,7 +178,7 @@ fun buildIfThen(def: DefinesGroup): IfGroup {
 fun buildIfThen(rep: RepresentsGroup): IfGroup {
     return IfGroup(
         ifSection = IfSection(
-            clauses = rep.assumingSection?.clauses ?: emptyList()
+            clauses = rep.assumingSection?.clauses ?: ClauseListNode(emptyList())
         ),
         thenSection = ThenSection(
             clauses = rep.thatSection.clauses

@@ -40,7 +40,6 @@ import mathlingua.common.textalk.TextTexTalkNode
 fun moveInlineCommandsToIsNode(node: Clause, sigToName: Map<String, String>): Clause {
     val sigsFound = mutableSetOf<String>()
     val newNode = replaceCommands(node, sigToName, sigsFound) as Clause
-    println("sigsFound=${sigsFound}")
     return ForGroup(
         forSection = ForSection(
             targets = sigsFound.map { Identifier(name = sigToName[it]!!) }

@@ -43,7 +43,6 @@ fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: 
 
 fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>, sigsFound: MutableSet<String>): Phase2Node {
     return node.transform {
-        println("At phase2 it=${it.javaClass.simpleName}")
         if (it !is Statement) {
             it
         } else {
@@ -52,7 +51,6 @@ fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>, sig
                 it
             } else {
                 val root = it.texTalkRoot.value!!
-                println("root=" + root.javaClass.simpleName)
                 val newRoot = replaceCommands(root, sigToReplacement, sigsFound) as ExpressionTexTalkNode
                 Statement(
                     text = newRoot.toCode(),
@@ -64,14 +62,11 @@ fun replaceCommands(node: Phase2Node, sigToReplacement: Map<String, String>, sig
 }
 
 fun replaceCommands(texTalkNode: TexTalkNode, sigToReplacement: Map<String, String>, sigsFound: MutableSet<String>): TexTalkNode {
-    println("replaceCommands for texTalkNode=${texTalkNode}")
     return texTalkNode.transform {
-        println("At textalk it=${it.javaClass.simpleName}: code=${it.toCode()}")
         if (it !is Command) {
             it
         } else {
             val sig = getCommandSignature(it).toCode()
-            println("At sig=${sig}")
             if (!sigToReplacement.containsKey(sig)) {
                 it
             } else {

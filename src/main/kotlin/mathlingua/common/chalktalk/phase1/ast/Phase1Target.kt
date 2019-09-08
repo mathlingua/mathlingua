@@ -36,28 +36,32 @@ enum class ChalkTalkTokenType {
     RCurly
 }
 
-sealed class ChalkTalkTarget : ChalkTalkNode
-sealed class TupleItem : ChalkTalkTarget()
+sealed class Phase1Target : Phase1Node
+sealed class TupleItem : Phase1Target()
 sealed class AssignmentRhs : TupleItem()
 
-data class ChalkTalkToken(val text: String, val type: ChalkTalkTokenType, val row: Int, val column: Int) :
+data class Phase1Token(val text: String, val type: ChalkTalkTokenType, val row: Int, val column: Int) :
     AssignmentRhs() {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
     }
 
     override fun toCode(): String {
         return text
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(this)
     }
 }
 
-data class Mapping(val lhs: ChalkTalkToken, val rhs: ChalkTalkToken) : ChalkTalkTarget() {
+data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(lhs)
         fn(rhs)
     }
@@ -66,15 +70,22 @@ data class Mapping(val lhs: ChalkTalkToken, val rhs: ChalkTalkToken) : ChalkTalk
         return lhs.toCode() + " = " + rhs.toCode()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Mapping(
+            lhs = lhs.transform(transformer) as Phase1Token,
+            rhs = rhs.transform(transformer) as Phase1Token
+        ))
     }
 }
 
-data class Group(val sections: List<Section>, val id: ChalkTalkToken?) :
-    ChalkTalkTarget() {
+data class Group(val sections: List<Section>, val id: Phase1Token?) :
+    Phase1Target() {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         if (id != null) {
             fn(id)
         }
@@ -103,14 +114,21 @@ data class Group(val sections: List<Section>, val id: ChalkTalkToken?) :
         return buffer.toString()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Group(
+            sections = sections.map { it.transform(transformer) as Section },
+            id = id?.transform(transformer) as Phase1Token
+        ))
     }
 }
 
-data class Assignment(val lhs: ChalkTalkToken, val rhs: AssignmentRhs) : TupleItem() {
+data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem() {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(lhs)
         fn(rhs)
     }
@@ -119,14 +137,21 @@ data class Assignment(val lhs: ChalkTalkToken, val rhs: AssignmentRhs) : TupleIt
         return lhs.toCode() + " := " + rhs.toCode()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Assignment(
+            lhs = lhs.transform(transformer) as Phase1Token,
+            rhs = rhs.transform(transformer) as Phase1Token
+        ))
     }
 }
 
 data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         items.forEach(fn)
     }
 
@@ -143,14 +168,20 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
         return builder.toString()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Tuple(
+            items = items.map { it.transform(transformer) as TupleItem }
+        ))
     }
 }
 
-data class Abstraction(val name: ChalkTalkToken, val params: List<ChalkTalkToken>) : TupleItem() {
+data class Abstraction(val name: Phase1Token, val params: List<Phase1Token>) : TupleItem() {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)
         params.forEach(fn)
     }
@@ -169,14 +200,21 @@ data class Abstraction(val name: ChalkTalkToken, val params: List<ChalkTalkToken
         return builder.toString()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Abstraction(
+            name = name.transform(transformer) as Phase1Token,
+            params = params.map { it.transform(transformer) as Phase1Token }
+        ))
     }
 }
 
-data class Aggregate(val params: List<ChalkTalkToken>) : AssignmentRhs() {
+data class Aggregate(val params: List<Phase1Token>) : AssignmentRhs() {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         params.forEach(fn)
     }
 
@@ -193,7 +231,13 @@ data class Aggregate(val params: List<ChalkTalkToken>) : AssignmentRhs() {
         return builder.toString()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Aggregate(
+            params = params.map { it.transform(transformer) as Phase1Token }
+        ))
     }
 }

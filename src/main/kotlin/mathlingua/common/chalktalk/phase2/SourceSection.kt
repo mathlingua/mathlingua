@@ -39,6 +39,10 @@ data class SourceSection(val mappings: List<MappingNode>) : Phase2Node {
         }
         return builder.toString()
     }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return chalkTransformer(this)
+    }
 }
 
 fun validateSourceSection(section: Section): Validation<SourceSection> {

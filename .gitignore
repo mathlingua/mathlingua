@@ -5,6 +5,7 @@ target
 .idea/tasks.xml
 .idea/shelf
 .idea/vcs.xml
+.idea/uiDesigner.xml
 
 .gradle
 /build/

@@ -18,7 +18,7 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -26,9 +26,9 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 data class ClauseListSection(val name: String, val clauses: List<Clause>)
 
 fun <T> validateClauseList(
-    rawNode: ChalkTalkNode,
+    rawNode: Phase1Node,
     expectedName: String,
-    builder: (clauses: List<Clause>) -> T
+    builder: (clauses: ClauseListNode) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
 
@@ -39,10 +39,10 @@ fun <T> validateClauseList(
     }
 
     val clauses = validation.value!!.clauses
-    return Validation.success(builder(clauses))
+    return Validation.success(builder(ClauseListNode(clauses)))
 }
 
-private fun validate(node: ChalkTalkNode, expectedName: String): Validation<ClauseListSection> {
+private fun validate(node: Phase1Node, expectedName: String): Validation<ClauseListSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
         errors.add(

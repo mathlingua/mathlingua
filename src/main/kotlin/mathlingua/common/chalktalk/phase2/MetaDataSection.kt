@@ -39,6 +39,12 @@ data class MetaDataSection(val mappings: List<MappingNode>) : Phase2Node {
         }
         return builder.toString()
     }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return chalkTransformer(MetaDataSection(
+            mappings = mappings.map { it.transform(chalkTransformer) as MappingNode }
+        ))
+    }
 }
 
 fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {

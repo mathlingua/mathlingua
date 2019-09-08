@@ -17,7 +17,7 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkToken
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Mapping
 import mathlingua.common.chalktalk.phase2.MappingNode
@@ -105,8 +105,8 @@ object HtmlDataGenerator {
                     if (srcIdToUrlMap.containsKey(key)) {
                         metadata = MetaDataSection(listOf(
                             MappingNode(Mapping(
-                                ChalkTalkToken("reference", ChalkTalkTokenType.String, -1, -1),
-                                ChalkTalkToken("\"source: $key; page: 1\"", ChalkTalkTokenType.String, -1, -1)
+                                Phase1Token("reference", ChalkTalkTokenType.String, -1, -1),
+                                Phase1Token("\"source: $key; page: 1\"", ChalkTalkTokenType.String, -1, -1)
                             ))
                         ))
                     } else {

@@ -40,8 +40,8 @@ fun getIndent(size: Int): String {
     return buffer.toString()
 }
 
-fun getRow(node: ChalkTalkNode): Int {
-    if (node is ChalkTalkToken) {
+fun getRow(node: Phase1Node): Int {
+    if (node is Phase1Token) {
         return node.row
     }
     var rowResult = -1
@@ -56,8 +56,8 @@ fun getRow(node: ChalkTalkNode): Int {
     return rowResult
 }
 
-fun getColumn(node: ChalkTalkNode): Int {
-    if (node is ChalkTalkToken) {
+fun getColumn(node: Phase1Node): Int {
+    if (node is Phase1Token) {
         return node.column
     }
     var colResult = -1

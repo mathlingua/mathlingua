@@ -16,7 +16,7 @@
 
 package mathlingua.common.textalk
 
-enum class NodeType {
+enum class TexTalkNodeType {
     Token,
     Identifier,
     Operator,
@@ -34,15 +34,21 @@ enum class NodeType {
     ColonEquals
 }
 
-interface Node {
-    val type: NodeType
+interface TexTalkNode {
+    var parent: TexTalkNode?
+    val type: TexTalkNodeType
     fun toCode(): String
-    fun forEach(fn: (node: Node) -> Unit)
+    fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit)
+    fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode
 }
 
-data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
-    override val type: NodeType
-        get() = NodeType.Is
+data class IsTexTalkNode(
+    override var parent: TexTalkNode?,
+    val lhs: ParametersTexTalkNode,
+    val rhs: ParametersTexTalkNode
+) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Is
 
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -52,15 +58,23 @@ data class IsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
         return builder.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         fn(lhs)
         fn(rhs)
     }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(IsTexTalkNode(
+            lhs = lhs.transform(transformer) as ParametersTexTalkNode,
+            rhs = rhs.transform(transformer) as ParametersTexTalkNode,
+            parent = parent
+        ))
+    }
 }
 
-data class ColonEqualsNode(val lhs: ParametersNode, val rhs: ParametersNode) : Node {
-    override val type: NodeType
-        get() = NodeType.ColonEquals
+data class ColonEqualsTexTalkNode(override var parent: TexTalkNode?, val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.ColonEquals
 
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -70,21 +84,30 @@ data class ColonEqualsNode(val lhs: ParametersNode, val rhs: ParametersNode) : N
         return builder.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         fn(lhs)
         fn(rhs)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(ColonEqualsTexTalkNode(
+            lhs = lhs.transform(transformer) as ParametersTexTalkNode,
+            rhs = rhs.transform(transformer) as ParametersTexTalkNode,
+            parent = parent
+        ))
     }
 }
 
 data class CommandPart(
-    val name: TextNode,
-    val square: GroupNode?,
-    val subSup: SubSupNode?,
-    val groups: List<GroupNode>,
-    val namedGroups: List<NamedGroupNode>
-) : Node {
-    override val type: NodeType
-        get() = NodeType.CommandPart
+    override var parent: TexTalkNode?,
+    val name: TextTexTalkNode,
+    val square: GroupTexTalkNode?,
+    val subSup: SubSupTexTalkNode?,
+    val groups: List<GroupTexTalkNode>,
+    val namedGroups: List<NamedGroupTexTalkNode>
+) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.CommandPart
 
     override fun toCode(): String {
         val buffer = StringBuilder()
@@ -112,7 +135,7 @@ data class CommandPart(
         return buffer.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         fn(name)
 
         if (square != null) {
@@ -126,11 +149,22 @@ data class CommandPart(
         groups.forEach(fn)
         namedGroups.forEach(fn)
     }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(CommandPart(
+            name = name.transform(transformer) as TextTexTalkNode,
+            square = square?.transform(transformer) as GroupTexTalkNode?,
+            subSup = subSup?.transform(transformer) as SubSupTexTalkNode?,
+            groups = groups.map { it.transform(transformer) as GroupTexTalkNode },
+            namedGroups = namedGroups.map { it.transform(transformer) as NamedGroupTexTalkNode },
+            parent = parent
+        ))
+    }
 }
 
-data class Command(val parts: List<CommandPart>) : Node {
-    override val type: NodeType
-        get() = NodeType.Command
+data class Command(override var parent: TexTalkNode?, val parts: List<CommandPart>) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Command
 
     override fun toCode(): String {
         val builder = StringBuilder("\\")
@@ -143,15 +177,22 @@ data class Command(val parts: List<CommandPart>) : Node {
         return builder.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         parts.forEach(fn)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(Command(
+            parts = parts.map { it.transform(transformer) as CommandPart },
+            parent = parent
+        ))
     }
 }
 
-data class ExpressionNode(val children: List<Node>) : Node {
+data class ExpressionTexTalkNode(override var parent: TexTalkNode?, val children: List<TexTalkNode>) : TexTalkNode {
 
-    override val type: NodeType
-        get() = NodeType.Expression
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Expression
 
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -166,14 +207,21 @@ data class ExpressionNode(val children: List<Node>) : Node {
         return builder.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         children.forEach(fn)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(ExpressionTexTalkNode(
+            children = children.map { it.transform(transformer) },
+            parent = parent
+        ))
     }
 }
 
-data class ParametersNode(val items: List<ExpressionNode>) : Node {
-    override val type: NodeType
-        get() = NodeType.Parameters
+data class ParametersTexTalkNode(override var parent: TexTalkNode?, val items: List<ExpressionTexTalkNode>) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Parameters
 
     override fun toCode(): String {
         val buffer = StringBuilder()
@@ -190,27 +238,34 @@ data class ParametersNode(val items: List<ExpressionNode>) : Node {
         return buffer.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         items.forEach(fn)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(ParametersTexTalkNode(
+            items = items.map { it.transform(transformer) as ExpressionTexTalkNode },
+            parent = parent
+        ))
     }
 }
 
-data class GroupNode(override val type: NodeType, val parameters: ParametersNode) : Node {
+data class GroupTexTalkNode(override var parent: TexTalkNode?, override val type: TexTalkNodeType, val parameters: ParametersTexTalkNode) : TexTalkNode {
 
     override fun toCode(): String {
         val prefix: String
         val suffix: String
 
         when (type) {
-            NodeType.ParenGroup -> {
+            TexTalkNodeType.ParenGroup -> {
                 prefix = "("
                 suffix = ")"
             }
-            NodeType.SquareGroup -> {
+            TexTalkNodeType.SquareGroup -> {
                 prefix = "["
                 suffix = "]"
             }
-            NodeType.CurlyGroup -> {
+            TexTalkNodeType.CurlyGroup -> {
                 prefix = "{"
                 suffix = "}"
             }
@@ -223,18 +278,27 @@ data class GroupNode(override val type: NodeType, val parameters: ParametersNode
         return buffer.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         fn(parameters)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(GroupTexTalkNode(
+            type = type,
+            parameters = parameters.transform(transformer) as ParametersTexTalkNode,
+            parent = parent
+        ))
     }
 }
 
-data class NamedGroupNode(
-    val name: TextNode,
-    val group: GroupNode
-) : Node {
+data class NamedGroupTexTalkNode(
+    override var parent: TexTalkNode?,
+    val name: TextTexTalkNode,
+    val group: GroupTexTalkNode
+) : TexTalkNode {
 
-    override val type: NodeType
-        get() = NodeType.NamedGroup
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.NamedGroup
 
     override fun toCode(): String {
         val buffer = StringBuilder()
@@ -243,19 +307,28 @@ data class NamedGroupNode(
         return buffer.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         fn(name)
         fn(group)
     }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(NamedGroupTexTalkNode(
+            name = name.transform(transformer) as TextTexTalkNode,
+            group = group.transform(transformer) as GroupTexTalkNode,
+            parent = parent
+        ))
+    }
 }
 
-data class SubSupNode(
-    val sub: GroupNode?,
-    val sup: GroupNode?
-) : Node {
+data class SubSupTexTalkNode(
+    override var parent: TexTalkNode?,
+    val sub: GroupTexTalkNode?,
+    val sup: GroupTexTalkNode?
+) : TexTalkNode {
 
-    override val type: NodeType
-        get() = NodeType.SubSup
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.SubSup
 
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -271,7 +344,7 @@ data class SubSupNode(
         return builder.toString()
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         if (sub != null) {
             fn(sub)
         }
@@ -280,31 +353,48 @@ data class SubSupNode(
             fn(sup)
         }
     }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(SubSupTexTalkNode(
+            sub = sub?.transform(transformer) as GroupTexTalkNode?,
+            sup = sup?.transform(transformer) as GroupTexTalkNode?,
+            parent = parent
+        ))
+    }
 }
 
-data class TextNode(override val type: NodeType, val text: String) : Node {
+data class TextTexTalkNode(override var parent: TexTalkNode?, override val type: TexTalkNodeType, val text: String) : TexTalkNode {
     override fun toCode(): String {
         return text
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(this)
     }
 }
 
 data class TexTalkToken(
+    override var parent: TexTalkNode?,
     val text: String,
     val tokenType: TexTalkTokenType,
     val row: Int,
     val column: Int
-) : Node {
-    override val type: NodeType
-        get() = NodeType.Token
+) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Token
 
     override fun toCode(): String {
         return text
     }
 
-    override fun forEach(fn: (node: Node) -> Unit) {
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode {
+        return transformer(this)
     }
 }
 

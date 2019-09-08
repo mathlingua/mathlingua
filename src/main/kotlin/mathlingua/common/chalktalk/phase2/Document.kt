@@ -18,7 +18,7 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkNode
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Root
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -26,6 +26,7 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 interface Phase2Node {
     fun forEach(fn: (node: Phase2Node) -> Unit)
     fun toCode(isArg: Boolean, indent: Int): String
+    fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
 }
 
 data class Document(
@@ -81,9 +82,20 @@ data class Document(
 
         return builder.toString()
     }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return Document(
+            defines = defines.map { it.transform(chalkTransformer) as DefinesGroup },
+            axioms = axioms.map { it.transform(chalkTransformer) as AxiomGroup },
+            conjectures = conjectures.map { it.transform(chalkTransformer) as ConjectureGroup },
+            represents = represents.map { it.transform(chalkTransformer) as RepresentsGroup },
+            results = results.map { it.transform(chalkTransformer) as ResultGroup },
+            sources = sources.map { it.transform(chalkTransformer) as SourceGroup }
+        )
+    }
 }
 
-fun validateDocument(rawNode: ChalkTalkNode): Validation<Document> {
+fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()

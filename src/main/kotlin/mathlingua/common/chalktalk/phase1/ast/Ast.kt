@@ -16,15 +16,16 @@
 
 package mathlingua.common.chalktalk.phase1.ast
 
-interface ChalkTalkNode {
-    fun forEach(fn: (node: ChalkTalkNode) -> Unit)
+interface Phase1Node {
+    fun forEach(fn: (node: Phase1Node) -> Unit)
     fun toCode(): String
-    fun resolve(): ChalkTalkNode
+    fun resolve(): Phase1Node
+    fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node
 }
 
-data class Root(val groups: List<Group>) : ChalkTalkNode {
+data class Root(val groups: List<Group>) : Phase1Node {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         groups.forEach(fn)
     }
 
@@ -40,21 +41,27 @@ data class Root(val groups: List<Group>) : ChalkTalkNode {
         return buffer.toString()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Root(
+            groups = groups.map { it.transform(transformer) as Group }
+        ))
     }
 }
 
-data class Argument(val chalkTalkTarget: ChalkTalkTarget) : ChalkTalkNode {
+data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(chalkTalkTarget)
     }
 
     fun print(buffer: StringBuilder, level: Int) {
         when (chalkTalkTarget) {
             is Group -> chalkTalkTarget.print(buffer, level, true)
-            is ChalkTalkToken -> {
+            is Phase1Token -> {
                 buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.text)
                 buffer.append("\n")
@@ -93,14 +100,20 @@ data class Argument(val chalkTalkTarget: ChalkTalkTarget) : ChalkTalkNode {
         return buffer.toString()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return chalkTalkTarget.resolve()
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Argument(
+            chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target
+        ))
     }
 }
 
-data class Section(val name: ChalkTalkToken, val args: List<Argument>) : ChalkTalkNode {
+data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node {
 
-    override fun forEach(fn: (node: ChalkTalkNode) -> Unit) {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)
         args.forEach(fn)
     }
@@ -120,7 +133,14 @@ data class Section(val name: ChalkTalkToken, val args: List<Argument>) : ChalkTa
         return buffer.toString()
     }
 
-    override fun resolve(): ChalkTalkNode {
+    override fun resolve(): Phase1Node {
         return this
+    }
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(Section(
+            name = name.transform(transformer) as Phase1Token,
+            args = args.map { it.transform(transformer) as Argument }
+        ))
     }
 }

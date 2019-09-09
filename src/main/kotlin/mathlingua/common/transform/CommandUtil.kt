@@ -103,17 +103,6 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-private fun getGluedCommands(node: ExpressionTexTalkNode): List<Command> {
-    val cmds = mutableListOf<Command>()
-    for (n in node.children) {
-        if (n !is Command) {
-            throw Error("Unexpected non-Command node")
-        }
-        cmds.add(n)
-    }
-    return glueCommands(cmds)
-}
-
 fun separateIsStatements(node: Phase2Node): Phase2Node {
     return node.transform {
         if (it is ClauseListNode) {
@@ -181,16 +170,60 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
     return result
 }
 
-/*
-fun glueAllCommands(node: TexTalkNode): TexTalkNode {
+// this function requires that `is` nodes are separated
+// that is 'x is \a, \b' is separated as 'x is \a' and
+// 'x is \b'
+fun glueCommands(node: Phase2Node): Phase2Node {
     return node.transform {
-        if (it is ExpressionTexTalkNode) {
+        if (it is Statement &&
+            it.texTalkRoot.isSuccessful &&
+            it.texTalkRoot.value!!.children.size == 1 &&
+            it.texTalkRoot.value.children[0] is IsTexTalkNode) {
+            val isNode = it.texTalkRoot.value!!.children[0] as IsTexTalkNode
+            if (isNode.rhs.items.size != 1) {
+                throw Error("Expected 'is' node $isNode to only contain a single rhs item")
+            }
+            val cmds = getCommandsToGlue(isNode.rhs.items[0])
+            val gluedCmds = glueCommands(cmds)
+            if (gluedCmds.size != 1) {
+                throw Error("Expected 'is' node $isNode to have only one glued rhs command")
+            }
+            val newExp = ExpressionTexTalkNode(
+                children = listOf(
+                    IsTexTalkNode(
+                        lhs = isNode.lhs,
+                        rhs = ParametersTexTalkNode(
+                            items = listOf(
+                                ExpressionTexTalkNode(
+                                    children = listOf(
+                                        gluedCmds[0]
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            Statement(
+                text = newExp.toCode(),
+                texTalkRoot = Validation.success(newExp)
+            )
         } else {
             it
         }
     }
 }
-*/
+
+private fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {
+    val cmds = mutableListOf<Command>()
+    for (n in node.children) {
+        if (n !is Command) {
+            throw Error("Unexpected non-Command node")
+        }
+        cmds.add(n)
+    }
+    return glueCommands(cmds)
+}
 
 fun glueCommands(commands: List<Command>): List<Command> {
     if (commands.isEmpty()) {

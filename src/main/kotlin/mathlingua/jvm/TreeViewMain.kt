@@ -25,6 +25,11 @@ import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.validateDocument
 import mathlingua.common.textalk.TexTalkNode
+import mathlingua.common.transform.glueCommands
+import mathlingua.common.transform.moveInlineCommandsToIsNode
+import mathlingua.common.transform.replaceIsNodes
+import mathlingua.common.transform.replaceRepresents
+import mathlingua.common.transform.separateIsStatements
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import java.awt.BorderLayout
@@ -164,7 +169,13 @@ object TreeViewMain {
                         }
                         signaturesList.text = sigBuilder.toString()
 
-                        outputArea.text = doc.toCode(false, 0)
+                        var transformed = separateIsStatements(doc)
+                        transformed = glueCommands(transformed)
+                        transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { true })
+                        transformed = replaceRepresents(transformed, doc.represents, { true })
+                        transformed = replaceIsNodes(transformed, doc.defines, { true })
+
+                        outputArea.text = transformed.toCode(false, 0)
                         phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
                         val numRows = phase2Tree.rowCount
                         if (numRows > 0) {

@@ -61,8 +61,8 @@ object TreeViewMain {
             println("Could not set the look and feel to Nimbus: $e")
         }
 
-        val fontSize = 14
-        val fontName = "Brass Mono"
+        val fontSize = 18
+        val fontName = "Courier New"
         val font = Font(fontName, Font.PLAIN, fontSize)
         val boldFont = Font(fontName, Font.BOLD, fontSize)
 
@@ -97,6 +97,10 @@ object TreeViewMain {
             override fun keyTyped(keyEvent: KeyEvent) {}
 
             override fun keyReleased(keyEvent: KeyEvent) {
+                if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
+                    return
+                }
+
                 SwingUtilities.invokeLater {
                     val errorBuilder = StringBuilder()
                     var doc: Document? = null

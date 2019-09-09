@@ -71,7 +71,6 @@ fun moveInlineCommandsToIsNode(
     }
 }
 
-
 fun moveStatementInlineCommandsToIsNode(
     seed: Int,
     stmt: Statement,
@@ -118,7 +117,7 @@ fun moveStatementInlineCommandsToIsNode(
 
     return ForGroup(
         forSection = ForSection(
-            targets = cmdsToProcess.map { Identifier(name = cmdToReplacement[it]!! ) }
+            targets = cmdsToProcess.map { Identifier(name = cmdToReplacement[it]!!) }
         ),
         whereSection = WhereSection(
             clauses = ClauseListNode(

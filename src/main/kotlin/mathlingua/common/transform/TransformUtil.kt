@@ -41,8 +41,39 @@ import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getAncestry
 
 fun moveInlineCommandsToIsNode(
+    node: Phase2Node,
+    shouldProcessChalk: (node: Phase2Node) -> Boolean,
+    shouldProcessTex: (node: TexTalkNode) -> Boolean
+): Phase2Node {
+    var seed = 0
+    return node.transform {
+        if (it is ClauseListNode) {
+            val newClauses = mutableListOf<Clause>()
+            for (c in it.clauses) {
+                if (c is Statement) {
+                    val transformed = moveStatementInlineCommandsToIsNode(
+                        seed++,
+                        c,
+                        shouldProcessChalk,
+                        shouldProcessTex
+                    )
+                    newClauses.add(transformed)
+                } else {
+                    newClauses.add(c)
+                }
+            }
+            ClauseListNode(
+                clauses = newClauses
+            )
+        } else {
+            it
+        }
+    }
+}
+
+fun moveStatementInlineCommandsToIsNode(
+    seed: Int,
     stmt: Statement,
-    sigToName: Map<String, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (node: TexTalkNode) -> Boolean
 ): Clause {
@@ -64,40 +95,33 @@ fun moveInlineCommandsToIsNode(
         return !getAncestry(root, node).any { it is IsTexTalkNode }
     }
 
-    val commandsFound = mutableListOf<Command>()
-    val newNode = replaceCommands(stmt, sigToName, commandsFound, shouldProcessChalk, ::shouldProcessTexNodes) as Clause
+    val commandsFound = findCommands(root)
+    val cmdToReplacement = mutableMapOf<Command, String>()
+    var count = seed
+    for (cmd in commandsFound) {
+        if (shouldProcessTex(cmd)) {
+            cmdToReplacement[cmd] = "\$${count++}"
+        }
+    }
+
+    val cmdsToProcess = cmdToReplacement.keys
+    val newNode = replaceCommands(stmt, cmdToReplacement, shouldProcessChalk, ::shouldProcessTexNodes) as Clause
 
     if (commandsFound.isEmpty()) {
         return stmt
     }
 
-    val uniqueSignatures = commandsFound.map {
-        getCommandSignature(it).toCode()
-    }.distinct().filter { sigToName.containsKey(it) }
-
-    if (uniqueSignatures.isEmpty()) {
+    if (cmdsToProcess.isEmpty()) {
         return stmt
     }
 
-    val tmp = mutableSetOf<String>()
-    val distinctCommands = mutableListOf<Command>()
-    for (cmd in commandsFound) {
-        val code = cmd.toCode()
-        if (!tmp.contains(code)) {
-            distinctCommands.add(cmd)
-            tmp.add(code)
-        }
-    }
-
-    println(sigToName)
-
     return ForGroup(
         forSection = ForSection(
-            targets = uniqueSignatures.map { println("it=" + it); Identifier(name = sigToName[it]!!) }
+            targets = cmdsToProcess.map { Identifier(name = cmdToReplacement[it]!!) }
         ),
         whereSection = WhereSection(
             clauses = ClauseListNode(
-                clauses = distinctCommands.map {
+                clauses = commandsFound.map {
                     val isNode = IsTexTalkNode(
                         lhs = ParametersTexTalkNode(
                             items = listOf(
@@ -105,7 +129,7 @@ fun moveInlineCommandsToIsNode(
                                     children = listOf(
                                         TextTexTalkNode(
                                             type = TexTalkNodeType.Identifier,
-                                            text = sigToName[getCommandSignature(it).toCode()]!!
+                                            text = cmdToReplacement[it]!!
                                         )
                                     )
                                 )

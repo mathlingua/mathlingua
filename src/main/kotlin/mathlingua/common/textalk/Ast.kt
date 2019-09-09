@@ -35,7 +35,6 @@ enum class TexTalkNodeType {
 }
 
 interface TexTalkNode {
-    var parent: TexTalkNode?
     val type: TexTalkNodeType
     fun toCode(): String
     fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit)
@@ -46,7 +45,6 @@ data class IsTexTalkNode(
     val lhs: ParametersTexTalkNode,
     val rhs: ParametersTexTalkNode
 ) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Is
@@ -73,7 +71,6 @@ data class IsTexTalkNode(
 }
 
 data class ColonEqualsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.ColonEquals
@@ -106,7 +103,6 @@ data class CommandPart(
     val groups: List<GroupTexTalkNode>,
     val namedGroups: List<NamedGroupTexTalkNode>
 ) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.CommandPart
@@ -164,7 +160,6 @@ data class CommandPart(
 }
 
 data class Command(val parts: List<CommandPart>) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Command
@@ -192,7 +187,6 @@ data class Command(val parts: List<CommandPart>) : TexTalkNode {
 }
 
 data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Expression
@@ -222,7 +216,6 @@ data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode 
 }
 
 data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Parameters
@@ -254,7 +247,6 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
 }
 
 data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: ParametersTexTalkNode) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override fun toCode(): String {
         val prefix: String
@@ -298,7 +290,6 @@ data class NamedGroupTexTalkNode(
     val name: TextTexTalkNode,
     val group: GroupTexTalkNode
 ) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.NamedGroup
@@ -327,7 +318,6 @@ data class SubSupTexTalkNode(
     val sub: GroupTexTalkNode?,
     val sup: GroupTexTalkNode?
 ) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.SubSup
@@ -365,7 +355,6 @@ data class SubSupTexTalkNode(
 }
 
 data class TextTexTalkNode(override val type: TexTalkNodeType, val text: String) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override fun toCode(): String {
         return text
@@ -385,7 +374,6 @@ data class TexTalkToken(
     val row: Int,
     val column: Int
 ) : TexTalkNode {
-    override var parent: TexTalkNode? = null
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Token
@@ -420,4 +408,31 @@ enum class TexTalkTokenType {
     ColonEquals,
     Is,
     Invalid
+}
+
+fun getAncestry(root: TexTalkNode, node: TexTalkNode): List<TexTalkNode> {
+    val path = mutableListOf<TexTalkNode>()
+    getAncestryImpl(root, node, path)
+    // 'node' itself shouldn't be in the ancestry
+    if (path.isNotEmpty()) {
+        path.removeAt(path.size - 1)
+    }
+    return path.reversed()
+}
+
+private fun getAncestryImpl(root: TexTalkNode, node: TexTalkNode, path: MutableList<TexTalkNode>) {
+    if (root == node) {
+        path.add(node)
+        return
+    }
+
+    path.add(root)
+    root.forEach {
+        if (path.isEmpty() || path.last() != node) {
+            getAncestryImpl(it, node, path)
+        }
+    }
+    if (path.isEmpty() || path.last() != node) {
+        path.removeAt(path.size - 1)
+    }
 }

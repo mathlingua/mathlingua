@@ -41,10 +41,17 @@ import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getAncestry
 
 fun moveInlineCommandsToIsNode(
+    defs: List<DefinesGroup>,
     node: Phase2Node,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (node: TexTalkNode) -> Boolean
 ): Phase2Node {
+    val knownDefSigs = defs.map { it.signature }.filterNotNull().toSet()
+    fun realShouldProcessTex(node: TexTalkNode): Boolean {
+        return shouldProcessTex(node) &&
+            (node !is Command || knownDefSigs.contains(getCommandSignature(node).toCode()))
+    }
+
     var seed = 0
     return node.transform {
         if (it is ClauseListNode) {
@@ -55,7 +62,7 @@ fun moveInlineCommandsToIsNode(
                         seed++,
                         c,
                         shouldProcessChalk,
-                        shouldProcessTex
+                        ::realShouldProcessTex
                     )
                     newClauses.add(transformed)
                 } else {

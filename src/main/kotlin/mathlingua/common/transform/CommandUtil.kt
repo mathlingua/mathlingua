@@ -50,7 +50,7 @@ fun replaceCommands(
     node: Phase2Node,
     cmdToReplacement: Map<Command, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
-    shouldProcessTex: (node: TexTalkNode) -> Boolean
+    shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
 ): Phase2Node {
     return node.transform {
         if (!shouldProcessChalk(it) || it !is Statement) {
@@ -61,7 +61,7 @@ fun replaceCommands(
                 it
             } else {
                 val root = it.texTalkRoot.value!!
-                val newRoot = replaceCommands(root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
+                val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
                 Statement(
                     text = newRoot.toCode(),
                     texTalkRoot = Validation.success(newRoot)
@@ -73,11 +73,12 @@ fun replaceCommands(
 
 fun replaceCommands(
     texTalkNode: TexTalkNode,
+    root: TexTalkNode,
     cmdToReplacement: Map<Command, String>,
-    shouldProcess: (node: TexTalkNode) -> Boolean
+    shouldProcess: (root: TexTalkNode, node: TexTalkNode) -> Boolean
 ): TexTalkNode {
     return texTalkNode.transform {
-        if (!shouldProcess(it) || it !is Command) {
+        if (!shouldProcess(root, it) || it !is Command) {
             it
         } else {
             if (!cmdToReplacement.containsKey(it)) {

@@ -33,9 +33,11 @@ import mathlingua.common.transform.separateIsStatements
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import java.awt.BorderLayout
+import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
+import javax.swing.JCheckBox
 import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.JScrollPane
@@ -74,6 +76,19 @@ object Playground {
 
         val signaturesList = JTextArea(20, 20)
         signaturesList.font = font
+
+        val separateIsBox = JCheckBox("Separate is statements", true)
+        val glueCommands = JCheckBox("Glue commands", true)
+        val moveInLineIs = JCheckBox("Move inline is statements", true)
+        val replaceReps = JCheckBox("Replace represents", true)
+        val replaceIsNodes = JCheckBox("Replace is nodes", true)
+
+        val statusPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+        statusPanel.add(separateIsBox)
+        statusPanel.add(glueCommands)
+        statusPanel.add(moveInLineIs)
+        statusPanel.add(replaceReps)
+        statusPanel.add(replaceIsNodes)
 
         val errorArea = JTextArea()
         errorArea.font = font
@@ -173,11 +188,27 @@ object Playground {
                         }
                         signaturesList.text = sigBuilder.toString()
 
-                        var transformed = separateIsStatements(doc)
-                        transformed = glueCommands(transformed)
-                        transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { true })
-                        transformed = replaceRepresents(transformed, doc.represents, { true })
-                        transformed = replaceIsNodes(transformed, doc.defines, { true })
+                        var transformed = doc as Phase2Node
+
+                        if (separateIsBox.isSelected) {
+                            transformed = separateIsStatements(doc)
+                        }
+
+                        if (glueCommands.isSelected) {
+                            transformed = glueCommands(transformed)
+                        }
+
+                        if (moveInLineIs.isSelected) {
+                            transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { root, node -> true })
+                        }
+
+                        if (replaceReps.isSelected) {
+                            transformed = replaceRepresents(transformed, doc.represents, { true })
+                        }
+
+                        if (replaceIsNodes.isSelected) {
+                            transformed = replaceIsNodes(transformed, doc.defines, { true })
+                        }
 
                         outputArea.text = transformed.toCode(false, 0)
                         phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
@@ -216,6 +247,7 @@ object Playground {
 
         val mainPanel = JPanel(BorderLayout())
         mainPanel.add(treePane, BorderLayout.CENTER)
+        mainPanel.add(statusPanel, BorderLayout.SOUTH)
 
         val frame = JFrame()
         frame.setSize(1300, 900)

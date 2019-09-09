@@ -40,7 +40,9 @@ data class AssumingSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "assuming:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -226,7 +228,9 @@ data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "means:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -253,7 +257,9 @@ data class ResultSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Result:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -280,7 +286,9 @@ data class AxiomSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Axiom:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -307,7 +315,9 @@ data class ConjectureSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Conjecture:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -334,7 +344,9 @@ data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "suchThat:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -361,7 +373,9 @@ data class ThatSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "that:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -388,7 +402,9 @@ data class IfSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "if:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -415,7 +431,9 @@ data class IffSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "iff:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -442,7 +460,9 @@ data class ThenSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "then:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -469,7 +489,9 @@ data class WhereSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "where:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -496,7 +518,9 @@ data class NotSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "not:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }
@@ -523,7 +547,9 @@ data class OrSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "or:"))
-        builder.append('\n')
+        if (clauses.clauses.isNotEmpty()) {
+            builder.append('\n')
+        }
         builder.append(clauses.toCode(true, indent + 2))
         return builder.toString()
     }

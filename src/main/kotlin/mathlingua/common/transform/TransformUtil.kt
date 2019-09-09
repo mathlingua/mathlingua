@@ -44,12 +44,26 @@ fun moveInlineCommandsToIsNode(
     defs: List<DefinesGroup>,
     node: Phase2Node,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
-    shouldProcessTex: (node: TexTalkNode) -> Boolean
+    shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
 ): Phase2Node {
     val knownDefSigs = defs.map { it.signature }.filterNotNull().toSet()
-    fun realShouldProcessTex(node: TexTalkNode): Boolean {
-        return shouldProcessTex(node) &&
-            (node !is Command || knownDefSigs.contains(getCommandSignature(node).toCode()))
+    fun realShouldProcessTex(root: TexTalkNode, node: TexTalkNode): Boolean {
+        if (!shouldProcessTex(root, node)) {
+            return false
+        }
+
+        if (node is Command && !knownDefSigs.contains(getCommandSignature(node).toCode())) {
+            return false
+        }
+
+        val parents = getAncestry(root, node)
+        for (p in parents) {
+            if (p is IsTexTalkNode) {
+                return false
+            }
+        }
+
+        return true
     }
 
     var seed = 0
@@ -82,7 +96,7 @@ fun moveStatementInlineCommandsToIsNode(
     seed: Int,
     stmt: Statement,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
-    shouldProcessTex: (node: TexTalkNode) -> Boolean
+    shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
 ): Clause {
     val validation = stmt.texTalkRoot
     if (!validation.isSuccessful) {
@@ -94,8 +108,8 @@ fun moveStatementInlineCommandsToIsNode(
         return stmt
     }
 
-    fun shouldProcessTexNodes(node: TexTalkNode): Boolean {
-        if (!shouldProcessTex(node)) {
+    fun shouldProcessTexNodes(root: TexTalkNode, node: TexTalkNode): Boolean {
+        if (!shouldProcessTex(root, node)) {
             return false
         }
 
@@ -106,7 +120,7 @@ fun moveStatementInlineCommandsToIsNode(
     val cmdToReplacement = mutableMapOf<Command, String>()
     var count = seed
     for (cmd in commandsFound) {
-        if (shouldProcessTex(cmd)) {
+        if (shouldProcessTex(root, cmd)) {
             cmdToReplacement[cmd] = "\$${count++}"
         }
     }

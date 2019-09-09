@@ -42,7 +42,6 @@ import mathlingua.common.textalk.getAncestry
 
 fun moveInlineCommandsToIsNode(
     node: Phase2Node,
-    sigToProcess: Set<String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (node: TexTalkNode) -> Boolean
 ): Phase2Node {
@@ -55,7 +54,6 @@ fun moveInlineCommandsToIsNode(
                     val transformed = moveStatementInlineCommandsToIsNode(
                         seed++,
                         c,
-                        sigToProcess,
                         shouldProcessChalk,
                         shouldProcessTex
                     )
@@ -77,7 +75,6 @@ fun moveInlineCommandsToIsNode(
 fun moveStatementInlineCommandsToIsNode(
     seed: Int,
     stmt: Statement,
-    sigToProcess: Set<String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (node: TexTalkNode) -> Boolean
 ): Clause {
@@ -103,7 +100,7 @@ fun moveStatementInlineCommandsToIsNode(
     val cmdToReplacement = mutableMapOf<Command, String>()
     var count = seed
     for (cmd in commandsFound) {
-        if (sigToProcess.contains(getCommandSignature(cmd).toCode())) {
+        if (shouldProcessTex(cmd)) {
             cmdToReplacement[cmd] = "\$${count++}"
         }
     }

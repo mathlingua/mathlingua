@@ -1,6 +1,8 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.textalk.Command
+import mathlingua.common.transform.getCommandSignature
 import mathlingua.common.transform.moveInlineCommandsToIsNode
 
 object SignatureTestBed {
@@ -16,6 +18,7 @@ object SignatureTestBed {
             Result:
             . 'a = \continuous.function'
             . 'b := \continuous.function'
+            . 'c = \function'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -26,6 +29,8 @@ object SignatureTestBed {
         println("----------------------------------------")
 
         val res = result.document!!.results[0]
-        println(moveInlineCommandsToIsNode(res, setOf("\\continuous.function"), { true }, { true }).toCode(false, 0))
+        println(moveInlineCommandsToIsNode(res, { true }, {
+            it is Command && getCommandSignature(it).toCode() == "\\continuous.function"
+        }).toCode(false, 0))
     }
 }

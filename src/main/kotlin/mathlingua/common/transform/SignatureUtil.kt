@@ -70,7 +70,7 @@ fun getCommandSignature(command: Command): Command {
     )
 }
 
-fun findAllSignatures(node: Phase2Node): Set<String> {
+fun locateAllSignatures(node: Phase2Node): Set<String> {
     val signatures = mutableSetOf<String>()
     findAllSignaturesImpl(node, signatures)
     return signatures

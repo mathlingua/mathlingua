@@ -1,9 +1,6 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.textalk.Command
-import mathlingua.common.transform.getCommandSignature
-import mathlingua.common.transform.moveInlineCommandsToIsNode
 
 object SignatureTestBed {
     @JvmStatic

@@ -38,28 +38,22 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
-import mathlingua.common.textalk.populateParents
-
-private fun hasIsNodeParent(node: TexTalkNode?): Boolean {
-    if (node == null) {
-        return false
-    }
-
-    if (node is IsTexTalkNode) {
-        return true
-    }
-
-    return hasIsNodeParent(node.parent)
-}
+import mathlingua.common.textalk.getAncestry
 
 fun moveInlineCommandsToIsNode(
-    node: Clause,
+    stmt: Statement,
     sigToName: Map<String, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (node: TexTalkNode) -> Boolean
 ): Clause {
-    if (!shouldProcessChalk(node)) {
-        return node
+    val validation = stmt.texTalkRoot
+    if (!validation.isSuccessful) {
+        return stmt
+    }
+    val root = validation.value!!
+
+    if (!shouldProcessChalk(stmt)) {
+        return stmt
     }
 
     fun shouldProcessTexNodes(node: TexTalkNode): Boolean {
@@ -67,19 +61,23 @@ fun moveInlineCommandsToIsNode(
             return false
         }
 
-        return !hasIsNodeParent(node)
+        return !getAncestry(root, node).any { it is IsTexTalkNode }
     }
 
     val commandsFound = mutableListOf<Command>()
-    val newNode = replaceCommands(node, sigToName, commandsFound, shouldProcessChalk, ::shouldProcessTexNodes) as Clause
+    val newNode = replaceCommands(stmt, sigToName, commandsFound, shouldProcessChalk, ::shouldProcessTexNodes) as Clause
 
     if (commandsFound.isEmpty()) {
-        return node
+        return stmt
     }
 
     val uniqueSignatures = commandsFound.map {
         getCommandSignature(it).toCode()
-    }.distinct()
+    }.distinct().filter { sigToName.containsKey(it) }
+
+    if (uniqueSignatures.isEmpty()) {
+        return stmt
+    }
 
     val tmp = mutableSetOf<String>()
     val distinctCommands = mutableListOf<Command>()
@@ -91,9 +89,11 @@ fun moveInlineCommandsToIsNode(
         }
     }
 
+    println(sigToName)
+
     return ForGroup(
         forSection = ForSection(
-            targets = uniqueSignatures.map { Identifier(name = sigToName[it]!!) }
+            targets = uniqueSignatures.map { println("it=" + it); Identifier(name = sigToName[it]!!) }
         ),
         whereSection = WhereSection(
             clauses = ClauseListNode(
@@ -123,10 +123,8 @@ fun moveInlineCommandsToIsNode(
                     Statement(
                         text = isNode.toCode(),
                         texTalkRoot = Validation.success(
-                            populateParents(
-                                ExpressionTexTalkNode(
-                                    children = listOf(isNode)
-                                )
+                            ExpressionTexTalkNode(
+                                children = listOf(isNode)
                             )
                         )
                     )

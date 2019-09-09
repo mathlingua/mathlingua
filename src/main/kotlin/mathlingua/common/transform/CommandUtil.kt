@@ -29,7 +29,6 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
-import mathlingua.common.textalk.populateParents
 
 fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     val commands = mutableListOf<Command>()
@@ -79,7 +78,7 @@ fun replaceCommands(
     commandsFound: MutableList<Command>,
     shouldProcess: (node: TexTalkNode) -> Boolean
 ): TexTalkNode {
-    return populateParents(texTalkNode).transform {
+    return texTalkNode.transform {
         if (!shouldProcess(it) || it !is Command) {
             it
         } else {

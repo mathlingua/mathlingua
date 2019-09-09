@@ -2,19 +2,20 @@ package mathlingua.jvm
 
 import mathlingua.common.MathLingua
 import mathlingua.common.chalktalk.phase2.Statement
-import mathlingua.common.textalk.Command
-import mathlingua.common.textalk.TexTalkNode
-import mathlingua.common.textalk.getAncestry
-import mathlingua.common.transform.findCommands
+import mathlingua.common.transform.moveInlineCommandsToIsNode
 
 object SignatureTestBed {
     @JvmStatic
     fun main(args: Array<String>) {
         val text = """
-            [\a \b]
-            Represents:
-            that:
-            . '\command:in{x + \some{\target}}'
+            [\continuous.function]
+            Defines: f
+            means:
+            . '\something'
+            
+            
+            Result:
+            . 'a = \continuous.function'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -24,19 +25,8 @@ object SignatureTestBed {
         println(text)
         println("----------------------------------------")
 
-        val rep = result.document!!.represents[0]
-        val stmt = rep.thatSection.clauses.clauses[0] as Statement
-        val root = stmt.texTalkRoot.value!!
-        val commands = findCommands(root)
-        lateinit var target: TexTalkNode
-        for (c in commands) {
-            if (c.parts[0].name.text == "target") {
-                target = c
-            }
-        }
-        var i = 0
-        for (item in getAncestry(root, target)) {
-            println("${i++}: " + item)
-        }
+        val res = result.document!!.results[0]
+        val stmt = res.resultSection.clauses.clauses[0] as Statement
+        println(moveInlineCommandsToIsNode(stmt, mapOf("\\continuous.function" to "Q"), { true }, { true }).toCode(false, 0))
     }
 }

@@ -31,14 +31,6 @@ fun newTexTalkParser(): TexTalkParser {
     return TexTalkParserImpl()
 }
 
-fun <T : TexTalkNode> populateParents(node: T): T {
-    node.forEach {
-        it.parent = node
-        populateParents(it)
-    }
-    return node
-}
-
 private val INVALID = TexTalkToken("INVALID", TexTalkTokenType.Invalid, -1, -1)
 
 class TexTalkParserImpl : TexTalkParser {
@@ -59,9 +51,7 @@ class TexTalkParserImpl : TexTalkParser {
 
         fun parse(): ExpressionTexTalkNode {
             val exp = expression(null) ?: ExpressionTexTalkNode(emptyList())
-            val result = resolveColonEqualsNode(resolveIsNode(exp)) as ExpressionTexTalkNode
-            populateParents(result)
-            return result
+            return resolveColonEqualsNode(resolveIsNode(exp)) as ExpressionTexTalkNode
         }
 
         private fun resolveIsNode(texTalkNode: TexTalkNode): TexTalkNode {

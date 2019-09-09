@@ -20,6 +20,7 @@ import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase2.Clause
 import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
+import mathlingua.common.chalktalk.phase2.Document
 import mathlingua.common.chalktalk.phase2.ForGroup
 import mathlingua.common.chalktalk.phase2.ForSection
 import mathlingua.common.chalktalk.phase2.Identifier
@@ -202,33 +203,46 @@ fun replaceRepresents(
             return node
         }
 
-        if (node !is Statement) {
+        if (node !is ClauseListNode) {
             return node
         }
 
-        if (!node.texTalkRoot.isSuccessful ||
-            node.texTalkRoot.value!!.children.size != 1 ||
-            node.texTalkRoot.value.children[0] !is Command) {
-            return node
+        val newClauses = mutableListOf<Clause>()
+
+        for (clause in node.clauses) {
+            if (clause !is Statement) {
+                newClauses.add(clause)
+                continue
+            }
+
+            if (!clause.texTalkRoot.isSuccessful ||
+                clause.texTalkRoot.value!!.children.size != 1 ||
+                clause.texTalkRoot.value.children[0] !is Command
+            ) {
+                newClauses.add(clause)
+                continue
+            }
+
+            val command = clause.texTalkRoot.value.children[0] as Command
+            val sig = getCommandSignature(command).toCode()
+
+            if (!repMap.containsKey(sig)) {
+                return node
+            }
+
+            val rep = repMap[sig]!!
+            val cmdVars = getVars(command)
+            val defIndirectVars = getRepresentsIdVars(rep)
+
+            val map = mutableMapOf<String, String>()
+            for (i in cmdVars.indices) {
+                map[defIndirectVars[i]] = cmdVars[i]
+            }
+
+            newClauses.add(renameVars(buildIfThen(rep), map) as Clause)
         }
 
-        val command = node.texTalkRoot.value.children[0] as Command
-        val sig = getCommandSignature(command).toCode()
-
-        if (!repMap.containsKey(sig)) {
-            return node
-        }
-
-        val rep = repMap[sig]!!
-        val cmdVars = getVars(command)
-        val defIndirectVars = getRepresentsIdVars(rep)
-
-        val map = mutableMapOf<String, String>()
-        for (i in cmdVars.indices) {
-            map[defIndirectVars[i]] = cmdVars[i]
-        }
-
-        return renameVars(buildIfThen(rep), map)
+        return ClauseListNode(clauses = newClauses)
     }
 
     return node.transform(::chalkTransformer)
@@ -366,4 +380,32 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
         vars.addAll(getVars(rep.id.texTalkRoot.value!!))
     }
     return vars
+}
+
+fun fullExpandOnce(doc: Document): Document {
+    var transformed = separateIsStatements(doc)
+    transformed = glueCommands(transformed)
+    transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { root, node -> true })
+    transformed = replaceRepresents(transformed, doc.represents, { true })
+    return replaceIsNodes(transformed, doc.defines, { true }) as Document
+}
+
+fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
+    val snapshots = mutableSetOf<String>()
+
+    var transformed = doc
+    var previousCode = transformed.toCode(false, 0)
+    snapshots.add(previousCode)
+
+    for (i in 0 until maxSteps) {
+        transformed = fullExpandOnce(transformed)
+        val code = transformed.toCode(false, 0)
+        if (snapshots.contains(code) || previousCode == code) {
+            break
+        }
+        previousCode = code
+        snapshots.add(previousCode)
+    }
+
+    return transformed
 }

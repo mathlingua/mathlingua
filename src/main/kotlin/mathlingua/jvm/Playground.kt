@@ -25,6 +25,7 @@ import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.validateDocument
 import mathlingua.common.textalk.TexTalkNode
+import mathlingua.common.transform.fullExpandComplete
 import mathlingua.common.transform.glueCommands
 import mathlingua.common.transform.moveInlineCommandsToIsNode
 import mathlingua.common.transform.replaceIsNodes
@@ -83,12 +84,24 @@ object Playground {
         val replaceReps = JCheckBox("Replace represents", true)
         val replaceIsNodes = JCheckBox("Replace is nodes", true)
 
+        val completeExpand = JCheckBox("Complete expansion", false)
+        completeExpand.addActionListener {
+            if (completeExpand.isSelected) {
+                separateIsBox.isSelected = false
+                glueCommands.isSelected = false
+                moveInLineIs.isSelected = false
+                replaceReps.isSelected = false
+                replaceIsNodes.isSelected = false
+            }
+        }
+
         val statusPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         statusPanel.add(separateIsBox)
         statusPanel.add(glueCommands)
         statusPanel.add(moveInLineIs)
         statusPanel.add(replaceReps)
         statusPanel.add(replaceIsNodes)
+        statusPanel.add(completeExpand)
 
         val errorArea = JTextArea()
         errorArea.font = font
@@ -208,6 +221,10 @@ object Playground {
 
                         if (replaceIsNodes.isSelected) {
                             transformed = replaceIsNodes(transformed, doc.defines, { true })
+                        }
+
+                        if (completeExpand.isSelected) {
+                            transformed = fullExpandComplete(doc)
                         }
 
                         outputArea.text = transformed.toCode(false, 0)

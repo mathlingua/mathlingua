@@ -49,7 +49,7 @@ import javax.swing.WindowConstants
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
-object TreeViewMain {
+object Playground {
 
     @JvmStatic
     fun main(args: Array<String>) {

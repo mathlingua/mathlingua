@@ -20,6 +20,7 @@ import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
@@ -97,3 +98,25 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
 
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
+
+fun glueCommands(node: ExpressionTexTalkNode): ExpressionTexTalkNode {
+    val newChildren = mutableListOf<TexTalkNode>()
+    var i = 0
+    while (i < node.children.size) {
+        val child = node.children[i++]
+        if (child is Command) {
+            val parts = mutableListOf<CommandPart>()
+            parts.addAll(child.parts)
+            while (i < node.children.size && node.children[i] is Command) {
+                val cmd = node.children[i++] as Command
+                parts.addAll(cmd.parts)
+            }
+            newChildren.add(Command(parts = parts))
+
+        } else {
+            newChildren.add(child)
+        }
+    }
+    return ExpressionTexTalkNode(children = newChildren)
+}
+

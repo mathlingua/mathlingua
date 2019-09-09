@@ -1,30 +1,20 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.chalktalk.phase2.DefinesGroup
-import mathlingua.common.transform.replaceIsNodes
+import mathlingua.common.chalktalk.phase2.Statement
+import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.CommandPart
+import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.IsTexTalkNode
+import mathlingua.common.textalk.TexTalkNode
+import mathlingua.common.transform.glueCommands
 
 object SignatureTestBed {
     @JvmStatic
     fun main(args: Array<String>) {
         val text = """
-            [\continuous.function:on{X}]
-            Defines: f
-            assuming: 'f is \function'
-            means:
-            . for: x
-              where: 'x \in X'
-              then:
-              . '\limit[t]_{x}{f(t)} = f(x)'
-
-
             Result:
-            . for: g, A
-              where:
-              . 'A is \set'
-              . 'g is \differentiable.function:on{A}'
-              then:
-              . 'g is \continuous.function:on{A}'
+            . 'x is \compact \set'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -34,22 +24,12 @@ object SignatureTestBed {
         println(text)
         println("----------------------------------------")
 
-        val defMap = mutableMapOf<String, DefinesGroup>()
-        val defs = result.document!!.defines
-        for (def in defs) {
-            val sig = def.signature
-            if (sig != null) {
-                defMap[sig] = def
-            }
-        }
-
         val res = result.document!!.results[0]
-
-        var count = 1
-        fun nextVar(): String {
-            return "#${count++}"
-        }
-
-        println(replaceIsNodes(res, defs) { true }.toCode(false, 0))
+        val stmt = res.resultSection.clauses.clauses[0] as Statement
+        val root = stmt.texTalkRoot.value!!
+        val isNode = root.children[0] as IsTexTalkNode
+        val rhsParameters = isNode.rhs
+        val param = rhsParameters.items[0]
+        println(glueCommands(param).toCode())
     }
 }

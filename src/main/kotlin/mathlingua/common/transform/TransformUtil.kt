@@ -41,6 +41,38 @@ import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getAncestry
 
 fun moveInlineCommandsToIsNode(
+    node: Phase2Node,
+    sigToName: Map<String, String>,
+    shouldProcessChalk: (node: Phase2Node) -> Boolean,
+    shouldProcessTex: (node: TexTalkNode) -> Boolean
+): Phase2Node {
+    return node.transform {
+        if (it is ClauseListNode) {
+            val newClauses = mutableListOf<Clause>()
+            for (c in it.clauses) {
+                if (c is Statement) {
+                    val transformed = moveInlineCommandsToIsNode(
+                        c,
+                        sigToName,
+                        shouldProcessChalk,
+                        shouldProcessTex
+                    )
+                    newClauses.add(transformed)
+                } else {
+                    newClauses.add(c)
+                }
+            }
+            ClauseListNode(
+                clauses = newClauses
+            )
+        } else {
+            it
+        }
+    }
+}
+
+
+fun moveInlineCommandsToIsNode(
     stmt: Statement,
     sigToName: Map<String, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,

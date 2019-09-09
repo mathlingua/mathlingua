@@ -1,7 +1,6 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.transform.moveInlineCommandsToIsNode
 
 object SignatureTestBed {
@@ -16,6 +15,7 @@ object SignatureTestBed {
             
             Result:
             . 'a = \continuous.function'
+            . 'b := \continuous.function'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -26,7 +26,6 @@ object SignatureTestBed {
         println("----------------------------------------")
 
         val res = result.document!!.results[0]
-        val stmt = res.resultSection.clauses.clauses[0] as Statement
-        println(moveInlineCommandsToIsNode(stmt, mapOf("\\continuous.function" to "Q"), { true }, { true }).toCode(false, 0))
+        println(moveInlineCommandsToIsNode(res, mapOf("\\continuous.function" to "Q"), { true }, { true }).toCode(false, 0))
     }
 }

@@ -56,7 +56,7 @@ object TreeViewMain {
             println("Could not set the look and feel to Nimbus: $e")
         }
 
-        val fontSize = 16
+        val fontSize = 14
         val fontName = "Brass Mono"
         val font = Font(fontName, Font.PLAIN, fontSize)
         val boldFont = Font(fontName, Font.BOLD, fontSize)

@@ -1,30 +1,17 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.chalktalk.phase2.DefinesGroup
-import mathlingua.common.transform.replaceIsNodes
+import mathlingua.common.transform.glueCommands
+import mathlingua.common.transform.separateIsStatements
 
 object SignatureTestBed {
     @JvmStatic
     fun main(args: Array<String>) {
         val text = """
-            [\continuous.function:on{X}]
-            Defines: f
-            assuming: 'f is \function'
-            means:
-            . for: x
-              where: 'x \in X'
-              then:
-              . '\limit[t]_{x}{f(t)} = f(x)'
-
-
-            Result:
-            . for: g, A
-              where:
-              . 'A is \set'
-              . 'g is \differentiable.function:on{A}'
-              then:
-              . 'g is \continuous.function:on{A}'
+            [\a \b]
+            Represents:
+            that:
+            . 'x, y is \a \b, \c'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -34,22 +21,7 @@ object SignatureTestBed {
         println(text)
         println("----------------------------------------")
 
-        val defMap = mutableMapOf<String, DefinesGroup>()
-        val defs = result.document!!.defines
-        for (def in defs) {
-            val sig = def.signature
-            if (sig != null) {
-                defMap[sig] = def
-            }
-        }
-
-        val res = result.document!!.results[0]
-
-        var count = 1
-        fun nextVar(): String {
-            return "#${count++}"
-        }
-
-        println(replaceIsNodes(res, defs) { true }.toCode(false, 0))
+        val rep = result.document!!.represents[0]
+        println(glueCommands(separateIsStatements(rep)).toCode(false, 0))
     }
 }

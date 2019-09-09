@@ -17,10 +17,15 @@
 package mathlingua.common.transform
 
 import mathlingua.common.Validation
+import mathlingua.common.chalktalk.phase2.Clause
+import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.IsTexTalkNode
+import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
@@ -96,4 +101,165 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     }
 
     texTalkNode.forEach { findCommandsImpl(it, commands) }
+}
+
+fun separateIsStatements(node: Phase2Node): Phase2Node {
+    return node.transform {
+        if (it is ClauseListNode) {
+            val newClauses = mutableListOf<Clause>()
+            for (clause in it.clauses) {
+                if (clause is Statement) {
+                    val separated = findSeparatedIsNodes(clause)
+                    if (separated == null) {
+                        newClauses.add(clause)
+                    } else {
+                        newClauses.addAll(separated.map {
+                            val root = ExpressionTexTalkNode(
+                                children = listOf(it)
+                            )
+                            Statement(
+                                text = root.toCode(),
+                                texTalkRoot = Validation.success(root)
+                            )
+                        })
+                    }
+                } else {
+                    newClauses.add(clause)
+                }
+            }
+            ClauseListNode(
+                clauses = newClauses
+            )
+        } else {
+            it
+        }
+    }
+}
+
+private fun findSeparatedIsNodes(node: Statement): List<IsTexTalkNode>? {
+    val validation = node.texTalkRoot
+    if (!validation.isSuccessful) {
+        return null
+    }
+
+    val root = node.texTalkRoot.value!!
+    return if (root.children.size == 1 && root.children[0] is IsTexTalkNode) {
+        val isNode = root.children[0] as IsTexTalkNode
+        separateIsStatementsUnder(isNode)
+    } else {
+        null
+    }
+}
+
+private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode> {
+    val result = mutableListOf<IsTexTalkNode>()
+    for (left in isNode.lhs.items) {
+        for (right in isNode.rhs.items) {
+            result.add(
+                IsTexTalkNode(
+                    lhs = ParametersTexTalkNode(
+                        items = listOf(left)
+                    ),
+                    rhs = ParametersTexTalkNode(
+                        items = listOf(right)
+                    )
+                )
+            )
+        }
+    }
+    return result
+}
+
+// this function requires that `is` nodes are separated
+// that is 'x is \a, \b' is separated as 'x is \a' and
+// 'x is \b'
+fun glueCommands(node: Phase2Node): Phase2Node {
+    return node.transform {
+        if (it is Statement &&
+            it.texTalkRoot.isSuccessful &&
+            it.texTalkRoot.value!!.children.all { c -> c is Command }) {
+            val exp = it.texTalkRoot.value
+            val cmds = getCommandsToGlue(exp)
+            val gluedCmds = glueCommands(cmds)
+            if (gluedCmds.size != 1) {
+                throw Error("Expected id $it to only contain a single glued command")
+            }
+            val newExp = ExpressionTexTalkNode(
+                children = listOf(
+                    gluedCmds[0]
+                )
+            )
+            Statement(
+                text = newExp.toCode(),
+                texTalkRoot = Validation.success(newExp)
+            )
+        } else if (it is Statement &&
+            it.texTalkRoot.isSuccessful &&
+            it.texTalkRoot.value!!.children.size == 1 &&
+            it.texTalkRoot.value.children[0] is IsTexTalkNode) {
+            val isNode = it.texTalkRoot.value!!.children[0] as IsTexTalkNode
+            if (isNode.rhs.items.size != 1) {
+                throw Error("Expected 'is' node $isNode to only contain a single rhs item")
+            }
+            val cmds = getCommandsToGlue(isNode.rhs.items[0])
+            val gluedCmds = glueCommands(cmds)
+            if (gluedCmds.size != 1) {
+                throw Error("Expected 'is' node $isNode to have only one glued rhs command")
+            }
+            val newExp = ExpressionTexTalkNode(
+                children = listOf(
+                    IsTexTalkNode(
+                        lhs = isNode.lhs,
+                        rhs = ParametersTexTalkNode(
+                            items = listOf(
+                                ExpressionTexTalkNode(
+                                    children = listOf(
+                                        gluedCmds[0]
+                                    )
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+            Statement(
+                text = newExp.toCode(),
+                texTalkRoot = Validation.success(newExp)
+            )
+        } else {
+            it
+        }
+    }
+}
+
+private fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {
+    val cmds = mutableListOf<Command>()
+    for (n in node.children) {
+        if (n !is Command) {
+            throw Error("Unexpected non-Command node")
+        }
+        cmds.add(n)
+    }
+    return glueCommands(cmds)
+}
+
+fun glueCommands(commands: List<Command>): List<Command> {
+    if (commands.isEmpty()) {
+        return emptyList()
+    }
+
+    if (commands.size == 1) {
+        return listOf(commands.first())
+    }
+
+    val last = commands.last()
+    val newCommands = mutableListOf<Command>()
+    for (i in 0 until commands.size - 1) {
+        val cmd = commands[i]
+        val parts = mutableListOf<CommandPart>()
+        parts.addAll(cmd.parts)
+        parts.addAll(last.parts)
+        newCommands.add(Command(parts = parts))
+    }
+    return newCommands
 }

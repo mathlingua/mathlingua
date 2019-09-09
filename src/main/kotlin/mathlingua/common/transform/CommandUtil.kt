@@ -177,6 +177,24 @@ fun glueCommands(node: Phase2Node): Phase2Node {
     return node.transform {
         if (it is Statement &&
             it.texTalkRoot.isSuccessful &&
+            it.texTalkRoot.value!!.children.all { c -> c is Command }) {
+            val exp = it.texTalkRoot.value
+            val cmds = getCommandsToGlue(exp)
+            val gluedCmds = glueCommands(cmds)
+            if (gluedCmds.size != 1) {
+                throw Error("Expected id $it to only contain a single glued command")
+            }
+            val newExp = ExpressionTexTalkNode(
+                children = listOf(
+                    gluedCmds[0]
+                )
+            )
+            Statement(
+                text = newExp.toCode(),
+                texTalkRoot = Validation.success(newExp)
+            )
+        } else if (it is Statement &&
+            it.texTalkRoot.isSuccessful &&
             it.texTalkRoot.value!!.children.size == 1 &&
             it.texTalkRoot.value.children[0] is IsTexTalkNode) {
             val isNode = it.texTalkRoot.value!!.children[0] as IsTexTalkNode

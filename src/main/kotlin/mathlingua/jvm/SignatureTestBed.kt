@@ -3,10 +3,7 @@ package mathlingua.jvm
 import mathlingua.common.MathLingua
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.textalk.Command
-import mathlingua.common.textalk.CommandPart
-import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.IsTexTalkNode
-import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.glueCommands
 
 object SignatureTestBed {
@@ -14,7 +11,7 @@ object SignatureTestBed {
     fun main(args: Array<String>) {
         val text = """
             Result:
-            . 'x is \compact \set'
+            . 'x is \closed:on{A} \almost.bounded{B} \unique \thing'
         """.trimIndent()
         val result = MathLingua().parse(text)
         for (err in result.errors) {
@@ -30,6 +27,15 @@ object SignatureTestBed {
         val isNode = root.children[0] as IsTexTalkNode
         val rhsParameters = isNode.rhs
         val param = rhsParameters.items[0]
-        println(glueCommands(param).toCode())
+        val cmds = mutableListOf<Command>()
+        for (node in param.children) {
+            if (node is Command) {
+                cmds.add(node)
+            }
+        }
+        val newCmds = glueCommands(cmds)
+        for (cmd in newCmds) {
+            println(cmd.toCode())
+        }
     }
 }

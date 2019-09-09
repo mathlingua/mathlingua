@@ -99,24 +99,23 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-fun glueCommands(node: ExpressionTexTalkNode): ExpressionTexTalkNode {
-    val newChildren = mutableListOf<TexTalkNode>()
-    var i = 0
-    while (i < node.children.size) {
-        val child = node.children[i++]
-        if (child is Command) {
-            val parts = mutableListOf<CommandPart>()
-            parts.addAll(child.parts)
-            while (i < node.children.size && node.children[i] is Command) {
-                val cmd = node.children[i++] as Command
-                parts.addAll(cmd.parts)
-            }
-            newChildren.add(Command(parts = parts))
-
-        } else {
-            newChildren.add(child)
-        }
+fun glueCommands(commands: List<Command>): List<Command> {
+    if (commands.isEmpty()) {
+        return emptyList()
     }
-    return ExpressionTexTalkNode(children = newChildren)
-}
 
+    if (commands.size == 1) {
+        return listOf(commands.first())
+    }
+
+    val last = commands.last()
+    val newCommands = mutableListOf<Command>()
+    for (i in 0 until commands.size - 1) {
+        val cmd = commands[i]
+        val parts = mutableListOf<CommandPart>()
+        parts.addAll(cmd.parts)
+        parts.addAll(last.parts)
+        newCommands.add(Command(parts = parts))
+    }
+    return newCommands
+}

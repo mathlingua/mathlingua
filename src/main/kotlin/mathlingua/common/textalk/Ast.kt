@@ -421,3 +421,30 @@ enum class TexTalkTokenType {
     Is,
     Invalid
 }
+
+fun getAncestry(root: TexTalkNode, node: TexTalkNode): List<TexTalkNode> {
+    val path = mutableListOf<TexTalkNode>()
+    getAncestryImpl(root, node, path)
+    // 'node' itself shouldn't be in the ancestry
+    if (path.isNotEmpty()) {
+        path.removeAt(path.size - 1)
+    }
+    return path.reversed()
+}
+
+private fun getAncestryImpl(root: TexTalkNode, node: TexTalkNode, path: MutableList<TexTalkNode>) {
+    if (root == node) {
+        path.add(node)
+        return
+    }
+
+    path.add(root)
+    root.forEach {
+        if (path.isEmpty() || path.last() != node) {
+            getAncestryImpl(it, node, path)
+        }
+    }
+    if (path.isEmpty() || path.last() != node) {
+        path.removeAt(path.size - 1)
+    }
+}

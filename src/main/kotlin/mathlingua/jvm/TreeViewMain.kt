@@ -24,9 +24,7 @@ import mathlingua.common.chalktalk.phase2.Document
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.validateDocument
-import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.TexTalkNode
-import mathlingua.common.transform.getCommandSignature
 import mathlingua.common.transform.glueCommands
 import mathlingua.common.transform.moveInlineCommandsToIsNode
 import mathlingua.common.transform.replaceIsNodes

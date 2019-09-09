@@ -26,6 +26,6 @@ object SignatureTestBed {
         println("----------------------------------------")
 
         val res = result.document!!.results[0]
-        println(moveInlineCommandsToIsNode(res, mapOf("\\continuous.function" to "Q"), { true }, { true }).toCode(false, 0))
+        println(moveInlineCommandsToIsNode(res, setOf("\\continuous.function"), { true }, { true }).toCode(false, 0))
     }
 }

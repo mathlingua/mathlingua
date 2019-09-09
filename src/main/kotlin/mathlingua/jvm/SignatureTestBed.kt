@@ -1,9 +1,6 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
-import mathlingua.common.textalk.Command
-import mathlingua.common.transform.getCommandSignature
-import mathlingua.common.transform.moveInlineCommandsToIsNode
 
 object SignatureTestBed {
     @JvmStatic
@@ -28,9 +25,9 @@ object SignatureTestBed {
         println(text)
         println("----------------------------------------")
 
-        val res = result.document!!.results[0]
-        println(moveInlineCommandsToIsNode(result.document!!.defines, res, { true }, {
-            it is Command && getCommandSignature(it).toCode() == "\\continuous.function"
-        }).toCode(false, 0))
+//        val res = result.document!!.results[0]
+//        println(moveInlineCommandsToIsNode(result.document!!.defines, res, { true }, {
+//            it is Command && getCommandSignature(it).toCode() == "\\continuous.function"
+//        }).toCode(false, 0))
     }
 }

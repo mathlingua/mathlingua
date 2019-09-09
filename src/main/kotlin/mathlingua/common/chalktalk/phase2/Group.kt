@@ -191,10 +191,10 @@ data class RepresentsGroup(
             signature = signature,
             id = id.transform(chalkTransformer) as Statement,
             representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
-            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection,
+            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
             thatSection = thatSection.transform(chalkTransformer) as ThatSection,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
         ))
     }
 }

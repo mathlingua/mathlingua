@@ -9,8 +9,8 @@ object SignatureTestBed {
     fun main(args: Array<String>) {
         val text = """
             [\a \b]
-            Defines: f
-            means:
+            Represents:
+            that:
             . 'x, y is \a \b, \c'
         """.trimIndent()
         val result = MathLingua().parse(text)
@@ -21,7 +21,7 @@ object SignatureTestBed {
         println(text)
         println("----------------------------------------")
 
-        val def = result.document!!.defines[0]
-        println(glueCommands(separateIsStatements(def)).toCode(false, 0))
+        val rep = result.document!!.represents[0]
+        println(glueCommands(separateIsStatements(rep)).toCode(false, 0))
     }
 }

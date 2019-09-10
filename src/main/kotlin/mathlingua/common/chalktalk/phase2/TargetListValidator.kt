@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -32,14 +34,13 @@ fun <T> validateTargetList(
 ): Validation<T> {
     val node = rawNode.resolve()
 
-    val validation =
-        validate(node, expectedName)
-    if (!validation.isSuccessful) {
-        return Validation.failure(validation.errors)
+    return when (val validation = validate(node, expectedName)) {
+        is ValidationSuccess -> {
+            val targets = validation.value.targets
+            return ValidationSuccess(builder(targets))
+        }
+        is ValidationFailure -> ValidationFailure(validation.errors)
     }
-
-    val targets = validation.value!!.targets
-    return Validation.success(builder(targets))
 }
 
 private fun validate(
@@ -83,15 +84,20 @@ private fun validate(
     }
 
     for (arg in args) {
-        val clauseValidation = validateClause(arg)
-        if (clauseValidation.isSuccessful) {
-            val clause = clauseValidation.value
-            if (clause is Target) {
-                targets.add(clause)
-                continue
+        var shouldContinue = false
+        when (val clauseValidation = validateClause(arg)) {
+            is ValidationSuccess -> {
+                val clause = clauseValidation.value
+                if (clause is Target) {
+                    targets.add(clause)
+                    shouldContinue = true
+                }
             }
-        } else {
-            errors.addAll(clauseValidation.errors)
+            is ValidationFailure -> errors.addAll(clauseValidation.errors)
+        }
+
+        if (shouldContinue) {
+            continue
         }
 
         errors.add(
@@ -103,6 +109,6 @@ private fun validate(
     }
 
     return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
-    } else Validation.success(TargetListSection(targets))
+        ValidationFailure(errors)
+    } else ValidationSuccess(TargetListSection(targets))
 }

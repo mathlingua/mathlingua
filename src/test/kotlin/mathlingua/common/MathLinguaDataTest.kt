@@ -28,15 +28,17 @@ internal class MathLinguaDataTest {
         val input = Files.readString(MATHLINGUA_SOURCE_FILE.toPath())
         val result = MathLingua().parse(input)
         val builder = StringBuilder()
-        for (err in result.errors) {
-            builder.append(
-                "ERROR: (${err.row + 1}, ${err.column + 1}) ${err.message}\n"
-            )
+        if (result is ValidationFailure) {
+            for (err in result.errors) {
+                builder.append(
+                    "ERROR: (${err.row + 1}, ${err.column + 1}) ${err.message}\n"
+                )
+            }
         }
         // The test should fail if there any errors.
         // This assertThat() is used so that the parse
         // errors are printed to the console.
         assertThat(builder.toString()).isEqualTo("")
-        assertThat(result.errors.size).isEqualTo(0)
+        assert(result is ValidationSuccess)
     }
 }

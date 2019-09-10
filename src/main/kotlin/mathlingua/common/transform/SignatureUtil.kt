@@ -16,6 +16,8 @@
 
 package mathlingua.common.transform
 
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.textalk.Command
@@ -38,15 +40,15 @@ fun getSignature(stmt: Statement): String? {
 }
 
 fun findAllStatementSignatures(stmt: Statement): Set<String> {
-    val rootValidation = stmt.texTalkRoot
-    if (!rootValidation.isSuccessful) {
-        return emptySet()
+    return when (val rootValidation = stmt.texTalkRoot) {
+        is ValidationSuccess -> {
+            val expressionNode = rootValidation.value
+            val signatures = mutableSetOf<String>()
+            findAllSignaturesImpl(expressionNode, signatures)
+            signatures
+        }
+        is ValidationFailure -> return emptySet()
     }
-
-    val expressionNode = rootValidation.value!!
-    val signatures = mutableSetOf<String>()
-    findAllSignaturesImpl(expressionNode, signatures)
-    return signatures
 }
 
 fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {

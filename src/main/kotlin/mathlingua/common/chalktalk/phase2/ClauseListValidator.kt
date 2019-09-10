@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -31,15 +33,10 @@ fun <T> validateClauseList(
     builder: (clauses: ClauseListNode) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-
-    val validation =
-        validate(node, expectedName)
-    if (!validation.isSuccessful) {
-        return Validation.failure(validation.errors)
+    return when (val validation = validate(node, expectedName)) {
+        is ValidationSuccess -> ValidationSuccess(builder(ClauseListNode(validation.value.clauses)))
+        is ValidationFailure -> ValidationFailure(validation.errors)
     }
-
-    val clauses = validation.value!!.clauses
-    return Validation.success(builder(ClauseListNode(clauses)))
 }
 
 private fun validate(node: Phase1Node, expectedName: String): Validation<ClauseListSection> {
@@ -75,17 +72,15 @@ private fun validate(node: Phase1Node, expectedName: String): Validation<ClauseL
 
     val clauses = ArrayList<Clause>()
     for (arg in args) {
-        val validation = validateClause(arg)
-        if (validation.isSuccessful) {
-            clauses.add(validation.value!!)
-        } else {
-            errors.addAll(validation.errors)
+        when (val validation = validateClause(arg)) {
+            is ValidationSuccess -> clauses.add(validation.value)
+            is ValidationFailure -> errors.addAll(validation.errors)
         }
     }
 
     return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
-    } else Validation.success(
+        ValidationFailure(errors)
+    } else ValidationSuccess(
         ClauseListSection(
             name.text,
             clauses

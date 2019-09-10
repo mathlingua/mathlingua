@@ -16,7 +16,8 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.Clause
 import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.Phase2Node
@@ -56,16 +57,16 @@ fun replaceCommands(
         if (!shouldProcessChalk(it) || it !is Statement) {
             it
         } else {
-            val validation = it.texTalkRoot
-            if (!validation.isSuccessful) {
-                it
-            } else {
-                val root = it.texTalkRoot.value!!
-                val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
-                Statement(
-                    text = newRoot.toCode(),
-                    texTalkRoot = Validation.success(newRoot)
-                )
+            when (val validation = it.texTalkRoot) {
+                is ValidationFailure -> it
+                is ValidationSuccess -> {
+                    val root = validation.value
+                    val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
+                    Statement(
+                        text = newRoot.toCode(),
+                        texTalkRoot = ValidationSuccess(newRoot)
+                    )
+                }
             }
         }
     }
@@ -115,7 +116,7 @@ fun separateIsStatements(node: Phase2Node): Phase2Node {
                             )
                             Statement(
                                 text = root.toCode(),
-                                texTalkRoot = Validation.success(root)
+                                texTalkRoot = ValidationSuccess(root)
                             )
                         })
                     }
@@ -133,17 +134,17 @@ fun separateIsStatements(node: Phase2Node): Phase2Node {
 }
 
 private fun findSeparatedIsNodes(node: Statement): List<IsTexTalkNode>? {
-    val validation = node.texTalkRoot
-    if (!validation.isSuccessful) {
-        return null
-    }
-
-    val root = node.texTalkRoot.value!!
-    return if (root.children.size == 1 && root.children[0] is IsTexTalkNode) {
-        val isNode = root.children[0] as IsTexTalkNode
-        separateIsStatementsUnder(isNode)
-    } else {
-        null
+    return when (val validation = node.texTalkRoot) {
+        is ValidationFailure -> null
+        is ValidationSuccess -> {
+            val root = validation.value
+            return if (root.children.size == 1 && root.children[0] is IsTexTalkNode) {
+                val isNode = root.children[0] as IsTexTalkNode
+                separateIsStatementsUnder(isNode)
+            } else {
+                null
+            }
+        }
     }
 }
 
@@ -172,8 +173,8 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 fun glueCommands(node: Phase2Node): Phase2Node {
     return node.transform {
         if (it is Statement &&
-            it.texTalkRoot.isSuccessful &&
-            it.texTalkRoot.value!!.children.all { c -> c is Command }) {
+            it.texTalkRoot is ValidationSuccess &&
+            it.texTalkRoot.value.children.all { c -> c is Command }) {
             val exp = it.texTalkRoot.value
             val cmds = getCommandsToGlue(exp)
             val gluedCmds = glueCommands(cmds)
@@ -187,11 +188,11 @@ fun glueCommands(node: Phase2Node): Phase2Node {
             )
             Statement(
                 text = newExp.toCode(),
-                texTalkRoot = Validation.success(newExp)
+                texTalkRoot = ValidationSuccess(newExp)
             )
         } else if (it is Statement &&
-            it.texTalkRoot.isSuccessful &&
-            it.texTalkRoot.value!!.children.size == 1 &&
+            it.texTalkRoot is ValidationSuccess &&
+            it.texTalkRoot.value.children.size == 1 &&
             it.texTalkRoot.value.children[0] is IsTexTalkNode) {
             val isNode = it.texTalkRoot.value!!.children[0] as IsTexTalkNode
             if (isNode.rhs.items.size != 1) {
@@ -220,7 +221,7 @@ fun glueCommands(node: Phase2Node): Phase2Node {
             )
             Statement(
                 text = newExp.toCode(),
-                texTalkRoot = Validation.success(newExp)
+                texTalkRoot = ValidationSuccess(newExp)
             )
         } else {
             it

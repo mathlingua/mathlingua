@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -47,7 +49,7 @@ data class SourceSection(val mappings: List<MappingNode>) : Phase2Node {
 
 fun validateSourceSection(section: Section): Validation<SourceSection> {
     if (section.name.text != "Source") {
-        return Validation.failure(
+        return ValidationFailure(
             listOf(
                 ParseError(
                     "Expected a 'Source' but found '${section.name.text}'",
@@ -60,17 +62,15 @@ fun validateSourceSection(section: Section): Validation<SourceSection> {
     val errors = mutableListOf<ParseError>()
     val mappings = mutableListOf<MappingNode>()
     for (arg in section.args) {
-        val validation = validateMappingNode(arg)
-        if (validation.isSuccessful) {
-            mappings.add(validation.value!!)
-        } else {
-            errors.addAll(validation.errors)
+        when (val validation = validateMappingNode(arg)) {
+            is ValidationSuccess -> mappings.add(validation.value)
+            is ValidationFailure -> errors.addAll(validation.errors)
         }
     }
 
     return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
+        ValidationFailure(errors)
     } else {
-        Validation.success(SourceSection(mappings))
+        ValidationSuccess(SourceSection(mappings))
     }
 }

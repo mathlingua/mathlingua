@@ -18,6 +18,8 @@ package mathlingua.jvm
 
 import mathlingua.common.MathLingua
 import mathlingua.common.ParseError
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -126,23 +128,24 @@ fun processFile(file: File, allSignatures: MutableSet<String>, defSignatures: Mu
     val input = String(file.readBytes())
     val inputLines = input.split("\n")
 
-    val result = MathLingua().parse(input)
+    return when (val validation = MathLingua().parse(input)) {
+        is ValidationSuccess -> {
+            val document = validation.value
+            val ml = MathLingua()
+            allSignatures.addAll(ml.findAllSignatures(document))
 
-    if (result.document != null) {
-        val ml = MathLingua()
-        allSignatures.addAll(ml.findAllSignatures(result.document))
+            for (def in document.defines) {
+                defSignatures.addAll(ml.findAllSignatures(def))
+            }
 
-        for (def in result.document.defines) {
-            defSignatures.addAll(ml.findAllSignatures(def))
+            for (rep in document.represents) {
+                defSignatures.addAll(ml.findAllSignatures(rep))
+            }
+            emptyList()
         }
-
-        for (rep in result.document.represents) {
-            defSignatures.addAll(ml.findAllSignatures(rep))
+        is ValidationFailure -> validation.errors.map {
+            getErrorInfo(it, file, inputLines)
         }
-    }
-
-    return result.errors.map {
-        getErrorInfo(it, file, inputLines)
     }
 }
 

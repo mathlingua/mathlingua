@@ -16,7 +16,8 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.Clause
 import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
@@ -100,10 +101,10 @@ fun moveStatementInlineCommandsToIsNode(
     shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
 ): Clause {
     val validation = stmt.texTalkRoot
-    if (!validation.isSuccessful) {
+    if (validation is ValidationFailure) {
         return stmt
     }
-    val root = validation.value!!
+    val root = (validation as ValidationSuccess).value
 
     if (!shouldProcessChalk(stmt)) {
         return stmt
@@ -168,7 +169,7 @@ fun moveStatementInlineCommandsToIsNode(
 
                     Statement(
                         text = isNode.toCode(),
-                        texTalkRoot = Validation.success(
+                        texTalkRoot = ValidationSuccess(
                             ExpressionTexTalkNode(
                                 children = listOf(isNode)
                             )
@@ -215,8 +216,8 @@ fun replaceRepresents(
                 continue
             }
 
-            if (!clause.texTalkRoot.isSuccessful ||
-                clause.texTalkRoot.value!!.children.size != 1 ||
+            if (clause.texTalkRoot is ValidationFailure ||
+                (clause.texTalkRoot as ValidationSuccess).value.children.size != 1 ||
                 clause.texTalkRoot.value.children[0] !is Command
             ) {
                 newClauses.add(clause)
@@ -270,8 +271,8 @@ fun replaceIsNodes(
             return node
         }
 
-        if (!node.texTalkRoot.isSuccessful ||
-            node.texTalkRoot.value!!.children.size != 1 ||
+        if (node.texTalkRoot is ValidationFailure ||
+            (node.texTalkRoot as ValidationSuccess).value.children.size != 1 ||
             node.texTalkRoot.value.children[0] !is IsTexTalkNode) {
             return node
         }
@@ -368,16 +369,16 @@ fun getDefinesDirectVars(def: DefinesGroup): List<String> {
 
 fun getDefinesIdVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()
-    if (def.id.texTalkRoot.isSuccessful) {
-        vars.addAll(getVars(def.id.texTalkRoot.value!!))
+    if (def.id.texTalkRoot is ValidationSuccess) {
+        vars.addAll(getVars(def.id.texTalkRoot.value))
     }
     return vars
 }
 
 fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     val vars = mutableListOf<String>()
-    if (rep.id.texTalkRoot.isSuccessful) {
-        vars.addAll(getVars(rep.id.texTalkRoot.value!!))
+    if (rep.id.texTalkRoot is ValidationSuccess) {
+        vars.addAll(getVars(rep.id.texTalkRoot.value))
     }
     return vars
 }

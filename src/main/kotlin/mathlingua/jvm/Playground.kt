@@ -17,6 +17,8 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
@@ -168,19 +170,19 @@ object Playground {
                                 phase1Tree.expandRow(numPhase1Rows - 1)
                             }
 
-                            val documentValidation = validateDocument(root)
-                            if (!documentValidation.isSuccessful) {
-                                for ((message, row, column) in documentValidation.errors) {
-                                    errorBuilder.append(message)
-                                    errorBuilder.append(" (Line: ")
-                                    errorBuilder.append(row + 1)
-                                    errorBuilder.append(", Column: ")
-                                    errorBuilder.append(column + 1)
-                                    errorBuilder.append(")\n")
+                            when (val documentValidation = validateDocument(root)) {
+                                is ValidationSuccess -> doc = documentValidation.value
+                                is ValidationFailure -> {
+                                    for ((message, row, column) in documentValidation.errors) {
+                                        errorBuilder.append(message)
+                                        errorBuilder.append(" (Line: ")
+                                        errorBuilder.append(row + 1)
+                                        errorBuilder.append(", Column: ")
+                                        errorBuilder.append(column + 1)
+                                        errorBuilder.append(")\n")
+                                    }
                                 }
                             }
-
-                            doc = documentValidation.value
                         }
                     } catch (e: Exception) {
                         System.err.println(e.message)
@@ -292,14 +294,17 @@ object Playground {
         phase2Node.forEach {
             visited = true
             if (it is Statement) {
-                val root = it.texTalkRoot.value
-                for (err in it.texTalkRoot.errors) {
-                    println(err)
-                }
-                if (root != null) {
-                    result.add(toTreeNode(root))
-                } else {
-                    result.add(DefaultMutableTreeNode(it.text))
+                when (it.texTalkRoot) {
+                    is ValidationSuccess -> {
+                        val root = it.texTalkRoot.value
+                        result.add(toTreeNode(root))
+                    }
+                    is ValidationFailure -> {
+                        for (err in it.texTalkRoot.errors) {
+                            println(err)
+                        }
+                        result.add(DefaultMutableTreeNode(it.text))
+                    }
                 }
             } else {
                 result.add(toTreeNode(it))

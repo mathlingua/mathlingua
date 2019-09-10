@@ -144,7 +144,7 @@ fun moveStatementInlineCommandsToIsNode(
         ),
         whereSection = WhereSection(
             clauses = ClauseListNode(
-                clauses = commandsFound.map {
+                clauses = cmdsToProcess.map {
                     val isNode = IsTexTalkNode(
                         lhs = ParametersTexTalkNode(
                             items = listOf(

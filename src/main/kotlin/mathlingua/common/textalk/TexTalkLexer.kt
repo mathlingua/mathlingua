@@ -84,9 +84,9 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Comma, line, column))
             } else if (c == '?') {
                 this.tokens.add(TexTalkToken("$c", TexTalkTokenType.Identifier, line, column))
-            } else if (isLetterOrDigit(c)) {
+            } else if (isIdentifierChar(c)) {
                 val id = StringBuilder("" + c)
-                while (i < text.length && isLetterOrDigit(text[i])) {
+                while (i < text.length && isIdentifierChar(text[i])) {
                     id.append(text[i++])
                     column++
                 }
@@ -139,7 +139,7 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
             c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
     }
 
-    private fun isLetterOrDigit(c: Char): Boolean {
-        return Regex("[a-zA-Z0-9]+").matches("$c")
+    private fun isIdentifierChar(c: Char): Boolean {
+        return Regex("[$#a-zA-Z0-9]+").matches("$c")
     }
 }

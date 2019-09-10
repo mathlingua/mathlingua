@@ -186,9 +186,9 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     column++
                 }
                 this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, line, column))
-            } else if (isLetterOrDigit(c)) {
+            } else if (isNameChar(c)) {
                 var name = "" + c
-                while (i < text.length && isLetterOrDigit(text[i])) {
+                while (i < text.length && isNameChar(text[i])) {
                     name += text[i++]
                     column++
                 }
@@ -276,11 +276,11 @@ private class ChalkTalkLexerImpl(private var text: String) :
     }
 
     private fun isOperatorChar(c: Char): Boolean {
-        return "~!@#%^&*-+<>\\/=".contains(c)
+        return "~!@%^&*-+<>\\/=".contains(c)
     }
 
-    private fun isLetterOrDigit(c: Char): Boolean {
-        return Regex("[a-zA-Z0-9]+").matches("$c")
+    private fun isNameChar(c: Char): Boolean {
+        return Regex("[$#a-zA-Z0-9]+").matches("$c")
     }
 
     override fun hasNext(): Boolean {

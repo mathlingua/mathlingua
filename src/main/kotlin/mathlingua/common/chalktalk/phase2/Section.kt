@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -160,9 +162,9 @@ fun validateRepresentsSection(node: Phase1Node): Validation<RepresentsSection> {
     }
 
     return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
+        ValidationFailure(errors)
     } else {
-        Validation.success(RepresentsSection())
+        ValidationSuccess(RepresentsSection())
     }
 }
 

@@ -17,6 +17,7 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.ValidationFailure
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -102,8 +103,10 @@ object MathLinguaEditor {
 
                     val result = MathLingua().parse(inputArea.text)
                     val errorBuilder = StringBuilder()
-                    for (err in result.errors) {
-                        errorBuilder.append("Error(${err.row + 1}, ${err.column + 1}): ${err.message}\n")
+                    if (result is ValidationFailure) {
+                        for (err in result.errors) {
+                            errorBuilder.append("Error(${err.row + 1}, ${err.column + 1}): ${err.message}\n")
+                        }
                     }
                     errorArea.text = errorBuilder.toString()
                 }

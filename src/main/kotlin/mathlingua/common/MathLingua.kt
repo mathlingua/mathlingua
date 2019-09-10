@@ -23,10 +23,8 @@ import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.validateDocument
 import mathlingua.common.transform.locateAllSignatures
 
-data class MathLinguaResult(val document: Document?, val errors: List<ParseError>)
-
 class MathLingua {
-    fun parse(input: String): MathLinguaResult {
+    fun parse(input: String): Validation<Document> {
         val lexer = newChalkTalkLexer(input)
 
         val allErrors = mutableListOf<ParseError>()
@@ -37,13 +35,16 @@ class MathLingua {
         allErrors.addAll(errors)
 
         if (root == null) {
-            return MathLinguaResult(null, allErrors)
+            return ValidationFailure(allErrors)
         }
 
-        val documentValidation = validateDocument(root)
-        allErrors.addAll(documentValidation.errors)
-
-        return MathLinguaResult(documentValidation.value, allErrors)
+        return when (val documentValidation = validateDocument(root)) {
+            is ValidationSuccess -> documentValidation
+            is ValidationFailure -> {
+                allErrors.addAll(documentValidation.errors)
+                ValidationFailure(allErrors)
+            }
+        }
     }
 
     fun findAllSignatures(node: Phase2Node): Array<String> {

@@ -1,6 +1,7 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.ValidationFailure
 
 object SignatureTestBed {
     @JvmStatic
@@ -18,8 +19,10 @@ object SignatureTestBed {
             . 'c = \function'
         """.trimIndent()
         val result = MathLingua().parse(text)
-        for (err in result.errors) {
-            println(err)
+        if (result is ValidationFailure) {
+            for (err in result.errors) {
+                println(err)
+            }
         }
 
         println(text)

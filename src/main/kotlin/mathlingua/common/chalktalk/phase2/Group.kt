@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
@@ -34,7 +36,7 @@ data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent,
-            Statement(id, Validation.failure(emptyList())), sourceSection)
+            Statement(id, ValidationFailure(emptyList())), sourceSection)
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
@@ -52,7 +54,7 @@ fun isSourceGroup(node: Phase1Node): Boolean {
 fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     val id = groupNode.id
     if (id == null) {
-        return Validation.failure(listOf(
+        return ValidationFailure(listOf(
             ParseError("A Source group must have an id",
                 getRow(groupNode), getColumn(groupNode))
         ))
@@ -81,13 +83,15 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
 
     val section = sections[0]
     val validation = validateSourceSection(section)
-    errors.addAll(validation.errors)
-
-    if (errors.isNotEmpty()) {
-        return Validation.failure(errors)
+    if (validation is ValidationFailure) {
+        errors.addAll(validation.errors)
     }
 
-    return Validation.success(SourceGroup(idText, validation.value!!))
+    if (errors.isNotEmpty()) {
+        return ValidationFailure(errors)
+    }
+
+    return ValidationSuccess(SourceGroup(idText, (validation as ValidationSuccess).value))
 }
 
 data class DefinesGroup(
@@ -379,45 +383,38 @@ fun <G, S> validateResultLikeGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     val resultLike = sectionMap[resultLikeName]
     val alias = sectionMap.getOrNull("Alias")
     val metadata = sectionMap.getOrNull("Metadata")
 
-    val resultLikeValidation = validateResultLikeSection(resultLike!!)
     var resultLikeSection: S? = null
-    if (resultLikeValidation.isSuccessful) {
-        resultLikeSection = resultLikeValidation.value
-    } else {
-        errors.addAll(resultLikeValidation.errors)
+    when (val resultLikeValidation = validateResultLikeSection(resultLike!!)) {
+        is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
+        is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
     if (metadata != null) {
-        val metaDataValidation = validateMetaDataSection(metadata)
-        if (metaDataValidation.isSuccessful) {
-            metaDataSection = metaDataValidation.value!!
-        } else {
-            errors.addAll(metaDataValidation.errors)
+        when (val metaDataValidation = validateMetaDataSection(metadata)) {
+            is ValidationSuccess -> metaDataSection = metaDataValidation.value
+            is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
     }
 
     var aliasSection: AliasSection? = null
     if (alias != null) {
-        val aliasValidation = validateAliasSection(alias)
-        if (aliasValidation.isSuccessful) {
-            aliasSection = aliasValidation.value!!
-        } else {
-            errors.addAll(aliasValidation.errors)
+        when (val aliasValidation = validateAliasSection(alias)) {
+            is ValidationSuccess -> aliasSection = aliasValidation.value
+            is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
     }
 
     return if (!errors.isEmpty()) {
-        Validation.failure(errors)
-    } else Validation
-        .success(buildGroup(resultLikeSection!!, aliasSection, metaDataSection))
+        ValidationFailure(errors)
+    } else ValidationSuccess(buildGroup(resultLikeSection!!, aliasSection, metaDataSection))
 }
 
 fun <G, S, E> validateDefinesLikeGroup(
@@ -448,11 +445,9 @@ fun <G, S, E> validateDefinesLikeGroup(
             statementText, ChalkTalkTokenType.Statement,
             row, column
         )
-        val idValidation = validateStatement(stmtToken)
-        if (idValidation.isSuccessful) {
-            id = idValidation.value
-        } else {
-            errors.addAll(idValidation.errors)
+        when (val idValidation = validateStatement(stmtToken)) {
+            is ValidationSuccess -> id = idValidation.value
+            is ValidationFailure -> errors.addAll(idValidation.errors)
         }
     } else {
         errors.add(
@@ -473,7 +468,7 @@ fun <G, S, E> validateDefinesLikeGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     val definesLike = sectionMap[definesLikeSectionName]
@@ -482,56 +477,45 @@ fun <G, S, E> validateDefinesLikeGroup(
     val alias = sectionMap.getOrNull("Alias")
     val metadata = sectionMap.getOrNull("Metadata")
 
-    val definesLikeValidation = validateDefinesLikeSection(definesLike!!)
     var definesLikeSection: S? = null
-    if (definesLikeValidation.isSuccessful) {
-        definesLikeSection = definesLikeValidation.value
-    } else {
-        errors.addAll(definesLikeValidation.errors)
+    when (val definesLikeValidation = validateDefinesLikeSection(definesLike!!)) {
+        is ValidationSuccess -> definesLikeSection = definesLikeValidation.value
+        is ValidationFailure -> errors.addAll(definesLikeValidation.errors)
     }
 
     var assumingSection: AssumingSection? = null
     if (assuming != null) {
-        val assumingValidation = validateAssumingSection(assuming)
-        if (assumingValidation.isSuccessful) {
-            assumingSection = assumingValidation.value!!
-        } else {
-            errors.addAll(assumingValidation.errors)
+        when (val assumingValidation = validateAssumingSection(assuming)) {
+            is ValidationSuccess -> assumingSection = assumingValidation.value
+            is ValidationFailure -> errors.addAll(assumingValidation.errors)
         }
     }
 
-    val endValidation = validateEndSection(end!!)
     var endSection: E? = null
-    if (endValidation.isSuccessful) {
-        endSection = endValidation.value
-    } else {
-        errors.addAll(endValidation.errors)
+    when (val endValidation = validateEndSection(end!!)) {
+        is ValidationSuccess -> endSection = endValidation.value
+        is ValidationFailure -> errors.addAll(endValidation.errors)
     }
 
     var aliasSection: AliasSection? = null
     if (alias != null) {
-        val aliasValidation = validateAliasSection(alias)
-        if (aliasValidation.isSuccessful) {
-            aliasSection = aliasValidation.value!!
-        } else {
-            errors.addAll(aliasValidation.errors)
+        when (val aliasValidation = validateAliasSection(alias)) {
+            is ValidationSuccess -> aliasSection = aliasValidation.value
+            is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
     }
 
     var metaDataSection: MetaDataSection? = null
     if (metadata != null) {
-        val metaDataValidation = validateMetaDataSection(metadata)
-        if (metaDataValidation.isSuccessful) {
-            metaDataSection = metaDataValidation.value!!
-        } else {
-            errors.addAll(metaDataValidation.errors)
+        when (val metaDataValidation = validateMetaDataSection(metadata)) {
+            is ValidationSuccess -> metaDataSection = metaDataValidation.value
+            is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
     }
 
-    return if (!errors.isEmpty()) {
-        Validation.failure(errors)
-    } else Validation
-        .success(
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else ValidationSuccess(
             buildGroup(
                 getSignature(id!!),
                 id, definesLikeSection!!,

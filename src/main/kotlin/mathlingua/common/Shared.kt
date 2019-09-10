@@ -18,6 +18,11 @@ package mathlingua.common
 
 data class ParseError(override val message: String, val row: Int, val column: Int) : RuntimeException(message)
 
+sealed class Validation<T>
+data class ValidationSuccess<T>(val value: T) : Validation<T>()
+data class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
+
+/*
 class Validation<T> private constructor(val value: T?, val errors: List<ParseError>) {
 
     val isSuccessful: Boolean
@@ -37,6 +42,7 @@ class Validation<T> private constructor(val value: T?, val errors: List<ParseErr
         }
     }
 }
+*/
 
 class Stack<T> {
     private val data = mutableListOf<T>()

@@ -17,6 +17,7 @@
 package mathlingua.jvm
 
 import mathlingua.common.MathLingua
+import mathlingua.common.ValidationSuccess
 
 object HtmlCompletionsGenerator {
     @JvmStatic
@@ -36,8 +37,8 @@ object HtmlCompletionsGenerator {
         val signatures = mutableSetOf<String>()
         for (part in parts) {
             val result = ml.parse(part)
-            if (result.document != null) {
-                signatures.addAll(ml.findAllSignatures(result.document))
+            if (result is ValidationSuccess) {
+                signatures.addAll(ml.findAllSignatures(result.value))
             }
         }
 

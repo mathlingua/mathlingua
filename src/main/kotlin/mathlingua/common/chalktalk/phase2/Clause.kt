@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Abstraction
 import mathlingua.common.chalktalk.phase1.ast.Aggregate
 import mathlingua.common.chalktalk.phase1.ast.Assignment
@@ -101,16 +103,14 @@ fun validateClause(rawNode: Phase1Node): Validation<Clause> {
 
     for (pair in CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
-            val validation = pair.validate(node)
-            return if (validation.isSuccessful) {
-                return Validation.success(validation.value!!)
-            } else {
-                Validation.failure(validation.errors)
+            return when (val validation = pair.validate(node)) {
+                is ValidationSuccess -> ValidationSuccess(validation.value)
+                is ValidationFailure -> ValidationFailure(validation.errors)
             }
         }
     }
 
-    return Validation.failure(
+    return ValidationFailure(
         listOf(
             ParseError(
                 "Expected a Target",
@@ -274,7 +274,7 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
                 getRow(node), getColumn(node)
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     val (text, type, row, column) = node
@@ -285,10 +285,10 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
                 row, column
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
-    return Validation.success(Identifier(text))
+    return ValidationSuccess(Identifier(text))
 }
 
 data class Statement(
@@ -332,7 +332,7 @@ fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
                 row, column
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     // the text is of the form '...'
@@ -348,12 +348,13 @@ fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
     val result = parser.parse(lexer)
     texTalkErrors.addAll(result.errors)
 
-    val validation = if (texTalkErrors.isEmpty())
-        Validation.success(result.root)
-    else
-        Validation.failure(texTalkErrors)
+    val validation = if (texTalkErrors.isEmpty()) {
+        ValidationSuccess(result.root)
+    } else {
+        ValidationFailure<ExpressionTexTalkNode>(texTalkErrors)
+    }
 
-    return Validation.success(Statement(text, validation))
+    return ValidationSuccess(Statement(text, validation))
 }
 
 data class Text(val text: String) : Clause() {
@@ -394,10 +395,10 @@ fun validateText(rawNode: Phase1Node): Validation<Text> {
                 row, column
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
-    return Validation.success(Text(text))
+    return ValidationSuccess(Text(text))
 }
 
 data class ExistsGroup(
@@ -549,7 +550,7 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
                 getRow(node), getColumn(node)
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     val (sections) = node
@@ -562,41 +563,36 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     var forSection: ForSection? = null
     val forNode = sectionMap["for"]
-    val forEvaluation = validateForSection(forNode!!)
-    if (forEvaluation.isSuccessful) {
-        forSection = forEvaluation.value
-    } else {
-        errors.addAll(forEvaluation.errors)
+
+    when (val forEvaluation = validateForSection(forNode!!)) {
+        is ValidationSuccess -> forSection = forEvaluation.value
+        is ValidationFailure -> errors.addAll(forEvaluation.errors)
     }
 
     var whereSection: WhereSection? = null
     if (sectionMap.containsKey("where")) {
         val where = sectionMap["where"]
-        val whereValidation = validateWhereSection(where!!)
-        if (whereValidation.isSuccessful) {
-            whereSection = whereValidation.value!!
-        } else {
-            errors.addAll(whereValidation.errors)
+        when (val whereValidation = validateWhereSection(where!!)) {
+            is ValidationSuccess -> whereSection = whereValidation.value
+            is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
     }
 
     var thenSection: ThenSection? = null
     val then = sectionMap["then"]
-    val thenValidation = validateThenSection(then!!)
-    if (thenValidation.isSuccessful) {
-        thenSection = thenValidation.value
-    } else {
-        errors.addAll(thenValidation.errors)
+    when (val thenValidation = validateThenSection(then!!)) {
+        is ValidationSuccess -> thenSection = thenValidation.value
+        is ValidationFailure -> errors.addAll(thenValidation.errors)
     }
 
     return if (!errors.isEmpty()) {
-        Validation.failure(errors)
-    } else Validation.success(ForGroup(forSection!!, whereSection, thenSection!!))
+        ValidationFailure(errors)
+    } else ValidationSuccess(ForGroup(forSection!!, whereSection, thenSection!!))
 }
 
 data class NotGroup(val notSection: NotSection) : Clause() {
@@ -680,7 +676,7 @@ fun <G, S> validateSingleSectionGroup(
                 getRow(node), getColumn(node)
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     val (sections) = node
@@ -692,21 +688,19 @@ fun <G, S> validateSingleSectionGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     var section: S? = null
     val sect = sectionMap[sectionName]
-    val validation = validateSection(sect!!)
-    if (validation.isSuccessful) {
-        section = validation.value
-    } else {
-        errors.addAll(validation.errors)
+    when (val validation = validateSection(sect!!)) {
+        is ValidationSuccess -> section = validation.value
+        is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
-    } else Validation.success(buildGroup(section!!))
+        ValidationFailure(errors)
+    } else ValidationSuccess(buildGroup(section!!))
 }
 
 private fun <G, S1, S2> validateDoubleSectionGroup(
@@ -727,7 +721,7 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
                 getRow(node), getColumn(node)
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     val (sections) = node
@@ -739,30 +733,26 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     var section1: S1? = null
     val sect1 = sectionMap[section1Name]
-    val section1Validation = validateSection1(sect1!!)
-    if (section1Validation.isSuccessful) {
-        section1 = section1Validation.value
-    } else {
-        errors.addAll(section1Validation.errors)
+    when (val section1Validation = validateSection1(sect1!!)) {
+        is ValidationSuccess -> section1 = section1Validation.value
+        is ValidationFailure -> errors.addAll(section1Validation.errors)
     }
 
     var section2: S2? = null
     val sect2 = sectionMap[section2Name]
-    val section2Validation = validateSection2(sect2!!)
-    if (section2Validation.isSuccessful) {
-        section2 = section2Validation.value
-    } else {
-        errors.addAll(section2Validation.errors)
+    when (val section2Validation = validateSection2(sect2!!)) {
+        is ValidationSuccess -> section2 = section2Validation.value
+        is ValidationFailure -> errors.addAll(section2Validation.errors)
     }
 
     return if (!errors.isEmpty()) {
-        Validation.failure(errors)
-    } else Validation.success(buildGroup(section1!!, section2!!))
+        ValidationFailure(errors)
+    } else ValidationSuccess(buildGroup(section1!!, section2!!))
 }
 
 private fun <Wrapped, Base> validateWrappedNode(
@@ -775,7 +765,7 @@ private fun <Wrapped, Base> validateWrappedNode(
 
     val base = checkType(node)
     if (base == null) {
-        return Validation.failure(
+        return ValidationFailure(
             listOf(
                 ParseError(
                     "Cannot convert to a $expectedType",
@@ -785,7 +775,7 @@ private fun <Wrapped, Base> validateWrappedNode(
         )
     }
 
-    return Validation.success(build(base))
+    return ValidationSuccess(build(base))
 }
 
 fun toCode(isArg: Boolean, indent: Int, phase1Node: Phase1Node): String {

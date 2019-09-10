@@ -19,6 +19,7 @@ package mathlingua.common.chalktalk.phase2
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.loadTestCases
@@ -43,10 +44,9 @@ internal class ChalkTalkParserTest {
                 assertThat(result.root).isNotNull()
 
                 val validation = validateDocument(result.root!!)
-                assertThat(validation.errors.size).isEqualTo(0)
-                assertThat(validation.value).isNotNull()
+                assert(validation is ValidationSuccess)
 
-                val doc = validation.value!!
+                val doc = (validation as ValidationSuccess).value
                 assertThat(doc.toCode(false, 0).trim()).isEqualTo(it.expectedOutput.trim())
             }
         }

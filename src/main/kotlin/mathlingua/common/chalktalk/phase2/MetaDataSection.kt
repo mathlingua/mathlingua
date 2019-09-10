@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -49,7 +51,7 @@ data class MetaDataSection(val mappings: List<MappingNode>) : Phase2Node {
 
 fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
     if (section.name.text != "Metadata") {
-        return Validation.failure(
+        return ValidationFailure(
             listOf(
                 ParseError(
                     "Expected a 'Metadata' but found '${section.name.text}'",
@@ -62,17 +64,15 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
     val errors = mutableListOf<ParseError>()
     val mappings = mutableListOf<MappingNode>()
     for (arg in section.args) {
-        val validation = validateMappingNode(arg)
-        if (validation.isSuccessful) {
-            mappings.add(validation.value!!)
-        } else {
-            errors.addAll(validation.errors)
+        when (val validation = validateMappingNode(arg)) {
+            is ValidationSuccess -> mappings.add(validation.value)
+            is ValidationFailure -> errors.addAll(validation.errors)
         }
     }
 
     return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
+        ValidationFailure(errors)
     } else {
-        Validation.success(MetaDataSection(mappings))
+        ValidationSuccess(MetaDataSection(mappings))
     }
 }

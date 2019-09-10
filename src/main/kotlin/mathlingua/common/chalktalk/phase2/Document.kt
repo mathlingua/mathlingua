@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Root
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -107,7 +109,7 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
                 getColumn(node)
             )
         )
-        return Validation.failure(errors)
+        return ValidationFailure(errors)
     }
 
     val defines = ArrayList<DefinesGroup>()
@@ -120,46 +122,34 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     val (groups) = node
     for (group in groups) {
         if (isResultGroup(group)) {
-            val resultValidation = validateResultGroup(group)
-            if (resultValidation.isSuccessful) {
-                results.add(resultValidation.value!!)
-            } else {
-                errors.addAll(resultValidation.errors)
+            when (val resultValidation = validateResultGroup(group)) {
+                is ValidationSuccess -> results.add(resultValidation.value)
+                is ValidationFailure -> errors.addAll(resultValidation.errors)
             }
         } else if (isAxiomGroup(group)) {
-            val axiomValidation = validateAxiomGroup(group)
-            if (axiomValidation.isSuccessful) {
-                axioms.add(axiomValidation.value!!)
-            } else {
-                errors.addAll(axiomValidation.errors)
+            when (val axiomValidation = validateAxiomGroup(group)) {
+                is ValidationSuccess -> axioms.add(axiomValidation.value)
+                is ValidationFailure -> errors.addAll(axiomValidation.errors)
             }
         } else if (isConjectureGroup(group)) {
-            val conjectureValidation = validateConjectureGroup(group)
-            if (conjectureValidation.isSuccessful) {
-                conjectures.add(conjectureValidation.value!!)
-            } else {
-                errors.addAll(conjectureValidation.errors)
+            when (val conjectureValidation = validateConjectureGroup(group)) {
+                is ValidationSuccess -> conjectures.add(conjectureValidation.value)
+                is ValidationFailure -> errors.addAll(conjectureValidation.errors)
             }
         } else if (isDefinesGroup(group)) {
-            val definesValidation = validateDefinesGroup(group)
-            if (definesValidation.isSuccessful) {
-                defines.add(definesValidation.value!!)
-            } else {
-                errors.addAll(definesValidation.errors)
+            when (val definesValidation = validateDefinesGroup(group)) {
+                is ValidationSuccess -> defines.add(definesValidation.value)
+                is ValidationFailure -> errors.addAll(definesValidation.errors)
             }
         } else if (isRepresentsGroup(group)) {
-            val representsValidation = validateRepresentsGroup(group)
-            if (representsValidation.isSuccessful) {
-                represents.add(representsValidation.value!!)
-            } else {
-                errors.addAll(representsValidation.errors)
+            when (val representsValidation = validateRepresentsGroup(group)) {
+                is ValidationSuccess -> represents.add(representsValidation.value)
+                is ValidationFailure -> errors.addAll(representsValidation.errors)
             }
         } else if (isSourceGroup(group)) {
-            val sourceValidation = validateSourceGroup(group)
-            if (sourceValidation.isSuccessful) {
-                sources.add(sourceValidation.value!!)
-            } else {
-                errors.addAll(sourceValidation.errors)
+            when (val sourceValidation = validateSourceGroup(group)) {
+                is ValidationSuccess -> sources.add(sourceValidation.value)
+                is ValidationFailure -> errors.addAll(sourceValidation.errors)
             }
         } else {
             errors.add(
@@ -172,8 +162,8 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     }
 
     return if (errors.isNotEmpty()) {
-        Validation.failure(errors)
-    } else Validation.success(
+        ValidationFailure(errors)
+    } else ValidationSuccess(
         Document(
             defines,
             represents,

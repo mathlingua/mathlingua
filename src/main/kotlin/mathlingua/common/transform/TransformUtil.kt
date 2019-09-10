@@ -240,7 +240,15 @@ fun replaceRepresents(
                 map[defIndirectVars[i]] = cmdVars[i]
             }
 
-            newClauses.add(renameVars(buildIfThen(rep), map) as Clause)
+            val ifThen = buildIfThen(rep)
+            val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
+                ifThen.thenSection.clauses.clauses.size == 1) {
+                ifThen.thenSection.clauses.clauses[0]
+            } else {
+                ifThen
+            }
+
+            newClauses.add(renameVars(res, map) as Clause)
         }
 
         return ClauseListNode(clauses = newClauses)
@@ -315,7 +323,15 @@ fun replaceIsNodes(
             map[defDirectVars[i]] = lhsVars[i]
         }
 
-        return renameVars(buildIfThen(def), map)
+        val ifThen = buildIfThen(def)
+        val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
+            ifThen.thenSection.clauses.clauses.size == 1) {
+            ifThen.thenSection.clauses.clauses[0]
+        } else {
+            ifThen
+        }
+
+        return renameVars(res, map)
     }
 
     return node.transform(::chalkTransformer)

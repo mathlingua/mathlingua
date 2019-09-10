@@ -16,7 +16,6 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.Validation
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node

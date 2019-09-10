@@ -569,7 +569,6 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
     var forSection: ForSection? = null
     val forNode = sectionMap["for"]
 
-
     when (val forEvaluation = validateForSection(forNode!!)) {
         is ValidationSuccess -> forSection = forEvaluation.value
         is ValidationFailure -> errors.addAll(forEvaluation.errors)

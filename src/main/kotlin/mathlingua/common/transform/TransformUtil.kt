@@ -216,39 +216,92 @@ fun replaceRepresents(
                 continue
             }
 
-            if (clause.texTalkRoot is ValidationFailure ||
-                (clause.texTalkRoot as ValidationSuccess).value.children.size != 1 ||
-                clause.texTalkRoot.value.children[0] !is Command
+            if (clause.texTalkRoot is ValidationSuccess &&
+                clause.texTalkRoot.value.children.size == 1 &&
+                clause.texTalkRoot.value.children[0] is Command
             ) {
-                newClauses.add(clause)
-                continue
-            }
+                // a prefix command
+                val command = clause.texTalkRoot.value.children[0] as Command
+                val sig = getCommandSignature(command).toCode()
 
-            val command = clause.texTalkRoot.value.children[0] as Command
-            val sig = getCommandSignature(command).toCode()
+                if (!repMap.containsKey(sig)) {
+                    return node
+                }
 
-            if (!repMap.containsKey(sig)) {
-                return node
-            }
+                val rep = repMap[sig]!!
+                val cmdVars = getVars(command)
+                val defIndirectVars = getRepresentsIdVars(rep)
 
-            val rep = repMap[sig]!!
-            val cmdVars = getVars(command)
-            val defIndirectVars = getRepresentsIdVars(rep)
+                val map = mutableMapOf<String, String>()
+                for (i in cmdVars.indices) {
+                    map[defIndirectVars[i]] = cmdVars[i]
+                }
 
-            val map = mutableMapOf<String, String>()
-            for (i in cmdVars.indices) {
-                map[defIndirectVars[i]] = cmdVars[i]
-            }
+                val ifThen = buildIfThen(rep)
+                val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
+                    ifThen.thenSection.clauses.clauses.size == 1
+                ) {
+                    ifThen.thenSection.clauses.clauses[0]
+                } else {
+                    ifThen
+                }
 
-            val ifThen = buildIfThen(rep)
-            val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
-                ifThen.thenSection.clauses.clauses.size == 1) {
-                ifThen.thenSection.clauses.clauses[0]
+                newClauses.add(renameVars(res, map) as Clause)
+            } else if (clause.texTalkRoot is ValidationSuccess &&
+                clause.texTalkRoot.value.children.size == 3 &&
+                clause.texTalkRoot.value.children[0] is TextTexTalkNode &&
+                clause.texTalkRoot.value.children[1] is Command &&
+                clause.texTalkRoot.value.children[2] is TextTexTalkNode) {
+                // and infix command
+                val left = clause.texTalkRoot.value.children[0] as TextTexTalkNode
+                val op = clause.texTalkRoot.value.children[1] as Command
+                val right = clause.texTalkRoot.value.children[2] as TextTexTalkNode
+
+                val sig = getCommandSignature(op).toCode()
+
+                if (!repMap.containsKey(sig)) {
+                    return node
+                }
+
+                val rep = repMap[sig]!!
+                val cmdVars = listOf(left.text, right.text)
+
+                if (rep.id.texTalkRoot is ValidationFailure) {
+                    return node
+                }
+
+                val validation = rep.id.texTalkRoot as ValidationSuccess
+                if (validation.value.children.size != 3 ||
+                    validation.value.children[0] !is TextTexTalkNode ||
+                    validation.value.children[1] !is Command ||
+                    validation.value.children[2] !is TextTexTalkNode) {
+                    return node
+                }
+
+                val repLeftOpRight = validation.value.children
+                val repLeft = (repLeftOpRight[0] as TextTexTalkNode).text
+                val repRight = (repLeftOpRight[2] as TextTexTalkNode).text
+
+                val defIndirectVars = listOf(repLeft, repRight)
+
+                val map = mutableMapOf<String, String>()
+                for (i in cmdVars.indices) {
+                    map[defIndirectVars[i]] = cmdVars[i]
+                }
+
+                val ifThen = buildIfThen(rep)
+                val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
+                    ifThen.thenSection.clauses.clauses.size == 1
+                ) {
+                    ifThen.thenSection.clauses.clauses[0]
+                } else {
+                    ifThen
+                }
+
+                newClauses.add(renameVars(res, map) as Clause)
             } else {
-                ifThen
+                newClauses.add(clause)
             }
-
-            newClauses.add(renameVars(res, map) as Clause)
         }
 
         return ClauseListNode(clauses = newClauses)

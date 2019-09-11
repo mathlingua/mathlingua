@@ -32,6 +32,7 @@ import mathlingua.common.transform.glueCommands
 import mathlingua.common.transform.moveInlineCommandsToIsNode
 import mathlingua.common.transform.replaceIsNodes
 import mathlingua.common.transform.replaceRepresents
+import mathlingua.common.transform.separateInfixOperatorStatements
 import mathlingua.common.transform.separateIsStatements
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
@@ -73,6 +74,7 @@ object Playground {
 
         val phase1Tree = JTree(DefaultMutableTreeNode())
         val phase2Tree = JTree(DefaultMutableTreeNode())
+        val outputTree = JTree(DefaultMutableTreeNode())
 
         val tokenList = JTextArea(20, 20)
         tokenList.font = font
@@ -81,6 +83,7 @@ object Playground {
         signaturesList.font = font
 
         val separateIsBox = JCheckBox("Separate is statements", true)
+        val separateInfixOps = JCheckBox("Separate infix operators", true)
         val glueCommands = JCheckBox("Glue commands", true)
         val moveInLineIs = JCheckBox("Move inline is statements", true)
         val replaceReps = JCheckBox("Replace represents", true)
@@ -90,6 +93,7 @@ object Playground {
         completeExpand.addActionListener {
             if (completeExpand.isSelected) {
                 separateIsBox.isSelected = false
+                separateInfixOps.isSelected = false
                 glueCommands.isSelected = false
                 moveInLineIs.isSelected = false
                 replaceReps.isSelected = false
@@ -99,6 +103,7 @@ object Playground {
 
         val statusPanel = JPanel(FlowLayout(FlowLayout.LEFT))
         statusPanel.add(separateIsBox)
+        statusPanel.add(separateInfixOps)
         statusPanel.add(glueCommands)
         statusPanel.add(moveInLineIs)
         statusPanel.add(replaceReps)
@@ -206,7 +211,11 @@ object Playground {
                         var transformed = doc as Phase2Node
 
                         if (separateIsBox.isSelected) {
-                            transformed = separateIsStatements(doc)
+                            transformed = separateIsStatements(transformed)
+                        }
+
+                        if (separateInfixOps.isSelected) {
+                            transformed = separateInfixOperatorStatements(transformed)
                         }
 
                         if (glueCommands.isSelected) {
@@ -231,6 +240,7 @@ object Playground {
 
                         outputArea.text = transformed.toCode(false, 0)
                         phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
+                        outputTree.model = DefaultTreeModel(toTreeNode(transformed))
                         val numRows = phase2Tree.rowCount
                         if (numRows > 0) {
                             phase2Tree.expandRow(numRows - 1)
@@ -256,6 +266,7 @@ object Playground {
         val treeTabbedPane = JTabbedPane()
         treeTabbedPane.addTab("Phase2", JScrollPane(phase2Tree))
         treeTabbedPane.addTab("Phase1", JScrollPane(phase1Tree))
+        treeTabbedPane.addTab("Output", JScrollPane(outputTree))
         treeTabbedPane.addTab("Tokens", JScrollPane(tokenList))
         treeTabbedPane.addTab("Signatures", JScrollPane(signaturesList))
 

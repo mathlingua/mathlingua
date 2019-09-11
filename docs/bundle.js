@@ -2909,10 +2909,10 @@ var bundle = function (_, Kotlin) {
   ClauseListSection.prototype.equals = function (other) {
     return this === other || (other !== null && (typeof other === 'object' && (Object.getPrototypeOf(this) === Object.getPrototypeOf(other) && (Kotlin.equals(this.name, other.name) && Kotlin.equals(this.clauses, other.clauses)))));
   };
-  function validateClauseList(rawNode, expectedName, builder) {
+  function validateClauseList(rawNode, expectedName, canBeEmpty, builder) {
     var tmp$;
     var node = rawNode.resolve();
-    var validation = validate(node, expectedName);
+    var validation = validate(node, expectedName, canBeEmpty);
     if (Kotlin.isType(validation, ValidationSuccess))
       tmp$ = new ValidationSuccess(builder(new ClauseListNode(validation.value.clauses)));
     else if (Kotlin.isType(validation, ValidationFailure))
@@ -2921,7 +2921,7 @@ var bundle = function (_, Kotlin) {
       tmp$ = Kotlin.noWhenBranchMatched();
     return tmp$;
   }
-  function validate(node, expectedName) {
+  function validate(node, expectedName, canBeEmpty) {
     var tmp$, tmp$_0, tmp$_1;
     var errors = ArrayList_init();
     if (!Kotlin.isType(node, Section)) {
@@ -2933,7 +2933,7 @@ var bundle = function (_, Kotlin) {
     if (!equals(name.text, expectedName)) {
       errors.add_11rb$(new ParseError('Expected a Section with name ' + expectedName + ' but found ' + name.text, getRow(node), getColumn(node)));
     }
-    if (args.isEmpty()) {
+    if (args.isEmpty() && !canBeEmpty) {
       errors.add_11rb$(new ParseError("Section '" + name.text + "' requires at least one argument.", getRow(node), getColumn(node)));
     }
     var clauses = ArrayList_init();
@@ -3960,7 +3960,7 @@ var bundle = function (_, Kotlin) {
     return new AssumingSection(it);
   }
   function validateAssumingSection(node) {
-    return validateClauseList(node, 'assuming', validateAssumingSection$lambda);
+    return validateClauseList(node, 'assuming', false, validateAssumingSection$lambda);
   }
   function DefinesSection(targets) {
     this.targets = targets;
@@ -4275,7 +4275,7 @@ var bundle = function (_, Kotlin) {
     return new MeansSection(it);
   }
   function validateMeansSection(node) {
-    return validateClauseList(node, 'means', validateMeansSection$lambda);
+    return validateClauseList(node, 'means', false, validateMeansSection$lambda);
   }
   function ResultSection(clauses) {
     this.clauses = clauses;
@@ -4322,7 +4322,7 @@ var bundle = function (_, Kotlin) {
     return new ResultSection(it);
   }
   function validateResultSection(node) {
-    return validateClauseList(node, 'Result', validateResultSection$lambda);
+    return validateClauseList(node, 'Result', false, validateResultSection$lambda);
   }
   function AxiomSection(clauses) {
     this.clauses = clauses;
@@ -4369,7 +4369,7 @@ var bundle = function (_, Kotlin) {
     return new AxiomSection(it);
   }
   function validateAxiomSection(node) {
-    return validateClauseList(node, 'Axiom', validateAxiomSection$lambda);
+    return validateClauseList(node, 'Axiom', false, validateAxiomSection$lambda);
   }
   function ConjectureSection(clauses) {
     this.clauses = clauses;
@@ -4416,7 +4416,7 @@ var bundle = function (_, Kotlin) {
     return new ConjectureSection(it);
   }
   function validateConjectureSection(node) {
-    return validateClauseList(node, 'Conjecture', validateConjectureSection$lambda);
+    return validateClauseList(node, 'Conjecture', false, validateConjectureSection$lambda);
   }
   function SuchThatSection(clauses) {
     this.clauses = clauses;
@@ -4463,7 +4463,7 @@ var bundle = function (_, Kotlin) {
     return new SuchThatSection(it);
   }
   function validateSuchThatSection(node) {
-    return validateClauseList(node, 'suchThat', validateSuchThatSection$lambda);
+    return validateClauseList(node, 'suchThat', false, validateSuchThatSection$lambda);
   }
   function ThatSection(clauses) {
     this.clauses = clauses;
@@ -4510,7 +4510,7 @@ var bundle = function (_, Kotlin) {
     return new ThatSection(it);
   }
   function validateThatSection(node) {
-    return validateClauseList(node, 'that', validateThatSection$lambda);
+    return validateClauseList(node, 'that', false, validateThatSection$lambda);
   }
   function IfSection(clauses) {
     this.clauses = clauses;
@@ -4557,7 +4557,7 @@ var bundle = function (_, Kotlin) {
     return new IfSection(it);
   }
   function validateIfSection(node) {
-    return validateClauseList(node, 'if', validateIfSection$lambda);
+    return validateClauseList(node, 'if', true, validateIfSection$lambda);
   }
   function IffSection(clauses) {
     this.clauses = clauses;
@@ -4604,7 +4604,7 @@ var bundle = function (_, Kotlin) {
     return new IffSection(it);
   }
   function validateIffSection(node) {
-    return validateClauseList(node, 'iff', validateIffSection$lambda);
+    return validateClauseList(node, 'iff', true, validateIffSection$lambda);
   }
   function ThenSection(clauses) {
     this.clauses = clauses;
@@ -4651,7 +4651,7 @@ var bundle = function (_, Kotlin) {
     return new ThenSection(it);
   }
   function validateThenSection(node) {
-    return validateClauseList(node, 'then', validateThenSection$lambda);
+    return validateClauseList(node, 'then', false, validateThenSection$lambda);
   }
   function WhereSection(clauses) {
     this.clauses = clauses;
@@ -4698,7 +4698,7 @@ var bundle = function (_, Kotlin) {
     return new WhereSection(it);
   }
   function validateWhereSection(node) {
-    return validateClauseList(node, 'where', validateWhereSection$lambda);
+    return validateClauseList(node, 'where', false, validateWhereSection$lambda);
   }
   function NotSection(clauses) {
     this.clauses = clauses;
@@ -4745,7 +4745,7 @@ var bundle = function (_, Kotlin) {
     return new NotSection(it);
   }
   function validateNotSection(node) {
-    return validateClauseList(node, 'not', validateNotSection$lambda);
+    return validateClauseList(node, 'not', false, validateNotSection$lambda);
   }
   function OrSection(clauses) {
     this.clauses = clauses;
@@ -4792,7 +4792,7 @@ var bundle = function (_, Kotlin) {
     return new OrSection(it);
   }
   function validateOrSection(node) {
-    return validateClauseList(node, 'or', validateOrSection$lambda);
+    return validateClauseList(node, 'or', false, validateOrSection$lambda);
   }
   function identifySections(sections, expected) {
     var tmp$, tmp$_0, tmp$_1, tmp$_2;
@@ -7745,7 +7745,7 @@ var bundle = function (_, Kotlin) {
   package$phase2.toCode_tsx3j7$ = toCode_0;
   package$phase2.ClauseListNode = ClauseListNode;
   package$phase2.ClauseListSection = ClauseListSection;
-  package$phase2.validateClauseList_a0jl34$ = validateClauseList;
+  package$phase2.validateClauseList_geu11l$ = validateClauseList;
   package$phase2.Phase2Node = Phase2Node;
   package$phase2.Document = Document;
   package$phase2.validateDocument_baevx2$ = validateDocument;

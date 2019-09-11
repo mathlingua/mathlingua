@@ -59,7 +59,8 @@ data class AssumingSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateAssumingSection(node: Phase1Node): Validation<AssumingSection> {
     return validateClauseList(
         node,
-        "assuming"
+        "assuming",
+        false
     ) { AssumingSection(it) }
 }
 
@@ -247,7 +248,8 @@ data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateMeansSection(node: Phase1Node): Validation<MeansSection> {
     return validateClauseList(
         node,
-        "means"
+        "means",
+        false
     ) { MeansSection(it) }
 }
 
@@ -276,7 +278,8 @@ data class ResultSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateResultSection(node: Phase1Node): Validation<ResultSection> {
     return validateClauseList(
         node,
-        "Result"
+        "Result",
+        false
     ) { ResultSection(it) }
 }
 
@@ -305,7 +308,8 @@ data class AxiomSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateAxiomSection(node: Phase1Node): Validation<AxiomSection> {
     return validateClauseList(
         node,
-        "Axiom"
+        "Axiom",
+        false
     ) { AxiomSection(it) }
 }
 
@@ -334,7 +338,8 @@ data class ConjectureSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateConjectureSection(node: Phase1Node): Validation<ConjectureSection> {
     return validateClauseList(
         node,
-        "Conjecture"
+        "Conjecture",
+        false
     ) { ConjectureSection(it) }
 }
 
@@ -363,7 +368,8 @@ data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateSuchThatSection(node: Phase1Node): Validation<SuchThatSection> {
     return validateClauseList(
         node,
-        "suchThat"
+        "suchThat",
+        false
     ) { SuchThatSection(it) }
 }
 
@@ -392,7 +398,8 @@ data class ThatSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateThatSection(node: Phase1Node): Validation<ThatSection> {
     return validateClauseList(
         node,
-        "that"
+        "that",
+        false
     ) { ThatSection(it) }
 }
 
@@ -421,7 +428,8 @@ data class IfSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateIfSection(node: Phase1Node): Validation<IfSection> {
     return validateClauseList(
         node,
-        "if"
+        "if",
+        true
     ) { IfSection(it) }
 }
 
@@ -450,7 +458,8 @@ data class IffSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateIffSection(node: Phase1Node): Validation<IffSection> {
     return validateClauseList(
         node,
-        "iff"
+        "iff",
+        true
     ) { IffSection(it) }
 }
 
@@ -479,7 +488,8 @@ data class ThenSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateThenSection(node: Phase1Node): Validation<ThenSection> {
     return validateClauseList(
         node,
-        "then"
+        "then",
+        false
     ) { ThenSection(it) }
 }
 
@@ -508,7 +518,8 @@ data class WhereSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateWhereSection(node: Phase1Node): Validation<WhereSection> {
     return validateClauseList(
         node,
-        "where"
+        "where",
+        false
     ) { WhereSection(it) }
 }
 
@@ -537,7 +548,8 @@ data class NotSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateNotSection(node: Phase1Node): Validation<NotSection> {
     return validateClauseList(
         node,
-        "not"
+        "not",
+        false
     ) { NotSection(it) }
 }
 
@@ -566,6 +578,7 @@ data class OrSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateOrSection(node: Phase1Node): Validation<OrSection> {
     return validateClauseList(
         node,
-        "or"
+        "or",
+        false
     ) { OrSection(it) }
 }

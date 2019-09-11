@@ -52,8 +52,9 @@ editor.session.setMode("ace/mode/yaml");
 function parse(input) {
     const ml = new bundle.mathlingua.common.MathLingua();
     const result = ml['parse_61zpoe$'](editor.getValue());
-    if (result.errors.length === 0) {
+    if (!result.errors) {
         document.getElementById('output').innerHTML = 'Processed Successfully';
+        document.getElementById('error').innerHTML = '';
     }
     else {
         let errorText = '';
@@ -66,6 +67,7 @@ function parse(input) {
               allMessages.add(message);
             }
         }
+        document.getElementById('output').innerHTML = '';
         document.getElementById('error').innerHTML = errorText;
     }
 }
@@ -76,10 +78,12 @@ editor.on('change', () => {
     const findAllSignatures = ml['findAllSignatures_mu0sga$'];
     const result = parse(editor.getValue());
 
-    if (result.document) {
+    console.log(JSON.stringify(result, null, 2));
+
+    if (result.value) {
         // update the completions
         COMPLETIONS = Array.from(BASE_COMPLETIONS);
-        const signatures = findAllSignatures(result.document);
+        const signatures = findAllSignatures(result.value);
         for (const sig of signatures) {
             const val = sig.replace(/\\/, '');
             COMPLETIONS.push({
@@ -89,8 +93,9 @@ editor.on('change', () => {
         }
     }
 
-    if (result.errors.length === 0) {
+    if (!result.errors) {
         document.getElementById('output').innerHTML = 'Processed Successfully';
+        document.getElementById('error').innerHTML = '';
     }
     else {
         let errorText = '';
@@ -103,6 +108,7 @@ editor.on('change', () => {
               allMessages.add(message);
             }
         }
+        document.getElementById('output').innerHTML = '';
         document.getElementById('error').innerHTML = errorText;
     }
 });
@@ -128,10 +134,20 @@ langTools.addCompleter({
    }
 });
 
+/*
 const link = document.getElementById('email');
 link.onclick = function() {
     this.href = 'mailto:DominicKramer@gmail.com?subject=MathLingua%20Contribution&body=';
     this.href += encodeURIComponent('I would like to contribute the ' +
         'following to the MathLingua project:\n\n');
     this.href += encodeURIComponent(editor.getValue());
+};
+*/
+
+const expandButton = document.getElementById('expand');
+expandButton.onclick = function() {
+    const ml = new bundle.mathlingua.common.MathLingua();
+    const result = ml['parse_61zpoe$'](editor.getValue());
+    const newDoc = ml['expand_8vvjcc$'](result.value);
+    editor.setValue(newDoc['toCode_eltk6l$']());
 };

@@ -137,6 +137,9 @@ var bundle = function (_, Kotlin) {
   MathLingua.prototype.findAllSignatures_mu0sga$ = function (node) {
     return copyToArray(toList(locateAllSignatures(node)));
   };
+  MathLingua.prototype.expand_8vvjcc$ = function (doc) {
+    return fullExpandComplete(doc);
+  };
   MathLingua.$metadata$ = {
     kind: Kind_CLASS,
     simpleName: 'MathLingua',

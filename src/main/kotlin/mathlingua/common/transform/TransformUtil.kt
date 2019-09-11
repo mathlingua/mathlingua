@@ -454,6 +454,7 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
 
 fun fullExpandOnce(doc: Document): Document {
     var transformed = separateIsStatements(doc)
+    transformed = separateInfixOperatorStatements(transformed)
     transformed = glueCommands(transformed)
     transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { root, node -> true })
     transformed = replaceRepresents(transformed, doc.represents, { true })
@@ -478,4 +479,108 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     }
 
     return transformed
+}
+
+fun separateInfixOperatorStatements(phase2Node: Phase2Node): Phase2Node {
+    return phase2Node.transform {
+        if (it is ClauseListNode) {
+            val newClauses = mutableListOf<Clause>()
+            for (c in it.clauses) {
+                if (c is Statement) {
+                    when (val validation = c.texTalkRoot) {
+                        is ValidationSuccess -> {
+                            val root = validation.value
+                            for (expanded in getExpandedInfixOperators(root)) {
+                                newClauses.add(Statement(
+                                    text = expanded.toCode(),
+                                    texTalkRoot = ValidationSuccess(root)
+                                ))
+                            }
+                        }
+                        is ValidationFailure -> newClauses.add(c)
+                    }
+                } else {
+                    newClauses.add(c)
+                }
+            }
+            ClauseListNode(clauses = newClauses)
+        } else {
+            it
+        }
+     }
+}
+
+private fun getSingleInfixOperatorIndex(exp: ExpressionTexTalkNode): Int {
+    var opIndex = -1
+    for (i in exp.children.indices) {
+        val child = exp.children[i]
+        if (child is Command) {
+            if (opIndex != -1) {
+                return -1
+            }
+            opIndex = i
+        }
+    }
+    return opIndex
+}
+
+private fun isInfixOperatorStatement(exp: ExpressionTexTalkNode): Boolean {
+    val opIndex = getSingleInfixOperatorIndex(exp)
+    // it should be `<arg>+ op <arg>+`
+    return opIndex > 0 && opIndex < exp.children.size - 1
+}
+
+private fun isComma(node: TexTalkNode): Boolean {
+    return node is TextTexTalkNode && node.text == ","
+}
+
+private fun getArguments(exp: ExpressionTexTalkNode, start: Int, end: Int): List<TexTalkNode> {
+    val result = mutableListOf<TexTalkNode>()
+    var i = start
+    while (i < end) {
+        val argChildren = mutableListOf<TexTalkNode>()
+        while (i < end && !isComma(exp.children[i])) {
+            argChildren.add(exp.children[i++])
+        }
+
+        if (i < end && isComma(exp.children[i])) {
+            i++ // skip the comma
+        }
+
+        if (argChildren.size == 1) {
+            result.add(argChildren[0])
+        } else {
+            result.add(ExpressionTexTalkNode(children = argChildren))
+        }
+    }
+    return result
+}
+
+private fun getExpandedInfixOperators(exp: ExpressionTexTalkNode): List<ExpressionTexTalkNode> {
+    if (!isInfixOperatorStatement(exp)) {
+        return listOf(exp)
+    }
+
+    val opIndex = getSingleInfixOperatorIndex(exp)
+    val leftArgs = getArguments(exp, 0, opIndex)
+    val rightArgs = getArguments(exp, opIndex+1, exp.children.size)
+
+    val result = mutableListOf<ExpressionTexTalkNode>()
+
+    val op = exp.children[opIndex]
+    for (left in leftArgs) {
+        for (right in rightArgs) {
+            result.add(
+                ExpressionTexTalkNode(
+                    children = listOf(
+                        left,
+                        op,
+                        right
+                    )
+                )
+            )
+        }
+    }
+
+    return result
 }

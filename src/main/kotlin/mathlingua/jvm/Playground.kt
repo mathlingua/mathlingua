@@ -208,6 +208,7 @@ object Playground {
                         }
                         signaturesList.text = sigBuilder.toString()
 
+                        phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
                         var transformed = doc as Phase2Node
 
                         if (separateIsBox.isSelected) {
@@ -239,7 +240,6 @@ object Playground {
                         }
 
                         outputArea.text = transformed.toCode(false, 0)
-                        phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
                         outputTree.model = DefaultTreeModel(toTreeNode(transformed))
                         val numRows = phase2Tree.rowCount
                         if (numRows > 0) {

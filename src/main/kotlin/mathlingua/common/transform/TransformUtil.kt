@@ -493,7 +493,7 @@ fun separateInfixOperatorStatements(phase2Node: Phase2Node): Phase2Node {
                             for (expanded in getExpandedInfixOperators(root)) {
                                 newClauses.add(Statement(
                                     text = expanded.toCode(),
-                                    texTalkRoot = ValidationSuccess(root)
+                                    texTalkRoot = ValidationSuccess(expanded)
                                 ))
                             }
                         }

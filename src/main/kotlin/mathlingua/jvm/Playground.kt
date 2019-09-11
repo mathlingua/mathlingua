@@ -74,6 +74,7 @@ object Playground {
 
         val phase1Tree = JTree(DefaultMutableTreeNode())
         val phase2Tree = JTree(DefaultMutableTreeNode())
+        val outputTree = JTree(DefaultMutableTreeNode())
 
         val tokenList = JTextArea(20, 20)
         tokenList.font = font
@@ -239,6 +240,7 @@ object Playground {
 
                         outputArea.text = transformed.toCode(false, 0)
                         phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
+                        outputTree.model = DefaultTreeModel(toTreeNode(transformed))
                         val numRows = phase2Tree.rowCount
                         if (numRows > 0) {
                             phase2Tree.expandRow(numRows - 1)
@@ -264,6 +266,7 @@ object Playground {
         val treeTabbedPane = JTabbedPane()
         treeTabbedPane.addTab("Phase2", JScrollPane(phase2Tree))
         treeTabbedPane.addTab("Phase1", JScrollPane(phase1Tree))
+        treeTabbedPane.addTab("Output", JScrollPane(outputTree))
         treeTabbedPane.addTab("Tokens", JScrollPane(tokenList))
         treeTabbedPane.addTab("Signatures", JScrollPane(signaturesList))
 

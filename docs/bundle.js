@@ -7230,7 +7230,7 @@ var bundle = function (_, Kotlin) {
         map.put_xwzc9p$(key, value);
       }
       var lhsVars = getVars_1(isNode.lhs);
-      if (lhsVars.size !== defDirectVars.size) {
+      if (lhsVars.size > defDirectVars.size) {
         return node;
       }
       for (var i_0 = 0; i_0 !== lhsVars.size; ++i_0) {

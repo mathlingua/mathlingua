@@ -26,6 +26,7 @@ import mathlingua.common.chalktalk.phase2.AssignmentNode
 import mathlingua.common.chalktalk.phase2.Identifier
 import mathlingua.common.chalktalk.phase2.Phase2Node
 import mathlingua.common.chalktalk.phase2.Statement
+import mathlingua.common.chalktalk.phase2.Text
 import mathlingua.common.chalktalk.phase2.TupleNode
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode
@@ -77,6 +78,13 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
                 }
                 is ValidationFailure -> node
             }
+        } else if (node is Text) {
+            var newText = node.text
+            val keysLongToShort = map.keys.toList().sortedBy { it.length }.reversed()
+            for (key in keysLongToShort) {
+                newText = newText.replace("%$key", map[key]!!)
+            }
+            return Text(text = newText)
         }
 
         return node

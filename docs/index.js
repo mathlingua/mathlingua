@@ -14,81 +14,138 @@
  * limitations under the License.
  */
 
-'use strict';
+'use strict'
 
-function filter(keywordText) {
-  const resultsNode = document.getElementById('results');
-
-  const keywords = keywordText.replace(/:/g, ' ')
-                              .split(' ')
-                              .filter(item => item.length > 0)
-                              .map(item => item.toLowerCase());
-
-  const found = [];
-  for (const item of window.MATHLINGUA_DATA) {
-    const itemKeywords = new Set(item.keywords);
-    var foundAll = true;
-    for (const kw of keywords) {
-      if (!itemKeywords.has(kw)) {
-        foundAll = false;
-        break;
-      }
-    }
-
-    if (foundAll) {
-      found.push({
-        text: item.text,
-        href: item.href,
-        mobileHref: item.mobileHref
-      });
-    }
-  }
-
-  while (resultsNode.firstChild) {
-    resultsNode.removeChild(resultsNode.firstChild);
-  }
-
-  if (found.length === 0) {
-    resultsNode.appendChild(createResultDiv('No results found', undefined, undefined));
-  }
-  else {
-    for (const res of found) {
-      resultsNode.appendChild(createResultDiv(res.text, res.href, res.mobileHref));
-    }
-  }
+let BASE_COMPLETIONS = [
+    { name: 'Result:', value: 'Result:\nAlias:\nMetadata:' },
+    { name: 'Axiom:', value: 'Axiom:\nAlias:\nMetadata:' },
+    { name: 'Conjecture:', value: 'Conjecture:\nAlias:\nMetadata:' },
+    { name: 'Defines:', value: 'Defines:\nassuming:\nmeans:\nAlias:\nMetadata:' },
+    { name: 'Refines:', value: 'Refines:\nassuming:\nmeans:\nAlias:\nMetadata:' },
+    { name: 'Represents:', value: 'Represents:\nassuming:\nthat:\nAlias:\nMetadata:' },
+    { name: 'for:', value: 'for:\nwhere:\nthen:' },
+    { name: 'exists:', value: 'exists:\nsuchThat:' },
+    { name: 'if:', value: 'if:\nthen:' },
+    { name: 'iff:', value: 'iff:\nthen:' },
+    { name: 'not:', value: 'not:' },
+    { name: 'or:', value: 'or:' }
+];
+for (const signature of window.MATHLINGUA_AUTOCOMPLETIONS) {
+    const val = signature.replace(/\\/, '');
+    BASE_COMPLETIONS.push({ name: val, value: val });
 }
 
-function isOnMobile() {
-    return (typeof window.orientation !== 'undefined') ||
-           (navigator.userAgent.toLowerCase().indexOf('iemobile') !== -1);
+let COMPLETIONS = Array.from(BASE_COMPLETIONS);
+
+const editor = ace.edit("editor");
+editor.setOptions({
+  highlightActiveLine: false,
+  useSoftTabs: true,
+  tabSize: 2,
+  showPrintMargin: false,
+  showFoldWidgets: false,
+  enableBasicAutocompletion: true,
+  enableLiveAutocompletion: false
+});
+editor.session.setMode("ace/mode/yaml");
+
+function parse(input) {
+    const ml = new bundle.mathlingua.common.MathLingua();
+    const result = ml['parse_61zpoe$'](editor.getValue());
+    if (!result.errors) {
+        document.getElementById('output').innerHTML = 'Processed Successfully';
+        document.getElementById('error').innerHTML = '';
+    }
+    else {
+        let errorText = '';
+        const allMessages = new Set();
+        for (const item of result.errors['array_hd7ov6$_0']) {
+            const message = item['message_8yp7un$_0'];
+            if (!allMessages.has(message)) {
+              errorText += 'Error(' + (item.row + 1) + ', ' + (item.column + 1) + '): ' +
+                message.replace(/\n/g, '<br/>') + '<br/>';
+              allMessages.add(message);
+            }
+        }
+        document.getElementById('output').innerHTML = '';
+        document.getElementById('error').innerHTML = errorText;
+    }
 }
 
-function createResultDiv(text, href, mobileHref) {
-  const codeBlock = document.createElement('code');
-  codeBlock.className = 'yaml';
-  codeBlock.appendChild(document.createTextNode(text));
+editor.on('change', () => {
+    const ml = new bundle.mathlingua.common.MathLingua();
+    const parse = ml['parse_61zpoe$'];
+    const findAllSignatures = ml['findAllSignatures_mu0sga$'];
+    const result = parse(editor.getValue());
 
-  const paddedPre = document.createElement('pre');
-  paddedPre.className = 'padded';
-  paddedPre.appendChild(codeBlock);
+    if (result.value) {
+        // update the completions
+        COMPLETIONS = Array.from(BASE_COMPLETIONS);
+        const signatures = findAllSignatures(result.value);
+        for (const sig of signatures) {
+            const val = sig.replace(/\\/, '');
+            COMPLETIONS.push({
+                name: val,
+                value: val
+            });
+        }
+    }
 
-  const centeredDiv = document.createElement('div');
-  centeredDiv.className = 'centered';
-  centeredDiv.appendChild(paddedPre);
+    if (!result.errors) {
+        document.getElementById('output').innerHTML = 'Processed Successfully';
+        document.getElementById('error').innerHTML = '';
+    }
+    else {
+        let errorText = '';
+        const allMessages = new Set();
+        for (const item of result.errors['array_hd7ov6$_0']) {
+            const message = item['message_8yp7un$_0'];
+            if (!allMessages.has(message)) {
+              errorText += 'Error(' + (item.row + 1) + ', ' + (item.column + 1) + '): ' +
+                message.replace(/\n/g, '<br/>') + '<br/>';
+              allMessages.add(message);
+            }
+        }
+        document.getElementById('output').innerHTML = '';
+        document.getElementById('error').innerHTML = errorText;
+    }
+});
 
-  const anchor = document.createElement('a');
-  anchor.className = 'plain';
-  anchor.setAttribute('target', '_');
-  const onMobile = isOnMobile();
-  if (!onMobile && href) {
-    anchor.setAttribute('href', href);
-  }
-  else if (onMobile && mobileHref) {
-    anchor.setAttribute('href', mobileHref);
-  }
-  anchor.appendChild(centeredDiv);
+const langTools = ace.require("ace/ext/language_tools");
+langTools.setCompleters();
+langTools.addCompleter({
+   getCompletions: (editor, session, pos, prefix, callback) => {
+       if (prefix.length === 0) {
+           return callback(null, []);
+       }
+       const column = pos.column;
+       let indent = '\n';
+       for (let i = 0; i < (column - prefix.length); i++) {
+           indent += ' ';
+       }
+       callback(null, COMPLETIONS.map(item => {
+           return {
+               name: item.name,
+               value: item.value.replace(/\n/g, indent)
+           };
+       }));
+   }
+});
 
-  hljs.highlightBlock(codeBlock);
+/*
+const link = document.getElementById('email');
+link.onclick = function() {
+    this.href = 'mailto:DominicKramer@gmail.com?subject=MathLingua%20Contribution&body=';
+    this.href += encodeURIComponent('I would like to contribute the ' +
+        'following to the MathLingua project:\n\n');
+    this.href += encodeURIComponent(editor.getValue());
+};
+*/
 
-  return anchor;
-}
+const expandButton = document.getElementById('expand');
+expandButton.onclick = function() {
+    const ml = new bundle.mathlingua.common.MathLingua();
+    const result = ml['parse_61zpoe$'](editor.getValue());
+    const newDoc = ml['expand_8vvjcc$'](result.value);
+    editor.setValue(newDoc['toCode_eltk6l$']());
+};

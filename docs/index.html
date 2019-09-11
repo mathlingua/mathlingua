@@ -4,64 +4,95 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-146435719-1"></script>
     <script>
-    window.dataLayer = window.dataLayer || [];
-    function gtag(){dataLayer.push(arguments);}
-    gtag('js', new Date());
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
 
-    gtag('config', 'UA-146435719-1');
+      gtag('config', 'UA-146435719-1');
 
     </script>
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet"
           href="style.css">
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/styles/atom-one-light.min.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.10/highlight.min.js"></script>
-    <script charset="UTF-8"
-            src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.9/languages/yaml.min.js"></script>
-    <script type="text/javascript"
-            charset="UTF-8"
-            src="data.js"></script>
-    <script type="text/javascript"
-            charset="UTF-8"
-            src="index.js"></script>
-    <script>hljs.initHighlightingOnLoad();</script>
-    <title>MathLingua</title>
+    <title>Playground</title>
 </head>
-<body onload="filter('')">
 
+<body>
 <div class="header">
-    <a class="active" href="index.html">Home</a>
-    <a href="contribute.html">Contribute</a>
-    <a href="about.html">About</a>
-    <a target="_" href="https://github.com/DominicKramer/mathlingua" style="float:right;">GitHub</a>
+    <a class="active" href="index.html">Playground</a>
+    <a target="_" href="https://www.mathlingua.org">Docs</a>
+    <a target="_" href="https://github.com/DominicKramer/mathlingua">GitHub</a>
 </div>
 &nbsp;
 <div class="centered">
     <div class="all-padded">
         <h1 class="title">
-            MathLingua
+            MathLingua Playground
         </h1>
         <p>
-            The <a href="https://github.com/DominicKramer/mathlingua">MathLingua</a>
-            language is used to encode mathematical definitions, theorems, axioms, and
-            conjectures.
+            The editor below can be used to write MathLingua encoded mathematics
+            and try the MathLingua language.
         </p>
         <p>
-            The goal of the MathLingua system is to have a central location of mathematical
-            results that can be searched by, contributed to, and built on by anyone anywhere.
+            The example below shows some of the power of MathLingua.  First, what
+            it means for an operator to be commutative is defined.  Next, an
+            Abelian group is defined, and a theorem is described that states that
+            all cyclic groups are Abelian.
         </p>
         <p>
-            Filter by keywords to find what is already encoded in MathLingua. For example,
-            filter using the keyword "group".
+            When the <i>Expand</i> button is pressed, all of the definitions and
+            results will be expanded with all definitions inlined.  This demonstrates
+            how definitions and results interact with each other and how MathLingua
+            can be used to analyze mathematical results.
         </p>
-        <form action="javascript:filter(keywords.value)" class="search-form">
-            <input class="search-field" type="text" id="keywords" placeholder="Enter keywords..."/>
-            <button class="button" type="submit">Filter</button>
-        </form>
+        <p>
+            In particular, the definition of a commutative operator will be inlined in
+            the definition of an Abelian group, and the definition of an Abelian group
+            will be inlined in the theorem.  It is fine that a cycle group is not defined,
+            but, because of that, it is not expanded.
+        </p>
+        <div id="editor">[\commutative:on{A}]
+Defines: *
+assuming: 'A is \set'
+means:
+. for: a, b
+  where: 'a, b \in A'
+  then: 'a * b = b * a'
+
+
+[\abelian.group]
+Defines: G := (X, *, e)
+means:
+. 'G is \group'
+. '* is \commutative:on{X}'
+
+
+Result:
+. for: G
+  where: 'G is \cyclic.group'
+  then: 'G is \abelian.group'
+</div>
+        <div style="padding-top: 5px; padding-bottom: 10px; padding-right: 0px;">
+            <a id="expand" class="button float-right" target="_">Expand</a>
+        </div>
+        <div id="output" class="output"></div>
+        <div id="error" class="error"></div>
     </div>
 </div>
-<div id="results"></div>
+<script type="text/javascript" src="kotlin.js"></script>
+<script type="text/javascript" src="bundle.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ace.js"
+        type="text/javascript"
+        charset="utf-8"></script>
+<script type="text/javascript"
+        charset="UTF-8"
+        src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.5/ext-language_tools.js"></script>
+<script type="text/javascript"
+        charset="UTF-8"
+        src="completions.js"></script>
+<script type="text/javascript"
+        charset="UTF-8"
+        src="index.js"></script>
 </body>
 </html>

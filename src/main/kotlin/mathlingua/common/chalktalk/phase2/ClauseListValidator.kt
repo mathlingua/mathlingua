@@ -30,16 +30,17 @@ data class ClauseListSection(val name: String, val clauses: List<Clause>)
 fun <T> validateClauseList(
     rawNode: Phase1Node,
     expectedName: String,
+    canBeEmpty: Boolean,
     builder: (clauses: ClauseListNode) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-    return when (val validation = validate(node, expectedName)) {
+    return when (val validation = validate(node, expectedName, canBeEmpty)) {
         is ValidationSuccess -> ValidationSuccess(builder(ClauseListNode(validation.value.clauses)))
         is ValidationFailure -> ValidationFailure(validation.errors)
     }
 }
 
-private fun validate(node: Phase1Node, expectedName: String): Validation<ClauseListSection> {
+private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean): Validation<ClauseListSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
         errors.add(
@@ -61,7 +62,7 @@ private fun validate(node: Phase1Node, expectedName: String): Validation<ClauseL
         )
     }
 
-    if (args.isEmpty()) {
+    if (args.isEmpty() && !canBeEmpty) {
         errors.add(
             ParseError(
                 "Section '" + name.text + "' requires at least one argument.",

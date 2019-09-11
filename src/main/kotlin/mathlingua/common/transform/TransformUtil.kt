@@ -368,7 +368,8 @@ fun replaceIsNodes(
         }
 
         val lhsVars = getVars(isNode.lhs)
-        if (lhsVars.size != defDirectVars.size) {
+
+        if (lhsVars.size > defDirectVars.size) {
             return node
         }
 

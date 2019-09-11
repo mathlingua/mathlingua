@@ -78,8 +78,6 @@ editor.on('change', () => {
     const findAllSignatures = ml['findAllSignatures_mu0sga$'];
     const result = parse(editor.getValue());
 
-    console.log(JSON.stringify(result, null, 2));
-
     if (result.value) {
         // update the completions
         COMPLETIONS = Array.from(BASE_COMPLETIONS);

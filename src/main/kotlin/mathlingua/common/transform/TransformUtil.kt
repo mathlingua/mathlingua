@@ -507,14 +507,14 @@ fun separateInfixOperatorStatements(phase2Node: Phase2Node): Phase2Node {
         } else {
             it
         }
-     }
+        }
 }
 
 private fun getSingleInfixOperatorIndex(exp: ExpressionTexTalkNode): Int {
     for (i in 1 until exp.children.size - 1) {
-        val prev = exp.children[i-1]
+        val prev = exp.children[i - 1]
         val cur = exp.children[i]
-        val next = exp.children[i+1]
+        val next = exp.children[i + 1]
         if (!isOperator(prev) && cur is Command && !isOperator(next)) {
             return i
         }
@@ -579,7 +579,7 @@ private fun getExpandedInfixOperators(exp: ExpressionTexTalkNode): List<Expressi
     }
 
     val leftArgs = getArguments(exp, 0, opIndex)
-    val rightArgs = getArguments(exp, opIndex+1, exp.children.size)
+    val rightArgs = getArguments(exp, opIndex + 1, exp.children.size)
 
     val result = mutableListOf<ExpressionTexTalkNode>()
 

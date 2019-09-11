@@ -511,27 +511,43 @@ fun separateInfixOperatorStatements(phase2Node: Phase2Node): Phase2Node {
 }
 
 private fun getSingleInfixOperatorIndex(exp: ExpressionTexTalkNode): Int {
-    var opIndex = -1
-    for (i in exp.children.indices) {
-        val child = exp.children[i]
-        if (child is Command) {
-            if (opIndex != -1) {
-                return -1
-            }
-            opIndex = i
+    for (i in 1 until exp.children.size - 1) {
+        val prev = exp.children[i-1]
+        val cur = exp.children[i]
+        val next = exp.children[i+1]
+        if (!isOperator(prev) && cur is Command && !isOperator(next)) {
+            return i
         }
     }
-    return opIndex
-}
 
-private fun isInfixOperatorStatement(exp: ExpressionTexTalkNode): Boolean {
-    val opIndex = getSingleInfixOperatorIndex(exp)
-    // it should be `<arg>+ op <arg>+`
-    return opIndex > 0 && opIndex < exp.children.size - 1
+    return -1
 }
 
 private fun isComma(node: TexTalkNode): Boolean {
     return node is TextTexTalkNode && node.text == ","
+}
+
+private fun isOperator(node: TexTalkNode): Boolean {
+    if (node !is TextTexTalkNode) {
+        return false
+    }
+
+    if (node.text.isBlank()) {
+        return false
+    }
+
+    for (c in node.text) {
+        if (!isOpChar(c)) {
+            return false
+        }
+    }
+
+    return true
+}
+
+private fun isOpChar(c: Char): Boolean {
+    return (c == '!' || c == '@' || c == '%' || c == '&' || c == '*' || c == '-' || c == '+' ||
+        c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
 }
 
 private fun getArguments(exp: ExpressionTexTalkNode, start: Int, end: Int): List<TexTalkNode> {
@@ -557,11 +573,11 @@ private fun getArguments(exp: ExpressionTexTalkNode, start: Int, end: Int): List
 }
 
 private fun getExpandedInfixOperators(exp: ExpressionTexTalkNode): List<ExpressionTexTalkNode> {
-    if (!isInfixOperatorStatement(exp)) {
+    val opIndex = getSingleInfixOperatorIndex(exp)
+    if (opIndex < 0) {
         return listOf(exp)
     }
 
-    val opIndex = getSingleInfixOperatorIndex(exp)
     val leftArgs = getArguments(exp, 0, opIndex)
     val rightArgs = getArguments(exp, opIndex+1, exp.children.size)
 

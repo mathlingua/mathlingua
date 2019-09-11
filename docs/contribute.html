@@ -21,7 +21,7 @@
 <body>
 <div class="header">
     <a href="index.html">Home</a>
-    <a class="active" href="contribute.html">Contribute</a>
+    <a class="active" href="contribute.html">Playground</a>
     <a href="about.html">About</a>
     <a target="_" href="https://github.com/DominicKramer/mathlingua" style="float:right;">GitHub</a>
 </div>
@@ -29,18 +29,51 @@
 <div class="centered">
     <div class="all-padded">
         <h1 class="title">
-            Contribute
+            MathLingua Playground
         </h1>
         <p>
             The editor below can be used to write MathLingua encoded mathematics
             and try the MathLingua language.
         </p>
         <p>
-            Email your encoded mathematics to <i>DominicKramer@gmail.com</i>
-            to contribute them to the MathLingua project. The <b>Contribute</b>
-            button below will draft an email for you.
+            The examples below shows some of the features of MathLingua.  First,
+            it is informally defined (as denoted by the use of double quotes) what
+            it means by <i>x \in X</i>. Next, there is a definition of a continuous
+            function.  Last, there is a result that states that a differentiable
+            function on a set is continuous on that set.
         </p>
-        <div id="editor"></div>
+        <p>
+            When the <i>Expand</i> button is pressed, all of the definitions and
+            results will be expanded with all definitions inlined.  This demonstrates
+            how definitions and results interact with each other and how MathLingua
+            can be used to analyze mathematical results.
+        </p>
+        <div id="editor">[a \in A]
+Represents:
+assuming: 'A is \set'
+that: "$%a$ is an element of $%A$."
+
+
+[\continuous.function:on{X}]
+Defines: f
+assuming: 'X is \set'
+means:
+. 'f is \function:on{X}'
+. for: x
+  where: 'x \in X'
+  then:
+  . '\limit[t]_{x}{f(t)} = f(x)'
+
+
+Result:
+. for: g, Y
+  where:
+  . 'Y is \set'
+  . 'g is \function:on{Y}'
+  then:
+  . if: 'g is \differentiable \function:on{Y}'
+    then: 'g is \continuous \function:on{Y}'
+</div>
         <div style="padding-top: 5px; padding-bottom: 10px; padding-right: 0px;">
             <a id="expand" class="button float-right" target="_">Expand</a>
         </div>

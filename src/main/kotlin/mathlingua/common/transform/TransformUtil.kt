@@ -456,9 +456,9 @@ fun fullExpandOnce(doc: Document): Document {
     var transformed = separateIsStatements(doc)
     transformed = separateInfixOperatorStatements(transformed)
     transformed = glueCommands(transformed)
-    transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { root, node -> true })
-    transformed = replaceRepresents(transformed, doc.represents, { true })
-    return replaceIsNodes(transformed, doc.defines, { true }) as Document
+    transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { _, _ -> true })
+    transformed = replaceRepresents(transformed, doc.represents) { true }
+    return replaceIsNodes(transformed, doc.defines) { true } as Document
 }
 
 fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {

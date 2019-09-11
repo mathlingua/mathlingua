@@ -194,7 +194,7 @@ fun glueCommands(node: Phase2Node): Phase2Node {
             it.texTalkRoot is ValidationSuccess &&
             it.texTalkRoot.value.children.size == 1 &&
             it.texTalkRoot.value.children[0] is IsTexTalkNode) {
-            val isNode = it.texTalkRoot.value!!.children[0] as IsTexTalkNode
+            val isNode = it.texTalkRoot.value.children[0] as IsTexTalkNode
             if (isNode.rhs.items.size != 1) {
                 throw Error("Expected 'is' node $isNode to only contain a single rhs item")
             }

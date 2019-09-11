@@ -54,7 +54,7 @@ fun getVars(texTalkNode: TexTalkNode): List<String> {
 fun renameVars(texTalkNode: TexTalkNode, map: Map<String, String>): TexTalkNode {
     return texTalkNode.transform {
         if (it is TextTexTalkNode) {
-            it.copy(text = map.getOrDefault(it.text, it.text))
+            it.copy(text = map[it.text] ?: it.text)
         } else {
             it
         }
@@ -64,16 +64,16 @@ fun renameVars(texTalkNode: TexTalkNode, map: Map<String, String>): TexTalkNode 
 fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
     fun chalkTransformer(node: Phase2Node): Phase2Node {
         if (node is Identifier) {
-            return node.copy(name = map.getOrDefault(node.name, node.name))
+            return node.copy(name = map[node.name] ?: node.name)
         }
 
         if (node is Statement) {
             return when (val validation = node.texTalkRoot) {
                 is ValidationSuccess -> {
-                    val root = renameVars(validation.value, map) as ExpressionTexTalkNode
+                    val exp = renameVars(validation.value, map) as ExpressionTexTalkNode
                     return Statement(
-                        text = root.toCode(),
-                        texTalkRoot = ValidationSuccess(root)
+                        text = exp.toCode(),
+                        texTalkRoot = ValidationSuccess(exp)
                     )
                 }
                 is ValidationFailure -> node

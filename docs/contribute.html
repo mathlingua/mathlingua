@@ -15,7 +15,7 @@
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
     <link rel="stylesheet"
           href="style.css">
-    <title>Contribute</title>
+    <title>Playground</title>
 </head>
 
 <body>
@@ -36,11 +36,10 @@
             and try the MathLingua language.
         </p>
         <p>
-            The examples below shows some of the features of MathLingua.  First,
-            it is informally defined (as denoted by the use of double quotes) what
-            it means by <i>x \in X</i>. Next, there is a definition of a continuous
-            function.  Last, there is a result that states that a differentiable
-            function on a set is continuous on that set.
+            The example below shows some of the power of MathLingua.  First, what
+            it means for an operator to be commutative is defined.  Next, an
+            Abelian group is defined, and a theorem is described that states that
+            all cyclic groups are Abelian.
         </p>
         <p>
             When the <i>Expand</i> button is pressed, all of the definitions and
@@ -48,31 +47,32 @@
             how definitions and results interact with each other and how MathLingua
             can be used to analyze mathematical results.
         </p>
-        <div id="editor">[a \in A]
-Represents:
+        <p>
+            In particular, the definition of a commutative operator will be inlined in
+            the definition of an Abelian group, and the definition of an Abelian group
+            will be inlined in the theorem.  It is fine that a cycle group is not defined,
+            but, because of that, it is not expanded.
+        </p>
+        <div id="editor">[\commutative:on{A}]
+Defines: *
 assuming: 'A is \set'
-that: "$%a$ is an element of $%A$."
-
-
-[\continuous.function:on{X}]
-Defines: f
-assuming: 'X is \set'
 means:
-. 'f is \function:on{X}'
-. for: x
-  where: 'x \in X'
-  then:
-  . '\limit[t]_{x}{f(t)} = f(x)'
+. for: a, b
+  where: 'a, b \in A'
+  then: 'a * b = b * a'
+
+
+[\abelian.group]
+Defines: G := (X, *, e)
+means:
+. 'G is \group'
+. '* is \commutative:on{X}'
 
 
 Result:
-. for: g, Y
-  where:
-  . 'Y is \set'
-  . 'g is \function:on{Y}'
-  then:
-  . if: 'g is \differentiable \function:on{Y}'
-    then: 'g is \continuous \function:on{Y}'
+. for: G
+  where: 'G is \cyclic.group'
+  then: 'G is \abelian.group'
 </div>
         <div style="padding-top: 5px; padding-bottom: 10px; padding-right: 0px;">
             <a id="expand" class="button float-right" target="_">Expand</a>

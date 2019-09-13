@@ -25,13 +25,13 @@ var bundle = function (_, Kotlin) {
   var Enum = Kotlin.kotlin.Enum;
   var throwISE = Kotlin.throwISE;
   var equals = Kotlin.equals;
+  var reversed = Kotlin.kotlin.collections.reversed_7wnvza$;
+  var last = Kotlin.kotlin.collections.last_2p1efm$;
   var getCallableRef = Kotlin.getCallableRef;
   var listOf_0 = Kotlin.kotlin.collections.listOf_i5x0yv$;
   var emptyList = Kotlin.kotlin.collections.emptyList_287e2$;
   var HashMap_init = Kotlin.kotlin.collections.HashMap_init_q3lmfv$;
   var StringBuilder = Kotlin.kotlin.text.StringBuilder;
-  var reversed = Kotlin.kotlin.collections.reversed_7wnvza$;
-  var last = Kotlin.kotlin.collections.last_2p1efm$;
   var HashSet_init = Kotlin.kotlin.collections.HashSet_init_287e2$;
   var distinct = Kotlin.kotlin.collections.distinct_7wnvza$;
   var Error_init = Kotlin.kotlin.Error_init_pdl1vj$;
@@ -1853,6 +1853,33 @@ var bundle = function (_, Kotlin) {
     }
     builder.append_gw00v9$(line);
     return builder.toString();
+  }
+  function getChalkTalkAncestry(root, node) {
+    var path = ArrayList_init();
+    getChalkTalkAncestryImpl(root, node, path);
+    if (!path.isEmpty()) {
+      path.removeAt_za3lpa$(path.size - 1 | 0);
+    }
+    return reversed(path);
+  }
+  function getChalkTalkAncestryImpl$lambda(closure$path, closure$node) {
+    return function (it) {
+      if (closure$path.isEmpty() || !equals(last(closure$path), closure$node)) {
+        getChalkTalkAncestryImpl(it, closure$node, closure$path);
+      }
+      return Unit;
+    };
+  }
+  function getChalkTalkAncestryImpl(root, node, path) {
+    if (equals(root, node)) {
+      path.add_11rb$(node);
+      return;
+    }
+    path.add_11rb$(root);
+    root.forEach_ye21ev$(getChalkTalkAncestryImpl$lambda(path, node));
+    if (path.isEmpty() || !equals(last(path), node)) {
+      path.removeAt_za3lpa$(path.size - 1 | 0);
+    }
   }
   function ValidationPair(matches, validate) {
     this.matches = matches;
@@ -6011,29 +6038,29 @@ var bundle = function (_, Kotlin) {
     }
   }
   TexTalkTokenType.valueOf_61zpoe$ = TexTalkTokenType$valueOf;
-  function getAncestry(root, node) {
+  function getTexTalkAncestry(root, node) {
     var path = ArrayList_init();
-    getAncestryImpl(root, node, path);
+    getTexTalkAncestryImpl(root, node, path);
     if (!path.isEmpty()) {
       path.removeAt_za3lpa$(path.size - 1 | 0);
     }
     return reversed(path);
   }
-  function getAncestryImpl$lambda(closure$path, closure$node) {
+  function getTexTalkAncestryImpl$lambda(closure$path, closure$node) {
     return function (it) {
       if (closure$path.isEmpty() || !equals(last(closure$path), closure$node)) {
-        getAncestryImpl(it, closure$node, closure$path);
+        getTexTalkAncestryImpl(it, closure$node, closure$path);
       }
       return Unit;
     };
   }
-  function getAncestryImpl(root, node, path) {
+  function getTexTalkAncestryImpl(root, node, path) {
     if (equals(root, node)) {
       path.add_11rb$(node);
       return;
     }
     path.add_11rb$(root);
-    root.forEach_j2ps96$(getAncestryImpl$lambda(path, node));
+    root.forEach_j2ps96$(getTexTalkAncestryImpl$lambda(path, node));
     if (path.isEmpty() || !equals(last(path), node)) {
       path.removeAt_za3lpa$(path.size - 1 | 0);
     }
@@ -6956,7 +6983,7 @@ var bundle = function (_, Kotlin) {
       if (Kotlin.isType(node, Command) && !closure$knownDefSigs.contains_11rb$(getCommandSignature(node).toCode())) {
         return false;
       }
-      var parents = getAncestry(root, node);
+      var parents = getTexTalkAncestry(root, node);
       tmp$ = parents.iterator();
       while (tmp$.hasNext()) {
         var p = tmp$.next();
@@ -7012,7 +7039,7 @@ var bundle = function (_, Kotlin) {
       if (!closure$shouldProcessTex(root, node)) {
         return false;
       }
-      var $receiver = getAncestry(root, node);
+      var $receiver = getTexTalkAncestry(root, node);
       var any$result;
       any$break: do {
         var tmp$;
@@ -7090,7 +7117,7 @@ var bundle = function (_, Kotlin) {
   }
   function replaceRepresents$chalkTransformer(closure$filter, closure$repMap) {
     return function (node) {
-      var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7, tmp$_8, tmp$_9, tmp$_10;
+      var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7, tmp$_8, tmp$_9, tmp$_10, tmp$_11, tmp$_12;
       if (!closure$filter(node)) {
         return node;
       }
@@ -7121,19 +7148,21 @@ var bundle = function (_, Kotlin) {
             map.put_xwzc9p$(key, value);
           }
           var ifThen = buildIfThen_0(rep);
-          if (ifThen.ifSection.clauses.clauses.isEmpty() && ifThen.thenSection.clauses.clauses.size === 1) {
-            tmp$_1 = ifThen.thenSection.clauses.clauses.get_za3lpa$(0);
+          if (ifThen.ifSection.clauses.clauses.isEmpty()) {
+            tmp$_1 = ifThen.thenSection.clauses.clauses.iterator();
+            while (tmp$_1.hasNext()) {
+              var c = tmp$_1.next();
+              newClauses.add_11rb$(Kotlin.isType(tmp$_2 = renameVars_0(c, map), Clause) ? tmp$_2 : throwCCE());
+            }
           }
            else {
-            tmp$_1 = ifThen;
+            newClauses.add_11rb$(Kotlin.isType(tmp$_3 = renameVars_0(ifThen, map), Clause) ? tmp$_3 : throwCCE());
           }
-          var res = tmp$_1;
-          newClauses.add_11rb$(Kotlin.isType(tmp$_2 = renameVars_0(res, map), Clause) ? tmp$_2 : throwCCE());
         }
          else if (Kotlin.isType(clause.texTalkRoot, ValidationSuccess) && clause.texTalkRoot.value.children.size === 3 && Kotlin.isType(clause.texTalkRoot.value.children.get_za3lpa$(0), TextTexTalkNode) && Kotlin.isType(clause.texTalkRoot.value.children.get_za3lpa$(1), Command) && Kotlin.isType(clause.texTalkRoot.value.children.get_za3lpa$(2), TextTexTalkNode)) {
-          var left = Kotlin.isType(tmp$_3 = clause.texTalkRoot.value.children.get_za3lpa$(0), TextTexTalkNode) ? tmp$_3 : throwCCE();
-          var op = Kotlin.isType(tmp$_4 = clause.texTalkRoot.value.children.get_za3lpa$(1), Command) ? tmp$_4 : throwCCE();
-          var right = Kotlin.isType(tmp$_5 = clause.texTalkRoot.value.children.get_za3lpa$(2), TextTexTalkNode) ? tmp$_5 : throwCCE();
+          var left = Kotlin.isType(tmp$_4 = clause.texTalkRoot.value.children.get_za3lpa$(0), TextTexTalkNode) ? tmp$_4 : throwCCE();
+          var op = Kotlin.isType(tmp$_5 = clause.texTalkRoot.value.children.get_za3lpa$(1), Command) ? tmp$_5 : throwCCE();
+          var right = Kotlin.isType(tmp$_6 = clause.texTalkRoot.value.children.get_za3lpa$(2), TextTexTalkNode) ? tmp$_6 : throwCCE();
           var sig_0 = getCommandSignature(op).toCode();
           if (!closure$repMap.containsKey_11rb$(sig_0)) {
             return node;
@@ -7143,13 +7172,13 @@ var bundle = function (_, Kotlin) {
           if (Kotlin.isType(rep_0.id.texTalkRoot, ValidationFailure)) {
             return node;
           }
-          var validation = Kotlin.isType(tmp$_6 = rep_0.id.texTalkRoot, ValidationSuccess) ? tmp$_6 : throwCCE();
+          var validation = Kotlin.isType(tmp$_7 = rep_0.id.texTalkRoot, ValidationSuccess) ? tmp$_7 : throwCCE();
           if (validation.value.children.size !== 3 || !Kotlin.isType(validation.value.children.get_za3lpa$(0), TextTexTalkNode) || !Kotlin.isType(validation.value.children.get_za3lpa$(1), Command) || !Kotlin.isType(validation.value.children.get_za3lpa$(2), TextTexTalkNode)) {
             return node;
           }
           var repLeftOpRight = validation.value.children;
-          var repLeft = (Kotlin.isType(tmp$_7 = repLeftOpRight.get_za3lpa$(0), TextTexTalkNode) ? tmp$_7 : throwCCE()).text;
-          var repRight = (Kotlin.isType(tmp$_8 = repLeftOpRight.get_za3lpa$(2), TextTexTalkNode) ? tmp$_8 : throwCCE()).text;
+          var repLeft = (Kotlin.isType(tmp$_8 = repLeftOpRight.get_za3lpa$(0), TextTexTalkNode) ? tmp$_8 : throwCCE()).text;
+          var repRight = (Kotlin.isType(tmp$_9 = repLeftOpRight.get_za3lpa$(2), TextTexTalkNode) ? tmp$_9 : throwCCE()).text;
           var defIndirectVars_0 = listOf_0([repLeft, repRight]);
           var map_0 = LinkedHashMap_init();
           for (var i_0 = 0; i_0 !== cmdVars_0.size; ++i_0) {
@@ -7158,14 +7187,16 @@ var bundle = function (_, Kotlin) {
             map_0.put_xwzc9p$(key_0, value_0);
           }
           var ifThen_0 = buildIfThen_0(rep_0);
-          if (ifThen_0.ifSection.clauses.clauses.isEmpty() && ifThen_0.thenSection.clauses.clauses.size === 1) {
-            tmp$_9 = ifThen_0.thenSection.clauses.clauses.get_za3lpa$(0);
+          if (ifThen_0.ifSection.clauses.clauses.isEmpty()) {
+            tmp$_10 = ifThen_0.thenSection.clauses.clauses.iterator();
+            while (tmp$_10.hasNext()) {
+              var c_0 = tmp$_10.next();
+              newClauses.add_11rb$(Kotlin.isType(tmp$_11 = renameVars_0(c_0, map_0), Clause) ? tmp$_11 : throwCCE());
+            }
           }
            else {
-            tmp$_9 = ifThen_0;
+            newClauses.add_11rb$(Kotlin.isType(tmp$_12 = renameVars_0(ifThen_0, map_0), Clause) ? tmp$_12 : throwCCE());
           }
-          var res_0 = tmp$_9;
-          newClauses.add_11rb$(Kotlin.isType(tmp$_10 = renameVars_0(res_0, map_0), Clause) ? tmp$_10 : throwCCE());
         }
          else {
           newClauses.add_11rb$(clause);
@@ -7195,61 +7226,132 @@ var bundle = function (_, Kotlin) {
   function replaceIsNodes$lambda(it) {
     return true;
   }
-  function replaceIsNodes$chalkTransformer(closure$filter, closure$defMap) {
+  function replaceIsNodes$chalkTransformer$addVarToMap(closure$forVarMap) {
+    return function (v) {
+      if (Kotlin.isType(v, AssignmentNode)) {
+        var name = v.assignment.lhs.text;
+        if (!closure$forVarMap.containsKey_11rb$(name)) {
+          closure$forVarMap.put_xwzc9p$(name, v);
+        }
+      }
+       else if (Kotlin.isType(v, AbstractionNode)) {
+        var name_0 = v.abstraction.name.text;
+        if (!closure$forVarMap.containsKey_11rb$(name_0)) {
+          closure$forVarMap.put_xwzc9p$(name_0, v);
+        }
+      }
+       else if (Kotlin.isType(v, Identifier)) {
+        var name_1 = v.name;
+        if (!closure$forVarMap.containsKey_11rb$(name_1)) {
+          closure$forVarMap.put_xwzc9p$(name_1, v);
+        }
+      }
+    };
+  }
+  function replaceIsNodes$chalkTransformer(closure$filter, closure$defMap, closure$root) {
     return function (node) {
-      var tmp$, tmp$_0, tmp$_1, tmp$_2;
+      var tmp$, tmp$_0, tmp$_1, tmp$_2, tmp$_3, tmp$_4, tmp$_5, tmp$_6, tmp$_7, tmp$_8, tmp$_9;
       if (!closure$filter(node)) {
         return node;
       }
-      if (!Kotlin.isType(node, Statement)) {
+      if (!Kotlin.isType(node, ClauseListNode)) {
         return node;
       }
-      if (Kotlin.isType(node.texTalkRoot, ValidationFailure) || (Kotlin.isType(tmp$ = node.texTalkRoot, ValidationSuccess) ? tmp$ : throwCCE()).value.children.size !== 1 || !Kotlin.isType(node.texTalkRoot.value.children.get_za3lpa$(0), IsTexTalkNode)) {
-        return node;
+      var newClauses = ArrayList_init();
+      tmp$ = node.clauses.iterator();
+      while (tmp$.hasNext()) {
+        var c = tmp$.next();
+        if (!Kotlin.isType(c, Statement)) {
+          newClauses.add_11rb$(c);
+          continue;
+        }
+        if (Kotlin.isType(c.texTalkRoot, ValidationFailure) || (Kotlin.isType(tmp$_0 = c.texTalkRoot, ValidationSuccess) ? tmp$_0 : throwCCE()).value.children.size !== 1 || !Kotlin.isType(c.texTalkRoot.value.children.get_za3lpa$(0), IsTexTalkNode)) {
+          newClauses.add_11rb$(c);
+          continue;
+        }
+        var isNode = Kotlin.isType(tmp$_1 = c.texTalkRoot.value.children.get_za3lpa$(0), IsTexTalkNode) ? tmp$_1 : throwCCE();
+        if (isNode.rhs.items.size !== 1 || isNode.rhs.items.get_za3lpa$(0).children.size !== 1 || !Kotlin.isType(isNode.rhs.items.get_za3lpa$(0).children.get_za3lpa$(0), Command)) {
+          newClauses.add_11rb$(c);
+          continue;
+        }
+        var command = Kotlin.isType(tmp$_2 = isNode.rhs.items.get_za3lpa$(0).children.get_za3lpa$(0), Command) ? tmp$_2 : throwCCE();
+        var sig = getCommandSignature(command).toCode();
+        if (!closure$defMap.containsKey_11rb$(sig)) {
+          newClauses.add_11rb$(c);
+          continue;
+        }
+        var def = ensureNotNull(closure$defMap.get_11rb$(sig));
+        var cmdVars = getVars_1(command);
+        var defDirectVars = getDefinesDirectVars(def);
+        var defIndirectVars = getDefinesIdVars(def);
+        if (cmdVars.size !== defIndirectVars.size) {
+          newClauses.add_11rb$(c);
+          continue;
+        }
+        var map = LinkedHashMap_init();
+        for (var i = 0; i !== cmdVars.size; ++i) {
+          var key = defIndirectVars.get_za3lpa$(i);
+          var value = cmdVars.get_za3lpa$(i);
+          map.put_xwzc9p$(key, value);
+        }
+        var stmtLhsVars = getVars_1(isNode.lhs);
+        var lhsAncestry = getChalkTalkAncestry(closure$root, c);
+        var forVarMap = LinkedHashMap_init();
+        var addVarToMap = replaceIsNodes$chalkTransformer$addVarToMap(forVarMap);
+        tmp$_3 = lhsAncestry.iterator();
+        while (tmp$_3.hasNext()) {
+          var parent = tmp$_3.next();
+          if (Kotlin.isType(parent, ForGroup)) {
+            tmp$_4 = parent.forSection.targets.iterator();
+            while (tmp$_4.hasNext()) {
+              var v = tmp$_4.next();
+              addVarToMap(v);
+            }
+          }
+           else if (Kotlin.isType(parent, ExistsGroup)) {
+            tmp$_5 = parent.existsSection.identifiers.iterator();
+            while (tmp$_5.hasNext()) {
+              var v_0 = tmp$_5.next();
+              addVarToMap(v_0);
+            }
+          }
+        }
+        var lhsVars = ArrayList_init();
+        tmp$_6 = stmtLhsVars.iterator();
+        while (tmp$_6.hasNext()) {
+          var v_1 = tmp$_6.next();
+          if (forVarMap.containsKey_11rb$(v_1)) {
+            lhsVars.addAll_brywnq$(getVars_0(ensureNotNull(forVarMap.get_11rb$(v_1))));
+          }
+           else {
+            lhsVars.add_11rb$(v_1);
+          }
+        }
+        if (lhsVars.size > defDirectVars.size) {
+          newClauses.add_11rb$(c);
+          continue;
+        }
+        for (var i_0 = 0; i_0 !== lhsVars.size; ++i_0) {
+          var key_0 = defDirectVars.get_za3lpa$(i_0);
+          var value_0 = lhsVars.get_za3lpa$(i_0);
+          map.put_xwzc9p$(key_0, value_0);
+        }
+        var ifThen = buildIfThen(def);
+        if (ifThen.ifSection.clauses.clauses.isEmpty()) {
+          tmp$_7 = ifThen.thenSection.clauses.clauses.iterator();
+          while (tmp$_7.hasNext()) {
+            var thenClause = tmp$_7.next();
+            newClauses.add_11rb$(Kotlin.isType(tmp$_8 = renameVars_0(thenClause, map), Clause) ? tmp$_8 : throwCCE());
+          }
+        }
+         else {
+          newClauses.add_11rb$(Kotlin.isType(tmp$_9 = renameVars_0(ifThen, map), Clause) ? tmp$_9 : throwCCE());
+        }
       }
-      var isNode = Kotlin.isType(tmp$_0 = node.texTalkRoot.value.children.get_za3lpa$(0), IsTexTalkNode) ? tmp$_0 : throwCCE();
-      if (isNode.rhs.items.size !== 1 || isNode.rhs.items.get_za3lpa$(0).children.size !== 1 || !Kotlin.isType(isNode.rhs.items.get_za3lpa$(0).children.get_za3lpa$(0), Command)) {
-        return node;
-      }
-      var command = Kotlin.isType(tmp$_1 = isNode.rhs.items.get_za3lpa$(0).children.get_za3lpa$(0), Command) ? tmp$_1 : throwCCE();
-      var sig = getCommandSignature(command).toCode();
-      if (!closure$defMap.containsKey_11rb$(sig)) {
-        return node;
-      }
-      var def = ensureNotNull(closure$defMap.get_11rb$(sig));
-      var cmdVars = getVars_1(command);
-      var defDirectVars = getDefinesDirectVars(def);
-      var defIndirectVars = getDefinesIdVars(def);
-      if (cmdVars.size !== defIndirectVars.size) {
-        return node;
-      }
-      var map = LinkedHashMap_init();
-      for (var i = 0; i !== cmdVars.size; ++i) {
-        var key = defIndirectVars.get_za3lpa$(i);
-        var value = cmdVars.get_za3lpa$(i);
-        map.put_xwzc9p$(key, value);
-      }
-      var lhsVars = getVars_1(isNode.lhs);
-      if (lhsVars.size > defDirectVars.size) {
-        return node;
-      }
-      for (var i_0 = 0; i_0 !== lhsVars.size; ++i_0) {
-        var key_0 = defDirectVars.get_za3lpa$(i_0);
-        var value_0 = lhsVars.get_za3lpa$(i_0);
-        map.put_xwzc9p$(key_0, value_0);
-      }
-      var ifThen = buildIfThen(def);
-      if (ifThen.ifSection.clauses.clauses.isEmpty() && ifThen.thenSection.clauses.clauses.size === 1) {
-        tmp$_2 = ifThen.thenSection.clauses.clauses.get_za3lpa$(0);
-      }
-       else {
-        tmp$_2 = ifThen;
-      }
-      var res = tmp$_2;
-      return renameVars_0(res, map);
+      return new ClauseListNode(newClauses);
     };
   }
-  function replaceIsNodes(node, defs, filter) {
+  function replaceIsNodes(root, defs, filter) {
     if (filter === void 0)
       filter = replaceIsNodes$lambda;
     var tmp$;
@@ -7262,8 +7364,8 @@ var bundle = function (_, Kotlin) {
         defMap.put_xwzc9p$(sig, def);
       }
     }
-    var chalkTransformer = replaceIsNodes$chalkTransformer(filter, defMap);
-    return node.transform_nrl0ww$(getCallableRef('chalkTransformer', function (node) {
+    var chalkTransformer = replaceIsNodes$chalkTransformer(filter, defMap, root);
+    return root.transform_nrl0ww$(getCallableRef('chalkTransformer', function (node) {
       return chalkTransformer(node);
     }));
   }
@@ -7694,6 +7796,7 @@ var bundle = function (_, Kotlin) {
   package$phase2.AliasSection = AliasSection;
   package$phase2.validateAliasSection_3fjnpj$ = validateAliasSection;
   package$phase2.indentedString_qta3xh$ = indentedString;
+  package$phase2.getChalkTalkAncestry_hkh2c8$ = getChalkTalkAncestry;
   package$phase2.Clause = Clause;
   package$phase2.validateClause_baevx2$ = validateClause;
   package$phase2.Target = Target;
@@ -7924,7 +8027,7 @@ var bundle = function (_, Kotlin) {
     get: TexTalkTokenType$Invalid_getInstance
   });
   package$textalk.TexTalkTokenType = TexTalkTokenType;
-  package$textalk.getAncestry_3b8392$ = getAncestry;
+  package$textalk.getTexTalkAncestry_3b8392$ = getTexTalkAncestry;
   package$textalk.TexTalkLexer = TexTalkLexer;
   package$textalk.newTexTalkLexer_61zpoe$ = newTexTalkLexer;
   package$textalk.TexTalkParser = TexTalkParser;

@@ -18,10 +18,13 @@ package mathlingua.common.transform
 
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
+import mathlingua.common.chalktalk.phase2.AbstractionNode
+import mathlingua.common.chalktalk.phase2.AssignmentNode
 import mathlingua.common.chalktalk.phase2.Clause
 import mathlingua.common.chalktalk.phase2.ClauseListNode
 import mathlingua.common.chalktalk.phase2.DefinesGroup
 import mathlingua.common.chalktalk.phase2.Document
+import mathlingua.common.chalktalk.phase2.ExistsGroup
 import mathlingua.common.chalktalk.phase2.ForGroup
 import mathlingua.common.chalktalk.phase2.ForSection
 import mathlingua.common.chalktalk.phase2.Identifier
@@ -33,6 +36,7 @@ import mathlingua.common.chalktalk.phase2.RepresentsGroup
 import mathlingua.common.chalktalk.phase2.Statement
 import mathlingua.common.chalktalk.phase2.ThenSection
 import mathlingua.common.chalktalk.phase2.WhereSection
+import mathlingua.common.chalktalk.phase2.getChalkTalkAncestry
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.IsTexTalkNode
@@ -40,7 +44,7 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
-import mathlingua.common.textalk.getAncestry
+import mathlingua.common.textalk.getTexTalkAncestry
 
 fun moveInlineCommandsToIsNode(
     defs: List<DefinesGroup>,
@@ -58,7 +62,7 @@ fun moveInlineCommandsToIsNode(
             return false
         }
 
-        val parents = getAncestry(root, node)
+        val parents = getTexTalkAncestry(root, node)
         for (p in parents) {
             if (p is IsTexTalkNode) {
                 return false
@@ -115,7 +119,7 @@ fun moveStatementInlineCommandsToIsNode(
             return false
         }
 
-        return !getAncestry(root, node).any { it is IsTexTalkNode }
+        return !getTexTalkAncestry(root, node).any { it is IsTexTalkNode }
     }
 
     val commandsFound = findCommands(root)
@@ -307,7 +311,7 @@ fun replaceRepresents(
 }
 
 fun replaceIsNodes(
-    node: Phase2Node,
+    root: Phase2Node,
     defs: List<DefinesGroup>,
     filter: (node: Phase2Node) -> Boolean = { true }
 ): Phase2Node {
@@ -376,7 +380,56 @@ fun replaceIsNodes(
                 map[defIndirectVars[i]] = cmdVars[i]
             }
 
-            val lhsVars = getVars(isNode.lhs)
+            val stmtLhsVars = getVars(isNode.lhs)
+            val lhsAncestry = getChalkTalkAncestry(root, c)
+
+            val forVarMap = mutableMapOf<String, Phase2Node>()
+            fun addVarToMap(v: Phase2Node) {
+                when (v) {
+                    is AssignmentNode -> {
+                        val name = v.assignment.lhs.text
+                        if (!forVarMap.containsKey(name)) {
+                            forVarMap[name] = v
+                        }
+                    }
+                    is AbstractionNode -> {
+                        val name = v.abstraction.name.text
+                        if (!forVarMap.containsKey(name)) {
+                            forVarMap[name] = v
+                        }
+                    }
+                    is Identifier -> {
+                        val name = v.name
+                        if (!forVarMap.containsKey(name)) {
+                            forVarMap[name] = v
+                        }
+                    }
+                }
+            }
+
+            for (parent in lhsAncestry) {
+                when (parent) {
+                    is ForGroup -> {
+                        for (v in parent.forSection.targets) {
+                            addVarToMap(v)
+                        }
+                    }
+                    is ExistsGroup -> {
+                        for (v in parent.existsSection.identifiers) {
+                            addVarToMap(v)
+                        }
+                    }
+                }
+            }
+
+            val lhsVars = mutableListOf<String>()
+            for (v in stmtLhsVars) {
+                if (forVarMap.containsKey(v)) {
+                    lhsVars.addAll(getVars(forVarMap[v]!!))
+                } else {
+                    lhsVars.add(v)
+                }
+            }
 
             if (lhsVars.size > defDirectVars.size) {
                 newClauses.add(c)
@@ -400,7 +453,7 @@ fun replaceIsNodes(
         return ClauseListNode(clauses = newClauses)
     }
 
-    return node.transform(::chalkTransformer)
+    return root.transform(::chalkTransformer)
 }
 
 fun toCanonicalForm(def: DefinesGroup): DefinesGroup {

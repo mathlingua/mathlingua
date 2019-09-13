@@ -20,7 +20,7 @@ Source:
 [\set]
 Defines: X
 means:
-. "A well defined collection of objects"
+. "$%X$ is well defined collection of objects"
 Metadata:
 . reference = "source: @AATA; page: 3"
 
@@ -29,7 +29,7 @@ Metadata:
 Represents:
 assuming: 'X is \set'
 that:
-. "$a$ is an element of $X$"
+. "$%a$ is an element of $%X$"
 Metadata:
 . reference = "source: @AATA; page: 4"
 
@@ -275,7 +275,7 @@ Metadata:
 
 [\integer]
 Defines: n
-means: "$n$ is a whole number"
+means: "$%n$ is a whole number"
 
 
 [\positive.integer]
@@ -344,7 +344,7 @@ assuming:
 . 'F is \set'
 . 'm, n is \positive \integer'
 means:
-. "an $m$ by $n$ grid of elements"
+. "an $%m$ by $%n$ grid of elements from the set $%F$"
 
 
 [\identity \matrix{n}]
@@ -393,7 +393,7 @@ Metadata:
 Defines: X
 means:
 . 'X is \set'
-. "$X$ has a finite number of elements"
+. "$%X$ has a finite number of elements"
 Metadata:
 . reference = "source: @AATA; page: 36"
 
@@ -411,7 +411,7 @@ Metadata:
 [\set.cardinality:of{X}]
 Defines: n
 assuming: 'X is \set'
-means: "$n$ is the number of elements in $X$"
+means: "$%n$ is the number of elements in $%X$"
 
 
 [\finite \group]

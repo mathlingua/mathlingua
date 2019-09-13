@@ -30,3 +30,30 @@ fun indentedString(useDot: Boolean, indent: Int, line: String): String {
     builder.append(line)
     return builder.toString()
 }
+
+fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {
+    val path = mutableListOf<Phase2Node>()
+    getChalkTalkAncestryImpl(root, node, path)
+    // 'node' itself shouldn't be in the ancestry
+    if (path.isNotEmpty()) {
+        path.removeAt(path.size - 1)
+    }
+    return path.reversed()
+}
+
+private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: MutableList<Phase2Node>) {
+    if (root == node) {
+        path.add(node)
+        return
+    }
+
+    path.add(root)
+    root.forEach {
+        if (path.isEmpty() || path.last() != node) {
+            getChalkTalkAncestryImpl(it, node, path)
+        }
+    }
+    if (path.isEmpty() || path.last() != node) {
+        path.removeAt(path.size - 1)
+    }
+}

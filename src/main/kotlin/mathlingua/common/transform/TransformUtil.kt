@@ -238,15 +238,13 @@ fun replaceRepresents(
                 }
 
                 val ifThen = buildIfThen(rep)
-                val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
-                    ifThen.thenSection.clauses.clauses.size == 1
-                ) {
-                    ifThen.thenSection.clauses.clauses[0]
+                if (ifThen.ifSection.clauses.clauses.isEmpty()) {
+                    for (c in ifThen.thenSection.clauses.clauses) {
+                        newClauses.add(renameVars(c, map) as Clause)
+                    }
                 } else {
-                    ifThen
+                    newClauses.add(renameVars(ifThen, map) as Clause)
                 }
-
-                newClauses.add(renameVars(res, map) as Clause)
             } else if (clause.texTalkRoot is ValidationSuccess &&
                 clause.texTalkRoot.value.children.size == 3 &&
                 clause.texTalkRoot.value.children[0] is TextTexTalkNode &&
@@ -290,15 +288,13 @@ fun replaceRepresents(
                 }
 
                 val ifThen = buildIfThen(rep)
-                val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
-                    ifThen.thenSection.clauses.clauses.size == 1
-                ) {
-                    ifThen.thenSection.clauses.clauses[0]
+                if (ifThen.ifSection.clauses.clauses.isEmpty()) {
+                    for (c in ifThen.thenSection.clauses.clauses) {
+                        newClauses.add(renameVars(c, map) as Clause)
+                    }
                 } else {
-                    ifThen
+                    newClauses.add(renameVars(ifThen, map) as Clause)
                 }
-
-                newClauses.add(renameVars(res, map) as Clause)
             } else {
                 newClauses.add(clause)
             }
@@ -328,64 +324,80 @@ fun replaceIsNodes(
             return node
         }
 
-        if (node !is Statement) {
+        if (node !is ClauseListNode) {
             return node
         }
 
-        if (node.texTalkRoot is ValidationFailure ||
-            (node.texTalkRoot as ValidationSuccess).value.children.size != 1 ||
-            node.texTalkRoot.value.children[0] !is IsTexTalkNode) {
-            return node
+        val newClauses = mutableListOf<Clause>()
+        for (c in node.clauses) {
+            if (c !is Statement) {
+                newClauses.add(c)
+                continue
+            }
+
+            if (c.texTalkRoot is ValidationFailure ||
+                (c.texTalkRoot as ValidationSuccess).value.children.size != 1 ||
+                c.texTalkRoot.value.children[0] !is IsTexTalkNode
+            ) {
+                newClauses.add(c)
+                continue
+            }
+
+            val isNode = c.texTalkRoot.value.children[0] as IsTexTalkNode
+            if (isNode.rhs.items.size != 1 ||
+                isNode.rhs.items[0].children.size != 1 ||
+                isNode.rhs.items[0].children[0] !is Command
+            ) {
+                newClauses.add(c)
+                continue
+            }
+
+            val command = isNode.rhs.items[0].children[0] as Command
+            val sig = getCommandSignature(command).toCode()
+
+            if (!defMap.containsKey(sig)) {
+                newClauses.add(c)
+                continue
+            }
+
+            val def = defMap[sig]!!
+            val cmdVars = getVars(command)
+
+            val defDirectVars = getDefinesDirectVars(def)
+            val defIndirectVars = getDefinesIdVars(def)
+
+            if (cmdVars.size != defIndirectVars.size) {
+                newClauses.add(c)
+                continue
+            }
+
+            val map = mutableMapOf<String, String>()
+            for (i in cmdVars.indices) {
+                map[defIndirectVars[i]] = cmdVars[i]
+            }
+
+            val lhsVars = getVars(isNode.lhs)
+
+            if (lhsVars.size > defDirectVars.size) {
+                newClauses.add(c)
+                continue
+            }
+
+            for (i in lhsVars.indices) {
+                map[defDirectVars[i]] = lhsVars[i]
+            }
+
+            val ifThen = buildIfThen(def)
+            if (ifThen.ifSection.clauses.clauses.isEmpty()) {
+                for (thenClause in ifThen.thenSection.clauses.clauses) {
+                    newClauses.add(renameVars(thenClause, map) as Clause)
+                }
+            } else {
+                newClauses.add(renameVars(ifThen, map) as Clause)
+            }
         }
 
-        val isNode = node.texTalkRoot.value.children[0] as IsTexTalkNode
-        if (isNode.rhs.items.size != 1 ||
-            isNode.rhs.items[0].children.size != 1 ||
-            isNode.rhs.items[0].children[0] !is Command) {
-            return node
-        }
-
-        val command = isNode.rhs.items[0].children[0] as Command
-        val sig = getCommandSignature(command).toCode()
-
-        if (!defMap.containsKey(sig)) {
-            return node
-        }
-
-        val def = defMap[sig]!!
-        val cmdVars = getVars(command)
-
-        val defDirectVars = getDefinesDirectVars(def)
-        val defIndirectVars = getDefinesIdVars(def)
-
-        if (cmdVars.size != defIndirectVars.size) {
-            return node
-        }
-
-        val map = mutableMapOf<String, String>()
-        for (i in cmdVars.indices) {
-            map[defIndirectVars[i]] = cmdVars[i]
-        }
-
-        val lhsVars = getVars(isNode.lhs)
-
-        if (lhsVars.size > defDirectVars.size) {
-            return node
-        }
-
-        for (i in lhsVars.indices) {
-            map[defDirectVars[i]] = lhsVars[i]
-        }
-
-        val ifThen = buildIfThen(def)
-        val res = if (ifThen.ifSection.clauses.clauses.isEmpty() &&
-            ifThen.thenSection.clauses.clauses.size == 1) {
-            ifThen.thenSection.clauses.clauses[0]
-        } else {
-            ifThen
-        }
-
-        return renameVars(res, map)
+        return ClauseListNode(clauses = newClauses)
     }
 
     return node.transform(::chalkTransformer)

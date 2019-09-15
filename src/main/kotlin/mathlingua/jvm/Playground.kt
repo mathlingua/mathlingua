@@ -116,13 +116,7 @@ object Playground {
             val validation = MathLingua().parse(text)
             if (validation is ValidationSuccess) {
                 val doc = validation.value
-                val transformed = expandAt(doc, doc)
-                outputArea.text = transformed.toCode(false, 0)
-                outputTree.model = DefaultTreeModel(toTreeNode(transformed))
-            }
 
-            /*
-            if (doc != null) {
                 val lines = inputArea.text.split('\n')
                 val offset = inputArea.caretPosition
                 var tmpOffset = offset
@@ -133,13 +127,16 @@ object Playground {
                 }
                 val col = tmpOffset
 
-                val nearestNode = findNode(doc!!, row, col)
-                println("Found node: $nearestNode")
-                doc = expandAt(doc!!, nearestNode)
+                phase1Tree.model = DefaultTreeModel(DefaultMutableTreeNode(doc))
 
-                inputArea.text = doc!!.toCode(false, 0)
+                val nearestNode = findNode(doc, row, col)
+                println("nearestNode=$nearestNode")
+
+                val newDoc = expandAt(doc, nearestNode)
+
+                outputArea.text = newDoc.toCode(false, 0)
+                outputTree.model = DefaultTreeModel(toTreeNode(newDoc))
             }
-            */
         }
         statusPanel.add(expandButton)
 

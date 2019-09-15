@@ -29,20 +29,30 @@ import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.transform.getSignature
 
-data class SourceGroup(val id: String, val sourceSection: SourceSection) : Phase2Node {
+data class SourceGroup(val id: String,
+                       val sourceSection: SourceSection,
+                       override val row: Int,
+                       override val column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         return toCode(isArg, indent,
-            Statement(id, ValidationFailure(emptyList())), sourceSection)
+            Statement(
+                    id,
+                    ValidationFailure(emptyList()),
+                    row,
+                    column
+            ), sourceSection)
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(SourceGroup(
             id = id,
-            sourceSection = sourceSection.transform(chalkTransformer) as SourceSection
+            sourceSection = sourceSection.transform(chalkTransformer) as SourceSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -91,7 +101,14 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
         return ValidationFailure(errors)
     }
 
-    return ValidationSuccess(SourceGroup(idText, (validation as ValidationSuccess).value))
+    return ValidationSuccess(
+            SourceGroup(
+                    id = idText,
+                    sourceSection = (validation as ValidationSuccess).value,
+                    row = getRow(groupNode),
+                    column = getColumn(groupNode)
+            )
+    )
 }
 
 data class DefinesGroup(
@@ -101,7 +118,9 @@ data class DefinesGroup(
     val assumingSection: AssumingSection?,
     val meansSection: MeansSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?
+    val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -136,7 +155,9 @@ data class DefinesGroup(
             assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
             meansSection = meansSection.transform(chalkTransformer) as MeansSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+            row = row,
+            column = column
         ))
     }
 }
@@ -163,7 +184,9 @@ data class RepresentsGroup(
     val assumingSection: AssumingSection?,
     val thatSection: ThatSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?
+    val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -198,7 +221,9 @@ data class RepresentsGroup(
             assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
             thatSection = thatSection.transform(chalkTransformer) as ThatSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+            row = row,
+            column = column
         ))
     }
 }
@@ -221,7 +246,9 @@ fun validateRepresentsGroup(groupNode: Group): Validation<RepresentsGroup> {
 data class ResultGroup(
     val resultSection: ResultSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?
+    val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -239,7 +266,9 @@ data class ResultGroup(
         return chalkTransformer(ResultGroup(
             resultSection = resultSection.transform(chalkTransformer) as ResultSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+            row = row,
+            column = column
         ))
     }
 }
@@ -260,7 +289,9 @@ fun validateResultGroup(groupNode: Group): Validation<ResultGroup> {
 data class AxiomGroup(
     val axiomSection: AxiomSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?
+    val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -278,7 +309,9 @@ data class AxiomGroup(
         return chalkTransformer(AxiomGroup(
             axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -299,7 +332,9 @@ fun validateAxiomGroup(groupNode: Group): Validation<AxiomGroup> {
 data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?
+    val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -317,7 +352,9 @@ data class ConjectureGroup(
         return chalkTransformer(ConjectureGroup(
             conjectureSection = conjectureSection.transform(chalkTransformer) as ConjectureSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -361,7 +398,13 @@ fun <G, S> validateResultLikeGroup(
     groupNode: Group,
     resultLikeName: String,
     validateResultLikeSection: (section: Section) -> Validation<S>,
-    buildGroup: (sect: S, alias: AliasSection?, metadata: MetaDataSection?) -> G
+    buildGroup: (
+            sect: S,
+            alias: AliasSection?,
+            metadata: MetaDataSection?,
+            row: Int,
+            column: Int
+    ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve() as Group
@@ -414,7 +457,12 @@ fun <G, S> validateResultLikeGroup(
 
     return if (!errors.isEmpty()) {
         ValidationFailure(errors)
-    } else ValidationSuccess(buildGroup(resultLikeSection!!, aliasSection, metaDataSection))
+    } else ValidationSuccess(buildGroup(
+            resultLikeSection!!,
+            aliasSection,
+            metaDataSection,
+            getRow(group), getColumn(group)
+    ))
 }
 
 fun <G, S, E> validateDefinesLikeGroup(
@@ -430,7 +478,9 @@ fun <G, S, E> validateDefinesLikeGroup(
         assuming: AssumingSection?,
         end: E,
         alias: AliasSection?,
-        metadata: MetaDataSection?
+        metadata: MetaDataSection?,
+        row: Int,
+        column: Int
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
@@ -520,7 +570,8 @@ fun <G, S, E> validateDefinesLikeGroup(
                 getSignature(id!!),
                 id, definesLikeSection!!,
                 assumingSection, endSection!!,
-                aliasSection, metaDataSection
+                aliasSection, metaDataSection,
+                getRow(group), getColumn(group)
             )
         )
 }

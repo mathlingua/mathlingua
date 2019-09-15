@@ -31,11 +31,14 @@ fun <T> validateClauseList(
     rawNode: Phase1Node,
     expectedName: String,
     canBeEmpty: Boolean,
-    builder: (clauses: ClauseListNode) -> T
+    builder: (clauses: ClauseListNode, row: Int, column: Int) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
+    val row = getRow(node)
+    val column = getColumn(node)
     return when (val validation = validate(node, expectedName, canBeEmpty)) {
-        is ValidationSuccess -> ValidationSuccess(builder(ClauseListNode(validation.value.clauses)))
+        is ValidationSuccess -> ValidationSuccess(builder(ClauseListNode(validation.value.clauses, row, column),
+                row, column))
         is ValidationFailure -> ValidationFailure(validation.errors)
     }
 }

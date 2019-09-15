@@ -16,6 +16,8 @@
 
 package mathlingua.common.chalktalk.phase2
 
+import kotlin.math.abs
+
 fun indentedString(useDot: Boolean, indent: Int, line: String): String {
     val builder = StringBuilder()
     for (i in 0 until indent - 2) {
@@ -56,4 +58,28 @@ private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: M
     if (path.isEmpty() || path.last() != node) {
         path.removeAt(path.size - 1)
     }
+}
+
+fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
+    val result = NearestNode(dist = Integer.MAX_VALUE, node = node)
+    findNodeImpl(node, row, col, result)
+    return result.node
+}
+
+private fun findNodeImpl(node: Phase2Node,
+                         row: Int, col: Int,
+                         result: NearestNode) {
+    val d = dist(node, row, col)
+    if (d <= result.dist) {
+        result.dist = d
+        result.node = node
+    }
+
+    node.forEach { findNodeImpl(it, row, col, result) }
+}
+
+private data class NearestNode(var dist: Int, var node: Phase2Node)
+
+private fun dist(node: Phase2Node, row: Int, col: Int): Int {
+     return 100*abs(node.row - row) + abs(node.column - col)
 }

@@ -122,7 +122,10 @@ fun validateClause(rawNode: Phase1Node): Validation<Clause> {
 
 sealed class Target : Clause()
 
-data class AbstractionNode(val abstraction: Abstraction) : Target() {
+data class AbstractionNode(val abstraction: Abstraction,
+                           override val row: Int,
+                           override val column: Int) : Target() {
+
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -143,10 +146,13 @@ fun validateAbstractionNode(node: Phase1Node): Validation<AbstractionNode> {
     return validateWrappedNode(node,
         "AbstractionNode",
         { it as? Abstraction },
-        { AbstractionNode(it) })
+        ::AbstractionNode
+    )
 }
 
-data class AggregateNode(val aggregate: Aggregate) : Target() {
+data class AggregateNode(val aggregate: Aggregate,
+                         override val row: Int,
+                         override val column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -167,10 +173,13 @@ fun validateAggregateNode(node: Phase1Node): Validation<AggregateNode> {
     return validateWrappedNode(node,
         "AggregateNode",
         { it as? Aggregate },
-        { AggregateNode(it) })
+        ::AggregateNode
+    )
 }
 
-data class TupleNode(val tuple: Tuple) : Target() {
+data class TupleNode(val tuple: Tuple,
+                     override val row: Int,
+                     override val column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -191,10 +200,13 @@ fun validateTupleNode(node: Phase1Node): Validation<TupleNode> {
     return validateWrappedNode(node,
         "TupleNode",
         { it as? Tuple },
-        { TupleNode(it) })
+        ::TupleNode
+    )
 }
 
-data class AssignmentNode(val assignment: Assignment) : Target() {
+data class AssignmentNode(val assignment: Assignment,
+                          override val row: Int,
+                          override val column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -220,7 +232,9 @@ fun validateAssignmentNode(node: Phase1Node): Validation<AssignmentNode> {
     )
 }
 
-data class MappingNode(val mapping: Mapping) : Phase2Node {
+data class MappingNode(val mapping: Mapping,
+                       override val row: Int,
+                       override val column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -246,7 +260,9 @@ fun validateMappingNode(node: Phase1Node): Validation<MappingNode> {
     )
 }
 
-data class Identifier(val name: String) : Target() {
+data class Identifier(val name: String,
+                      override val row: Int,
+                      override val column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -288,12 +304,14 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
         return ValidationFailure(errors)
     }
 
-    return ValidationSuccess(Identifier(text))
+    return ValidationSuccess(Identifier(text, getRow(node), getColumn(node)))
 }
 
 data class Statement(
     val text: String,
-    val texTalkRoot: Validation<ExpressionTexTalkNode>
+    val texTalkRoot: Validation<ExpressionTexTalkNode>,
+    override val row: Int,
+    override val column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
@@ -354,10 +372,12 @@ fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
         ValidationFailure<ExpressionTexTalkNode>(texTalkErrors)
     }
 
-    return ValidationSuccess(Statement(text, validation))
+    return ValidationSuccess(Statement(text, validation, getRow(node), getColumn(node)))
 }
 
-data class Text(val text: String) : Clause() {
+data class Text(val text: String,
+                override val row: Int,
+                override val column: Int) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -398,12 +418,14 @@ fun validateText(rawNode: Phase1Node): Validation<Text> {
         return ValidationFailure(errors)
     }
 
-    return ValidationSuccess(Text(text))
+    return ValidationSuccess(Text(text, getRow(node), getColumn(node)))
 }
 
 data class ExistsGroup(
     val existsSection: ExistsSection,
-    val suchThatSection: SuchThatSection
+    val suchThatSection: SuchThatSection,
+    override val row: Int,
+    override val column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(existsSection)
@@ -417,7 +439,9 @@ data class ExistsGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ExistsGroup(
             existsSection = existsSection.transform(chalkTransformer) as ExistsSection,
-            suchThatSection = suchThatSection.transform(chalkTransformer) as SuchThatSection
+            suchThatSection = suchThatSection.transform(chalkTransformer) as SuchThatSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -439,7 +463,9 @@ fun validateExistsGroup(node: Phase1Node): Validation<ExistsGroup> {
 
 data class IfGroup(
     val ifSection: IfSection,
-    val thenSection: ThenSection
+    val thenSection: ThenSection,
+    override val row: Int,
+    override val column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(ifSection)
@@ -453,7 +479,9 @@ data class IfGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(IfGroup(
             ifSection = ifSection.transform(chalkTransformer) as IfSection,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -475,7 +503,9 @@ fun validateIfGroup(node: Phase1Node): Validation<IfGroup> {
 
 data class IffGroup(
     val iffSection: IffSection,
-    val thenSection: ThenSection
+    val thenSection: ThenSection,
+    override val row: Int,
+    override val column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(iffSection)
@@ -489,7 +519,9 @@ data class IffGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(IffGroup(
             iffSection = iffSection.transform(chalkTransformer) as IffSection,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -512,7 +544,9 @@ fun validateIffGroup(node: Phase1Node): Validation<IffGroup> {
 data class ForGroup(
     val forSection: ForSection,
     val whereSection: WhereSection?,
-    val thenSection: ThenSection
+    val thenSection: ThenSection,
+    override val row: Int,
+    override val column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(forSection)
@@ -530,7 +564,9 @@ data class ForGroup(
         return chalkTransformer(ForGroup(
             forSection = forSection.transform(chalkTransformer) as ForSection,
             whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -592,10 +628,13 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
 
     return if (!errors.isEmpty()) {
         ValidationFailure(errors)
-    } else ValidationSuccess(ForGroup(forSection!!, whereSection, thenSection!!))
+    } else ValidationSuccess(ForGroup(forSection!!, whereSection, thenSection!!,
+            getRow(node), getColumn((node))))
 }
 
-data class NotGroup(val notSection: NotSection) : Clause() {
+data class NotGroup(val notSection: NotSection,
+                    override val row: Int,
+                    override val column: Int) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(notSection)
     }
@@ -606,7 +645,9 @@ data class NotGroup(val notSection: NotSection) : Clause() {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(NotGroup(
-            notSection = notSection.transform(chalkTransformer) as NotSection
+            notSection = notSection.transform(chalkTransformer) as NotSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -622,7 +663,9 @@ fun validateNotGroup(node: Phase1Node): Validation<NotGroup> {
     )
 }
 
-data class OrGroup(val orSection: OrSection) : Clause() {
+data class OrGroup(val orSection: OrSection,
+                   override val row: Int,
+                   override val column: Int) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(orSection)
     }
@@ -633,7 +676,9 @@ data class OrGroup(val orSection: OrSection) : Clause() {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(OrGroup(
-            orSection = orSection.transform(chalkTransformer) as OrSection
+            orSection = orSection.transform(chalkTransformer) as OrSection,
+            row = row,
+            column = column
         ))
     }
 }
@@ -663,7 +708,7 @@ fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
 fun <G, S> validateSingleSectionGroup(
     rawNode: Phase1Node,
     sectionName: String,
-    buildGroup: (sect: S) -> G,
+    buildGroup: (sect: S, row: Int, column: Int) -> G,
     validateSection: (section: Section) -> Validation<S>
 ): Validation<G> {
     val node = rawNode.resolve()
@@ -700,7 +745,8 @@ fun <G, S> validateSingleSectionGroup(
 
     return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
-    } else ValidationSuccess(buildGroup(section!!))
+    } else ValidationSuccess(buildGroup(section!!,
+            getRow(node), getColumn(node)))
 }
 
 private fun <G, S1, S2> validateDoubleSectionGroup(
@@ -709,7 +755,7 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
     validateSection1: (section: Section) -> Validation<S1>,
     section2Name: String,
     validateSection2: (section: Section) -> Validation<S2>,
-    buildGroup: (sect1: S1, sect2: S2) -> G
+    buildGroup: (sect1: S1, sect2: S2, row: Int, column: Int) -> G
 ): Validation<G> {
     val node = rawNode.resolve()
 
@@ -752,14 +798,15 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
 
     return if (!errors.isEmpty()) {
         ValidationFailure(errors)
-    } else ValidationSuccess(buildGroup(section1!!, section2!!))
+    } else ValidationSuccess(buildGroup(section1!!, section2!!,
+            getRow(node), getColumn(node)))
 }
 
 private fun <Wrapped, Base> validateWrappedNode(
     rawNode: Phase1Node,
     expectedType: String,
     checkType: (node: Phase1Node) -> Base?,
-    build: (base: Base) -> Wrapped
+    build: (base: Base, row: Int, column: Int) -> Wrapped
 ): Validation<Wrapped> {
     val node = rawNode.resolve()
 
@@ -775,7 +822,7 @@ private fun <Wrapped, Base> validateWrappedNode(
         )
     }
 
-    return ValidationSuccess(build(base))
+    return ValidationSuccess(build(base, getRow(node), getColumn(node)))
 }
 
 fun toCode(isArg: Boolean, indent: Int, phase1Node: Phase1Node): String {

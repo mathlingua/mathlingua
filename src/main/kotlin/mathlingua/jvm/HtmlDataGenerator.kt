@@ -113,12 +113,20 @@ object HtmlDataGenerator {
                 val src = subDocument.sources.first()
                 val key = "@${src.id}"
                 if (srcIdToUrlMap.containsKey(key)) {
-                    metadata = MetaDataSection(listOf(
-                        MappingNode(Mapping(
-                            Phase1Token("reference", ChalkTalkTokenType.String, -1, -1),
-                            Phase1Token("\"source: $key; page: 1\"", ChalkTalkTokenType.String, -1, -1)
-                        ))
-                    ))
+                    metadata = MetaDataSection(
+                        row = -1,
+                        column = -1,
+                        mappings = listOf(
+                            MappingNode(
+                                row = -1,
+                                column = -1,
+                                mapping = Mapping(
+                                    Phase1Token("reference", ChalkTalkTokenType.String, -1, -1),
+                                    Phase1Token("\"source: $key; page: 1\"", ChalkTalkTokenType.String, -1, -1)
+                                )
+                            )
+                        )
+                    )
                 } else {
                     metadata = null
                 }

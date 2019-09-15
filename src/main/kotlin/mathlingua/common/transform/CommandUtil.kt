@@ -30,6 +30,7 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
+import kotlin.system.exitProcess
 
 fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     val commands = mutableListOf<Command>()
@@ -64,7 +65,9 @@ fun replaceCommands(
                     val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
                     Statement(
                         text = newRoot.toCode(),
-                        texTalkRoot = ValidationSuccess(newRoot)
+                        texTalkRoot = ValidationSuccess(newRoot),
+                        row = -1,
+                        column = -1
                     )
                 }
             }
@@ -100,9 +103,10 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-fun separateIsStatements(node: Phase2Node): Phase2Node {
-    return node.transform {
-        if (it is ClauseListNode) {
+fun separateIsStatements(node: Phase2Node): Map<Phase2Node, Phase2Node> {
+    val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
+    node.transform {
+        val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
             for (clause in it.clauses) {
                 if (clause is Statement) {
@@ -116,7 +120,9 @@ fun separateIsStatements(node: Phase2Node): Phase2Node {
                             )
                             Statement(
                                 text = root.toCode(),
-                                texTalkRoot = ValidationSuccess(root)
+                                texTalkRoot = ValidationSuccess(root),
+                                    row = -1,
+                                    column = -1
                             )
                         })
                     }
@@ -125,12 +131,17 @@ fun separateIsStatements(node: Phase2Node): Phase2Node {
                 }
             }
             ClauseListNode(
-                clauses = newClauses
+                clauses = newClauses,
+                    row = -1,
+                    column = -1
             )
         } else {
             it
         }
+        transformMap[it] = result
+        result
     }
+    return transformMap
 }
 
 private fun findSeparatedIsNodes(node: Statement): List<IsTexTalkNode>? {
@@ -170,9 +181,10 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // this function requires that `is` nodes are separated
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
-fun glueCommands(node: Phase2Node): Phase2Node {
-    return node.transform {
-        if (it is Statement &&
+fun glueCommands(node: Phase2Node): Map<Phase2Node, Phase2Node> {
+    val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
+    node.transform {
+        val result = if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
             it.texTalkRoot.value.children.all { c -> c is Command }) {
             val exp = it.texTalkRoot.value
@@ -188,7 +200,9 @@ fun glueCommands(node: Phase2Node): Phase2Node {
             )
             Statement(
                 text = newExp.toCode(),
-                texTalkRoot = ValidationSuccess(newExp)
+                texTalkRoot = ValidationSuccess(newExp),
+                    row = -1,
+                    column = -1
             )
         } else if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
@@ -221,12 +235,17 @@ fun glueCommands(node: Phase2Node): Phase2Node {
             )
             Statement(
                 text = newExp.toCode(),
-                texTalkRoot = ValidationSuccess(newExp)
+                texTalkRoot = ValidationSuccess(newExp),
+                    row = -1,
+                    column = -1
             )
         } else {
             it
         }
+        transformMap[it] = result
+        result
     }
+    return transformMap
 }
 
 private fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {

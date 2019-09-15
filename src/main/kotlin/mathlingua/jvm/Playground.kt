@@ -22,18 +22,9 @@ import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
-import mathlingua.common.chalktalk.phase2.Document
-import mathlingua.common.chalktalk.phase2.Phase2Node
-import mathlingua.common.chalktalk.phase2.Statement
-import mathlingua.common.chalktalk.phase2.validateDocument
+import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.textalk.TexTalkNode
-import mathlingua.common.transform.fullExpandComplete
-import mathlingua.common.transform.glueCommands
-import mathlingua.common.transform.moveInlineCommandsToIsNode
-import mathlingua.common.transform.replaceIsNodes
-import mathlingua.common.transform.replaceRepresents
-import mathlingua.common.transform.separateInfixOperatorStatements
-import mathlingua.common.transform.separateIsStatements
+import mathlingua.common.transform.*
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import java.awt.BorderLayout
@@ -41,17 +32,7 @@ import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
-import javax.swing.JCheckBox
-import javax.swing.JFrame
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JSplitPane
-import javax.swing.JTabbedPane
-import javax.swing.JTextArea
-import javax.swing.JTree
-import javax.swing.SwingUtilities
-import javax.swing.UIManager
-import javax.swing.WindowConstants
+import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
@@ -128,6 +109,40 @@ object Playground {
         inputArea.font = font
         inputArea.syntaxScheme
             .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+
+        val expandButton = JButton("Expand At")
+        expandButton.addActionListener {
+            val text = inputArea.text
+            val validation = MathLingua().parse(text)
+            if (validation is ValidationSuccess) {
+                val doc = validation.value
+                val transformed = expandAt(doc, doc)
+                outputArea.text = transformed.toCode(false, 0)
+                outputTree.model = DefaultTreeModel(toTreeNode(transformed))
+            }
+
+            /*
+            if (doc != null) {
+                val lines = inputArea.text.split('\n')
+                val offset = inputArea.caretPosition
+                var tmpOffset = offset
+                var row = 0
+                while (row < lines.size && tmpOffset - lines[row].length >= 0) {
+                    tmpOffset -= lines[row].length
+                    row++
+                }
+                val col = tmpOffset
+
+                val nearestNode = findNode(doc!!, row, col)
+                println("Found node: $nearestNode")
+                doc = expandAt(doc!!, nearestNode)
+
+                inputArea.text = doc!!.toCode(false, 0)
+            }
+            */
+        }
+        statusPanel.add(expandButton)
+
         inputArea.addKeyListener(object : KeyListener {
             override fun keyTyped(keyEvent: KeyEvent) {}
 
@@ -137,8 +152,8 @@ object Playground {
                 }
 
                 SwingUtilities.invokeLater {
-                    val errorBuilder = StringBuilder()
                     var doc: Document? = null
+                    val errorBuilder = StringBuilder()
                     try {
                         val input = inputArea.text
 
@@ -202,41 +217,43 @@ object Playground {
                     } else {
                         val sigBuilder = StringBuilder()
                         val ml = MathLingua()
-                        for (sig in ml.findAllSignatures(doc)) {
+                        for (sig in ml.findAllSignatures(doc!!)) {
                             sigBuilder.append(sig)
                             sigBuilder.append('\n')
                         }
                         signaturesList.text = sigBuilder.toString()
 
-                        phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
+                        println("doc=$doc")
+
+                        phase2Tree.model = DefaultTreeModel(toTreeNode(doc!!))
                         var transformed = doc as Phase2Node
 
                         if (separateIsBox.isSelected) {
-                            transformed = separateIsStatements(transformed)
+                            transformed = separateIsStatements(transformed)[transformed]!!
                         }
 
                         if (separateInfixOps.isSelected) {
-                            transformed = separateInfixOperatorStatements(transformed)
+                            transformed = separateInfixOperatorStatements(transformed)[transformed]!!
                         }
 
                         if (glueCommands.isSelected) {
-                            transformed = glueCommands(transformed)
+                            transformed = glueCommands(transformed)[transformed]!!
                         }
 
                         if (moveInLineIs.isSelected) {
-                            transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { root, node -> true })
+                            transformed = moveInlineCommandsToIsNode(doc!!.defines, transformed, { true }, { root, node -> true })[transformed]!!
                         }
 
                         if (replaceReps.isSelected) {
-                            transformed = replaceRepresents(transformed, doc.represents, { true })
+                            transformed = replaceRepresents(transformed, doc!!.represents, { true })[transformed]!!
                         }
 
                         if (replaceIsNodes.isSelected) {
-                            transformed = replaceIsNodes(transformed, doc.defines, { true })
+                            transformed = replaceIsNodes(transformed, doc!!.defines, { true })[transformed]!!
                         }
 
                         if (completeExpand.isSelected) {
-                            transformed = fullExpandComplete(doc)
+                            transformed = fullExpandComplete(doc!!)
                         }
 
                         outputArea.text = transformed.toCode(false, 0)

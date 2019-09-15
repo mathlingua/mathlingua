@@ -51,7 +51,7 @@ fun moveInlineCommandsToIsNode(
     node: Phase2Node,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
-): Phase2Node {
+): Map<Phase2Node, Phase2Node> {
     val knownDefSigs = defs.map { it.signature }.filterNotNull().toSet()
     fun realShouldProcessTex(root: TexTalkNode, node: TexTalkNode): Boolean {
         if (!shouldProcessTex(root, node)) {
@@ -73,8 +73,9 @@ fun moveInlineCommandsToIsNode(
     }
 
     var seed = 0
-    return node.transform {
-        if (it is ClauseListNode) {
+    val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
+    node.transform {
+        val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
             for (c in it.clauses) {
                 if (c is Statement) {
@@ -90,12 +91,17 @@ fun moveInlineCommandsToIsNode(
                 }
             }
             ClauseListNode(
-                clauses = newClauses
+                clauses = newClauses,
+                    row = -1,
+                    column = -1
             )
         } else {
             it
         }
+        transformMap[it] = result
+        result
     }
+    return transformMap
 }
 
 fun moveStatementInlineCommandsToIsNode(
@@ -143,11 +149,24 @@ fun moveStatementInlineCommandsToIsNode(
     }
 
     return ForGroup(
+            row = -1,
+            column = -1,
         forSection = ForSection(
-            targets = cmdsToProcess.map { Identifier(name = cmdToReplacement[it]!!) }
+            targets = cmdsToProcess.map {
+                Identifier(
+                    name = cmdToReplacement[it]!!,
+                    row = -1,
+                    column = -1)
+                },
+                row = -1,
+                column = -1
         ),
         whereSection = WhereSection(
+                row = -1,
+                column = -1,
             clauses = ClauseListNode(
+                row = -1,
+                column = -1,
                 clauses = cmdsToProcess.map {
                     val isNode = IsTexTalkNode(
                         lhs = ParametersTexTalkNode(
@@ -172,6 +191,8 @@ fun moveStatementInlineCommandsToIsNode(
                     )
 
                     Statement(
+                        row = -1,
+                        column = -1,
                         text = isNode.toCode(),
                         texTalkRoot = ValidationSuccess(
                             ExpressionTexTalkNode(
@@ -183,7 +204,11 @@ fun moveStatementInlineCommandsToIsNode(
             )
         ),
         thenSection = ThenSection(
+                row = -1,
+                column = -1,
             clauses = ClauseListNode(
+                    row = -1,
+                    column = -1,
                 clauses = listOf(newNode)
             )
         )
@@ -194,7 +219,7 @@ fun replaceRepresents(
     node: Phase2Node,
     represents: List<RepresentsGroup>,
     filter: (node: Phase2Node) -> Boolean = { true }
-): Phase2Node {
+): Map<Phase2Node, Phase2Node> {
     val repMap = mutableMapOf<String, RepresentsGroup>()
     for (rep in represents) {
         val sig = rep.signature
@@ -303,18 +328,29 @@ fun replaceRepresents(
                 newClauses.add(clause)
             }
         }
-
-        return ClauseListNode(clauses = newClauses)
+        return ClauseListNode(
+            clauses = newClauses,
+            row = -1,
+            column = -1
+        )
     }
 
-    return node.transform(::chalkTransformer)
+    val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
+    fun chalkTransformerAndRecord(node: Phase2Node): Phase2Node {
+        val result = chalkTransformer(node)
+        transformMap[node] = result
+        return result
+    }
+
+    node.transform(::chalkTransformerAndRecord)
+    return transformMap
 }
 
 fun replaceIsNodes(
     root: Phase2Node,
     defs: List<DefinesGroup>,
     filter: (node: Phase2Node) -> Boolean = { true }
-): Phase2Node {
+): Map<Phase2Node, Phase2Node> {
     val defMap = mutableMapOf<String, DefinesGroup>()
     for (def in defs) {
         val sig = def.signature
@@ -450,20 +486,38 @@ fun replaceIsNodes(
             }
         }
 
-        return ClauseListNode(clauses = newClauses)
+        return ClauseListNode(
+            clauses = newClauses,
+            row = -1,
+            column = -1
+        )
     }
 
-    return root.transform(::chalkTransformer)
+    val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
+    fun chalkTransformerAndRecord(node: Phase2Node): Phase2Node {
+        val result = chalkTransformer(node)
+        transformMap[node] = result
+        return result
+    }
+
+    root.transform(::chalkTransformerAndRecord)
+    return transformMap
 }
 
 fun toCanonicalForm(def: DefinesGroup): DefinesGroup {
     return DefinesGroup(
+            row = -1,
+            column = -1,
         signature = def.signature,
         id = def.id,
         definesSection = def.definesSection,
         assumingSection = null,
         meansSection = MeansSection(
+                row = -1,
+                column = -1,
             clauses = ClauseListNode(
+                    row = -1,
+                    column = -1,
                 clauses = listOf(buildIfThen(def))
             )
         ),
@@ -474,10 +528,21 @@ fun toCanonicalForm(def: DefinesGroup): DefinesGroup {
 
 fun buildIfThen(def: DefinesGroup): IfGroup {
     return IfGroup(
+            row = -1,
+            column = -1,
         ifSection = IfSection(
-            clauses = def.assumingSection?.clauses ?: ClauseListNode(emptyList())
+                row = -1,
+                column = -1,
+            clauses = def.assumingSection?.clauses ?:
+                ClauseListNode(
+                    clauses = emptyList(),
+                    row = -1,
+                    column = -1
+                )
         ),
         thenSection = ThenSection(
+                row = -1,
+                column = -1,
             clauses = def.meansSection.clauses
         )
     )
@@ -485,10 +550,20 @@ fun buildIfThen(def: DefinesGroup): IfGroup {
 
 fun buildIfThen(rep: RepresentsGroup): IfGroup {
     return IfGroup(
+        row = -1,
+        column = -1,
         ifSection = IfSection(
-            clauses = rep.assumingSection?.clauses ?: ClauseListNode(emptyList())
+                row = -1,
+                column = -1,
+            clauses = rep.assumingSection?.clauses ?:
+                ClauseListNode(
+                        clauses = emptyList(),
+                        row = -1,
+                        column = -1)
         ),
         thenSection = ThenSection(
+            row = -1,
+            column = -1,
             clauses = rep.thatSection.clauses
         )
     )
@@ -518,13 +593,52 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     return vars
 }
 
+fun expandAt(doc: Document, target: Phase2Node): Document {
+    var transformed = doc
+
+    val separateIsMap = separateIsStatements(transformed)
+
+    println("KEYS:")
+    for (key in separateIsMap.keys) {
+        println(key)
+    }
+    println("transformed=" + transformed)
+    println("separateIsMap[transformed]=" + separateIsMap.containsKey(transformed))
+    println("^^^^^^^^^^^^^^^^^")
+
+    transformed = separateIsMap[transformed] as Document
+    val targetAfterSepIs = separateIsMap[target]
+
+    val separateInfixMap = separateInfixOperatorStatements(transformed)
+    transformed = separateInfixMap[transformed] as Document
+    val targetAfterInfix = separateInfixMap[targetAfterSepIs]
+
+    val glueCommandsMap = glueCommands(transformed)
+    transformed = glueCommandsMap[transformed] as Document
+    val targetAfterGlue = glueCommandsMap[targetAfterInfix]
+
+    val mvCmdMap = moveInlineCommandsToIsNode(doc.defines, transformed, { it === targetAfterGlue }, { _, _ -> true })
+    transformed = mvCmdMap[transformed] as Document
+    val targetAfterCmdMv = mvCmdMap[target]
+
+    val replaceRepsMap = replaceRepresents(transformed, doc.represents) { it === targetAfterCmdMv }
+    transformed = replaceRepsMap[transformed] as Document
+    val targetAfterReps = replaceRepsMap[targetAfterCmdMv]!!
+
+    val replaceIsMap = replaceIsNodes(transformed, doc.defines) { it === targetAfterReps }
+    transformed = replaceIsMap[transformed] as Document
+
+    return transformed
+}
+
 fun fullExpandOnce(doc: Document): Document {
-    var transformed = separateIsStatements(doc)
-    transformed = separateInfixOperatorStatements(transformed)
-    transformed = glueCommands(transformed)
-    transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { _, _ -> true })
-    transformed = replaceRepresents(transformed, doc.represents) { true }
-    return replaceIsNodes(transformed, doc.defines) { true } as Document
+    var transformed = separateIsStatements(doc)[doc]!!
+    transformed = separateInfixOperatorStatements(transformed)[transformed]!!
+    transformed = glueCommands(transformed)[transformed]!!
+    transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { _, _ -> true })[transformed]!!
+    transformed = replaceRepresents(transformed, doc.represents) { true }[transformed]!!
+    transformed = replaceIsNodes(transformed, doc.defines) { true }[transformed]!!
+    return transformed as Document
 }
 
 fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
@@ -547,9 +661,10 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     return transformed
 }
 
-fun separateInfixOperatorStatements(phase2Node: Phase2Node): Phase2Node {
-    return phase2Node.transform {
-        if (it is ClauseListNode) {
+fun separateInfixOperatorStatements(phase2Node: Phase2Node): Map<Phase2Node, Phase2Node> {
+    val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
+    phase2Node.transform {
+        val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
             for (c in it.clauses) {
                 if (c is Statement) {
@@ -559,7 +674,9 @@ fun separateInfixOperatorStatements(phase2Node: Phase2Node): Phase2Node {
                             for (expanded in getExpandedInfixOperators(root)) {
                                 newClauses.add(Statement(
                                     text = expanded.toCode(),
-                                    texTalkRoot = ValidationSuccess(expanded)
+                                    texTalkRoot = ValidationSuccess(expanded),
+                                    row = -1,
+                                    column = -1
                                 ))
                             }
                         }
@@ -569,11 +686,18 @@ fun separateInfixOperatorStatements(phase2Node: Phase2Node): Phase2Node {
                     newClauses.add(c)
                 }
             }
-            ClauseListNode(clauses = newClauses)
+            ClauseListNode(
+                    clauses = newClauses,
+                    row = -1,
+                    column = -1
+            )
         } else {
             it
         }
-        }
+        transformMap[it] = result
+        result
+    }
+    return transformMap
 }
 
 private fun getSingleInfixOperatorIndex(exp: ExpressionTexTalkNode): Int {

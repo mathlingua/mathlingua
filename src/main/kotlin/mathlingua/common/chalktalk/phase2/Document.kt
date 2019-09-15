@@ -26,6 +26,8 @@ import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
 interface Phase2Node {
+    val row: Int
+    val column: Int
     fun forEach(fn: (node: Phase2Node) -> Unit)
     fun toCode(isArg: Boolean, indent: Int): String
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
@@ -37,7 +39,9 @@ data class Document(
     val results: List<ResultGroup>,
     val axioms: List<AxiomGroup>,
     val conjectures: List<ConjectureGroup>,
-    val sources: List<SourceGroup>
+    val sources: List<SourceGroup>,
+    override val row: Int,
+    override val column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -86,13 +90,17 @@ data class Document(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return Document(
-            defines = defines.map { it.transform(chalkTransformer) as DefinesGroup },
-            axioms = axioms.map { it.transform(chalkTransformer) as AxiomGroup },
-            conjectures = conjectures.map { it.transform(chalkTransformer) as ConjectureGroup },
-            represents = represents.map { it.transform(chalkTransformer) as RepresentsGroup },
-            results = results.map { it.transform(chalkTransformer) as ResultGroup },
-            sources = sources.map { it.transform(chalkTransformer) as SourceGroup }
+        return chalkTransformer(
+            Document(
+                defines = defines.map { it.transform(chalkTransformer) as DefinesGroup },
+                axioms = axioms.map { it.transform(chalkTransformer) as AxiomGroup },
+                conjectures = conjectures.map { it.transform(chalkTransformer) as ConjectureGroup },
+                represents = represents.map { it.transform(chalkTransformer) as RepresentsGroup },
+                results = results.map { it.transform(chalkTransformer) as ResultGroup },
+                sources = sources.map { it.transform(chalkTransformer) as SourceGroup },
+                row = row,
+                column = column
+            )
         )
     }
 }
@@ -161,6 +169,23 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
         }
     }
 
+    var row = Integer.MAX_VALUE
+    var column = Integer.MAX_VALUE
+
+    fun updateRowCol(nodes: List<Phase2Node>) {
+        for (n in nodes) {
+            row = min(row, n.row)
+            column = min(column, n.column)
+        }
+    }
+
+    updateRowCol(defines)
+    updateRowCol(represents)
+    updateRowCol(results)
+    updateRowCol(axioms)
+    updateRowCol(conjectures)
+    updateRowCol(sources)
+
     return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else ValidationSuccess(
@@ -170,7 +195,13 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
             results,
             axioms,
             conjectures,
-            sources
+            sources,
+            row,
+            column
         )
     )
+}
+
+fun min(x: Int, y: Int): Int {
+    return if (x < y) x else y
 }

@@ -24,7 +24,9 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
-data class SourceSection(val mappings: List<MappingNode>) : Phase2Node {
+data class SourceSection(val mappings: List<MappingNode>,
+                         override val row: Int,
+                         override val column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
     }
@@ -71,6 +73,10 @@ fun validateSourceSection(section: Section): Validation<SourceSection> {
     return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else {
-        ValidationSuccess(SourceSection(mappings))
+        ValidationSuccess(SourceSection(
+                mappings = mappings,
+                row = getRow(section),
+                column = getColumn(section)
+        ))
     }
 }

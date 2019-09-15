@@ -81,5 +81,13 @@ private fun findNodeImpl(node: Phase2Node,
 private data class NearestNode(var dist: Int, var node: Phase2Node)
 
 private fun dist(node: Phase2Node, row: Int, col: Int): Int {
-     return 100*abs(node.row - row) + abs(node.column - col)
+    if (node.row != row) {
+        return Integer.MAX_VALUE
+    }
+
+    if (node.column > col) {
+        return Integer.MAX_VALUE
+    }
+
+    return col - node.column
 }

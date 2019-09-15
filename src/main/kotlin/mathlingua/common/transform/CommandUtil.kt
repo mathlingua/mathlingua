@@ -105,7 +105,7 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
 
 fun separateIsStatements(node: Phase2Node): Map<Phase2Node, Phase2Node> {
     val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
-    node.transform {
+    val result = node.transform {
         val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
             for (clause in it.clauses) {
@@ -141,6 +141,7 @@ fun separateIsStatements(node: Phase2Node): Map<Phase2Node, Phase2Node> {
         transformMap[it] = result
         result
     }
+    transformMap[node] = result
     return transformMap
 }
 
@@ -183,7 +184,7 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // 'x is \b'
 fun glueCommands(node: Phase2Node): Map<Phase2Node, Phase2Node> {
     val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
-    node.transform {
+    val result = node.transform {
         val result = if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
             it.texTalkRoot.value.children.all { c -> c is Command }) {
@@ -245,6 +246,7 @@ fun glueCommands(node: Phase2Node): Map<Phase2Node, Phase2Node> {
         transformMap[it] = result
         result
     }
+    transformMap[node] = result
     return transformMap
 }
 

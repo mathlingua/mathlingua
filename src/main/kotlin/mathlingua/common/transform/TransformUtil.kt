@@ -46,7 +46,13 @@ import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getTexTalkAncestry
 
-class TransformMap {
+fun getKey(node: Phase2Node): String {
+    val str = node.toString()
+    return str.replace(Regex("row=-?\\d+"), "ROW")
+            .replace(Regex("column=-?\\d+"), "COLUMN")
+}
+
+class TransformMap : Iterable<String> {
     private val map = mutableMapOf<String, Phase2Node>()
 
     operator fun get(node: Phase2Node): Phase2Node? {
@@ -57,10 +63,8 @@ class TransformMap {
         map[getKey(key)] = value
     }
 
-    private fun getKey(node: Phase2Node): String {
-        val str = node.toString()
-        return str.replace(Regex("row=-?\\d+"), "ROW")
-                .replace(Regex("column=-?\\d+"), "COLUMN")
+    override fun iterator(): Iterator<String> {
+        return map.keys.iterator()
     }
 }
 
@@ -615,29 +619,41 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
 }
 
 fun expandAt(doc: Document, target: Phase2Node): Document {
+    println("target=" + target)
+
     var transformed = doc
 
     val separateIsMap = separateIsStatements(transformed)
     transformed = separateIsMap[transformed] as Document
-    val targetAfterSepIs = separateIsMap[target]
+    val targetAfterSepIs = separateIsMap[target]!!
+
+    println("targetAfterSepIs=" + targetAfterSepIs)
 
     val separateInfixMap = separateInfixOperatorStatements(transformed)
     transformed = separateInfixMap[transformed] as Document
-    val targetAfterInfix = separateInfixMap[targetAfterSepIs]
+    val targetAfterInfix = separateInfixMap[targetAfterSepIs]!!
+
+    println("targetAfterInfix=" + targetAfterInfix)
 
     val glueCommandsMap = glueCommands(transformed)
     transformed = glueCommandsMap[transformed] as Document
-    val targetAfterGlue = glueCommandsMap[targetAfterInfix]
+    val targetAfterGlue = glueCommandsMap[targetAfterInfix]!!
 
-    val mvCmdMap = moveInlineCommandsToIsNode(doc.defines, transformed, { it === targetAfterGlue }, { _, _ -> true })
+    println("targetAfterGlue=" + targetAfterGlue)
+
+    val mvCmdMap = moveInlineCommandsToIsNode(doc.defines, transformed, { getKey(it) == getKey(targetAfterGlue) }, { _, _ -> true })
     transformed = mvCmdMap[transformed] as Document
     val targetAfterCmdMv = mvCmdMap[target]!!
 
-    val replaceRepsMap = replaceRepresents(transformed, doc.represents) { it === targetAfterCmdMv }
+    println("targetAfterCmdMv=" + targetAfterCmdMv)
+
+    val replaceRepsMap = replaceRepresents(transformed, doc.represents) { getKey(it) == getKey(targetAfterCmdMv) }
     transformed = replaceRepsMap[transformed] as Document
     val targetAfterReps = replaceRepsMap[targetAfterCmdMv]!!
 
-    val replaceIsMap = replaceIsNodes(transformed, doc.defines) { it === targetAfterReps }
+    println("targetAfterReps=" + targetAfterReps)
+
+    val replaceIsMap = replaceIsNodes(transformed, doc.defines) { getKey(it) == getKey(targetAfterReps) }
     transformed = replaceIsMap[transformed] as Document
 
     return transformed
@@ -673,8 +689,8 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     return transformed
 }
 
-fun separateInfixOperatorStatements(phase2Node: Phase2Node): Map<Phase2Node, Phase2Node> {
-    val transformMap = mutableMapOf<Phase2Node, Phase2Node>()
+fun separateInfixOperatorStatements(phase2Node: Phase2Node): TransformMap {
+    val transformMap = TransformMap()
     val result = phase2Node.transform {
         val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()

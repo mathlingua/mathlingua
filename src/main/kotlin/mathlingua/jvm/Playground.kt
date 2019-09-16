@@ -130,7 +130,6 @@ object Playground {
                 phase1Tree.model = DefaultTreeModel(DefaultMutableTreeNode(doc))
 
                 val nearestNode = findNode(doc, row, col)
-                println("nearestNode=$nearestNode")
 
                 val newDoc = expandAt(doc, nearestNode)
 
@@ -226,15 +225,15 @@ object Playground {
                         var transformed = doc as Phase2Node
 
                         if (separateIsBox.isSelected) {
-                            transformed = separateIsStatements(transformed)
+                            transformed = separateIsStatements(transformed, transformed).root
                         }
 
                         if (separateInfixOps.isSelected) {
-                            transformed = separateInfixOperatorStatements(transformed)
+                            transformed = separateInfixOperatorStatements(transformed, transformed).root
                         }
 
                         if (glueCommands.isSelected) {
-                            transformed = glueCommands(transformed)
+                            transformed = glueCommands(transformed, transformed).root
                         }
 
                         if (moveInLineIs.isSelected) {

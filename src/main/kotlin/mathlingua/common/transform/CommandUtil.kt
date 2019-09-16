@@ -105,9 +105,10 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-fun separateIsStatements(node: Phase2Node): Phase2Node {
-    return node.transform {
-        if (it is ClauseListNode) {
+fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node?> {
+    var newFollow: Phase2Node? = null
+    val newRoot = root.transform {
+        val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
             for (clause in it.clauses) {
                 if (clause is Statement) {
@@ -139,7 +140,15 @@ fun separateIsStatements(node: Phase2Node): Phase2Node {
         } else {
             it
         }
+        if (it === follow) {
+            newFollow = result
+        }
+        result
     }
+    return RootTarget(
+            root = newRoot,
+            target = newFollow
+    )
 }
 
 private fun findSeparatedIsNodes(node: Statement): List<IsTexTalkNode>? {
@@ -179,9 +188,10 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // this function requires that `is` nodes are separated
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
-fun glueCommands(root: Phase2Node): Phase2Node {
-    return root.transform {
-        if (it is Statement &&
+fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node?> {
+    var newFollow: Phase2Node? = null
+    val newRoot = root.transform {
+        val result = if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
             it.texTalkRoot.value.children.all { c -> c is Command }) {
             val exp = it.texTalkRoot.value
@@ -239,7 +249,15 @@ fun glueCommands(root: Phase2Node): Phase2Node {
         } else {
             it
         }
+        if (it === follow) {
+            newFollow = result
+        }
+        result
     }
+    return RootTarget(
+            root = newRoot,
+            target = newFollow
+    )
 }
 
 private fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {

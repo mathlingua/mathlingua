@@ -591,19 +591,32 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
 
 fun expandAt(doc: Document, target: Phase2Node?): Document {
     var transformed = doc
-
-    transformed = separateIsStatements(transformed) as Document
-    transformed = separateInfixOperatorStatements(transformed) as Document
-    transformed = glueCommands(transformed) as Document
-
     var realTarget = target
+
+    val sepIsPair = separateIsStatements(transformed, realTarget!!)
+    transformed = sepIsPair.root as Document
+    realTarget = sepIsPair.target
+
+    val sepInfixPair = separateInfixOperatorStatements(transformed, realTarget!!)
+    transformed = sepInfixPair.root as Document
+    realTarget = sepInfixPair.target
+
+    val gluePair = glueCommands(transformed, realTarget!!)
+    transformed = gluePair.root as Document
+    realTarget = gluePair.target
+
     val nearestClauseListForInline = if (realTarget == null) {
         null
     } else {
-        findNearestChalkTalkAncestorWhere(doc, realTarget) { it is ClauseListNode }
+        findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
     }
+
+    println("realTarget=$realTarget  and  nearestClauseListForInline=$nearestClauseListForInline")
+
     if (realTarget == null || nearestClauseListForInline != null) {
-        val pair = moveInlineCommandsToIsNode(doc.defines, doc, nearestClauseListForInline as ClauseListNode)
+        println("For moveInlineCommands... using " + nearestClauseListForInline)
+
+        val pair = moveInlineCommandsToIsNode(transformed.defines, transformed, nearestClauseListForInline as ClauseListNode)
         transformed = pair.root as Document
         realTarget = pair.target
     }
@@ -611,10 +624,12 @@ fun expandAt(doc: Document, target: Phase2Node?): Document {
     val nearestClauseListForReps = if (realTarget == null) {
         null
     } else {
-        findNearestChalkTalkAncestorWhere(doc, realTarget) { it is ClauseListNode }
+        findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
     }
     if (realTarget == null || nearestClauseListForReps != null) {
-        val pair = replaceRepresents(doc, doc.represents, nearestClauseListForReps as ClauseListNode)
+        println("for replaceReps ... using " + nearestClauseListForReps)
+
+        val pair = replaceRepresents(transformed, transformed.represents, nearestClauseListForReps as ClauseListNode)
         transformed = pair.root as Document
         realTarget = pair.target
     }
@@ -622,10 +637,12 @@ fun expandAt(doc: Document, target: Phase2Node?): Document {
     val nearestClauseListForIs = if (realTarget == null) {
         null
     } else {
-        findNearestChalkTalkAncestorWhere(doc, realTarget) { it is ClauseListNode }
+        findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
     }
     if (realTarget == null || nearestClauseListForIs != null) {
-        val pair = replaceIsNodes(doc, doc.defines, nearestClauseListForIs)
+        println("for replaceIs ... using " + nearestClauseListForIs)
+
+        val pair = replaceIsNodes(transformed, transformed.defines, nearestClauseListForIs)
         transformed = pair.root as Document
         realTarget = pair.target
     }
@@ -634,13 +651,16 @@ fun expandAt(doc: Document, target: Phase2Node?): Document {
 }
 
 fun fullExpandOnce(doc: Document): Document {
+    /*
     var transformed = separateIsStatements(doc)
     transformed = separateInfixOperatorStatements(transformed)
     transformed = glueCommands(transformed)
-    transformed = moveInlineCommandsToIsNode(doc.defines, doc, null).root
-    transformed = replaceRepresents(doc, doc.represents, null).root
-    transformed = replaceIsNodes(doc, doc.defines, null).root
+    transformed = moveInlineCommandsToIsNode((transformed as Document).defines, transformed, null).root
+    transformed = replaceRepresents(transformed, (transformed as Document).represents, null).root
+    transformed = replaceIsNodes(transformed, (transformed as Document).defines, null).root
     return transformed as Document
+     */
+    return doc
 }
 
 fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
@@ -663,9 +683,10 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     return transformed
 }
 
-fun separateInfixOperatorStatements(root: Phase2Node): Phase2Node {
-    return root.transform {
-        if (it is ClauseListNode) {
+fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node?> {
+    var newFollow: Phase2Node? = null
+    val newRoot = root.transform {
+        val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
             for (c in it.clauses) {
                 if (c is Statement) {
@@ -695,7 +716,15 @@ fun separateInfixOperatorStatements(root: Phase2Node): Phase2Node {
         } else {
             it
         }
+        if (it === follow) {
+            newFollow = result
+        }
+        result
     }
+    return RootTarget(
+            root = newRoot,
+            target = newFollow
+    )
 }
 
 private fun getSingleInfixOperatorIndex(exp: ExpressionTexTalkNode): Int {

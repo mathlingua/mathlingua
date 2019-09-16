@@ -226,27 +226,27 @@ object Playground {
                         var transformed = doc as Phase2Node
 
                         if (separateIsBox.isSelected) {
-                            transformed = separateIsStatements(transformed)[transformed]!!
+                            transformed = separateIsStatements(transformed)
                         }
 
                         if (separateInfixOps.isSelected) {
-                            transformed = separateInfixOperatorStatements(transformed)[transformed]!!
+                            transformed = separateInfixOperatorStatements(transformed)
                         }
 
                         if (glueCommands.isSelected) {
-                            transformed = glueCommands(transformed)[transformed]!!
+                            transformed = glueCommands(transformed)
                         }
 
                         if (moveInLineIs.isSelected) {
-                            transformed = moveInlineCommandsToIsNode(doc!!.defines, transformed, { true }, { root, node -> true })[transformed]!!
+                            transformed = moveInlineCommandsToIsNode(doc!!.defines, transformed, null).root
                         }
 
                         if (replaceReps.isSelected) {
-                            transformed = replaceRepresents(transformed, doc!!.represents, { true })[transformed]!!
+                            transformed = replaceRepresents(transformed, doc!!.represents, null).root
                         }
 
                         if (replaceIsNodes.isSelected) {
-                            transformed = replaceIsNodes(transformed, doc!!.defines, { true })[transformed]!!
+                            transformed = replaceIsNodes(transformed, doc!!.defines, null).root
                         }
 
                         if (completeExpand.isSelected) {

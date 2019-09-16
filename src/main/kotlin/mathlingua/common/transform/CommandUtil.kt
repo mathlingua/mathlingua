@@ -32,6 +32,8 @@ import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
 import kotlin.system.exitProcess
 
+data class RootTarget<R, T>(val root: R, val target: T)
+
 fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     val commands = mutableListOf<Command>()
     findCommandsImpl(texTalkNode, commands)
@@ -103,10 +105,9 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-fun separateIsStatements(node: Phase2Node): TransformMap {
-    val transformMap = TransformMap()
-    val result = node.transform {
-        val result = if (it is ClauseListNode) {
+fun separateIsStatements(node: Phase2Node): Phase2Node {
+    return node.transform {
+        if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
             for (clause in it.clauses) {
                 if (clause is Statement) {
@@ -138,11 +139,7 @@ fun separateIsStatements(node: Phase2Node): TransformMap {
         } else {
             it
         }
-        transformMap[it] = result
-        result
     }
-    transformMap[node] = result
-    return transformMap
 }
 
 private fun findSeparatedIsNodes(node: Statement): List<IsTexTalkNode>? {
@@ -182,10 +179,9 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // this function requires that `is` nodes are separated
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
-fun glueCommands(node: Phase2Node): TransformMap {
-    val transformMap = TransformMap()
-    val result = node.transform {
-        val result = if (it is Statement &&
+fun glueCommands(root: Phase2Node): Phase2Node {
+    return root.transform {
+        if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
             it.texTalkRoot.value.children.all { c -> c is Command }) {
             val exp = it.texTalkRoot.value
@@ -243,11 +239,7 @@ fun glueCommands(node: Phase2Node): TransformMap {
         } else {
             it
         }
-        transformMap[it] = result
-        result
     }
-    transformMap[node] = result
-    return transformMap
 }
 
 private fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {

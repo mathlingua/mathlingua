@@ -31,8 +31,8 @@ import mathlingua.common.transform.getSignature
 
 data class SourceGroup(val id: String,
                        val sourceSection: SourceSection,
-                       override val row: Int,
-                       override val column: Int) : Phase2Node {
+                       override var row: Int,
+                       override var column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
     }
@@ -119,8 +119,8 @@ data class DefinesGroup(
     val meansSection: MeansSection,
     val aliasSection: AliasSection?,
     val metaDataSection: MetaDataSection?,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -185,8 +185,8 @@ data class RepresentsGroup(
     val thatSection: ThatSection,
     val aliasSection: AliasSection?,
     val metaDataSection: MetaDataSection?,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -247,8 +247,8 @@ data class ResultGroup(
     val resultSection: ResultSection,
     val aliasSection: AliasSection?,
     val metaDataSection: MetaDataSection?,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -290,8 +290,8 @@ data class AxiomGroup(
     val axiomSection: AxiomSection,
     val aliasSection: AliasSection?,
     val metaDataSection: MetaDataSection?,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -333,8 +333,8 @@ data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
     val aliasSection: AliasSection?,
     val metaDataSection: MetaDataSection?,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {

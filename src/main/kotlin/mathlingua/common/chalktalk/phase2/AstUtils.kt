@@ -16,8 +16,6 @@
 
 package mathlingua.common.chalktalk.phase2
 
-import kotlin.math.abs
-
 fun indentedString(useDot: Boolean, indent: Int, line: String): String {
     val builder = StringBuilder()
     for (i in 0 until indent - 2) {
@@ -117,4 +115,10 @@ fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
     }
 
     return found
+}
+
+fun resetRowColumn(node: Phase2Node) {
+    node.row = -1
+    node.column = -1
+    node.forEach { resetRowColumn(it) }
 }

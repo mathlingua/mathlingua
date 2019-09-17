@@ -137,7 +137,7 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
         } else {
             it
         }
-        if (hasChild(it, follow)) {
+        if (newFollow == null && hasChild(it, follow)) {
             newFollow = result
         }
         result
@@ -246,7 +246,7 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
         } else {
             it
         }
-        if (hasChild(it, follow)) {
+        if (newFollow == null && hasChild(it, follow)) {
             newFollow = follow
         }
         result

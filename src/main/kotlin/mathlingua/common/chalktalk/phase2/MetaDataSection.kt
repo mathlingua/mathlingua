@@ -25,8 +25,8 @@ import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
 data class MetaDataSection(val mappings: List<MappingNode>,
-                           override val row: Int,
-                           override val column: Int) : Phase2Node {
+                           override var row: Int,
+                           override var column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
     }

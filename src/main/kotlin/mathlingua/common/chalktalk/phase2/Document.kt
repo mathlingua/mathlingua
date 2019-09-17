@@ -26,8 +26,8 @@ import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
 interface Phase2Node {
-    val row: Int
-    val column: Int
+    var row: Int
+    var column: Int
     fun forEach(fn: (node: Phase2Node) -> Unit)
     fun toCode(isArg: Boolean, indent: Int): String
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
@@ -40,8 +40,8 @@ data class Document(
     val axioms: List<AxiomGroup>,
     val conjectures: List<ConjectureGroup>,
     val sources: List<SourceGroup>,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {

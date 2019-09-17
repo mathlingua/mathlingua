@@ -123,8 +123,8 @@ fun validateClause(rawNode: Phase1Node): Validation<Clause> {
 sealed class Target : Clause()
 
 data class AbstractionNode(val abstraction: Abstraction,
-                           override val row: Int,
-                           override val column: Int) : Target() {
+                           override var row: Int,
+                           override var column: Int) : Target() {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
@@ -151,8 +151,8 @@ fun validateAbstractionNode(node: Phase1Node): Validation<AbstractionNode> {
 }
 
 data class AggregateNode(val aggregate: Aggregate,
-                         override val row: Int,
-                         override val column: Int) : Target() {
+                         override var row: Int,
+                         override var column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -178,8 +178,8 @@ fun validateAggregateNode(node: Phase1Node): Validation<AggregateNode> {
 }
 
 data class TupleNode(val tuple: Tuple,
-                     override val row: Int,
-                     override val column: Int) : Target() {
+                     override var row: Int,
+                     override var column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -205,8 +205,8 @@ fun validateTupleNode(node: Phase1Node): Validation<TupleNode> {
 }
 
 data class AssignmentNode(val assignment: Assignment,
-                          override val row: Int,
-                          override val column: Int) : Target() {
+                          override var row: Int,
+                          override var column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -233,8 +233,8 @@ fun validateAssignmentNode(node: Phase1Node): Validation<AssignmentNode> {
 }
 
 data class MappingNode(val mapping: Mapping,
-                       override val row: Int,
-                       override val column: Int) : Phase2Node {
+                       override var row: Int,
+                       override var column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -261,8 +261,8 @@ fun validateMappingNode(node: Phase1Node): Validation<MappingNode> {
 }
 
 data class Identifier(val name: String,
-                      override val row: Int,
-                      override val column: Int) : Target() {
+                      override var row: Int,
+                      override var column: Int) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -310,8 +310,8 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
 data class Statement(
     val text: String,
     val texTalkRoot: Validation<ExpressionTexTalkNode>,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
@@ -376,8 +376,8 @@ fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
 }
 
 data class Text(val text: String,
-                override val row: Int,
-                override val column: Int) : Clause() {
+                override var row: Int,
+                override var column: Int) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -424,8 +424,8 @@ fun validateText(rawNode: Phase1Node): Validation<Text> {
 data class ExistsGroup(
     val existsSection: ExistsSection,
     val suchThatSection: SuchThatSection,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(existsSection)
@@ -464,8 +464,8 @@ fun validateExistsGroup(node: Phase1Node): Validation<ExistsGroup> {
 data class IfGroup(
     val ifSection: IfSection,
     val thenSection: ThenSection,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(ifSection)
@@ -504,8 +504,8 @@ fun validateIfGroup(node: Phase1Node): Validation<IfGroup> {
 data class IffGroup(
     val iffSection: IffSection,
     val thenSection: ThenSection,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(iffSection)
@@ -545,8 +545,8 @@ data class ForGroup(
     val forSection: ForSection,
     val whereSection: WhereSection?,
     val thenSection: ThenSection,
-    override val row: Int,
-    override val column: Int
+    override var row: Int,
+    override var column: Int
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(forSection)
@@ -633,8 +633,8 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
 }
 
 data class NotGroup(val notSection: NotSection,
-                    override val row: Int,
-                    override val column: Int) : Clause() {
+                    override var row: Int,
+                    override var column: Int) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(notSection)
     }
@@ -664,8 +664,8 @@ fun validateNotGroup(node: Phase1Node): Validation<NotGroup> {
 }
 
 data class OrGroup(val orSection: OrSection,
-                   override val row: Int,
-                   override val column: Int) : Clause() {
+                   override var row: Int,
+                   override var column: Int) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(orSection)
     }

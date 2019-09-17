@@ -82,7 +82,7 @@ fun moveInlineCommandsToIsNode(
         } else {
             it
         }
-        if (hasChild(it, target)) {
+        if (newTarget == null && hasChild(it, target)) {
             newTarget = result
         }
         result
@@ -324,7 +324,7 @@ fun replaceRepresents(
     fun chalkTransformerAndTracker(node: Phase2Node): Phase2Node {
         return node.transform {
             val result = chalkTransformer(it)
-            if (hasChild(it, target)) {
+            if (newTarget == null && hasChild(it, target)) {
                 newTarget = result
             }
             result
@@ -485,7 +485,7 @@ fun replaceIsNodes(
     fun chalkTransformerAndTracker(node: Phase2Node): Phase2Node {
         return node.transform {
             val result = chalkTransformer(it)
-            if (hasChild(it, target)) {
+            if (newTarget == null && hasChild(it, target)) {
                 newTarget = result
             }
             result
@@ -495,7 +495,7 @@ fun replaceIsNodes(
     val newRoot = root.transform(::chalkTransformerAndTracker)
     return RootTarget(
             root = newRoot,
-            target = newTarget!!
+            target = newTarget ?: root
     )
 }
 
@@ -589,6 +589,11 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
 }
 
 fun expandAt(doc: Document, target: Phase2Node): Document {
+    resetRowColumn(doc)
+    resetRowColumn(target)
+
+    println("target0=" + target)
+
     var transformed = doc
     var realTarget = target
 
@@ -610,21 +615,18 @@ fun expandAt(doc: Document, target: Phase2Node): Document {
 
     println("realTarget3=" + realTarget)
 
-    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }!! // TODO: CHECK NULL
     val mvInlineCmdsPair = moveInlineCommandsToIsNode(transformed.defines, transformed, realTarget)
     transformed = mvInlineCmdsPair.root as Document
     realTarget = mvInlineCmdsPair.target
 
     println("realTarget4=" + realTarget)
 
-    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }!! // TODO: CHECK NULL
     val replaceRepsPair = replaceRepresents(transformed, transformed.represents, realTarget)
     transformed = replaceRepsPair.root as Document
     realTarget = replaceRepsPair.target
 
     println("realTarget5=" + realTarget)
 
-    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }!! // TODO: CHECK NULL
     val replaceIsPair = replaceIsNodes(transformed, transformed.defines, realTarget)
     transformed = replaceIsPair.root as Document
     realTarget = replaceIsPair.target
@@ -700,7 +702,7 @@ fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootT
         } else {
             it
         }
-        if (hasChild(it, follow)) {
+        if (newFollow == null && hasChild(it, follow)) {
             newFollow = result
         }
         result

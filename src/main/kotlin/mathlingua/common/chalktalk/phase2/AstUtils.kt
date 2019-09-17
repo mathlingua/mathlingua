@@ -64,9 +64,12 @@ fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
     return result.node
 }
 
-private fun findNodeImpl(node: Phase2Node,
-                         row: Int, col: Int,
-                         result: NearestNode) {
+private fun findNodeImpl(
+    node: Phase2Node,
+    row: Int,
+    col: Int,
+    result: NearestNode
+) {
     val d = dist(node, row, col)
     if (d <= result.dist) {
         result.dist = d

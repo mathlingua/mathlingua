@@ -24,9 +24,11 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
-data class SourceSection(val mappings: List<MappingNode>,
-                         override var row: Int,
-                         override var column: Int) : Phase2Node {
+data class SourceSection(
+    val mappings: List<MappingNode>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
     }

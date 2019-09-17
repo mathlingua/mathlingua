@@ -16,9 +16,11 @@
 
 package mathlingua.common.chalktalk.phase2
 
-data class ClauseListNode(val clauses: List<Clause>,
-                          override var row: Int,
-                          override var column: Int) : Phase2Node {
+data class ClauseListNode(
+    val clauses: List<Clause>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }

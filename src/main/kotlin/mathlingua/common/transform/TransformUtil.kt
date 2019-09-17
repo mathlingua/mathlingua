@@ -516,8 +516,8 @@ fun buildIfThen(def: DefinesGroup): IfGroup {
         ifSection = IfSection(
                 row = -1,
                 column = -1,
-            clauses = def.assumingSection?.clauses ?:
-                ClauseListNode(
+            clauses = def.assumingSection?.clauses
+                ?: ClauseListNode(
                     clauses = emptyList(),
                     row = -1,
                     column = -1
@@ -538,8 +538,8 @@ fun buildIfThen(rep: RepresentsGroup): IfGroup {
         ifSection = IfSection(
                 row = -1,
                 column = -1,
-            clauses = rep.assumingSection?.clauses ?:
-                ClauseListNode(
+            clauses = rep.assumingSection?.clauses
+                ?: ClauseListNode(
                         clauses = emptyList(),
                         row = -1,
                         column = -1)

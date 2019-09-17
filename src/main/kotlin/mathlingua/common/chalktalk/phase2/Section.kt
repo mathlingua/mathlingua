@@ -34,9 +34,11 @@ private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, inde
     }
 }
 
-data class AssumingSection(val clauses: ClauseListNode,
-                           override var row: Int,
-                           override var column: Int) : Phase2Node {
+data class AssumingSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -69,9 +71,11 @@ fun validateAssumingSection(node: Phase1Node): Validation<AssumingSection> {
     )
 }
 
-data class DefinesSection(val targets: List<Target>,
-                          override var row: Int,
-                          override var column: Int) : Phase2Node {
+data class DefinesSection(
+    val targets: List<Target>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         targets.forEach(fn)
     }
@@ -101,9 +105,11 @@ fun validateDefinesSection(node: Phase1Node): Validation<DefinesSection> {
     )
 }
 
-data class RefinesSection(val targets: List<Target>,
-                          override var row: Int,
-                          override var column: Int) :
+data class RefinesSection(
+    val targets: List<Target>,
+    override var row: Int,
+    override var column: Int
+) :
     Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         targets.forEach(fn)
@@ -134,8 +140,10 @@ fun validateRefinesSection(node: Phase1Node): Validation<RefinesSection> {
     )
 }
 
-data class RepresentsSection(override var row: Int,
-                             override var column: Int) : Phase2Node {
+data class RepresentsSection(
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -188,9 +196,11 @@ fun validateRepresentsSection(node: Phase1Node): Validation<RepresentsSection> {
     }
 }
 
-data class ExistsSection(val identifiers: List<Target>,
-                         override var row: Int,
-                         override var column: Int) : Phase2Node {
+data class ExistsSection(
+    val identifiers: List<Target>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         identifiers.forEach(fn)
     }
@@ -220,9 +230,11 @@ fun validateExistsSection(node: Phase1Node): Validation<ExistsSection> {
     )
 }
 
-data class ForSection(val targets: List<Target>,
-                      override var row: Int,
-                      override var column: Int) : Phase2Node {
+data class ForSection(
+    val targets: List<Target>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         targets.forEach(fn)
     }
@@ -252,9 +264,11 @@ fun validateForSection(node: Phase1Node): Validation<ForSection> {
     )
 }
 
-data class MeansSection(val clauses: ClauseListNode,
-                        override var row: Int,
-                        override var column: Int) : Phase2Node {
+data class MeansSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(clauses)
     }
@@ -287,9 +301,11 @@ fun validateMeansSection(node: Phase1Node): Validation<MeansSection> {
     )
 }
 
-data class ResultSection(val clauses: ClauseListNode,
-                         override var row: Int,
-                         override var column: Int) : Phase2Node {
+data class ResultSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -307,9 +323,9 @@ data class ResultSection(val clauses: ClauseListNode,
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ResultSection(
             clauses = clauses.transform(chalkTransformer) as ClauseListNode,
-                row = row,
-                column = column
-         ))
+            row = row,
+            column = column
+            ))
     }
 }
 
@@ -322,9 +338,11 @@ fun validateResultSection(node: Phase1Node): Validation<ResultSection> {
     )
 }
 
-data class AxiomSection(val clauses: ClauseListNode,
-                        override var row: Int,
-                        override var column: Int) : Phase2Node {
+data class AxiomSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -357,9 +375,11 @@ fun validateAxiomSection(node: Phase1Node): Validation<AxiomSection> {
     )
 }
 
-data class ConjectureSection(val clauses: ClauseListNode,
-                             override var row: Int,
-                             override var column: Int) : Phase2Node {
+data class ConjectureSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -392,9 +412,11 @@ fun validateConjectureSection(node: Phase1Node): Validation<ConjectureSection> {
     )
 }
 
-data class SuchThatSection(val clauses: ClauseListNode,
-                           override var row: Int,
-                           override var column: Int) : Phase2Node {
+data class SuchThatSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -427,9 +449,11 @@ fun validateSuchThatSection(node: Phase1Node): Validation<SuchThatSection> {
     )
 }
 
-data class ThatSection(val clauses: ClauseListNode,
-                       override var row: Int,
-                       override var column: Int) : Phase2Node {
+data class ThatSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -462,9 +486,11 @@ fun validateThatSection(node: Phase1Node): Validation<ThatSection> {
     )
 }
 
-data class IfSection(val clauses: ClauseListNode,
-                     override var row: Int,
-                     override var column: Int) : Phase2Node {
+data class IfSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -497,9 +523,11 @@ fun validateIfSection(node: Phase1Node): Validation<IfSection> {
     )
 }
 
-data class IffSection(val clauses: ClauseListNode,
-                      override var row: Int,
-                      override var column: Int) : Phase2Node {
+data class IffSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -532,9 +560,11 @@ fun validateIffSection(node: Phase1Node): Validation<IffSection> {
     )
 }
 
-data class ThenSection(val clauses: ClauseListNode,
-                       override var row: Int,
-                       override var column: Int) : Phase2Node {
+data class ThenSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -567,9 +597,11 @@ fun validateThenSection(node: Phase1Node): Validation<ThenSection> {
     )
 }
 
-data class WhereSection(val clauses: ClauseListNode,
-                        override var row: Int,
-                        override var column: Int) : Phase2Node {
+data class WhereSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -602,9 +634,11 @@ fun validateWhereSection(node: Phase1Node): Validation<WhereSection> {
     )
 }
 
-data class NotSection(val clauses: ClauseListNode,
-                      override var row: Int,
-                      override var column: Int) : Phase2Node {
+data class NotSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -637,9 +671,11 @@ fun validateNotSection(node: Phase1Node): Validation<NotSection> {
     )
 }
 
-data class OrSection(val clauses: ClauseListNode,
-                     override var row: Int,
-                     override var column: Int) : Phase2Node {
+data class OrSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }

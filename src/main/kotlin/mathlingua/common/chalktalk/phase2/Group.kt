@@ -29,10 +29,12 @@ import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.transform.getSignature
 
-data class SourceGroup(val id: String,
-                       val sourceSection: SourceSection,
-                       override var row: Int,
-                       override var column: Int) : Phase2Node {
+data class SourceGroup(
+    val id: String,
+    val sourceSection: SourceSection,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
     }
@@ -399,11 +401,11 @@ fun <G, S> validateResultLikeGroup(
     resultLikeName: String,
     validateResultLikeSection: (section: Section) -> Validation<S>,
     buildGroup: (
-            sect: S,
-            alias: AliasSection?,
-            metadata: MetaDataSection?,
-            row: Int,
-            column: Int
+        sect: S,
+        alias: AliasSection?,
+        metadata: MetaDataSection?,
+        row: Int,
+        column: Int
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()

@@ -57,9 +57,9 @@ fun moveInlineCommandsToIsNode(
     }
 
     var seed = 0
-    var newTarget: Phase2Node? = null
+    var newTarget: Phase2Node = target
     val newRoot = root.transform {
-        val result = if (it is ClauseListNode && hasChild(it, target)) {
+        val result = if (it is ClauseListNode && (hasChild(it, target) || hasChild(target, it))) {
             val newClauses = mutableListOf<Clause>()
             for (c in it.clauses) {
                 if (c is Statement) {
@@ -74,22 +74,23 @@ fun moveInlineCommandsToIsNode(
                     newClauses.add(c)
                 }
             }
-            ClauseListNode(
+            val result = ClauseListNode(
                 clauses = newClauses,
                 row = -1,
                 column = -1
             )
+            if (hasChild(it, target)) {
+                newTarget = result
+            }
+            result
         } else {
             it
-        }
-        if (newTarget == null && hasChild(it, target)) {
-            newTarget = result
         }
         result
     }
     return RootTarget(
             root = newRoot,
-            target = newTarget!!
+            target = newTarget
     )
 }
 
@@ -217,8 +218,9 @@ fun replaceRepresents(
         }
     }
 
+    var newTarget: Phase2Node = target
     fun chalkTransformer(node: Phase2Node): Phase2Node {
-        if (node !is ClauseListNode || !hasChild(node, target)) {
+        if (node !is ClauseListNode || (!hasChild(node, target) && !hasChild(target, node))) {
             return node
         }
 
@@ -313,28 +315,21 @@ fun replaceRepresents(
                 newClauses.add(clause)
             }
         }
-        return ClauseListNode(
+        val result = ClauseListNode(
             clauses = newClauses,
             row = -1,
             column = -1
         )
-    }
-
-    var newTarget: Phase2Node? = null
-    fun chalkTransformerAndTracker(node: Phase2Node): Phase2Node {
-        return node.transform {
-            val result = chalkTransformer(it)
-            if (newTarget == null && hasChild(it, target)) {
-                newTarget = result
-            }
-            result
+        if (hasChild(node, target)) {
+            newTarget = result
         }
+        return result
     }
 
-    val newRoot = root.transform(::chalkTransformerAndTracker)
+    val newRoot = root.transform(::chalkTransformer)
     return RootTarget(
             root = newRoot,
-            target = newTarget!!
+            target = newTarget
     )
 }
 
@@ -351,8 +346,9 @@ fun replaceIsNodes(
         }
     }
 
+    var newTarget: Phase2Node = target
     fun chalkTransformer(node: Phase2Node): Phase2Node {
-        if (node !is ClauseListNode || !hasChild(node, target)) {
+        if (node !is ClauseListNode || (!hasChild(node, target) && !hasChild(target, node))) {
             return node
         }
 
@@ -473,29 +469,21 @@ fun replaceIsNodes(
                 newClauses.add(renameVars(ifThen, map) as Clause)
             }
         }
-
-        return ClauseListNode(
+        val result = ClauseListNode(
             clauses = newClauses,
             row = -1,
             column = -1
         )
-    }
-
-    var newTarget: Phase2Node? = null
-    fun chalkTransformerAndTracker(node: Phase2Node): Phase2Node {
-        return node.transform {
-            val result = chalkTransformer(it)
-            if (newTarget == null && hasChild(it, target)) {
-                newTarget = result
-            }
-            result
+        if (hasChild(node, target)) {
+            newTarget = result
         }
+        return result
     }
 
-    val newRoot = root.transform(::chalkTransformerAndTracker)
+    val newRoot = root.transform(::chalkTransformer)
     return RootTarget(
             root = newRoot,
-            target = newTarget ?: root
+            target = newTarget
     )
 }
 
@@ -670,7 +658,7 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
 }
 
 fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
-    var newFollow: Phase2Node? = null
+    var newFollow: Phase2Node = follow
     val newRoot = root.transform {
         val result = if (it is ClauseListNode) {
             val newClauses = mutableListOf<Clause>()
@@ -694,22 +682,23 @@ fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootT
                     newClauses.add(c)
                 }
             }
-           ClauseListNode(
-                    clauses = newClauses,
-                    row = -1,
-                    column = -1
+            val result = ClauseListNode(
+                clauses = newClauses,
+                row = -1,
+                column = -1
             )
+            if (hasChild(it, follow)) {
+                newFollow = result
+            }
+            result
         } else {
             it
-        }
-        if (newFollow == null && hasChild(it, follow)) {
-            newFollow = result
         }
         result
     }
     return RootTarget(
             root = newRoot,
-            target = newFollow!!
+            target = newFollow
     )
 }
 

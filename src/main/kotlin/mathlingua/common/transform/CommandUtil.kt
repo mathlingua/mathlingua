@@ -27,7 +27,6 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
-import kotlin.system.exitProcess
 
 data class RootTarget<R, T>(val root: R, val target: T)
 
@@ -120,8 +119,8 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
                             Statement(
                                 text = root.toCode(),
                                 texTalkRoot = ValidationSuccess(root),
-                                    row = -1,
-                                    column = -1
+                                row = -1,
+                                column = -1
                             )
                         })
                     }
@@ -129,22 +128,23 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
                     newClauses.add(clause)
                 }
             }
-            ClauseListNode(
+            val result = ClauseListNode(
                 clauses = newClauses,
-                    row = -1,
-                    column = -1
+                row = -1,
+                column = -1
             )
+            if (newFollow == null && hasChild(it, follow)) {
+                newFollow = result
+            }
+            result
         } else {
             it
-        }
-        if (newFollow == null && hasChild(it, follow)) {
-            newFollow = result
         }
         result
     }
     return RootTarget(
             root = newRoot,
-            target = newFollow!!
+            target = newFollow ?: follow
     )
 }
 
@@ -186,7 +186,7 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
 fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
-    var newFollow: Phase2Node? = null
+    var newFollow: Phase2Node = follow
     val newRoot = root.transform {
         val result = if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
@@ -202,12 +202,16 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
                     gluedCmds[0]
                 )
             )
-            Statement(
+            val result = Statement(
                 text = newExp.toCode(),
                 texTalkRoot = ValidationSuccess(newExp),
                     row = -1,
                     column = -1
             )
+            if (hasChild(it, follow)) {
+                newFollow = result
+            }
+            result
         } else if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
             it.texTalkRoot.value.children.size == 1 &&
@@ -237,23 +241,24 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
                     )
                 )
             )
-            Statement(
+            val result = Statement(
                 text = newExp.toCode(),
                 texTalkRoot = ValidationSuccess(newExp),
                     row = -1,
                     column = -1
             )
+            if (hasChild(it, follow)) {
+                newFollow = result
+            }
+            result
         } else {
             it
-        }
-        if (newFollow == null && hasChild(it, follow)) {
-            newFollow = follow
         }
         result
     }
     return RootTarget(
             root = newRoot,
-            target = newFollow!!
+            target = newFollow
     )
 }
 

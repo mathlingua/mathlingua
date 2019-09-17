@@ -213,7 +213,7 @@ object Playground {
                     } else {
                         val sigBuilder = StringBuilder()
                         val ml = MathLingua()
-                        for (sig in ml.findAllSignatures(doc!!)) {
+                        for (sig in ml.findAllSignatures(doc)) {
                             sigBuilder.append(sig)
                             sigBuilder.append('\n')
                         }
@@ -221,35 +221,35 @@ object Playground {
 
                         println("doc=$doc")
 
-                        phase2Tree.model = DefaultTreeModel(toTreeNode(doc!!))
-                        var transformed = doc as Phase2Node
+                        phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
+                        var transformed = doc
 
                         if (separateIsBox.isSelected) {
-                            transformed = separateIsStatements(transformed, transformed).root
+                            transformed = separateIsStatements(transformed, transformed).root as Document
                         }
 
                         if (separateInfixOps.isSelected) {
-                            transformed = separateInfixOperatorStatements(transformed, transformed).root
+                            transformed = separateInfixOperatorStatements(transformed, transformed).root as Document
                         }
 
                         if (glueCommands.isSelected) {
-                            transformed = glueCommands(transformed, transformed).root
+                            transformed = glueCommands(transformed, transformed).root as Document
                         }
 
                         if (moveInLineIs.isSelected) {
-                            transformed = moveInlineCommandsToIsNode(doc!!.defines, transformed, null).root
+                            transformed = moveInlineCommandsToIsNode(transformed.defines, transformed, transformed).root as Document
                         }
 
                         if (replaceReps.isSelected) {
-                            transformed = replaceRepresents(transformed, doc!!.represents, null).root
+                            transformed = replaceRepresents(transformed, transformed.represents, transformed).root as Document
                         }
 
                         if (replaceIsNodes.isSelected) {
-                            transformed = replaceIsNodes(transformed, doc!!.defines, null).root
+                            transformed = replaceIsNodes(transformed, transformed.defines, transformed).root as Document
                         }
 
                         if (completeExpand.isSelected) {
-                            transformed = fullExpandComplete(doc!!)
+                            transformed = fullExpandComplete(doc)
                         }
 
                         outputArea.text = transformed.toCode(false, 0)

@@ -18,10 +18,7 @@ package mathlingua.common.transform
 
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.Clause
-import mathlingua.common.chalktalk.phase2.ClauseListNode
-import mathlingua.common.chalktalk.phase2.Phase2Node
-import mathlingua.common.chalktalk.phase2.Statement
+import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionTexTalkNode
@@ -105,7 +102,7 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node?> {
+fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot = root.transform {
         val result = if (it is ClauseListNode) {
@@ -140,14 +137,14 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
         } else {
             it
         }
-        if (it === follow) {
+        if (hasChild(it, follow)) {
             newFollow = result
         }
         result
     }
     return RootTarget(
             root = newRoot,
-            target = newFollow
+            target = newFollow!!
     )
 }
 
@@ -188,7 +185,7 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // this function requires that `is` nodes are separated
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
-fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node?> {
+fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot = root.transform {
         val result = if (it is Statement &&
@@ -249,14 +246,14 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
         } else {
             it
         }
-        if (it === follow) {
-            newFollow = result
+        if (hasChild(it, follow)) {
+            newFollow = follow
         }
         result
     }
     return RootTarget(
             root = newRoot,
-            target = newFollow
+            target = newFollow!!
     )
 }
 

@@ -34,28 +34,12 @@ fun getKey(node: Phase2Node): String {
             .replace(Regex("column=-?\\d+"), "COLUMN")
 }
 
-class TransformMap : Iterable<String> {
-    private val map = mutableMapOf<String, Phase2Node>()
-
-    operator fun get(node: Phase2Node): Phase2Node? {
-        return map[getKey(node)]
-    }
-
-    operator fun set(key: Phase2Node, value: Phase2Node) {
-        map[getKey(key)] = value
-    }
-
-    override fun iterator(): Iterator<String> {
-        return map.keys.iterator()
-    }
-}
-
 fun moveInlineCommandsToIsNode(
     defs: List<DefinesGroup>,
     root: Phase2Node,
-    target: ClauseListNode? // non-null targets a specific node
-                            // and null targets all ClauseListNodes
-): RootTarget<Phase2Node, ClauseListNode?> {
+    target: Phase2Node // non-null targets a specific node
+                       // and null targets all ClauseListNodes
+): RootTarget<Phase2Node, Phase2Node> {
     val knownDefSigs = defs.map { it.signature }.filterNotNull().toSet()
     fun realShouldProcessTex(root: TexTalkNode, node: TexTalkNode): Boolean {
         if (node is Command && !knownDefSigs.contains(getCommandSignature(node).toCode())) {
@@ -73,10 +57,9 @@ fun moveInlineCommandsToIsNode(
     }
 
     var seed = 0
-    val transformMap = TransformMap()
-    var newTarget: ClauseListNode? = null
+    var newTarget: Phase2Node? = null
     val newRoot = root.transform {
-        if (it is ClauseListNode && (target == null || target == it)) {
+        val result = if (it is ClauseListNode && hasChild(it, target)) {
             val newClauses = mutableListOf<Clause>()
             for (c in it.clauses) {
                 if (c is Statement) {
@@ -91,22 +74,22 @@ fun moveInlineCommandsToIsNode(
                     newClauses.add(c)
                 }
             }
-            val result = ClauseListNode(
+            ClauseListNode(
                 clauses = newClauses,
-                    row = -1,
-                    column = -1
+                row = -1,
+                column = -1
             )
-            if (target != null) {
-                newTarget = result
-            }
-            result
         } else {
             it
         }
+        if (hasChild(it, target)) {
+            newTarget = result
+        }
+        result
     }
     return RootTarget(
             root = newRoot,
-            target = newTarget
+            target = newTarget!!
     )
 }
 
@@ -224,8 +207,8 @@ fun moveStatementInlineCommandsToIsNode(
 fun replaceRepresents(
     root: Phase2Node,
     represents: List<RepresentsGroup>,
-    target: ClauseListNode?
-): RootTarget<Phase2Node, ClauseListNode?> {
+    target: Phase2Node
+): RootTarget<Phase2Node, Phase2Node> {
     val repMap = mutableMapOf<String, RepresentsGroup>()
     for (rep in represents) {
         val sig = rep.signature
@@ -234,9 +217,8 @@ fun replaceRepresents(
         }
     }
 
-    var newTarget: ClauseListNode? = null
     fun chalkTransformer(node: Phase2Node): Phase2Node {
-        if (node !is ClauseListNode || (target != null && target != node)) {
+        if (node !is ClauseListNode || !hasChild(node, target)) {
             return node
         }
 
@@ -331,27 +313,36 @@ fun replaceRepresents(
                 newClauses.add(clause)
             }
         }
-        val result = ClauseListNode(
+        return ClauseListNode(
             clauses = newClauses,
             row = -1,
             column = -1
         )
-        newTarget = result
-        return result
     }
 
-    val newRoot = root.transform(::chalkTransformer)
+    var newTarget: Phase2Node? = null
+    fun chalkTransformerAndTracker(node: Phase2Node): Phase2Node {
+        return node.transform {
+            val result = chalkTransformer(it)
+            if (hasChild(it, target)) {
+                newTarget = result
+            }
+            result
+        }
+    }
+
+    val newRoot = root.transform(::chalkTransformerAndTracker)
     return RootTarget(
             root = newRoot,
-            target = newTarget
+            target = newTarget!!
     )
 }
 
 fun replaceIsNodes(
     root: Phase2Node,
     defs: List<DefinesGroup>,
-    target: Phase2Node?
-): RootTarget<Phase2Node, ClauseListNode?> {
+    target: Phase2Node
+): RootTarget<Phase2Node, Phase2Node> {
     val defMap = mutableMapOf<String, DefinesGroup>()
     for (def in defs) {
         val sig = def.signature
@@ -360,9 +351,8 @@ fun replaceIsNodes(
         }
     }
 
-    var newTarget: ClauseListNode? = null
     fun chalkTransformer(node: Phase2Node): Phase2Node {
-        if (node !is ClauseListNode || (target != null && target != node)) {
+        if (node !is ClauseListNode || !hasChild(node, target)) {
             return node
         }
 
@@ -484,19 +474,28 @@ fun replaceIsNodes(
             }
         }
 
-        val result = ClauseListNode(
+        return ClauseListNode(
             clauses = newClauses,
             row = -1,
             column = -1
         )
-        newTarget = result
-        return result
     }
 
-    val newRoot = root.transform(::chalkTransformer)
+    var newTarget: Phase2Node? = null
+    fun chalkTransformerAndTracker(node: Phase2Node): Phase2Node {
+        return node.transform {
+            val result = chalkTransformer(it)
+            if (hasChild(it, target)) {
+                newTarget = result
+            }
+            result
+        }
+    }
+
+    val newRoot = root.transform(::chalkTransformerAndTracker)
     return RootTarget(
             root = newRoot,
-            target = newTarget
+            target = newTarget!!
     )
 }
 
@@ -589,43 +588,43 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     return vars
 }
 
-fun expandAt(doc: Document, target: Phase2Node?): Document {
+fun expandAt(doc: Document, target: Phase2Node): Document {
     var transformed = doc
     var realTarget = target
 
-    val sepIsPair = separateIsStatements(transformed, realTarget!!)
+    val sepIsPair = separateIsStatements(transformed, realTarget)
     transformed = sepIsPair.root as Document
     realTarget = sepIsPair.target
 
     println("realTarget1=" + realTarget)
 
-    val sepInfixPair = separateInfixOperatorStatements(transformed, realTarget!!)
+    val sepInfixPair = separateInfixOperatorStatements(transformed, realTarget)
     transformed = sepInfixPair.root as Document
     realTarget = sepInfixPair.target
 
     println("realTarget2=" + realTarget)
 
-    val gluePair = glueCommands(transformed, realTarget!!)
+    val gluePair = glueCommands(transformed, realTarget)
     transformed = gluePair.root as Document
     realTarget = gluePair.target
 
     println("realTarget3=" + realTarget)
 
-    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
-    val mvInlineCmdsPair = moveInlineCommandsToIsNode(transformed.defines, transformed, realTarget as ClauseListNode?)
+    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }!! // TODO: CHECK NULL
+    val mvInlineCmdsPair = moveInlineCommandsToIsNode(transformed.defines, transformed, realTarget)
     transformed = mvInlineCmdsPair.root as Document
     realTarget = mvInlineCmdsPair.target
 
     println("realTarget4=" + realTarget)
 
-    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
-    val replaceRepsPair = replaceRepresents(transformed, transformed.represents, realTarget as ClauseListNode?)
+    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }!! // TODO: CHECK NULL
+    val replaceRepsPair = replaceRepresents(transformed, transformed.represents, realTarget)
     transformed = replaceRepsPair.root as Document
     realTarget = replaceRepsPair.target
 
     println("realTarget5=" + realTarget)
 
-    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
+    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }!! // TODO: CHECK NULL
     val replaceIsPair = replaceIsNodes(transformed, transformed.defines, realTarget)
     transformed = replaceIsPair.root as Document
     realTarget = replaceIsPair.target
@@ -668,7 +667,7 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     return transformed
 }
 
-fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node?> {
+fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot = root.transform {
         val result = if (it is ClauseListNode) {
@@ -693,7 +692,7 @@ fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootT
                     newClauses.add(c)
                 }
             }
-            ClauseListNode(
+           ClauseListNode(
                     clauses = newClauses,
                     row = -1,
                     column = -1
@@ -701,14 +700,14 @@ fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootT
         } else {
             it
         }
-        if (it === follow) {
+        if (hasChild(it, follow)) {
             newFollow = result
         }
         result
     }
     return RootTarget(
             root = newRoot,
-            target = newFollow
+            target = newFollow!!
     )
 }
 

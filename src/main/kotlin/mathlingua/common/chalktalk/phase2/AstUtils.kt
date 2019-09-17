@@ -60,11 +60,7 @@ private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: M
     }
 }
 
-fun findNearestChalkTalkAncestorWhere(root: Phase2Node, from: Phase2Node?, predicate: (node: Phase2Node) -> Boolean): Phase2Node? {
-    if (from == null) {
-        return null
-    }
-
+fun findNearestChalkTalkAncestorWhere(root: Phase2Node, from: Phase2Node, predicate: (node: Phase2Node) -> Boolean): Phase2Node? {
     val ancestry = getChalkTalkAncestry(root, from)
     println("ANCESTRY=" + ancestry)
     for (a in ancestry) {
@@ -106,4 +102,19 @@ private fun dist(node: Phase2Node, row: Int, col: Int): Int {
     }
 
     return col - node.column
+}
+
+fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
+    if (node == child) {
+        return true
+    }
+
+    var found = false
+    node.forEach {
+        if (!found) {
+            found = hasChild(it, child)
+        }
+    }
+
+    return found
 }

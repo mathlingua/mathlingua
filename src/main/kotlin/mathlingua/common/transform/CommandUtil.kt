@@ -186,7 +186,7 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
 fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
-    var newFollow: Phase2Node = follow
+    var newFollow: Phase2Node? = null
     val newRoot = root.transform {
         val result = if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
@@ -208,7 +208,7 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
                     row = -1,
                     column = -1
             )
-            if (hasChild(it, follow)) {
+            if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result
             }
             result
@@ -247,7 +247,7 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
                     row = -1,
                     column = -1
             )
-            if (hasChild(it, follow)) {
+            if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result
             }
             result
@@ -258,7 +258,7 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
     }
     return RootTarget(
             root = newRoot,
-            target = newFollow
+            target = newFollow ?: follow
     )
 }
 

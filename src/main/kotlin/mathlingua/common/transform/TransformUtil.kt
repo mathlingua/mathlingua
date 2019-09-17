@@ -597,55 +597,40 @@ fun expandAt(doc: Document, target: Phase2Node?): Document {
     transformed = sepIsPair.root as Document
     realTarget = sepIsPair.target
 
+    println("realTarget1=" + realTarget)
+
     val sepInfixPair = separateInfixOperatorStatements(transformed, realTarget!!)
     transformed = sepInfixPair.root as Document
     realTarget = sepInfixPair.target
+
+    println("realTarget2=" + realTarget)
 
     val gluePair = glueCommands(transformed, realTarget!!)
     transformed = gluePair.root as Document
     realTarget = gluePair.target
 
-    val nearestClauseListForInline = if (realTarget == null) {
-        null
-    } else {
-        findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
-    }
+    println("realTarget3=" + realTarget)
 
-    println("realTarget=$realTarget  and  nearestClauseListForInline=$nearestClauseListForInline")
+    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
+    val mvInlineCmdsPair = moveInlineCommandsToIsNode(transformed.defines, transformed, realTarget as ClauseListNode?)
+    transformed = mvInlineCmdsPair.root as Document
+    realTarget = mvInlineCmdsPair.target
 
-    if (realTarget == null || nearestClauseListForInline != null) {
-        println("For moveInlineCommands... using " + nearestClauseListForInline)
+    println("realTarget4=" + realTarget)
 
-        val pair = moveInlineCommandsToIsNode(transformed.defines, transformed, nearestClauseListForInline as ClauseListNode)
-        transformed = pair.root as Document
-        realTarget = pair.target
-    }
+    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
+    val replaceRepsPair = replaceRepresents(transformed, transformed.represents, realTarget as ClauseListNode?)
+    transformed = replaceRepsPair.root as Document
+    realTarget = replaceRepsPair.target
 
-    val nearestClauseListForReps = if (realTarget == null) {
-        null
-    } else {
-        findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
-    }
-    if (realTarget == null || nearestClauseListForReps != null) {
-        println("for replaceReps ... using " + nearestClauseListForReps)
+    println("realTarget5=" + realTarget)
 
-        val pair = replaceRepresents(transformed, transformed.represents, nearestClauseListForReps as ClauseListNode)
-        transformed = pair.root as Document
-        realTarget = pair.target
-    }
+    realTarget = findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
+    val replaceIsPair = replaceIsNodes(transformed, transformed.defines, realTarget)
+    transformed = replaceIsPair.root as Document
+    realTarget = replaceIsPair.target
 
-    val nearestClauseListForIs = if (realTarget == null) {
-        null
-    } else {
-        findNearestChalkTalkAncestorWhere(transformed, realTarget) { it is ClauseListNode }
-    }
-    if (realTarget == null || nearestClauseListForIs != null) {
-        println("for replaceIs ... using " + nearestClauseListForIs)
-
-        val pair = replaceIsNodes(transformed, transformed.defines, nearestClauseListForIs)
-        transformed = pair.root as Document
-        realTarget = pair.target
-    }
+    println("realTarget6=" + realTarget)
 
     return transformed
 }

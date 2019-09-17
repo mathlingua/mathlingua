@@ -20,6 +20,8 @@ import mathlingua.common.MathLingua
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.*
@@ -27,6 +29,7 @@ import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.*
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
+import org.fife.ui.rtextarea.RTextScrollPane
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.Font
@@ -157,7 +160,10 @@ object Playground {
                         val tokenBuilder = StringBuilder()
                         while (tmpLexer.hasNext()) {
                             val next = tmpLexer.next()
-                            tokenBuilder.append("${next.text} <${next.type}>\n")
+                            val row = next.row
+                            val column = next.column
+                            tokenBuilder.append(
+                                "${next.text} <${next.type}>  (${row}, ${column})\n")
                         }
                         for (err in tmpLexer.errors()) {
                             tokenBuilder.append("ERROR: $err\n")
@@ -267,7 +273,7 @@ object Playground {
         })
 
         val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
-        inputSplitPane.leftComponent = JScrollPane(inputArea)
+        inputSplitPane.leftComponent = RTextScrollPane(inputArea)
         inputSplitPane.rightComponent = JScrollPane(outputArea)
         inputSplitPane.resizeWeight = 0.5
 
@@ -300,20 +306,25 @@ object Playground {
     }
 
     private fun toTreeNode(phase1Node: Phase1Node): DefaultMutableTreeNode {
-        val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName)
+        val row = getRow(phase1Node)
+        val column = getColumn(phase1Node)
+        val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName +
+            " (${row}, ${column})")
         var visited = false
         phase1Node.forEach {
             visited = true
             result.add(toTreeNode(it))
         }
         if (!visited) {
-            result.add(DefaultMutableTreeNode(phase1Node.toCode()))
+            result.add(DefaultMutableTreeNode(phase1Node.toCode() +
+                    " (${row}, ${column})"))
         }
         return result
     }
 
     private fun toTreeNode(phase2Node: Phase2Node): DefaultMutableTreeNode {
-        val result = DefaultMutableTreeNode(phase2Node.javaClass.simpleName)
+        val result = DefaultMutableTreeNode(phase2Node.javaClass.simpleName +
+                " (${phase2Node.row}, ${phase2Node.column})")
         var visited = false
         phase2Node.forEach {
             visited = true
@@ -335,7 +346,9 @@ object Playground {
             }
         }
         if (!visited) {
-            result.add(DefaultMutableTreeNode(phase2Node.toCode(false, 0)))
+            result.add(DefaultMutableTreeNode(
+                    phase2Node.toCode(false, 0) +
+                            " (${phase2Node.row}, ${phase2Node.column})"))
         }
         return result
     }

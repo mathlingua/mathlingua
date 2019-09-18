@@ -580,8 +580,6 @@ fun expandAt(doc: Document, target: Phase2Node): Document {
     resetRowColumn(doc)
     resetRowColumn(target)
 
-    println("target0=" + target)
-
     var transformed = doc
     var realTarget = target
 
@@ -589,52 +587,30 @@ fun expandAt(doc: Document, target: Phase2Node): Document {
     transformed = sepIsPair.root as Document
     realTarget = sepIsPair.target
 
-    println("realTarget1=" + realTarget)
-
     val sepInfixPair = separateInfixOperatorStatements(transformed, realTarget)
     transformed = sepInfixPair.root as Document
     realTarget = sepInfixPair.target
-
-    println("realTarget2=" + realTarget)
 
     val gluePair = glueCommands(transformed, realTarget)
     transformed = gluePair.root as Document
     realTarget = gluePair.target
 
-    println("realTarget3=" + realTarget)
-
     val mvInlineCmdsPair = moveInlineCommandsToIsNode(transformed.defines, transformed, realTarget)
     transformed = mvInlineCmdsPair.root as Document
     realTarget = mvInlineCmdsPair.target
-
-    println("realTarget4=" + realTarget)
 
     val replaceRepsPair = replaceRepresents(transformed, transformed.represents, realTarget)
     transformed = replaceRepsPair.root as Document
     realTarget = replaceRepsPair.target
 
-    println("realTarget5=" + realTarget)
-
     val replaceIsPair = replaceIsNodes(transformed, transformed.defines, realTarget)
     transformed = replaceIsPair.root as Document
-    realTarget = replaceIsPair.target
-
-    println("realTarget6=" + realTarget)
 
     return transformed
 }
 
 fun fullExpandOnce(doc: Document): Document {
-    /*
-    var transformed = separateIsStatements(doc)
-    transformed = separateInfixOperatorStatements(transformed)
-    transformed = glueCommands(transformed)
-    transformed = moveInlineCommandsToIsNode((transformed as Document).defines, transformed, null).root
-    transformed = replaceRepresents(transformed, (transformed as Document).represents, null).root
-    transformed = replaceIsNodes(transformed, (transformed as Document).defines, null).root
-    return transformed as Document
-     */
-    return doc
+    return expandAt(doc, doc)
 }
 
 fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {

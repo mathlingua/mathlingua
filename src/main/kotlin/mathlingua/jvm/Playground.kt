@@ -38,6 +38,7 @@ import java.awt.event.KeyListener
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreePath
 
 object Playground {
 
@@ -130,9 +131,15 @@ object Playground {
                 }
                 val col = tmpOffset
 
-                phase1Tree.model = DefaultTreeModel(DefaultMutableTreeNode(doc))
-
+                val root = toTreeNode(doc)
+                phase2Tree.model = DefaultTreeModel(root)
                 val nearestNode = findNode(doc, row, col)
+
+                println("Found node: $nearestNode")
+
+                val path = getPath(root, nearestNode)
+                phase2Tree.expandPath(path)
+                phase2Tree.selectionPath = path
 
                 val newDoc = expandAt(doc, nearestNode)
 
@@ -224,8 +231,6 @@ object Playground {
                             sigBuilder.append('\n')
                         }
                         signaturesList.text = sigBuilder.toString()
-
-                        println("doc=$doc")
 
                         phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
                         var transformed = doc
@@ -323,11 +328,11 @@ object Playground {
     }
 
     private fun toTreeNode(phase2Node: Phase2Node): DefaultMutableTreeNode {
-        val result = DefaultMutableTreeNode(phase2Node.javaClass.simpleName +
-                " (${phase2Node.row}, ${phase2Node.column})")
+        val result = DefaultMutableTreeNode(Phase2Value(phase2Node, false))
         var visited = false
         phase2Node.forEach {
             visited = true
+            /*
             if (it is Statement) {
                 when (it.texTalkRoot) {
                     is ValidationSuccess -> {
@@ -344,11 +349,11 @@ object Playground {
             } else {
                 result.add(toTreeNode(it))
             }
+             */
+            result.add(toTreeNode(it))
         }
         if (!visited) {
-            result.add(DefaultMutableTreeNode(
-                    phase2Node.toCode(false, 0) +
-                            " (${phase2Node.row}, ${phase2Node.column})"))
+            result.add(DefaultMutableTreeNode(Phase2Value(phase2Node, true)))
         }
         return result
     }
@@ -365,4 +370,42 @@ object Playground {
         }
         return result
     }
+}
+
+data class Phase2Value(val value: Phase2Node, val showCode: Boolean) {
+    override fun toString(): String {
+        return if (showCode) {
+            value.toCode(false, 0) + " (${value.row}, ${value.column})"
+        } else {
+            value.javaClass.simpleName +
+                    " (${value.row}, ${value.column})"
+        }
+    }
+}
+
+fun getPath(root: DefaultMutableTreeNode, target: Phase2Node): TreePath {
+    val path = mutableListOf<DefaultMutableTreeNode>()
+    val found = mutableListOf<MutableList<DefaultMutableTreeNode>>()
+    getPathImpl(root, target, path, found)
+    val first = found[0]
+    val nodes = Array(first.size) { first[it] }
+    return TreePath(nodes)
+}
+
+fun getPathImpl(root: DefaultMutableTreeNode, target: Phase2Node, path: MutableList<DefaultMutableTreeNode>,
+                found: MutableList<MutableList<DefaultMutableTreeNode>>) {
+    if (path.isNotEmpty() &&
+            path.last().userObject is Phase2Value &&
+                (path.last().userObject as Phase2Value).value == target) {
+        val copy = mutableListOf<DefaultMutableTreeNode>()
+        copy.addAll(path)
+        found.add(copy)
+    }
+
+    path.add(root)
+    for (i in 0 until root.childCount) {
+        val child = root.getChildAt(i)
+        getPathImpl(child as DefaultMutableTreeNode, target, path, found)
+    }
+    path.removeAt(path.size - 1)
 }

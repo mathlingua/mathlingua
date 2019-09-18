@@ -72,6 +72,8 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
                 is ValidationSuccess -> {
                     val exp = renameVars(validation.value, map) as ExpressionTexTalkNode
                     return Statement(
+                            row = -1,
+                            column = -1,
                         text = exp.toCode(),
                         texTalkRoot = ValidationSuccess(exp)
                     )
@@ -84,7 +86,11 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
             for (key in keysLongToShort) {
                 newText = newText.replace("%$key", map[key]!!)
             }
-            return Text(text = newText)
+            return Text(
+                text = newText,
+                row = -1,
+                column = -1
+            )
         }
 
         return node

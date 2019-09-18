@@ -16,6 +16,8 @@
 
 package mathlingua.common.chalktalk.phase2
 
+import java.lang.IllegalArgumentException
+
 fun indentedString(useDot: Boolean, indent: Int, line: String): String {
     val builder = StringBuilder()
     for (i in 0 until indent - 2) {
@@ -56,4 +58,62 @@ private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: M
     if (path.isEmpty() || path.last() != node) {
         path.removeAt(path.size - 1)
     }
+}
+
+fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
+    if (row < 0 || col < 0) {
+        throw IllegalArgumentException("Row and column must be non-negative " +
+                "but found row=$row, column=$col")
+    }
+
+    val nodesAtRow = mutableSetOf<Phase2Node>()
+    findNodesAtRow(node, row, nodesAtRow)
+    if (nodesAtRow.isEmpty()) {
+        return if (row == 0) {
+            node
+        } else {
+            findNode(node, row - 1, col)
+        }
+    }
+
+    val sortedByCol = nodesAtRow.toList().sortedBy { it.column }
+    var prev: Phase2Node = sortedByCol.first()
+    for (n in sortedByCol) {
+        if (n.column > col) {
+            return prev
+        }
+        prev = n
+    }
+    return prev
+}
+
+fun findNodesAtRow(node: Phase2Node, row: Int, result: MutableSet<Phase2Node>) {
+    if (node.row == row) {
+        result.add(node)
+    }
+    node.forEach { findNodesAtRow(it, row, result) }
+}
+
+fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
+    resetRowColumn(node)
+    resetRowColumn(child)
+
+    if (node == child) {
+        return true
+    }
+
+    var found = false
+    node.forEach {
+        if (!found) {
+            found = hasChild(it, child)
+        }
+    }
+
+    return found
+}
+
+fun resetRowColumn(node: Phase2Node) {
+    node.row = -1
+    node.column = -1
+    node.forEach { resetRowColumn(it) }
 }

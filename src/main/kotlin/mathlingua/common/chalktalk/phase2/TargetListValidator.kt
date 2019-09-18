@@ -30,14 +30,15 @@ data class TargetListSection(val targets: List<Target>)
 fun <T> validateTargetList(
     rawNode: Phase1Node,
     expectedName: String,
-    builder: (targets: List<Target>) -> T
+    builder: (targets: List<Target>, row: Int, column: Int) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-
+    val row = getRow(node)
+    val column = getColumn(node)
     return when (val validation = validate(node, expectedName)) {
         is ValidationSuccess -> {
             val targets = validation.value.targets
-            return ValidationSuccess(builder(targets))
+            return ValidationSuccess(builder(targets, row, column))
         }
         is ValidationFailure -> ValidationFailure(validation.errors)
     }

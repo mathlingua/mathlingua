@@ -33,15 +33,15 @@ internal class ChalkTalkLexerTest {
         }
 
         val expected = listOf(
-            Phase1Token(text = "someName", type = ChalkTalkTokenType.Name, row = 0, column = 7),
+            Phase1Token(text = "someName", type = ChalkTalkTokenType.Name, row = 0, column = 0),
             Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 0, column = 8),
             Phase1Token(
                 text = "'some statement'",
                 type = ChalkTalkTokenType.Statement,
                 row = 0,
-                column = 24
+                column = 9
             ),
-            Phase1Token(text = "\"some text\"", type = ChalkTalkTokenType.String, row = 0, column = 35),
+            Phase1Token(text = "\"some text\"", type = ChalkTalkTokenType.String, row = 0, column = 25),
             Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 0, column = 36),
             Phase1Token(text = "[some id]", type = ChalkTalkTokenType.Id, row = 0, column = 38),
             Phase1Token(text = ",", type = ChalkTalkTokenType.Comma, row = 0, column = 47),

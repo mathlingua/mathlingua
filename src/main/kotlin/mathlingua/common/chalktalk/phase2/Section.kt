@@ -34,7 +34,11 @@ private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, inde
     }
 }
 
-data class AssumingSection(val clauses: ClauseListNode) : Phase2Node {
+data class AssumingSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -51,7 +55,9 @@ data class AssumingSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(AssumingSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+            row = row,
+            column = column
         ))
     }
 }
@@ -60,11 +66,16 @@ fun validateAssumingSection(node: Phase1Node): Validation<AssumingSection> {
     return validateClauseList(
         node,
         "assuming",
-        false
-    ) { AssumingSection(it) }
+        false,
+        ::AssumingSection
+    )
 }
 
-data class DefinesSection(val targets: List<Target>) : Phase2Node {
+data class DefinesSection(
+    val targets: List<Target>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         targets.forEach(fn)
     }
@@ -79,7 +90,9 @@ data class DefinesSection(val targets: List<Target>) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(DefinesSection(
-            targets = targets.map { it.transform(chalkTransformer) as Target }
+            targets = targets.map { it.transform(chalkTransformer) as Target },
+            row = row,
+            column = column
         ))
     }
 }
@@ -87,11 +100,16 @@ data class DefinesSection(val targets: List<Target>) : Phase2Node {
 fun validateDefinesSection(node: Phase1Node): Validation<DefinesSection> {
     return validateTargetList(
         node,
-        "Defines"
-    ) { DefinesSection(it) }
+        "Defines",
+        ::DefinesSection
+    )
 }
 
-data class RefinesSection(val targets: List<Target>) :
+data class RefinesSection(
+    val targets: List<Target>,
+    override var row: Int,
+    override var column: Int
+) :
     Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         targets.forEach(fn)
@@ -107,7 +125,9 @@ data class RefinesSection(val targets: List<Target>) :
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(RefinesSection(
-            targets = targets.map { it.transform(chalkTransformer) as Target }
+            targets = targets.map { it.transform(chalkTransformer) as Target },
+            row = row,
+            column = column
         ))
     }
 }
@@ -115,11 +135,15 @@ data class RefinesSection(val targets: List<Target>) :
 fun validateRefinesSection(node: Phase1Node): Validation<RefinesSection> {
     return validateTargetList(
         node,
-        "Refines"
-    ) { RefinesSection(it) }
+        "Refines",
+        ::RefinesSection
+    )
 }
 
-class RepresentsSection : Phase2Node {
+data class RepresentsSection(
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -165,11 +189,18 @@ fun validateRepresentsSection(node: Phase1Node): Validation<RepresentsSection> {
     return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else {
-        ValidationSuccess(RepresentsSection())
+        ValidationSuccess(RepresentsSection(
+                row = getRow(node),
+                column = getColumn(node)
+        ))
     }
 }
 
-data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
+data class ExistsSection(
+    val identifiers: List<Target>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         identifiers.forEach(fn)
     }
@@ -184,7 +215,9 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ExistsSection(
-            identifiers = identifiers.map { it.transform(chalkTransformer) as Target }
+            identifiers = identifiers.map { it.transform(chalkTransformer) as Target },
+            row = row,
+            column = column
         ))
     }
 }
@@ -192,11 +225,16 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
 fun validateExistsSection(node: Phase1Node): Validation<ExistsSection> {
     return validateTargetList(
         node,
-        "exists"
-    ) { ExistsSection(it) }
+        "exists",
+        ::ExistsSection
+    )
 }
 
-data class ForSection(val targets: List<Target>) : Phase2Node {
+data class ForSection(
+    val targets: List<Target>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         targets.forEach(fn)
     }
@@ -211,7 +249,9 @@ data class ForSection(val targets: List<Target>) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ForSection(
-            targets = targets.map { it.transform(chalkTransformer) as Target }
+            targets = targets.map { it.transform(chalkTransformer) as Target },
+                row = row,
+                column = column
         ))
     }
 }
@@ -219,11 +259,16 @@ data class ForSection(val targets: List<Target>) : Phase2Node {
 fun validateForSection(node: Phase1Node): Validation<ForSection> {
     return validateTargetList(
         node,
-        "for"
-    ) { ForSection(it) }
+        "for",
+            ::ForSection
+    )
 }
 
-data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
+data class MeansSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(clauses)
     }
@@ -240,7 +285,9 @@ data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(MeansSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -249,11 +296,16 @@ fun validateMeansSection(node: Phase1Node): Validation<MeansSection> {
     return validateClauseList(
         node,
         "means",
-        false
-    ) { MeansSection(it) }
+        false,
+            ::MeansSection
+    )
 }
 
-data class ResultSection(val clauses: ClauseListNode) : Phase2Node {
+data class ResultSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -270,8 +322,10 @@ data class ResultSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ResultSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
-        ))
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+            row = row,
+            column = column
+            ))
     }
 }
 
@@ -279,11 +333,16 @@ fun validateResultSection(node: Phase1Node): Validation<ResultSection> {
     return validateClauseList(
         node,
         "Result",
-        false
-    ) { ResultSection(it) }
+        false,
+            ::ResultSection
+    )
 }
 
-data class AxiomSection(val clauses: ClauseListNode) : Phase2Node {
+data class AxiomSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -300,7 +359,9 @@ data class AxiomSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(AxiomSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -309,11 +370,16 @@ fun validateAxiomSection(node: Phase1Node): Validation<AxiomSection> {
     return validateClauseList(
         node,
         "Axiom",
-        false
-    ) { AxiomSection(it) }
+        false,
+            ::AxiomSection
+    )
 }
 
-data class ConjectureSection(val clauses: ClauseListNode) : Phase2Node {
+data class ConjectureSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -330,7 +396,9 @@ data class ConjectureSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ConjectureSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -339,11 +407,16 @@ fun validateConjectureSection(node: Phase1Node): Validation<ConjectureSection> {
     return validateClauseList(
         node,
         "Conjecture",
-        false
-    ) { ConjectureSection(it) }
+        false,
+            ::ConjectureSection
+    )
 }
 
-data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
+data class SuchThatSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -360,7 +433,9 @@ data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(SuchThatSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -369,11 +444,16 @@ fun validateSuchThatSection(node: Phase1Node): Validation<SuchThatSection> {
     return validateClauseList(
         node,
         "suchThat",
-        false
-    ) { SuchThatSection(it) }
+        false,
+            ::SuchThatSection
+    )
 }
 
-data class ThatSection(val clauses: ClauseListNode) : Phase2Node {
+data class ThatSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -390,7 +470,9 @@ data class ThatSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ThatSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -399,11 +481,16 @@ fun validateThatSection(node: Phase1Node): Validation<ThatSection> {
     return validateClauseList(
         node,
         "that",
-        false
-    ) { ThatSection(it) }
+        false,
+            ::ThatSection
+    )
 }
 
-data class IfSection(val clauses: ClauseListNode) : Phase2Node {
+data class IfSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -420,7 +507,9 @@ data class IfSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(IfSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -429,11 +518,16 @@ fun validateIfSection(node: Phase1Node): Validation<IfSection> {
     return validateClauseList(
         node,
         "if",
-        true
-    ) { IfSection(it) }
+        true,
+            ::IfSection
+    )
 }
 
-data class IffSection(val clauses: ClauseListNode) : Phase2Node {
+data class IffSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -450,7 +544,9 @@ data class IffSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(IffSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -459,11 +555,16 @@ fun validateIffSection(node: Phase1Node): Validation<IffSection> {
     return validateClauseList(
         node,
         "iff",
-        true
-    ) { IffSection(it) }
+        true,
+            ::IffSection
+    )
 }
 
-data class ThenSection(val clauses: ClauseListNode) : Phase2Node {
+data class ThenSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -480,20 +581,27 @@ data class ThenSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ThenSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
 
 fun validateThenSection(node: Phase1Node): Validation<ThenSection> {
     return validateClauseList(
-        node,
-        "then",
-        false
-    ) { ThenSection(it) }
+            node,
+            "then",
+            false,
+            ::ThenSection
+    )
 }
 
-data class WhereSection(val clauses: ClauseListNode) : Phase2Node {
+data class WhereSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -510,7 +618,9 @@ data class WhereSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(WhereSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -519,11 +629,16 @@ fun validateWhereSection(node: Phase1Node): Validation<WhereSection> {
     return validateClauseList(
         node,
         "where",
-        false
-    ) { WhereSection(it) }
+        false,
+            ::WhereSection
+    )
 }
 
-data class NotSection(val clauses: ClauseListNode) : Phase2Node {
+data class NotSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -540,7 +655,9 @@ data class NotSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(NotSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -549,11 +666,16 @@ fun validateNotSection(node: Phase1Node): Validation<NotSection> {
     return validateClauseList(
         node,
         "not",
-        false
-    ) { NotSection(it) }
+        false,
+            ::NotSection
+    )
 }
 
-data class OrSection(val clauses: ClauseListNode) : Phase2Node {
+data class OrSection(
+    val clauses: ClauseListNode,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -570,7 +692,9 @@ data class OrSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(OrSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode,
+                row = row,
+                column = column
         ))
     }
 }
@@ -579,6 +703,7 @@ fun validateOrSection(node: Phase1Node): Validation<OrSection> {
     return validateClauseList(
         node,
         "or",
-        false
-    ) { OrSection(it) }
+        false,
+            ::OrSection
+    )
 }

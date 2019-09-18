@@ -20,40 +20,25 @@ import mathlingua.common.MathLingua
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
-import mathlingua.common.chalktalk.phase2.Document
-import mathlingua.common.chalktalk.phase2.Phase2Node
-import mathlingua.common.chalktalk.phase2.Statement
-import mathlingua.common.chalktalk.phase2.validateDocument
+import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.textalk.TexTalkNode
-import mathlingua.common.transform.fullExpandComplete
-import mathlingua.common.transform.glueCommands
-import mathlingua.common.transform.moveInlineCommandsToIsNode
-import mathlingua.common.transform.replaceIsNodes
-import mathlingua.common.transform.replaceRepresents
-import mathlingua.common.transform.separateInfixOperatorStatements
-import mathlingua.common.transform.separateIsStatements
+import mathlingua.common.transform.*
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
+import org.fife.ui.rtextarea.RTextScrollPane
 import java.awt.BorderLayout
 import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
-import javax.swing.JCheckBox
-import javax.swing.JFrame
-import javax.swing.JPanel
-import javax.swing.JScrollPane
-import javax.swing.JSplitPane
-import javax.swing.JTabbedPane
-import javax.swing.JTextArea
-import javax.swing.JTree
-import javax.swing.SwingUtilities
-import javax.swing.UIManager
-import javax.swing.WindowConstants
+import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreePath
 
 object Playground {
 
@@ -128,6 +113,44 @@ object Playground {
         inputArea.font = font
         inputArea.syntaxScheme
             .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+
+        val expandButton = JButton("Expand At")
+        expandButton.addActionListener {
+            val text = inputArea.text
+            val validation = MathLingua().parse(text)
+            if (validation is ValidationSuccess) {
+                val doc = validation.value
+
+                val lines = inputArea.text.split('\n')
+                val offset = inputArea.caretPosition
+                var sum = 0
+                var row = 0
+                while (row < lines.size && sum + lines[row].length + 1 <= offset) {
+                    sum += lines[row].length + 1
+                    row++
+                }
+                val col = offset - sum
+
+                println("row=$row, column=$col")
+
+                val root = toTreeNode(doc)
+                phase2Tree.model = DefaultTreeModel(root)
+                val nearestNode = findNode(doc, row, col)!!
+
+                println("Found node: $nearestNode")
+
+                val path = getPath(root, nearestNode)
+                phase2Tree.expandPath(path)
+                phase2Tree.selectionPath = path
+
+                val newDoc = expandAt(doc, nearestNode)
+
+                outputArea.text = newDoc.toCode(false, 0)
+                outputTree.model = DefaultTreeModel(toTreeNode(newDoc))
+            }
+        }
+        statusPanel.add(expandButton)
+
         inputArea.addKeyListener(object : KeyListener {
             override fun keyTyped(keyEvent: KeyEvent) {}
 
@@ -137,8 +160,8 @@ object Playground {
                 }
 
                 SwingUtilities.invokeLater {
-                    val errorBuilder = StringBuilder()
                     var doc: Document? = null
+                    val errorBuilder = StringBuilder()
                     try {
                         val input = inputArea.text
 
@@ -146,7 +169,10 @@ object Playground {
                         val tokenBuilder = StringBuilder()
                         while (tmpLexer.hasNext()) {
                             val next = tmpLexer.next()
-                            tokenBuilder.append("${next.text} <${next.type}>\n")
+                            val row = next.row
+                            val column = next.column
+                            tokenBuilder.append(
+                                "${next.text} <${next.type}>  ($row, $column)\n")
                         }
                         for (err in tmpLexer.errors()) {
                             tokenBuilder.append("ERROR: $err\n")
@@ -209,30 +235,30 @@ object Playground {
                         signaturesList.text = sigBuilder.toString()
 
                         phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
-                        var transformed = doc as Phase2Node
+                        var transformed = doc
 
                         if (separateIsBox.isSelected) {
-                            transformed = separateIsStatements(transformed)
+                            transformed = separateIsStatements(transformed, transformed).root as Document
                         }
 
                         if (separateInfixOps.isSelected) {
-                            transformed = separateInfixOperatorStatements(transformed)
+                            transformed = separateInfixOperatorStatements(transformed, transformed).root as Document
                         }
 
                         if (glueCommands.isSelected) {
-                            transformed = glueCommands(transformed)
+                            transformed = glueCommands(transformed, transformed).root as Document
                         }
 
                         if (moveInLineIs.isSelected) {
-                            transformed = moveInlineCommandsToIsNode(doc.defines, transformed, { true }, { root, node -> true })
+                            transformed = moveInlineCommandsToIsNode(transformed.defines, transformed, transformed).root as Document
                         }
 
                         if (replaceReps.isSelected) {
-                            transformed = replaceRepresents(transformed, doc.represents, { true })
+                            transformed = replaceRepresents(transformed, transformed.represents, transformed).root as Document
                         }
 
                         if (replaceIsNodes.isSelected) {
-                            transformed = replaceIsNodes(transformed, doc.defines, { true })
+                            transformed = replaceIsNodes(transformed, transformed.defines, transformed).root as Document
                         }
 
                         if (completeExpand.isSelected) {
@@ -254,7 +280,7 @@ object Playground {
         })
 
         val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
-        inputSplitPane.leftComponent = JScrollPane(inputArea)
+        inputSplitPane.leftComponent = RTextScrollPane(inputArea)
         inputSplitPane.rightComponent = JScrollPane(outputArea)
         inputSplitPane.resizeWeight = 0.5
 
@@ -287,23 +313,28 @@ object Playground {
     }
 
     private fun toTreeNode(phase1Node: Phase1Node): DefaultMutableTreeNode {
-        val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName)
+        val row = getRow(phase1Node)
+        val column = getColumn(phase1Node)
+        val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName +
+            " ($row, $column)")
         var visited = false
         phase1Node.forEach {
             visited = true
             result.add(toTreeNode(it))
         }
         if (!visited) {
-            result.add(DefaultMutableTreeNode(phase1Node.toCode()))
+            result.add(DefaultMutableTreeNode(phase1Node.toCode() +
+                    " ($row, $column)"))
         }
         return result
     }
 
     private fun toTreeNode(phase2Node: Phase2Node): DefaultMutableTreeNode {
-        val result = DefaultMutableTreeNode(phase2Node.javaClass.simpleName)
+        val result = DefaultMutableTreeNode(Phase2Value(phase2Node, false))
         var visited = false
         phase2Node.forEach {
             visited = true
+            /*
             if (it is Statement) {
                 when (it.texTalkRoot) {
                     is ValidationSuccess -> {
@@ -320,9 +351,11 @@ object Playground {
             } else {
                 result.add(toTreeNode(it))
             }
+             */
+            result.add(toTreeNode(it))
         }
         if (!visited) {
-            result.add(DefaultMutableTreeNode(phase2Node.toCode(false, 0)))
+            result.add(DefaultMutableTreeNode(Phase2Value(phase2Node, true)))
         }
         return result
     }
@@ -339,4 +372,46 @@ object Playground {
         }
         return result
     }
+}
+
+data class Phase2Value(val value: Phase2Node, val showCode: Boolean) {
+    override fun toString(): String {
+        return if (showCode) {
+            value.toCode(false, 0) + " (${value.row}, ${value.column})"
+        } else {
+            value.javaClass.simpleName +
+                    " (${value.row}, ${value.column})"
+        }
+    }
+}
+
+fun getPath(root: DefaultMutableTreeNode, target: Phase2Node): TreePath {
+    val path = mutableListOf<DefaultMutableTreeNode>()
+    val found = mutableListOf<MutableList<DefaultMutableTreeNode>>()
+    getPathImpl(root, target, path, found)
+    val first = found[0]
+    val nodes = Array(first.size) { first[it] }
+    return TreePath(nodes)
+}
+
+fun getPathImpl(
+    root: DefaultMutableTreeNode,
+    target: Phase2Node,
+    path: MutableList<DefaultMutableTreeNode>,
+    found: MutableList<MutableList<DefaultMutableTreeNode>>
+) {
+    if (path.isNotEmpty() &&
+            path.last().userObject is Phase2Value &&
+                (path.last().userObject as Phase2Value).value == target) {
+        val copy = mutableListOf<DefaultMutableTreeNode>()
+        copy.addAll(path)
+        found.add(copy)
+    }
+
+    path.add(root)
+    for (i in 0 until root.childCount) {
+        val child = root.getChildAt(i)
+        getPathImpl(child as DefaultMutableTreeNode, target, path, found)
+    }
+    path.removeAt(path.size - 1)
 }

@@ -24,7 +24,11 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
-data class AliasSection(val mappings: List<MappingNode>) :
+data class AliasSection(
+    val mappings: List<MappingNode>,
+    override var row: Int,
+    override var column: Int
+) :
     Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
@@ -45,7 +49,9 @@ data class AliasSection(val mappings: List<MappingNode>) :
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(AliasSection(
-            mappings = mappings.map { it.transform(chalkTransformer) as MappingNode }
+            mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
+            row = row,
+            column = column
         ))
     }
 }
@@ -74,6 +80,10 @@ fun validateAliasSection(section: Section): Validation<AliasSection> {
     return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else {
-        ValidationSuccess(AliasSection(mappings))
+        ValidationSuccess(AliasSection(
+            mappings = mappings,
+            row = getRow(section),
+            column = getColumn(section)
+        ))
     }
 }

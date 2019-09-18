@@ -123,17 +123,19 @@ object Playground {
 
                 val lines = inputArea.text.split('\n')
                 val offset = inputArea.caretPosition
-                var tmpOffset = offset
+                var sum = 0
                 var row = 0
-                while (row < lines.size && tmpOffset - lines[row].length >= 0) {
-                    tmpOffset -= lines[row].length
+                while (row < lines.size && sum + lines[row].length + 1 <= offset) {
+                    sum += lines[row].length + 1
                     row++
                 }
-                val col = tmpOffset
+                val col = offset - sum
+
+                println("row=$row, column=$col")
 
                 val root = toTreeNode(doc)
                 phase2Tree.model = DefaultTreeModel(root)
-                val nearestNode = findNode(doc, row, col)
+                val nearestNode = findNode(doc, row, col)!!
 
                 println("Found node: $nearestNode")
 

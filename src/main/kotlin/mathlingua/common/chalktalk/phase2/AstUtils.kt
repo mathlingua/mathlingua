@@ -16,6 +16,8 @@
 
 package mathlingua.common.chalktalk.phase2
 
+import java.lang.IllegalArgumentException
+
 fun indentedString(useDot: Boolean, indent: Int, line: String): String {
     val builder = StringBuilder()
     for (i in 0 until indent - 2) {
@@ -59,38 +61,37 @@ private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: M
 }
 
 fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
-    val result = NearestNode(dist = Integer.MAX_VALUE, node = node)
-    findNodeImpl(node, row, col, result)
-    return result.node
+    if (row < 0 || col < 0) {
+        throw IllegalArgumentException("Row and column must be non-negative " +
+                "but found row=$row, column=$col")
+    }
+
+    val nodesAtRow = mutableSetOf<Phase2Node>()
+    findNodesAtRow(node, row, nodesAtRow)
+    if (nodesAtRow.isEmpty()) {
+        return if (row == 0) {
+            node
+        } else {
+            findNode(node, row-1, col)
+        }
+    }
+
+    val sortedByCol = nodesAtRow.toList().sortedBy { it.column }
+    var prev: Phase2Node = sortedByCol.first()
+    for (n in sortedByCol) {
+        if (n.column > col) {
+            return prev
+        }
+        prev = n
+    }
+    return prev
 }
 
-private fun findNodeImpl(
-    node: Phase2Node,
-    row: Int,
-    col: Int,
-    result: NearestNode
-) {
-    val d = dist(node, row, col)
-    if (d <= result.dist) {
-        result.dist = d
-        result.node = node
+fun findNodesAtRow(node: Phase2Node, row: Int, result: MutableSet<Phase2Node>) {
+    if (node.row == row) {
+        result.add(node)
     }
-
-    node.forEach { findNodeImpl(it, row, col, result) }
-}
-
-private data class NearestNode(var dist: Int, var node: Phase2Node)
-
-private fun dist(node: Phase2Node, row: Int, col: Int): Int {
-    if (node.row != row) {
-        return Integer.MAX_VALUE
-    }
-
-    if (node.column > col) {
-        return Integer.MAX_VALUE
-    }
-
-    return col - node.column
+    node.forEach { findNodesAtRow(it, row, result) }
 }
 
 fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {

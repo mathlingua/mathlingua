@@ -576,7 +576,7 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     return vars
 }
 
-fun expandAt(doc: Document, target: Phase2Node): Document {
+fun expandAtNode(doc: Document, target: Phase2Node): Document {
     resetRowColumn(doc)
     resetRowColumn(target)
 
@@ -610,7 +610,7 @@ fun expandAt(doc: Document, target: Phase2Node): Document {
 }
 
 fun fullExpandOnce(doc: Document): Document {
-    return expandAt(doc, doc)
+    return expandAtNode(doc, doc)
 }
 
 fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {

@@ -72,7 +72,7 @@ fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
         return if (row == 0) {
             node
         } else {
-            findNode(node, row-1, col)
+            findNode(node, row - 1, col)
         }
     }
 

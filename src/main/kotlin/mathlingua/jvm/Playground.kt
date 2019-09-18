@@ -172,7 +172,7 @@ object Playground {
                             val row = next.row
                             val column = next.column
                             tokenBuilder.append(
-                                "${next.text} <${next.type}>  (${row}, ${column})\n")
+                                "${next.text} <${next.type}>  ($row, $column)\n")
                         }
                         for (err in tmpLexer.errors()) {
                             tokenBuilder.append("ERROR: $err\n")
@@ -316,7 +316,7 @@ object Playground {
         val row = getRow(phase1Node)
         val column = getColumn(phase1Node)
         val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName +
-            " (${row}, ${column})")
+            " ($row, $column)")
         var visited = false
         phase1Node.forEach {
             visited = true
@@ -324,7 +324,7 @@ object Playground {
         }
         if (!visited) {
             result.add(DefaultMutableTreeNode(phase1Node.toCode() +
-                    " (${row}, ${column})"))
+                    " ($row, $column)"))
         }
         return result
     }
@@ -394,8 +394,12 @@ fun getPath(root: DefaultMutableTreeNode, target: Phase2Node): TreePath {
     return TreePath(nodes)
 }
 
-fun getPathImpl(root: DefaultMutableTreeNode, target: Phase2Node, path: MutableList<DefaultMutableTreeNode>,
-                found: MutableList<MutableList<DefaultMutableTreeNode>>) {
+fun getPathImpl(
+    root: DefaultMutableTreeNode,
+    target: Phase2Node,
+    path: MutableList<DefaultMutableTreeNode>,
+    found: MutableList<MutableList<DefaultMutableTreeNode>>
+) {
     if (path.isNotEmpty() &&
             path.last().userObject is Phase2Value &&
                 (path.last().userObject as Phase2Value).value == target) {

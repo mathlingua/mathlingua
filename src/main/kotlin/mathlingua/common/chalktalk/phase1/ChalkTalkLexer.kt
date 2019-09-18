@@ -82,23 +82,23 @@ private class ChalkTalkLexerImpl(private var text: String) :
             column++
             if (c == '=') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("=", ChalkTalkTokenType.Equals, line, column-1)
+                    Phase1Token("=", ChalkTalkTokenType.Equals, line, column - 1)
                 )
             } else if (c == '(') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("(", ChalkTalkTokenType.LParen, line, column-1)
+                    Phase1Token("(", ChalkTalkTokenType.LParen, line, column - 1)
                 )
             } else if (c == ')') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token(")", ChalkTalkTokenType.RParen, line, column-1)
+                    Phase1Token(")", ChalkTalkTokenType.RParen, line, column - 1)
                 )
             } else if (c == '{') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("{", ChalkTalkTokenType.LCurly, line, column-1)
+                    Phase1Token("{", ChalkTalkTokenType.LCurly, line, column - 1)
                 )
             } else if (c == '}') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("}", ChalkTalkTokenType.RCurly, line, column-1)
+                    Phase1Token("}", ChalkTalkTokenType.RCurly, line, column - 1)
                 )
             } else if (c == ':') {
                 if (i < text.length && text[i] == '=') {
@@ -107,17 +107,17 @@ private class ChalkTalkLexerImpl(private var text: String) :
                             ":=",
                             ChalkTalkTokenType.ColonEquals,
                             line,
-                            column-2
+                            column - 2
                         )
                     )
                     i++ // move past the =
                 } else {
-                    this.chalkTalkTokens!!.add(Phase1Token(":", ChalkTalkTokenType.Colon, line, column-1))
+                    this.chalkTalkTokens!!.add(Phase1Token(":", ChalkTalkTokenType.Colon, line, column - 1))
                 }
             } else if (c == ',') {
-                this.chalkTalkTokens!!.add(Phase1Token(",", ChalkTalkTokenType.Comma, line, column-1))
+                this.chalkTalkTokens!!.add(Phase1Token(",", ChalkTalkTokenType.Comma, line, column - 1))
             } else if (c == '.' && i < text.length && text[i] == ' ') {
-                this.chalkTalkTokens!!.add(Phase1Token(". ", ChalkTalkTokenType.DotSpace, line, column-2))
+                this.chalkTalkTokens!!.add(Phase1Token(". ", ChalkTalkTokenType.DotSpace, line, column - 2))
                 i++ // move past space
                 column++
             } else if (c == '\n') {

@@ -143,7 +143,7 @@ object Playground {
                 phase2Tree.expandPath(path)
                 phase2Tree.selectionPath = path
 
-                val newDoc = expandAtNode(doc, nearestNode)
+                val newDoc = expandAtNode(doc, nearestNode, doc.defines, doc.represents)
 
                 outputArea.text = newDoc.toCode(false, 0)
                 outputTree.model = DefaultTreeModel(toTreeNode(newDoc))

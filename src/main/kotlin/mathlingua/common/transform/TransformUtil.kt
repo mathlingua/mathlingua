@@ -576,41 +576,43 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     return vars
 }
 
-fun expandAtNode(doc: Document, target: Phase2Node): Document {
-    resetRowColumn(doc)
+fun expandAtNode(root: Phase2Node, target: Phase2Node,
+                 defines: List<DefinesGroup>,
+                 represents: List<RepresentsGroup>): Phase2Node {
+    resetRowColumn(root)
     resetRowColumn(target)
 
-    var transformed = doc
+    var transformed = root
     var realTarget = target
 
     val sepIsPair = separateIsStatements(transformed, realTarget)
-    transformed = sepIsPair.root as Document
+    transformed = sepIsPair.root
     realTarget = sepIsPair.target
 
     val sepInfixPair = separateInfixOperatorStatements(transformed, realTarget)
-    transformed = sepInfixPair.root as Document
+    transformed = sepInfixPair.root
     realTarget = sepInfixPair.target
 
     val gluePair = glueCommands(transformed, realTarget)
-    transformed = gluePair.root as Document
+    transformed = gluePair.root
     realTarget = gluePair.target
 
-    val mvInlineCmdsPair = moveInlineCommandsToIsNode(transformed.defines, transformed, realTarget)
-    transformed = mvInlineCmdsPair.root as Document
+    val mvInlineCmdsPair = moveInlineCommandsToIsNode(defines, transformed, realTarget)
+    transformed = mvInlineCmdsPair.root
     realTarget = mvInlineCmdsPair.target
 
-    val replaceRepsPair = replaceRepresents(transformed, transformed.represents, realTarget)
-    transformed = replaceRepsPair.root as Document
+    val replaceRepsPair = replaceRepresents(transformed, represents, realTarget)
+    transformed = replaceRepsPair.root
     realTarget = replaceRepsPair.target
 
-    val replaceIsPair = replaceIsNodes(transformed, transformed.defines, realTarget)
-    transformed = replaceIsPair.root as Document
+    val replaceIsPair = replaceIsNodes(transformed, defines, realTarget)
+    transformed = replaceIsPair.root
 
     return transformed
 }
 
 fun fullExpandOnce(doc: Document): Document {
-    return expandAtNode(doc, doc)
+    return expandAtNode(doc, doc, doc.defines, doc.represents) as Document
 }
 
 fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {

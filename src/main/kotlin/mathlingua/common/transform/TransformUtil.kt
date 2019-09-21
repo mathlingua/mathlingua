@@ -576,9 +576,12 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     return vars
 }
 
-fun expandAtNode(root: Phase2Node, target: Phase2Node,
-                 defines: List<DefinesGroup>,
-                 represents: List<RepresentsGroup>): Phase2Node {
+fun expandAtNode(
+    root: Phase2Node,
+    target: Phase2Node,
+    defines: List<DefinesGroup>,
+    represents: List<RepresentsGroup>
+): Phase2Node {
     resetRowColumn(root)
     resetRowColumn(target)
 

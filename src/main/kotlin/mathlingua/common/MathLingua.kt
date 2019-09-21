@@ -51,9 +51,13 @@ class MathLingua {
         return locateAllSignatures(node).toList().toTypedArray()
     }
 
-    fun expandAtPosition(text: String, row: Int, column: Int,
-                         defines: List<DefinesGroup>,
-                         represents: List<RepresentsGroup>): Validation<Document> {
+    fun expandAtPosition(
+        text: String,
+        row: Int,
+        column: Int,
+        defines: List<DefinesGroup>,
+        represents: List<RepresentsGroup>
+    ): Validation<Document> {
         return when (val validation = parse(text)) {
             is ValidationFailure -> validation
             is ValidationSuccess -> {

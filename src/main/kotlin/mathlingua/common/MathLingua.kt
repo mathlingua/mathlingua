@@ -18,9 +18,8 @@ package mathlingua.common
 
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
-import mathlingua.common.chalktalk.phase2.Document
-import mathlingua.common.chalktalk.phase2.Phase2Node
-import mathlingua.common.chalktalk.phase2.validateDocument
+import mathlingua.common.chalktalk.phase2.*
+import mathlingua.common.transform.expandAtNode
 import mathlingua.common.transform.fullExpandComplete
 import mathlingua.common.transform.locateAllSignatures
 
@@ -50,6 +49,24 @@ class MathLingua {
 
     fun findAllSignatures(node: Phase2Node): Array<String> {
         return locateAllSignatures(node).toList().toTypedArray()
+    }
+
+    fun expandAtPosition(
+        text: String,
+        row: Int,
+        column: Int,
+        defines: List<DefinesGroup>,
+        represents: List<RepresentsGroup>
+    ): Validation<Document> {
+        return when (val validation = parse(text)) {
+            is ValidationFailure -> validation
+            is ValidationSuccess -> {
+                val doc = validation.value
+                val target = findNode(doc, row, column)
+                val newDoc = expandAtNode(doc, target, defines, represents) as Document
+                ValidationSuccess(newDoc)
+            }
+        }
     }
 
     fun expand(doc: Document): Document {

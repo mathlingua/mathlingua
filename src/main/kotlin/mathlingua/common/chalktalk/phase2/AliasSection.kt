@@ -30,9 +30,7 @@ data class AliasSection(
     override var column: Int
 ) :
     Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        mappings.forEach(fn)
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = mappings.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
@@ -47,13 +45,11 @@ data class AliasSection(
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(AliasSection(
-            mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(AliasSection(
+        mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
+        row = row,
+        column = column
+    ))
 }
 
 fun validateAliasSection(section: Section): Validation<AliasSection> {

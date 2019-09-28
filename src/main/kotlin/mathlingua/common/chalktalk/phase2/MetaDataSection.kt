@@ -29,9 +29,7 @@ data class MetaDataSection(
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        mappings.forEach(fn)
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = mappings.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
@@ -46,13 +44,12 @@ data class MetaDataSection(
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(MetaDataSection(
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(MetaDataSection(
             mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
             row = row,
             column = column
         ))
-    }
 }
 
 fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {

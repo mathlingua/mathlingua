@@ -202,6 +202,4 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     )
 }
 
-fun min(x: Int, y: Int): Int {
-    return if (x < y) x else y
-}
+fun min(x: Int, y: Int) = if (x < y) x else y

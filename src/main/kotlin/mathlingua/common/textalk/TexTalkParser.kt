@@ -443,18 +443,4 @@ class TexTalkParserImpl : TexTalkParser {
 
         private fun addError(message: String, row: Int, column: Int) = errors.add(ParseError(message, row, column))
     }
-
-    companion object {
-        @JvmStatic
-        fun main(args: Array<String>) {
-            val code = "\\f{x}{y}..."
-            val lexer = newTexTalkLexer(code)
-            val parser = newTexTalkParser()
-            val result = parser.parse(lexer)
-            for (err in result.errors) {
-                println(err)
-            }
-            println(result.root.toCode())
-        }
-    }
 }

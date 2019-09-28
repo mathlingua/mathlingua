@@ -235,7 +235,7 @@ class TexTalkParserImpl : TexTalkParser {
 
             if (grp == null) {
                 addError("Expected a value with an underscore", row, column)
-                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()))
+                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
             }
 
             return grp
@@ -263,7 +263,7 @@ class TexTalkParserImpl : TexTalkParser {
 
             if (grp == null) {
                 addError("Expected a value with a caret", row, column)
-                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()))
+                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
             }
 
             return grp
@@ -312,7 +312,17 @@ class TexTalkParserImpl : TexTalkParser {
             }
 
             expect(endType)
-            return GroupTexTalkNode(nodeType, ParametersTexTalkNode(expressions))
+
+            val isVarArg = has(TexTalkTokenType.DotDotDot)
+            if (isVarArg) {
+                next() // move past the ...
+            }
+
+            return GroupTexTalkNode(
+                    type = nodeType,
+                    parameters = ParametersTexTalkNode(expressions),
+                    isVarArg = isVarArg
+            )
         }
 
         private fun namedGroup(): NamedGroupTexTalkNode? {
@@ -333,7 +343,7 @@ class TexTalkParserImpl : TexTalkParser {
                 rawGroup
             } else {
                 addError("Expected a group in a named group")
-                GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()))
+                GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
             }
             return NamedGroupTexTalkNode(text, group)
         }
@@ -437,14 +447,14 @@ class TexTalkParserImpl : TexTalkParser {
     companion object {
         @JvmStatic
         fun main(args: Array<String>) {
-            val code = "is... abc"
+            val code = "\\f{x}{y}..."
             val lexer = newTexTalkLexer(code)
             val parser = newTexTalkParser()
             val result = parser.parse(lexer)
             for (err in result.errors) {
                 println(err)
             }
-            println(result.root)
+            println(result.root.toCode())
         }
     }
 }

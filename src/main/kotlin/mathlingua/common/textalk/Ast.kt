@@ -240,7 +240,9 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
         ))
 }
 
-data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: ParametersTexTalkNode) : TexTalkNode {
+data class GroupTexTalkNode(override val type: TexTalkNodeType,
+                            val parameters: ParametersTexTalkNode,
+                            val isVarArg: Boolean) : TexTalkNode {
 
     override fun toCode(): String {
         val prefix: String
@@ -265,6 +267,9 @@ data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: 
         val buffer = StringBuilder(prefix)
         buffer.append(parameters.toCode())
         buffer.append(suffix)
+        if (isVarArg) {
+            buffer.append("...")
+        }
         return buffer.toString()
     }
 
@@ -275,7 +280,8 @@ data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(GroupTexTalkNode(
             type = type,
-            parameters = parameters.transform(transformer) as ParametersTexTalkNode
+            parameters = parameters.transform(transformer) as ParametersTexTalkNode,
+            isVarArg = isVarArg
         ))
 }
 

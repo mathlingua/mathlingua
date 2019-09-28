@@ -240,9 +240,11 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
         ))
 }
 
-data class GroupTexTalkNode(override val type: TexTalkNodeType,
-                            val parameters: ParametersTexTalkNode,
-                            val isVarArg: Boolean) : TexTalkNode {
+data class GroupTexTalkNode(
+    override val type: TexTalkNodeType,
+    val parameters: ParametersTexTalkNode,
+    val isVarArg: Boolean
+) : TexTalkNode {
 
     override fun toCode(): String {
         val prefix: String
@@ -351,9 +353,11 @@ data class SubSupTexTalkNode(
         ))
 }
 
-data class TextTexTalkNode(override val type: TexTalkNodeType,
-                           val text: String,
-                           val isVarArg: Boolean) : TexTalkNode {
+data class TextTexTalkNode(
+    override val type: TexTalkNodeType,
+    val text: String,
+    val isVarArg: Boolean
+) : TexTalkNode {
 
     override fun toCode() = text + if (isVarArg) { "..." } else { "" }
 

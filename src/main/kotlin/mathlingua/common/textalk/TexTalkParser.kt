@@ -348,13 +348,14 @@ class TexTalkParserImpl : TexTalkParser {
             return NamedGroupTexTalkNode(text, group)
         }
 
-        private fun text(tokenType: TexTalkTokenType,
-                         nodeType: TexTalkNodeType,
-                         canBeVarArg: Boolean): TextTexTalkNode? {
+        private fun text(
+            tokenType: TexTalkTokenType,
+            nodeType: TexTalkNodeType,
+            canBeVarArg: Boolean
+        ): TextTexTalkNode? {
             if (!has(tokenType)) {
                 return null
             }
-
 
             val textToken = next()
             val nextIsDotDotDot = has(TexTalkTokenType.DotDotDot)

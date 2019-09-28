@@ -61,7 +61,7 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 i++
                 column++
             } else if (c == '.' && i < text.length && text[i] == '.' &&
-                       i + 1 < text.length && text[i + 1] == '.') {
+                i + 1 < text.length && text[i + 1] == '.') {
                 val startLine = line
                 val startColumn = column
                 // skip past the next two '.' characters

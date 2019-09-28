@@ -418,7 +418,7 @@ data class ThatSection(
         ))
 }
 
-fun validateThatSection(node: Phase1Node)= validateClauseList(
+fun validateThatSection(node: Phase1Node) = validateClauseList(
     node,
     "that",
     false,

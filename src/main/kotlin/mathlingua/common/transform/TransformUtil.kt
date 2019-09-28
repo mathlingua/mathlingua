@@ -708,8 +708,8 @@ private fun isOperator(node: TexTalkNode): Boolean {
     return true
 }
 
-private fun isOpChar(c: Char) = (c == '!' || c == '@' || c == '%' || c == '&'
-        || c == '*' || c == '-' || c == '+' ||
+private fun isOpChar(c: Char) = (c == '!' || c == '@' || c == '%' || c == '&' ||
+        c == '*' || c == '-' || c == '+' ||
         c == '=' || c == '|' || c == '/' ||
         c == '<' || c == '>')
 

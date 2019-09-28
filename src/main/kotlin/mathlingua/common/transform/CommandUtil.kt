@@ -36,9 +36,11 @@ fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     return commands.distinct()
 }
 
-fun replaceSignatures(texTalkNode: TexTalkNode,
-                      signature: String,
-                      replacement: String) = texTalkNode.transform {
+fun replaceSignatures(
+    texTalkNode: TexTalkNode,
+    signature: String,
+    replacement: String
+) = texTalkNode.transform {
     if (it is Command && getCommandSignature(it).toCode() == signature) {
         TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
     } else {

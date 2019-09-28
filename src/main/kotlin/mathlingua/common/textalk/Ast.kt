@@ -62,8 +62,8 @@ data class IsTexTalkNode(
         fn(rhs)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(IsTexTalkNode(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(IsTexTalkNode(
             lhs = lhs.transform(transformer) as ParametersTexTalkNode,
             rhs = rhs.transform(transformer) as ParametersTexTalkNode
         ))
@@ -87,8 +87,8 @@ data class ColonEqualsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: Param
         fn(rhs)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(ColonEqualsTexTalkNode(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(ColonEqualsTexTalkNode(
             lhs = lhs.transform(transformer) as ParametersTexTalkNode,
             rhs = rhs.transform(transformer) as ParametersTexTalkNode
         ))
@@ -146,8 +146,8 @@ data class CommandPart(
         namedGroups.forEach(fn)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(CommandPart(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(CommandPart(
             name = name.transform(transformer) as TextTexTalkNode,
             square = square?.transform(transformer) as GroupTexTalkNode?,
             subSup = subSup?.transform(transformer) as SubSupTexTalkNode?,
@@ -176,8 +176,8 @@ data class Command(val parts: List<CommandPart>) : TexTalkNode {
         parts.forEach(fn)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(Command(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(Command(
             parts = parts.map { it.transform(transformer) as CommandPart }
         ))
 }
@@ -204,8 +204,8 @@ data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode 
         children.forEach(fn)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(ExpressionTexTalkNode(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(ExpressionTexTalkNode(
             children = children.map { it.transform(transformer) }
         ))
 }
@@ -234,8 +234,8 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
         items.forEach(fn)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(ParametersTexTalkNode(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(ParametersTexTalkNode(
             items = items.map { it.transform(transformer) as ExpressionTexTalkNode }
         ))
 }
@@ -272,8 +272,8 @@ data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: 
         fn(parameters)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(GroupTexTalkNode(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(GroupTexTalkNode(
             type = type,
             parameters = parameters.transform(transformer) as ParametersTexTalkNode
         ))
@@ -299,8 +299,8 @@ data class NamedGroupTexTalkNode(
         fn(group)
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(NamedGroupTexTalkNode(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(NamedGroupTexTalkNode(
             name = name.transform(transformer) as TextTexTalkNode,
             group = group.transform(transformer) as GroupTexTalkNode
         ))
@@ -338,8 +338,8 @@ data class SubSupTexTalkNode(
         }
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(SubSupTexTalkNode(
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(SubSupTexTalkNode(
             sub = sub?.transform(transformer) as GroupTexTalkNode?,
             sup = sup?.transform(transformer) as GroupTexTalkNode?
         ))
@@ -354,8 +354,8 @@ data class TextTexTalkNode(override val type: TexTalkNodeType, val text: String)
     override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(this)
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(this)
 }
 
 data class TexTalkToken(
@@ -375,8 +375,8 @@ data class TexTalkToken(
     override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
     }
 
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode)
-        = transformer(this)
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(this)
 }
 
 enum class TexTalkTokenType {

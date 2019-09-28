@@ -325,8 +325,10 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
 
         private fun has(type: ChalkTalkTokenType) = hasNext() && chalkTalkLexer.peek().type == type
 
-        private fun hasHas(type: ChalkTalkTokenType,
-                           thenType: ChalkTalkTokenType) = has(type) &&
+        private fun hasHas(
+            type: ChalkTalkTokenType,
+            thenType: ChalkTalkTokenType
+        ) = has(type) &&
                 chalkTalkLexer.hasNextNext() && chalkTalkLexer.peekPeek().type == thenType
 
         private fun expect(type: ChalkTalkTokenType): Phase1Token {

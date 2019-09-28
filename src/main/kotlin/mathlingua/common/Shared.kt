@@ -16,8 +16,11 @@
 
 package mathlingua.common
 
-data class ParseError(override val message: String,
-                      val row: Int, val column: Int) : RuntimeException(message)
+data class ParseError(
+    override val message: String,
+    val row: Int,
+    val column: Int
+) : RuntimeException(message)
 
 sealed class Validation<T>
 data class ValidationSuccess<T>(val value: T) : Validation<T>()

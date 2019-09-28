@@ -51,8 +51,10 @@ fun getVars(texTalkNode: TexTalkNode): List<String> {
     return vars
 }
 
-fun renameVars(texTalkNode: TexTalkNode,
-               map: Map<String, String>) = texTalkNode.transform {
+fun renameVars(
+    texTalkNode: TexTalkNode,
+    map: Map<String, String>
+) = texTalkNode.transform {
     if (it is TextTexTalkNode) {
         it.copy(text = map[it.text] ?: it.text)
     } else {
@@ -98,8 +100,10 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
     return root.transform(::chalkTransformer)
 }
 
-private fun getVarsImpl(node: Phase1Node,
-                        vars: MutableList<String>) {
+private fun getVarsImpl(
+    node: Phase1Node,
+    vars: MutableList<String>
+) {
     if (node is Phase1Token) {
         vars.add(node.text)
     } else {
@@ -107,8 +111,10 @@ private fun getVarsImpl(node: Phase1Node,
     }
 }
 
-private fun getVarsImpl(node: Phase2Node,
-                        vars: MutableList<String>) {
+private fun getVarsImpl(
+    node: Phase2Node,
+    vars: MutableList<String>
+) {
     if (node is Identifier) {
         vars.add(node.name)
     } else if (node is TupleNode) {

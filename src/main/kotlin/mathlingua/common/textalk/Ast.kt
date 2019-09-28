@@ -240,7 +240,11 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
         ))
 }
 
-data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: ParametersTexTalkNode) : TexTalkNode {
+data class GroupTexTalkNode(
+    override val type: TexTalkNodeType,
+    val parameters: ParametersTexTalkNode,
+    val isVarArg: Boolean
+) : TexTalkNode {
 
     override fun toCode(): String {
         val prefix: String
@@ -265,6 +269,9 @@ data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: 
         val buffer = StringBuilder(prefix)
         buffer.append(parameters.toCode())
         buffer.append(suffix)
+        if (isVarArg) {
+            buffer.append("...")
+        }
         return buffer.toString()
     }
 
@@ -275,7 +282,8 @@ data class GroupTexTalkNode(override val type: TexTalkNodeType, val parameters: 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(GroupTexTalkNode(
             type = type,
-            parameters = parameters.transform(transformer) as ParametersTexTalkNode
+            parameters = parameters.transform(transformer) as ParametersTexTalkNode,
+            isVarArg = isVarArg
         ))
 }
 
@@ -345,14 +353,15 @@ data class SubSupTexTalkNode(
         ))
 }
 
-data class TextTexTalkNode(override val type: TexTalkNodeType, val text: String) : TexTalkNode {
+data class TextTexTalkNode(
+    override val type: TexTalkNodeType,
+    val text: String,
+    val isVarArg: Boolean
+) : TexTalkNode {
 
-    override fun toCode(): String {
-        return text
-    }
+    override fun toCode() = text + if (isVarArg) { "..." } else { "" }
 
-    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
-    }
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {}
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(this)
@@ -368,12 +377,9 @@ data class TexTalkToken(
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Token
 
-    override fun toCode(): String {
-        return text
-    }
+    override fun toCode() = text
 
-    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
-    }
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {}
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(this)
@@ -396,6 +402,7 @@ enum class TexTalkTokenType {
     Caret,
     ColonEquals,
     Is,
+    DotDotDot,
     Invalid
 }
 

@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 internal class TexTalkLexerTest {
     @Test
     fun `correctly identifies tokens`() {
-        val text = "G := (X, *, 0) + B, X is \\some[x]_a^b{x, y}.thing:on{A} $1 #2"
+        val text = "G := (X, *, 0) + B, X is \\some[x]_a^b{x, y}.thing:on{A} $1 #2 abc...xyz"
         val lexer = newTexTalkLexer(text)
         val actual = mutableListOf<TexTalkToken>()
         while (lexer.hasNext()) {
@@ -49,7 +49,7 @@ internal class TexTalkLexerTest {
             TexTalkToken(text = "X", tokenType = TexTalkTokenType.Identifier, row = 0, column = 20),
             TexTalkToken(text = "is", tokenType = TexTalkTokenType.Is, row = 0, column = 22),
             TexTalkToken(text = "\\", tokenType = TexTalkTokenType.Backslash, row = 0, column = 25),
-            TexTalkToken(text = "some", tokenType = TexTalkTokenType.Identifier, row = 0, column = 29),
+            TexTalkToken(text = "some", tokenType = TexTalkTokenType.Identifier, row = 0, column = 26),
             TexTalkToken(text = "[", tokenType = TexTalkTokenType.LSquare, row = 0, column = 30),
             TexTalkToken(text = "x", tokenType = TexTalkTokenType.Identifier, row = 0, column = 31),
             TexTalkToken(text = "]", tokenType = TexTalkTokenType.RSquare, row = 0, column = 32),
@@ -63,14 +63,17 @@ internal class TexTalkLexerTest {
             TexTalkToken(text = "y", tokenType = TexTalkTokenType.Identifier, row = 0, column = 41),
             TexTalkToken(text = "}", tokenType = TexTalkTokenType.RCurly, row = 0, column = 42),
             TexTalkToken(text = ".", tokenType = TexTalkTokenType.Period, row = 0, column = 43),
-            TexTalkToken(text = "thing", tokenType = TexTalkTokenType.Identifier, row = 0, column = 48),
+            TexTalkToken(text = "thing", tokenType = TexTalkTokenType.Identifier, row = 0, column = 44),
             TexTalkToken(text = ":", tokenType = TexTalkTokenType.Colon, row = 0, column = 49),
-            TexTalkToken(text = "on", tokenType = TexTalkTokenType.Identifier, row = 0, column = 51),
+            TexTalkToken(text = "on", tokenType = TexTalkTokenType.Identifier, row = 0, column = 50),
             TexTalkToken(text = "{", tokenType = TexTalkTokenType.LCurly, row = 0, column = 52),
             TexTalkToken(text = "A", tokenType = TexTalkTokenType.Identifier, row = 0, column = 53),
             TexTalkToken(text = "}", tokenType = TexTalkTokenType.RCurly, row = 0, column = 54),
-            TexTalkToken(text = "$1", tokenType = TexTalkTokenType.Identifier, row = 0, column = 57),
-            TexTalkToken(text = "#2", tokenType = TexTalkTokenType.Identifier, row = 0, column = 60)
+            TexTalkToken(text = "$1", tokenType = TexTalkTokenType.Identifier, row = 0, column = 56),
+            TexTalkToken(text = "#2", tokenType = TexTalkTokenType.Identifier, row = 0, column = 59),
+            TexTalkToken(text = "abc", tokenType = TexTalkTokenType.Identifier, row = 0, column = 62),
+            TexTalkToken(text = "...", tokenType = TexTalkTokenType.DotDotDot, row = 0, column = 65),
+            TexTalkToken(text = "xyz", tokenType = TexTalkTokenType.Identifier, row = 0, column = 68)
         )
 
         assertThat(actual).isEqualTo(expected)

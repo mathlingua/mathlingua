@@ -121,7 +121,8 @@ private fun getSubSupForSignature(node: SubSupTexTalkNode) = SubSupTexTalkNode(
 
 private fun getGroupNodeForSignature(node: GroupTexTalkNode) = GroupTexTalkNode(
     type = node.type,
-    parameters = getParametersNodeForSignature(node.parameters)
+    parameters = getParametersNodeForSignature(node.parameters),
+    isVarArg = node.isVarArg
 )
 
 private fun getParametersNodeForSignature(node: ParametersTexTalkNode) = ParametersTexTalkNode(
@@ -130,7 +131,8 @@ private fun getParametersNodeForSignature(node: ParametersTexTalkNode) = Paramet
             children = listOf(
                 TextTexTalkNode(
                     type = TexTalkNodeType.Identifier,
-                    text = "?"
+                    text = "?",
+                    isVarArg = false
                 )
             )
         )

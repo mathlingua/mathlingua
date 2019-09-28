@@ -345,14 +345,13 @@ data class SubSupTexTalkNode(
         ))
 }
 
-data class TextTexTalkNode(override val type: TexTalkNodeType, val text: String) : TexTalkNode {
+data class TextTexTalkNode(override val type: TexTalkNodeType,
+                           val text: String,
+                           val isVarArg: Boolean) : TexTalkNode {
 
-    override fun toCode(): String {
-        return text
-    }
+    override fun toCode() = text + if (isVarArg) { "..." } else { "" }
 
-    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
-    }
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {}
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(this)
@@ -368,12 +367,9 @@ data class TexTalkToken(
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Token
 
-    override fun toCode(): String {
-        return text
-    }
+    override fun toCode() = text
 
-    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
-    }
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {}
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(this)
@@ -396,6 +392,7 @@ enum class TexTalkTokenType {
     Caret,
     ColonEquals,
     Is,
+    DotDotDot,
     Invalid
 }
 

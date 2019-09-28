@@ -42,7 +42,7 @@ fun replaceSignatures(
     replacement: String
 ) = texTalkNode.transform {
     if (it is Command && getCommandSignature(it).toCode() == signature) {
-        TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
+        TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement, isVarArg = false)
     } else {
         texTalkNode
     }
@@ -86,7 +86,7 @@ fun replaceCommands(
             it
         } else {
             val name = cmdToReplacement[it]
-            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!)
+            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!, isVarArg = false)
         }
     }
 }

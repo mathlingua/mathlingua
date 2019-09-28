@@ -130,7 +130,8 @@ private fun getParametersNodeForSignature(node: ParametersTexTalkNode) = Paramet
             children = listOf(
                 TextTexTalkNode(
                     type = TexTalkNodeType.Identifier,
-                    text = "?"
+                    text = "?",
+                    isVarArg = false
                 )
             )
         )

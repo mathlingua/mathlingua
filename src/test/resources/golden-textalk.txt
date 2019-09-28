@@ -173,3 +173,11 @@ f(x + 2*(x + y)^2) + (a + b)/2
 -- Output:
 f (x + 2 * (x + y) ^ 2) + (a + b) / 2
 -- End;
+
+
+-- Test: handles varargs
+-- Input:
+xyz... := f(abc... + x)
+-- Output:
+xyz... := f (abc... + x)
+-- End;

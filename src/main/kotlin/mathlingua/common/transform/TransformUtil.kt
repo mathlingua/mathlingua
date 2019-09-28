@@ -165,7 +165,8 @@ fun moveStatementInlineCommandsToIsNode(
                                     children = listOf(
                                         TextTexTalkNode(
                                             type = TexTalkNodeType.Identifier,
-                                            text = cmdToReplacement[it]!!
+                                            text = cmdToReplacement[it]!!,
+                                            isVarArg = false
                                         )
                                     )
                                 )

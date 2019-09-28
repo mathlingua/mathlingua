@@ -60,6 +60,14 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 // skip the =
                 i++
                 column++
+            } else if (c == '.' && i < text.length && text[i] == '.' &&
+                       i + 1 < text.length && text[i + 1] == '.') {
+                val startLine = line
+                val startColumn = column
+                // skip past the next two '.' characters
+                i += 2
+                column += 2
+                this.tokens.add(TexTalkToken("...", TexTalkTokenType.DotDotDot, startLine, startColumn))
             } else if (c == ':') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Colon, line, column))
             } else if (c == '.') {
@@ -85,6 +93,9 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
             } else if (c == '?') {
                 this.tokens.add(TexTalkToken("$c", TexTalkTokenType.Identifier, line, column))
             } else if (isIdentifierChar(c)) {
+                val startLine = line
+                val startColumn = column
+
                 val id = StringBuilder("" + c)
                 while (i < text.length && isIdentifierChar(text[i])) {
                     id.append(text[i++])
@@ -94,14 +105,17 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                     id.append(text[i++])
                     column++
                 }
-                this.tokens.add(TexTalkToken(id.toString(), TexTalkTokenType.Identifier, line, column))
+                this.tokens.add(TexTalkToken(id.toString(), TexTalkTokenType.Identifier, startLine, startColumn))
             } else if (isOpChar(c)) {
+                val startLine = line
+                val startColumn = column
+
                 val op = StringBuilder("" + c)
                 while (i < text.length && isOpChar(text[i])) {
                     op.append(text[i++])
                     column++
                 }
-                this.tokens.add(TexTalkToken(op.toString(), TexTalkTokenType.Operator, line, column))
+                this.tokens.add(TexTalkToken(op.toString(), TexTalkTokenType.Operator, startLine, startColumn))
             } else if (c != ' ') {
                 this.errors.add(
                     ParseError(

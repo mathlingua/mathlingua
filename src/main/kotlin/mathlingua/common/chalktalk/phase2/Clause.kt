@@ -128,168 +128,116 @@ data class AbstractionNode(
     override var column: Int
 ) : Target() {
 
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, abstraction)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, abstraction)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isAbstraction(node: Phase1Node): Boolean {
-    return node is Abstraction
-}
+fun isAbstraction(node: Phase1Node) = node is Abstraction
 
-fun validateAbstractionNode(node: Phase1Node): Validation<AbstractionNode> {
-    return validateWrappedNode(node,
-        "AbstractionNode",
-        { it as? Abstraction },
-        ::AbstractionNode
-    )
-}
+fun validateAbstractionNode(node: Phase1Node) = validateWrappedNode(node,
+    "AbstractionNode",
+    { it as? Abstraction },
+    ::AbstractionNode
+)
 
 data class AggregateNode(
     val aggregate: Aggregate,
     override var row: Int,
     override var column: Int
 ) : Target() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, aggregate)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, aggregate)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isAggregate(node: Phase1Node): Boolean {
-    return node is Aggregate
-}
+fun isAggregate(node: Phase1Node) = node is Aggregate
 
-fun validateAggregateNode(node: Phase1Node): Validation<AggregateNode> {
-    return validateWrappedNode(node,
-        "AggregateNode",
-        { it as? Aggregate },
-        ::AggregateNode
-    )
-}
+fun validateAggregateNode(node: Phase1Node) = validateWrappedNode(node,
+    "AggregateNode",
+    { it as? Aggregate },
+    ::AggregateNode
+)
 
 data class TupleNode(
     val tuple: Tuple,
     override var row: Int,
     override var column: Int
 ) : Target() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, tuple)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, tuple)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isTuple(node: Phase1Node): Boolean {
-    return node is Tuple
-}
+fun isTuple(node: Phase1Node) = node is Tuple
 
-fun validateTupleNode(node: Phase1Node): Validation<TupleNode> {
-    return validateWrappedNode(node,
-        "TupleNode",
-        { it as? Tuple },
-        ::TupleNode
-    )
-}
+fun validateTupleNode(node: Phase1Node) = validateWrappedNode(node,
+    "TupleNode",
+    { it as? Tuple },
+    ::TupleNode
+)
 
 data class AssignmentNode(
     val assignment: Assignment,
     override var row: Int,
     override var column: Int
 ) : Target() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, assignment)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, assignment)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isAssignment(node: Phase1Node): Boolean {
-    return node is Assignment
-}
+fun isAssignment(node: Phase1Node) = node is Assignment
 
-fun validateAssignmentNode(node: Phase1Node): Validation<AssignmentNode> {
-    return validateWrappedNode(
-        node,
-        "AssignmentNode",
-        { it as? Assignment },
-        ::AssignmentNode
-    )
-}
+fun validateAssignmentNode(node: Phase1Node) = validateWrappedNode(
+    node,
+    "AssignmentNode",
+    { it as? Assignment },
+    ::AssignmentNode
+)
 
 data class MappingNode(
     val mapping: Mapping,
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, mapping)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, mapping)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isMapping(node: Phase1Node): Boolean {
-    return node is Mapping
-}
+fun isMapping(node: Phase1Node) = node is Mapping
 
-fun validateMappingNode(node: Phase1Node): Validation<MappingNode> {
-    return validateWrappedNode(
-        node,
-        "MappingNode",
-        { it as? Mapping },
-        ::MappingNode
-    )
-}
+fun validateMappingNode(node: Phase1Node) = validateWrappedNode(
+    node,
+    "MappingNode",
+    { it as? Mapping },
+    ::MappingNode
+)
 
 data class Identifier(
     val name: String,
     override var row: Int,
     override var column: Int
 ) : Target() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return indentedString(isArg, indent, name)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = indentedString(isArg, indent, name)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isIdentifier(node: Phase1Node): Boolean {
-    return node is Phase1Token && node.type === ChalkTalkTokenType.Name
-}
+fun isIdentifier(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Name
 
 fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
     val node = rawNode.resolve()
@@ -325,21 +273,14 @@ data class Statement(
     override var row: Int,
     override var column: Int
 ) : Clause() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return indentedString(isArg, indent, "'$text'")
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = indentedString(isArg, indent, "'$text'")
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isStatement(node: Phase1Node): Boolean {
-    return node is Phase1Token && node.type === ChalkTalkTokenType.Statement
-}
+fun isStatement(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 
 fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
     val node = rawNode.resolve()
@@ -392,21 +333,14 @@ data class Text(
     override var row: Int,
     override var column: Int
 ) : Clause() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return indentedString(isArg, indent, text)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = indentedString(isArg, indent, text)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun isText(node: Phase1Node): Boolean {
-    return node is Phase1Token && node.type === ChalkTalkTokenType.String
-}
+fun isText(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.String
 
 fun validateText(rawNode: Phase1Node): Validation<Text> {
     val node = rawNode.resolve()
@@ -446,34 +380,26 @@ data class ExistsGroup(
         fn(suchThatSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, existsSection, suchThatSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, existsSection, suchThatSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(ExistsGroup(
-            existsSection = existsSection.transform(chalkTransformer) as ExistsSection,
-            suchThatSection = suchThatSection.transform(chalkTransformer) as SuchThatSection,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ExistsGroup(
+        existsSection = existsSection.transform(chalkTransformer) as ExistsSection,
+        suchThatSection = suchThatSection.transform(chalkTransformer) as SuchThatSection,
+        row = row,
+        column = column
+    ))
 }
 
-fun isExistsGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "exists")
-}
+fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
 
-fun validateExistsGroup(node: Phase1Node): Validation<ExistsGroup> {
-    return validateDoubleSectionGroup(
-        node,
-        "exists",
-        ::validateExistsSection,
-        "suchThat",
-        ::validateSuchThatSection,
-        ::ExistsGroup
-    )
-}
+fun validateExistsGroup(node: Phase1Node) = validateDoubleSectionGroup(
+    node,
+    "exists",
+    ::validateExistsSection,
+    "suchThat",
+    ::validateSuchThatSection,
+    ::ExistsGroup
+)
 
 data class IfGroup(
     val ifSection: IfSection,
@@ -486,34 +412,26 @@ data class IfGroup(
         fn(thenSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, ifSection, thenSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, ifSection, thenSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(IfGroup(
-            ifSection = ifSection.transform(chalkTransformer) as IfSection,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(IfGroup(
+        ifSection = ifSection.transform(chalkTransformer) as IfSection,
+        thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+        row = row,
+        column = column
+    ))
 }
 
-fun isIfGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "if")
-}
+fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
 
-fun validateIfGroup(node: Phase1Node): Validation<IfGroup> {
-    return validateDoubleSectionGroup(
-        node,
-        "if",
-        ::validateIfSection,
-        "then",
-        ::validateThenSection,
-        ::IfGroup
-    )
-}
+fun validateIfGroup(node: Phase1Node) = validateDoubleSectionGroup(
+    node,
+    "if",
+    ::validateIfSection,
+    "then",
+    ::validateThenSection,
+    ::IfGroup
+)
 
 data class IffGroup(
     val iffSection: IffSection,
@@ -526,34 +444,26 @@ data class IffGroup(
         fn(thenSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, iffSection, thenSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, iffSection, thenSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(IffGroup(
-            iffSection = iffSection.transform(chalkTransformer) as IffSection,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(IffGroup(
+        iffSection = iffSection.transform(chalkTransformer) as IffSection,
+        thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+        row = row,
+        column = column
+    ))
 }
 
-fun isIffGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "iff")
-}
+fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
 
-fun validateIffGroup(node: Phase1Node): Validation<IffGroup> {
-    return validateDoubleSectionGroup(
-        node,
-        "iff",
-        ::validateIffSection,
-        "then",
-        ::validateThenSection,
-        ::IffGroup
-    )
-}
+fun validateIffGroup(node: Phase1Node) = validateDoubleSectionGroup(
+    node,
+    "iff",
+    ::validateIffSection,
+    "then",
+    ::validateThenSection,
+    ::IffGroup
+)
 
 data class ForGroup(
     val forSection: ForSection,
@@ -570,24 +480,19 @@ data class ForGroup(
         fn(thenSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, forSection, whereSection, thenSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) =
+            toCode(isArg, indent, forSection, whereSection, thenSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(ForGroup(
-            forSection = forSection.transform(chalkTransformer) as ForSection,
-            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ForGroup(
+        forSection = forSection.transform(chalkTransformer) as ForSection,
+        whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+        thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+        row = row,
+        column = column
+    ))
 }
 
-fun isForGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "for")
-}
+fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
 
 fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
     val node = rawNode.resolve()
@@ -651,66 +556,46 @@ data class NotGroup(
     override var row: Int,
     override var column: Int
 ) : Clause() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(notSection)
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(notSection)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return notSection.toCode(isArg, indent)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = notSection.toCode(isArg, indent)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(NotGroup(
-            notSection = notSection.transform(chalkTransformer) as NotSection,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(NotGroup(
+        notSection = notSection.transform(chalkTransformer) as NotSection,
+        row = row,
+        column = column
+    ))
 }
 
-fun isNotGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "not")
-}
+fun isNotGroup(node: Phase1Node) = firstSectionMatchesName(node, "not")
 
-fun validateNotGroup(node: Phase1Node): Validation<NotGroup> {
-    return validateSingleSectionGroup(
-        node, "not", ::NotGroup,
-        ::validateNotSection
-    )
-}
+fun validateNotGroup(node: Phase1Node) = validateSingleSectionGroup(
+    node, "not", ::NotGroup,
+    ::validateNotSection
+)
 
 data class OrGroup(
     val orSection: OrSection,
     override var row: Int,
     override var column: Int
 ) : Clause() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(orSection)
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(orSection)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return orSection.toCode(isArg, indent)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = orSection.toCode(isArg, indent)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(OrGroup(
-            orSection = orSection.transform(chalkTransformer) as OrSection,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(OrGroup(
+        orSection = orSection.transform(chalkTransformer) as OrSection,
+        row = row,
+        column = column
+    ))
 }
 
-fun isOrGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "or")
-}
+fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
 
-fun validateOrGroup(node: Phase1Node): Validation<OrGroup> {
-    return validateSingleSectionGroup(
-        node, "or", ::OrGroup,
-        ::validateOrSection
-    )
-}
+fun validateOrGroup(node: Phase1Node) = validateSingleSectionGroup(
+    node, "or", ::OrGroup,
+    ::validateOrSection
+)
 
 fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     if (node !is Group) {

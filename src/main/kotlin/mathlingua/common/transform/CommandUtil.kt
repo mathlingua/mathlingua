@@ -36,13 +36,15 @@ fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     return commands.distinct()
 }
 
-fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: String): TexTalkNode {
-    return texTalkNode.transform {
-        if (it is Command && getCommandSignature(it).toCode() == signature) {
-            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
-        } else {
-            texTalkNode
-        }
+fun replaceSignatures(
+    texTalkNode: TexTalkNode,
+    signature: String,
+    replacement: String
+) = texTalkNode.transform {
+    if (it is Command && getCommandSignature(it).toCode() == signature) {
+        TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement)
+    } else {
+        texTalkNode
     }
 }
 
@@ -51,23 +53,21 @@ fun replaceCommands(
     cmdToReplacement: Map<Command, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
-): Phase2Node {
-    return node.transform {
-        if (!shouldProcessChalk(it) || it !is Statement) {
-            it
-        } else {
-            when (val validation = it.texTalkRoot) {
-                is ValidationFailure -> it
-                is ValidationSuccess -> {
-                    val root = validation.value
-                    val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
-                    Statement(
-                        text = newRoot.toCode(),
-                        texTalkRoot = ValidationSuccess(newRoot),
-                        row = -1,
-                        column = -1
-                    )
-                }
+) = node.transform {
+    if (!shouldProcessChalk(it) || it !is Statement) {
+        it
+    } else {
+        when (val validation = it.texTalkRoot) {
+            is ValidationFailure -> it
+            is ValidationSuccess -> {
+                val root = validation.value
+                val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
+                Statement(
+                    text = newRoot.toCode(),
+                    texTalkRoot = ValidationSuccess(newRoot),
+                    row = -1,
+                    column = -1
+                )
             }
         }
     }
@@ -78,17 +78,15 @@ fun replaceCommands(
     root: TexTalkNode,
     cmdToReplacement: Map<Command, String>,
     shouldProcess: (root: TexTalkNode, node: TexTalkNode) -> Boolean
-): TexTalkNode {
-    return texTalkNode.transform {
-        if (!shouldProcess(root, it) || it !is Command) {
+) = texTalkNode.transform {
+    if (!shouldProcess(root, it) || it !is Command) {
+        it
+    } else {
+        if (!cmdToReplacement.containsKey(it)) {
             it
         } else {
-            if (!cmdToReplacement.containsKey(it)) {
-                it
-            } else {
-                val name = cmdToReplacement[it]
-                TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!)
-            }
+            val name = cmdToReplacement[it]
+            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!)
         }
     }
 }
@@ -148,17 +146,15 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
     )
 }
 
-private fun findSeparatedIsNodes(node: Statement): List<IsTexTalkNode>? {
-    return when (val validation = node.texTalkRoot) {
-        is ValidationFailure -> null
-        is ValidationSuccess -> {
-            val root = validation.value
-            return if (root.children.size == 1 && root.children[0] is IsTexTalkNode) {
-                val isNode = root.children[0] as IsTexTalkNode
-                separateIsStatementsUnder(isNode)
-            } else {
-                null
-            }
+private fun findSeparatedIsNodes(node: Statement) = when (val validation = node.texTalkRoot) {
+    is ValidationFailure -> null
+    is ValidationSuccess -> {
+        val root = validation.value
+        if (root.children.size == 1 && root.children[0] is IsTexTalkNode) {
+            val isNode = root.children[0] as IsTexTalkNode
+            separateIsStatementsUnder(isNode)
+        } else {
+            null
         }
     }
 }

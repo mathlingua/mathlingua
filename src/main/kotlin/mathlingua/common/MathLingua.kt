@@ -47,9 +47,7 @@ class MathLingua {
         }
     }
 
-    fun findAllSignatures(node: Phase2Node): Array<String> {
-        return locateAllSignatures(node).toList().toTypedArray()
-    }
+    fun findAllSignatures(node: Phase2Node) = locateAllSignatures(node).toList().toTypedArray()
 
     fun expandAtPosition(
         text: String,
@@ -57,19 +55,15 @@ class MathLingua {
         column: Int,
         defines: List<DefinesGroup>,
         represents: List<RepresentsGroup>
-    ): Validation<Document> {
-        return when (val validation = parse(text)) {
-            is ValidationFailure -> validation
-            is ValidationSuccess -> {
-                val doc = validation.value
-                val target = findNode(doc, row, column)
-                val newDoc = expandAtNode(doc, target, defines, represents) as Document
-                ValidationSuccess(newDoc)
-            }
+    ) = when (val validation = parse(text)) {
+        is ValidationFailure -> validation
+        is ValidationSuccess -> {
+            val doc = validation.value
+            val target = findNode(doc, row, column)
+            val newDoc = expandAtNode(doc, target, defines, represents) as Document
+            ValidationSuccess(newDoc)
         }
     }
 
-    fun expand(doc: Document): Document {
-        return fullExpandComplete(doc)
-    }
+    fun expand(doc: Document) = fullExpandComplete(doc)
 }

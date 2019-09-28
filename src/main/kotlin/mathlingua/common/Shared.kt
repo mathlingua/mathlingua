@@ -16,74 +16,38 @@
 
 package mathlingua.common
 
-data class ParseError(override val message: String, val row: Int, val column: Int) : RuntimeException(message)
+data class ParseError(
+    override val message: String,
+    val row: Int,
+    val column: Int
+) : RuntimeException(message)
 
 sealed class Validation<T>
 data class ValidationSuccess<T>(val value: T) : Validation<T>()
 data class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
 
-/*
-class Validation<T> private constructor(val value: T?, val errors: List<ParseError>) {
-
-    val isSuccessful: Boolean
-        get() = this.value != null
-
-    companion object {
-
-        fun <T> success(value: T): Validation<T> {
-            if (value == null) {
-                throw IllegalArgumentException("A successful validation cannot have a null value")
-            }
-            return Validation(value, ArrayList())
-        }
-
-        fun <T> failure(errors: List<ParseError>): Validation<T> {
-            return Validation(null, errors)
-        }
-    }
-}
-*/
-
 class Stack<T> {
     private val data = mutableListOf<T>()
 
-    fun push(item: T) {
-        data.add(item)
-    }
+    fun push(item: T) = data.add(item)
 
-    fun pop(): T {
-        return data.removeAt(data.size - 1)
-    }
+    fun pop() = data.removeAt(data.size - 1)
 
-    fun peek(): T {
-        return data.elementAt(data.size - 1)
-    }
+    fun peek() = data.elementAt(data.size - 1)
 
-    fun isEmpty(): Boolean {
-        return data.isEmpty()
-    }
+    fun isEmpty() = data.isEmpty()
 }
 
 class Queue<T> : Iterable<T> {
     private val data = ArrayList<T>()
 
-    fun offer(item: T) {
-        data.add(0, item)
-    }
+    fun offer(item: T) = data.add(0, item)
 
-    fun poll(): T {
-        return data.removeAt(0)
-    }
+    fun poll() = data.removeAt(0)
 
-    fun peek(): T {
-        return data.elementAt(0)
-    }
+    fun peek() = data.elementAt(0)
 
-    fun isEmpty(): Boolean {
-        return data.isEmpty()
-    }
+    fun isEmpty() = data.isEmpty()
 
-    override fun iterator(): Iterator<T> {
-        return data.iterator()
-    }
+    override fun iterator() = data.iterator()
 }

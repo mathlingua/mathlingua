@@ -112,21 +112,13 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
         }
     }
 
-    override fun hasNext(): Boolean {
-        return this.index < this.tokens.size
-    }
+    override fun hasNext() = this.index < this.tokens.size
 
-    override fun hasNextNext(): Boolean {
-        return this.index + 1 < this.tokens.size
-    }
+    override fun hasNextNext() = this.index + 1 < this.tokens.size
 
-    override fun peek(): TexTalkToken {
-        return this.tokens[this.index]
-    }
+    override fun peek() = this.tokens[this.index]
 
-    override fun peekPeek(): TexTalkToken {
-        return this.tokens[this.index + 1]
-    }
+    override fun peekPeek() = this.tokens[this.index + 1]
 
     override fun next(): TexTalkToken {
         val result = peek()
@@ -134,12 +126,9 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
         return result
     }
 
-    private fun isOpChar(c: Char): Boolean {
-        return (c == '!' || c == '@' || c == '%' || c == '&' || c == '*' || c == '-' || c == '+' ||
+    private fun isOpChar(c: Char) = (c == '!' || c == '@' || c == '%' ||
+            c == '&' || c == '*' || c == '-' || c == '+' ||
             c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
-    }
 
-    private fun isIdentifierChar(c: Char): Boolean {
-        return Regex("[$#a-zA-Z0-9]+").matches("$c")
-    }
+    private fun isIdentifierChar(c: Char) = Regex("[$#a-zA-Z0-9]+").matches("$c")
 }

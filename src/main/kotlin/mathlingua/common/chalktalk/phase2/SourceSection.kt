@@ -29,9 +29,7 @@ data class SourceSection(
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        mappings.forEach(fn)
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = mappings.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
@@ -46,9 +44,7 @@ data class SourceSection(
         return builder.toString()
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(this)
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
 fun validateSourceSection(section: Section): Validation<SourceSection> {

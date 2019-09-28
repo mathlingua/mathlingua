@@ -487,70 +487,64 @@ fun replaceIsNodes(
     )
 }
 
-fun toCanonicalForm(def: DefinesGroup): DefinesGroup {
-    return DefinesGroup(
-            row = -1,
-            column = -1,
-        signature = def.signature,
-        id = def.id,
-        definesSection = def.definesSection,
-        assumingSection = null,
-        meansSection = MeansSection(
-                row = -1,
-                column = -1,
-            clauses = ClauseListNode(
-                    row = -1,
-                    column = -1,
-                clauses = listOf(buildIfThen(def))
-            )
-        ),
-        aliasSection = def.aliasSection,
-        metaDataSection = def.metaDataSection
-    )
-}
-
-fun buildIfThen(def: DefinesGroup): IfGroup {
-    return IfGroup(
-            row = -1,
-            column = -1,
-        ifSection = IfSection(
-                row = -1,
-                column = -1,
-            clauses = def.assumingSection?.clauses
-                ?: ClauseListNode(
-                    clauses = emptyList(),
-                    row = -1,
-                    column = -1
-                )
-        ),
-        thenSection = ThenSection(
-                row = -1,
-                column = -1,
-            clauses = def.meansSection.clauses
-        )
-    )
-}
-
-fun buildIfThen(rep: RepresentsGroup): IfGroup {
-    return IfGroup(
+fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
+    row = -1,
+    column = -1,
+    signature = def.signature,
+    id = def.id,
+    definesSection = def.definesSection,
+    assumingSection = null,
+    meansSection = MeansSection(
         row = -1,
         column = -1,
-        ifSection = IfSection(
-                row = -1,
-                column = -1,
-            clauses = rep.assumingSection?.clauses
-                ?: ClauseListNode(
-                        clauses = emptyList(),
-                        row = -1,
-                        column = -1)
-        ),
-        thenSection = ThenSection(
+        clauses = ClauseListNode(
             row = -1,
             column = -1,
-            clauses = rep.thatSection.clauses
+            clauses = listOf(buildIfThen(def))
         )
+    ),
+    aliasSection = def.aliasSection,
+    metaDataSection = def.metaDataSection
+)
+
+fun buildIfThen(def: DefinesGroup) = IfGroup(
+        row = -1,
+        column = -1,
+    ifSection = IfSection(
+            row = -1,
+            column = -1,
+        clauses = def.assumingSection?.clauses
+            ?: ClauseListNode(
+                clauses = emptyList(),
+                row = -1,
+                column = -1
+            )
+    ),
+    thenSection = ThenSection(
+            row = -1,
+            column = -1,
+        clauses = def.meansSection.clauses
     )
-}
+)
+
+fun buildIfThen(rep: RepresentsGroup) = IfGroup(
+    row = -1,
+    column = -1,
+    ifSection = IfSection(
+            row = -1,
+            column = -1,
+        clauses = rep.assumingSection?.clauses
+            ?: ClauseListNode(
+                    clauses = emptyList(),
+                    row = -1,
+                    column = -1)
+    ),
+    thenSection = ThenSection(
+        row = -1,
+        column = -1,
+        clauses = rep.thatSection.clauses
+    )
+)
 
 fun getDefinesDirectVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()
@@ -614,9 +608,7 @@ fun expandAtNode(
     return transformed
 }
 
-fun fullExpandOnce(doc: Document): Document {
-    return expandAtNode(doc, doc, doc.defines, doc.represents) as Document
-}
+fun fullExpandOnce(doc: Document) = expandAtNode(doc, doc, doc.defines, doc.represents) as Document
 
 fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     val snapshots = mutableSetOf<String>()
@@ -696,9 +688,7 @@ private fun getSingleInfixOperatorIndex(exp: ExpressionTexTalkNode): Int {
     return -1
 }
 
-private fun isComma(node: TexTalkNode): Boolean {
-    return node is TextTexTalkNode && node.text == ","
-}
+private fun isComma(node: TexTalkNode) = node is TextTexTalkNode && node.text == ","
 
 private fun isOperator(node: TexTalkNode): Boolean {
     if (node !is TextTexTalkNode) {
@@ -718,10 +708,10 @@ private fun isOperator(node: TexTalkNode): Boolean {
     return true
 }
 
-private fun isOpChar(c: Char): Boolean {
-    return (c == '!' || c == '@' || c == '%' || c == '&' || c == '*' || c == '-' || c == '+' ||
-        c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
-}
+private fun isOpChar(c: Char) = (c == '!' || c == '@' || c == '%' || c == '&' ||
+        c == '*' || c == '-' || c == '+' ||
+        c == '=' || c == '|' || c == '/' ||
+        c == '<' || c == '>')
 
 private fun getArguments(exp: ExpressionTexTalkNode, start: Int, end: Int): List<TexTalkNode> {
     val result = mutableListOf<TexTalkNode>()

@@ -35,33 +35,25 @@ data class SourceGroup(
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(sourceSection)
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(sourceSection)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent,
-            Statement(
-                    id,
-                    ValidationFailure(emptyList()),
-                    row,
-                    column
-            ), sourceSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent,
+        Statement(
+                id,
+                ValidationFailure(emptyList()),
+                row,
+                column
+        ), sourceSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(SourceGroup(
-            id = id,
-            sourceSection = sourceSection.transform(chalkTransformer) as SourceSection,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(SourceGroup(
+        id = id,
+        sourceSection = sourceSection.transform(chalkTransformer) as SourceSection,
+        row = row,
+        column = column
+    ))
 }
 
-fun isSourceGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "Source")
-}
+fun isSourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Source")
 
 fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     val id = groupNode.id
@@ -137,47 +129,39 @@ data class DefinesGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(
-            isArg,
-            indent,
-            id,
-            definesSection,
-            assumingSection,
-            meansSection,
-            metaDataSection
-        )
-    }
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(DefinesGroup(
-            signature = signature,
-            id = id.transform(chalkTransformer) as Statement,
-            definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
-            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
-            meansSection = meansSection.transform(chalkTransformer) as MeansSection,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            row = row,
-            column = column
-        ))
-    }
-}
-
-fun isDefinesGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "Defines")
-}
-
-fun validateDefinesGroup(groupNode: Group): Validation<DefinesGroup> {
-    return validateDefinesLikeGroup(
-        groupNode,
-        "Defines",
-        ::validateDefinesSection,
-        "means",
-        ::validateMeansSection,
-        ::DefinesGroup
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(
+        isArg,
+        indent,
+        id,
+        definesSection,
+        assumingSection,
+        meansSection,
+        metaDataSection
     )
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(DefinesGroup(
+        signature = signature,
+        id = id.transform(chalkTransformer) as Statement,
+        definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
+        assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
+        meansSection = meansSection.transform(chalkTransformer) as MeansSection,
+        aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+        row = row,
+        column = column
+    ))
 }
+
+fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
+
+fun validateDefinesGroup(groupNode: Group) = validateDefinesLikeGroup(
+    groupNode,
+    "Defines",
+    ::validateDefinesSection,
+    "means",
+    ::validateMeansSection,
+    ::DefinesGroup
+)
 
 data class RepresentsGroup(
     val signature: String?,
@@ -203,47 +187,39 @@ data class RepresentsGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(
-            isArg,
-            indent,
-            id,
-            representsSection,
-            assumingSection,
-            thatSection,
-            metaDataSection
-        )
-    }
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(RepresentsGroup(
-            signature = signature,
-            id = id.transform(chalkTransformer) as Statement,
-            representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
-            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
-            thatSection = thatSection.transform(chalkTransformer) as ThatSection,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            row = row,
-            column = column
-        ))
-    }
-}
-
-fun isRepresentsGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "Represents")
-}
-
-fun validateRepresentsGroup(groupNode: Group): Validation<RepresentsGroup> {
-    return validateDefinesLikeGroup(
-        groupNode,
-        "Represents",
-        ::validateRepresentsSection,
-        "that",
-        ::validateThatSection,
-        ::RepresentsGroup
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(
+        isArg,
+        indent,
+        id,
+        representsSection,
+        assumingSection,
+        thatSection,
+        metaDataSection
     )
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(RepresentsGroup(
+        signature = signature,
+        id = id.transform(chalkTransformer) as Statement,
+        representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
+        assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
+        thatSection = thatSection.transform(chalkTransformer) as ThatSection,
+        aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+        row = row,
+        column = column
+    ))
 }
+
+fun isRepresentsGroup(node: Phase1Node) = firstSectionMatchesName(node, "Represents")
+
+fun validateRepresentsGroup(groupNode: Group) = validateDefinesLikeGroup(
+    groupNode,
+    "Represents",
+    ::validateRepresentsSection,
+    "that",
+    ::validateThatSection,
+    ::RepresentsGroup
+)
 
 data class ResultGroup(
     val resultSection: ResultSection,
@@ -260,33 +236,26 @@ data class ResultGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, null, resultSection, metaDataSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) =
+            toCode(isArg, indent, null, resultSection, metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(ResultGroup(
-            resultSection = resultSection.transform(chalkTransformer) as ResultSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            row = row,
-            column = column
-        ))
-    }
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ResultGroup(
+        resultSection = resultSection.transform(chalkTransformer) as ResultSection,
+        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+        aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+        row = row,
+        column = column
+    ))
 }
 
-fun isResultGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "Result")
-}
+fun isResultGroup(node: Phase1Node) = firstSectionMatchesName(node, "Result")
 
-fun validateResultGroup(groupNode: Group): Validation<ResultGroup> {
-    return validateResultLikeGroup(
-        groupNode,
-        "Result",
-        ::validateResultSection,
-        ::ResultGroup
-    )
-}
+fun validateResultGroup(groupNode: Group) = validateResultLikeGroup(
+    groupNode,
+    "Result",
+    ::validateResultSection,
+    ::ResultGroup
+)
 
 data class AxiomGroup(
     val axiomSection: AxiomSection,
@@ -303,33 +272,27 @@ data class AxiomGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, null, axiomSection, metaDataSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) =
+            toCode(isArg, indent, null, axiomSection, metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(AxiomGroup(
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(AxiomGroup(
             axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection,
             row = row,
             column = column
         ))
-    }
 }
 
-fun isAxiomGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "Axiom")
-}
+fun isAxiomGroup(node: Phase1Node) = firstSectionMatchesName(node, "Axiom")
 
-fun validateAxiomGroup(groupNode: Group): Validation<AxiomGroup> {
-    return validateResultLikeGroup(
-        groupNode,
-        "Axiom",
-        ::validateAxiomSection,
-        ::AxiomGroup
-    )
-}
+fun validateAxiomGroup(groupNode: Group) = validateResultLikeGroup(
+    groupNode,
+    "Axiom",
+    ::validateAxiomSection,
+    ::AxiomGroup
+)
 
 data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
@@ -346,33 +309,27 @@ data class ConjectureGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        return toCode(isArg, indent, null, conjectureSection, metaDataSection)
-    }
+    override fun toCode(isArg: Boolean, indent: Int) =
+            toCode(isArg, indent, null, conjectureSection, metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(ConjectureGroup(
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(ConjectureGroup(
             conjectureSection = conjectureSection.transform(chalkTransformer) as ConjectureSection,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection,
             row = row,
             column = column
         ))
-    }
 }
 
-fun isConjectureGroup(node: Phase1Node): Boolean {
-    return firstSectionMatchesName(node, "Conjecture")
-}
+fun isConjectureGroup(node: Phase1Node) = firstSectionMatchesName(node, "Conjecture")
 
-fun validateConjectureGroup(groupNode: Group): Validation<ConjectureGroup> {
-    return validateResultLikeGroup(
-        groupNode,
-        "Conjecture",
-        ::validateConjectureSection,
-        ::ConjectureGroup
-    )
-}
+fun validateConjectureGroup(groupNode: Group) = validateResultLikeGroup(
+    groupNode,
+    "Conjecture",
+    ::validateConjectureSection,
+    ::ConjectureGroup
+)
 
 fun toCode(isArg: Boolean, indent: Int, id: Statement?, vararg sections: Phase2Node?): String {
     val builder = StringBuilder()
@@ -578,6 +535,5 @@ fun <G, S, E> validateDefinesLikeGroup(
         )
 }
 
-private fun <K, V> Map<K, V>.getOrNull(key: K): V? {
-    return if (this.containsKey(key)) this.get(key) else null
-}
+private fun <K, V> Map<K, V>.getOrNull(key: K): V? =
+        if (this.containsKey(key)) this[key] else null

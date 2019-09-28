@@ -284,13 +284,9 @@ private class ChalkTalkLexerImpl(private var text: String) :
         }
     }
 
-    private fun isOperatorChar(c: Char): Boolean {
-        return "~!@%^&*-+<>\\/=".contains(c)
-    }
+    private fun isOperatorChar(c: Char) = "~!@%^&*-+<>\\/=".contains(c)
 
-    private fun isNameChar(c: Char): Boolean {
-        return Regex("[$#a-zA-Z0-9]+").matches("$c")
-    }
+    private fun isNameChar(c: Char) = Regex("[$#a-zA-Z0-9]+").matches("$c")
 
     override fun hasNext(): Boolean {
         ensureInitialized()
@@ -319,7 +315,5 @@ private class ChalkTalkLexerImpl(private var text: String) :
         return tok
     }
 
-    override fun errors(): List<ParseError> {
-        return this.errors
-    }
+    override fun errors() = this.errors
 }

@@ -46,17 +46,11 @@ data class Phase1Token(val text: String, val type: ChalkTalkTokenType, val row: 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
     }
 
-    override fun toCode(): String {
-        return text
-    }
+    override fun toCode() = text
 
-    override fun resolve(): Phase1Node {
-        return this
-    }
+    override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return transformer(this)
-    }
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(this)
 }
 
 data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() {
@@ -66,20 +60,14 @@ data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() 
         fn(rhs)
     }
 
-    override fun toCode(): String {
-        return lhs.toCode() + " = " + rhs.toCode()
-    }
+    override fun toCode() = lhs.toCode() + " = " + rhs.toCode()
 
-    override fun resolve(): Phase1Node {
-        return this
-    }
+    override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return transformer(Mapping(
-            lhs = lhs.transform(transformer) as Phase1Token,
-            rhs = rhs.transform(transformer) as Phase1Token
-        ))
-    }
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Mapping(
+        lhs = lhs.transform(transformer) as Phase1Token,
+        rhs = rhs.transform(transformer) as Phase1Token
+    ))
 }
 
 data class Group(val sections: List<Section>, val id: Phase1Token?) :
@@ -114,16 +102,12 @@ data class Group(val sections: List<Section>, val id: Phase1Token?) :
         return buffer.toString()
     }
 
-    override fun resolve(): Phase1Node {
-        return this
-    }
+    override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return transformer(Group(
-            sections = sections.map { it.transform(transformer) as Section },
-            id = id?.transform(transformer) as Phase1Token
-        ))
-    }
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Group(
+        sections = sections.map { it.transform(transformer) as Section },
+        id = id?.transform(transformer) as Phase1Token
+    ))
 }
 
 data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem() {
@@ -133,32 +117,24 @@ data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem(
         fn(rhs)
     }
 
-    override fun toCode(): String {
-        return lhs.toCode() + " := " + rhs.toCode()
-    }
+    override fun toCode() = lhs.toCode() + " := " + rhs.toCode()
 
-    override fun resolve(): Phase1Node {
-        return this
-    }
+    override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return transformer(Assignment(
-            lhs = lhs.transform(transformer) as Phase1Token,
-            rhs = rhs.transform(transformer) as Phase1Token
-        ))
-    }
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Assignment(
+        lhs = lhs.transform(transformer) as Phase1Token,
+        rhs = rhs.transform(transformer) as Phase1Token
+    ))
 }
 
 data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
 
-    override fun forEach(fn: (node: Phase1Node) -> Unit) {
-        items.forEach(fn)
-    }
+    override fun forEach(fn: (node: Phase1Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(): String {
-        var builder = StringBuilder()
+        val builder = StringBuilder()
         builder.append('(')
-        for (i in 0 until items.size) {
+        for (i in items.indices) {
             builder.append(items[i].toCode())
             if (i != items.size - 1) {
                 builder.append(", ")
@@ -168,15 +144,11 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
         return builder.toString()
     }
 
-    override fun resolve(): Phase1Node {
-        return this
-    }
+    override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return transformer(Tuple(
-            items = items.map { it.transform(transformer) as TupleItem }
-        ))
-    }
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Tuple(
+        items = items.map { it.transform(transformer) as TupleItem }
+    ))
 }
 
 data class Abstraction(val name: Phase1Token, val params: List<Phase1Token>) : TupleItem() {
@@ -200,23 +172,17 @@ data class Abstraction(val name: Phase1Token, val params: List<Phase1Token>) : T
         return builder.toString()
     }
 
-    override fun resolve(): Phase1Node {
-        return this
-    }
+    override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return transformer(Abstraction(
-            name = name.transform(transformer) as Phase1Token,
-            params = params.map { it.transform(transformer) as Phase1Token }
-        ))
-    }
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Abstraction(
+        name = name.transform(transformer) as Phase1Token,
+        params = params.map { it.transform(transformer) as Phase1Token }
+    ))
 }
 
 data class Aggregate(val params: List<Phase1Token>) : AssignmentRhs() {
 
-    override fun forEach(fn: (node: Phase1Node) -> Unit) {
-        params.forEach(fn)
-    }
+    override fun forEach(fn: (node: Phase1Node) -> Unit) = params.forEach(fn)
 
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -231,13 +197,9 @@ data class Aggregate(val params: List<Phase1Token>) : AssignmentRhs() {
         return builder.toString()
     }
 
-    override fun resolve(): Phase1Node {
-        return this
-    }
+    override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
-        return transformer(Aggregate(
-            params = params.map { it.transform(transformer) as Phase1Token }
-        ))
-    }
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Aggregate(
+        params = params.map { it.transform(transformer) as Phase1Token }
+    ))
 }

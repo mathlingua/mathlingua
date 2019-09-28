@@ -394,24 +394,16 @@ class TexTalkParserImpl : TexTalkParser {
 
         private fun next() = texTalkLexer.next()
 
-        private fun has(tokenType: TexTalkTokenType): Boolean {
-            return hasNext() && texTalkLexer.peek().tokenType === tokenType
-        }
+        private fun has(tokenType: TexTalkTokenType) =
+                hasNext() && texTalkLexer.peek().tokenType === tokenType
 
-        private fun hasHas(tokenType1: TexTalkTokenType, tokenType2: TexTalkTokenType): Boolean {
-            return has(tokenType1) && texTalkLexer.hasNextNext() && texTalkLexer.peekPeek().tokenType == tokenType2
-        }
+        private fun hasHas(tokenType1: TexTalkTokenType, tokenType2: TexTalkTokenType) =
+            has(tokenType1) && texTalkLexer.hasNextNext() && texTalkLexer.peekPeek().tokenType == tokenType2
 
-        private fun addError(message: String, token: TexTalkToken) {
-            addError(message, token.row, token.column)
-        }
+        private fun addError(message: String, token: TexTalkToken) = addError(message, token.row, token.column)
 
-        private fun addError(message: String) {
-            addError(message, -1, -1)
-        }
+        private fun addError(message: String) = addError(message, -1, -1)
 
-        private fun addError(message: String, row: Int, column: Int) {
-            errors.add(ParseError(message, row, column))
-        }
+        private fun addError(message: String, row: Int, column: Int) = errors.add(ParseError(message, row, column))
     }
 }

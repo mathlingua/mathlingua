@@ -16,9 +16,7 @@
 
 package mathlingua.common.chalktalk.phase1.ast
 
-private fun max(val1: Int, val2: Int): Int {
-    return if (val1 >= val2) val1 else val2
-}
+private fun max(val1: Int, val2: Int) = if (val1 >= val2) val1 else val2
 
 fun buildIndent(level: Int, isArg: Boolean): String {
     val buffer = StringBuilder()

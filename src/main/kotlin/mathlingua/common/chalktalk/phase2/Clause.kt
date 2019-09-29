@@ -227,12 +227,14 @@ fun validateMappingNode(node: Phase1Node) = validateWrappedNode(
 
 data class Identifier(
     val name: String,
+    val isVarArgs: Boolean,
     override var row: Int,
     override var column: Int
 ) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = indentedString(isArg, indent, name)
+    override fun toCode(isArg: Boolean, indent: Int) =
+            indentedString(isArg, indent, name + if (isVarArgs) "..." else "")
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -264,7 +266,21 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
         return ValidationFailure(errors)
     }
 
-    return ValidationSuccess(Identifier(text, getRow(node), getColumn(node)))
+    var realText = text
+    var isVarArgs = false
+    if (text.endsWith("...")) {
+        realText = text.substring(0, text.length - 3)
+        isVarArgs = true
+    }
+
+    return ValidationSuccess(
+        Identifier(
+            name = realText,
+            isVarArgs = isVarArgs,
+            row = getRow(node),
+            column =getColumn(node)
+        )
+    )
 }
 
 data class Statement(

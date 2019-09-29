@@ -18,9 +18,12 @@ package mathlingua.common
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import mathlingua.jvm.MATHLINGUA_SOURCE_FILE
 import org.junit.jupiter.api.Test
+import java.io.File
 import java.nio.file.Files
+import java.nio.file.Paths
+
+val MATHLINGUA_SOURCE_FILE: File = Paths.get("src", "main", "resources", "mathlingua.txt").toFile()
 
 internal class MathLinguaDataTest {
     @Test

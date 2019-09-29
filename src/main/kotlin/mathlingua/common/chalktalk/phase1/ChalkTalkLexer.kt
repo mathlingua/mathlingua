@@ -197,6 +197,15 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     name += text[i++]
                     column++
                 }
+                // a name can end in ...
+                if (i < text.length && text[i] == '.' &&
+                        i + 1 < text.length && text[i + 1] == '.' &&
+                        i + 2 < text.length && text[i + 2] == '.') {
+                    for (tmp in 0 until "...".length) {
+                        name += text[i++]
+                        column++
+                    }
+                }
                 this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
             } else if (c == '"') {
                 val startLine = line

@@ -146,7 +146,8 @@ fun moveStatementInlineCommandsToIsNode(
                 Identifier(
                     name = cmdToReplacement[it]!!,
                     row = -1,
-                    column = -1)
+                    column = -1,
+                    isVarArgs = false)
                 },
                 row = -1,
                 column = -1

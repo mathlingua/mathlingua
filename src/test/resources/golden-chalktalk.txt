@@ -94,3 +94,21 @@ Result: f(x, y, z)
 Result:
 . f(x, y, z)
 -- End;
+
+
+-- Test: parses names with ...
+-- Input:
+Result: abc...
+-- Output:
+Result:
+. abc...
+-- End;
+
+
+-- Test: parses nested names with ...
+-- Input:
+Result: f(abc...)
+-- Output:
+Result:
+. f(abc...)
+-- End;

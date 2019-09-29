@@ -199,8 +199,8 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
                 // a name can end in ...
                 if (i < text.length && text[i] == '.' &&
-                        i+1 < text.length && text[i+1] == '.' &&
-                        i+2 < text.length && text[i+2] == '.') {
+                        i + 1 < text.length && text[i + 1] == '.' &&
+                        i + 2 < text.length && text[i + 2] == '.') {
                     for (tmp in 0 until "...".length) {
                         name += text[i++]
                         column++

@@ -278,7 +278,7 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
             name = realText,
             isVarArgs = isVarArgs,
             row = getRow(node),
-            column =getColumn(node)
+            column = getColumn(node)
         )
     )
 }

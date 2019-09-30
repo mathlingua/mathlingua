@@ -25,11 +25,31 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
+private fun canBeOnOneLine(target: Target) =
+        target is Identifier ||
+        target is TupleNode ||
+        target is AbstractionNode ||
+        target is AggregateNode ||
+        target is AssignmentNode
+
 private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, indent: Int) {
-    for (i in targets.indices) {
-        builder.append(targets[i].toCode(true, indent))
-        if (i != targets.size - 1) {
+    var i = 0
+    while (i < targets.size) {
+        val lineItems = mutableListOf<Target>()
+        while (i < targets.size && canBeOnOneLine(targets[i])) {
+            lineItems.add(targets[i++])
+        }
+        if (lineItems.isEmpty()) {
             builder.append('\n')
+            builder.append(targets[i++].toCode(true, indent))
+        } else {
+            builder.append(' ')
+            for (j in lineItems.indices) {
+                builder.append(lineItems[j].toCode(false, 0))
+                if (j != lineItems.size - 1) {
+                    builder.append(", ")
+                }
+            }
         }
     }
 }
@@ -76,7 +96,6 @@ data class DefinesSection(
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Defines:"))
-        builder.append('\n')
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
     }
@@ -106,7 +125,6 @@ data class RefinesSection(
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Refines:"))
-        builder.append('\n')
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
     }
@@ -186,7 +204,6 @@ data class ExistsSection(
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "exists:"))
-        builder.append('\n')
         appendTargetArgs(builder, identifiers, indent + 2)
         return builder.toString()
     }
@@ -215,7 +232,6 @@ data class ForSection(
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "for:"))
-        builder.append('\n')
         appendTargetArgs(builder, targets, indent + 2)
         return builder.toString()
     }

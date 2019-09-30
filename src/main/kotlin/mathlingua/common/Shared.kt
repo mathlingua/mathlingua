@@ -16,6 +16,10 @@
 
 package mathlingua.common
 
+import java.lang.StringBuilder
+import java.util.*
+import kotlin.collections.ArrayList
+
 data class ParseError(
     override val message: String,
     val row: Int,
@@ -50,4 +54,45 @@ class Queue<T> : Iterable<T> {
     fun isEmpty() = data.isEmpty()
 
     override fun iterator() = data.iterator()
+}
+
+private fun tokenize(text: String): List<String> {
+    val tokens = mutableListOf<String>()
+    var i = 0
+    while (i < text.length) {
+        if (text[i] == ' ') {
+            val buffer = StringBuilder()
+            while (i < text.length && text[i] == ' ') {
+                buffer.append(text[i++])
+            }
+            tokens.add(buffer.toString())
+        } else {
+            val buffer = StringBuilder()
+            while (i < text.length && text[i] != ' ') {
+                buffer.append(text[i++])
+            }
+            tokens.add(buffer.toString())
+        }
+    }
+    return tokens
+}
+
+private fun justify(text: String, width: Int): List<String> {
+    val tokens = tokenize(text)
+    val lines = mutableListOf<String>()
+    var i = 0
+    while (i < tokens.size) {
+        val curLine = StringBuilder()
+        while (curLine.isEmpty() && tokens[i].isBlank()) {
+            i++
+        }
+        while (i < tokens.size && curLine.length + tokens[i].length <= width) {
+            curLine.append(tokens[i++])
+        }
+        if (curLine.isEmpty()) {
+            curLine.append(tokens[i++])
+        }
+        lines.add(curLine.toString())
+    }
+    return lines
 }

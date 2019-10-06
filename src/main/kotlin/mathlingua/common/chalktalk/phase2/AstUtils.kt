@@ -16,8 +16,6 @@
 
 package mathlingua.common.chalktalk.phase2
 
-import java.lang.IllegalArgumentException
-
 fun indentedString(useDot: Boolean, indent: Int, line: String): String {
     val builder = StringBuilder()
     for (i in 0 until indent - 2) {

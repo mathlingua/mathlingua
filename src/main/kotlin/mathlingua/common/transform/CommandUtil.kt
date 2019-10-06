@@ -111,12 +111,12 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
                         newClauses.add(clause)
                     } else {
                         newClauses.addAll(separated.map {
-                            val root = ExpressionTexTalkNode(
+                            val expRoot = ExpressionTexTalkNode(
                                 children = listOf(it)
                             )
                             Statement(
-                                text = root.toCode(),
-                                texTalkRoot = ValidationSuccess(root),
+                                text = expRoot.toCode(),
+                                texTalkRoot = ValidationSuccess(expRoot),
                                 row = -1,
                                 column = -1
                             )

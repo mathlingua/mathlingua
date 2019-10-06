@@ -641,8 +641,8 @@ fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootT
                 if (c is Statement) {
                     when (val validation = c.texTalkRoot) {
                         is ValidationSuccess -> {
-                            val root = validation.value
-                            for (expanded in getExpandedInfixOperators(root)) {
+                            val expRoot = validation.value
+                            for (expanded in getExpandedInfixOperators(expRoot)) {
                                 newClauses.add(Statement(
                                     text = expanded.toCode(),
                                     texTalkRoot = ValidationSuccess(expanded),

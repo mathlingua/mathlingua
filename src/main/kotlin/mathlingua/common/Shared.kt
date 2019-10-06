@@ -16,8 +16,6 @@
 
 package mathlingua.common
 
-import java.lang.StringBuilder
-import java.util.*
 import kotlin.collections.ArrayList
 
 data class ParseError(

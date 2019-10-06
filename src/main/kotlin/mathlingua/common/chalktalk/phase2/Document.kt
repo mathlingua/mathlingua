@@ -169,8 +169,8 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
         }
     }
 
-    var row = Integer.MAX_VALUE
-    var column = Integer.MAX_VALUE
+    var row = Int.MAX_VALUE
+    var column = Int.MAX_VALUE
 
     fun updateRowCol(nodes: List<Phase2Node>) {
         for (n in nodes) {

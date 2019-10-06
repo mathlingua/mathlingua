@@ -29,13 +29,21 @@ import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.transform.getSignature
 
+sealed class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
+
 data class SourceGroup(
     val id: String,
     val sourceSection: SourceSection,
+    override val metaDataSection: MetaDataSection?,
     override var row: Int,
     override var column: Int
-) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(sourceSection)
+) : TopLevelGroup(metaDataSection) {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(sourceSection)
+        if (metaDataSection != null) {
+            fn(metaDataSection)
+        }
+    }
 
     override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent,
         Statement(
@@ -43,11 +51,12 @@ data class SourceGroup(
                 ValidationFailure(emptyList()),
                 row,
                 column
-        ), sourceSection)
+        ), sourceSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(SourceGroup(
         id = id,
         sourceSection = sourceSection.transform(chalkTransformer) as SourceSection,
+        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection,
         row = row,
         column = column
     ))
@@ -78,17 +87,38 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     }
 
     val sections = groupNode.sections
-    if (sections.size != 1) {
+    if (sections.isEmpty()) {
         errors.add(
-            ParseError("Expected a singe section but found ${sections.size}",
+            ParseError("Expected a Source section",
                 getRow(groupNode), getColumn(groupNode))
         )
     }
 
-    val section = sections[0]
-    val validation = validateSourceSection(section)
-    if (validation is ValidationFailure) {
-        errors.addAll(validation.errors)
+    val sourceSection = sections[0]
+    val sourceValidation = validateSourceSection(sourceSection)
+    if (sourceValidation is ValidationFailure) {
+        errors.addAll(sourceValidation.errors)
+    }
+
+    var metaDataSection: MetaDataSection? = null
+    if (sections.size >= 2) {
+        val metadataValidation = validateMetaDataSection(sections[1])
+        metaDataSection = when (metadataValidation) {
+            is ValidationFailure -> {
+                errors.addAll(metadataValidation.errors)
+                null
+            }
+            is ValidationSuccess -> {
+                metadataValidation.value
+            }
+        }
+    }
+
+    if (sections.size > 2) {
+        errors.add(
+                ParseError("A Source group can only have a Source section and optionally a Metadata section",
+                        getRow(groupNode), getColumn(groupNode))
+        )
     }
 
     if (errors.isNotEmpty()) {
@@ -98,7 +128,8 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     return ValidationSuccess(
             SourceGroup(
                     id = idText,
-                    sourceSection = (validation as ValidationSuccess).value,
+                    sourceSection = (sourceValidation as ValidationSuccess).value,
+                    metaDataSection = metaDataSection,
                     row = getRow(groupNode),
                     column = getColumn(groupNode)
             )
@@ -112,10 +143,10 @@ data class DefinesGroup(
     val assumingSection: AssumingSection?,
     val meansSection: MeansSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?,
+    override val metaDataSection: MetaDataSection?,
     override var row: Int,
     override var column: Int
-) : Phase2Node {
+) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
@@ -170,10 +201,10 @@ data class RepresentsGroup(
     val assumingSection: AssumingSection?,
     val thatSection: ThatSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?,
+    override val metaDataSection: MetaDataSection?,
     override var row: Int,
     override var column: Int
-) : Phase2Node {
+) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
@@ -224,10 +255,10 @@ fun validateRepresentsGroup(groupNode: Group) = validateDefinesLikeGroup(
 data class ResultGroup(
     val resultSection: ResultSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?,
+    override val metaDataSection: MetaDataSection?,
     override var row: Int,
     override var column: Int
-) : Phase2Node {
+) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(resultSection)
@@ -260,10 +291,10 @@ fun validateResultGroup(groupNode: Group) = validateResultLikeGroup(
 data class AxiomGroup(
     val axiomSection: AxiomSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?,
+    override val metaDataSection: MetaDataSection?,
     override var row: Int,
     override var column: Int
-) : Phase2Node {
+) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(axiomSection)
@@ -297,10 +328,10 @@ fun validateAxiomGroup(groupNode: Group) = validateResultLikeGroup(
 data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
     val aliasSection: AliasSection?,
-    val metaDataSection: MetaDataSection?,
+    override val metaDataSection: MetaDataSection?,
     override var row: Int,
     override var column: Int
-) : Phase2Node {
+) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(conjectureSection)
@@ -366,7 +397,7 @@ fun <G, S> validateResultLikeGroup(
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
-    val group = groupNode.resolve() as Group
+    val group = groupNode.resolve()
     if (group.id != null) {
         errors.add(
             ParseError(
@@ -443,7 +474,7 @@ fun <G, S, E> validateDefinesLikeGroup(
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
-    val group = groupNode.resolve() as Group
+    val group = groupNode.resolve()
     var id: Statement? = null
     if (group.id != null) {
         val (rawText, _, row, column) = group.id

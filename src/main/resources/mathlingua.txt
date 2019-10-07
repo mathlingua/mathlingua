@@ -22,7 +22,7 @@ Defines: X
 means:
 . "$%X$ is well defined collection of objects"
 Metadata:
-. reference = "source: @AATA; page: 3"
+. reference = "source: @AATA; page: 3; offset: 17"
 
 
 [a \in X]
@@ -31,7 +31,7 @@ assuming: 'X is \set'
 that:
 . "$%a$ is an element of $%X$"
 Metadata:
-. reference = "source: @AATA; page: 4"
+. reference = "source: @AATA; page: 4; offset: 18"
 
 
 [A \subset B]
@@ -42,7 +42,7 @@ that:
   where: 'a \in A'
   then: 'a \in B'
 Metadata:
-. reference = "source: @AATA; page: 4"
+. reference = "source: @AATA; page: 4; offset: 18"
 
 
 [x \neq y]
@@ -57,7 +57,7 @@ that:
 . 'A \subset B'
 . 'A \neq B'
 Metadata:
-. reference = "source: @AATA; page: 4"
+. reference = "source: @AATA; page: 4; offset: 18"
 
 
 [\empty.set]
@@ -68,7 +68,7 @@ means:
   . exists: x
     suchThat: 'x \in E'
 Metadata:
-. reference = "source: @AATA; page: 4"
+. reference = "source: @AATA; page: 4; offset: 18"
 
 
 [A \union B]
@@ -80,7 +80,7 @@ means:
   . 'c \in A'
   . 'c \in B'
 Metadata:
-. reference = "source: @AATA; page: 4"
+. reference = "source: @AATA; page: 4; offset: 18"
 
 
 [A \intersect B]
@@ -91,7 +91,7 @@ means:
 . 'c \in A'
 . 'c \in B'
 Metadata:
-. reference = "source: @AATA; page: 4"
+. reference = "source: @AATA; page: 4; offset: 18"
 
 
 [\disjoint.set]
@@ -99,7 +99,7 @@ Defines: (A, B)
 assuming: 'A, B is \set'
 means: '(A \intersect B) = \empty.set'
 Metadata:
-. reference = "source: @AATA; page: 5"
+. reference = "source: @AATA; page: 5; offset: 19"
 
 
 [x \notin X]
@@ -118,7 +118,7 @@ means:
 . 'x \in U'
 . 'x \notin A'
 Metadata:
-. reference = "source: @AATA; page: 5"
+. reference = "source: @AATA; page: 5; offset: 19"
 
 
 [A \set.difference B]
@@ -128,7 +128,7 @@ means:
 . 'c \in A'
 . 'c \notin B'
 Metadata:
-. reference = "source: @AATA; page: 5"
+. reference = "source: @AATA; page: 5; offset: 19"
 
 
 [A \set.cartesian.product B]
@@ -138,7 +138,7 @@ means:
 . 'x \in A'
 . 'y \in B'
 Metadata:
-. reference = "source: @AATA; page: 6"
+. reference = "source: @AATA; page: 6; offset: 20"
 
 
 [\function.domain:of{f}]
@@ -150,7 +150,7 @@ assuming:
 means:
 . 'X := A'
 Metadata:
-. reference = "source: @AATA; page: 7"
+. reference = "source: @AATA; page: 7; offset: 21"
 
 
 [\function.range:of{f}]
@@ -161,7 +161,7 @@ means:
 Alias:
 . domain = "function.domain:of"
 Metadata:
-. reference = "source: @AATA; page: 7"
+. reference = "source: @AATA; page: 7; offset: 21"
 
 
 [\surjective \function:on{A}to{B}]
@@ -175,7 +175,7 @@ means:
     suchThat:
     . 'f(a) = b'
 Metadata:
-. reference = "source: @AATA; page: 8"
+. reference = "source: @AATA; page: 8; offset: 22"
 
 
 [\injective \function:on{A}to{B}]
@@ -188,7 +188,7 @@ means:
   . if: 'a1 \neq a2'
     then: 'f(a1) \neq f(a2)'
 Metadata:
-. reference = "source: @AATA; page: 8"
+. reference = "source: @AATA; page: 8; offset: 22"
 
 
 [\bijective \function]
@@ -196,7 +196,7 @@ Defines: f
 means:
 . 'f \is \injective \surjective \function'
 Metadata:
-. reference = "source: @AATA; page: 8"
+. reference = "source: @AATA; page: 8; offset: 22"
 
 
 [g \of f]
@@ -211,7 +211,7 @@ means:
 . 'h is \function:on{A}to{C}'
 . 'h(x) = g(f(x))'
 Metadata:
-. reference = "source: @AATA; page: 8"
+. reference = "source: @AATA; page: 8; offset: 22"
 
 
 [\permutation:of{S}]
@@ -219,7 +219,7 @@ Defines: f
 assuming: 'S is \set'
 means: 'f is \bijective \function:on{S}to{S}'
 Metadata:
-. reference = "source: @AATA; page: 9"
+. reference = "source: @AATA; page: 9; offset: 23"
 
 
 [\identity.function:on{A}]
@@ -230,7 +230,7 @@ means:
 . for: x
   then: 'f(x) = x'
 Metadata:
-. reference = "source: @AATA; page: 10"
+. reference = "source: @AATA; page: 10; offset: 24"
 
 
 [\inverse.function:of{f}]
@@ -243,7 +243,7 @@ means:
 . 'g is \function:on{B}to{A}'
 . '(g \of f) = \identity.function:on{A}'
 Metadata:
-. reference = "source: @AATA; page: 10"
+. reference = "source: @AATA; page: 10; offset: 24"
 
 
 [\equivalence.relation:on{X}]
@@ -270,7 +270,7 @@ means:
 Alias:
 . cross = "set.cartesian.product"
 Metadata:
-. reference = "source: @AATA; page: 11"
+. reference = "source: @AATA; page: 11; offset: 25"
 
 
 [\integer]
@@ -299,7 +299,7 @@ means:
 Alias:
 . cross = "set.cartesian.product"
 Metadata:
-. reference = "source: @AATA; page: 33"
+. reference = "source: @AATA; page: 33; offset: 47"
 
 
 [\group]
@@ -323,7 +323,7 @@ means:
     . 'b \in X'
     . 'a * b = b * a = e'
 Metadata:
-. reference = "source: @AATA; page: 34"
+. reference = "source: @AATA; page: 34; offset: 48"
 
 
 [\abelian \group]
@@ -335,7 +335,7 @@ means:
   then:
   . 'a * b = b * a'
 Metadata:
-. reference = "source: @AATA; page: 34"
+. reference = "source: @AATA; page: 34; offset: 48"
 
 
 [\matrix{m, n}:over{F}]
@@ -356,7 +356,7 @@ means:
   then: 'M(i, j) = 0'
 . 'M(i, i) = 1'
 Metadata:
-. reference = "source: @AATA; page: 35"
+. reference = "source: @AATA; page: 35; offset: 49"
 
 
 [A * B]
@@ -373,7 +373,7 @@ means:
 . exists: A
   suchThat: 'M * A = \identity.matrix'
 Metadata:
-. reference = "source: @AATA; page: 35"
+. reference = "source: @AATA; page: 35; offset: 49"
 
 
 [\general.linear.group{n}:over{F}]
@@ -386,7 +386,7 @@ assuming:
 means:
 . 'X = \set[M]{M}{M is \invertible.matrix}'
 Metadata:
-. reference = "source: @AATA; page: 35"
+. reference = "source: @AATA; page: 35; offset: 49"
 
 
 [\finite \set]
@@ -395,7 +395,7 @@ means:
 . 'X is \set'
 . "$%X$ has a finite number of elements"
 Metadata:
-. reference = "source: @AATA; page: 36"
+. reference = "source: @AATA; page: 36; offset: 50"
 
 
 [\infinite \set]
@@ -405,7 +405,7 @@ means:
 . not:
   . 'X is \finite \set'
 Metadata:
-. reference = "source: @AATA; page: 36"
+. reference = "source: @AATA; page: 36; offset: 50"
 
 
 [\set.cardinality:of{X}]
@@ -420,7 +420,7 @@ means:
 . 'G is \group'
 . 'X \is \finite \set'
 Metadata:
-. reference = "source: @AATA; page: 36"
+. reference = "source: @AATA; page: 36; offset: 50"
 
 
 [\infinite \group]
@@ -429,7 +429,7 @@ means:
 . 'G is \group'
 . 'X \is \infinite \set'
 Metadata:
-. reference = "source: @AATA; page: 36"
+. reference = "source: @AATA; page: 36; offset: 50"
 
 
 [\group.order:of{G := (X, *)}]
@@ -437,7 +437,7 @@ Defines: n
 assuming: 'G is \group'
 means: 'n = \set.cardinality:of{X}'
 Metadata:
-. reference = "source: @AATA; page: 36"
+. reference = "source: @AATA; page: 36; offset: 50"
 
 
 
@@ -465,7 +465,7 @@ means:
   . 'a*(b + c) = a*b + a*c'
   . '(a + b)*c = a*c + b*c'
 Metadata:
-. reference = "source: @AATA; page: 199"
+. reference = "source: @AATA; page: 199; offset: 213"
 
 
 [\with.unity \ring]
@@ -476,7 +476,7 @@ means:
   where: 'x \in X'
   then: '1*x = x*1 = x'
 Metadata:
-. reference = "source: @AATA; page: 199"
+. reference = "source: @AATA; page: 199; offset: 213"
 
 
 [\commutative \ring]
@@ -487,7 +487,7 @@ means:
   where: 'x, y \in X'
   then: 'x*y = y*x'
 Metadata:
-. reference = "source: @AATA; page: 199"
+. reference = "source: @AATA; page: 199; offset: 213"
 
 
 [\integral.domain]
@@ -504,7 +504,7 @@ means:
       . 'x = 0'
       . 'y = 0'
 Metadata:
-. reference = "source: @AATA; page: 200"
+. reference = "source: @AATA; page: 200; offset: 214"
 
 
 [\ring.unit:in{R := (X, +, *, 0, 1)}]
@@ -517,7 +517,7 @@ means:
   . 'b is \unique'
   . 'u*b = b*u = 1'
 Metadata:
-. reference = "source: @AATA; page: 200"
+. reference = "source: @AATA; page: 200; offset: 214"
 
 
 [\division \with.identity.ring]
@@ -531,7 +531,7 @@ means:
   then:
   . 'x is \ring.unit:in{R}'
 Metadata:
-. reference = "source: @AATA; page: 200"
+. reference = "source: @AATA; page: 200; offset: 214"
 
 
 [\field]
@@ -540,7 +540,7 @@ means:
 . '(X, +, *, 0) is \commutative \ring'
 . '(X, +, *, 0, 1) is \division \with.identity.ring'
 Metadata:
-. reference = "source: @AATA; page: 200"
+. reference = "source: @AATA; page: 200; offset: 214"
 
 
 [\transitive.relation:on{X}]
@@ -557,7 +557,7 @@ means:
     then:
     . 'a < c'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [\order.relation:on{F := (X, +, *, 0, 1)}]
@@ -586,7 +586,7 @@ means:
   . if: 'a < b'
     then: 'a * c < b * c'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [\ordered.field]
@@ -598,14 +598,14 @@ means:
   . 'F is \field'
   . '< is \order.relation:on{F}'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [\real.field]
 Defines: R := (X, +, *, 0, 1, <)
 means: 'R is \ordered.field'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [\reals]
@@ -615,7 +615,7 @@ means:
   where: 'Rb is \real.field'
   then: 'R := X'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [\real]
@@ -644,21 +644,21 @@ means:
 Defines: lt
 means: 'lt := <'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [a > b]
 Defines: >
 means: 'b < a'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [a \gt b]
 Defines: gt
 means: 'gt := >'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [a <= b]
@@ -668,7 +668,7 @@ means:
   . 'a < b'
   . 'a = b'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
 
 [a >= b]
@@ -678,5 +678,5 @@ means:
   . 'a > b'
   . 'a = b'
 Metadata:
-. reference = "source: @TrenchRealAnalysis; page: 2"
+. reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 

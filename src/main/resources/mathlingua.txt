@@ -680,3 +680,140 @@ means:
 Metadata:
 . reference = "source: @TrenchRealAnalysis; page: 2; offset: 11"
 
+
+[\real.open.interval:on{a, b}]
+Defines: I
+assuming:
+. 'a, b is \real'
+means:
+. 'I := \set[x]{x}{x > a}{x < b}'
+
+
+[\real.open.interval]
+Defines: I
+means:
+. exists: a, b
+  suchThat:
+  . 'I is \real.open.interval:on{a, b}'
+
+
+[\real.dense.set]
+Defines: D
+means:
+. 'D is \set'
+. for: I
+  where: 'I is \real.open.interval'
+  then:
+  . exists: x
+    suchThat:
+    . 'x \in I'
+    . 'x \in D'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 5; offset: 14"
+. description = "Definition: A set $D$ is dense in the reals if every open
+                 interval $(a,b)$ contains a member of $D$."
+
+
+[\uniformly.continuous.function:on{S}]
+Defines: f(x)
+assuming:
+. 'S \subset \function.domain:of{f}'
+means:
+. for: epsilon
+  where: 'epsilon > 0'
+  then:
+  . exists: delta
+    suchThat:
+    . 'delta > 0'
+    . for: x, y
+      where: 'x, y \in S'
+      then:
+      . if: '\abs{x - y} < delta'
+        then: '\abs{f(x) - f(y)} < epsilon'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 65; offset: 74"
+. description = "Definition: A function $f$ is uniformly continuous on a
+                 subset $S$ of its domain if, for every $\epsilon >0$, there
+                 is a $\delta>0$ such that $$ |f(x)-f(x')|<\epsilon \
+                 |x-x'|<\delta \ x,x'\in S. \eqno{ } $$"
+
+
+
+[\real.bounded.below.sequence:by{a}]
+Defines: S(n)
+assuming: 'a is \real'
+means:
+. 'S is \sequence'
+. for: n
+  then:
+  . 'S(n) >= a'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 181; offset: 190"
+. description = "Definition: A sequence $\{s_n\}$ is bounded above if there
+                 is a real number $b$ such that $$ s_n\le b , $$ bounded
+                 below if there is a real number $a$ such that $$ s_n\ge a ,
+                 $$ or bounded if there is a real number $r$ such that $$
+                 |s_n|\le r . $$"
+
+
+
+[\real.bounded.below.sequence]
+Defines: S
+means:
+. exists: a
+  suchThat: 'S is \real.bounded.below.sequence:by{a}'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 181; offset: 190"
+. description = "Definition: A sequence $\{s_n\}$ is bounded above if there
+                 is a real number $b$ such that $$ s_n\le b , $$ bounded
+                 below if there is a real number $a$ such that $$ s_n\ge a ,
+                 $$ or bounded if there is a real number $r$ such that $$
+                 |s_n|\le r . $$"
+
+
+[\real.bounded.above.sequence:by{b}]
+Defines: S(n)
+assuming: 'b is \real'
+means:
+. 'S is \sequence'
+. for: n
+  then:
+  . 'S(n) <= b'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 181; offset: 190"
+. description = "Definition: A sequence $\{s_n\}$ is bounded above if there
+                 is a real number $b$ such that $$ s_n\le b , $$ bounded
+                 below if there is a real number $a$ such that $$ s_n\ge a ,
+                 $$ or bounded if there is a real number $r$ such that $$
+                 |s_n|\le r . $$"
+
+
+[\real.bounded.above.sequence]
+Defines: S
+means:
+. exists: b
+  suchThat: 'S is \real.bounded.above.sequence:by{b}'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 181; offset: 190"
+. description = "Definition: A sequence $\{s_n\}$ is bounded above if there
+                 is a real number $b$ such that $$ s_n\le b , $$ bounded
+                 below if there is a real number $a$ such that $$ s_n\ge a ,
+                 $$ or bounded if there is a real number $r$ such that $$
+                 |s_n|\le r . $$"
+
+
+[\real.bounded.sequence]
+Defines: S
+means:
+. exists: a, b
+  suchThat:
+  . 'S is \real.bounded.above.sequence:by{b}'
+  . 'S is \real.bounded.below.sequence:by{a}'
+Metadata:
+. reference = "source: @TrenchRealAnalysis; page: 181; offset: 190"
+. description = "Definition: A sequence $\{s_n\}$ is bounded above if there
+                 is a real number $b$ such that $$ s_n\le b , $$ bounded
+                 below if there is a real number $a$ such that $$ s_n\ge a ,
+                 $$ or bounded if there is a real number $r$ such that $$
+                 |s_n|\le r . $$"
+

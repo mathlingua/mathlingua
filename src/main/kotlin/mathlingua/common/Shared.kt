@@ -24,7 +24,7 @@ data class ParseError(
     val column: Int
 ) : RuntimeException(message)
 
-sealed class Validation<T>
+sealed class Validation<out T>
 data class ValidationSuccess<T>(val value: T) : Validation<T>()
 data class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
 

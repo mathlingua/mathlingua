@@ -263,23 +263,25 @@ fun validateReferenceGroup(groupNode: Group): Validation<MetaDataItem> {
 }
 
 data class ReferenceSection(
-    val sourceItem: SourceItemGroup,
+    val sourceItems: List<SourceItemGroup>,
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(sourceItem)
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = sourceItems.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val buffer = StringBuilder()
         buffer.append(indentedString(isArg, indent, "reference"))
         buffer.append('\n')
-        buffer.append(sourceItem.toCode(true, indent + 2))
-        return buffer.toString()
+        for (sourceItem in sourceItems) {
+            buffer.append(sourceItem.toCode(true, indent + 2))
+        }
+        return buffer.toString().trim()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ReferenceSection(
-                    sourceItem = chalkTransformer(sourceItem) as SourceItemGroup,
+                    sourceItems = sourceItems.map { chalkTransformer(it) as SourceItemGroup },
                     row = row,
                     column = column
             ))
@@ -307,23 +309,38 @@ private fun validateReferenceSection(rawNode: Phase1Node): Validation<ReferenceS
         )
     }
 
-    if (args.size != 1 || args[0].chalkTalkTarget !is Group) {
+    if (args.isEmpty()) {
         errors.add(
                 ParseError(
-                        "Section '" + name.text + "' requires a single 'source' argument.",
+                        "Section '" + name.text + "' requires at least one 'source' argument.",
                         getRow(node), getColumn(node)
                 )
         )
     }
 
-    var sourceItemGroup: SourceItemGroup? = null
-    if (args.isNotEmpty()) {
-        val arg = args[0]
+    val sourceItems = mutableListOf<SourceItemGroup>()
+    var row = -1
+    var column = -1
+    for (arg in args) {
         if (arg.chalkTalkTarget is Group) {
             when (val validation = validateSourceItemGroup(arg.chalkTalkTarget)) {
-                is ValidationSuccess -> sourceItemGroup = validation.value
+                is ValidationSuccess -> {
+                    if (row == -1) {
+                        row = validation.value.row
+                        column = validation.value.column
+                    }
+                    sourceItems.add(validation.value)
+                }
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
+        } else {
+            errors.add(
+                    ParseError(
+                            message = "Expected a 'source' group but found ${arg.toCode()}",
+                            row = getRow(arg),
+                            column = getColumn(arg)
+                    )
+            )
         }
     }
 
@@ -331,9 +348,9 @@ private fun validateReferenceSection(rawNode: Phase1Node): Validation<ReferenceS
         ValidationFailure(errors)
     } else ValidationSuccess(
             ReferenceSection(
-                    sourceItem = sourceItemGroup!!,
-                    row = sourceItemGroup.row,
-                    column = sourceItemGroup.column
+                    sourceItems = sourceItems,
+                    row = row,
+                    column = column
             )
     )
 }

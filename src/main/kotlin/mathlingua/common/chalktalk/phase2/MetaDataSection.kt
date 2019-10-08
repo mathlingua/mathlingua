@@ -22,6 +22,16 @@ import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.*
 
+val META_DATA_ITEM_CONSTRAINTS = mapOf(
+        "name" to -1,
+        "author" to -1,
+        "contributor" to -1,
+        "written" to -1,
+        "id" to 1,
+        "concept" to 1,
+        "summary" to 1,
+        "note" to 1)
+
 data class MetaDataSection(
         val mappings: List<MappingNode>,
         val items: List<MetaDataItem>,
@@ -88,11 +98,70 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
                 is ValidationSuccess -> items.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
-        } else {
+        } else if (arg.chalkTalkTarget is Mapping) {
             when (val validation = validateMappingNode(arg)) {
                 is ValidationSuccess -> mappings.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
+        } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
+            val group = arg.chalkTalkTarget as Group
+            val sect = group.sections[0]
+            val name = sect.name.text
+            if (META_DATA_ITEM_CONSTRAINTS.containsKey(name)) {
+                val expectedCount = META_DATA_ITEM_CONSTRAINTS[name]!!
+                if (expectedCount >= 0 && sect.args.size != expectedCount) {
+                    errors.add(
+                            ParseError(
+                                    message = "Expected $expectedCount arguments for " +
+                                              "section $name but found ${sect.args.size}",
+                                    row = getRow(sect),
+                                    column = getColumn(sect)
+                            )
+                    )
+                }
+                for (a in sect.args) {
+                    val values = mutableListOf<String>()
+                    if (a.chalkTalkTarget is Phase1Token &&
+                            a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
+                        values.add(a.chalkTalkTarget.text)
+                    } else {
+                        errors.add(
+                                ParseError(
+                                        message = "Expected a string but found ${a.chalkTalkTarget}",
+                                        row = getRow(a.chalkTalkTarget),
+                                        column = getColumn(a.chalkTalkTarget)
+                                )
+                        )
+                    }
+                    items.add(StringSectionGroup(
+                            section = StringSection(
+                                    name = name,
+                                    values = values,
+                                    row = getRow(a.chalkTalkTarget),
+                                    column = getColumn(a.chalkTalkTarget)
+                            ),
+                            row = getRow(a.chalkTalkTarget),
+                            column = getColumn(a.chalkTalkTarget)
+                    ))
+                }
+            } else {
+                errors.add(
+                        ParseError(
+                                message = "Expected a section with one of " +
+                                          "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
+                                row = getRow(arg),
+                                column = getColumn(arg)
+                        )
+                )
+            }
+        } else {
+            errors.add(
+                    ParseError(
+                            message = "Unexpected item '${arg.toCode()}'",
+                            row = getRow(arg),
+                            column = getColumn(arg)
+                    )
+            )
         }
     }
 
@@ -105,6 +174,13 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
                 row = getRow(section),
                 column = getColumn(section)))
     }
+}
+
+fun isSingleSectionGroup(node: Phase1Node): Boolean {
+    if (node !is Group) {
+        return false
+    }
+    return node.sections.size == 1
 }
 
 fun validateMetaDataItem(arg: Argument): Validation<MetaDataItem> {
@@ -486,4 +562,45 @@ private fun <T> validateStringSection(rawNode: Phase1Node,
     return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else ValidationSuccess(fn(token.text, token.row, token.column))
+}
+
+class StringSectionGroup(
+        val section: StringSection,
+        override var row: Int,
+        override var column: Int
+) : MetaDataItem() {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(section)
+
+    override fun toCode(isArg: Boolean, indent: Int) = section.toCode(isArg, indent)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(
+                    StringSectionGroup(
+                            section = chalkTransformer(section) as StringSection,
+                            row = row,
+                            column = column
+                    )
+            )
+}
+
+class StringSection(
+        val name: String,
+        val values: List<String>,
+        override var row: Int,
+        override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        val buffer = StringBuilder()
+        buffer.append(indentedString(isArg, indent, "$name:"))
+        for (value in values) {
+            buffer.append('\n')
+            buffer.append(indentedString(true, indent + 2, value))
+        }
+        return buffer.toString()
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(this)
 }

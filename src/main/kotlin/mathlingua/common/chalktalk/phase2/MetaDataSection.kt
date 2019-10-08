@@ -35,14 +35,22 @@ data class MetaDataSection(
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
+        builder.append(indentedString(isArg, indent, "Metadata:"))
+        builder.append('\n')
         for (i in mappings.indices) {
             builder.append(mappings[i].toCode(true, indent + 2))
             if (i != mappings.size - 1) {
                 builder.append('\n')
             }
         }
+        // The mappings did not add a trailing newline
+        // but since there are items, the newline is needed
+        // before printing the items.
+        if (mappings.isNotEmpty() && items.isNotEmpty()) {
+            builder.append('\n')
+        }
         for (i in items.indices) {
-            builder.append(items[i].toCode(true, indent))
+            builder.append(items[i].toCode(true, indent + 2))
             if (i != items.size - 1) {
                 builder.append('\n')
             }
@@ -116,6 +124,143 @@ fun validateMetaDataItem(arg: Argument): Validation<MetaDataItem> {
 sealed class MetaDataItem : Phase2Node
 
 data class ReferenceGroup(
+        val referenceSection: ReferenceSection,
+        override var row: Int,
+        override var column: Int
+) : MetaDataItem() {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(referenceSection)
+
+    override fun toCode(isArg: Boolean, indent: Int) = referenceSection.toCode(isArg, indent)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(ReferenceGroup(
+                    referenceSection = chalkTransformer(referenceSection) as ReferenceSection,
+                    row = row,
+                    column = column
+            ))
+}
+
+fun isReferenceGroup(node: Phase1Node) = firstSectionMatchesName(node, "reference")
+
+fun validateReferenceGroup(groupNode: Group): Validation<MetaDataItem> {
+    val errors = ArrayList<ParseError>()
+    val group = groupNode.resolve()
+    if (group.id != null) {
+        errors.add(
+                ParseError(
+                        "A reference cannot have an Id",
+                        getRow(group), getColumn(group)
+                )
+        )
+    }
+
+    val sections = group.sections
+
+    val sectionMap: Map<String, Section?>
+    try {
+        sectionMap = identifySections(
+                sections, "reference"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return ValidationFailure(errors)
+    }
+
+    val rawReference = sectionMap["reference"]!!;
+    var referenceSection: ReferenceSection? = null
+    when (val validation = validateReferenceSection(rawReference)) {
+        is ValidationSuccess -> referenceSection = validation.value
+        is ValidationFailure -> errors.addAll(validation.errors)
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else {
+        ValidationSuccess(
+                ReferenceGroup(
+                        referenceSection = referenceSection!!,
+                        row = referenceSection.row,
+                        column = referenceSection.column
+                )
+        )
+    }
+}
+
+data class ReferenceSection(
+        val sourceItem: SourceItemGroup,
+        override var row: Int,
+        override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(sourceItem)
+
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        val buffer = StringBuilder()
+        buffer.append(indentedString(isArg, indent, "reference"))
+        buffer.append('\n')
+        buffer.append(sourceItem.toCode(true, indent + 2))
+        return buffer.toString()
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(ReferenceSection(
+                    sourceItem = chalkTransformer(sourceItem) as SourceItemGroup,
+                    row = row,
+                    column = column
+            ))
+}
+
+private fun validateReferenceSection(rawNode: Phase1Node): Validation<ReferenceSection> {
+    val node = rawNode.resolve()
+    val errors = ArrayList<ParseError>()
+    if (node !is Section) {
+        errors.add(
+                ParseError(
+                        "Expected a Section",
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    val (name, args) = node as Section
+    if (name.text != "reference") {
+        errors.add(
+                ParseError(
+                        "Expected a Section with name 'reference' but found " + name.text,
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    if (args.size != 1 || args[0].chalkTalkTarget !is Group) {
+        errors.add(
+                ParseError(
+                        "Section '" + name.text + "' requires a single 'source' argument.",
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    val arg = args[0]
+    var sourceItemGroup: SourceItemGroup? = null
+    if (arg.chalkTalkTarget is Group) {
+        when (val validation = validateSourceItemGroup(arg.chalkTalkTarget)) {
+            is ValidationSuccess -> sourceItemGroup = validation.value
+            is ValidationFailure -> errors.addAll(validation.errors)
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else ValidationSuccess(
+            ReferenceSection(
+                    sourceItem = sourceItemGroup!!,
+                    row = sourceItemGroup.row,
+                    column = sourceItemGroup.column
+            )
+    )
+}
+
+data class SourceItemGroup(
         val sourceSection: SourceItemSection,
         val pageSection: PageItemSection?,
         val offsetSection: OffsetItemSection?,
@@ -150,7 +295,7 @@ data class ReferenceGroup(
     )
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(ReferenceGroup(
+            chalkTransformer(SourceItemGroup(
                     sourceSection = sourceSection.transform(chalkTransformer) as SourceItemSection,
                     pageSection = pageSection?.transform(chalkTransformer) as PageItemSection,
                     offsetSection = offsetSection?.transform(chalkTransformer) as OffsetItemSection,
@@ -160,19 +305,15 @@ data class ReferenceGroup(
             ))
 }
 
-fun isReferenceGroup(node: Phase1Node): Boolean {
-    val result = firstSectionMatchesName(node, "reference")
-    println("Is ${node.toCode()} a reference group? " + result)
-    return result
-}
+fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
 
-fun validateReferenceGroup(groupNode: Group): Validation<ReferenceGroup> {
+fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
     if (group.id != null) {
         errors.add(
                 ParseError(
-                        "A reference cannot have an Id",
+                        "A reference source cannot have an Id",
                         getRow(group), getColumn(group)
                 )
         )
@@ -228,7 +369,7 @@ fun validateReferenceGroup(groupNode: Group): Validation<ReferenceGroup> {
         ValidationFailure(errors)
     } else {
         ValidationSuccess(
-                ReferenceGroup(
+                SourceItemGroup(
                     sourceSection = sourceSection!!,
                     pageSection = pageSection,
                     offsetSection = offsetSection,
@@ -300,7 +441,7 @@ data class ContentItemSection(
 }
 
 private fun indentedStringSection(isArg: Boolean, indent: Int, sectionName: String, value: String): String {
-    return indentedString(isArg, indent, "$sectionName: \"$value\"")
+    return indentedString(isArg, indent, "$sectionName: $value")
 }
 
 private fun <T> validateStringSection(rawNode: Phase1Node,

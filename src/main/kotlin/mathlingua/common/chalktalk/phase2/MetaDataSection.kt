@@ -33,10 +33,10 @@ val META_DATA_ITEM_CONSTRAINTS = mapOf(
         "note" to 1)
 
 data class MetaDataSection(
-        val mappings: List<MappingNode>,
-        val items: List<MetaDataItem>,
-        override var row: Int,
-        override var column: Int
+    val mappings: List<MappingNode>,
+    val items: List<MetaDataItem>,
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         mappings.forEach(fn)
@@ -113,7 +113,7 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
                     errors.add(
                             ParseError(
                                     message = "Expected $expectedCount arguments for " +
-                                              "section $name but found ${sect.args.size}",
+                                        "section $name but found ${sect.args.size}",
                                     row = getRow(sect),
                                     column = getColumn(sect)
                             )
@@ -148,7 +148,7 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
                 errors.add(
                         ParseError(
                                 message = "Expected a section with one of " +
-                                          "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
+                                    "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
                                 row = getRow(arg),
                                 column = getColumn(arg)
                         )
@@ -200,9 +200,9 @@ fun validateMetaDataItem(arg: Argument): Validation<MetaDataItem> {
 sealed class MetaDataItem : Phase2Node
 
 data class ReferenceGroup(
-        val referenceSection: ReferenceSection,
-        override var row: Int,
-        override var column: Int
+    val referenceSection: ReferenceSection,
+    override var row: Int,
+    override var column: Int
 ) : MetaDataItem() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(referenceSection)
 
@@ -242,7 +242,7 @@ fun validateReferenceGroup(groupNode: Group): Validation<MetaDataItem> {
         return ValidationFailure(errors)
     }
 
-    val rawReference = sectionMap["reference"]!!;
+    val rawReference = sectionMap["reference"]!!
     var referenceSection: ReferenceSection? = null
     when (val validation = validateReferenceSection(rawReference)) {
         is ValidationSuccess -> referenceSection = validation.value
@@ -263,9 +263,9 @@ fun validateReferenceGroup(groupNode: Group): Validation<MetaDataItem> {
 }
 
 data class ReferenceSection(
-        val sourceItem: SourceItemGroup,
-        override var row: Int,
-        override var column: Int
+    val sourceItem: SourceItemGroup,
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(sourceItem)
 
@@ -316,12 +316,14 @@ private fun validateReferenceSection(rawNode: Phase1Node): Validation<ReferenceS
         )
     }
 
-    val arg = args[0]
     var sourceItemGroup: SourceItemGroup? = null
-    if (arg.chalkTalkTarget is Group) {
-        when (val validation = validateSourceItemGroup(arg.chalkTalkTarget)) {
-            is ValidationSuccess -> sourceItemGroup = validation.value
-            is ValidationFailure -> errors.addAll(validation.errors)
+    if (args.isNotEmpty()) {
+        val arg = args[0]
+        if (arg.chalkTalkTarget is Group) {
+            when (val validation = validateSourceItemGroup(arg.chalkTalkTarget)) {
+                is ValidationSuccess -> sourceItemGroup = validation.value
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
         }
     }
 
@@ -337,12 +339,12 @@ private fun validateReferenceSection(rawNode: Phase1Node): Validation<ReferenceS
 }
 
 data class SourceItemGroup(
-        val sourceSection: SourceItemSection,
-        val pageSection: PageItemSection?,
-        val offsetSection: OffsetItemSection?,
-        val contentSection: ContentItemSection?,
-        override var row: Int,
-        override var column: Int
+    val sourceSection: SourceItemSection,
+    val pageSection: PageItemSection?,
+    val offsetSection: OffsetItemSection?,
+    val contentSection: ContentItemSection?,
+    override var row: Int,
+    override var column: Int
 ) : MetaDataItem() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
@@ -407,7 +409,7 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
         return ValidationFailure(errors)
     }
 
-    val rawSource = sectionMap["source"]!!;
+    val rawSource = sectionMap["source"]!!
     var sourceSection: SourceItemSection? = null
     when (val validation = validateStringSection(rawSource, "source", ::SourceItemSection)) {
         is ValidationSuccess -> sourceSection = validation.value
@@ -457,9 +459,9 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
 }
 
 data class SourceItemSection(
-        val sourceReference: String,
-        override var row: Int,
-        override var column: Int
+    val sourceReference: String,
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -472,9 +474,9 @@ data class SourceItemSection(
 }
 
 data class PageItemSection(
-        val page: String,
-        override var row: Int,
-        override var column: Int
+    val page: String,
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -487,9 +489,9 @@ data class PageItemSection(
 }
 
 data class OffsetItemSection(
-        val offset: String,
-        override var row: Int,
-        override var column: Int
+    val offset: String,
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -502,9 +504,9 @@ data class OffsetItemSection(
 }
 
 data class ContentItemSection(
-        val content: String,
-        override var row: Int,
-        override var column: Int
+    val content: String,
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -520,11 +522,15 @@ private fun indentedStringSection(isArg: Boolean, indent: Int, sectionName: Stri
     return indentedString(isArg, indent, "$sectionName: $value")
 }
 
-private fun <T> validateStringSection(rawNode: Phase1Node,
-                                      expectedName: String,
-                                      fn: (text: String,
-                                           row: Int,
-                                           column: Int) -> T): Validation<T> {
+private fun <T> validateStringSection(
+    rawNode: Phase1Node,
+    expectedName: String,
+    fn: (
+        text: String,
+        row: Int,
+        column: Int
+    ) -> T
+): Validation<T> {
     val node = rawNode.resolve()
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
@@ -565,9 +571,9 @@ private fun <T> validateStringSection(rawNode: Phase1Node,
 }
 
 class StringSectionGroup(
-        val section: StringSection,
-        override var row: Int,
-        override var column: Int
+    val section: StringSection,
+    override var row: Int,
+    override var column: Int
 ) : MetaDataItem() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(section)
 
@@ -584,19 +590,23 @@ class StringSectionGroup(
 }
 
 class StringSection(
-        val name: String,
-        val values: List<String>,
-        override var row: Int,
-        override var column: Int
+    val name: String,
+    val values: List<String>,
+    override var row: Int,
+    override var column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val buffer = StringBuilder()
         buffer.append(indentedString(isArg, indent, "$name:"))
-        for (value in values) {
-            buffer.append('\n')
-            buffer.append(indentedString(true, indent + 2, value))
+        if (values.size == 1) {
+            buffer.append(" ${values[0]}")
+        } else {
+            for (value in values) {
+                buffer.append('\n')
+                buffer.append(indentedString(true, indent + 2, value))
+            }
         }
         return buffer.toString()
     }

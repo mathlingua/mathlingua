@@ -56,7 +56,7 @@ data class SourceGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(SourceGroup(
         id = id,
         sourceSection = sourceSection.transform(chalkTransformer) as SourceSection,
-        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection,
+        metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection,
         row = row,
         column = column
     ))

@@ -33,32 +33,16 @@ val META_DATA_ITEM_CONSTRAINTS = mapOf(
         "note" to 1)
 
 data class MetaDataSection(
-    val mappings: List<MappingNode>,
     val items: List<MetaDataItem>,
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        mappings.forEach(fn)
-        items.forEach(fn)
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Metadata:"))
         builder.append('\n')
-        for (i in mappings.indices) {
-            builder.append(mappings[i].toCode(true, indent + 2))
-            if (i != mappings.size - 1) {
-                builder.append('\n')
-            }
-        }
-        // The mappings did not add a trailing newline
-        // but since there are items, the newline is needed
-        // before printing the items.
-        if (mappings.isNotEmpty() && items.isNotEmpty()) {
-            builder.append('\n')
-        }
         for (i in items.indices) {
             builder.append(items[i].toCode(true, indent + 2))
             if (i != items.size - 1) {
@@ -70,7 +54,6 @@ data class MetaDataSection(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(MetaDataSection(
-                    mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
                     items = items.map { it.transform(chalkTransformer) as MetaDataItem },
                     row = row,
                     column = column
@@ -169,7 +152,6 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
         ValidationFailure(errors)
     } else {
         ValidationSuccess(MetaDataSection(
-                mappings = mappings,
                 items = items,
                 row = getRow(section),
                 column = getColumn(section)))

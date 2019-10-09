@@ -734,7 +734,7 @@ private fun <Wrapped, Base> validateWrappedNode(
         return ValidationFailure(
             listOf(
                 ParseError(
-                    "Cannot convert to a $expectedType",
+                    "Cannot convert ${node.toCode()} to a $expectedType",
                     getRow(node), getColumn(node)
                 )
             )

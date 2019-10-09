@@ -20,16 +20,28 @@ import mathlingua.common.ParseError
 import mathlingua.common.Validation
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
-import mathlingua.common.chalktalk.phase1.ast.Section
-import mathlingua.common.chalktalk.phase1.ast.getColumn
-import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase1.ast.*
+
+val META_DATA_ITEM_CONSTRAINTS = mapOf(
+        "name" to -1,
+        "author" to -1,
+        "contributor" to -1,
+        "written" to -1,
+        "id" to 1,
+        "concept" to 1,
+        "summary" to 1,
+        "note" to 1)
 
 data class MetaDataSection(
     val mappings: List<MappingNode>,
+    val items: List<MetaDataItem>,
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = mappings.forEach(fn)
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        mappings.forEach(fn)
+        items.forEach(fn)
+    }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
@@ -41,35 +53,115 @@ data class MetaDataSection(
                 builder.append('\n')
             }
         }
+        // The mappings did not add a trailing newline
+        // but since there are items, the newline is needed
+        // before printing the items.
+        if (mappings.isNotEmpty() && items.isNotEmpty()) {
+            builder.append('\n')
+        }
+        for (i in items.indices) {
+            builder.append(items[i].toCode(true, indent + 2))
+            if (i != items.size - 1) {
+                builder.append('\n')
+            }
+        }
         return builder.toString()
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(MetaDataSection(
-            mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
-            row = row,
-            column = column
-        ))
+            chalkTransformer(MetaDataSection(
+                    mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
+                    items = items.map { it.transform(chalkTransformer) as MetaDataItem },
+                    row = row,
+                    column = column
+            ))
 }
 
 fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
     if (section.name.text != "Metadata") {
         return ValidationFailure(
-            listOf(
-                ParseError(
-                    "Expected a 'Metadata' but found '${section.name.text}'",
-                    getRow(section), getColumn(section)
+                listOf(
+                        ParseError(
+                                "Expected a 'Metadata' but found '${section.name.text}'",
+                                getRow(section), getColumn(section)
+                        )
                 )
-            )
         )
     }
 
     val errors = mutableListOf<ParseError>()
     val mappings = mutableListOf<MappingNode>()
+    val items = mutableListOf<MetaDataItem>()
     for (arg in section.args) {
-        when (val validation = validateMappingNode(arg)) {
-            is ValidationSuccess -> mappings.add(validation.value)
-            is ValidationFailure -> errors.addAll(validation.errors)
+        if (isReferenceGroup(arg.chalkTalkTarget)) {
+            when (val validation = validateMetaDataItem(arg)) {
+                is ValidationSuccess -> items.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (arg.chalkTalkTarget is Mapping) {
+            when (val validation = validateMappingNode(arg)) {
+                is ValidationSuccess -> mappings.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
+            val group = arg.chalkTalkTarget as Group
+            val sect = group.sections[0]
+            val name = sect.name.text
+            if (META_DATA_ITEM_CONSTRAINTS.containsKey(name)) {
+                val expectedCount = META_DATA_ITEM_CONSTRAINTS[name]!!
+                if (expectedCount >= 0 && sect.args.size != expectedCount) {
+                    errors.add(
+                            ParseError(
+                                    message = "Expected $expectedCount arguments for " +
+                                        "section $name but found ${sect.args.size}",
+                                    row = getRow(sect),
+                                    column = getColumn(sect)
+                            )
+                    )
+                }
+                for (a in sect.args) {
+                    val values = mutableListOf<String>()
+                    if (a.chalkTalkTarget is Phase1Token &&
+                            a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
+                        values.add(a.chalkTalkTarget.text)
+                    } else {
+                        errors.add(
+                                ParseError(
+                                        message = "Expected a string but found ${a.chalkTalkTarget}",
+                                        row = getRow(a.chalkTalkTarget),
+                                        column = getColumn(a.chalkTalkTarget)
+                                )
+                        )
+                    }
+                    items.add(StringSectionGroup(
+                            section = StringSection(
+                                    name = name,
+                                    values = values,
+                                    row = getRow(a.chalkTalkTarget),
+                                    column = getColumn(a.chalkTalkTarget)
+                            ),
+                            row = getRow(a.chalkTalkTarget),
+                            column = getColumn(a.chalkTalkTarget)
+                    ))
+                }
+            } else {
+                errors.add(
+                        ParseError(
+                                message = "Expected a section with one of " +
+                                    "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
+                                row = getRow(arg),
+                                column = getColumn(arg)
+                        )
+                )
+            }
+        } else {
+            errors.add(
+                    ParseError(
+                            message = "Unexpected item '${arg.toCode()}'",
+                            row = getRow(arg),
+                            column = getColumn(arg)
+                    )
+            )
         }
     }
 
@@ -78,7 +170,464 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
     } else {
         ValidationSuccess(MetaDataSection(
                 mappings = mappings,
+                items = items,
                 row = getRow(section),
                 column = getColumn(section)))
     }
+}
+
+fun isSingleSectionGroup(node: Phase1Node): Boolean {
+    if (node !is Group) {
+        return false
+    }
+    return node.sections.size == 1
+}
+
+fun validateMetaDataItem(arg: Argument): Validation<MetaDataItem> {
+    if (arg.chalkTalkTarget !is Group) {
+        return ValidationFailure(listOf(
+                ParseError(
+                        message = "Expected a group",
+                        row = getRow(arg),
+                        column = getColumn(arg)
+                )
+        ))
+    }
+
+    return validateReferenceGroup(arg.chalkTalkTarget)
+}
+
+sealed class MetaDataItem : Phase2Node
+
+data class ReferenceGroup(
+    val referenceSection: ReferenceSection,
+    override var row: Int,
+    override var column: Int
+) : MetaDataItem() {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(referenceSection)
+
+    override fun toCode(isArg: Boolean, indent: Int) = referenceSection.toCode(isArg, indent)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(ReferenceGroup(
+                    referenceSection = chalkTransformer(referenceSection) as ReferenceSection,
+                    row = row,
+                    column = column
+            ))
+}
+
+fun isReferenceGroup(node: Phase1Node) = firstSectionMatchesName(node, "reference")
+
+fun validateReferenceGroup(groupNode: Group): Validation<MetaDataItem> {
+    val errors = ArrayList<ParseError>()
+    val group = groupNode.resolve()
+    if (group.id != null) {
+        errors.add(
+                ParseError(
+                        "A reference cannot have an Id",
+                        getRow(group), getColumn(group)
+                )
+        )
+    }
+
+    val sections = group.sections
+
+    val sectionMap: Map<String, Section?>
+    try {
+        sectionMap = identifySections(
+                sections, "reference"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return ValidationFailure(errors)
+    }
+
+    val rawReference = sectionMap["reference"]!!
+    var referenceSection: ReferenceSection? = null
+    when (val validation = validateReferenceSection(rawReference)) {
+        is ValidationSuccess -> referenceSection = validation.value
+        is ValidationFailure -> errors.addAll(validation.errors)
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else {
+        ValidationSuccess(
+                ReferenceGroup(
+                        referenceSection = referenceSection!!,
+                        row = referenceSection.row,
+                        column = referenceSection.column
+                )
+        )
+    }
+}
+
+data class ReferenceSection(
+    val sourceItems: List<SourceItemGroup>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = sourceItems.forEach(fn)
+
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        val buffer = StringBuilder()
+        buffer.append(indentedString(isArg, indent, "reference"))
+        buffer.append('\n')
+        for (sourceItem in sourceItems) {
+            buffer.append(sourceItem.toCode(true, indent + 2))
+        }
+        return buffer.toString().trim()
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(ReferenceSection(
+                    sourceItems = sourceItems.map { chalkTransformer(it) as SourceItemGroup },
+                    row = row,
+                    column = column
+            ))
+}
+
+private fun validateReferenceSection(rawNode: Phase1Node): Validation<ReferenceSection> {
+    val node = rawNode.resolve()
+    val errors = ArrayList<ParseError>()
+    if (node !is Section) {
+        errors.add(
+                ParseError(
+                        "Expected a Section",
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    val (name, args) = node as Section
+    if (name.text != "reference") {
+        errors.add(
+                ParseError(
+                        "Expected a Section with name 'reference' but found " + name.text,
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    if (args.isEmpty()) {
+        errors.add(
+                ParseError(
+                        "Section '" + name.text + "' requires at least one 'source' argument.",
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    val sourceItems = mutableListOf<SourceItemGroup>()
+    var row = -1
+    var column = -1
+    for (arg in args) {
+        if (arg.chalkTalkTarget is Group) {
+            when (val validation = validateSourceItemGroup(arg.chalkTalkTarget)) {
+                is ValidationSuccess -> {
+                    if (row == -1) {
+                        row = validation.value.row
+                        column = validation.value.column
+                    }
+                    sourceItems.add(validation.value)
+                }
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else {
+            errors.add(
+                    ParseError(
+                            message = "Expected a 'source' group but found ${arg.toCode()}",
+                            row = getRow(arg),
+                            column = getColumn(arg)
+                    )
+            )
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else ValidationSuccess(
+            ReferenceSection(
+                    sourceItems = sourceItems,
+                    row = row,
+                    column = column
+            )
+    )
+}
+
+data class SourceItemGroup(
+    val sourceSection: SourceItemSection,
+    val pageSection: PageItemSection?,
+    val offsetSection: OffsetItemSection?,
+    val contentSection: ContentItemSection?,
+    override var row: Int,
+    override var column: Int
+) : MetaDataItem() {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(sourceSection)
+
+        if (pageSection != null) {
+            fn(pageSection)
+        }
+
+        if (offsetSection != null) {
+            fn(offsetSection)
+        }
+
+        if (contentSection != null) {
+            fn(contentSection)
+        }
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int) = toCode(
+            isArg,
+            indent,
+            null,
+            sourceSection,
+            pageSection,
+            offsetSection,
+            contentSection
+    )
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(SourceItemGroup(
+                    sourceSection = sourceSection.transform(chalkTransformer) as SourceItemSection,
+                    pageSection = pageSection?.transform(chalkTransformer) as PageItemSection,
+                    offsetSection = offsetSection?.transform(chalkTransformer) as OffsetItemSection,
+                    contentSection = contentSection?.transform(chalkTransformer) as ContentItemSection,
+                    row = row,
+                    column = column
+            ))
+}
+
+fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
+
+fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
+    val errors = ArrayList<ParseError>()
+    val group = groupNode.resolve()
+    if (group.id != null) {
+        errors.add(
+                ParseError(
+                        "A reference source cannot have an Id",
+                        getRow(group), getColumn(group)
+                )
+        )
+    }
+
+    val sections = group.sections
+
+    val sectionMap: Map<String, Section?>
+    try {
+        sectionMap = identifySections(
+                sections, "source", "page?", "offset?", "content?"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return ValidationFailure(errors)
+    }
+
+    val rawSource = sectionMap["source"]!!
+    var sourceSection: SourceItemSection? = null
+    when (val validation = validateStringSection(rawSource, "source", ::SourceItemSection)) {
+        is ValidationSuccess -> sourceSection = validation.value
+        is ValidationFailure -> errors.addAll(validation.errors)
+    }
+
+    val rawPage = sectionMap["page"]
+    var pageSection: PageItemSection? = null
+    if (rawPage != null) {
+        when (val validation = validateStringSection(rawPage, "page", ::PageItemSection)) {
+            is ValidationSuccess -> pageSection = validation.value
+            is ValidationFailure -> errors.addAll(validation.errors)
+        }
+    }
+
+    val rawOffset = sectionMap["offset"]
+    var offsetSection: OffsetItemSection? = null
+    if (rawOffset != null) {
+        when (val validation = validateStringSection(rawOffset, "offset", ::OffsetItemSection)) {
+            is ValidationSuccess -> offsetSection = validation.value
+            is ValidationFailure -> errors.addAll(validation.errors)
+        }
+    }
+
+    val rawContent = sectionMap["content"]
+    var contentSection: ContentItemSection? = null
+    if (rawContent != null) {
+        when (val validation = validateStringSection(rawContent, "content", ::ContentItemSection)) {
+            is ValidationSuccess -> contentSection = validation.value
+            is ValidationFailure -> errors.addAll(validation.errors)
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else {
+        ValidationSuccess(
+                SourceItemGroup(
+                    sourceSection = sourceSection!!,
+                    pageSection = pageSection,
+                    offsetSection = offsetSection,
+                    contentSection = contentSection,
+                    row = sourceSection.row,
+                    column = sourceSection.column)
+                )
+    }
+}
+
+data class SourceItemSection(
+    val sourceReference: String,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int) =
+            indentedStringSection(isArg, indent, "source", sourceReference)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return chalkTransformer(this)
+    }
+}
+
+data class PageItemSection(
+    val page: String,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int) =
+            indentedStringSection(isArg, indent, "page", page)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return chalkTransformer(this)
+    }
+}
+
+data class OffsetItemSection(
+    val offset: String,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int) =
+            indentedStringSection(isArg, indent, "offset", offset)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return chalkTransformer(this)
+    }
+}
+
+data class ContentItemSection(
+    val content: String,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int) =
+            indentedStringSection(isArg, indent, "content", content)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return chalkTransformer(this)
+    }
+}
+
+private fun indentedStringSection(isArg: Boolean, indent: Int, sectionName: String, value: String): String {
+    return indentedString(isArg, indent, "$sectionName: $value")
+}
+
+private fun <T> validateStringSection(
+    rawNode: Phase1Node,
+    expectedName: String,
+    fn: (
+        text: String,
+        row: Int,
+        column: Int
+    ) -> T
+): Validation<T> {
+    val node = rawNode.resolve()
+    val errors = ArrayList<ParseError>()
+    if (node !is Section) {
+        errors.add(
+                ParseError(
+                        "Expected a Section",
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    val (name, args) = node as Section
+    if (name.text != expectedName) {
+        errors.add(
+                ParseError(
+                        "Expected a Section with name " +
+                                expectedName + " but found " + name.text,
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    if (args.size != 1 ||
+            args[0].chalkTalkTarget !is Phase1Token ||
+            (args[0].chalkTalkTarget as Phase1Token).type != ChalkTalkTokenType.String) {
+        errors.add(
+                ParseError(
+                        "Section '" + name.text + "' requires a single string argument.",
+                        getRow(node), getColumn(node)
+                )
+        )
+    }
+
+    val token = args[0].chalkTalkTarget as Phase1Token
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else ValidationSuccess(fn(token.text, token.row, token.column))
+}
+
+class StringSectionGroup(
+    val section: StringSection,
+    override var row: Int,
+    override var column: Int
+) : MetaDataItem() {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(section)
+
+    override fun toCode(isArg: Boolean, indent: Int) = section.toCode(isArg, indent)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(
+                    StringSectionGroup(
+                            section = chalkTransformer(section) as StringSection,
+                            row = row,
+                            column = column
+                    )
+            )
+}
+
+class StringSection(
+    val name: String,
+    val values: List<String>,
+    override var row: Int,
+    override var column: Int
+) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        val buffer = StringBuilder()
+        buffer.append(indentedString(isArg, indent, "$name:"))
+        if (values.size == 1) {
+            buffer.append(" ${values[0]}")
+        } else {
+            for (value in values) {
+                buffer.append('\n')
+                buffer.append(indentedString(true, indent + 2, value))
+            }
+        }
+        return buffer.toString()
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(this)
 }

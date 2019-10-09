@@ -1,20 +1,20 @@
 
 [AATA]
 Source:
-. name = "Abstract Algebra Theory and Applications"
-. author = "Thomas W. Judson"
-. date = "July 10, 2019"
-. url = "http://abstract.ups.edu/download/aata-20190710-print.pdf"
-. offset = "14"
+. name: "Abstract Algebra Theory and Applications"
+. author: "Thomas W. Judson"
+. date: "July 10, 2019"
+. url: "http://abstract.ups.edu/download/aata-20190710-print.pdf"
+. offset: "14"
 
 
 [TrenchRealAnalysis]
 Source:
-. name = "Introduction to Real Analysis"
-. author = "William F. Trench"
-. date = "December 2013"
-. url = "https://digitalcommons.trinity.edu/cgi/viewcontent.cgi?article=1006&context=mono"
-. offset = "9"
+. name: "Introduction to Real Analysis"
+. author: "William F. Trench"
+. date: "December 2013"
+. url: "https://digitalcommons.trinity.edu/cgi/viewcontent.cgi?article=1006&context=mono"
+. offset: "9"
 
 
 [\set]

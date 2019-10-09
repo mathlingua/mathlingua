@@ -20,24 +20,29 @@ import mathlingua.common.ParseError
 import mathlingua.common.Validation
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
-import mathlingua.common.chalktalk.phase1.ast.Section
-import mathlingua.common.chalktalk.phase1.ast.getColumn
-import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase1.ast.*
+
+val SOURCE_ITEM_CONSTRAINTS = mapOf(
+        "name" to 1,
+        "author" to 1,
+        "date" to 1,
+        "url" to 1,
+        "offset" to 1)
 
 data class SourceSection(
-    val mappings: List<MappingNode>,
+    val items: List<StringSectionGroup>,
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = mappings.forEach(fn)
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val builder = StringBuilder()
         builder.append(indentedString(isArg, indent, "Source:"))
         builder.append('\n')
-        for (i in mappings.indices) {
-            builder.append(mappings[i].toCode(true, indent + 2))
-            if (i != mappings.size - 1) {
+        for (i in items.indices) {
+            builder.append(items[i].toCode(true, indent + 2))
+            if (i != items.size - 1) {
                 builder.append('\n')
             }
         }
@@ -50,21 +55,77 @@ data class SourceSection(
 fun validateSourceSection(section: Section): Validation<SourceSection> {
     if (section.name.text != "Source") {
         return ValidationFailure(
-            listOf(
-                ParseError(
-                    "Expected a 'Source' but found '${section.name.text}'",
-                    getRow(section), getColumn(section)
+                listOf(
+                        ParseError(
+                                "Expected a 'Source' but found '${section.name.text}'",
+                                getRow(section), getColumn(section)
+                        )
                 )
-            )
         )
     }
 
     val errors = mutableListOf<ParseError>()
-    val mappings = mutableListOf<MappingNode>()
+    val items = mutableListOf<StringSectionGroup>()
     for (arg in section.args) {
-        when (val validation = validateMappingNode(arg)) {
-            is ValidationSuccess -> mappings.add(validation.value)
-            is ValidationFailure -> errors.addAll(validation.errors)
+        if (isSingleSectionGroup(arg.chalkTalkTarget)) {
+            val group = arg.chalkTalkTarget as Group
+            val sect = group.sections[0]
+            val name = sect.name.text
+            if (SOURCE_ITEM_CONSTRAINTS.containsKey(name)) {
+                val expectedCount = SOURCE_ITEM_CONSTRAINTS[name]!!
+                if (expectedCount >= 0 && sect.args.size != expectedCount) {
+                    errors.add(
+                            ParseError(
+                                    message = "Expected $expectedCount arguments for " +
+                                            "section $name but found ${sect.args.size}",
+                                    row = getRow(sect),
+                                    column = getColumn(sect)
+                            )
+                    )
+                }
+                for (a in sect.args) {
+                    val values = mutableListOf<String>()
+                    if (a.chalkTalkTarget is Phase1Token &&
+                            a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
+                        values.add(a.chalkTalkTarget.text)
+                    } else {
+                        errors.add(
+                                ParseError(
+                                        message = "Expected a string but found ${a.chalkTalkTarget}",
+                                        row = getRow(a.chalkTalkTarget),
+                                        column = getColumn(a.chalkTalkTarget)
+                                )
+                        )
+                    }
+                    items.add(StringSectionGroup(
+                            section = StringSection(
+                                    name = name,
+                                    values = values,
+                                    row = getRow(a.chalkTalkTarget),
+                                    column = getColumn(a.chalkTalkTarget)
+                            ),
+                            row = getRow(a.chalkTalkTarget),
+                            column = getColumn(a.chalkTalkTarget)
+                    ))
+                }
+            } else {
+                errors.add(
+                        ParseError(
+                                message = "Expected a section with one of " +
+                                        "the names ${SOURCE_ITEM_CONSTRAINTS.keys}",
+                                row = getRow(arg),
+                                column = getColumn(arg)
+                        )
+                )
+            }
+        } else {
+            errors.add(
+                    ParseError(
+                            message = "Unexpected item '${arg.toCode()}'",
+                            row = getRow(arg),
+                            column = getColumn(arg)
+                    )
+            )
         }
     }
 
@@ -72,9 +133,8 @@ fun validateSourceSection(section: Section): Validation<SourceSection> {
         ValidationFailure(errors)
     } else {
         ValidationSuccess(SourceSection(
-                mappings = mappings,
+                items = items,
                 row = getRow(section),
-                column = getColumn(section)
-        ))
+                column = getColumn(section)))
     }
 }

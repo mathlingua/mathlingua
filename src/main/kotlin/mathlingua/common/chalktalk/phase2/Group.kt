@@ -141,7 +141,7 @@ data class DefinesGroup(
     val id: Statement,
     val definesSection: DefinesSection,
     val assumingSection: AssumingSection?,
-    val meansSection: MeansSection,
+    val meansSections: List<MeansSection>,
     val aliasSection: AliasSection?,
     override val metaDataSection: MetaDataSection?,
     override var row: Int,
@@ -154,28 +154,30 @@ data class DefinesGroup(
         if (assumingSection != null) {
             fn(assumingSection)
         }
-        fn(meansSection)
+        meansSections.forEach(fn)
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(
-        isArg,
-        indent,
-        id,
-        definesSection,
-        assumingSection,
-        meansSection,
-        metaDataSection
-    )
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        val sections = mutableListOf(definesSection, assumingSection)
+        sections.addAll(meansSections)
+        sections.add(metaDataSection)
+        return toCode(
+                isArg,
+                indent,
+                id,
+                *sections.toTypedArray()
+        )
+    }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(DefinesGroup(
         signature = signature,
         id = id.transform(chalkTransformer) as Statement,
         definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
         assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
-        meansSection = meansSection.transform(chalkTransformer) as MeansSection,
+        meansSections = meansSections.map { chalkTransformer(it) as MeansSection },
         aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
         metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
         row = row,
@@ -199,7 +201,7 @@ data class RepresentsGroup(
     val id: Statement,
     val representsSection: RepresentsSection,
     val assumingSection: AssumingSection?,
-    val thatSection: ThatSection,
+    val thatSections: List<ThatSection>,
     val aliasSection: AliasSection?,
     override val metaDataSection: MetaDataSection?,
     override var row: Int,
@@ -212,28 +214,30 @@ data class RepresentsGroup(
         if (assumingSection != null) {
             fn(assumingSection)
         }
-        fn(thatSection)
+        thatSections.forEach(fn)
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(
-        isArg,
-        indent,
-        id,
-        representsSection,
-        assumingSection,
-        thatSection,
-        metaDataSection
-    )
+    override fun toCode(isArg: Boolean, indent: Int): String {
+        val sections = mutableListOf(representsSection, assumingSection)
+        sections.addAll(thatSections)
+        sections.add(metaDataSection)
+        return toCode(
+                isArg,
+                indent,
+                id,
+                *sections.toTypedArray()
+        )
+    }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(RepresentsGroup(
         signature = signature,
         id = id.transform(chalkTransformer) as Statement,
         representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
         assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
-        thatSection = thatSection.transform(chalkTransformer) as ThatSection,
+        thatSections = thatSections.map { chalkTransformer(it) as ThatSection } as List<ThatSection>,
         aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
         metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
         row = row,
@@ -409,7 +413,7 @@ fun <G, S> validateResultLikeGroup(
 
     val sections = group.sections
 
-    val sectionMap: Map<String, Section?>
+    val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
             sections, resultLikeName, "Alias?", "Metadata?"
@@ -419,33 +423,33 @@ fun <G, S> validateResultLikeGroup(
         return ValidationFailure(errors)
     }
 
-    val resultLike = sectionMap[resultLikeName]
-    val alias = sectionMap.getOrNull("Alias")
-    val metadata = sectionMap.getOrNull("Metadata")
+    val resultLike = sectionMap[resultLikeName]!!
+    val alias = sectionMap["Alias"] ?: emptyList()
+    val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var resultLikeSection: S? = null
-    when (val resultLikeValidation = validateResultLikeSection(resultLike!!)) {
+    when (val resultLikeValidation = validateResultLikeSection(resultLike[0])) {
         is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
         is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
-    if (metadata != null) {
-        when (val metaDataValidation = validateMetaDataSection(metadata)) {
+    if (metadata.isNotEmpty()) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0])) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
     }
 
     var aliasSection: AliasSection? = null
-    if (alias != null) {
-        when (val aliasValidation = validateAliasSection(alias)) {
+    if (alias.isNotEmpty()) {
+        when (val aliasValidation = validateAliasSection(alias[0])) {
             is ValidationSuccess -> aliasSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
     }
 
-    return if (!errors.isEmpty()) {
+    return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else ValidationSuccess(buildGroup(
             resultLikeSection!!,
@@ -466,7 +470,7 @@ fun <G, S, E> validateDefinesLikeGroup(
         id: Statement,
         definesLike: S,
         assuming: AssumingSection?,
-        end: E,
+        end: List<E>,
         alias: AliasSection?,
         metadata: MetaDataSection?,
         row: Int,
@@ -500,7 +504,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     val sections = group.sections
 
-    val sectionMap: Map<String, Section?>
+    val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
             sections,
@@ -511,43 +515,45 @@ fun <G, S, E> validateDefinesLikeGroup(
         return ValidationFailure(errors)
     }
 
-    val definesLike = sectionMap[definesLikeSectionName]
-    val assuming = sectionMap.getOrNull("assuming")
-    val end = sectionMap[endSectionName]
-    val alias = sectionMap.getOrNull("Alias")
-    val metadata = sectionMap.getOrNull("Metadata")
+    val definesLike = sectionMap[definesLikeSectionName]!!
+    val assuming = sectionMap["assuming"] ?: emptyList()
+    val ends = sectionMap[endSectionName]!!
+    val alias = sectionMap["Alias"] ?: emptyList()
+    val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var definesLikeSection: S? = null
-    when (val definesLikeValidation = validateDefinesLikeSection(definesLike!!)) {
+    when (val definesLikeValidation = validateDefinesLikeSection(definesLike[0])) {
         is ValidationSuccess -> definesLikeSection = definesLikeValidation.value
         is ValidationFailure -> errors.addAll(definesLikeValidation.errors)
     }
 
     var assumingSection: AssumingSection? = null
-    if (assuming != null) {
-        when (val assumingValidation = validateAssumingSection(assuming)) {
+    if (assuming.isNotEmpty()) {
+        when (val assumingValidation = validateAssumingSection(assuming[0])) {
             is ValidationSuccess -> assumingSection = assumingValidation.value
             is ValidationFailure -> errors.addAll(assumingValidation.errors)
         }
     }
 
-    var endSection: E? = null
-    when (val endValidation = validateEndSection(end!!)) {
-        is ValidationSuccess -> endSection = endValidation.value
-        is ValidationFailure -> errors.addAll(endValidation.errors)
+    val endSections = mutableListOf<E>()
+    for (end in ends) {
+        when (val endValidation = validateEndSection(end)) {
+            is ValidationSuccess -> endSections.add(endValidation.value)
+            is ValidationFailure -> errors.addAll(endValidation.errors)
+        }
     }
 
     var aliasSection: AliasSection? = null
-    if (alias != null) {
-        when (val aliasValidation = validateAliasSection(alias)) {
+    if (alias.isNotEmpty()) {
+        when (val aliasValidation = validateAliasSection(alias[0])) {
             is ValidationSuccess -> aliasSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
     }
 
     var metaDataSection: MetaDataSection? = null
-    if (metadata != null) {
-        when (val metaDataValidation = validateMetaDataSection(metadata)) {
+    if (metadata.isNotEmpty()) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0])) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
@@ -559,12 +565,9 @@ fun <G, S, E> validateDefinesLikeGroup(
             buildGroup(
                 getSignature(id!!),
                 id, definesLikeSection!!,
-                assumingSection, endSection!!,
+                assumingSection, endSections,
                 aliasSection, metaDataSection,
                 getRow(group), getColumn(group)
             )
         )
 }
-
-private fun <K, V> Map<K, V>.getOrNull(key: K): V? =
-        if (this.containsKey(key)) this[key] else null

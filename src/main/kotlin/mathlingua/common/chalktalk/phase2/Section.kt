@@ -278,7 +278,7 @@ fun validateMeansSection(node: Phase1Node) = validateClauseList(
     node,
     "means",
     false,
-        ::MeansSection
+    ::MeansSection
 )
 
 data class ResultSection(

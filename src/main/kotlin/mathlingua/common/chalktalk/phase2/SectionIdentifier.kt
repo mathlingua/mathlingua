@@ -22,7 +22,7 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 
-fun identifySections(sections: List<Section>, vararg expected: String): Map<String, Section> {
+fun identifySections(sections: List<Section>, vararg expected: String): Map<String, List<Section>> {
     val patternBuilder = StringBuilder()
     for (name in expected) {
         patternBuilder.append(name)
@@ -42,7 +42,7 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         expectedQueue.offer(e)
     }
 
-    val result = HashMap<String, Section>()
+    val result = mutableMapOf<String, MutableList<Section>>()
 
     while (!sectionQueue.isEmpty() && !expectedQueue.isEmpty()) {
         val nextSection = sectionQueue.peek()
@@ -52,10 +52,16 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         val trueName =
             if (isOptional) maybeName.substring(0, maybeName.length - 1) else maybeName
         if (nextSection.name.text == trueName) {
-            result[trueName] = nextSection
-            // the expected name and Section have booth been used so move past them
+            if (!result.containsKey(trueName)) {
+                result[trueName] = mutableListOf()
+            }
+            result[trueName]!!.add(nextSection)
+            // the expected name and Section have both been used so move past them
             sectionQueue.poll()
             expectedQueue.poll()
+            while (!sectionQueue.isEmpty() && sectionQueue.peek().name.text == trueName) {
+                result[trueName]!!.add(sectionQueue.poll())
+            }
         } else if (isOptional) {
             // The Section found doesn't match the expected name
             // but the expected name is optional.  So move past
@@ -105,5 +111,12 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         )
     }
 
-    return result
+    // All of the sections in the map are in reverse order
+    // and thus need to be reversed.
+    val reversedResult = mutableMapOf<String, List<Section>>()
+    for (key in result.keys) {
+        reversedResult[key] = result[key]!!.reversed()
+    }
+
+    return reversedResult
 }

@@ -526,7 +526,7 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
 
     val (sections) = node
 
-    val sectionMap: Map<String, Section>
+    val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
             sections,
@@ -540,15 +540,15 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
     var forSection: ForSection? = null
     val forNode = sectionMap["for"]
 
-    when (val forEvaluation = validateForSection(forNode!!)) {
+    when (val forEvaluation = validateForSection(forNode!![0])) {
         is ValidationSuccess -> forSection = forEvaluation.value
         is ValidationFailure -> errors.addAll(forEvaluation.errors)
     }
 
     var whereSection: WhereSection? = null
-    if (sectionMap.containsKey("where")) {
-        val where = sectionMap["where"]
-        when (val whereValidation = validateWhereSection(where!!)) {
+    if (sectionMap.containsKey("where") && sectionMap["where"]!!.isNotEmpty()) {
+        val where = sectionMap["where"]!!
+        when (val whereValidation = validateWhereSection(where[0])) {
             is ValidationSuccess -> whereSection = whereValidation.value
             is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
@@ -556,7 +556,7 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
 
     var thenSection: ThenSection? = null
     val then = sectionMap["then"]
-    when (val thenValidation = validateThenSection(then!!)) {
+    when (val thenValidation = validateThenSection(then!![0])) {
         is ValidationSuccess -> thenSection = thenValidation.value
         is ValidationFailure -> errors.addAll(thenValidation.errors)
     }
@@ -644,7 +644,7 @@ fun <G, S> validateSingleSectionGroup(
     }
 
     val (sections) = node
-    val sectionMap: Map<String, Section>
+    val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
             sections,
@@ -657,7 +657,7 @@ fun <G, S> validateSingleSectionGroup(
 
     var section: S? = null
     val sect = sectionMap[sectionName]
-    when (val validation = validateSection(sect!!)) {
+    when (val validation = validateSection(sect!![0])) {
         is ValidationSuccess -> section = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
@@ -691,7 +691,7 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
 
     val (sections) = node
 
-    val sectionMap: Map<String, Section>
+    val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
             sections, section1Name, section2Name
@@ -703,19 +703,19 @@ private fun <G, S1, S2> validateDoubleSectionGroup(
 
     var section1: S1? = null
     val sect1 = sectionMap[section1Name]
-    when (val section1Validation = validateSection1(sect1!!)) {
+    when (val section1Validation = validateSection1(sect1!![0])) {
         is ValidationSuccess -> section1 = section1Validation.value
         is ValidationFailure -> errors.addAll(section1Validation.errors)
     }
 
     var section2: S2? = null
     val sect2 = sectionMap[section2Name]
-    when (val section2Validation = validateSection2(sect2!!)) {
+    when (val section2Validation = validateSection2(sect2!![0])) {
         is ValidationSuccess -> section2 = section2Validation.value
         is ValidationFailure -> errors.addAll(section2Validation.errors)
     }
 
-    return if (!errors.isEmpty()) {
+    return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else ValidationSuccess(buildGroup(section1!!, section2!!,
             getRow(node), getColumn(node)))

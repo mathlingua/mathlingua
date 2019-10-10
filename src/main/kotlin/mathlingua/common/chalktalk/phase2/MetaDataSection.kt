@@ -73,17 +73,11 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
     }
 
     val errors = mutableListOf<ParseError>()
-    val mappings = mutableListOf<MappingNode>()
     val items = mutableListOf<MetaDataItem>()
     for (arg in section.args) {
         if (isReferenceGroup(arg.chalkTalkTarget)) {
             when (val validation = validateMetaDataItem(arg)) {
                 is ValidationSuccess -> items.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-        } else if (arg.chalkTalkTarget is Mapping) {
-            when (val validation = validateMappingNode(arg)) {
-                is ValidationSuccess -> mappings.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
         } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
@@ -214,7 +208,7 @@ fun validateReferenceGroup(groupNode: Group): Validation<MetaDataItem> {
 
     val sections = group.sections
 
-    val sectionMap: Map<String, Section?>
+    val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
                 sections, "reference"
@@ -224,7 +218,7 @@ fun validateReferenceGroup(groupNode: Group): Validation<MetaDataItem> {
         return ValidationFailure(errors)
     }
 
-    val rawReference = sectionMap["reference"]!!
+    val rawReference = sectionMap["reference"]!![0]
     var referenceSection: ReferenceSection? = null
     when (val validation = validateReferenceSection(rawReference)) {
         is ValidationSuccess -> referenceSection = validation.value
@@ -398,7 +392,7 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
 
     val sections = group.sections
 
-    val sectionMap: Map<String, Section?>
+    val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
                 sections, "source", "page?", "offset?", "content?"
@@ -408,7 +402,7 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
         return ValidationFailure(errors)
     }
 
-    val rawSource = sectionMap["source"]!!
+    val rawSource = sectionMap["source"]!![0]
     var sourceSection: SourceItemSection? = null
     when (val validation = validateStringSection(rawSource, "source", ::SourceItemSection)) {
         is ValidationSuccess -> sourceSection = validation.value
@@ -417,8 +411,8 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
 
     val rawPage = sectionMap["page"]
     var pageSection: PageItemSection? = null
-    if (rawPage != null) {
-        when (val validation = validateStringSection(rawPage, "page", ::PageItemSection)) {
+    if (rawPage != null && rawPage.isNotEmpty()) {
+        when (val validation = validateStringSection(rawPage[0], "page", ::PageItemSection)) {
             is ValidationSuccess -> pageSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }
@@ -426,8 +420,8 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
 
     val rawOffset = sectionMap["offset"]
     var offsetSection: OffsetItemSection? = null
-    if (rawOffset != null) {
-        when (val validation = validateStringSection(rawOffset, "offset", ::OffsetItemSection)) {
+    if (rawOffset != null && rawOffset.isNotEmpty()) {
+        when (val validation = validateStringSection(rawOffset[0], "offset", ::OffsetItemSection)) {
             is ValidationSuccess -> offsetSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }
@@ -435,8 +429,8 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
 
     val rawContent = sectionMap["content"]
     var contentSection: ContentItemSection? = null
-    if (rawContent != null) {
-        when (val validation = validateStringSection(rawContent, "content", ::ContentItemSection)) {
+    if (rawContent != null && rawContent.isNotEmpty()) {
+        when (val validation = validateStringSection(rawContent[0], "content", ::ContentItemSection)) {
             is ValidationSuccess -> contentSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }

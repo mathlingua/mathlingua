@@ -255,7 +255,7 @@ fun replaceRepresents(
                     map[defIndirectVars[i]] = cmdVars[i]
                 }
 
-                val ifThen = buildIfThen(rep)
+                val ifThen = buildIfThens(rep)[0]
                 if (ifThen.ifSection.clauses.clauses.isEmpty()) {
                     for (c in ifThen.thenSection.clauses.clauses) {
                         newClauses.add(renameVars(c, map) as Clause)
@@ -305,7 +305,7 @@ fun replaceRepresents(
                     map[defIndirectVars[i]] = cmdVars[i]
                 }
 
-                val ifThen = buildIfThen(rep)
+                val ifThen = buildIfThens(rep)[0]
                 if (ifThen.ifSection.clauses.clauses.isEmpty()) {
                     for (c in ifThen.thenSection.clauses.clauses) {
                         newClauses.add(renameVars(c, map) as Clause)
@@ -462,7 +462,7 @@ fun replaceIsNodes(
                 map[defDirectVars[i]] = lhsVars[i]
             }
 
-            val ifThen = buildIfThen(def)
+            val ifThen = buildIfThens(def)[0]
             if (ifThen.ifSection.clauses.clauses.isEmpty()) {
                 for (thenClause in ifThen.thenSection.clauses.clauses) {
                     newClauses.add(renameVars(thenClause, map) as Clause)
@@ -496,57 +496,63 @@ fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
     id = def.id,
     definesSection = def.definesSection,
     assumingSection = null,
-    meansSection = MeansSection(
-        row = -1,
-        column = -1,
-        clauses = ClauseListNode(
-            row = -1,
-            column = -1,
-            clauses = listOf(buildIfThen(def))
+    meansSections = buildIfThens(def).map {
+        MeansSection(
+                row = -1,
+                column = -1,
+                clauses = ClauseListNode(
+                        row = -1,
+                        column = -1,
+                        clauses = listOf(it)
+                )
         )
-    ),
+    },
     aliasSection = def.aliasSection,
     metaDataSection = def.metaDataSection
 )
 
-fun buildIfThen(def: DefinesGroup) = IfGroup(
-        row = -1,
-        column = -1,
-    ifSection = IfSection(
+fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
+    IfGroup(
             row = -1,
             column = -1,
-        clauses = def.assumingSection?.clauses
-            ?: ClauseListNode(
-                clauses = emptyList(),
-                row = -1,
-                column = -1
-            )
-    ),
-    thenSection = ThenSection(
-            row = -1,
-            column = -1,
-        clauses = def.meansSection.clauses
-    )
-)
-
-fun buildIfThen(rep: RepresentsGroup) = IfGroup(
-    row = -1,
-    column = -1,
-    ifSection = IfSection(
-            row = -1,
-            column = -1,
-        clauses = rep.assumingSection?.clauses
-            ?: ClauseListNode(
-                    clauses = emptyList(),
+            ifSection = IfSection(
                     row = -1,
-                    column = -1)
-    ),
-    thenSection = ThenSection(
-        row = -1,
-        column = -1,
-        clauses = rep.thatSection.clauses
+                    column = -1,
+                    clauses = def.assumingSection?.clauses
+                            ?: ClauseListNode(
+                                    clauses = emptyList(),
+                                    row = -1,
+                                    column = -1
+                            )
+            ),
+            thenSection = ThenSection(
+                    row = -1,
+                    column = -1,
+                    clauses = it.clauses
+            )
     )
-)
+}
+
+fun buildIfThens(rep: RepresentsGroup) = rep.thatSections.map {
+    IfGroup(
+            row = -1,
+            column = -1,
+            ifSection = IfSection(
+                    row = -1,
+                    column = -1,
+                    clauses = rep.assumingSection?.clauses
+                            ?: ClauseListNode(
+                                    clauses = emptyList(),
+                                    row = -1,
+                                    column = -1)
+            ),
+            thenSection = ThenSection(
+                    row = -1,
+                    column = -1,
+                    clauses = it.clauses
+            )
+    )
+}
 
 fun getDefinesDirectVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()

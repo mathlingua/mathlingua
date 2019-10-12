@@ -27,10 +27,10 @@ val META_DATA_ITEM_CONSTRAINTS = mapOf(
         "author" to -1,
         "contributor" to -1,
         "written" to -1,
+        "note" to -1,
         "id" to 1,
         "concept" to 1,
-        "summary" to 1,
-        "note" to 1)
+        "summary" to 1)
 
 data class MetaDataSection(
     val items: List<MetaDataItem>,
@@ -96,8 +96,8 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
                             )
                     )
                 }
+                val values = mutableListOf<String>()
                 for (a in sect.args) {
-                    val values = mutableListOf<String>()
                     if (a.chalkTalkTarget is Phase1Token &&
                             a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
                         values.add(a.chalkTalkTarget.text)
@@ -110,17 +110,19 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
                                 )
                         )
                     }
-                    items.add(StringSectionGroup(
-                            section = StringSection(
-                                    name = name,
-                                    values = values,
-                                    row = getRow(a.chalkTalkTarget),
-                                    column = getColumn(a.chalkTalkTarget)
-                            ),
-                            row = getRow(a.chalkTalkTarget),
-                            column = getColumn(a.chalkTalkTarget)
-                    ))
                 }
+                val row = getRow(sect)
+                val column = getColumn(sect)
+                items.add(StringSectionGroup(
+                        section = StringSection(
+                        name = name,
+                        values = values,
+                        row = row,
+                        column = column
+                        ),
+                        row = row,
+                        column = column
+                ))
             } else {
                 errors.add(
                         ParseError(
@@ -247,7 +249,7 @@ data class ReferenceSection(
 
     override fun toCode(isArg: Boolean, indent: Int): String {
         val buffer = StringBuilder()
-        buffer.append(indentedString(isArg, indent, "reference"))
+        buffer.append(indentedString(isArg, indent, "reference:"))
         buffer.append('\n')
         for (sourceItem in sourceItems) {
             buffer.append(sourceItem.toCode(true, indent + 2))

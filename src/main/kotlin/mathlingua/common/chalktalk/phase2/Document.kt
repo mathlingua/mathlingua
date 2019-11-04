@@ -40,6 +40,7 @@ data class Document(
     val axioms: List<AxiomGroup>,
     val conjectures: List<ConjectureGroup>,
     val sources: List<SourceGroup>,
+    val protoGroups: List<ProtoGroup>,
     override var row: Int,
     override var column: Int
 ) : Phase2Node {
@@ -51,6 +52,7 @@ data class Document(
         axioms.forEach(fn)
         conjectures.forEach(fn)
         sources.forEach(fn)
+        protoGroups.forEach(fn)
     }
 
     override fun toCode(isArg: Boolean, indent: Int): String {
@@ -81,6 +83,11 @@ data class Document(
             builder.append("\n\n\n")
         }
 
+        for (grp in protoGroups) {
+            builder.append(grp.toCode(false, 0))
+            builder.append("\n\n\n")
+        }
+
         for (src in sources) {
             builder.append(src.toCode(false, 0))
             builder.append("\n\n\n")
@@ -98,6 +105,7 @@ data class Document(
                 represents = represents.map { it.transform(chalkTransformer) as RepresentsGroup },
                 results = results.map { it.transform(chalkTransformer) as ResultGroup },
                 sources = sources.map { it.transform(chalkTransformer) as SourceGroup },
+                protoGroups = protoGroups.map { it.transform(chalkTransformer) as ProtoGroup },
                 row = row,
                 column = column
             )
@@ -125,6 +133,7 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     val results = ArrayList<ResultGroup>()
     val axioms = ArrayList<AxiomGroup>()
     val conjectures = ArrayList<ConjectureGroup>()
+    val protoGroups = ArrayList<ProtoGroup>()
     val sources = ArrayList<SourceGroup>()
 
     val (groups) = node
@@ -158,6 +167,26 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
             when (val sourceValidation = validateSourceGroup(group)) {
                 is ValidationSuccess -> sources.add(sourceValidation.value)
                 is ValidationFailure -> errors.addAll(sourceValidation.errors)
+            }
+        } else if (firstSectionMatchesName(group, "ProtoDefines")) {
+            when (val validation = validateProtoGroup(group, "ProtoDefines")) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (firstSectionMatchesName(group, "ProtoResult")) {
+            when (val validation = validateProtoGroup(group, "ProtoResult")) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (firstSectionMatchesName(group, "ProtoAxiom")) {
+            when (val validation = validateProtoGroup(group, "ProtoAxiom")) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (firstSectionMatchesName(group, "ProtoConjecture")) {
+            when (val validation = validateProtoGroup(group, "ProtoConjecture")) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
             }
         } else {
             errors.add(
@@ -196,6 +225,7 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
             axioms,
             conjectures,
             sources,
+            protoGroups,
             row,
             column
         )

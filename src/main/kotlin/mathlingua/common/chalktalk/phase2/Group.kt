@@ -388,6 +388,96 @@ fun toCode(isArg: Boolean, indent: Int, id: Statement?, vararg sections: Phase2N
     return builder.toString()
 }
 
+class ProtoGroup(
+    val textSection: TextSection,
+    override val metaDataSection: MetaDataSection?,
+    override var row: Int,
+    override var column: Int
+) : TopLevelGroup(metaDataSection) {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(textSection)
+        if (metaDataSection != null) {
+            fn(metaDataSection)
+        }
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int) =
+            toCode(isArg, indent, null, textSection, metaDataSection)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(ProtoGroup(
+                    textSection = textSection.transform(chalkTransformer) as TextSection,
+                    metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection,
+                    row = row,
+                    column = column
+            ))
+}
+
+fun validateProtoGroup(
+    groupNode: Group,
+    name: String
+): Validation<ProtoGroup> {
+    val errors = ArrayList<ParseError>()
+    val group = groupNode.resolve()
+    if (group.id != null) {
+        errors.add(
+                ParseError(
+                        "A proto group cannot have an Id",
+                        getRow(group), getColumn(group)
+                )
+        )
+    }
+
+    val sections = group.sections
+
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+                sections, name, "Metadata?"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return ValidationFailure(errors)
+    }
+
+    val textSect = sectionMap[name]
+    val metadata = sectionMap["Metadata"] ?: emptyList()
+
+    if (textSect == null || textSect.size != 1) {
+        errors.add(
+                ParseError(
+                        "Expected a single section with name $name",
+                        getRow(group), getColumn(group)
+                )
+        )
+    }
+
+    var textSection: TextSection? = null
+    when (val validation = validateTextSection(textSect!![0], name)) {
+        is ValidationSuccess -> textSection = validation.value
+        is ValidationFailure -> errors.addAll(validation.errors)
+    }
+
+    var metaDataSection: MetaDataSection? = null
+    if (metadata.isNotEmpty()) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0])) {
+            is ValidationSuccess -> metaDataSection = metaDataValidation.value
+            is ValidationFailure -> errors.addAll(metaDataValidation.errors)
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else {
+        ValidationSuccess(ProtoGroup(
+                textSection = textSection!!,
+                metaDataSection = metaDataSection,
+                row = getRow(group),
+                column = getColumn(group)
+        ))
+    }
+}
+
 fun <G, S> validateResultLikeGroup(
     groupNode: Group,
     resultLikeName: String,

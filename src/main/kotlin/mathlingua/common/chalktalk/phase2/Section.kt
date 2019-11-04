@@ -649,8 +649,9 @@ data class TextSection(
 }
 
 fun validateTextSection(
-        rawNode: Phase1Node,
-        name: String): Validation<TextSection> {
+    rawNode: Phase1Node,
+    name: String
+): Validation<TextSection> {
     val node = rawNode.resolve()
     val row = getRow(node)
     val column = getColumn(node)

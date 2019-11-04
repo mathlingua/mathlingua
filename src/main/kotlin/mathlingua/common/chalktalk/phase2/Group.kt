@@ -413,8 +413,10 @@ class ProtoGroup(
             ))
 }
 
-fun validateProtoGroup(groupNode: Group,
-                       name: String): Validation<ProtoGroup> {
+fun validateProtoGroup(
+    groupNode: Group,
+    name: String
+): Validation<ProtoGroup> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
     if (group.id != null) {

@@ -18,6 +18,7 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
+import mathlingua.common.textalk.ExpressionTexTalkNode
 
 interface CodeWriter {
     fun append(node: Phase2Node, hasDot: Boolean, indent: Int)
@@ -29,8 +30,10 @@ interface CodeWriter {
     fun writeIndent(hasDot: Boolean, indent: Int)
     fun writePhase1Node(phase1Node: Phase1Node)
     fun writeId(id: Statement)
+    fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>)
+    fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
-    fun writeDirect(str: String)
+    fun writeDirect(text: String)
     fun getCode(): String
 }
 
@@ -304,15 +307,26 @@ class TextCodeWriter : CodeWriter {
         builder.append('"')
     }
 
-    override fun writeDirect(str: String) {
-        builder.append(str)
+    override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
+        builder.append("'$stmtText'")
+    }
+
+    override fun writeIdentifier(name: String, isVarArgs: Boolean) {
+        builder.append(name)
+        if (isVarArgs) {
+            builder.append("...")
+        }
+    }
+
+    override fun writeDirect(text: String) {
+        builder.append(text)
     }
 
     override fun getCode() = builder.toString()
 }
 
 fun main(args: Array<String>) {
-    val code = """
+    val code1 = """
         [a \in b]
         Defines: f(x)
         means:
@@ -324,8 +338,12 @@ fun main(args: Array<String>) {
     val code2 = """
         Result: a
     """.trimIndent()
+    val code3 = """
+        ProtoResult:
+        . "This is some text"
+    """.trimIndent()
     val ml = MathLingua()
-    when (val validation = ml.parse(code)) {
+    when (val validation = ml.parse(code1)) {
         is ValidationSuccess -> {
             val writer = TextCodeWriter()
             validation.value.toCode(false, 0, writer)

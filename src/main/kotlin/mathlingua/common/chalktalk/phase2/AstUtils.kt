@@ -16,24 +16,6 @@
 
 package mathlingua.common.chalktalk.phase2
 
-fun indentedString(writer: CodeWriter, useDot: Boolean, indent: Int, line: String): CodeWriter {
-    for (i in 0 until indent - 2) {
-        writer.writeSpace()
-    }
-    if (indent - 2 >= 0) {
-        if (useDot) {
-            writer.writeDot()
-        } else {
-            writer.writeSpace()
-        }
-    }
-    if (indent - 1 >= 0) {
-        writer.writeSpace()
-    }
-    writer.writeDirect(line)
-    return writer
-}
-
 fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {
     val path = mutableListOf<Phase2Node>()
     getChalkTalkAncestryImpl(root, node, path)

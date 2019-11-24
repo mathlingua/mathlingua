@@ -233,8 +233,11 @@ data class Identifier(
 ) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            indentedString(writer, isArg, indent, name + if (isVarArgs) "..." else "")
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeIdentifier(name, isVarArgs)
+        return writer
+    }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -291,8 +294,11 @@ data class Statement(
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            indentedString(writer, isArg, indent, "'$text'")
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeStatement(text, texTalkRoot)
+        return writer
+    }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -352,8 +358,11 @@ data class Text(
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            indentedString(writer, isArg, indent, text)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeText(text.removeSurrounding("\"", "\""))
+        return writer
+    }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }

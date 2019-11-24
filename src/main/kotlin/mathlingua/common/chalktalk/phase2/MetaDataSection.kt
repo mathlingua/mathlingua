@@ -184,8 +184,8 @@ data class ReferenceGroup(
 ) : MetaDataItem() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(referenceSection)
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
-            = referenceSection.toCode(isArg, indent, writer)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            referenceSection.toCode(isArg, indent, writer)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ReferenceGroup(

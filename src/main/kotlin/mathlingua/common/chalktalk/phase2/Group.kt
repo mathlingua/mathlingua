@@ -371,7 +371,7 @@ fun validateConjectureGroup(groupNode: Group) = validateResultLikeGroup(
 fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: Statement?, vararg sections: Phase2Node?): CodeWriter {
     var useAsArg = isArg
     if (id != null) {
-        writer.writeIndent(isArg, indent);
+        writer.writeIndent(isArg, indent)
         writer.writeId(id)
         writer.writeNewline()
         useAsArg = false

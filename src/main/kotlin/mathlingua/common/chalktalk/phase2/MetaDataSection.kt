@@ -39,17 +39,17 @@ data class MetaDataSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Metadata:"))
-        builder.append('\n')
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Metadata")
+        writer.writeNewline()
         for (i in items.indices) {
-            builder.append(items[i].toCode(true, indent + 2))
+            writer.append(items[i], true, indent + 2)
             if (i != items.size - 1) {
-                builder.append('\n')
+                writer.writeNewline()
             }
         }
-        return builder.toString()
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -184,7 +184,8 @@ data class ReferenceGroup(
 ) : MetaDataItem() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(referenceSection)
 
-    override fun toCode(isArg: Boolean, indent: Int) = referenceSection.toCode(isArg, indent)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
+            = referenceSection.toCode(isArg, indent, writer)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ReferenceGroup(
@@ -247,14 +248,14 @@ data class ReferenceSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = sourceItems.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val buffer = StringBuilder()
-        buffer.append(indentedString(isArg, indent, "reference:"))
-        buffer.append('\n')
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("reference")
+        writer.writeNewline()
         for (sourceItem in sourceItems) {
-            buffer.append(sourceItem.toCode(true, indent + 2))
+            writer.append(sourceItem, true, indent + 2)
         }
-        return buffer.toString().trim()
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -357,7 +358,8 @@ data class SourceItemGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(
+            writer,
             isArg,
             indent,
             null,
@@ -460,8 +462,8 @@ data class SourceItemSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            indentedStringSection(isArg, indent, "source", sourceReference)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            indentedStringSection(writer, isArg, indent, "source", sourceReference)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
@@ -475,8 +477,8 @@ data class PageItemSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            indentedStringSection(isArg, indent, "page", page)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            indentedStringSection(writer, isArg, indent, "page", page)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
@@ -490,8 +492,8 @@ data class OffsetItemSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            indentedStringSection(isArg, indent, "offset", offset)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            indentedStringSection(writer, isArg, indent, "offset", offset)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
@@ -505,16 +507,20 @@ data class ContentItemSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            indentedStringSection(isArg, indent, "content", content)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            indentedStringSection(writer, isArg, indent, "content", content)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)
     }
 }
 
-private fun indentedStringSection(isArg: Boolean, indent: Int, sectionName: String, value: String): String {
-    return indentedString(isArg, indent, "$sectionName: $value")
+private fun indentedStringSection(writer: CodeWriter, isArg: Boolean, indent: Int, sectionName: String, value: String): CodeWriter {
+    writer.writeIndent(isArg, indent)
+    writer.writeHeader(sectionName)
+    writer.writeSpace()
+    writer.writeText(value)
+    return writer
 }
 
 private fun <T> validateStringSection(
@@ -572,7 +578,7 @@ class StringSectionGroup(
 ) : MetaDataItem() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(section)
 
-    override fun toCode(isArg: Boolean, indent: Int) = section.toCode(isArg, indent)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = section.toCode(isArg, indent, writer)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(
@@ -592,18 +598,20 @@ class StringSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val buffer = StringBuilder()
-        buffer.append(indentedString(isArg, indent, "$name:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader(name)
         if (values.size == 1) {
-            buffer.append(" ${values[0]}")
+            writer.writeSpace()
+            writer.writeDirect(values[0])
         } else {
             for (value in values) {
-                buffer.append('\n')
-                buffer.append(indentedString(true, indent + 2, value))
+                writer.writeNewline()
+                writer.writeIndent(true, indent + 2)
+                writer.writeDirect(value)
             }
         }
-        return buffer.toString()
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =

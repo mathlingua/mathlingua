@@ -36,17 +36,17 @@ data class SourceSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Source:"))
-        builder.append('\n')
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Source")
+        writer.writeNewline()
         for (i in items.indices) {
-            builder.append(items[i].toCode(true, indent + 2))
+            writer.append(items[i], true, indent + 2)
             if (i != items.size - 1) {
-                builder.append('\n')
+                writer.writeNewline()
             }
         }
-        return builder.toString()
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)

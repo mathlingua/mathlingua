@@ -16,19 +16,22 @@
 
 package mathlingua.common.chalktalk.phase2
 
-fun indentedString(useDot: Boolean, indent: Int, line: String): String {
-    val builder = StringBuilder()
+fun indentedString(writer: CodeWriter, useDot: Boolean, indent: Int, line: String): CodeWriter {
     for (i in 0 until indent - 2) {
-        builder.append(' ')
+        writer.writeSpace()
     }
     if (indent - 2 >= 0) {
-        builder.append(if (useDot) '.' else ' ')
+        if (useDot) {
+            writer.writeDot()
+        } else {
+            writer.writeSpace()
+        }
     }
     if (indent - 1 >= 0) {
-        builder.append(' ')
+        writer.writeSpace()
     }
-    builder.append(line)
-    return builder.toString()
+    writer.writeDirect(line)
+    return writer
 }
 
 fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {

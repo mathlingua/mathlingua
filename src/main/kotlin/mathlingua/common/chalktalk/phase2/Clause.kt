@@ -130,7 +130,7 @@ data class AbstractionNode(
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, abstraction)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, abstraction)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -150,7 +150,7 @@ data class AggregateNode(
 ) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, aggregate)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, aggregate)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -170,7 +170,7 @@ data class TupleNode(
 ) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, tuple)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, tuple)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -190,7 +190,7 @@ data class AssignmentNode(
 ) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, assignment)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, assignment)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -211,7 +211,7 @@ data class MappingNode(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, mapping)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, mapping)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -233,8 +233,8 @@ data class Identifier(
 ) : Target() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            indentedString(isArg, indent, name + if (isVarArgs) "..." else "")
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            indentedString(writer, isArg, indent, name + if (isVarArgs) "..." else "")
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -291,7 +291,8 @@ data class Statement(
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = indentedString(isArg, indent, "'$text'")
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
+            = indentedString(writer, isArg, indent, "'$text'")
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -351,7 +352,8 @@ data class Text(
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = indentedString(isArg, indent, text)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
+            = indentedString(writer, isArg, indent, text)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -396,7 +398,8 @@ data class ExistsGroup(
         fn(suchThatSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, existsSection, suchThatSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, existsSection, suchThatSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ExistsGroup(
         existsSection = existsSection.transform(chalkTransformer) as ExistsSection,
@@ -428,7 +431,8 @@ data class IfGroup(
         fn(thenSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, ifSection, thenSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
+            = toCode(writer, isArg, indent, ifSection, thenSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(IfGroup(
         ifSection = ifSection.transform(chalkTransformer) as IfSection,
@@ -460,7 +464,8 @@ data class IffGroup(
         fn(thenSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent, iffSection, thenSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
+            = toCode(writer, isArg, indent, iffSection, thenSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(IffGroup(
         iffSection = iffSection.transform(chalkTransformer) as IffSection,
@@ -496,8 +501,8 @@ data class ForGroup(
         fn(thenSection)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            toCode(isArg, indent, forSection, whereSection, thenSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, forSection, whereSection, thenSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ForGroup(
         forSection = forSection.transform(chalkTransformer) as ForSection,
@@ -574,7 +579,8 @@ data class NotGroup(
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(notSection)
 
-    override fun toCode(isArg: Boolean, indent: Int) = notSection.toCode(isArg, indent)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
+            = notSection.toCode(isArg, indent, writer)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(NotGroup(
         notSection = notSection.transform(chalkTransformer) as NotSection,
@@ -597,7 +603,8 @@ data class OrGroup(
 ) : Clause() {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(orSection)
 
-    override fun toCode(isArg: Boolean, indent: Int) = orSection.toCode(isArg, indent)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter)
+            = orSection.toCode(isArg, indent, writer)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(OrGroup(
         orSection = orSection.transform(chalkTransformer) as OrSection,
@@ -744,23 +751,21 @@ private fun <Wrapped, Base> validateWrappedNode(
     return ValidationSuccess(build(base, getRow(node), getColumn(node)))
 }
 
-fun toCode(isArg: Boolean, indent: Int, phase1Node: Phase1Node): String {
-    val builder = StringBuilder()
-    builder.append(indentedString(isArg, indent, ""))
-    builder.append(phase1Node.toCode())
-    return builder.toString()
+fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1Node): CodeWriter {
+    writer.writeIndent(isArg, indent)
+    writer.writePhase1Node(phase1Node)
+    return writer
 }
 
-fun toCode(isArg: Boolean, indent: Int, vararg sections: Phase2Node?): String {
-    val builder = StringBuilder()
+fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Phase2Node?): CodeWriter {
     for (i in sections.indices) {
         val sect = sections[i]
         if (sect != null) {
-            builder.append(sect.toCode(isArg && i == 0, indent))
+            writer.append(sect, isArg && i == 0, indent)
             if (i != sections.size - 1) {
-                builder.append('\n')
+                writer.writeNewline()
             }
         }
     }
-    return builder.toString()
+    return writer
 }

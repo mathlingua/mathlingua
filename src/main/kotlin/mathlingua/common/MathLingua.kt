@@ -34,7 +34,7 @@ class MathLingua {
         val (root, errors) = parser.parse(lexer)
         allErrors.addAll(errors)
 
-        if (root == null) {
+        if (root == null || allErrors.isNotEmpty()) {
             return ValidationFailure(allErrors)
         }
 

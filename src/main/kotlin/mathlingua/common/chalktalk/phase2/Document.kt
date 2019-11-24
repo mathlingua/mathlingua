@@ -16,20 +16,29 @@
 
 package mathlingua.common.chalktalk.phase2
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
-import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase1.ast.Root
-import mathlingua.common.chalktalk.phase1.ast.getColumn
-import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.*
+import mathlingua.common.chalktalk.phase1.ast.*
+
+interface CodeWriter {
+    fun append(node: Phase2Node, hasDot: Boolean, indent: Int)
+    fun writeHeader(header: String)
+    fun writeNewline(count: Int = 1)
+    fun writeSpace()
+    fun writeDot()
+    fun writeComma()
+    fun writeIndent(hasDot: Boolean, indent: Int)
+    fun writePhase1Node(phase1Node: Phase1Node)
+    fun writeId(id: Statement)
+    fun writeText(text: String)
+    fun writeDirect(str: String)
+    fun getCode(): String
+}
 
 interface Phase2Node {
     var row: Int
     var column: Int
     fun forEach(fn: (node: Phase2Node) -> Unit)
-    fun toCode(isArg: Boolean, indent: Int): String
+    fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter = TextCodeWriter()): CodeWriter
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
 }
 
@@ -55,45 +64,43 @@ data class Document(
         protoGroups.forEach(fn)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         for (grp in defines) {
-            builder.append(grp.toCode(false, 0))
-            builder.append("\n\n\n")
+            writer.append(grp, false, 0)
+            writer.writeNewline(3)
         }
 
         for (grp in represents) {
-            builder.append(grp.toCode(false, 0))
-            builder.append("\n\n\n")
+            writer.append(grp, false, 0)
+            writer.writeNewline(3)
         }
 
         for (grp in axioms) {
-            builder.append(grp.toCode(false, 0))
-            builder.append("\n\n\n")
+            writer.append(grp, false, 0)
+            writer.writeNewline(3)
         }
 
         for (grp in conjectures) {
-            builder.append(grp.toCode(false, 0))
-            builder.append("\n\n\n")
+            writer.append(grp, false, 0)
+            writer.writeNewline(3)
         }
 
         for (grp in results) {
-            builder.append(grp.toCode(false, 0))
-            builder.append("\n\n\n")
+            writer.append(grp, false, 0)
+            writer.writeNewline(3)
         }
 
         for (grp in protoGroups) {
-            builder.append(grp.toCode(false, 0))
-            builder.append("\n\n\n")
+            writer.append(grp, false, 0)
+            writer.writeNewline(3)
         }
 
         for (src in sources) {
-            builder.append(src.toCode(false, 0))
-            builder.append("\n\n\n")
+            writer.append(src, false, 0)
+            writer.writeNewline(3)
         }
 
-        return builder.toString()
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
@@ -233,3 +240,97 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
 }
 
 fun min(x: Int, y: Int) = if (x < y) x else y
+
+class TextCodeWriter : CodeWriter {
+    private val builder = StringBuilder()
+
+    override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
+        builder.append(node.toCode(hasDot, indent, TextCodeWriter()).getCode())
+    }
+
+    override fun writeHeader(header: String) {
+        builder.append(header)
+        builder.append(':')
+    }
+
+    override fun writeNewline(count: Int) {
+        for (i in 0 until count) {
+            builder.append('\n')
+        }
+    }
+
+    override fun writeSpace() {
+        builder.append(' ')
+    }
+
+    override fun writeDot() {
+        builder.append('.')
+    }
+
+    override fun writeComma() {
+        builder.append(',')
+    }
+
+    override fun writeIndent(hasDot: Boolean, indent: Int) {
+        for (i in 0 until indent - 2) {
+            writeSpace()
+        }
+        if (indent - 2 >= 0) {
+            if (hasDot) {
+                writeDot()
+            } else {
+                writeSpace()
+            }
+        }
+        if (indent - 1 >= 0) {
+            writeSpace()
+        }
+    }
+
+    override fun writePhase1Node(phase1Node: Phase1Node) {
+        builder.append(phase1Node.toCode())
+    }
+
+    override fun writeId(id: Statement) {
+        builder.append('[')
+        val stmt = id.toCode(false, 0, TextCodeWriter()).getCode()
+        builder.append(stmt.removeSurrounding("'", "'"))
+        builder.append(']')
+    }
+
+    override fun writeText(text: String) {
+        builder.append('"')
+        builder.append(text)
+        builder.append('"')
+    }
+
+    override fun writeDirect(str: String) {
+        builder.append(str)
+    }
+
+    override fun getCode() = builder.toString()
+}
+
+fun main(args: Array<String>) {
+    val code = """
+        [a \in b]
+        Defines: f(x)
+        means:
+        . for: x, y, A := ({b}, c)
+          where: "something"
+          then:
+          . 'x + y = z'
+    """.trimIndent()
+    val code2 = """
+        Result: a
+    """.trimIndent()
+    val ml = MathLingua()
+    when (val validation = ml.parse(code)) {
+        is ValidationSuccess -> {
+            val writer = TextCodeWriter()
+            validation.value.toCode(false, 0, writer)
+            println(writer.getCode())
+        }
+        is ValidationFailure -> validation.errors.forEach(::println)
+    }
+}

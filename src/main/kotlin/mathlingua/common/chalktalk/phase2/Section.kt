@@ -29,7 +29,7 @@ private fun canBeOnOneLine(target: Target) =
         target is AggregateNode ||
         target is AssignmentNode
 
-private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, indent: Int) {
+private fun appendTargetArgs(writer: CodeWriter, targets: List<Target>, indent: Int) {
     var i = 0
     while (i < targets.size) {
         val lineItems = mutableListOf<Target>()
@@ -37,14 +37,15 @@ private fun appendTargetArgs(builder: StringBuilder, targets: List<Target>, inde
             lineItems.add(targets[i++])
         }
         if (lineItems.isEmpty()) {
-            builder.append('\n')
-            builder.append(targets[i++].toCode(true, indent))
+            writer.writeNewline()
+            writer.append(targets[i++], true, indent)
         } else {
-            builder.append(' ')
+            writer.writeSpace()
             for (j in lineItems.indices) {
-                builder.append(lineItems[j].toCode(false, 0))
+                writer.append(lineItems[j], false, 0)
                 if (j != lineItems.size - 1) {
-                    builder.append(", ")
+                    writer.writeComma()
+                    writer.writeSpace()
                 }
             }
         }
@@ -58,14 +59,14 @@ data class AssumingSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "assuming:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("assuming")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -90,11 +91,11 @@ data class DefinesSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Defines:"))
-        appendTargetArgs(builder, targets, indent + 2)
-        return builder.toString()
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Defines")
+        appendTargetArgs(writer, targets, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -119,11 +120,11 @@ data class RefinesSection(
     Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Refines:"))
-        appendTargetArgs(builder, targets, indent + 2)
-        return builder.toString()
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Refines")
+        appendTargetArgs(writer, targets, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -146,7 +147,11 @@ data class RepresentsSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
-    override fun toCode(isArg: Boolean, indent: Int) = indentedString(isArg, indent, "Represents:")
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Represents")
+        return writer
+    }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
@@ -198,11 +203,11 @@ data class ExistsSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = identifiers.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "exists:"))
-        appendTargetArgs(builder, identifiers, indent + 2)
-        return builder.toString()
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("exists")
+        appendTargetArgs(writer, identifiers, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -226,11 +231,11 @@ data class ForSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "for:"))
-        appendTargetArgs(builder, targets, indent + 2)
-        return builder.toString()
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("for")
+        appendTargetArgs(writer, targets, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -254,14 +259,14 @@ data class MeansSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(clauses)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "means:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("means")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(MeansSection(
@@ -285,14 +290,14 @@ data class ResultSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Result:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Result")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -317,14 +322,14 @@ data class AxiomSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Axiom:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Axiom")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -349,14 +354,14 @@ data class ConjectureSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Conjecture:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Conjecture")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -381,14 +386,14 @@ data class SuchThatSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "suchThat:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("suchThat")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -413,14 +418,14 @@ data class ThatSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "that:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("that")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -445,14 +450,14 @@ data class IfSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "if:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("if")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -477,14 +482,14 @@ data class IffSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "iff:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("iff")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(IffSection(
@@ -508,14 +513,14 @@ data class ThenSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "then:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("then")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ThenSection(
@@ -539,14 +544,14 @@ data class WhereSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "where:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("where")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -571,14 +576,14 @@ data class NotSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "not:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("not")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -603,14 +608,14 @@ data class OrSection(
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "or:"))
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("or")
         if (clauses.clauses.isNotEmpty()) {
-            builder.append('\n')
+            writer.writeNewline()
         }
-        builder.append(clauses.toCode(true, indent + 2))
-        return builder.toString()
+        writer.append(clauses, true, indent + 2)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -637,11 +642,13 @@ data class TextSection(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "$name:\n"))
-        builder.append(indentedString(true, indent + 2, text))
-        return builder.toString()
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader(name)
+        writer.writeNewline()
+        writer.writeIndent(true, indent + 2)
+        writer.writeDirect(text)
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =

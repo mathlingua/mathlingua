@@ -41,7 +41,7 @@ interface Phase2Node {
     var row: Int
     var column: Int
     fun forEach(fn: (node: Phase2Node) -> Unit)
-    fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter = TextCodeWriter()): CodeWriter
+    fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter = MathLinguaCodeWriter()): CodeWriter
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
 }
 
@@ -244,11 +244,127 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
 
 fun min(x: Int, y: Int) = if (x < y) x else y
 
-class TextCodeWriter : CodeWriter {
+class HtmlCodeWriter : CodeWriter {
     private val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, TextCodeWriter()).getCode())
+        builder.append(node.toCode(hasDot, indent, HtmlCodeWriter()).getCode())
+    }
+
+    override fun writeHeader(header: String) {
+        builder.append("<span class='mathlingua-header'>")
+        builder.append(header)
+        builder.append(':')
+        builder.append("</span>")
+    }
+
+    override fun writeNewline(count: Int) {
+        for (i in 0 until count) {
+            builder.append("<br/>")
+        }
+    }
+
+    override fun writeSpace() {
+        builder.append("<span class='mathlingua-whitespace'></span>")
+    }
+
+    override fun writeDot() {
+        builder.append("<span class='mathlingua-dot'>")
+        builder.append('.')
+        builder.append("</span>")
+    }
+
+    override fun writeComma() {
+        builder.append("<span class='mathlingua-comma'>")
+        builder.append(',')
+        builder.append("</span>")
+    }
+
+    override fun writeIndent(hasDot: Boolean, indent: Int) {
+        for (i in 0 until indent - 2) {
+            writeSpace()
+        }
+        if (indent - 2 >= 0) {
+            if (hasDot) {
+                writeDot()
+            } else {
+                writeSpace()
+            }
+        }
+        if (indent - 1 >= 0) {
+            writeSpace()
+        }
+    }
+
+    override fun writePhase1Node(phase1Node: Phase1Node) {
+        builder.append("<span class='mathlingua-argument'>")
+        builder.append("\\[${phase1Node.toCode()
+                .replace("{", "\\{")
+                .replace("}", "\\}")}\\]")
+        builder.append("</span>")
+    }
+
+    override fun writeId(id: Statement) {
+        builder.append("<span class='mathlingua-id'>")
+        builder.append('[')
+        val stmt = id.toCode(false, 0, MathLinguaCodeWriter()).getCode()
+        builder.append(stmt.removeSurrounding("'", "'"))
+        builder.append(']')
+        builder.append("</span>")
+    }
+
+    override fun writeText(text: String) {
+        builder.append("<span class='mathlingua-text'>")
+        builder.append('"')
+        builder.append(text)
+        builder.append('"')
+        builder.append("</span>")
+    }
+
+    override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
+        builder.append("<span class='mathlingua-statement'>")
+        val IS = "is"
+        if (stmtText.contains(IS)) {
+            val index = stmtText.indexOf(IS)
+            builder.append("\\[${stmtText.substring(0, index)}\\]")
+            writeSpace()
+            writeDirect("is")
+            writeSpace()
+            writeDirect(stmtText.substring(index + IS.length).trim())
+        } else {
+            builder.append("\\[$stmtText\\]")
+        }
+        builder.append("</span>")
+    }
+
+    override fun writeIdentifier(name: String, isVarArgs: Boolean) {
+        builder.append("<span class='mathlingua-identifier'>\\[")
+        builder.append(name)
+        if (isVarArgs) {
+            builder.append("...")
+        }
+        builder.append("\\]</span>")
+    }
+
+    override fun writeDirect(text: String) {
+        builder.append("<span>")
+        builder.append(text)
+        builder.append("</span>")
+    }
+
+    override fun getCode(): String {
+        val text = builder.toString()
+                .replace(Regex("(\\s*<\\s*br\\s*/\\s*>\\s*)+$"), "")
+                .replace(Regex("^(\\s*<\\s*br\\s*/\\s*>\\s*)+$"), "")
+        return "<span class='mathlingua'>$text</span>"
+    }
+}
+
+class MathLinguaCodeWriter : CodeWriter {
+    private val builder = StringBuilder()
+
+    override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
+        builder.append(node.toCode(hasDot, indent, MathLinguaCodeWriter()).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -296,7 +412,7 @@ class TextCodeWriter : CodeWriter {
 
     override fun writeId(id: Statement) {
         builder.append('[')
-        val stmt = id.toCode(false, 0, TextCodeWriter()).getCode()
+        val stmt = id.toCode(false, 0, MathLinguaCodeWriter()).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
     }
@@ -323,32 +439,4 @@ class TextCodeWriter : CodeWriter {
     }
 
     override fun getCode() = builder.toString()
-}
-
-fun main(args: Array<String>) {
-    val code1 = """
-        [a \in b]
-        Defines: f(x)
-        means:
-        . for: x, y, A := ({b}, c)
-          where: "something"
-          then:
-          . 'x + y = z'
-    """.trimIndent()
-    val code2 = """
-        Result: a
-    """.trimIndent()
-    val code3 = """
-        ProtoResult:
-        . "This is some text"
-    """.trimIndent()
-    val ml = MathLingua()
-    when (val validation = ml.parse(code1)) {
-        is ValidationSuccess -> {
-            val writer = TextCodeWriter()
-            validation.value.toCode(false, 0, writer)
-            println(writer.getCode())
-        }
-        is ValidationFailure -> validation.errors.forEach(::println)
-    }
 }

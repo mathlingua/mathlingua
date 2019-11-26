@@ -25,15 +25,14 @@ data class ClauseListNode(
         clauses.forEach(fn)
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         for (i in clauses.indices) {
-            builder.append(clauses[i].toCode(true, indent))
+            writer.append(clauses[i], true, indent)
             if (i != clauses.size - 1) {
-                builder.append('\n')
+                writer.writeNewline()
             }
         }
-        return builder.toString()
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {

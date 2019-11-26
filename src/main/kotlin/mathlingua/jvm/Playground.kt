@@ -145,7 +145,7 @@ object Playground {
 
                 val newDoc = expandAtNode(doc, nearestNode, doc.defines, doc.represents)
 
-                outputArea.text = newDoc.toCode(false, 0)
+                outputArea.text = newDoc.toCode(false, 0).getCode()
                 outputTree.model = DefaultTreeModel(toTreeNode(newDoc))
             }
         }
@@ -265,7 +265,7 @@ object Playground {
                             transformed = fullExpandComplete(doc)
                         }
 
-                        outputArea.text = transformed.toCode(false, 0)
+                        outputArea.text = transformed.toCode(false, 0).getCode()
                         outputTree.model = DefaultTreeModel(toTreeNode(transformed))
                         val numRows = phase2Tree.rowCount
                         if (numRows > 0) {
@@ -377,7 +377,7 @@ object Playground {
 data class Phase2Value(val value: Phase2Node, val showCode: Boolean) {
     override fun toString(): String {
         return if (showCode) {
-            value.toCode(false, 0) + " (${value.row}, ${value.column})"
+            value.toCode(false, 0).getCode() + " (${value.row}, ${value.column})"
         } else {
             value.javaClass.simpleName +
                     " (${value.row}, ${value.column})"

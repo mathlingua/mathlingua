@@ -622,12 +622,12 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     val snapshots = mutableSetOf<String>()
 
     var transformed = doc
-    var previousCode = transformed.toCode(false, 0)
+    var previousCode = transformed.toCode(false, 0).getCode()
     snapshots.add(previousCode)
 
     for (i in 0 until maxSteps) {
         transformed = fullExpandOnce(transformed)
-        val code = transformed.toCode(false, 0)
+        val code = transformed.toCode(false, 0).getCode()
         if (snapshots.contains(code) || previousCode == code) {
             break
         }

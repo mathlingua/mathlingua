@@ -32,17 +32,17 @@ data class AliasSection(
     Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = mappings.forEach(fn)
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
-        val builder = StringBuilder()
-        builder.append(indentedString(isArg, indent, "Alias:"))
-        builder.append('\n')
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeHeader("Alias")
+        writer.writeNewline()
         for (i in mappings.indices) {
-            builder.append(mappings[i].toCode(true, indent + 2))
+            writer.append(mappings[i], true, indent + 2)
             if (i != mappings.size - 1) {
-                builder.append('\n')
+                writer.writeNewline()
             }
         }
-        return builder.toString()
+        return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(AliasSection(

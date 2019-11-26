@@ -45,7 +45,7 @@ data class SourceGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) = toCode(isArg, indent,
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent,
         Statement(
                 id,
                 ValidationFailure(emptyList()),
@@ -160,11 +160,12 @@ data class DefinesGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(definesSection, assumingSection)
         sections.addAll(meansSections)
         sections.add(metaDataSection)
         return toCode(
+                writer,
                 isArg,
                 indent,
                 id,
@@ -220,11 +221,12 @@ data class RepresentsGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int): String {
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(representsSection, assumingSection)
         sections.addAll(thatSections)
         sections.add(metaDataSection)
         return toCode(
+                writer,
                 isArg,
                 indent,
                 id,
@@ -271,8 +273,8 @@ data class ResultGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            toCode(isArg, indent, null, resultSection, metaDataSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, null, resultSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ResultGroup(
         resultSection = resultSection.transform(chalkTransformer) as ResultSection,
@@ -307,8 +309,8 @@ data class AxiomGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            toCode(isArg, indent, null, axiomSection, metaDataSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, null, axiomSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(AxiomGroup(
@@ -344,8 +346,8 @@ data class ConjectureGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            toCode(isArg, indent, null, conjectureSection, metaDataSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, null, conjectureSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(ConjectureGroup(
@@ -366,26 +368,27 @@ fun validateConjectureGroup(groupNode: Group) = validateResultLikeGroup(
     ::ConjectureGroup
 )
 
-fun toCode(isArg: Boolean, indent: Int, id: Statement?, vararg sections: Phase2Node?): String {
-    val builder = StringBuilder()
+fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: Statement?, vararg sections: Phase2Node?): CodeWriter {
     var useAsArg = isArg
     if (id != null) {
-        builder.append(indentedString(isArg, indent, "[${id.text}]\n"))
+        writer.writeIndent(isArg, indent)
+        writer.writeId(id)
+        writer.writeNewline()
         useAsArg = false
     }
 
     for (i in 0 until sections.size) {
         val sect = sections[i]
         if (sect != null) {
-            builder.append(sect.toCode(useAsArg, indent))
+            writer.append(sect, useAsArg, indent)
             useAsArg = false
             if (i != sections.size - 1) {
-                builder.append('\n')
+                writer.writeNewline()
             }
         }
     }
 
-    return builder.toString()
+    return writer
 }
 
 class ProtoGroup(
@@ -401,8 +404,8 @@ class ProtoGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int) =
-            toCode(isArg, indent, null, textSection, metaDataSection)
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, null, textSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ProtoGroup(

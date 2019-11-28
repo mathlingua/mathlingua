@@ -21,6 +21,7 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.transform.expandAtNode
 import mathlingua.common.transform.fullExpandComplete
+import mathlingua.common.transform.getSignature
 import mathlingua.common.transform.locateAllSignatures
 
 class MathLingua {
@@ -46,6 +47,8 @@ class MathLingua {
             }
         }
     }
+
+    fun signatureOf(group: TopLevelGroup) = getSignature(group)
 
     fun findAllSignatures(node: Phase2Node) = locateAllSignatures(node).toList().toTypedArray()
 

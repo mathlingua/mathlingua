@@ -18,8 +18,7 @@ package mathlingua.common.transform
 
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.Phase2Node
-import mathlingua.common.chalktalk.phase2.Statement
+import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionTexTalkNode
@@ -31,6 +30,14 @@ import mathlingua.common.textalk.SubSupTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
+
+fun getSignature(group: TopLevelGroup): String? {
+    return when (group) {
+        is DefinesGroup -> getSignature(group.id)
+        is RepresentsGroup -> getSignature(group.id)
+        else -> null
+    }
+}
 
 fun getSignature(stmt: Statement): String? {
     val sigs = findAllStatementSignatures(stmt)

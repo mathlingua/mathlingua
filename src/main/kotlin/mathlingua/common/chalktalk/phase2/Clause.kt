@@ -286,6 +286,30 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
     )
 }
 
+data class IdStatement(
+    val text: String,
+    val texTalkRoot: Validation<ExpressionTexTalkNode>,
+    override var row: Int,
+    override var column: Int
+) : Clause() {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeStatement(text, texTalkRoot)
+        return writer
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+
+    fun toStatement() = Statement(
+            text = text,
+            texTalkRoot = texTalkRoot,
+            row = row,
+            column = column
+    )
+}
+
 data class Statement(
     val text: String,
     val texTalkRoot: Validation<ExpressionTexTalkNode>,
@@ -304,6 +328,17 @@ data class Statement(
 }
 
 fun isStatement(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Statement
+
+fun validateIdStatement(rawNode: Phase1Node): Validation<IdStatement> =
+when (val validation = validateStatement(rawNode)) {
+    is ValidationSuccess -> ValidationSuccess(IdStatement(
+            text = validation.value.text,
+            texTalkRoot = validation.value.texTalkRoot,
+            row = validation.value.row,
+            column = validation.value.column
+    ))
+    is ValidationFailure -> ValidationFailure(validation.errors)
+}
 
 fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
     val node = rawNode.resolve()

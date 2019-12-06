@@ -138,7 +138,7 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
 
 data class DefinesGroup(
     val signature: String?,
-    val id: Statement,
+    val id: IdStatement,
     val definesSection: DefinesSection,
     val assumingSection: AssumingSection?,
     val meansSections: List<MeansSection>,
@@ -175,7 +175,7 @@ data class DefinesGroup(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(DefinesGroup(
         signature = signature,
-        id = id.transform(chalkTransformer) as Statement,
+        id = id.transform(chalkTransformer) as IdStatement,
         definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
         assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
         meansSections = meansSections.map { chalkTransformer(it) as MeansSection },
@@ -199,7 +199,7 @@ fun validateDefinesGroup(groupNode: Group) = validateDefinesLikeGroup(
 
 data class RepresentsGroup(
     val signature: String?,
-    val id: Statement,
+    val id: IdStatement,
     val representsSection: RepresentsSection,
     val assumingSection: AssumingSection?,
     val thatSections: List<ThatSection>,
@@ -236,7 +236,7 @@ data class RepresentsGroup(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(RepresentsGroup(
         signature = signature,
-        id = id.transform(chalkTransformer) as Statement,
+        id = id.transform(chalkTransformer) as IdStatement,
         representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
         assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
         thatSections = thatSections.map { chalkTransformer(it) as ThatSection } as List<ThatSection>,
@@ -368,7 +368,7 @@ fun validateConjectureGroup(groupNode: Group) = validateResultLikeGroup(
     ::ConjectureGroup
 )
 
-fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: Statement?, vararg sections: Phase2Node?): CodeWriter {
+fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?): CodeWriter {
     var useAsArg = isArg
     if (id != null) {
         writer.writeIndent(isArg, indent)
@@ -560,7 +560,7 @@ fun <G, S, E> validateDefinesLikeGroup(
     validateEndSection: (section: Section) -> Validation<E>,
     buildGroup: (
         signature: String?,
-        id: Statement,
+        id: IdStatement,
         definesLike: S,
         assuming: AssumingSection?,
         end: List<E>,
@@ -572,7 +572,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
-    var id: Statement? = null
+    var id: IdStatement? = null
     if (group.id != null) {
         val (rawText, _, row, column) = group.id
         // The id token is of type Id and the text is of the form "[...]"
@@ -582,7 +582,7 @@ fun <G, S, E> validateDefinesLikeGroup(
             statementText, ChalkTalkTokenType.Statement,
             row, column
         )
-        when (val idValidation = validateStatement(stmtToken)) {
+        when (val idValidation = validateIdStatement(stmtToken)) {
             is ValidationSuccess -> id = idValidation.value
             is ValidationFailure -> errors.addAll(idValidation.errors)
         }
@@ -656,7 +656,7 @@ fun <G, S, E> validateDefinesLikeGroup(
         ValidationFailure(errors)
     } else ValidationSuccess(
             buildGroup(
-                getSignature(id!!),
+                getSignature(id!!.toStatement()),
                 id, definesLikeSection!!,
                 assumingSection, endSections,
                 aliasSection, metaDataSection,

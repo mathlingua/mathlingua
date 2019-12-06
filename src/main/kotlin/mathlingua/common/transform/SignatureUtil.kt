@@ -39,6 +39,8 @@ fun getSignature(group: TopLevelGroup): String? {
     }
 }
 
+fun getSignature(id: IdStatement) = getSignature(id.toStatement())
+
 fun getSignature(stmt: Statement): String? {
     val sigs = findAllStatementSignatures(stmt)
     return if (sigs.size == 1) {

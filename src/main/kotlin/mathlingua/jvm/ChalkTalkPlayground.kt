@@ -40,7 +40,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 
-object Playground {
+object ChalkTalkPlayground {
 
     @JvmStatic
     fun main(args: Array<String>) {

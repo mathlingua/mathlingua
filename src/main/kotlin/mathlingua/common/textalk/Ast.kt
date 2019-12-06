@@ -36,7 +36,7 @@ enum class TexTalkNodeType {
 
 interface TexTalkNode {
     val type: TexTalkNodeType
-    fun toCode(): String
+    fun toCode(interceptor: (node: TexTalkNode) -> String? = { null }): String
     fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit)
     fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode
 }
@@ -49,11 +49,16 @@ data class IsTexTalkNode(
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Is
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val builder = StringBuilder()
-        builder.append(lhs.toCode())
+        builder.append(lhs.toCode(interceptor))
         builder.append(" is ")
-        builder.append(rhs.toCode())
+        builder.append(rhs.toCode(interceptor))
         return builder.toString()
     }
 
@@ -74,11 +79,16 @@ data class ColonEqualsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: Param
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.ColonEquals
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val builder = StringBuilder()
-        builder.append(lhs.toCode())
+        builder.append(lhs.toCode(interceptor))
         builder.append(" := ")
-        builder.append(rhs.toCode())
+        builder.append(rhs.toCode(interceptor))
         return builder.toString()
     }
 
@@ -105,28 +115,33 @@ data class CommandPart(
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.CommandPart
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val buffer = StringBuilder()
 
-        buffer.append(name.toCode())
+        buffer.append(name.toCode(interceptor))
 
         if (square != null) {
-            buffer.append(square.toCode())
+            buffer.append(square.toCode(interceptor))
         }
 
         if (subSup != null) {
-            buffer.append(subSup.toCode())
+            buffer.append(subSup.toCode(interceptor))
         }
 
         for (grp in groups) {
-            buffer.append(grp.toCode())
+            buffer.append(grp.toCode(interceptor))
         }
 
         if (namedGroups.isNotEmpty()) {
             buffer.append(":")
         }
         for (namedGrp in namedGroups) {
-            buffer.append(namedGrp.toCode())
+            buffer.append(namedGrp.toCode(interceptor))
         }
         return buffer.toString()
     }
@@ -161,13 +176,18 @@ data class Command(val parts: List<CommandPart>) : TexTalkNode {
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Command
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val builder = StringBuilder("\\")
         for (i in 0 until parts.size) {
             if (i > 0) {
                 builder.append('.')
             }
-            builder.append(parts[i].toCode())
+            builder.append(parts[i].toCode(interceptor))
         }
         return builder.toString()
     }
@@ -187,12 +207,12 @@ data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Expression
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
         val builder = StringBuilder()
         val children = children
         for (i in children.indices) {
             val child = children[i]
-            builder.append(child.toCode())
+            builder.append(child.toCode(interceptor))
             if (i != children.size - 1) {
                 builder.append(" ")
             }
@@ -215,16 +235,21 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Parameters
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val buffer = StringBuilder()
 
         if (items.isNotEmpty()) {
-            buffer.append(items[0].toCode())
+            buffer.append(items[0].toCode(interceptor))
         }
 
         for (i in 1 until items.size) {
             buffer.append(", ")
-            buffer.append(items[i].toCode())
+            buffer.append(items[i].toCode(interceptor))
         }
 
         return buffer.toString()
@@ -246,7 +271,12 @@ data class GroupTexTalkNode(
     val isVarArg: Boolean
 ) : TexTalkNode {
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val prefix: String
         val suffix: String
 
@@ -267,7 +297,7 @@ data class GroupTexTalkNode(
         }
 
         val buffer = StringBuilder(prefix)
-        buffer.append(parameters.toCode())
+        buffer.append(parameters.toCode(interceptor))
         buffer.append(suffix)
         if (isVarArg) {
             buffer.append("...")
@@ -295,10 +325,15 @@ data class NamedGroupTexTalkNode(
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.NamedGroup
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val buffer = StringBuilder()
-        buffer.append(name.toCode())
-        buffer.append(group.toCode())
+        buffer.append(name.toCode(interceptor))
+        buffer.append(group.toCode(interceptor))
         return buffer.toString()
     }
 
@@ -322,16 +357,21 @@ data class SubSupTexTalkNode(
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.SubSup
 
-    override fun toCode(): String {
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val builder = StringBuilder()
         if (sub != null) {
             builder.append("_")
-            builder.append(sub.toCode())
+            builder.append(sub.toCode(interceptor))
         }
 
         if (sup != null) {
             builder.append("^")
-            builder.append(sup.toCode())
+            builder.append(sup.toCode(interceptor))
         }
         return builder.toString()
     }
@@ -359,7 +399,14 @@ data class TextTexTalkNode(
     val isVarArg: Boolean
 ) : TexTalkNode {
 
-    override fun toCode() = text + if (isVarArg) { "..." } else { "" }
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        return text + if (isVarArg) { "..." } else { "" }
+    }
 
     override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {}
 
@@ -377,7 +424,14 @@ data class TexTalkToken(
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Token
 
-    override fun toCode() = text
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        return text
+    }
 
     override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {}
 

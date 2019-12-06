@@ -29,11 +29,12 @@ interface CodeWriter {
     fun writeComma()
     fun writeIndent(hasDot: Boolean, indent: Int)
     fun writePhase1Node(phase1Node: Phase1Node)
-    fun writeId(id: Statement)
+    fun writeId(id: IdStatement)
     fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>)
     fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
     fun writeDirect(text: String)
+    fun newCodeWriter(): CodeWriter
     fun getCode(): String
 }
 
@@ -244,11 +245,11 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
 
 fun min(x: Int, y: Int) = if (x < y) x else y
 
-class HtmlCodeWriter : CodeWriter {
-    private val builder = StringBuilder()
+open class HtmlCodeWriter : CodeWriter {
+    protected val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, HtmlCodeWriter()).getCode())
+        builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -304,7 +305,7 @@ class HtmlCodeWriter : CodeWriter {
         builder.append("</span>")
     }
 
-    override fun writeId(id: Statement) {
+    override fun writeId(id: IdStatement) {
         builder.append("<span class='mathlingua-id'>")
         builder.append('[')
         val stmt = id.toCode(false, 0, MathLinguaCodeWriter()).getCode()
@@ -352,6 +353,8 @@ class HtmlCodeWriter : CodeWriter {
         builder.append("</span>")
     }
 
+    override fun newCodeWriter() = HtmlCodeWriter()
+
     override fun getCode(): String {
         val text = builder.toString()
                 .replace(Regex("(\\s*<\\s*br\\s*/\\s*>\\s*)+$"), "")
@@ -364,7 +367,7 @@ class MathLinguaCodeWriter : CodeWriter {
     private val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, MathLinguaCodeWriter()).getCode())
+        builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -410,9 +413,9 @@ class MathLinguaCodeWriter : CodeWriter {
         builder.append(phase1Node.toCode())
     }
 
-    override fun writeId(id: Statement) {
+    override fun writeId(id: IdStatement) {
         builder.append('[')
-        val stmt = id.toCode(false, 0, MathLinguaCodeWriter()).getCode()
+        val stmt = id.toCode(false, 0, newCodeWriter()).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
     }
@@ -437,6 +440,8 @@ class MathLinguaCodeWriter : CodeWriter {
     override fun writeDirect(text: String) {
         builder.append(text)
     }
+
+    override fun newCodeWriter() = MathLinguaCodeWriter()
 
     override fun getCode() = builder.toString()
 }

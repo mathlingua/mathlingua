@@ -348,9 +348,7 @@ open class HtmlCodeWriter : CodeWriter {
     }
 
     override fun writeDirect(text: String) {
-        builder.append("<span>")
         builder.append(text)
-        builder.append("</span>")
     }
 
     override fun newCodeWriter() = HtmlCodeWriter()

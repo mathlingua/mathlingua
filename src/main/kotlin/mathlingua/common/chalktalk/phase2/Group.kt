@@ -46,7 +46,7 @@ data class SourceGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent,
-        Statement(
+        IdStatement(
                 id,
                 ValidationFailure(emptyList()),
                 row,
@@ -377,14 +377,13 @@ fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, va
         useAsArg = false
     }
 
-    for (i in 0 until sections.size) {
-        val sect = sections[i]
-        if (sect != null) {
-            writer.append(sect, useAsArg, indent)
-            useAsArg = false
-            if (i != sections.size - 1) {
-                writer.writeNewline()
-            }
+    val nonNullSections = sections.filterNotNull()
+    for (i in nonNullSections.indices) {
+        val sect = nonNullSections[i]
+        writer.append(sect, useAsArg, indent)
+        useAsArg = false
+        if (i != nonNullSections.size - 1) {
+            writer.writeNewline()
         }
     }
 

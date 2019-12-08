@@ -42,12 +42,9 @@ data class MetaDataSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("Metadata")
-        writer.writeNewline()
         for (i in items.indices) {
+            writer.writeNewline()
             writer.append(items[i], true, indent + 2)
-            if (i != items.size - 1) {
-                writer.writeNewline()
-            }
         }
         return writer
     }
@@ -251,8 +248,8 @@ data class ReferenceSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("reference")
-        writer.writeNewline()
         for (sourceItem in sourceItems) {
+            writer.writeNewline()
             writer.append(sourceItem, true, indent + 2)
         }
         return writer
@@ -519,7 +516,7 @@ private fun indentedStringSection(writer: CodeWriter, isArg: Boolean, indent: In
     writer.writeIndent(isArg, indent)
     writer.writeHeader(sectionName)
     writer.writeSpace()
-    writer.writeText(value)
+    writer.writeText(value.removeSurrounding("\"", "\""))
     return writer
 }
 

@@ -34,6 +34,7 @@ assuming: 'X is \set'
 that:
 . "$%a$ is an element of $%X$"
 Metadata:
+. written: "a& \in X&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -48,6 +49,7 @@ that:
   where: 'a \in A'
   then: 'a \in B'
 Metadata:
+. written: "A& \subset B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -57,6 +59,8 @@ Metadata:
 [x \neq y]
 Represents:
 that: 'x != y'
+Metadata:
+. written: "x& \neq y&"
 
 
 [A \proper.subset B]
@@ -66,6 +70,7 @@ that:
 . 'A \subset B'
 . 'A \neq B'
 Metadata:
+. written: "A& \subsetneq B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -80,6 +85,7 @@ means:
   . exists: x
     suchThat: 'x \in E'
 Metadata:
+. written: "\emptyset"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -95,6 +101,7 @@ means:
   . 'c \in A'
   . 'c \in B'
 Metadata:
+. written: "A& \cup B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -109,6 +116,7 @@ means:
 . 'c \in A'
 . 'c \in B'
 Metadata:
+. written: "A& \cap B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -132,6 +140,8 @@ assuming: 'X is \set'
 that:
 . not:
   . 'x \in X'
+Metadata:
+. written: "x& \notin X&"
 
 
 
@@ -142,6 +152,7 @@ means:
 . 'x \in U'
 . 'x \notin A'
 Metadata:
+. written: "A&^{C}"
 . reference:
   . source: "@AATA"
     page: "5"
@@ -155,6 +166,7 @@ means:
 . 'c \in A'
 . 'c \notin B'
 Metadata:
+. written: "A& \setminus B&"
 . reference:
   . source: "@AATA"
     page: "5"
@@ -168,6 +180,7 @@ means:
 . 'x \in A'
 . 'y \in B'
 Metadata:
+. written: "A& \cross B&"
 . reference:
   . source: "@AATA"
     page: "6"
@@ -259,6 +272,7 @@ means:
 . 'h is \function:on{A}to{C}'
 . 'h(x) = g(f(x))'
 Metadata:
+. written: "g& \circ f&"
 . reference:
   . source: "@AATA"
     page: "8"
@@ -284,6 +298,7 @@ means:
 . for: x
   then: 'f(x) = x'
 Metadata:
+. written: "\textrm{Id}"
 . reference:
   . source: "@AATA"
     page: "10"
@@ -300,6 +315,7 @@ means:
 . 'g is \function:on{B}to{A}'
 . '(g \of f) = \identity.function:on{A}'
 Metadata:
+. written: "f&^{-1}"
 . reference:
   . source: "@AATA"
     page: "10"
@@ -339,6 +355,8 @@ Metadata:
 [\integer]
 Defines: n
 means: "$%n$ is a whole number"
+Metadata:
+. written: "\mathbb{Z}"
 
 
 [\positive.integer]
@@ -346,6 +364,8 @@ Defines: n
 means:
 . 'n is \integer'
 . 'n > 0'
+Metadata:
+. written: "\mathbb{Z}^+"
 
 
 [\nonzero]
@@ -744,6 +764,7 @@ means:
   where: 'Rb is \real.field'
   then: 'R := X'
 Metadata:
+. written: "\mathbb{R}"
 . reference:
   . source: "@TrenchRealAnalysis"
     page: "2"

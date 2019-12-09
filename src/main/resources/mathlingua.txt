@@ -1005,3 +1005,17 @@ Metadata:
               $$ or bounded if there is a real number $r$ such that $$
               |s_n|\le r . $$"
 
+[\function:on{A}to{B}]
+Defines: f(x)
+assuming:
+. 'A, B is \set'
+means:
+. for: a
+  where: 'a \in A'
+  then:
+  . exists: b
+    suchThat:
+    . 'b is \unique'
+    . 'f(a) = b'
+Metadata:
+. written: "f& : A& \rightarrow B&"

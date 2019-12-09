@@ -20,7 +20,7 @@ Source:
 [\set]
 Defines: X
 means:
-. "$%X$ is well defined collection of objects"
+. "$X&$ is well defined collection of objects"
 Metadata:
 . reference:
   . source: "@AATA"
@@ -32,7 +32,7 @@ Metadata:
 Represents:
 assuming: 'X is \set'
 that:
-. "$%a$ is an element of $%X$"
+. "$a&$ is an element of $X&$"
 Metadata:
 . written: "a& \in X&"
 . reference:
@@ -180,7 +180,7 @@ means:
 . 'x \in A'
 . 'y \in B'
 Metadata:
-. written: "A& \cross B&"
+. written: "A& \times B&"
 . reference:
   . source: "@AATA"
     page: "6"
@@ -252,7 +252,7 @@ Metadata:
 [\bijective \function]
 Defines: f
 means:
-. 'f \is \injective \surjective \function'
+. 'f is \injective \surjective \function'
 Metadata:
 . reference:
   . source: "@AATA"
@@ -326,7 +326,7 @@ Metadata:
 Defines: R := {a, b}
 assuming: 'X is \set'
 means:
-. 'R \subset (X \cross X)'
+. 'R \subset (X \set.cartesian.product X)'
 . for: x
   where: 'x \in X'
   then: '(x, x) \in R'
@@ -354,7 +354,7 @@ Metadata:
 
 [\integer]
 Defines: n
-means: "$%n$ is a whole number"
+means: "$n&$ is a whole number"
 Metadata:
 . written: "\mathbb{Z}"
 
@@ -378,7 +378,7 @@ means: 'x \neq 0'
 Defines: *
 assuming: 'G is \set'
 means:
-. '* is \function:on{G \cross G}to{G}'
+. '* is \function:on{G \set.cartesian.product G}to{G}'
 Alias:
 . cross = "set.cartesian.product"
 Metadata:
@@ -436,7 +436,7 @@ assuming:
 . 'F is \set'
 . 'm, n is \positive \integer'
 means:
-. "an $%m$ by $%n$ grid of elements from the set $%F$"
+. "an $m&$ by $n&$ grid of elements from the set $F&$"
 
 
 [\identity \matrix{n}]
@@ -494,7 +494,7 @@ Metadata:
 Defines: X
 means:
 . 'X is \set'
-. "$%X$ has a finite number of elements"
+. "$X&$ has a finite number of elements"
 Metadata:
 . reference:
   . source: "@AATA"
@@ -518,14 +518,14 @@ Metadata:
 [\set.cardinality:of{X}]
 Defines: n
 assuming: 'X is \set'
-means: "$%n$ is the number of elements in $%X$"
+means: "$n&$ is the number of elements in $X&$"
 
 
 [\finite \group]
 Defines: G := (X, *, e)
 means:
 . 'G is \group'
-. 'X \is \finite \set'
+. 'X is \finite \set'
 Metadata:
 . reference:
   . source: "@AATA"
@@ -537,7 +537,7 @@ Metadata:
 Defines: G := (X, *, e)
 means:
 . 'G is \group'
-. 'X \is \infinite \set'
+. 'X is \infinite \set'
 Metadata:
 . reference:
   . source: "@AATA"

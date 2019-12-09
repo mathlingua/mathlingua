@@ -85,7 +85,7 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
             var newText = node.text
             val keysLongToShort = map.keys.toList().sortedBy { it.length }.reversed()
             for (key in keysLongToShort) {
-                newText = newText.replace("%$key", map[key]!!)
+                newText = newText.replace("$key&", map[key]!!)
             }
             return Text(
                 text = newText,

@@ -317,7 +317,7 @@ open class HtmlCodeWriter : CodeWriter {
     override fun writeText(text: String) {
         builder.append("<span class='mathlingua-text'>")
         builder.append('"')
-        builder.append(text)
+        builder.append(text.replace("&", ""))
         builder.append('"')
         builder.append("</span>")
     }

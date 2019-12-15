@@ -19,10 +19,8 @@ package mathlingua.common
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.*
-import mathlingua.common.transform.expandAtNode
-import mathlingua.common.transform.fullExpandComplete
-import mathlingua.common.transform.getSignature
-import mathlingua.common.transform.locateAllSignatures
+import mathlingua.common.textalk.Command
+import mathlingua.common.transform.*
 
 class MathLingua {
     fun parse(input: String): Validation<Document> {
@@ -49,6 +47,9 @@ class MathLingua {
     }
 
     fun signatureOf(group: TopLevelGroup) = getSignature(group)
+    fun signatureOf(command: Command) = getCommandSignature(command).toCode()
+
+    fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList().toTypedArray()
 
     fun findAllSignatures(node: Phase2Node) = locateAllSignatures(node).toList().toTypedArray()
 

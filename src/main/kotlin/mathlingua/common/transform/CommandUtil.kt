@@ -30,6 +30,29 @@ import mathlingua.common.textalk.TextTexTalkNode
 
 data class RootTarget<R, T>(val root: R, val target: T)
 
+fun locateAllCommands(phase2Node: Phase2Node): List<Command> {
+    var root = phase2Node
+    root = separateIsStatements(root, root).root
+    root = separateInfixOperatorStatements(root, root).root
+    root = glueCommands(root, root).root
+
+    val commands = mutableListOf<Command>()
+    findCommandsImpl(root, commands)
+    return commands
+}
+
+private fun findCommandsImpl(phase2Node: Phase2Node, commands: MutableList<Command>) {
+    phase2Node.forEach {
+        if (it is Statement) {
+            if (it.texTalkRoot is ValidationSuccess) {
+                findCommandsImpl(it.texTalkRoot.value, commands)
+            }
+        } else {
+            findCommandsImpl(it, commands)
+        }
+    }
+}
+
 fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     val commands = mutableListOf<Command>()
     findCommandsImpl(texTalkNode, commands)

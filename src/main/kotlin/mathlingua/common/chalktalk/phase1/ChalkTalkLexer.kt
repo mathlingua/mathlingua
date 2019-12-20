@@ -84,6 +84,10 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 this.chalkTalkTokens!!.add(
                     Phase1Token("=", ChalkTalkTokenType.Equals, line, column)
                 )
+            } else if (c == '_') {
+                this.chalkTalkTokens!!.add(
+                        Phase1Token("_", ChalkTalkTokenType.Underscore, line, column)
+                )
             } else if (c == '(') {
                 this.chalkTalkTokens!!.add(
                     Phase1Token("(", ChalkTalkTokenType.LParen, line, column)

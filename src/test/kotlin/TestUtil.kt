@@ -18,12 +18,22 @@ package mathlingua
 
 import java.io.File
 
-data class TestCase(val name: String, val input: String, val expectedOutput: String)
+data class TestCase(
+    val name: String,
+    val input: String,
+    val phase1Output: String,
+    val phase2Output: String
+)
 
 const val TEST_NAME_PREFIX = "-- Test:"
-const val INPUT_PREFIX = "-- Input:"
-const val OUTPUT_PREFIX = "-- Output:"
-const val END_PREFIX = "-- End;"
+const val INPUT_START = "-- Input:"
+const val INPUT_END = "-- EndInput:"
+const val OUTPUT_START = "-- Output:"
+const val OUTPUT_END = "-- EndOutput:"
+const val OUTPUT_PHASE1_START = "-- Output(Phase1):"
+const val OUTPUT_PHASE1_END = "-- EndOutput(Phase1):"
+const val OUTPUT_PHASE2_START = "-- Output(Phase2):"
+const val OUTPUT_PHASE2_END = "-- EndOutput(Phase2):"
 
 fun loadTestCases(file: File): List<TestCase> {
     // This function is only used in tests, and thus
@@ -40,40 +50,55 @@ fun loadTestCases(file: File): List<TestCase> {
             i++
         }
 
+        fun readSection(start: String, end: String): String? {
+            if (i >= lines.size || lines[i] != start) {
+                return null
+            }
+
+            expectPrefix(start, lines[i], i + 1)
+            i++ // move past the start line
+
+            val buffer = StringBuilder()
+            while (i < lines.size && lines[i] != end) {
+                buffer.append(lines[i++])
+                buffer.append('\n')
+            }
+            expectPrefix(end, lines[i], i + 1)
+            i++ // move past the end line
+
+            return buffer.toString()
+        }
+
         val testNameLine = lines[i]
         expectPrefix(TEST_NAME_PREFIX, testNameLine, i + 1)
         val testName = trimPrefix(TEST_NAME_PREFIX, testNameLine)
         i++
 
-        val inputLine = lines[i]
-        expectPrefix(INPUT_PREFIX, inputLine, i + 1)
-        i++
+        val input = readSection(INPUT_START, INPUT_END)
+        val output = readSection(OUTPUT_START, OUTPUT_END)
+        val phase1Output = readSection(OUTPUT_PHASE1_START, OUTPUT_PHASE1_END)
+        val phase2Output = readSection(OUTPUT_PHASE2_START, OUTPUT_PHASE2_END)
 
-        val inputBuilder = StringBuilder()
-        while (i < lines.size && !hasPrefix(OUTPUT_PREFIX, lines[i])) {
-            inputBuilder.append(lines[i++])
-            inputBuilder.append("\n")
+        if (input == null) {
+            throw Exception("Line ${i + 1}: Input not specified")
         }
 
-        val outputLine = lines[i]
-        expectPrefix(OUTPUT_PREFIX, outputLine, i + 1)
-        i++
-
-        val outputBuilder = StringBuilder()
-        while (i < lines.size && !hasPrefix(END_PREFIX, lines[i])) {
-            outputBuilder.append(lines[i++])
-            outputBuilder.append('\n')
+        if (output == null && (phase1Output == null || phase2Output == null)) {
+            throw Exception("Line ${i + 1}: Output is not specified and " +
+                    "one of Phase1Output or Phase2Output is missing")
         }
 
-        val endLine = lines[i]
-        expectPrefix(END_PREFIX, endLine, i + 1)
-        i++
+        if (output != null && (phase1Output != null || phase2Output != null)) {
+            throw Exception("Line ${i + 1}: Output is specified but so " +
+                    "is one of Phase1Output or Phase2Output")
+        }
 
         result.add(
             TestCase(
                 name = testName,
-                input = inputBuilder.toString(),
-                expectedOutput = outputBuilder.toString()
+                input = input,
+                phase1Output = (phase1Output ?: output)!!,
+                phase2Output = (phase2Output ?: output)!!
             )
         )
     }

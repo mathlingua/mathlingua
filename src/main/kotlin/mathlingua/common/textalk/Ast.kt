@@ -366,12 +366,24 @@ data class SubSupTexTalkNode(
         val builder = StringBuilder()
         if (sub != null) {
             builder.append("_")
-            builder.append(sub.toCode(interceptor))
+            if (sub.parameters.items.size == 1 &&
+                    sub.parameters.items[0].children.size == 1 &&
+                    sub.parameters.items[0].children[0].type == TexTalkNodeType.Identifier) {
+                builder.append(sub.parameters.items[0].children[0].toCode(interceptor))
+            } else {
+                builder.append(sub.toCode(interceptor))
+            }
         }
 
         if (sup != null) {
             builder.append("^")
-            builder.append(sup.toCode(interceptor))
+            if (sup.parameters.items.size == 1 &&
+                    sup.parameters.items[0].children.size == 1 &&
+                    sup.parameters.items[0].children[0].type == TexTalkNodeType.Identifier) {
+                builder.append(sup.parameters.items[0].children[0].toCode(interceptor))
+            } else {
+                builder.append(sup.toCode(interceptor))
+            }
         }
         return builder.toString()
     }

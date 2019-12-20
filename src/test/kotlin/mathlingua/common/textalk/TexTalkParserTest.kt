@@ -37,6 +37,9 @@ internal class TexTalkParserTest {
 
                 val parser = newTexTalkParser()
                 val result = parser.parse(lexer)
+                for (err in result.errors) {
+                    println("ERROR: $err")
+                }
                 assertThat(result.errors.size).isEqualTo(0)
                 assertThat(result.root).isNotNull()
 

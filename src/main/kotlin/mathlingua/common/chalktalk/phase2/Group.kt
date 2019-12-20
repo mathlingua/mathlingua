@@ -239,7 +239,7 @@ data class RepresentsGroup(
         id = id.transform(chalkTransformer) as IdStatement,
         representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
         assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
-        thatSections = thatSections.map { chalkTransformer(it) as ThatSection } as List<ThatSection>,
+        thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
         aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
         metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
         row = row,

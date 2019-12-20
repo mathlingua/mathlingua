@@ -47,7 +47,7 @@ internal class ChalkTalkParserTest {
                 assert(validation is ValidationSuccess)
 
                 val doc = (validation as ValidationSuccess).value
-                assertThat(doc.toCode(false, 0).getCode().trim()).isEqualTo(it.expectedOutput.trim())
+                assertThat(doc.toCode(false, 0).getCode().trim()).isEqualTo(it.phase2Output.trim())
             }
         }
     }

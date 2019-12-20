@@ -2,190 +2,214 @@
 -- Test: parses identifiers
 -- Input:
 abc
+-- EndInput:
 -- Output:
 abc
--- End;
+-- EndOutput:
 
 
 -- Test: parses operators
 -- Input:
 **
+-- EndInput:
 -- Output:
 **
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command
 -- Input:
 \cos
+-- EndInput:
 -- Output:
 \cos
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with {}
 -- Input:
 \cos{x}
+-- EndInput:
 -- Output:
 \cos{x}
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with ()
 -- Input:
 \cos(x)
+-- EndInput:
 -- Output:
 \cos(x)
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with {} and multi args
 -- Input:
 \cos{x, y, z}
+-- EndInput:
 -- Output:
 \cos{x, y, z}
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with []
 -- Input:
 \cos[x]
+-- EndInput:
 -- Output:
 \cos[x]
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with [] and {}
 -- Input:
 \cos[x]{a}
+-- EndInput:
 -- Output:
 \cos[x]{a}
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with [] and multi args
 -- Input:
 \cos[x, y, z]
+-- EndInput:
 -- Output:
 \cos[x, y, z]
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with [] and {} and multi args
 -- Input:
 \cos[x, y, z]{a, b, c}
+-- EndInput:
 -- Output:
 \cos[x, y, z]{a, b, c}
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with [] and multi args and sub-sup
 -- Input:
 \cos[x, y, z]_{a}^{b}
+-- EndInput:
 -- Output:
 \cos[x, y, z]_{a}^{b}
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with [] and multi args and sub-sup and {}
 -- Input:
 \cos[x, y, z]_{a}^{b}{x}
+-- EndInput:
 -- Output:
 \cos[x, y, z]_{a}^{b}{x}
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with [] and multi args and sub-sup and ()
 -- Input:
 \cos[x, y, z]_{a}^{b}(x)
+-- EndInput:
 -- Output:
 \cos[x, y, z]_{a}^{b}(x)
--- End;
+-- EndOutput:
 
 
 -- Test: parses single name command with [] and multi args and sub-sup and () and multi args
 -- Input:
 \cos[x, y, z]_{a}^{b}(x, y, z)
+-- EndInput:
 -- Output:
 \cos[x, y, z]_{a}^{b}(x, y, z)
--- End;
+-- EndOutput:
 
 
 -- Test: parses compound name command
 -- Input:
 \some.compound.name
+-- EndInput:
 -- Output:
 \some.compound.name
--- End;
+-- EndOutput:
 
 
 -- Test: parses complex compound name
 -- Input:
 \some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}
+-- EndInput:
 -- Output:
 \some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}
--- End;
+-- EndOutput:
 
 
 -- Test: parses simple is statements
 -- Input:
 a is b
+-- EndInput:
 -- Output:
 a is b
--- End;
+-- EndOutput:
 
 
 -- Test: parses multi is statements
 -- Input:
 a, b, c is x, y, z
+-- EndInput:
 -- Output:
 a, b, c is x, y, z
--- End;
+-- EndOutput:
 
 
 -- Test: parses is statements with commands
 -- Input:
 x is \set
+-- EndInput:
 -- Output:
 x is \set
--- End;
+-- EndOutput:
 
 
 -- Test: parses is statements with multi commands
 -- Input:
 x is \compact \convex \set
+-- EndInput:
 -- Output:
 x is \compact \convex \set
--- End;
+-- EndOutput:
 
 
 -- Test: parses expressions
 -- Input:
 a + b^2 + \sin(x) - \frac{x}{y}
+-- EndInput:
 -- Output:
 a + b ^ 2 + \sin(x) - \frac{x}{y}
--- End;
+-- EndOutput:
 
 
 -- Test: parses expressions with parens
 -- Input:
 f(x + 2*(x + y)^2) + (a + b)/2
+-- EndInput:
 -- Output:
 f (x + 2 * (x + y) ^ 2) + (a + b) / 2
--- End;
+-- EndOutput:
 
 
 -- Test: handles varargs in identifiers
 -- Input:
 xyz... := f(abc... + x)
+-- EndInput:
 -- Output:
 xyz... := f (abc... + x)
--- End;
+-- EndOutput:
 
 
 -- Test: handles varargs in groups
 -- Input:
 \f{x}{y}...
+-- EndInput:
 -- Output:
 \f{x}{y}...
--- End;
+-- EndOutput:

@@ -33,7 +33,8 @@ enum class ChalkTalkTokenType {
     LParen,
     RParen,
     LCurly,
-    RCurly
+    RCurly,
+    Underscore
 }
 
 sealed class Phase1Target : Phase1Node
@@ -151,24 +152,46 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
     ))
 }
 
-data class Abstraction(val name: Phase1Token, val params: List<Phase1Token>) : TupleItem() {
+data class Abstraction(val name: Phase1Token,
+                       val subParams: List<Phase1Token>?,
+                       val params: List<Phase1Token>?) : TupleItem() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)
-        params.forEach(fn)
+        subParams?.forEach(fn)
+        params?.forEach(fn)
     }
 
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
-        builder.append('(')
-        for (i in params.indices) {
-            builder.append(params[i].toCode())
-            if (i != params.size - 1) {
-                builder.append(", ")
+        if (subParams != null) {
+            builder.append('_')
+            if (subParams.size == 1) {
+                builder.append(subParams[0].toCode())
+            } else {
+                builder.append('{')
+                for (i in subParams.indices) {
+                    builder.append(subParams[i].toCode())
+                    if (i != subParams.size - 1) {
+                        builder.append(", ")
+                    }
+                }
+                builder.append('}')
             }
         }
-        builder.append(')')
+
+        if (params != null) {
+            builder.append('(')
+            for (i in params.indices) {
+                builder.append(params[i].toCode())
+                if (i != params.size - 1) {
+                    builder.append(", ")
+                }
+            }
+            builder.append(')')
+        }
+
         return builder.toString()
     }
 
@@ -176,7 +199,8 @@ data class Abstraction(val name: Phase1Token, val params: List<Phase1Token>) : T
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Abstraction(
         name = name.transform(transformer) as Phase1Token,
-        params = params.map { it.transform(transformer) as Phase1Token }
+        subParams = subParams?.map { it.transform(transformer) as Phase1Token },
+        params = params?.map { it.transform(transformer) as Phase1Token }
     ))
 }
 

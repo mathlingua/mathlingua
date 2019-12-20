@@ -233,15 +233,33 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
         }
 
         private fun abstraction(): Abstraction? {
-            if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.LParen)) {
+            if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.LParen) &&
+                !hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Underscore)) {
                 return null
             }
 
             val id = expect(ChalkTalkTokenType.Name)
-            expect(ChalkTalkTokenType.LParen)
-            val names = nameList(ChalkTalkTokenType.RParen)
-            expect(ChalkTalkTokenType.RParen)
-            return Abstraction(id, names)
+
+            var subParams: List<Phase1Token>? = null
+            if (has(ChalkTalkTokenType.Underscore)) {
+                expect(ChalkTalkTokenType.Underscore)
+                if (has(ChalkTalkTokenType.LCurly)) {
+                    expect(ChalkTalkTokenType.LCurly)
+                    subParams = nameList(ChalkTalkTokenType.RCurly)
+                    expect(ChalkTalkTokenType.RCurly)
+                } else {
+                    subParams = listOf(expect(ChalkTalkTokenType.Name))
+                }
+            }
+
+            var names: List<Phase1Token>? = null
+            if (has(ChalkTalkTokenType.LParen)) {
+                expect(ChalkTalkTokenType.LParen)
+                names = nameList(ChalkTalkTokenType.RParen)
+                expect(ChalkTalkTokenType.RParen)
+            }
+
+            return Abstraction(id, subParams, names)
         }
 
         private fun name(): Phase1Token {
@@ -343,5 +361,18 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             }
             return next()
         }
+    }
+}
+
+fun main() {
+    val text = "A: f_n"
+    val lexer = newChalkTalkLexer(text)
+    val parser = newChalkTalkParser()
+    val result = parser.parse(lexer)
+    for (err in result.errors) {
+        println("ERROR: $err")
+    }
+    if (result.root != null) {
+        println(result.root.toCode())
     }
 }

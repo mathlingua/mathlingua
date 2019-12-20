@@ -40,7 +40,7 @@ internal class TexTalkParserTest {
                 assertThat(result.errors.size).isEqualTo(0)
                 assertThat(result.root).isNotNull()
 
-                assertThat(result.root.toCode().trim()).isEqualTo(it.expectedOutput.trim())
+                assertThat(result.root.toCode().trim()).isEqualTo(it.phase1Output.trim())
             }
         }
     }

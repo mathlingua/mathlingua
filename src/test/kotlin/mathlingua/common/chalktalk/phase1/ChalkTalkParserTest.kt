@@ -37,10 +37,15 @@ internal class ChalkTalkParserTest {
 
                 val parser = newChalkTalkParser()
                 val result = parser.parse(lexer)
+                if (result.errors.isNotEmpty()) {
+                    for (err in result.errors) {
+                        println("ERROR: $err")
+                    }
+                }
                 assertThat(result.errors.size).isEqualTo(0)
                 assertThat(result.root).isNotNull()
 
-                assertThat(result.root!!.toCode()).isEqualTo(it.expectedOutput)
+                assertThat(result.root!!.toCode()).isEqualTo(it.phase1Output)
             }
         }
     }

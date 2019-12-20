@@ -152,9 +152,11 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
     ))
 }
 
-data class Abstraction(val name: Phase1Token,
-                       val subParams: List<Phase1Token>?,
-                       val params: List<Phase1Token>?) : TupleItem() {
+data class Abstraction(
+    val name: Phase1Token,
+    val subParams: List<Phase1Token>?,
+    val params: List<Phase1Token>?
+) : TupleItem() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)

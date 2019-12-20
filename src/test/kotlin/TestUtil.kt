@@ -18,10 +18,12 @@ package mathlingua
 
 import java.io.File
 
-data class TestCase(val name: String,
-                    val input: String,
-                    val phase1Output: String,
-                    val phase2Output: String)
+data class TestCase(
+    val name: String,
+    val input: String,
+    val phase1Output: String,
+    val phase2Output: String
+)
 
 const val TEST_NAME_PREFIX = "-- Test:"
 const val INPUT_START = "-- Input:"
@@ -78,16 +80,16 @@ fun loadTestCases(file: File): List<TestCase> {
         val phase2Output = readSection(OUTPUT_PHASE2_START, OUTPUT_PHASE2_END)
 
         if (input == null) {
-            throw Exception("Line ${i+1}: Input not specified")
+            throw Exception("Line ${i + 1}: Input not specified")
         }
 
         if (output == null && (phase1Output == null || phase2Output == null)) {
-            throw Exception("Line ${i+1}: Output is not specified and " +
+            throw Exception("Line ${i + 1}: Output is not specified and " +
                     "one of Phase1Output or Phase2Output is missing")
         }
 
         if (output != null && (phase1Output != null || phase2Output != null)) {
-            throw Exception("Line ${i+1}: Output is specified but so " +
+            throw Exception("Line ${i + 1}: Output is specified but so " +
                     "is one of Phase1Output or Phase2Output")
         }
 

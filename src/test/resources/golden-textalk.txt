@@ -94,7 +94,7 @@ abc
 \cos[x, y, z]_{a}^{b}
 -- EndInput:
 -- Output:
-\cos[x, y, z]_{a}^{b}
+\cos[x, y, z]_a^b
 -- EndOutput:
 
 
@@ -103,7 +103,7 @@ abc
 \cos[x, y, z]_{a}^{b}{x}
 -- EndInput:
 -- Output:
-\cos[x, y, z]_{a}^{b}{x}
+\cos[x, y, z]_a^b{x}
 -- EndOutput:
 
 
@@ -112,7 +112,7 @@ abc
 \cos[x, y, z]_{a}^{b}(x)
 -- EndInput:
 -- Output:
-\cos[x, y, z]_{a}^{b}(x)
+\cos[x, y, z]_a^b(x)
 -- EndOutput:
 
 
@@ -121,7 +121,7 @@ abc
 \cos[x, y, z]_{a}^{b}(x, y, z)
 -- EndInput:
 -- Output:
-\cos[x, y, z]_{a}^{b}(x, y, z)
+\cos[x, y, z]_a^b(x, y, z)
 -- EndOutput:
 
 
@@ -139,7 +139,34 @@ abc
 \some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}
 -- EndInput:
 -- Output:
-\some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}
+\some[x]_a^b{x}.compound.name(x).function[x]{a, b}
+-- EndOutput:
+
+
+-- Test: parses commands with a single bare sub param
+-- Input:
+\some[x]_a
+-- EndInput:
+-- Output:
+\some[x]_a
+-- EndOutput:
+
+
+-- Test: parses commands with a single bare sup param
+-- Input:
+\some[x]^a
+-- EndInput:
+-- Output:
+\some[x]^a
+-- EndOutput:
+
+
+-- Test: parses commands with a single bare sub param and a single bare sup param
+-- Input:
+\some[x]_a^b
+-- EndInput:
+-- Output:
+\some[x]_a^b
 -- EndOutput:
 
 

@@ -221,9 +221,32 @@ class TexTalkParserImpl : TexTalkParser {
             val (_, _, row, column) = expect(TexTalkTokenType.Underscore)
 
             var grp: GroupTexTalkNode? = null
-            val curly = group(TexTalkNodeType.CurlyGroup)
-            if (curly != null) {
-                grp = curly
+            if (has(TexTalkTokenType.Identifier)) {
+                val id = next()
+                grp = GroupTexTalkNode(
+                        type = TexTalkNodeType.CurlyGroup,
+                        parameters = ParametersTexTalkNode(
+                                items = listOf(
+                                        ExpressionTexTalkNode(
+                                                children = listOf(
+                                                        TextTexTalkNode(
+                                                                type = TexTalkNodeType.Identifier,
+                                                                text = id.text,
+                                                                isVarArg = false
+                                                        )
+                                                )
+                                        )
+                                )
+                        ),
+                        isVarArg = false
+                )
+            }
+
+            if (grp == null) {
+                val curly = group(TexTalkNodeType.CurlyGroup)
+                if (curly != null) {
+                    grp = curly
+                }
             }
 
             if (grp == null) {
@@ -247,11 +270,34 @@ class TexTalkParserImpl : TexTalkParser {
             }
 
             val (_, _, row, column) = expect(TexTalkTokenType.Caret)
-            var grp: GroupTexTalkNode? = null
 
-            val curly = group(TexTalkNodeType.CurlyGroup)
-            if (curly != null) {
-                grp = curly
+            var grp: GroupTexTalkNode? = null
+            if (has(TexTalkTokenType.Identifier)) {
+                val id = next()
+                grp = GroupTexTalkNode(
+                        type = TexTalkNodeType.CurlyGroup,
+                        parameters = ParametersTexTalkNode(
+                                items = listOf(
+                                        ExpressionTexTalkNode(
+                                                children = listOf(
+                                                        TextTexTalkNode(
+                                                                type = TexTalkNodeType.Identifier,
+                                                                text = id.text,
+                                                                isVarArg = false
+                                                        )
+                                                )
+                                        )
+                                )
+                        ),
+                        isVarArg = false
+                )
+            }
+
+            if (grp == null) {
+                val curly = group(TexTalkNodeType.CurlyGroup)
+                if (curly != null) {
+                    grp = curly
+                }
             }
 
             if (grp == null) {

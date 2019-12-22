@@ -245,6 +245,57 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
 
 fun min(x: Int, y: Int) = if (x < y) x else y
 
+fun isGreekLetter(letter: String) =
+    mutableSetOf(
+            "alpha",
+            "beta",
+            "gamma",
+            "delta",
+            "epsilon",
+            "zeta",
+            "eta",
+            "theta",
+            "iota",
+            "kappa",
+            "lambda",
+            "mu",
+            "nu",
+            "xi",
+            "omicron",
+            "pi",
+            "rho",
+            "sigma",
+            "tau",
+            "upsilon",
+            "phi",
+            "chi",
+            "psi",
+            "omega",
+            "Alpha",
+            "Beta",
+            "Gamma",
+            "Delta",
+            "Epsilon",
+            "Zeta",
+            "Eta",
+            "Theta",
+            "Iota",
+            "Kappa",
+            "Lambda",
+            "Mu",
+            "Nu",
+            "Xi",
+            "Omicron",
+            "Pi",
+            "Rho",
+            "Sigma",
+            "Tau",
+            "Upsilon",
+            "Phi",
+            "Chi",
+            "Psi",
+            "Omega").contains(letter)
+
 open class HtmlCodeWriter : CodeWriter {
     protected val builder = StringBuilder()
 
@@ -340,7 +391,11 @@ open class HtmlCodeWriter : CodeWriter {
 
     override fun writeIdentifier(name: String, isVarArgs: Boolean) {
         builder.append("<span class='mathlingua-identifier'>\\[")
-        builder.append(name)
+        if (isGreekLetter(name)) {
+            builder.append("\\$name")
+        } else {
+            builder.append(name)
+        }
         if (isVarArgs) {
             builder.append("...")
         }

@@ -216,7 +216,7 @@ Metadata:
     offset: "21"
 
 
-[\surjective \function:on{A}to{B}]
+[\surjective.function:on{A}to{B}]
 Defines: f
 means:
 . 'f is \function:on{A}to{B}'
@@ -233,7 +233,7 @@ Metadata:
     offset: "22"
 
 
-[\injective \function:on{A}to{B}]
+[\injective.function:on{A}to{B}]
 Defines: f
 means:
 . 'f is \function:on{A}to{B}'
@@ -249,7 +249,7 @@ Metadata:
     offset: "22"
 
 
-[\bijective \function]
+[\bijective.function]
 Defines: f
 means:
 . 'f is \injective \surjective \function'
@@ -415,7 +415,7 @@ Metadata:
     offset: "48"
 
 
-[\abelian \group]
+[\abelian.group]
 Defines: G := (X, *, e)
 means:
 . 'G is \group'
@@ -439,7 +439,7 @@ means:
 . "an $m&$ by $n&$ grid of elements from the set $F&$"
 
 
-[\identity \matrix{n}]
+[\identity.matrix{n}]
 Defines: M(i, j)
 assuming: 'i, j is \positive \integer'
 means:
@@ -461,7 +461,7 @@ means:
   then: 'A * B is \matrix'
 
 
-[\invertible \matrix]
+[\invertible.matrix]
 Defines: M
 means:
 . 'M is \matrix'
@@ -490,7 +490,7 @@ Metadata:
     offset: "49"
 
 
-[\finite \set]
+[\finite.set]
 Defines: X
 means:
 . 'X is \set'
@@ -502,7 +502,7 @@ Metadata:
     offset: "50"
 
 
-[\infinite \set]
+[\infinite.set]
 Defines: X
 means:
 . 'X is \set'
@@ -521,7 +521,7 @@ assuming: 'X is \set'
 means: "$n&$ is the number of elements in $X&$"
 
 
-[\finite \group]
+[\finite.group]
 Defines: G := (X, *, e)
 means:
 . 'G is \group'
@@ -533,7 +533,7 @@ Metadata:
     offset: "50"
 
 
-[\infinite \group]
+[\infinite.group]
 Defines: G := (X, *, e)
 means:
 . 'G is \group'
@@ -557,7 +557,7 @@ Metadata:
 
 
 
-[\nonempty \set]
+[\nonempty.set]
 Defines: X
 means:
 . 'X is \set'
@@ -587,7 +587,7 @@ Metadata:
     offset: "213"
 
 
-[\with.unity \ring]
+[\with.unity.ring]
 Defines: R := (X, +, *, 0, 1)
 means:
 . 'R is \ring'
@@ -601,7 +601,7 @@ Metadata:
     offset: "213"
 
 
-[\commutative \ring]
+[\commutative.ring]
 Defines: R := (X, +, *, 0)
 means:
 . 'R is \ring'
@@ -651,7 +651,7 @@ Metadata:
     offset: "214"
 
 
-[\division \with.identity.ring]
+[\division.with.identity.ring]
 Defines: R := (X, +, *, 0, 1)
 means:
 . 'R is \ring'
@@ -1004,6 +1004,7 @@ Metadata:
               below if there is a real number $a$ such that $$ s_n\ge a ,
               $$ or bounded if there is a real number $r$ such that $$
               |s_n|\le r . $$"
+
 
 [\function:on{A}to{B}]
 Defines: f(x)

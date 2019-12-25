@@ -296,6 +296,27 @@ fun isGreekLetter(letter: String) =
             "Psi",
             "Omega").contains(letter)
 
+fun prettyPrintIdentifier(text: String): String {
+    val regex = Regex("([a-zA-Z]+)([0-9]+)")
+    val match = regex.find(text)
+    return if (match != null) {
+        val groups = match.groupValues
+        val name = if (isGreekLetter(groups[1])) {
+            "\\${groups[1]}"
+        } else {
+            groups[1]
+        }
+        val number = groups[2]
+        "${name}_$number"
+    } else {
+        if (isGreekLetter(text)) {
+            "\\$text"
+        } else {
+            text
+        }
+    }
+}
+
 open class HtmlCodeWriter : CodeWriter {
     protected val builder = StringBuilder()
 
@@ -391,11 +412,7 @@ open class HtmlCodeWriter : CodeWriter {
 
     override fun writeIdentifier(name: String, isVarArgs: Boolean) {
         builder.append("<span class='mathlingua-identifier'>\\[")
-        if (isGreekLetter(name)) {
-            builder.append("\\$name")
-        } else {
-            builder.append(name)
-        }
+        builder.append(prettyPrintIdentifier(name))
         if (isVarArgs) {
             builder.append("...")
         }

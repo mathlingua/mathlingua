@@ -363,16 +363,3 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
         }
     }
 }
-
-fun main() {
-    val text = "A: f_n"
-    val lexer = newChalkTalkLexer(text)
-    val parser = newChalkTalkParser()
-    val result = parser.parse(lexer)
-    for (err in result.errors) {
-        println("ERROR: $err")
-    }
-    if (result.root != null) {
-        println(result.root.toCode())
-    }
-}

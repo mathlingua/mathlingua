@@ -139,15 +139,29 @@ private fun getGroupNodeForSignature(node: GroupTexTalkNode) = GroupTexTalkNode(
 
 private fun getParametersNodeForSignature(node: ParametersTexTalkNode) = ParametersTexTalkNode(
     items = node.items.map {
-        ExpressionTexTalkNode(
-            children = listOf(
-                TextTexTalkNode(
-                    type = TexTalkNodeType.Identifier,
-                    text = "?",
-                    isVarArg = false
-                )
+        if (it.children.size == 1 &&
+            it.children[0] is TextTexTalkNode &&
+            (it.children[0] as TextTexTalkNode).isVarArg) {
+            ExpressionTexTalkNode(
+                    children = listOf(
+                            TextTexTalkNode(
+                                    type = TexTalkNodeType.Identifier,
+                                    text = "?",
+                                    isVarArg = true
+                            )
+                    )
             )
-        )
+        } else {
+            ExpressionTexTalkNode(
+                    children = listOf(
+                            TextTexTalkNode(
+                                    type = TexTalkNodeType.Identifier,
+                                    text = "?",
+                                    isVarArg = false
+                            )
+                    )
+            )
+        }
     }
 )
 

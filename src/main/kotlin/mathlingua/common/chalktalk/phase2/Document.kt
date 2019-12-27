@@ -320,14 +320,14 @@ fun prettyPrintIdentifier(text: String): String {
 open class HtmlCodeWriter : CodeWriter {
     protected val builder = StringBuilder()
 
-    override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
-    }
+        override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
+            builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
+        }
 
-    override fun writeHeader(header: String) {
-        builder.append("<span class='mathlingua-header'>")
-        builder.append(header)
-        builder.append(':')
+        override fun writeHeader(header: String) {
+            builder.append("<span class='mathlingua-header'>")
+            builder.append(header)
+            builder.append(':')
         builder.append("</span>")
     }
 
@@ -373,7 +373,11 @@ open class HtmlCodeWriter : CodeWriter {
         builder.append("<span class='mathlingua-argument'>")
         builder.append("\\[${phase1Node.toCode()
                 .replace("{", "\\{")
-                .replace("}", "\\}")}\\]")
+                .replace("}", "\\}")
+                // replace _\{...\} with _{...}
+                // because that is required to support things
+                // like M_{i, j}
+                .replace(Regex("_\\\\\\{(.*?)\\\\\\}"), "_{$1}")}\\]")
         builder.append("</span>")
     }
 

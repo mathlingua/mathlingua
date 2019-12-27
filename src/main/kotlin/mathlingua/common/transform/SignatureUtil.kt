@@ -48,14 +48,17 @@ fun getSignature(stmt: Statement): String? {
     } else null
 }
 
-fun findAllStatementSignatures(stmt: Statement) = when (val rootValidation = stmt.texTalkRoot) {
-    is ValidationSuccess -> {
-        val expressionNode = rootValidation.value
-        val signatures = mutableSetOf<String>()
-        findAllSignaturesImpl(expressionNode, signatures)
-        signatures
+fun findAllStatementSignatures(stmt: Statement): Set<String> {
+    val gluedStmt = glueCommands(stmt, stmt).root as Statement
+    return when (val rootValidation = gluedStmt.texTalkRoot) {
+        is ValidationSuccess -> {
+            val expressionNode = rootValidation.value
+            val signatures = mutableSetOf<String>()
+            findAllSignaturesImpl(expressionNode, signatures)
+            signatures
+        }
+        is ValidationFailure -> emptySet<String>()
     }
-    is ValidationFailure -> emptySet<String>()
 }
 
 fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {

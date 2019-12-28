@@ -91,7 +91,7 @@ object TexTalkPlayground {
                         val sigBuilder = StringBuilder()
                         for (node in root.children) {
                             if (node is Command) {
-                                val sig = getCommandSignature(node).toCode()
+                                val sig = getCommandSignature(node)
                                 sigBuilder.append(sig)
                                 sigBuilder.append('\n')
                             }

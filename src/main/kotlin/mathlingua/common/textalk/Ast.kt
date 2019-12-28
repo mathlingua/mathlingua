@@ -208,8 +208,12 @@ data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode 
         get() = TexTalkNodeType.Expression
 
     override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
         val builder = StringBuilder()
-        val children = children
         for (i in children.indices) {
             val child = children[i]
             builder.append(child.toCode(interceptor))

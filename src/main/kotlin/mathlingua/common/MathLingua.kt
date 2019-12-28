@@ -47,7 +47,7 @@ class MathLingua {
     }
 
     fun signatureOf(group: TopLevelGroup) = getSignature(group)
-    fun signatureOf(command: Command) = getCommandSignature(command).toCode()
+    fun signatureOf(command: Command) = getCommandSignature(command)
 
     fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList().toTypedArray()
 

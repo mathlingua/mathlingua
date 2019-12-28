@@ -31,7 +31,7 @@ internal class SignatureUtilKtTest {
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
         val signatures = findAllStatementSignatures(stmt)
-        assertThat(signatures).isEqualTo(setOf("\\xyz{?}"))
+        assertThat(signatures).isEqualTo(setOf("\\xyz{}"))
     }
 
     @Test
@@ -42,7 +42,7 @@ internal class SignatureUtilKtTest {
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
         val signatures = findAllStatementSignatures(stmt)
-        assertThat(signatures).isEqualTo(setOf("\\abc.xyz{?}"))
+        assertThat(signatures).isEqualTo(setOf("\\abc.xyz{}"))
     }
 
     @Test

@@ -133,7 +133,7 @@ private fun getVarsImpl(
 
 private fun getVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>, inParams: Boolean) {
     if (inParams && texTalkNode is TextTexTalkNode) {
-        vars.add(texTalkNode.text)
+        vars.add(texTalkNode.text + if (texTalkNode.isVarArg) { "..." } else { "" })
     } else if (texTalkNode is ParametersTexTalkNode) {
         texTalkNode.forEach { getVarsImpl(it, vars, true) }
     } else {

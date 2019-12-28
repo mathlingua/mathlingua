@@ -57,7 +57,7 @@ fun findAllStatementSignatures(stmt: Statement): Set<String> {
             findAllSignaturesImpl(expressionNode, signatures)
             signatures
         }
-        is ValidationFailure -> emptySet<String>()
+        is ValidationFailure -> emptySet()
     }
 }
 
@@ -70,15 +70,15 @@ fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
     }
 
     if (commandParts.isNotEmpty()) {
-        return getCommandSignature(Command(parts = commandParts)).toCode()
+        return getCommandSignature(Command(parts = commandParts))
     }
 
     return null
 }
 
-fun getCommandSignature(command: Command) = Command(
+fun getCommandSignature(command: Command) = flattenSignature(Command(
     parts = command.parts.map { getCommandPartForSignature(it) }
-)
+).toCode())
 
 fun locateAllSignatures(node: Phase2Node): Set<String> {
     val signatures = mutableSetOf<String>()
@@ -105,7 +105,7 @@ private fun findAllSignaturesImpl(texTalkNode: TexTalkNode, signatures: MutableS
         }
         return
     } else if (texTalkNode is Command) {
-        val sig = getCommandSignature(texTalkNode).toCode()
+        val sig = getCommandSignature(texTalkNode)
         signatures.add(sig)
     }
 
@@ -169,3 +169,16 @@ private fun getNamedGroupNodeForSignature(node: NamedGroupTexTalkNode) = NamedGr
     name = node.name,
     group = getGroupNodeForSignature(node.group)
 )
+
+fun flattenSignature(signature: String): String {
+    /*
+     * This converts \f[?]{?, ?, ?}{} to \f[]{}{}.  That is, the ?, are
+     * removed.  In addition \f{}{}{}... is replaced with \f{}...
+     * That is, a sequence of {} followed by ... is replaced with a
+     * single {}...
+     */
+    return signature.replace(Regex("\\?\\.\\.\\."), "?")
+                    .replace(Regex("\\s*\\??(\\s*,\\s*\\?\\s*)*"), "")
+                    .replace(" ", "")
+                    .replace(Regex("(\\{\\})*\\{\\}\\.\\.\\."), "{}...")
+}

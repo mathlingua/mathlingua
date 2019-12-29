@@ -28,6 +28,15 @@ Metadata:
     offset: "17"
 
 
+[\set[x...]{form...}{condition}...]
+Defines: A := {a...}
+means:
+. 'a... := form...'
+. 'condition'
+Metadata:
+. written: "\left \{ form{<?,?>}& \: : \: condition{<?\:and\:?>}& \right \}"
+
+
 [a \in X]
 Represents:
 assuming: 'X is \set'

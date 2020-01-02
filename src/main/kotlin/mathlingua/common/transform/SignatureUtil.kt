@@ -88,8 +88,9 @@ fun locateAllSignatures(node: Phase2Node): Set<String> {
 
 private fun findAllSignaturesImpl(node: Phase2Node, signatures: MutableSet<String>) {
     if (node is Statement) {
-        val sigs = findAllStatementSignatures(node)
-        signatures.addAll(sigs)
+        signatures.addAll(findAllStatementSignatures(node))
+    } else if (node is IdStatement) {
+        findAllSignaturesImpl(node.toStatement(), signatures)
     }
 
     node.forEach { findAllSignaturesImpl(it, signatures) }

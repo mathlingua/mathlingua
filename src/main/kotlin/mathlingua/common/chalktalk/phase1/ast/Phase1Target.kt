@@ -34,6 +34,8 @@ enum class ChalkTalkTokenType {
     RParen,
     LCurly,
     RCurly,
+    LCurlyColon,
+    RColonCurly,
     Underscore
 }
 
@@ -153,6 +155,7 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
 }
 
 data class Abstraction(
+    val isEnclosed: Boolean,
     val name: Phase1Token,
     val subParams: List<Phase1Token>?,
     val params: List<Phase1Token>?
@@ -166,6 +169,9 @@ data class Abstraction(
 
     override fun toCode(): String {
         val builder = StringBuilder()
+        if (isEnclosed) {
+            builder.append('{')
+        }
         builder.append(name.toCode())
         if (subParams != null) {
             builder.append('_')
@@ -194,12 +200,17 @@ data class Abstraction(
             builder.append(')')
         }
 
+        if (isEnclosed) {
+            builder.append('}')
+        }
+
         return builder.toString()
     }
 
     override fun resolve() = this
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Abstraction(
+        isEnclosed = isEnclosed,
         name = name.transform(transformer) as Phase1Token,
         subParams = subParams?.map { it.transform(transformer) as Phase1Token },
         params = params?.map { it.transform(transformer) as Phase1Token }
@@ -212,14 +223,14 @@ data class Aggregate(val params: List<Phase1Token>) : AssignmentRhs() {
 
     override fun toCode(): String {
         val builder = StringBuilder()
-        builder.append('{')
+        builder.append("{:")
         for (i in params.indices) {
             builder.append(params[i].toCode())
             if (i != params.size - 1) {
                 builder.append(", ")
             }
         }
-        builder.append('}')
+        builder.append(":}")
         return builder.toString()
     }
 

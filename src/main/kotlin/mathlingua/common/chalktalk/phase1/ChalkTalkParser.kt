@@ -221,21 +221,28 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
         }
 
         private fun aggregate(): Aggregate? {
-            if (!has(ChalkTalkTokenType.LCurly)) {
+            if (!has(ChalkTalkTokenType.LCurlyColon)) {
                 return null
             }
 
-            expect(ChalkTalkTokenType.LCurly)
-            val names = nameList(ChalkTalkTokenType.RCurly)
-            expect(ChalkTalkTokenType.RCurly)
+            expect(ChalkTalkTokenType.LCurlyColon)
+            val names = nameList(ChalkTalkTokenType.RColonCurly)
+            expect(ChalkTalkTokenType.RColonCurly)
 
             return Aggregate(names)
         }
 
         private fun abstraction(): Abstraction? {
             if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.LParen) &&
-                !hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Underscore)) {
+                !hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Underscore) &&
+                !has(ChalkTalkTokenType.LCurly)) {
                 return null
+            }
+
+            var isEnclosed = false
+            if (has(ChalkTalkTokenType.LCurly)) {
+                isEnclosed = true
+                next()
             }
 
             val id = expect(ChalkTalkTokenType.Name)
@@ -259,7 +266,11 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 expect(ChalkTalkTokenType.RParen)
             }
 
-            return Abstraction(id, subParams, names)
+            if (isEnclosed) {
+                expect(ChalkTalkTokenType.RCurly)
+            }
+
+            return Abstraction(isEnclosed, id, subParams, names)
         }
 
         private fun name(): Phase1Token {

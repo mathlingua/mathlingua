@@ -29,7 +29,7 @@ Metadata:
 
 
 [\set[x...]{form...}{condition}...]
-Defines: A := {a...}
+Defines: A := {: a... :}
 means:
 . 'a... := form...'
 . 'condition'
@@ -102,7 +102,7 @@ Metadata:
 
 
 [A \union B]
-Defines: C := {c}
+Defines: C := {:c:}
 assuming: 'A, B is \set'
 means:
 . 'C is \set'
@@ -118,7 +118,7 @@ Metadata:
 
 
 [A \intersect B]
-Defines: C := {c}
+Defines: C := {:c:}
 assuming: 'A, B is \set'
 means:
 . 'C is \set'
@@ -155,7 +155,7 @@ Metadata:
 
 
 [\complement:of{A}in{U}]
-Defines: X := {x}
+Defines: X := {:x:}
 assuming: 'A, U is \set'
 means:
 . 'x \in U'
@@ -169,7 +169,7 @@ Metadata:
 
 
 [A \set.difference B]
-Defines: C := {c}
+Defines: C := {:c:}
 assuming: 'A, B is \set'
 means:
 . 'c \in A'
@@ -183,7 +183,7 @@ Metadata:
 
 
 [A \set.cartesian.product B]
-Defines: C := {x,y}
+Defines: C := {:x,y:}
 assuming: 'A, B is \set'
 means:
 . 'x \in A'
@@ -332,7 +332,7 @@ Metadata:
 
 
 [\equivalence.relation:on{X}]
-Defines: R := {a, b}
+Defines: R := {:a, b:}
 assuming: 'X is \set'
 means:
 . 'R \subset (X \set.cartesian.product X)'

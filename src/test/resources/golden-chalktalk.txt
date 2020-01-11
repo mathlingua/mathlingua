@@ -104,6 +104,69 @@ Result:
 -- EndOutput:
 
 
+-- Test: parses enclosed plain abstractions
+-- Input:
+Result:
+. for: {f}
+  then: x
+-- EndInput:
+-- Output(Phase1):
+Result:
+. for:
+  . {f}
+  then:
+  . x
+-- EndOutput(Phase1):
+-- Output(Phase2):
+Result:
+. for: {f}
+  then:
+  . x
+-- EndOutput(Phase2):
+
+
+-- Test: parses enclosed regular abstractions
+-- Input:
+Result:
+. for: {f(x)}
+  then: x
+-- EndInput:
+-- Output(Phase1):
+Result:
+. for:
+  . {f(x)}
+  then:
+  . x
+-- EndOutput(Phase1):
+-- Output(Phase2):
+Result:
+. for: {f(x)}
+  then:
+  . x
+-- EndOutput(Phase2):
+
+
+-- Test: parses enclosed abstractions with sub params
+-- Input:
+Result:
+. for: {a_i}
+  then: x
+-- EndInput:
+-- Output(Phase1):
+Result:
+. for:
+  . {a_i}
+  then:
+  . x
+-- EndOutput(Phase1):
+-- Output(Phase2):
+Result:
+. for: {a_i}
+  then:
+  . x
+-- EndOutput(Phase2):
+
+
 -- Test: parses names with ...
 -- Input:
 Result: abc...

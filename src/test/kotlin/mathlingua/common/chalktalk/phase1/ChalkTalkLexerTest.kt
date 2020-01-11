@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
 internal class ChalkTalkLexerTest {
     @Test
     fun `correctly identifies tokens`() {
-        val text = "someName:'some statement'\"some text\". [some id],:=$1 #2 abc...xyz_"
+        val text = "someName:'some statement'\"some text\". [some id],:=$1 #2 abc...xyz_{::}"
         val lexer = newChalkTalkLexer(text)
         val actual: MutableList<Phase1Token> = ArrayList()
         while (lexer.hasNext()) {
@@ -51,6 +51,8 @@ internal class ChalkTalkLexerTest {
             Phase1Token(text = "abc...", type = ChalkTalkTokenType.Name, row = 0, column = 56),
             Phase1Token(text = "xyz", type = ChalkTalkTokenType.Name, row = 0, column = 62),
             Phase1Token(text = "_", type = ChalkTalkTokenType.Underscore, row = 0, column = 65),
+            Phase1Token(text = "{:", type = ChalkTalkTokenType.LCurlyColon, row = 0, column = 66),
+            Phase1Token(text = ":}", type = ChalkTalkTokenType.RColonCurly, row = 0, column = 68),
             Phase1Token(text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
             Phase1Token(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 1, column = 0)
         )

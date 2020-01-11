@@ -320,14 +320,14 @@ fun prettyPrintIdentifier(text: String): String {
 open class HtmlCodeWriter : CodeWriter {
     protected val builder = StringBuilder()
 
-        override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-            builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
-        }
+    override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
+        builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
+    }
 
-        override fun writeHeader(header: String) {
-            builder.append("<span class='mathlingua-header'>")
-            builder.append(header)
-            builder.append(':')
+    override fun writeHeader(header: String) {
+        builder.append("<span class='mathlingua-header'>")
+        builder.append(header)
+        builder.append(':')
         builder.append("</span>")
     }
 

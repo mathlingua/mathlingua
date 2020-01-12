@@ -17,19 +17,7 @@
 package mathlingua.common.chalktalk.phase1
 
 import mathlingua.common.ParseError
-import mathlingua.common.chalktalk.phase1.ast.Abstraction
-import mathlingua.common.chalktalk.phase1.ast.Aggregate
-import mathlingua.common.chalktalk.phase1.ast.Argument
-import mathlingua.common.chalktalk.phase1.ast.Assignment
-import mathlingua.common.chalktalk.phase1.ast.AssignmentRhs
-import mathlingua.common.chalktalk.phase1.ast.Phase1Token
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
-import mathlingua.common.chalktalk.phase1.ast.Group
-import mathlingua.common.chalktalk.phase1.ast.Mapping
-import mathlingua.common.chalktalk.phase1.ast.Root
-import mathlingua.common.chalktalk.phase1.ast.Section
-import mathlingua.common.chalktalk.phase1.ast.Tuple
-import mathlingua.common.chalktalk.phase1.ast.TupleItem
+import mathlingua.common.chalktalk.phase1.ast.*
 
 interface ChalkTalkParser {
     fun parse(chalkTalkLexer: ChalkTalkLexer): ChalkTalkParseResult
@@ -220,29 +208,47 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
             return Assignment(name, rhs)
         }
 
-        private fun aggregate(): Aggregate? {
-            if (!has(ChalkTalkTokenType.LCurlyColon)) {
-                return null
-            }
-
-            expect(ChalkTalkTokenType.LCurlyColon)
-            val names = nameList(ChalkTalkTokenType.RColonCurly)
-            expect(ChalkTalkTokenType.RColonCurly)
-
-            return Aggregate(names)
-        }
-
         private fun abstraction(): Abstraction? {
-            if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.LParen) &&
-                !hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Underscore) &&
-                !has(ChalkTalkTokenType.LCurly)) {
-                return null
-            }
-
             var isEnclosed = false
+            var openCurly: Phase1Token? = null
             if (has(ChalkTalkTokenType.LCurly)) {
                 isEnclosed = true
-                next()
+                openCurly = next() // skip the {
+            }
+
+            val parts = mutableListOf<AbstractionPart>()
+            while (hasNext() && !has(ChalkTalkTokenType.RCurly)) {
+                if (parts.isNotEmpty()) {
+                    expect(ChalkTalkTokenType.Comma)
+                }
+                val part = abstractionPart()
+                if (part == null && isEnclosed) {
+                    addError("Expected an abstraction after a {", openCurly)
+                }
+                part ?: break
+                parts.add(part)
+                if (!isEnclosed) {
+                    // break after adding the first AbstractionPart
+                    // if the abstraction is not enclosed, because only
+                    // enclosed abstractions can contain multiple parts
+                    break
+                }
+            }
+
+            if (isEnclosed) {
+                expect(ChalkTalkTokenType.RCurly)
+            }
+
+            return if (!isEnclosed && parts.isEmpty()) {
+                null
+            } else {
+                Abstraction(isEnclosed, parts)
+            }
+        }
+
+        private fun abstractionPart(): AbstractionPart? {
+            if (!has(ChalkTalkTokenType.Name)) {
+                return null
             }
 
             val id = expect(ChalkTalkTokenType.Name)
@@ -266,11 +272,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 expect(ChalkTalkTokenType.RParen)
             }
 
-            if (isEnclosed) {
-                expect(ChalkTalkTokenType.RCurly)
-            }
-
-            return Abstraction(isEnclosed, id, subParams, names)
+            return AbstractionPart(id, subParams, names)
         }
 
         private fun name(): Phase1Token {
@@ -312,7 +314,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
         }
 
         private fun assignmentRhs(): AssignmentRhs? {
-            return tuple() ?: aggregate() ?: name()
+            return tuple() ?: abstraction() ?: name()
         }
 
         private fun tupleItem(): TupleItem? {

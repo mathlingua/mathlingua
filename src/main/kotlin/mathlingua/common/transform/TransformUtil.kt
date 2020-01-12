@@ -415,9 +415,11 @@ fun replaceIsNodes(
                         }
                     }
                     is AbstractionNode -> {
-                        val name = v.abstraction.name.text
-                        if (!forVarMap.containsKey(name)) {
-                            forVarMap[name] = v
+                        for (part in v.abstraction.parts) {
+                            val name = part.name.text
+                            if (!forVarMap.containsKey(name)) {
+                                forVarMap[name] = v
+                            }
                         }
                     }
                     is Identifier -> {

@@ -21,7 +21,6 @@ import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase2.AbstractionNode
-import mathlingua.common.chalktalk.phase2.AggregateNode
 import mathlingua.common.chalktalk.phase2.AssignmentNode
 import mathlingua.common.chalktalk.phase2.Identifier
 import mathlingua.common.chalktalk.phase2.Phase2Node
@@ -119,8 +118,6 @@ private fun getVarsImpl(
         vars.add(node.name)
     } else if (node is TupleNode) {
         getVarsImpl(node.tuple, vars)
-    } else if (node is AggregateNode) {
-        getVarsImpl(node.aggregate, vars)
     } else if (node is AbstractionNode) {
         getVarsImpl(node.abstraction, vars)
     } else if (node is AssignmentNode) {

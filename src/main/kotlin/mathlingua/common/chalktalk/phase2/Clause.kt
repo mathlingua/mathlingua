@@ -21,7 +21,6 @@ import mathlingua.common.Validation
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Abstraction
-import mathlingua.common.chalktalk.phase1.ast.Aggregate
 import mathlingua.common.chalktalk.phase1.ast.Assignment
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
@@ -45,10 +44,6 @@ private val CLAUSE_VALIDATORS = listOf(
     ValidationPair(
         ::isAbstraction,
         ::validateAbstractionNode
-    ),
-    ValidationPair(
-        ::isAggregate,
-        ::validateAggregateNode
     ),
     ValidationPair(
         ::isTuple,
@@ -141,26 +136,6 @@ fun validateAbstractionNode(node: Phase1Node) = validateWrappedNode(node,
     "AbstractionNode",
     { it as? Abstraction },
     ::AbstractionNode
-)
-
-data class AggregateNode(
-    val aggregate: Aggregate,
-    override var row: Int,
-    override var column: Int
-) : Target() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, aggregate)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
-}
-
-fun isAggregate(node: Phase1Node) = node is Aggregate
-
-fun validateAggregateNode(node: Phase1Node) = validateWrappedNode(node,
-    "AggregateNode",
-    { it as? Aggregate },
-    ::AggregateNode
 )
 
 data class TupleNode(

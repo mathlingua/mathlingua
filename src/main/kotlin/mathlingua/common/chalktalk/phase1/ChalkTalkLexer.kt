@@ -96,28 +96,6 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 this.chalkTalkTokens!!.add(
                     Phase1Token(")", ChalkTalkTokenType.RParen, line, column)
                 )
-            } else if (c == '{' && i < text.length && text[i] == ':') {
-                this.chalkTalkTokens!!.add(
-                        Phase1Token(
-                            "{:",
-                            ChalkTalkTokenType.LCurlyColon,
-                            line,
-                            column
-                        )
-                )
-                i++ // move past the :
-                column++
-            } else if (c == ':' && i < text.length && text[i] == '}') {
-                this.chalkTalkTokens!!.add(
-                        Phase1Token(
-                                ":}",
-                                ChalkTalkTokenType.RColonCurly,
-                                line,
-                                column
-                        )
-                )
-                i++ // move past the }
-                column++
             } else if (c == '{') {
                 this.chalkTalkTokens!!.add(
                     Phase1Token("{", ChalkTalkTokenType.LCurly, line, column)

@@ -26,7 +26,6 @@ private fun canBeOnOneLine(target: Target) =
         target is Identifier ||
         target is TupleNode ||
         target is AbstractionNode ||
-        target is AggregateNode ||
         target is AssignmentNode
 
 private fun appendTargetArgs(writer: CodeWriter, targets: List<Target>, indent: Int) {

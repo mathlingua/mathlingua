@@ -63,11 +63,6 @@ data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
-            is Aggregate -> {
-                buffer.append(buildIndent(level, true))
-                buffer.append(chalkTalkTarget.toCode())
-                buffer.append("\n")
-            }
             is Assignment -> {
                 buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.toCode())

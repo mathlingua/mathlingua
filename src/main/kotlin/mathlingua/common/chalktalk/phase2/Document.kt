@@ -371,7 +371,8 @@ open class HtmlCodeWriter : CodeWriter {
 
     override fun writePhase1Node(phase1Node: Phase1Node) {
         builder.append("<span class='mathlingua-argument'>")
-        builder.append("\\[${phase1Node.toCode()
+        val code = prettyPrintIdentifier(phase1Node.toCode())
+        builder.append("\\[${code
                 .replace("{", "\\{")
                 .replace("}", "\\}")
                 // replace _\{...\} with _{...}

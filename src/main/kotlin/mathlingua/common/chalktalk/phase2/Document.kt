@@ -58,6 +58,18 @@ data class Document(
     override var column: Int
 ) : Phase2Node {
 
+    fun all(): List<TopLevelGroup> {
+        val result = mutableListOf<TopLevelGroup>()
+        result.addAll(defines)
+        result.addAll(represents)
+        result.addAll(results)
+        result.addAll(axioms)
+        result.addAll(conjectures)
+        result.addAll(sources)
+        result.addAll(protoGroups)
+        return result
+    }
+
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         defines.forEach(fn)
         represents.forEach(fn)

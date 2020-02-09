@@ -35,6 +35,7 @@ fun getSignature(group: TopLevelGroup): String? {
     return when (group) {
         is DefinesGroup -> getSignature(group.id)
         is RepresentsGroup -> getSignature(group.id)
+        is ProtoGroup -> getSignature(group.textSection)
         else -> null
     }
 }
@@ -91,9 +92,22 @@ private fun findAllSignaturesImpl(node: Phase2Node, signatures: MutableSet<Strin
         signatures.addAll(findAllStatementSignatures(node))
     } else if (node is IdStatement) {
         findAllSignaturesImpl(node.toStatement(), signatures)
+    } else if (node is TextSection) {
+        val sig = getSignature(node)
+        if (sig != null) {
+            signatures.add(sig)
+        }
     }
 
     node.forEach { findAllSignaturesImpl(it, signatures) }
+}
+
+private fun getSignature(section: TextSection): String? {
+    val match = Regex("\\\\term\\{(.*?)\\}").find(section.text)
+    if (match == null || match.groupValues.size < 2) {
+        return null
+    }
+    return match.groupValues[1]
 }
 
 private fun findAllSignaturesImpl(texTalkNode: TexTalkNode, signatures: MutableSet<String>) {

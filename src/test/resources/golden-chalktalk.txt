@@ -355,3 +355,24 @@ Result:
 Metadata:
 . classification: "a"
 -- EndOutput(Phase2):
+
+
+-- Test: handles multiple classifications in metadata
+-- Input:
+Result:
+. "something"
+Metadata:
+. classification:
+  . "a"
+  . "b"
+  . "c"
+-- EndInput:
+-- Output:
+Result:
+. "something"
+Metadata:
+. classification:
+  . "a"
+  . "b"
+  . "c"
+-- EndOutput:

@@ -25,6 +25,7 @@ import mathlingua.common.chalktalk.phase1.ast.*
 val META_DATA_ITEM_CONSTRAINTS = mapOf(
         "name" to -1,
         "classification" to -1,
+        "tag" to -1,
         "author" to -1,
         "contributor" to -1,
         "written" to -1,

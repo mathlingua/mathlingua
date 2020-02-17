@@ -376,3 +376,47 @@ Metadata:
   . "b"
   . "c"
 -- EndOutput:
+
+
+-- Test: handles a single tag in metadata
+-- Input:
+Result:
+. "something"
+Metadata:
+. tag:
+  . "a"
+-- EndInput:
+-- Output(Phase1):
+Result:
+. "something"
+Metadata:
+. tag:
+  . "a"
+-- EndOutput(Phase1):
+-- Output(Phase2):
+Result:
+. "something"
+Metadata:
+. tag: "a"
+-- EndOutput(Phase2):
+
+
+-- Test: handles multiple tags in metadata
+-- Input:
+Result:
+. "something"
+Metadata:
+. tag:
+  . "a"
+  . "b"
+  . "c"
+-- EndInput:
+-- Output:
+Result:
+. "something"
+Metadata:
+. tag:
+  . "a"
+  . "b"
+  . "c"
+-- EndOutput:

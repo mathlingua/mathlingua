@@ -332,3 +332,26 @@ Result:
   then:
   . b
 -- EndOutput(Phase2):
+
+
+-- Test: handles a single classification in metadata
+-- Input:
+Result:
+. "something"
+Metadata:
+. classification:
+  . "a"
+-- EndInput:
+-- Output(Phase1):
+Result:
+. "something"
+Metadata:
+. classification:
+  . "a"
+-- EndOutput(Phase1):
+-- Output(Phase2):
+Result:
+. "something"
+Metadata:
+. classification: "a"
+-- EndOutput(Phase2):

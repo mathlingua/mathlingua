@@ -209,6 +209,7 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
     val newRoot = root.transform {
         val result = if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
+            it.texTalkRoot.value.children.isNotEmpty() &&
             it.texTalkRoot.value.children.all { c -> c is Command }) {
             val exp = it.texTalkRoot.value
             val cmds = getCommandsToGlue(exp)

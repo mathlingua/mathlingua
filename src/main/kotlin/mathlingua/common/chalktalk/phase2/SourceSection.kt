@@ -26,6 +26,7 @@ val SOURCE_ITEM_CONSTRAINTS = mapOf(
         "name" to 1,
         "author" to -1,
         "date" to 1,
+        "homepage" to 1,
         "url" to 1,
         "offset" to 1)
 

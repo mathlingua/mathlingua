@@ -474,3 +474,26 @@ Source:
   . "author2"
   . "author3"
 -- EndOutput(Phase2):
+
+
+-- Test: handles sources with a homepage
+-- Input:
+[id]
+Source:
+. name: "some name"
+. homepage: "some.homepage.com"
+-- EndInput:
+-- Output(Phase1):
+[id]
+Source:
+. name:
+  . "some name"
+. homepage:
+  . "some.homepage.com"
+-- EndOutput(Phase1):
+-- Output(Phase2):
+[id]
+Source:
+. name: "some name"
+. homepage: "some.homepage.com"
+-- EndOutput(Phase2):

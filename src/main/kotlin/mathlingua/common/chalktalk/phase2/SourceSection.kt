@@ -24,7 +24,7 @@ import mathlingua.common.chalktalk.phase1.ast.*
 
 val SOURCE_ITEM_CONSTRAINTS = mapOf(
         "name" to 1,
-        "author" to 1,
+        "author" to -1,
         "date" to 1,
         "url" to 1,
         "offset" to 1)
@@ -82,9 +82,19 @@ fun validateSourceSection(section: Section): Validation<SourceSection> {
                                     column = getColumn(sect)
                             )
                     )
+                } else if (expectedCount < 0 && sect.args.size < -expectedCount) {
+                    errors.add(
+                            ParseError(
+                                    message = "Expected at least ${-expectedCount} arguments for " +
+                                            "section $name but found ${sect.args.size}",
+                                    row = getRow(sect),
+                                    column = getColumn(sect)
+                            )
+                    )
                 }
+
+                val values = mutableListOf<String>()
                 for (a in sect.args) {
-                    val values = mutableListOf<String>()
                     if (a.chalkTalkTarget is Phase1Token &&
                             a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
                         values.add(a.chalkTalkTarget.text)
@@ -97,17 +107,25 @@ fun validateSourceSection(section: Section): Validation<SourceSection> {
                                 )
                         )
                     }
-                    items.add(StringSectionGroup(
-                            section = StringSection(
-                                    name = name,
-                                    values = values,
-                                    row = getRow(a.chalkTalkTarget),
-                                    column = getColumn(a.chalkTalkTarget)
-                            ),
-                            row = getRow(a.chalkTalkTarget),
-                            column = getColumn(a.chalkTalkTarget)
-                    ))
                 }
+                items.add(StringSectionGroup(
+                        section = StringSection(
+                                name = name,
+                                values = values,
+                                row = if (sect.args.isNotEmpty()) {
+                                    getRow(sect.args[0])
+                                } else {
+                                    -1
+                                },
+                                column = if (sect.args.isNotEmpty()) {
+                                    getColumn(sect.args[0])
+                                } else {
+                                    -1
+                                }
+                        ),
+                        row = getRow(sect),
+                        column = getColumn(sect)
+                ))
             } else {
                 errors.add(
                         ParseError(

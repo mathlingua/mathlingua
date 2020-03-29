@@ -420,3 +420,57 @@ Metadata:
   . "b"
   . "c"
 -- EndOutput:
+
+
+-- Test: handles sources with a single author
+-- Input:
+[id]
+Source:
+. name: "some name"
+. author: "author1"
+-- EndInput:
+-- Output(Phase1):
+[id]
+Source:
+. name:
+  . "some name"
+. author:
+  . "author1"
+-- EndOutput(Phase1):
+-- Output(Phase2):
+[id]
+Source:
+. name: "some name"
+. author: "author1"
+-- EndOutput(Phase2):
+
+
+-- Test: handles sources with multiple authors
+-- Input:
+[id]
+Source:
+. name: "some name"
+. author:
+  . "author1"
+  . "author2"
+  . "author3"
+-- EndInput:
+-- Output(Phase1):
+[id]
+Source:
+. name:
+  . "some name"
+. author:
+  . "author1"
+  . "author2"
+  . "author3"
+-- EndOutput(Phase1):
+-- Output(Phase2):
+[id]
+Source:
+. name: "some name"
+. author:
+  . "author1"
+  . "author2"
+  . "author3"
+-- EndOutput(Phase2):

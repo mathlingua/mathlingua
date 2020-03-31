@@ -23,6 +23,7 @@ import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.*
 
 val SOURCE_ITEM_CONSTRAINTS = mapOf(
+        "type" to 1,
         "name" to 1,
         "author" to -1,
         "date" to 1,

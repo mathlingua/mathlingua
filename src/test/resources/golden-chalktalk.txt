@@ -497,3 +497,25 @@ Source:
 . name: "some name"
 . homepage: "some.homepage.com"
 -- EndOutput(Phase2):
+
+-- Test: handles sources with a type
+-- Input:
+[id]
+Source:
+. name: "some name"
+. type: "Book"
+-- EndInput:
+-- Output(Phase1):
+[id]
+Source:
+. name:
+  . "some name"
+. type:
+  . "Book"
+-- EndOutput(Phase1):
+-- Output(Phase2):
+[id]
+Source:
+. name: "some name"
+. type: "Book"
+-- EndOutput(Phase2):

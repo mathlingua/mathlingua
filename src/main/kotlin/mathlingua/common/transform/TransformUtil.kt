@@ -19,6 +19,12 @@ package mathlingua.common.transform
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.*
+import mathlingua.common.chalktalk.phase2.ast.Document
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.*
+import mathlingua.common.chalktalk.phase2.ast.section.*
+import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.IsTexTalkNode
@@ -75,9 +81,9 @@ fun moveInlineCommandsToIsNode(
                 }
             }
             val result = ClauseListNode(
-                clauses = newClauses,
-                row = -1,
-                column = -1
+                    clauses = newClauses,
+                    row = -1,
+                    column = -1
             )
             if (newTarget == null && hasChild(it, target)) {
                 newTarget = result
@@ -141,69 +147,69 @@ fun moveStatementInlineCommandsToIsNode(
     return ForGroup(
             row = -1,
             column = -1,
-        forSection = ForSection(
-            targets = cmdsToProcess.map {
-                Identifier(
-                    name = cmdToReplacement[it]!!,
+            forSection = ForSection(
+                    targets = cmdsToProcess.map {
+                        Identifier(
+                                name = cmdToReplacement[it]!!,
+                                row = -1,
+                                column = -1,
+                                isVarArgs = false)
+                    },
+                    row = -1,
+                    column = -1
+            ),
+            whereSection = WhereSection(
                     row = -1,
                     column = -1,
-                    isVarArgs = false)
-                },
-                row = -1,
-                column = -1
-        ),
-        whereSection = WhereSection(
-                row = -1,
-                column = -1,
-            clauses = ClauseListNode(
-                row = -1,
-                column = -1,
-                clauses = cmdsToProcess.map {
-                    val isNode = IsTexTalkNode(
-                        lhs = ParametersTexTalkNode(
-                            items = listOf(
-                                ExpressionTexTalkNode(
-                                    children = listOf(
-                                        TextTexTalkNode(
-                                            type = TexTalkNodeType.Identifier,
-                                            text = cmdToReplacement[it]!!,
-                                            isVarArg = false
+                    clauses = ClauseListNode(
+                            row = -1,
+                            column = -1,
+                            clauses = cmdsToProcess.map {
+                                val isNode = IsTexTalkNode(
+                                        lhs = ParametersTexTalkNode(
+                                                items = listOf(
+                                                        ExpressionTexTalkNode(
+                                                                children = listOf(
+                                                                        TextTexTalkNode(
+                                                                                type = TexTalkNodeType.Identifier,
+                                                                                text = cmdToReplacement[it]!!,
+                                                                                isVarArg = false
+                                                                        )
+                                                                )
+                                                        )
+                                                )
+                                        ),
+                                        rhs = ParametersTexTalkNode(
+                                                items = listOf(
+                                                        ExpressionTexTalkNode(
+                                                                children = listOf(it)
+                                                        )
+                                                )
                                         )
-                                    )
                                 )
-                            )
-                        ),
-                        rhs = ParametersTexTalkNode(
-                            items = listOf(
-                                ExpressionTexTalkNode(
-                                    children = listOf(it)
-                                )
-                            )
-                        )
-                    )
 
-                    Statement(
-                        row = -1,
-                        column = -1,
-                        text = isNode.toCode(),
-                        texTalkRoot = ValidationSuccess(
-                            ExpressionTexTalkNode(
-                                children = listOf(isNode)
-                            )
-                        )
+                                Statement(
+                                        row = -1,
+                                        column = -1,
+                                        text = isNode.toCode(),
+                                        texTalkRoot = ValidationSuccess(
+                                                ExpressionTexTalkNode(
+                                                        children = listOf(isNode)
+                                                )
+                                        )
+                                )
+                            }
                     )
-                }
-            )
-        ),
-        thenSection = ThenSection(
-                row = -1,
-                column = -1,
-            clauses = ClauseListNode(
+            ),
+            thenSection = ThenSection(
                     row = -1,
                     column = -1,
-                clauses = listOf(newNode)
+                    clauses = ClauseListNode(
+                            row = -1,
+                            column = -1,
+                            clauses = listOf(newNode)
+                    )
             )
-        )
     )
 }
 
@@ -318,9 +324,9 @@ fun replaceRepresents(
             }
         }
         val result = ClauseListNode(
-            clauses = newClauses,
-            row = -1,
-            column = -1
+                clauses = newClauses,
+                row = -1,
+                column = -1
         )
         if (newTarget == null && hasChild(node, target)) {
             newTarget = result
@@ -474,9 +480,9 @@ fun replaceIsNodes(
             }
         }
         val result = ClauseListNode(
-            clauses = newClauses,
-            row = -1,
-            column = -1
+                clauses = newClauses,
+                row = -1,
+                column = -1
         )
         if (newTarget == null && hasChild(node, target)) {
             newTarget = result
@@ -492,25 +498,25 @@ fun replaceIsNodes(
 }
 
 fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
-    row = -1,
-    column = -1,
-    signature = def.signature,
-    id = def.id,
-    definesSection = def.definesSection,
-    assumingSection = null,
-    meansSections = buildIfThens(def).map {
-        MeansSection(
-                row = -1,
-                column = -1,
-                clauses = ClauseListNode(
-                        row = -1,
-                        column = -1,
-                        clauses = listOf(it)
-                )
-        )
-    },
-    aliasSection = def.aliasSection,
-    metaDataSection = def.metaDataSection
+        row = -1,
+        column = -1,
+        signature = def.signature,
+        id = def.id,
+        definesSection = def.definesSection,
+        assumingSection = null,
+        meansSections = buildIfThens(def).map {
+            MeansSection(
+                    row = -1,
+                    column = -1,
+                    clauses = ClauseListNode(
+                            row = -1,
+                            column = -1,
+                            clauses = listOf(it)
+                    )
+            )
+        },
+        aliasSection = def.aliasSection,
+        metaDataSection = def.metaDataSection
 )
 
 fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
@@ -652,10 +658,10 @@ fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootT
                             val expRoot = validation.value
                             for (expanded in getExpandedInfixOperators(expRoot)) {
                                 newClauses.add(Statement(
-                                    text = expanded.toCode(),
-                                    texTalkRoot = ValidationSuccess(expanded),
-                                    row = -1,
-                                    column = -1
+                                        text = expanded.toCode(),
+                                        texTalkRoot = ValidationSuccess(expanded),
+                                        row = -1,
+                                        column = -1
                                 ))
                             }
                         }
@@ -666,9 +672,9 @@ fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootT
                 }
             }
             val result = ClauseListNode(
-                clauses = newClauses,
-                row = -1,
-                column = -1
+                    clauses = newClauses,
+                    row = -1,
+                    column = -1
             )
             if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result

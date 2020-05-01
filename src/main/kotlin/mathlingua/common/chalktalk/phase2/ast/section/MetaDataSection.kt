@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2
+package mathlingua.common.chalktalk.phase2.ast.section
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.*
+import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 
 val META_DATA_ITEM_CONSTRAINTS = mapOf(
         "name" to -1,
@@ -114,10 +117,10 @@ fun validateMetaDataSection(section: Section): Validation<MetaDataSection> {
                 val column = getColumn(sect)
                 items.add(StringSectionGroup(
                         section = StringSection(
-                        name = name,
-                        values = values,
-                        row = row,
-                        column = column
+                                name = name,
+                                values = values,
+                                row = row,
+                                column = column
                         ),
                         row = row,
                         column = column
@@ -357,7 +360,7 @@ data class SourceItemGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = mathlingua.common.chalktalk.phase2.ast.toplevel.toCode(
             writer,
             isArg,
             indent,
@@ -444,12 +447,12 @@ fun validateSourceItemGroup(groupNode: Group): Validation<SourceItemGroup> {
     } else {
         ValidationSuccess(
                 SourceItemGroup(
-                    sourceSection = sourceSection!!,
-                    pageSection = pageSection,
-                    offsetSection = offsetSection,
-                    contentSection = contentSection,
-                    row = sourceSection.row,
-                    column = sourceSection.column)
+                        sourceSection = sourceSection!!,
+                        pageSection = pageSection,
+                        offsetSection = offsetSection,
+                        contentSection = contentSection,
+                        row = sourceSection.row,
+                        column = sourceSection.column)
                 )
     }
 }

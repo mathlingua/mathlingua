@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2
+package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
@@ -85,9 +85,9 @@ private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean
     return if (errors.isNotEmpty()) {
         ValidationFailure(errors)
     } else ValidationSuccess(
-        ClauseListSection(
-            name.text,
-            clauses
-        )
+            ClauseListSection(
+                    name.text,
+                    clauses
+            )
     )
 }

@@ -25,7 +25,7 @@ import org.junit.jupiter.api.Test
 internal class SignatureUtilKtTest {
     @Test
     fun findAllStatementSignaturesNonGluedTest() {
-        val validation = MathLingua().parse("[\\xyz{x}]\nDefines: y\nmeans: 'something'")
+        val validation = MathLingua.parse("[\\xyz{x}]\nDefines: y\nmeans: 'something'")
         val doc = (validation as ValidationSuccess).value
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
@@ -36,7 +36,7 @@ internal class SignatureUtilKtTest {
 
     @Test
     fun findAllStatementSignaturesGluedTest() {
-        val validation = MathLingua().parse("[\\abc \\xyz{x}]\nDefines: y\nmeans: 'something'")
+        val validation = MathLingua.parse("[\\abc \\xyz{x}]\nDefines: y\nmeans: 'something'")
         val doc = (validation as ValidationSuccess).value
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
@@ -47,7 +47,7 @@ internal class SignatureUtilKtTest {
 
     @Test
     fun findAllStatementSignaturesInfixTest() {
-        val validation = MathLingua().parse("[x \\abc y]\nDefines: y\nmeans: 'something'")
+        val validation = MathLingua.parse("[x \\abc y]\nDefines: y\nmeans: 'something'")
         val doc = (validation as ValidationSuccess).value
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]

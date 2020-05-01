@@ -18,7 +18,14 @@ package mathlingua.common.transform
 
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.*
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.common.chalktalk.phase2.ast.clause.Statement
+import mathlingua.common.chalktalk.phase2.ast.section.TextSection
+import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.ProtoGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionTexTalkNode

@@ -16,8 +16,6 @@
 
 package mathlingua.common
 
-import kotlin.collections.ArrayList
-
 data class ParseError(
     override val message: String,
     val row: Int,
@@ -27,32 +25,6 @@ data class ParseError(
 sealed class Validation<out T>
 data class ValidationSuccess<T>(val value: T) : Validation<T>()
 data class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
-
-class Stack<T> {
-    private val data = mutableListOf<T>()
-
-    fun push(item: T) = data.add(item)
-
-    fun pop() = data.removeAt(data.size - 1)
-
-    fun peek() = data.elementAt(data.size - 1)
-
-    fun isEmpty() = data.isEmpty()
-}
-
-class Queue<T> : Iterable<T> {
-    private val data = ArrayList<T>()
-
-    fun offer(item: T) = data.add(0, item)
-
-    fun poll() = data.removeAt(0)
-
-    fun peek() = data.elementAt(0)
-
-    fun isEmpty() = data.isEmpty()
-
-    override fun iterator() = data.iterator()
-}
 
 private fun tokenize(text: String): List<String> {
     val tokens = mutableListOf<String>()

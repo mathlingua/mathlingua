@@ -16,137 +16,133 @@ import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 
-object TexTalkPlayground {
+fun main() {
+    // enable sub-pixel antialiasing
+    System.setProperty("awt.useSystemAAFontSettings", "on")
+    try {
+        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel")
+    } catch (e: Exception) {
+        println("Could not set the look and feel to Nimbus: $e")
+    }
 
-    @JvmStatic
-    fun main(args: Array<String>) {
-        // enable sub-pixel antialiasing
-        System.setProperty("awt.useSystemAAFontSettings", "on")
-        try {
-            UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel")
-        } catch (e: Exception) {
-            println("Could not set the look and feel to Nimbus: $e")
-        }
+    val fontSize = 18
+    val fontName = "Courier New"
+    val font = Font(fontName, Font.PLAIN, fontSize)
+    val boldFont = Font(fontName, Font.BOLD, fontSize)
 
-        val fontSize = 18
-        val fontName = "Courier New"
-        val font = Font(fontName, Font.PLAIN, fontSize)
-        val boldFont = Font(fontName, Font.BOLD, fontSize)
+    val outputTree = JTree(DefaultMutableTreeNode())
 
-        val outputTree = JTree(DefaultMutableTreeNode())
+    val signaturesList = JTextArea(20, 20)
+    signaturesList.font = font
 
-        val signaturesList = JTextArea(20, 20)
-        signaturesList.font = font
+    val errorArea = JTextArea()
+    errorArea.font = font
 
-        val errorArea = JTextArea()
-        errorArea.font = font
+    val outputArea = RSyntaxTextArea(20, 60)
+    outputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
+    outputArea.isCodeFoldingEnabled = true
+    outputArea.highlightCurrentLine = false
+    outputArea.font = font
+    outputArea.syntaxScheme
+            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
-        val outputArea = RSyntaxTextArea(20, 60)
-        outputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
-        outputArea.isCodeFoldingEnabled = true
-        outputArea.highlightCurrentLine = false
-        outputArea.font = font
-        outputArea.syntaxScheme
-                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+    val inputArea = RSyntaxTextArea(20, 60)
+    inputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
+    inputArea.isCodeFoldingEnabled = true
+    inputArea.highlightCurrentLine = false
+    inputArea.font = font
+    inputArea.syntaxScheme
+            .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
-        val inputArea = RSyntaxTextArea(20, 60)
-        inputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
-        inputArea.isCodeFoldingEnabled = true
-        inputArea.highlightCurrentLine = false
-        inputArea.font = font
-        inputArea.syntaxScheme
-                .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+    inputArea.addKeyListener(object : KeyListener {
+        override fun keyTyped(keyEvent: KeyEvent) {}
 
-        inputArea.addKeyListener(object : KeyListener {
-            override fun keyTyped(keyEvent: KeyEvent) {}
-
-            override fun keyReleased(keyEvent: KeyEvent) {
-                if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
-                    return
-                }
-
-                SwingUtilities.invokeLater {
-                    val errorBuilder = StringBuilder()
-                    try {
-                        val input = inputArea.text
-
-                        val lexer = newTexTalkLexer(input)
-
-                        for (err in lexer.errors) {
-                            errorBuilder.append(err)
-                            errorBuilder.append('\n')
-                        }
-
-                        val parser = newTexTalkParser()
-                        val (root, errors) = parser.parse(lexer)
-
-                        for (err in errors) {
-                            errorBuilder.append(err)
-                            errorBuilder.append('\n')
-                        }
-
-                        outputArea.text = root.toCode()
-                        outputTree.model = DefaultTreeModel(toTreeNode(root))
-
-                        val sigBuilder = StringBuilder()
-                        for (node in root.children) {
-                            if (node is Command) {
-                                val sig = getCommandSignature(node)
-                                sigBuilder.append(sig)
-                                sigBuilder.append('\n')
-                            }
-                        }
-                        signaturesList.text = sigBuilder.toString()
-                    } catch (e: Exception) {
-                        System.err.println(e.message)
-                        e.printStackTrace()
-                    }
-                    errorArea.text = errorBuilder.toString()
-                }
+        override fun keyReleased(keyEvent: KeyEvent) {
+            if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
+                return
             }
 
-            override fun keyPressed(keyEvent: KeyEvent) {}
-        })
+            SwingUtilities.invokeLater {
+                val errorBuilder = StringBuilder()
+                try {
+                    val input = inputArea.text
 
-        val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
-        inputSplitPane.leftComponent = RTextScrollPane(inputArea)
-        inputSplitPane.rightComponent = JScrollPane(outputArea)
-        inputSplitPane.resizeWeight = 0.5
+                    val lexer = newTexTalkLexer(input)
 
-        val textPane = JSplitPane(JSplitPane.VERTICAL_SPLIT)
-        textPane.dividerLocation = 600
-        textPane.topComponent = inputSplitPane
-        textPane.bottomComponent = JScrollPane(errorArea)
+                    for (err in lexer.errors) {
+                        errorBuilder.append(err)
+                        errorBuilder.append('\n')
+                    }
 
-        val treeTabbedPane = JTabbedPane()
-        treeTabbedPane.addTab("Output", JScrollPane(outputTree))
-        treeTabbedPane.addTab("Signatures", JScrollPane(signaturesList))
+                    val parser = newTexTalkParser()
+                    val (root, errors) = parser.parse(lexer)
 
-        val treePane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
-        treePane.dividerLocation = 900
-        treePane.leftComponent = textPane
-        treePane.rightComponent = treeTabbedPane
+                    for (err in errors) {
+                        errorBuilder.append(err)
+                        errorBuilder.append('\n')
+                    }
 
-        val mainPanel = JPanel(BorderLayout())
-        mainPanel.add(treePane, BorderLayout.CENTER)
+                    outputArea.text = root.toCode()
+                    outputTree.model = DefaultTreeModel(toTreeNode(root))
 
-        val frame = JFrame()
-        frame.setSize(1300, 900)
-        frame.contentPane = mainPanel
-        frame.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
-        frame.isVisible = true
-    }
-
-    private fun toTreeNode(texTalkNode: TexTalkNode): DefaultMutableTreeNode {
-        val result = DefaultMutableTreeNode(texTalkNode.javaClass.simpleName)
-        var visited = false
-        texTalkNode.forEach {
-            visited = true
-            result.add(toTreeNode(it))
+                    val sigBuilder = StringBuilder()
+                    for (node in root.children) {
+                        if (node is Command) {
+                            val sig = getCommandSignature(node)
+                            sigBuilder.append(sig)
+                            sigBuilder.append('\n')
+                        }
+                    }
+                    signaturesList.text = sigBuilder.toString()
+                } catch (e: Exception) {
+                    System.err.println(e.message)
+                    e.printStackTrace()
+                }
+                errorArea.text = errorBuilder.toString()
+            }
         }
-        if (!visited) {
-            result.add(DefaultMutableTreeNode(texTalkNode.toCode()))
-        }
-        return result
+
+        override fun keyPressed(keyEvent: KeyEvent) {}
+    })
+
+    val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
+    inputSplitPane.leftComponent = RTextScrollPane(inputArea)
+    inputSplitPane.rightComponent = JScrollPane(outputArea)
+    inputSplitPane.resizeWeight = 0.5
+
+    val textPane = JSplitPane(JSplitPane.VERTICAL_SPLIT)
+    textPane.dividerLocation = 600
+    textPane.topComponent = inputSplitPane
+    textPane.bottomComponent = JScrollPane(errorArea)
+
+    val treeTabbedPane = JTabbedPane()
+    treeTabbedPane.addTab("Output", JScrollPane(outputTree))
+    treeTabbedPane.addTab("Signatures", JScrollPane(signaturesList))
+
+    val treePane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
+    treePane.dividerLocation = 900
+    treePane.leftComponent = textPane
+    treePane.rightComponent = treeTabbedPane
+
+    val mainPanel = JPanel(BorderLayout())
+    mainPanel.add(treePane, BorderLayout.CENTER)
+
+    val frame = JFrame()
+    frame.setSize(1300, 900)
+    frame.contentPane = mainPanel
+    frame.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
+    frame.isVisible = true
+}
+
+private fun toTreeNode(texTalkNode: TexTalkNode): DefaultMutableTreeNode {
+    val result = DefaultMutableTreeNode(texTalkNode.javaClass.simpleName)
+    var visited = false
+    texTalkNode.forEach {
+        visited = true
+        result.add(toTreeNode(it))
     }
+    if (!visited) {
+        result.add(DefaultMutableTreeNode(texTalkNode.toCode()))
+    }
+    return result
 }

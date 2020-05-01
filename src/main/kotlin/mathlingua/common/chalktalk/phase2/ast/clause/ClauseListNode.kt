@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2
+package mathlingua.common.chalktalk.phase2.ast.clause
+
+import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 data class ClauseListNode(
     val clauses: List<Clause>,
@@ -37,9 +40,9 @@ data class ClauseListNode(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(ClauseListNode(
-            clauses = clauses.map { it.transform(chalkTransformer) as Clause },
-            row = row,
-            column = column
+                clauses = clauses.map { it.transform(chalkTransformer) as Clause },
+                row = row,
+                column = column
         ))
     }
 }

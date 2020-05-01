@@ -19,6 +19,10 @@ package mathlingua.common.transform
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.*
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.Clause
+import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionTexTalkNode
@@ -86,10 +90,10 @@ fun replaceCommands(
                 val root = validation.value
                 val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
                 Statement(
-                    text = newRoot.toCode(),
-                    texTalkRoot = ValidationSuccess(newRoot),
-                    row = -1,
-                    column = -1
+                        text = newRoot.toCode(),
+                        texTalkRoot = ValidationSuccess(newRoot),
+                        row = -1,
+                        column = -1
                 )
             }
         }
@@ -138,10 +142,10 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
                                 children = listOf(it)
                             )
                             Statement(
-                                text = expRoot.toCode(),
-                                texTalkRoot = ValidationSuccess(expRoot),
-                                row = -1,
-                                column = -1
+                                    text = expRoot.toCode(),
+                                    texTalkRoot = ValidationSuccess(expRoot),
+                                    row = -1,
+                                    column = -1
                             )
                         })
                     }
@@ -150,9 +154,9 @@ fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase
                 }
             }
             val result = ClauseListNode(
-                clauses = newClauses,
-                row = -1,
-                column = -1
+                    clauses = newClauses,
+                    row = -1,
+                    column = -1
             )
             if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result
@@ -223,8 +227,8 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
                 )
             )
             val result = Statement(
-                text = newExp.toCode(),
-                texTalkRoot = ValidationSuccess(newExp),
+                    text = newExp.toCode(),
+                    texTalkRoot = ValidationSuccess(newExp),
                     row = -1,
                     column = -1
             )
@@ -262,8 +266,8 @@ fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, P
                 )
             )
             val result = Statement(
-                text = newExp.toCode(),
-                texTalkRoot = ValidationSuccess(newExp),
+                    text = newExp.toCode(),
+                    texTalkRoot = ValidationSuccess(newExp),
                     row = -1,
                     column = -1
             )

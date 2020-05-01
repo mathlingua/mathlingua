@@ -18,6 +18,8 @@ package mathlingua.common.textalk
 
 import mathlingua.common.ParseError
 
+// ------------------------------------------------------------------------------------------------------------------ //
+
 interface TexTalkParser {
     fun parse(texTalkLexer: TexTalkLexer): TexTalkParseResult
 }
@@ -30,6 +32,8 @@ data class TexTalkParseResult(
 fun newTexTalkParser(): TexTalkParser {
     return TexTalkParserImpl()
 }
+
+// ------------------------------------------------------------------------------------------------------------------ //
 
 private val INVALID = TexTalkToken("INVALID", TexTalkTokenType.Invalid, -1, -1)
 

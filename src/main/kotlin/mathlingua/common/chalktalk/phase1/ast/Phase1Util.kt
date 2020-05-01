@@ -16,7 +16,7 @@
 
 package mathlingua.common.chalktalk.phase1.ast
 
-private fun max(val1: Int, val2: Int) = if (val1 >= val2) val1 else val2
+import kotlin.math.max
 
 fun buildIndent(level: Int, isArg: Boolean): String {
     val buffer = StringBuilder()
@@ -26,14 +26,6 @@ fun buildIndent(level: Int, isArg: Boolean): String {
     }
     if (isArg) {
         buffer.append(". ")
-    }
-    return buffer.toString()
-}
-
-fun getIndent(size: Int): String {
-    val buffer = StringBuilder()
-    for (i in 0 until size) {
-        buffer.append(' ')
     }
     return buffer.toString()
 }

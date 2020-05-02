@@ -25,6 +25,7 @@ import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.loadTestCases
+import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
@@ -48,6 +49,7 @@ internal class ChalkTalkParserTest {
 
                 val doc = (validation as ValidationSuccess).value
                 assertThat(doc.toCode(false, 0).getCode().trim()).isEqualTo(it.phase2Output.trim())
+                assertThat(serialize(doc)).isEqualTo(it.phase2Structure)
             }
         }
     }

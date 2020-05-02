@@ -1,0 +1,38 @@
+ExpressionTexTalkNode(
+  children = [
+               Command(
+                 parts = [
+                           CommandPart(
+                             name = TextTexTalkNode(
+                               type = TexTalkNodeType.Identifier
+                               text = "cos"
+                               isVarArg = false
+                             )
+                             square = null
+                             subSup = null
+                             groups = [
+                                        GroupTexTalkNode(
+                                          type = TexTalkNodeType.CurlyGroup
+                                          parameters = ParametersTexTalkNode(
+                                            items = [
+                                                      ExpressionTexTalkNode(
+                                                        children = [
+                                                                     TextTexTalkNode(
+                                                                       type = TexTalkNodeType.Identifier
+                                                                       text = "x"
+                                                                       isVarArg = false
+                                                                     )
+                                                                   ]
+                                                      )
+                                                    ]
+                                          )
+                                          isVarArg = false
+                                        )
+                                      ]
+                             namedGroups = [
+                                           ]
+                           )
+                         ]
+               )
+             ]
+)

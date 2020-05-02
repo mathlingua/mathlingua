@@ -1,0 +1,70 @@
+Root(
+  groups = [
+             Group(
+               sections = [
+                            Section(
+                              name = Phase1Token(
+                                text = "Result"
+                                type = ChalkTalkTokenType.Name
+                                row = 0
+                                column = 0
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Abstraction(
+                                           isEnclosed = false
+                                           parts = [
+                                                     AbstractionPart(
+                                                       name = Phase1Token(
+                                                         text = "a"
+                                                         type = ChalkTalkTokenType.Name
+                                                         row = 1
+                                                         column = 3
+                                                       )
+                                                       subParams = null
+                                                       params = null
+                                                     )
+                                                   ]
+                                         )
+                                       ),
+                                       Argument(
+                                         chalkTalkTarget = Abstraction(
+                                           isEnclosed = false
+                                           parts = [
+                                                     AbstractionPart(
+                                                       name = Phase1Token(
+                                                         text = "b"
+                                                         type = ChalkTalkTokenType.Name
+                                                         row = 2
+                                                         column = 3
+                                                       )
+                                                       subParams = null
+                                                       params = null
+                                                     )
+                                                   ]
+                                         )
+                                       ),
+                                       Argument(
+                                         chalkTalkTarget = Abstraction(
+                                           isEnclosed = false
+                                           parts = [
+                                                     AbstractionPart(
+                                                       name = Phase1Token(
+                                                         text = "c"
+                                                         type = ChalkTalkTokenType.Name
+                                                         row = 3
+                                                         column = 3
+                                                       )
+                                                       subParams = null
+                                                       params = null
+                                                     )
+                                                   ]
+                                         )
+                                       )
+                                     ]
+                            )
+                          ]
+               id = null
+             )
+           ]
+)

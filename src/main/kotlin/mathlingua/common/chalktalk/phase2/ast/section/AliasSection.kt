@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2
+package mathlingua.common.chalktalk.phase2.ast.section
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
@@ -23,13 +23,16 @@ import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.ast.clause.MappingNode
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.validateMappingNode
 
 data class AliasSection(
     val mappings: List<MappingNode>,
     override var row: Int,
     override var column: Int
-) :
-    Phase2Node {
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = mappings.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -46,9 +49,9 @@ data class AliasSection(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(AliasSection(
-        mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
-        row = row,
-        column = column
+            mappings = mappings.map { it.transform(chalkTransformer) as MappingNode },
+            row = row,
+            column = column
     ))
 }
 
@@ -77,9 +80,9 @@ fun validateAliasSection(section: Section): Validation<AliasSection> {
         ValidationFailure(errors)
     } else {
         ValidationSuccess(AliasSection(
-            mappings = mappings,
-            row = getRow(section),
-            column = getColumn(section)
+                mappings = mappings,
+                row = getRow(section),
+                column = getColumn(section)
         ))
     }
 }

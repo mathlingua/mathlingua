@@ -17,9 +17,9 @@
 package mathlingua.common.chalktalk.phase1
 
 import mathlingua.common.ParseError
-import mathlingua.common.Stack
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
+import java.util.*
 
 interface ChalkTalkLexer {
     fun hasNext(): Boolean
@@ -33,6 +33,8 @@ interface ChalkTalkLexer {
 fun newChalkTalkLexer(text: String): ChalkTalkLexer {
     return ChalkTalkLexerImpl(text)
 }
+
+// ------------------------------------------------------------------------------------------------------------------ //
 
 private class ChalkTalkLexerImpl(private var text: String) :
     ChalkTalkLexer {

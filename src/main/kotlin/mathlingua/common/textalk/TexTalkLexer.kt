@@ -18,6 +18,8 @@ package mathlingua.common.textalk
 
 import mathlingua.common.ParseError
 
+// ------------------------------------------------------------------------------------------------------------------ //
+
 interface TexTalkLexer {
     fun hasNext(): Boolean
     fun hasNextNext(): Boolean
@@ -30,6 +32,8 @@ interface TexTalkLexer {
 fun newTexTalkLexer(text: String): TexTalkLexer {
     return TexTalkLexerImpl(text)
 }
+
+// ------------------------------------------------------------------------------------------------------------------ //
 
 private class TexTalkLexerImpl(text: String) : TexTalkLexer {
     override val errors = mutableListOf<ParseError>()

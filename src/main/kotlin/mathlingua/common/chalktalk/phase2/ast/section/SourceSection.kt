@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2
+package mathlingua.common.chalktalk.phase2.ast.section
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.*
+import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 val SOURCE_ITEM_CONSTRAINTS = mapOf(
         "type" to 1,

@@ -24,6 +24,7 @@ import mathlingua.GoldenType
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
+import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.loadTestCases
 import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest

@@ -20,13 +20,8 @@ import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
-import mathlingua.common.chalktalk.phase2.AbstractionNode
-import mathlingua.common.chalktalk.phase2.AssignmentNode
-import mathlingua.common.chalktalk.phase2.Identifier
-import mathlingua.common.chalktalk.phase2.Phase2Node
-import mathlingua.common.chalktalk.phase2.Statement
-import mathlingua.common.chalktalk.phase2.Text
-import mathlingua.common.chalktalk.phase2.TupleNode
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.*
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
@@ -64,7 +59,12 @@ fun renameVars(
 fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
     fun chalkTransformer(node: Phase2Node): Phase2Node {
         if (node is Identifier) {
-            return node.copy(name = map[node.name] ?: node.name)
+            return Identifier(
+                    name = map[node.name] ?: node.name,
+                    isVarArgs = node.isVarArgs,
+                    row = node.row,
+                    column = node.column
+            )
         }
 
         if (node is Statement) {
@@ -74,8 +74,8 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
                     return Statement(
                             row = -1,
                             column = -1,
-                        text = exp.toCode(),
-                        texTalkRoot = ValidationSuccess(exp)
+                            text = exp.toCode(),
+                            texTalkRoot = ValidationSuccess(exp)
                     )
                 }
                 is ValidationFailure -> node
@@ -87,9 +87,9 @@ fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
                 newText = newText.replace("$key&", map[key]!!)
             }
             return Text(
-                text = newText,
-                row = -1,
-                column = -1
+                    text = newText,
+                    row = -1,
+                    column = -1
             )
         }
 

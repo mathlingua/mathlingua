@@ -23,7 +23,7 @@ import mathlingua.common.ValidationSuccess
 import java.io.File
 import kotlin.system.exitProcess
 
-data class ErrorInfo(
+private data class ErrorInfo(
     val file: String,
     val message: String,
     val failedLine: String,
@@ -102,7 +102,7 @@ fun main(args: Array<String>) {
     exitProcess(if (allErrorInfo.isEmpty()) 0 else 1)
 }
 
-fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>): ErrorInfo {
+private fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>): ErrorInfo {
     val lineNumber = "Line ${err.row + 1}: "
     val lineBuilder = StringBuilder()
     lineBuilder.append(lineNumber)
@@ -124,22 +124,21 @@ fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>): ErrorIn
     )
 }
 
-fun processFile(file: File, allSignatures: MutableSet<String>, defSignatures: MutableSet<String>): List<ErrorInfo> {
+private fun processFile(file: File, allSignatures: MutableSet<String>, defSignatures: MutableSet<String>): List<ErrorInfo> {
     val input = String(file.readBytes())
     val inputLines = input.split("\n")
 
-    return when (val validation = MathLingua().parse(input)) {
+    return when (val validation = MathLingua.parse(input)) {
         is ValidationSuccess -> {
             val document = validation.value
-            val ml = MathLingua()
-            allSignatures.addAll(ml.findAllSignatures(document))
+            allSignatures.addAll(MathLingua.findAllSignatures(document))
 
             for (def in document.defines) {
-                defSignatures.addAll(ml.findAllSignatures(def))
+                defSignatures.addAll(MathLingua.findAllSignatures(def))
             }
 
             for (rep in document.represents) {
-                defSignatures.addAll(ml.findAllSignatures(rep))
+                defSignatures.addAll(MathLingua.findAllSignatures(rep))
             }
             emptyList()
         }
@@ -149,7 +148,7 @@ fun processFile(file: File, allSignatures: MutableSet<String>, defSignatures: Mu
     }
 }
 
-fun findFiles(file: File, ext: String): List<File> {
+private fun findFiles(file: File, ext: String): List<File> {
     if (file.isFile) {
         return if (file.absolutePath.endsWith(ext)) {
             listOf(file)

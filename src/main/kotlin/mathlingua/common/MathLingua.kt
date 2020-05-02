@@ -19,10 +19,16 @@ package mathlingua.common
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.*
+import mathlingua.common.chalktalk.phase2.ast.Document
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
+import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.Command
 import mathlingua.common.transform.*
 
-class MathLingua {
+object MathLingua {
     fun parse(input: String): Validation<Document> {
         val lexer = newChalkTalkLexer(input)
 
@@ -49,9 +55,9 @@ class MathLingua {
     fun signatureOf(group: TopLevelGroup) = getSignature(group)
     fun signatureOf(command: Command) = getCommandSignature(command)
 
-    fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList().toTypedArray()
+    fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
 
-    fun findAllSignatures(node: Phase2Node) = locateAllSignatures(node).toList().toTypedArray()
+    fun findAllSignatures(node: Phase2Node) = locateAllSignatures(node).toList()
 
     fun expandAtPosition(
         text: String,

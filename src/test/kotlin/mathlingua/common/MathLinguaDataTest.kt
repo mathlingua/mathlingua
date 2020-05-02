@@ -29,7 +29,7 @@ internal class MathLinguaDataTest {
     @Test
     fun `mathlingua text file is valid`() {
         val input = Files.readString(MATHLINGUA_SOURCE_FILE.toPath())
-        val result = MathLingua().parse(input)
+        val result = MathLingua.parse(input)
         val builder = StringBuilder()
         if (result is ValidationFailure) {
             for (err in result.errors) {

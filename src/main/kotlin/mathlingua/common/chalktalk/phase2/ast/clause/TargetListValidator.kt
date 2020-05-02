@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2
+package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.ParseError
 import mathlingua.common.Validation
@@ -35,7 +35,7 @@ fun <T> validateTargetList(
     val node = rawNode.resolve()
     val row = getRow(node)
     val column = getColumn(node)
-    return when (val validation = validate(node, expectedName)) {
+    return when (val validation = validateTargetListSection(node, expectedName)) {
         is ValidationSuccess -> {
             val targets = validation.value.targets
             return ValidationSuccess(builder(targets, row, column))
@@ -44,7 +44,7 @@ fun <T> validateTargetList(
     }
 }
 
-private fun validate(
+private fun validateTargetListSection(
     node: Phase1Node,
     expectedName: String
 ): Validation<TargetListSection> {

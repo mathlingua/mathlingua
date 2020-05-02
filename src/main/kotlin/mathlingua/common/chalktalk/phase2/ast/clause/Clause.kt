@@ -1,0 +1,261 @@
+/*
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package mathlingua.common.chalktalk.phase2.ast.clause
+
+import mathlingua.common.ParseError
+import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Group
+import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.section.identifySections
+
+private data class ValidationPair<T>(
+    val matches: (node: Phase1Node) -> Boolean,
+    val validate: (node: Phase1Node) -> Validation<T>
+)
+
+interface Clause : Phase2Node
+interface Target : Clause
+
+private val CLAUSE_VALIDATORS = listOf(
+        ValidationPair<Clause>(
+                ::isAbstraction,
+                ::validateAbstractionNode
+        ),
+        ValidationPair(
+                ::isTuple,
+                ::validateTupleNode
+        ),
+        ValidationPair(
+                ::isAssignment,
+                ::validateAssignmentNode
+        ),
+        ValidationPair(
+                ::isIdentifier,
+                ::validateIdentifier
+        ),
+        ValidationPair(
+                ::isStatement,
+                ::validateStatement
+        ),
+        ValidationPair(
+                ::isText,
+                ::validateText
+        ),
+        ValidationPair(
+                ::isForGroup,
+                ::validateForGroup
+        ),
+        ValidationPair(
+                ::isExistsGroup,
+                ::validateExistsGroup
+        ),
+        ValidationPair(
+                ::isNotGroup,
+                ::validateNotGroup
+        ),
+        ValidationPair(
+                ::isOrGroup,
+                ::validateOrGroup
+        ),
+        ValidationPair(
+                ::isIfGroup,
+                ::validateIfGroup
+        ),
+        ValidationPair(
+                ::isIffGroup,
+                ::validateIffGroup
+        )
+)
+
+fun validateClause(rawNode: Phase1Node): Validation<Clause> {
+    val node = rawNode.resolve()
+
+    for (pair in CLAUSE_VALIDATORS) {
+        if (pair.matches(node)) {
+            return when (val validation = pair.validate(node)) {
+                is ValidationSuccess -> ValidationSuccess(validation.value)
+                is ValidationFailure -> ValidationFailure(validation.errors)
+            }
+        }
+    }
+
+    return ValidationFailure(
+        listOf(
+            ParseError(
+                "Expected a Target",
+                getRow(node), getColumn(node)
+            )
+        )
+    )
+}
+
+fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
+    if (node !is Group) {
+        return false
+    }
+
+    val (sections) = node
+    return if (sections.isEmpty()) {
+        false
+    } else sections[0].name.text == name
+}
+
+fun <G, S> validateSingleSectionGroup(
+    rawNode: Phase1Node,
+    sectionName: String,
+    buildGroup: (sect: S, row: Int, column: Int) -> G,
+    validateSection: (section: Section) -> Validation<S>
+): Validation<G> {
+    val node = rawNode.resolve()
+
+    val errors = ArrayList<ParseError>()
+    if (node !is Group) {
+        errors.add(
+            ParseError(
+                "Expected a Group",
+                getRow(node), getColumn(node)
+            )
+        )
+        return ValidationFailure(errors)
+    }
+
+    val (sections) = node
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+                sections,
+                sectionName
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return ValidationFailure(errors)
+    }
+
+    var section: S? = null
+    val sect = sectionMap[sectionName]
+    when (val validation = validateSection(sect!![0])) {
+        is ValidationSuccess -> section = validation.value
+        is ValidationFailure -> errors.addAll(validation.errors)
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else ValidationSuccess(buildGroup(section!!,
+            getRow(node), getColumn(node)))
+}
+
+fun <G, S1, S2> validateDoubleSectionGroup(
+    rawNode: Phase1Node,
+    section1Name: String,
+    validateSection1: (section: Section) -> Validation<S1>,
+    section2Name: String,
+    validateSection2: (section: Section) -> Validation<S2>,
+    buildGroup: (sect1: S1, sect2: S2, row: Int, column: Int) -> G
+): Validation<G> {
+    val node = rawNode.resolve()
+
+    val errors = ArrayList<ParseError>()
+    if (node !is Group) {
+        errors.add(
+            ParseError(
+                "Expected a Group",
+                getRow(node), getColumn(node)
+            )
+        )
+        return ValidationFailure(errors)
+    }
+
+    val (sections) = node
+
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+                sections, section1Name, section2Name
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return ValidationFailure(errors)
+    }
+
+    var section1: S1? = null
+    val sect1 = sectionMap[section1Name]
+    when (val section1Validation = validateSection1(sect1!![0])) {
+        is ValidationSuccess -> section1 = section1Validation.value
+        is ValidationFailure -> errors.addAll(section1Validation.errors)
+    }
+
+    var section2: S2? = null
+    val sect2 = sectionMap[section2Name]
+    when (val section2Validation = validateSection2(sect2!![0])) {
+        is ValidationSuccess -> section2 = section2Validation.value
+        is ValidationFailure -> errors.addAll(section2Validation.errors)
+    }
+
+    return if (errors.isNotEmpty()) {
+        ValidationFailure(errors)
+    } else ValidationSuccess(buildGroup(section1!!, section2!!,
+            getRow(node), getColumn(node)))
+}
+
+fun <Wrapped, Base> validateWrappedNode(
+    rawNode: Phase1Node,
+    expectedType: String,
+    checkType: (node: Phase1Node) -> Base?,
+    build: (base: Base, row: Int, column: Int) -> Wrapped
+): Validation<Wrapped> {
+    val node = rawNode.resolve()
+
+    val base = checkType(node)
+    if (base == null) {
+        return ValidationFailure(
+            listOf(
+                ParseError(
+                    "Cannot convert ${node.toCode()} to a $expectedType",
+                    getRow(node), getColumn(node)
+                )
+            )
+        )
+    }
+
+    return ValidationSuccess(build(base, getRow(node), getColumn(node)))
+}
+
+fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1Node): CodeWriter {
+    writer.writeIndent(isArg, indent)
+    writer.writePhase1Node(phase1Node)
+    return writer
+}
+
+fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Phase2Node?): CodeWriter {
+    for (i in sections.indices) {
+        val sect = sections[i]
+        if (sect != null) {
+            writer.append(sect, isArg && i == 0, indent)
+            if (i != sections.size - 1) {
+                writer.writeNewline()
+            }
+        }
+    }
+    return writer
+}

@@ -1,0 +1,4 @@
+Result:
+. for: a_{}()
+  then:
+  . b

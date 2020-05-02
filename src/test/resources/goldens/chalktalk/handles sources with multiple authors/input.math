@@ -1,0 +1,7 @@
+[id]
+Source:
+. name: "some name"
+. author:
+  . "author1"
+  . "author2"
+  . "author3"

@@ -1,0 +1,7 @@
+Result:
+. "something"
+Metadata:
+. tag:
+  . "a"
+  . "b"
+  . "c"

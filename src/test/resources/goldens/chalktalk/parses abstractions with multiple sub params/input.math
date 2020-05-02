@@ -1,0 +1,3 @@
+Result:
+. for: a_{x, y, z}
+  then: b

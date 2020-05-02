@@ -1,0 +1,4 @@
+Result:
+. for: {a_i}
+  then:
+  . x

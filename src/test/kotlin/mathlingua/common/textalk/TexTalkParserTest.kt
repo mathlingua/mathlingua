@@ -19,16 +19,15 @@ package mathlingua.common.textalk
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
+import mathlingua.GoldenType
 import mathlingua.loadTestCases
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
-import java.nio.file.Paths
 
 internal class TexTalkParserTest {
     @TestFactory
     fun `Golden TexTalk Tests`(): Collection<DynamicTest> {
-        val goldenFile = Paths.get("src", "test", "resources", "golden-textalk.txt").toFile()
-        val testCases = loadTestCases(goldenFile)
+        val testCases = loadTestCases(GoldenType.Textalk)
 
         return testCases.map {
             DynamicTest.dynamicTest("TexTalk Parser: ${it.name}") {

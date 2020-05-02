@@ -24,17 +24,6 @@ import mathlingua.common.chalktalk.phase2.ast.section.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateIfSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateThenSection
 
-fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
-
-fun validateIfGroup(node: Phase1Node) = validateDoubleSectionGroup(
-        node,
-        "if",
-        ::validateIfSection,
-        "then",
-        ::validateThenSection,
-        ::IfGroup
-)
-
 data class IfGroup(
     val ifSection: IfSection,
     val thenSection: ThenSection,
@@ -56,3 +45,14 @@ data class IfGroup(
             column = column
     ))
 }
+
+fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
+
+fun validateIfGroup(node: Phase1Node) = validateDoubleSectionGroup(
+        node,
+        "if",
+        ::validateIfSection,
+        "then",
+        ::validateThenSection,
+        ::IfGroup
+)

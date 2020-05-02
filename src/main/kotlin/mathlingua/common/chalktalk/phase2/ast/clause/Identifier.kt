@@ -24,6 +24,23 @@ import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
+data class Identifier(
+    val name: String,
+    val isVarArgs: Boolean,
+    override var row: Int,
+    override var column: Int
+) : Target {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeIdentifier(name, isVarArgs)
+        return writer
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+}
+
 fun isIdentifier(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Name
 
 fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
@@ -66,21 +83,4 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
                     column = getColumn(node)
             )
     )
-}
-
-data class Identifier(
-    val name: String,
-    val isVarArgs: Boolean,
-    override var row: Int,
-    override var column: Int
-) : Target {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        writer.writeIndent(isArg, indent)
-        writer.writeIdentifier(name, isVarArgs)
-        return writer
-    }
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }

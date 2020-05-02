@@ -24,17 +24,6 @@ import mathlingua.common.chalktalk.phase2.ast.section.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateIffSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateThenSection
 
-fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
-
-fun validateIffGroup(node: Phase1Node) = validateDoubleSectionGroup(
-        node,
-        "iff",
-        ::validateIffSection,
-        "then",
-        ::validateThenSection,
-        ::IffGroup
-)
-
 data class IffGroup(
     val iffSection: IffSection,
     val thenSection: ThenSection,
@@ -56,3 +45,14 @@ data class IffGroup(
             column = column
     ))
 }
+
+fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
+
+fun validateIffGroup(node: Phase1Node) = validateDoubleSectionGroup(
+        node,
+        "iff",
+        ::validateIffSection,
+        "then",
+        ::validateThenSection,
+        ::IffGroup
+)

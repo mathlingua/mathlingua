@@ -22,13 +22,6 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.section.NotSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateNotSection
 
-fun isNotGroup(node: Phase1Node) = firstSectionMatchesName(node, "not")
-
-fun validateNotGroup(node: Phase1Node) = validateSingleSectionGroup(
-        node, "not", ::NotGroup,
-        ::validateNotSection
-)
-
 data class NotGroup(
     val notSection: NotSection,
     override var row: Int,
@@ -45,3 +38,10 @@ data class NotGroup(
             column = column
     ))
 }
+
+fun isNotGroup(node: Phase1Node) = firstSectionMatchesName(node, "not")
+
+fun validateNotGroup(node: Phase1Node) = validateSingleSectionGroup(
+        node, "not", ::NotGroup,
+        ::validateNotSection
+)

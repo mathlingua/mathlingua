@@ -26,6 +26,33 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.chalktalk.phase2.ast.section.*
 
+data class ForGroup(
+    val forSection: ForSection,
+    val whereSection: WhereSection?,
+    val thenSection: ThenSection,
+    override var row: Int,
+    override var column: Int
+) : Clause {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(forSection)
+        if (whereSection != null) {
+            fn(whereSection)
+        }
+        fn(thenSection)
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, forSection, whereSection, thenSection)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ForGroup(
+            forSection = forSection.transform(chalkTransformer) as ForSection,
+            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+            row = row,
+            column = column
+    ))
+}
+
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
 
 fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
@@ -83,31 +110,4 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
         ValidationFailure(errors)
     } else ValidationSuccess(ForGroup(forSection!!, whereSection, thenSection!!,
             getRow(node), getColumn((node))))
-}
-
-data class ForGroup(
-    val forSection: ForSection,
-    val whereSection: WhereSection?,
-    val thenSection: ThenSection,
-    override var row: Int,
-    override var column: Int
-) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(forSection)
-        if (whereSection != null) {
-            fn(whereSection)
-        }
-        fn(thenSection)
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, forSection, whereSection, thenSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ForGroup(
-            forSection = forSection.transform(chalkTransformer) as ForSection,
-            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-            row = row,
-            column = column
-    ))
 }

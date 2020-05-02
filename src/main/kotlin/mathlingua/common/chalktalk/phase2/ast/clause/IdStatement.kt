@@ -24,17 +24,6 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.textalk.ExpressionTexTalkNode
 
-fun validateIdStatement(rawNode: Phase1Node): Validation<IdStatement> =
-        when (val validation = validateStatement(rawNode)) {
-            is ValidationSuccess -> ValidationSuccess(IdStatement(
-                    text = validation.value.text,
-                    texTalkRoot = validation.value.texTalkRoot,
-                    row = validation.value.row,
-                    column = validation.value.column
-            ))
-            is ValidationFailure -> ValidationFailure(validation.errors)
-        }
-
 data class IdStatement(
     val text: String,
     val texTalkRoot: Validation<ExpressionTexTalkNode>,
@@ -58,3 +47,14 @@ data class IdStatement(
             column = column
     )
 }
+
+fun validateIdStatement(rawNode: Phase1Node): Validation<IdStatement> =
+        when (val validation = validateStatement(rawNode)) {
+            is ValidationSuccess -> ValidationSuccess(IdStatement(
+                    text = validation.value.text,
+                    texTalkRoot = validation.value.texTalkRoot,
+                    row = validation.value.row,
+                    column = validation.value.column
+            ))
+            is ValidationFailure -> ValidationFailure(validation.errors)
+        }

@@ -21,14 +21,6 @@ import mathlingua.common.chalktalk.phase1.ast.Tuple
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-fun isTuple(node: Phase1Node) = node is Tuple
-
-fun validateTupleNode(node: Phase1Node) = validateWrappedNode(node,
-        "TupleNode",
-        { it as? Tuple },
-        ::TupleNode
-)
-
 data class TupleNode(
     val tuple: Tuple,
     override var row: Int,
@@ -40,3 +32,11 @@ data class TupleNode(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
+
+fun isTuple(node: Phase1Node) = node is Tuple
+
+fun validateTupleNode(node: Phase1Node) = validateWrappedNode(node,
+        "TupleNode",
+        { it as? Tuple },
+        ::TupleNode
+)

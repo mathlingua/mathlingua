@@ -24,17 +24,6 @@ import mathlingua.common.chalktalk.phase2.ast.section.SuchThatSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateExistsSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateSuchThatSection
 
-fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
-
-fun validateExistsGroup(node: Phase1Node) = validateDoubleSectionGroup(
-        node,
-        "exists",
-        ::validateExistsSection,
-        "suchThat",
-        ::validateSuchThatSection,
-        ::ExistsGroup
-)
-
 data class ExistsGroup(
     val existsSection: ExistsSection,
     val suchThatSection: SuchThatSection,
@@ -56,3 +45,14 @@ data class ExistsGroup(
             column = column
     ))
 }
+
+fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
+
+fun validateExistsGroup(node: Phase1Node) = validateDoubleSectionGroup(
+        node,
+        "exists",
+        ::validateExistsSection,
+        "suchThat",
+        ::validateSuchThatSection,
+        ::ExistsGroup
+)

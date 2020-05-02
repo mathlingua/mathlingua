@@ -27,6 +27,23 @@ import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
 
+data class Statement(
+    val text: String,
+    val texTalkRoot: Validation<ExpressionTexTalkNode>,
+    override var row: Int,
+    override var column: Int
+) : Clause {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeIndent(isArg, indent)
+        writer.writeStatement(text, texTalkRoot)
+        return writer
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+}
+
 fun isStatement(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 
 fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
@@ -73,21 +90,4 @@ fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
     }
 
     return ValidationSuccess(Statement(text, validation, getRow(node), getColumn(node)))
-}
-
-data class Statement(
-    val text: String,
-    val texTalkRoot: Validation<ExpressionTexTalkNode>,
-    override var row: Int,
-    override var column: Int
-) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        writer.writeIndent(isArg, indent)
-        writer.writeStatement(text, texTalkRoot)
-        return writer
-    }
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }

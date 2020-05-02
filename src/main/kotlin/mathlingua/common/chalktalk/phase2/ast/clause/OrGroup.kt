@@ -22,13 +22,6 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.section.OrSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateOrSection
 
-fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
-
-fun validateOrGroup(node: Phase1Node) = validateSingleSectionGroup(
-        node, "or", ::OrGroup,
-        ::validateOrSection
-)
-
 data class OrGroup(
     val orSection: OrSection,
     override var row: Int,
@@ -45,3 +38,10 @@ data class OrGroup(
             column = column
     ))
 }
+
+fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
+
+fun validateOrGroup(node: Phase1Node) = validateSingleSectionGroup(
+        node, "or", ::OrGroup,
+        ::validateOrSection
+)

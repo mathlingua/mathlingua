@@ -35,7 +35,7 @@ enum class GoldenType {
 fun loadTestCases(type: GoldenType): List<TestCase> {
     val result = mutableListOf<TestCase>()
 
-    val root = Paths.get("src", "test", "resources", "goldens", type.name).toFile()
+    val root = Paths.get("src", "test", "resources", "goldens", type.name.toLowerCase()).toFile()
     if (!root.exists()) {
         throw IOException("Golden root directory ${root.absolutePath} does not exist")
     }

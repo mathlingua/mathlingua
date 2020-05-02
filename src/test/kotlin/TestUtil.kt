@@ -46,8 +46,8 @@ fun loadTestCases(type: GoldenType): List<TestCase> {
             result.add(TestCase(
                     name = caseDir.name,
                     input = File(caseDir, "input.math").readText(),
-                    phase1Output = File(caseDir, "phase1.math").readText(),
-                    phase2Output = File(caseDir, "phase2.math").readText()
+                    phase1Output = File(caseDir, "phase1-output.math").readText(),
+                    phase2Output = File(caseDir, "phase2-output.math").readText()
             ))
         }
     }

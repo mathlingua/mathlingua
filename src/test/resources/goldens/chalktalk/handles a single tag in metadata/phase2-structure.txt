@@ -1,0 +1,56 @@
+Document(
+  defines = [
+            ]
+  represents = [
+               ]
+  results = [
+              ResultGroup(
+                resultSection = ResultSection(
+                  clauses = ClauseListNode(
+                    clauses = [
+                                Text(
+                                  text = ""something""
+                                  row = 1
+                                  column = 3
+                                )
+                              ]
+                    row = 0
+                    column = 0
+                  )
+                  row = 0
+                  column = 0
+                )
+                aliasSection = null
+                metaDataSection = MetaDataSection(
+                  items = [
+                            StringSectionGroup(
+                              section = StringSection(
+                                name = "tag"
+                                values = [
+                                           ""a""
+                                         ]
+                                row = 3
+                                column = 3
+                              )
+                              row = 3
+                              column = 3
+                            )
+                          ]
+                  row = 2
+                  column = 1
+                )
+                row = 0
+                column = 0
+              )
+            ]
+  axioms = [
+           ]
+  conjectures = [
+                ]
+  sources = [
+            ]
+  protoGroups = [
+                ]
+  row = 0
+  column = 0
+)

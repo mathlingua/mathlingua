@@ -1,0 +1,74 @@
+Root(
+  groups = [
+             Group(
+               sections = [
+                            Section(
+                              name = Phase1Token(
+                                text = "Source"
+                                type = ChalkTalkTokenType.Name
+                                row = 1
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Group(
+                                           sections = [
+                                                        Section(
+                                                          name = Phase1Token(
+                                                            text = "name"
+                                                            type = ChalkTalkTokenType.Name
+                                                            row = 2
+                                                            column = 3
+                                                          )
+                                                          args = [
+                                                                   Argument(
+                                                                     chalkTalkTarget = Phase1Token(
+                                                                       text = ""some name""
+                                                                       type = ChalkTalkTokenType.String
+                                                                       row = 2
+                                                                       column = 9
+                                                                     )
+                                                                   )
+                                                                 ]
+                                                        )
+                                                      ]
+                                           id = null
+                                         )
+                                       ),
+                                       Argument(
+                                         chalkTalkTarget = Group(
+                                           sections = [
+                                                        Section(
+                                                          name = Phase1Token(
+                                                            text = "author"
+                                                            type = ChalkTalkTokenType.Name
+                                                            row = 3
+                                                            column = 3
+                                                          )
+                                                          args = [
+                                                                   Argument(
+                                                                     chalkTalkTarget = Phase1Token(
+                                                                       text = ""author1""
+                                                                       type = ChalkTalkTokenType.String
+                                                                       row = 3
+                                                                       column = 11
+                                                                     )
+                                                                   )
+                                                                 ]
+                                                        )
+                                                      ]
+                                           id = null
+                                         )
+                                       )
+                                     ]
+                            )
+                          ]
+               id = Phase1Token(
+                 text = "[id]"
+                 type = ChalkTalkTokenType.Id
+                 row = 0
+                 column = 0
+               )
+             )
+           ]
+)

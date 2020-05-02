@@ -1,0 +1,187 @@
+ExpressionTexTalkNode(
+  children = [
+               Command(
+                 parts = [
+                           CommandPart(
+                             name = TextTexTalkNode(
+                               type = TexTalkNodeType.Identifier
+                               text = "some"
+                               isVarArg = false
+                             )
+                             square = GroupTexTalkNode(
+                               type = TexTalkNodeType.SquareGroup
+                               parameters = ParametersTexTalkNode(
+                                 items = [
+                                           ExpressionTexTalkNode(
+                                             children = [
+                                                          TextTexTalkNode(
+                                                            type = TexTalkNodeType.Identifier
+                                                            text = "x"
+                                                            isVarArg = false
+                                                          )
+                                                        ]
+                                           )
+                                         ]
+                               )
+                               isVarArg = false
+                             )
+                             subSup = SubSupTexTalkNode(
+                               sub = GroupTexTalkNode(
+                                 type = TexTalkNodeType.CurlyGroup
+                                 parameters = ParametersTexTalkNode(
+                                   items = [
+                                             ExpressionTexTalkNode(
+                                               children = [
+                                                            TextTexTalkNode(
+                                                              type = TexTalkNodeType.Identifier
+                                                              text = "a"
+                                                              isVarArg = false
+                                                            )
+                                                          ]
+                                             )
+                                           ]
+                                 )
+                                 isVarArg = false
+                               )
+                               sup = GroupTexTalkNode(
+                                 type = TexTalkNodeType.CurlyGroup
+                                 parameters = ParametersTexTalkNode(
+                                   items = [
+                                             ExpressionTexTalkNode(
+                                               children = [
+                                                            TextTexTalkNode(
+                                                              type = TexTalkNodeType.Identifier
+                                                              text = "b"
+                                                              isVarArg = false
+                                                            )
+                                                          ]
+                                             )
+                                           ]
+                                 )
+                                 isVarArg = false
+                               )
+                             )
+                             groups = [
+                                        GroupTexTalkNode(
+                                          type = TexTalkNodeType.CurlyGroup
+                                          parameters = ParametersTexTalkNode(
+                                            items = [
+                                                      ExpressionTexTalkNode(
+                                                        children = [
+                                                                     TextTexTalkNode(
+                                                                       type = TexTalkNodeType.Identifier
+                                                                       text = "x"
+                                                                       isVarArg = false
+                                                                     )
+                                                                   ]
+                                                      )
+                                                    ]
+                                          )
+                                          isVarArg = false
+                                        )
+                                      ]
+                             namedGroups = [
+                                           ]
+                           ),
+                           CommandPart(
+                             name = TextTexTalkNode(
+                               type = TexTalkNodeType.Identifier
+                               text = "compound"
+                               isVarArg = false
+                             )
+                             square = null
+                             subSup = null
+                             groups = [
+                                      ]
+                             namedGroups = [
+                                           ]
+                           ),
+                           CommandPart(
+                             name = TextTexTalkNode(
+                               type = TexTalkNodeType.Identifier
+                               text = "name"
+                               isVarArg = false
+                             )
+                             square = null
+                             subSup = null
+                             groups = [
+                                        GroupTexTalkNode(
+                                          type = TexTalkNodeType.ParenGroup
+                                          parameters = ParametersTexTalkNode(
+                                            items = [
+                                                      ExpressionTexTalkNode(
+                                                        children = [
+                                                                     TextTexTalkNode(
+                                                                       type = TexTalkNodeType.Identifier
+                                                                       text = "x"
+                                                                       isVarArg = false
+                                                                     )
+                                                                   ]
+                                                      )
+                                                    ]
+                                          )
+                                          isVarArg = false
+                                        )
+                                      ]
+                             namedGroups = [
+                                           ]
+                           ),
+                           CommandPart(
+                             name = TextTexTalkNode(
+                               type = TexTalkNodeType.Identifier
+                               text = "function"
+                               isVarArg = false
+                             )
+                             square = GroupTexTalkNode(
+                               type = TexTalkNodeType.SquareGroup
+                               parameters = ParametersTexTalkNode(
+                                 items = [
+                                           ExpressionTexTalkNode(
+                                             children = [
+                                                          TextTexTalkNode(
+                                                            type = TexTalkNodeType.Identifier
+                                                            text = "x"
+                                                            isVarArg = false
+                                                          )
+                                                        ]
+                                           )
+                                         ]
+                               )
+                               isVarArg = false
+                             )
+                             subSup = null
+                             groups = [
+                                        GroupTexTalkNode(
+                                          type = TexTalkNodeType.CurlyGroup
+                                          parameters = ParametersTexTalkNode(
+                                            items = [
+                                                      ExpressionTexTalkNode(
+                                                        children = [
+                                                                     TextTexTalkNode(
+                                                                       type = TexTalkNodeType.Identifier
+                                                                       text = "a"
+                                                                       isVarArg = false
+                                                                     )
+                                                                   ]
+                                                      ),
+                                                      ExpressionTexTalkNode(
+                                                        children = [
+                                                                     TextTexTalkNode(
+                                                                       type = TexTalkNodeType.Identifier
+                                                                       text = "b"
+                                                                       isVarArg = false
+                                                                     )
+                                                                   ]
+                                                      )
+                                                    ]
+                                          )
+                                          isVarArg = false
+                                        )
+                                      ]
+                             namedGroups = [
+                                           ]
+                           )
+                         ]
+               )
+             ]
+)

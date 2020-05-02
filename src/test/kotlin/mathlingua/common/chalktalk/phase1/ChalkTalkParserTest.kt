@@ -21,6 +21,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mathlingua.GoldenType
 import mathlingua.loadTestCases
+import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
@@ -45,6 +46,7 @@ internal class ChalkTalkParserTest {
                 assertThat(result.root).isNotNull()
 
                 assertThat(result.root!!.toCode()).isEqualTo(it.phase1Output)
+                assertThat(serialize(result.root!!)).isEqualTo(it.phase1Structure)
             }
         }
     }

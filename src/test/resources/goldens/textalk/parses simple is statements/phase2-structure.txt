@@ -1,0 +1,32 @@
+ExpressionTexTalkNode(
+  children = [
+               IsTexTalkNode(
+                 lhs = ParametersTexTalkNode(
+                   items = [
+                             ExpressionTexTalkNode(
+                               children = [
+                                            TextTexTalkNode(
+                                              type = TexTalkNodeType.Identifier
+                                              text = "a"
+                                              isVarArg = false
+                                            )
+                                          ]
+                             )
+                           ]
+                 )
+                 rhs = ParametersTexTalkNode(
+                   items = [
+                             ExpressionTexTalkNode(
+                               children = [
+                                            TextTexTalkNode(
+                                              type = TexTalkNodeType.Identifier
+                                              text = "b"
+                                              isVarArg = false
+                                            )
+                                          ]
+                             )
+                           ]
+                 )
+               )
+             ]
+)

@@ -1,0 +1,53 @@
+Document(
+  defines = [
+            ]
+  represents = [
+               ]
+  results = [
+              ResultGroup(
+                resultSection = ResultSection(
+                  clauses = ClauseListNode(
+                    clauses = [
+                                AbstractionNode(
+                                  abstraction = Abstraction(
+                                    isEnclosed = false
+                                    parts = [
+                                              AbstractionPart(
+                                                name = Phase1Token(
+                                                  text = "x"
+                                                  type = ChalkTalkTokenType.Name
+                                                  row = 0
+                                                  column = 8
+                                                )
+                                                subParams = null
+                                                params = null
+                                              )
+                                            ]
+                                  )
+                                  row = 0
+                                  column = 8
+                                )
+                              ]
+                    row = 0
+                    column = 0
+                  )
+                  row = 0
+                  column = 0
+                )
+                aliasSection = null
+                metaDataSection = null
+                row = 0
+                column = 0
+              )
+            ]
+  axioms = [
+           ]
+  conjectures = [
+                ]
+  sources = [
+            ]
+  protoGroups = [
+                ]
+  row = 0
+  column = 0
+)

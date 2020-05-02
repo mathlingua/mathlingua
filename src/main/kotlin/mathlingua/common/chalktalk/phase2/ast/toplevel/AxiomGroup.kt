@@ -27,11 +27,11 @@ import mathlingua.common.chalktalk.phase2.ast.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateAxiomSection
 
 data class AxiomGroup(
-        val axiomSection: AxiomSection,
-        val aliasSection: AliasSection?,
-        override val metaDataSection: MetaDataSection?,
-        override var row: Int,
-        override var column: Int
+    val axiomSection: AxiomSection,
+    val aliasSection: AliasSection?,
+    override val metaDataSection: MetaDataSection?,
+    override var row: Int,
+    override var column: Int
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -62,4 +62,3 @@ fun validateAxiomGroup(groupNode: Group) = validateResultLikeGroup(
         ::validateAxiomSection,
         ::AxiomGroup
 )
-

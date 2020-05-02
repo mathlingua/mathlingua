@@ -22,9 +22,9 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 data class AbstractionNode(
-        val abstraction: Abstraction,
-        override var row: Int,
-        override var column: Int
+    val abstraction: Abstraction,
+    override var row: Int,
+    override var column: Int
 ) : Target {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -41,4 +41,3 @@ fun validateAbstractionNode(node: Phase1Node) = validateWrappedNode(node,
         { it as? Abstraction },
         ::AbstractionNode
 )
-

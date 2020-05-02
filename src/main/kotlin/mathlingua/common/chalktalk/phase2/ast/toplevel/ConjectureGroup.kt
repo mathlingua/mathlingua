@@ -27,11 +27,11 @@ import mathlingua.common.chalktalk.phase2.ast.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateConjectureSection
 
 data class ConjectureGroup(
-        val conjectureSection: ConjectureSection,
-        val aliasSection: AliasSection?,
-        override val metaDataSection: MetaDataSection?,
-        override var row: Int,
-        override var column: Int
+    val conjectureSection: ConjectureSection,
+    val aliasSection: AliasSection?,
+    override val metaDataSection: MetaDataSection?,
+    override var row: Int,
+    override var column: Int
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -62,4 +62,3 @@ fun validateConjectureGroup(groupNode: Group) = validateResultLikeGroup(
         ::validateConjectureSection,
         ::ConjectureGroup
 )
-

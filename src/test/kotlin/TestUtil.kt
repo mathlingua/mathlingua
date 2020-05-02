@@ -17,6 +17,8 @@
 package mathlingua
 
 import java.io.File
+import java.io.IOException
+import java.nio.file.Paths
 
 data class TestCase(
     val name: String,
@@ -25,103 +27,30 @@ data class TestCase(
     val phase2Output: String
 )
 
-const val TEST_NAME_PREFIX = "-- Test:"
-const val INPUT_START = "-- Input:"
-const val INPUT_END = "-- EndInput:"
-const val OUTPUT_START = "-- Output:"
-const val OUTPUT_END = "-- EndOutput:"
-const val OUTPUT_PHASE1_START = "-- Output(Phase1):"
-const val OUTPUT_PHASE1_END = "-- EndOutput(Phase1):"
-const val OUTPUT_PHASE2_START = "-- Output(Phase2):"
-const val OUTPUT_PHASE2_END = "-- EndOutput(Phase2):"
+enum class GoldenType {
+    Chalktalk,
+    Textalk
+}
 
-fun loadTestCases(file: File): List<TestCase> {
-    // This function is only used in tests, and thus
-    // it is good for it to fail with expections thrown
-    // if the input file does not have the correct syntax.
-
+fun loadTestCases(type: GoldenType): List<TestCase> {
     val result = mutableListOf<TestCase>()
-    val lines = file.readLines()
 
-    var i = 0
-    while (i < lines.size) {
-        // skip blank lines
-        while (i < lines.size && lines[i].isBlank()) {
-            i++
+    val root = Paths.get("src", "test", "resources", "goldens", type.name).toFile()
+    if (!root.exists()) {
+        throw IOException("Golden root directory ${root.absolutePath} does not exist")
+    }
+
+    val caseDirs = root.listFiles()
+    if (caseDirs != null) {
+        for (caseDir in caseDirs) {
+            result.add(TestCase(
+                    name = caseDir.name,
+                    input = File(caseDir, "input.math").readText(),
+                    phase1Output = File(caseDir, "phase1.math").readText(),
+                    phase2Output = File(caseDir, "phase2.math").readText()
+            ))
         }
-
-        fun readSection(start: String, end: String): String? {
-            if (i >= lines.size || lines[i] != start) {
-                return null
-            }
-
-            expectPrefix(start, lines[i], i + 1)
-            i++ // move past the start line
-
-            val buffer = StringBuilder()
-            while (i < lines.size && lines[i] != end) {
-                buffer.append(lines[i++])
-                buffer.append('\n')
-            }
-            expectPrefix(end, lines[i], i + 1)
-            i++ // move past the end line
-
-            return buffer.toString()
-        }
-
-        val testNameLine = lines[i]
-        expectPrefix(TEST_NAME_PREFIX, testNameLine, i + 1)
-        val testName = trimPrefix(TEST_NAME_PREFIX, testNameLine)
-        i++
-
-        val input = readSection(INPUT_START, INPUT_END)
-        val output = readSection(OUTPUT_START, OUTPUT_END)
-        val phase1Output = readSection(OUTPUT_PHASE1_START, OUTPUT_PHASE1_END)
-        val phase2Output = readSection(OUTPUT_PHASE2_START, OUTPUT_PHASE2_END)
-
-        if (input == null) {
-            throw Exception("Line ${i + 1}: Input not specified")
-        }
-
-        if (output == null && (phase1Output == null || phase2Output == null)) {
-            throw Exception("Line ${i + 1}: Output is not specified and " +
-                    "one of Phase1Output or Phase2Output is missing")
-        }
-
-        if (output != null && (phase1Output != null || phase2Output != null)) {
-            throw Exception("Line ${i + 1}: Output is specified but so " +
-                    "is one of Phase1Output or Phase2Output")
-        }
-
-        result.add(
-            TestCase(
-                name = testName,
-                input = input,
-                phase1Output = (phase1Output ?: output)!!,
-                phase2Output = (phase2Output ?: output)!!
-            )
-        )
     }
 
     return result
-}
-
-fun expectPrefix(prefix: String, line: String, lineNumber: Int) {
-    if (!line.startsWith(prefix)) {
-        throw RuntimeException(
-            "Expected the line $lineNumber: '$line' to begin with $prefix"
-        )
-    }
-}
-
-fun hasPrefix(prefix: String, line: String): Boolean {
-    return line.startsWith(prefix)
-}
-
-fun trimPrefix(prefix: String, line: String): String {
-    return if (hasPrefix(prefix, line)) {
-        line.substring(prefix.length)
-    } else {
-        line
-    }
 }

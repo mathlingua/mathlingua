@@ -1,0 +1,4 @@
+Result:
+. for: {f}
+  then:
+  . x

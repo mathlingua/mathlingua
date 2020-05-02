@@ -1,0 +1,5 @@
+Result:
+. for:
+  . {f(x)}
+  then:
+  . x

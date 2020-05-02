@@ -20,19 +20,18 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import mathlingua.GoldenType
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.loadTestCases
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
-import java.nio.file.Paths
 
 internal class ChalkTalkParserTest {
     @TestFactory
     fun `Golden Validation Tests`(): Collection<DynamicTest> {
-        val goldenFile = Paths.get("src", "test", "resources", "golden-chalktalk.txt").toFile()
-        val testCases = loadTestCases(goldenFile)
+        val testCases = loadTestCases(GoldenType.Chalktalk)
 
         return testCases.map {
             DynamicTest.dynamicTest("ChalkTalk Validation: ${it.name}") {

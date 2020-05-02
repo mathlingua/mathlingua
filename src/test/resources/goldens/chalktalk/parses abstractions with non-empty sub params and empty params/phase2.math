@@ -1,0 +1,4 @@
+Result:
+. for: a_{n, m}()
+  then:
+  . b

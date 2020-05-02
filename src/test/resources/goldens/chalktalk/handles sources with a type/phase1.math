@@ -1,0 +1,6 @@
+[id]
+Source:
+. name:
+  . "some name"
+. type:
+  . "Book"

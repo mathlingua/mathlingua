@@ -135,7 +135,7 @@ fun main() {
 
             val root = toTreeNode(doc)
             phase2Tree.model = DefaultTreeModel(root)
-            val nearestNode = findNode(doc, row, col)!!
+            val nearestNode = findNode(doc, row, col)
 
             println("Found node: $nearestNode")
 

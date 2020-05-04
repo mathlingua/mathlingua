@@ -27,25 +27,25 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TextTexTalkNode
 
-fun getVars(node: Phase1Node): List<String> {
+internal fun getVars(node: Phase1Node): List<String> {
     val vars = mutableListOf<String>()
     getVarsImpl(node, vars)
     return vars
 }
 
-fun getVars(node: Phase2Node): List<String> {
+internal fun getVars(node: Phase2Node): List<String> {
     val vars = mutableListOf<String>()
     getVarsImpl(node, vars)
     return vars
 }
 
-fun getVars(texTalkNode: TexTalkNode): List<String> {
+internal fun getVars(texTalkNode: TexTalkNode): List<String> {
     val vars = mutableListOf<String>()
     getVarsImpl(texTalkNode, vars, false)
     return vars
 }
 
-fun renameVars(
+internal fun renameVars(
     texTalkNode: TexTalkNode,
     map: Map<String, String>
 ) = texTalkNode.transform {
@@ -56,7 +56,7 @@ fun renameVars(
     }
 }
 
-fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
+internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
     fun chalkTransformer(node: Phase2Node): Phase2Node {
         if (node is Identifier) {
             return Identifier(

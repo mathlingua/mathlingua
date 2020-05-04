@@ -34,7 +34,7 @@ import mathlingua.common.textalk.TextTexTalkNode
 
 data class RootTarget<R, T>(val root: R, val target: T)
 
-fun locateAllCommands(phase2Node: Phase2Node): List<Command> {
+internal fun locateAllCommands(phase2Node: Phase2Node): List<Command> {
     var root = phase2Node
     root = separateIsStatements(root, root).root
     root = separateInfixOperatorStatements(root, root).root
@@ -57,13 +57,13 @@ private fun findCommandsImpl(phase2Node: Phase2Node, commands: MutableList<Comma
     }
 }
 
-fun findCommands(texTalkNode: TexTalkNode): List<Command> {
+internal fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     val commands = mutableListOf<Command>()
     findCommandsImpl(texTalkNode, commands)
     return commands.distinct()
 }
 
-fun replaceSignatures(
+internal fun replaceSignatures(
     texTalkNode: TexTalkNode,
     signature: String,
     replacement: String
@@ -75,7 +75,7 @@ fun replaceSignatures(
     }
 }
 
-fun replaceCommands(
+internal fun replaceCommands(
     node: Phase2Node,
     cmdToReplacement: Map<Command, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
@@ -100,7 +100,7 @@ fun replaceCommands(
     }
 }
 
-fun replaceCommands(
+internal fun replaceCommands(
     texTalkNode: TexTalkNode,
     root: TexTalkNode,
     cmdToReplacement: Map<Command, String>,
@@ -126,7 +126,7 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
+internal fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot = root.transform {
         val result = if (it is ClauseListNode) {
@@ -208,7 +208,7 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // this function requires that `is` nodes are separated
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
-fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
+internal fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot = root.transform {
         val result = if (it is Statement &&
@@ -297,7 +297,7 @@ private fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {
     return glueCommands(cmds)
 }
 
-fun glueCommands(commands: List<Command>): List<Command> {
+internal fun glueCommands(commands: List<Command>): List<Command> {
     if (commands.isEmpty()) {
         return emptyList()
     }

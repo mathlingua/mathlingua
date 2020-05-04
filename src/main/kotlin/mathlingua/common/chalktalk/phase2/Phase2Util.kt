@@ -18,7 +18,7 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {
+internal fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {
     val path = mutableListOf<Phase2Node>()
     getChalkTalkAncestryImpl(root, node, path)
     // 'node' itself shouldn't be in the ancestry
@@ -45,7 +45,7 @@ private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: M
     }
 }
 
-fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
+internal fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
     if (row < 0 || col < 0) {
         throw IllegalArgumentException("Row and column must be non-negative " +
                 "but found row=$row, column=$col")
@@ -72,14 +72,14 @@ fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
     return prev
 }
 
-fun findNodesAtRow(node: Phase2Node, row: Int, result: MutableSet<Phase2Node>) {
+internal fun findNodesAtRow(node: Phase2Node, row: Int, result: MutableSet<Phase2Node>) {
     if (node.row == row) {
         result.add(node)
     }
     node.forEach { findNodesAtRow(it, row, result) }
 }
 
-fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
+internal fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
     resetRowColumn(node)
     resetRowColumn(child)
 
@@ -97,7 +97,7 @@ fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
     return found
 }
 
-fun resetRowColumn(node: Phase2Node) {
+internal fun resetRowColumn(node: Phase2Node) {
     node.row = -1
     node.column = -1
     node.forEach { resetRowColumn(it) }

@@ -18,7 +18,7 @@ package mathlingua.common.chalktalk.phase1.ast
 
 import kotlin.math.max
 
-fun buildIndent(level: Int, isArg: Boolean): String {
+internal fun buildIndent(level: Int, isArg: Boolean): String {
     val buffer = StringBuilder()
     val numSpaces = if (isArg) 2 * max(level - 1, 0) else 2 * level
     for (i in 0 until numSpaces) {
@@ -30,7 +30,7 @@ fun buildIndent(level: Int, isArg: Boolean): String {
     return buffer.toString()
 }
 
-fun getRow(node: Phase1Node): Int {
+internal fun getRow(node: Phase1Node): Int {
     if (node is Phase1Token) {
         return node.row
     }
@@ -46,7 +46,7 @@ fun getRow(node: Phase1Node): Int {
     return rowResult
 }
 
-fun getColumn(node: Phase1Node): Int {
+internal fun getColumn(node: Phase1Node): Int {
     if (node is Phase1Token) {
         return node.column
     }

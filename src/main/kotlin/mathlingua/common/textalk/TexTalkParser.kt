@@ -37,7 +37,7 @@ fun newTexTalkParser(): TexTalkParser {
 
 private val INVALID = TexTalkToken("INVALID", TexTalkTokenType.Invalid, -1, -1)
 
-class TexTalkParserImpl : TexTalkParser {
+private class TexTalkParserImpl : TexTalkParser {
 
     override fun parse(texTalkLexer: TexTalkLexer): TexTalkParseResult {
         val worker = ParserWorker(texTalkLexer)

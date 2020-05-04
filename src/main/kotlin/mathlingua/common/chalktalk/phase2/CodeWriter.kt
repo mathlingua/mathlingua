@@ -244,7 +244,7 @@ class MathLinguaCodeWriter : CodeWriter {
     override fun getCode() = builder.toString()
 }
 
-fun prettyPrintIdentifier(text: String): String {
+internal fun prettyPrintIdentifier(text: String): String {
     val regex = Regex("([a-zA-Z]+)([0-9]+)")
     val match = regex.find(text)
     return if (match != null) {

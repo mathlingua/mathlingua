@@ -47,7 +47,7 @@ private fun tokenize(text: String): List<String> {
     return tokens
 }
 
-fun justify(text: String, width: Int): List<String> {
+internal fun justify(text: String, width: Int): List<String> {
     val tokens = tokenize(text)
     val lines = mutableListOf<String>()
     var i = 0

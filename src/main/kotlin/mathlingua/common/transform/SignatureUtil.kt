@@ -38,7 +38,7 @@ import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
 
-fun getSignature(group: TopLevelGroup): String? {
+internal fun getSignature(group: TopLevelGroup): String? {
     return when (group) {
         is DefinesGroup -> getSignature(group.id)
         is RepresentsGroup -> getSignature(group.id)
@@ -47,16 +47,16 @@ fun getSignature(group: TopLevelGroup): String? {
     }
 }
 
-fun getSignature(id: IdStatement) = getSignature(id.toStatement())
+internal fun getSignature(id: IdStatement) = getSignature(id.toStatement())
 
-fun getSignature(stmt: Statement): String? {
+internal fun getSignature(stmt: Statement): String? {
     val sigs = findAllStatementSignatures(stmt)
     return if (sigs.size == 1) {
         sigs.first()
     } else null
 }
 
-fun findAllStatementSignatures(stmt: Statement): Set<String> {
+internal fun findAllStatementSignatures(stmt: Statement): Set<String> {
     val gluedStmt = glueCommands(stmt, stmt).root as Statement
     return when (val rootValidation = gluedStmt.texTalkRoot) {
         is ValidationSuccess -> {
@@ -69,7 +69,7 @@ fun findAllStatementSignatures(stmt: Statement): Set<String> {
     }
 }
 
-fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
+internal fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
     val commandParts = mutableListOf<CommandPart>()
     for (child in expressionNode.children) {
         if (child is Command) {
@@ -84,11 +84,11 @@ fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): String? {
     return null
 }
 
-fun getCommandSignature(command: Command) = flattenSignature(Command(
+internal fun getCommandSignature(command: Command) = flattenSignature(Command(
     parts = command.parts.map { getCommandPartForSignature(it) }
 ).toCode())
 
-fun locateAllSignatures(node: Phase2Node): Set<String> {
+internal fun locateAllSignatures(node: Phase2Node): Set<String> {
     val signatures = mutableSetOf<String>()
     findAllSignaturesImpl(node, signatures)
     return signatures
@@ -192,7 +192,7 @@ private fun getNamedGroupNodeForSignature(node: NamedGroupTexTalkNode) = NamedGr
     group = getGroupNodeForSignature(node.group)
 )
 
-fun flattenSignature(signature: String): String {
+internal fun flattenSignature(signature: String): String {
     /*
      * This converts \f[?]{?, ?, ?}{} to \f[]{}{}.  That is, the ?, are
      * removed.  In addition \f{}{}{}... is replaced with \f{}...

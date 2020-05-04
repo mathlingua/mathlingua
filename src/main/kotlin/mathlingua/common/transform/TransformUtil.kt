@@ -34,13 +34,13 @@ import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getTexTalkAncestry
 
-fun getKey(node: Phase2Node): String {
+internal fun getKey(node: Phase2Node): String {
     val str = node.toString()
     return str.replace(Regex("row=-?\\d+"), "ROW")
             .replace(Regex("column=-?\\d+"), "COLUMN")
 }
 
-fun moveInlineCommandsToIsNode(
+internal fun moveInlineCommandsToIsNode(
     defs: List<DefinesGroup>,
     root: Phase2Node,
     target: Phase2Node // non-null targets a specific node
@@ -100,7 +100,7 @@ fun moveInlineCommandsToIsNode(
     )
 }
 
-fun moveStatementInlineCommandsToIsNode(
+internal fun moveStatementInlineCommandsToIsNode(
     seed: Int,
     stmt: Statement,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
@@ -213,7 +213,7 @@ fun moveStatementInlineCommandsToIsNode(
     )
 }
 
-fun replaceRepresents(
+internal fun replaceRepresents(
     root: Phase2Node,
     represents: List<RepresentsGroup>,
     target: Phase2Node
@@ -341,7 +341,7 @@ fun replaceRepresents(
     )
 }
 
-fun replaceIsNodes(
+internal fun replaceIsNodes(
     root: Phase2Node,
     defs: List<DefinesGroup>,
     target: Phase2Node
@@ -497,7 +497,7 @@ fun replaceIsNodes(
     )
 }
 
-fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
+internal fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
         row = -1,
         column = -1,
         signature = def.signature,
@@ -519,7 +519,7 @@ fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
         metaDataSection = def.metaDataSection
 )
 
-fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
+internal fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
     IfGroup(
             row = -1,
             column = -1,
@@ -541,7 +541,7 @@ fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
     )
 }
 
-fun buildIfThens(rep: RepresentsGroup) = rep.thatSections.map {
+internal fun buildIfThens(rep: RepresentsGroup) = rep.thatSections.map {
     IfGroup(
             row = -1,
             column = -1,
@@ -562,7 +562,7 @@ fun buildIfThens(rep: RepresentsGroup) = rep.thatSections.map {
     )
 }
 
-fun getDefinesDirectVars(def: DefinesGroup): List<String> {
+internal fun getDefinesDirectVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()
     for (target in def.definesSection.targets) {
         vars.addAll(getVars(target))
@@ -570,7 +570,7 @@ fun getDefinesDirectVars(def: DefinesGroup): List<String> {
     return vars
 }
 
-fun getDefinesIdVars(def: DefinesGroup): List<String> {
+internal fun getDefinesIdVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()
     if (def.id.texTalkRoot is ValidationSuccess) {
         vars.addAll(getVars(def.id.texTalkRoot.value))
@@ -578,7 +578,7 @@ fun getDefinesIdVars(def: DefinesGroup): List<String> {
     return vars
 }
 
-fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
+internal fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     val vars = mutableListOf<String>()
     if (rep.id.texTalkRoot is ValidationSuccess) {
         vars.addAll(getVars(rep.id.texTalkRoot.value))
@@ -586,7 +586,7 @@ fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
     return vars
 }
 
-fun expandAtNode(
+internal fun expandAtNode(
     root: Phase2Node,
     target: Phase2Node,
     defines: List<DefinesGroup>,
@@ -624,9 +624,9 @@ fun expandAtNode(
     return transformed
 }
 
-fun fullExpandOnce(doc: Document) = expandAtNode(doc, doc, doc.defines, doc.represents) as Document
+internal fun fullExpandOnce(doc: Document) = expandAtNode(doc, doc, doc.defines, doc.represents) as Document
 
-fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
+internal fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     val snapshots = mutableSetOf<String>()
 
     var transformed = doc
@@ -646,7 +646,7 @@ fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     return transformed
 }
 
-fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
+internal fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot = root.transform {
         val result = if (it is ClauseListNode) {

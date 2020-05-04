@@ -52,12 +52,19 @@ object MathLingua {
         }
     }
 
+    fun justify(text: String, width: Int) = mathlingua.common.justify(text, width)
+
+    fun prettyPrintIdentifier(text: String) = mathlingua.common.chalktalk.phase2.prettyPrintIdentifier(text)
+
     fun signatureOf(group: TopLevelGroup) = getSignature(group)
+
     fun signatureOf(command: Command) = getCommandSignature(command)
 
-    fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
-
     fun findAllSignatures(node: Phase2Node) = locateAllSignatures(node).toList()
+
+    fun flattenSignature(signature: String) = mathlingua.common.transform.flattenSignature(signature)
+
+    fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
 
     fun expandAtPosition(
         text: String,

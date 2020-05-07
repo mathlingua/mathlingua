@@ -31,6 +31,7 @@ import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
+import mathlingua.common.validationSuccess
 
 data class RootTarget<R, T>(val root: R, val target: T)
 
@@ -91,9 +92,7 @@ internal fun replaceCommands(
                 val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
                 Statement(
                         text = newRoot.toCode(),
-                        texTalkRoot = ValidationSuccess(newRoot),
-                        row = -1,
-                        column = -1
+                        texTalkRoot = validationSuccess(newRoot)
                 )
             }
         }
@@ -143,9 +142,7 @@ internal fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTar
                             )
                             Statement(
                                     text = expRoot.toCode(),
-                                    texTalkRoot = ValidationSuccess(expRoot),
-                                    row = -1,
-                                    column = -1
+                                    texTalkRoot = validationSuccess(expRoot)
                             )
                         })
                     }
@@ -153,11 +150,7 @@ internal fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTar
                     newClauses.add(clause)
                 }
             }
-            val result = ClauseListNode(
-                    clauses = newClauses,
-                    row = -1,
-                    column = -1
-            )
+            val result = ClauseListNode(clauses = newClauses)
             if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result
             }
@@ -228,9 +221,7 @@ internal fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phas
             )
             val result = Statement(
                     text = newExp.toCode(),
-                    texTalkRoot = ValidationSuccess(newExp),
-                    row = -1,
-                    column = -1
+                    texTalkRoot = validationSuccess(newExp)
             )
             if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result
@@ -267,9 +258,7 @@ internal fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phas
             )
             val result = Statement(
                     text = newExp.toCode(),
-                    texTalkRoot = ValidationSuccess(newExp),
-                    row = -1,
-                    column = -1
+                    texTalkRoot = validationSuccess(newExp)
             )
             if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result

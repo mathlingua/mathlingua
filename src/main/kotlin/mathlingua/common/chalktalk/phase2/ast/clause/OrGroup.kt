@@ -16,32 +16,28 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.section.OrSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateOrSection
 
-data class OrGroup(
-    val orSection: OrSection,
-    override var row: Int,
-    override var column: Int
-) : Clause {
+data class OrGroup(val orSection: OrSection) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(orSection)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
             orSection.toCode(isArg, indent, writer)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(OrGroup(
-            orSection = orSection.transform(chalkTransformer) as OrSection,
-            row = row,
-            column = column
+            orSection = orSection.transform(chalkTransformer) as OrSection
     ))
 }
 
 fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
 
-fun validateOrGroup(node: Phase1Node) = validateSingleSectionGroup(
+fun validateOrGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateSingleSectionGroup(
+        tracker,
         node, "or", ::OrGroup,
         ::validateOrSection
 )

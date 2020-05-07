@@ -21,7 +21,6 @@ import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.toplevel.*
-import kotlin.math.min
 
 data class Document(
     val defines: List<DefinesGroup>,
@@ -30,9 +29,7 @@ data class Document(
     val axioms: List<AxiomGroup>,
     val conjectures: List<ConjectureGroup>,
     val sources: List<SourceGroup>,
-    val protoGroups: List<ProtoGroup>,
-    override var row: Int,
-    override var column: Int
+    val protoGroups: List<ProtoGroup>
 ) : Phase2Node {
 
     fun all(): List<TopLevelGroup> {
@@ -105,15 +102,13 @@ data class Document(
                         represents = represents.map { it.transform(chalkTransformer) as RepresentsGroup },
                         results = results.map { it.transform(chalkTransformer) as ResultGroup },
                         sources = sources.map { it.transform(chalkTransformer) as SourceGroup },
-                        protoGroups = protoGroups.map { it.transform(chalkTransformer) as ProtoGroup },
-                        row = row,
-                        column = column
+                        protoGroups = protoGroups.map { it.transform(chalkTransformer) as ProtoGroup }
                 )
         )
     }
 }
 
-fun validateDocument(rawNode: Phase1Node): Validation<Document> {
+fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Document> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
@@ -125,7 +120,7 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
                 getColumn(node)
             )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val defines = ArrayList<DefinesGroup>()
@@ -139,52 +134,52 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     val (groups) = node
     for (group in groups) {
         if (isResultGroup(group)) {
-            when (val resultValidation = validateResultGroup(group)) {
+            when (val resultValidation = validateResultGroup(group, tracker)) {
                 is ValidationSuccess -> results.add(resultValidation.value)
                 is ValidationFailure -> errors.addAll(resultValidation.errors)
             }
         } else if (isAxiomGroup(group)) {
-            when (val axiomValidation = validateAxiomGroup(group)) {
+            when (val axiomValidation = validateAxiomGroup(group, tracker)) {
                 is ValidationSuccess -> axioms.add(axiomValidation.value)
                 is ValidationFailure -> errors.addAll(axiomValidation.errors)
             }
         } else if (isConjectureGroup(group)) {
-            when (val conjectureValidation = validateConjectureGroup(group)) {
+            when (val conjectureValidation = validateConjectureGroup(group, tracker)) {
                 is ValidationSuccess -> conjectures.add(conjectureValidation.value)
                 is ValidationFailure -> errors.addAll(conjectureValidation.errors)
             }
         } else if (isDefinesGroup(group)) {
-            when (val definesValidation = validateDefinesGroup(group)) {
+            when (val definesValidation = validateDefinesGroup(group, tracker)) {
                 is ValidationSuccess -> defines.add(definesValidation.value)
                 is ValidationFailure -> errors.addAll(definesValidation.errors)
             }
         } else if (isRepresentsGroup(group)) {
-            when (val representsValidation = validateRepresentsGroup(group)) {
+            when (val representsValidation = validateRepresentsGroup(group, tracker)) {
                 is ValidationSuccess -> represents.add(representsValidation.value)
                 is ValidationFailure -> errors.addAll(representsValidation.errors)
             }
         } else if (isSourceGroup(group)) {
-            when (val sourceValidation = validateSourceGroup(group)) {
+            when (val sourceValidation = validateSourceGroup(group, tracker)) {
                 is ValidationSuccess -> sources.add(sourceValidation.value)
                 is ValidationFailure -> errors.addAll(sourceValidation.errors)
             }
         } else if (firstSectionMatchesName(group, "ProtoDefines")) {
-            when (val validation = validateProtoGroup(group, "ProtoDefines")) {
+            when (val validation = validateProtoGroup(group, "ProtoDefines", tracker)) {
                 is ValidationSuccess -> protoGroups.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
         } else if (firstSectionMatchesName(group, "ProtoResult")) {
-            when (val validation = validateProtoGroup(group, "ProtoResult")) {
+            when (val validation = validateProtoGroup(group, "ProtoResult", tracker)) {
                 is ValidationSuccess -> protoGroups.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
         } else if (firstSectionMatchesName(group, "ProtoAxiom")) {
-            when (val validation = validateProtoGroup(group, "ProtoAxiom")) {
+            when (val validation = validateProtoGroup(group, "ProtoAxiom", tracker)) {
                 is ValidationSuccess -> protoGroups.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
         } else if (firstSectionMatchesName(group, "ProtoConjecture")) {
-            when (val validation = validateProtoGroup(group, "ProtoConjecture")) {
+            when (val validation = validateProtoGroup(group, "ProtoConjecture", tracker)) {
                 is ValidationSuccess -> protoGroups.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
@@ -198,26 +193,11 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
         }
     }
 
-    var row = Int.MAX_VALUE
-    var column = Int.MAX_VALUE
-
-    fun updateRowCol(nodes: List<Phase2Node>) {
-        for (n in nodes) {
-            row = min(row, n.row)
-            column = min(column, n.column)
-        }
-    }
-
-    updateRowCol(defines)
-    updateRowCol(represents)
-    updateRowCol(results)
-    updateRowCol(axioms)
-    updateRowCol(conjectures)
-    updateRowCol(sources)
-
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(
+        validationFailure(errors)
+    } else validationSuccess(
+            tracker,
+            rawNode,
             Document(
                     defines,
                     represents,
@@ -225,9 +205,7 @@ fun validateDocument(rawNode: Phase1Node): Validation<Document> {
                     axioms,
                     conjectures,
                     sources,
-                    protoGroups,
-                    row,
-                    column
+                    protoGroups
             )
     )
 }

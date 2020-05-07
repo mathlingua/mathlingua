@@ -16,35 +16,33 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 data class TargetListSection(val targets: List<Target>)
 
-fun <T> validateTargetList(
+fun <T : Phase2Node> validateTargetList(
+    tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     expectedName: String,
-    builder: (targets: List<Target>, row: Int, column: Int) -> T
+    builder: (targets: List<Target>) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-    val row = getRow(node)
-    val column = getColumn(node)
-    return when (val validation = validateTargetListSection(node, expectedName)) {
+    return when (val validation = validateTargetListSection(tracker, node, expectedName)) {
         is ValidationSuccess -> {
             val targets = validation.value.targets
-            return ValidationSuccess(builder(targets, row, column))
+            return validationSuccess(tracker, rawNode, builder(targets))
         }
-        is ValidationFailure -> ValidationFailure(validation.errors)
+        is ValidationFailure -> validationFailure(validation.errors)
     }
 }
 
 private fun validateTargetListSection(
+    tracker: MutableLocationTracker,
     node: Phase1Node,
     expectedName: String
 ): Validation<TargetListSection> {
@@ -86,7 +84,7 @@ private fun validateTargetListSection(
 
     for (arg in args) {
         var shouldContinue = false
-        when (val clauseValidation = validateClause(arg)) {
+        when (val clauseValidation = validateClause(arg, tracker)) {
             is ValidationSuccess -> {
                 val clause = clauseValidation.value
                 if (clause is Target) {
@@ -110,6 +108,6 @@ private fun validateTargetListSection(
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(TargetListSection(targets))
+        validationFailure(errors)
+    } else validationSuccess(TargetListSection(targets))
 }

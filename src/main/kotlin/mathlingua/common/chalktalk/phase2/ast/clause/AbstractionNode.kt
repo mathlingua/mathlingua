@@ -16,16 +16,13 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Abstraction
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-data class AbstractionNode(
-    val abstraction: Abstraction,
-    override var row: Int,
-    override var column: Int
-) : Target {
+data class AbstractionNode(val abstraction: Abstraction) : Target {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -36,7 +33,9 @@ data class AbstractionNode(
 
 fun isAbstraction(node: Phase1Node) = node is Abstraction
 
-fun validateAbstractionNode(node: Phase1Node) = validateWrappedNode(node,
+fun validateAbstractionNode(node: Phase1Node, tracker: MutableLocationTracker) = validateWrappedNode(
+        tracker,
+        node,
         "AbstractionNode",
         { it as? Abstraction },
         ::AbstractionNode

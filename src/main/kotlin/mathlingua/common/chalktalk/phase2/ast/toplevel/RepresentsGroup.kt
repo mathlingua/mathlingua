@@ -16,6 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
@@ -31,9 +32,7 @@ data class RepresentsGroup(
     val assumingSection: AssumingSection?,
     val thatSections: List<ThatSection>,
     val aliasSection: AliasSection?,
-    override val metaDataSection: MetaDataSection?,
-    override var row: Int,
-    override var column: Int
+    override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -68,15 +67,14 @@ data class RepresentsGroup(
             assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
             thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            row = row,
-            column = column
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
 
 fun isRepresentsGroup(node: Phase1Node) = firstSectionMatchesName(node, "Represents")
 
-fun validateRepresentsGroup(groupNode: Group) = validateDefinesLikeGroup(
+fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker) = validateDefinesLikeGroup(
+        tracker,
         groupNode,
         "Represents",
         ::validateRepresentsSection,

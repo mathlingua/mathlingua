@@ -16,16 +16,13 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Assignment
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-data class AssignmentNode(
-    val assignment: Assignment,
-    override var row: Int,
-    override var column: Int
-) : Target {
+data class AssignmentNode(val assignment: Assignment) : Target {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, assignment)
@@ -35,7 +32,8 @@ data class AssignmentNode(
 
 fun isAssignment(node: Phase1Node) = node is Assignment
 
-fun validateAssignmentNode(node: Phase1Node) = validateWrappedNode(
+fun validateAssignmentNode(node: Phase1Node, tracker: MutableLocationTracker) = validateWrappedNode(
+        tracker,
         node,
         "AssignmentNode",
         { it as? Assignment },

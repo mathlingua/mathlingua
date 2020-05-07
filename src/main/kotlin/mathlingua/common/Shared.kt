@@ -16,15 +16,63 @@
 
 package mathlingua.common
 
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+
 data class ParseError(
     override val message: String,
     val row: Int,
     val column: Int
 ) : RuntimeException(message)
 
+data class Location(val row: Int, val column: Int)
+
+interface LocationTracker {
+    fun hasLocationOf(node: Phase2Node): Boolean
+    fun getLocationOf(node: Phase2Node): Location?
+}
+
+interface MutableLocationTracker : LocationTracker {
+    fun setLocationOf(node: Phase2Node, location: Location)
+}
+
+private class MutableLocationTrackerImpl : MutableLocationTracker {
+    private val map: MutableMap<Phase2Node, Location> = mutableMapOf()
+
+    override fun hasLocationOf(node: Phase2Node) = map.containsKey(node)
+
+    override fun getLocationOf(node: Phase2Node) = map[node]
+
+    override fun setLocationOf(node: Phase2Node, location: Location) {
+        map[node] = location
+    }
+}
+
+fun newLocationTracker(): MutableLocationTracker {
+    return MutableLocationTrackerImpl()
+}
+
 sealed class Validation<out T>
-data class ValidationSuccess<T>(val value: T) : Validation<T>()
-data class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
+abstract class ValidationSuccess<T>(val value: T) : Validation<T>()
+abstract class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
+
+data class ValidationSuccessImpl<T>(val v: T) : ValidationSuccess<T>(v)
+data class ValidationFailureImpl<T>(val errs: List<ParseError>) : ValidationFailure<T>(errs)
+
+fun <T> validationSuccess(value: T): ValidationSuccess<T> = ValidationSuccessImpl(value)
+
+fun <T : Phase2Node> validationSuccess(tracker: MutableLocationTracker, phase1Node: Phase1Node, phase2Node: T): ValidationSuccess<T> {
+    tracker.setLocationOf(phase2Node, Location(
+            row = getRow(phase1Node),
+            column = getColumn(phase1Node)
+    ))
+    return ValidationSuccessImpl(phase2Node)
+}
+
+fun <T> validationFailure(errors: List<ParseError>): ValidationFailure<T> =
+    ValidationFailureImpl(errors)
 
 private fun tokenize(text: String): List<String> {
     val tokens = mutableListOf<String>()

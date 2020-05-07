@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -27,10 +24,7 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-data class RepresentsSection(
-    override var row: Int,
-    override var column: Int
-) : Phase2Node {
+class RepresentsSection : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -42,7 +36,7 @@ data class RepresentsSection(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun validateRepresentsSection(node: Phase1Node): Validation<RepresentsSection> {
+fun validateRepresentsSection(node: Phase1Node, tracker: MutableLocationTracker): Validation<RepresentsSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
         errors.add(
@@ -73,11 +67,8 @@ fun validateRepresentsSection(node: Phase1Node): Validation<RepresentsSection> {
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
+        validationFailure(errors)
     } else {
-        ValidationSuccess(RepresentsSection(
-                row = getRow(node),
-                column = getColumn(node)
-        ))
+        validationSuccess(tracker, node, RepresentsSection())
     }
 }

@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -30,9 +27,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 
 class ProtoGroup(
     val textSection: TextSection,
-    override val metaDataSection: MetaDataSection?,
-    override var row: Int,
-    override var column: Int
+    override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(textSection)
@@ -47,15 +42,14 @@ class ProtoGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ProtoGroup(
                     textSection = textSection.transform(chalkTransformer) as TextSection,
-                    metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection,
-                    row = row,
-                    column = column
+                    metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection
             ))
 }
 
 fun validateProtoGroup(
     groupNode: Group,
-    name: String
+    name: String,
+    tracker: MutableLocationTracker
 ): Validation<ProtoGroup> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
@@ -77,7 +71,7 @@ fun validateProtoGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val textSect = sectionMap[name]
@@ -93,27 +87,28 @@ fun validateProtoGroup(
     }
 
     var textSection: TextSection? = null
-    when (val validation = validateTextSection(textSect!![0], name)) {
+    when (val validation = validateTextSection(textSect!![0], name, tracker)) {
         is ValidationSuccess -> textSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
     if (metadata.isNotEmpty()) {
-        when (val metaDataValidation = validateMetaDataSection(metadata[0])) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
+        validationFailure(errors)
     } else {
-        ValidationSuccess(ProtoGroup(
-                textSection = textSection!!,
-                metaDataSection = metaDataSection,
-                row = getRow(group),
-                column = getColumn(group)
-        ))
+        validationSuccess(
+                tracker,
+                groupNode,
+                ProtoGroup(
+                    textSection = textSection!!,
+                    metaDataSection = metaDataSection
+                ))
     }
 }

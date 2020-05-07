@@ -20,11 +20,7 @@ Document(
                                 values = [
                                            ""some name""
                                          ]
-                                row = 2
-                                column = 9
                               )
-                              row = 2
-                              column = 3
                             ),
                             StringSectionGroup(
                               section = StringSection(
@@ -32,23 +28,13 @@ Document(
                                 values = [
                                            ""some.homepage.com""
                                          ]
-                                row = 3
-                                column = 13
                               )
-                              row = 3
-                              column = 3
                             )
                           ]
-                  row = 1
-                  column = 1
                 )
                 metaDataSection = null
-                row = 0
-                column = 0
               )
             ]
   protoGroups = [
                 ]
-  row = 0
-  column = 0
 )

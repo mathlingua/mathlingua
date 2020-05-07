@@ -16,17 +16,14 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Target
 import mathlingua.common.chalktalk.phase2.ast.clause.validateTargetList
 
-data class ExistsSection(
-    val identifiers: List<Target>,
-    override var row: Int,
-    override var column: Int
-) : Phase2Node {
+data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = identifiers.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -38,13 +35,12 @@ data class ExistsSection(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ExistsSection(
-                    identifiers = identifiers.map { it.transform(chalkTransformer) as Target },
-                    row = row,
-                    column = column
+                    identifiers = identifiers.map { it.transform(chalkTransformer) as Target }
             ))
 }
 
-fun validateExistsSection(node: Phase1Node) = validateTargetList(
+fun validateExistsSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTargetList(
+        tracker,
         node,
         "exists",
         ::ExistsSection

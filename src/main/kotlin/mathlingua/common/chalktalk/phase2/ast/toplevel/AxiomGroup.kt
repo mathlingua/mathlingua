@@ -16,6 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
@@ -29,9 +30,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.validateAxiomSection
 data class AxiomGroup(
     val axiomSection: AxiomSection,
     val aliasSection: AliasSection?,
-    override val metaDataSection: MetaDataSection?,
-    override var row: Int,
-    override var column: Int
+    override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -48,15 +47,14 @@ data class AxiomGroup(
             chalkTransformer(AxiomGroup(
                     axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
                     aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
-                    metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection,
-                    row = row,
-                    column = column
+                    metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
             ))
 }
 
 fun isAxiomGroup(node: Phase1Node) = firstSectionMatchesName(node, "Axiom")
 
-fun validateAxiomGroup(groupNode: Group) = validateResultLikeGroup(
+fun validateAxiomGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
+        tracker,
         groupNode,
         "Axiom",
         ::validateAxiomSection,

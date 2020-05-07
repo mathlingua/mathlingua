@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
@@ -33,11 +30,7 @@ val SOURCE_ITEM_CONSTRAINTS = mapOf(
         "url" to 1,
         "offset" to 1)
 
-data class SourceSection(
-    val items: List<StringSectionGroup>,
-    override var row: Int,
-    override var column: Int
-) : Phase2Node {
+data class SourceSection(val items: List<StringSectionGroup>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -56,9 +49,9 @@ data class SourceSection(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun validateSourceSection(section: Section): Validation<SourceSection> {
+fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Validation<SourceSection> {
     if (section.name.text != "Source") {
-        return ValidationFailure(
+        return validationFailure(
                 listOf(
                         ParseError(
                                 "Expected a 'Source' but found '${section.name.text}'",
@@ -112,24 +105,24 @@ fun validateSourceSection(section: Section): Validation<SourceSection> {
                         )
                     }
                 }
-                items.add(StringSectionGroup(
-                        section = StringSection(
-                                name = name,
-                                values = values,
-                                row = if (sect.args.isNotEmpty()) {
-                                    getRow(sect.args[0])
-                                } else {
-                                    -1
-                                },
-                                column = if (sect.args.isNotEmpty()) {
-                                    getColumn(sect.args[0])
-                                } else {
-                                    -1
-                                }
-                        ),
-                        row = getRow(sect),
-                        column = getColumn(sect)
-                ))
+
+                val location = Location(
+                        row = getRow(arg),
+                        column = getColumn(arg)
+                )
+
+                val s = StringSection(
+                        name = name,
+                        values = values
+                )
+                tracker.setLocationOf(s, location)
+
+                val res = StringSectionGroup(
+                        section = s
+                )
+                tracker.setLocationOf(res, location)
+
+                items.add(res)
             } else {
                 errors.add(
                         ParseError(
@@ -152,11 +145,8 @@ fun validateSourceSection(section: Section): Validation<SourceSection> {
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
+        validationFailure(errors)
     } else {
-        ValidationSuccess(SourceSection(
-                items = items,
-                row = getRow(section),
-                column = getColumn(section)))
+        validationSuccess(tracker, section, SourceSection(items = items))
     }
 }

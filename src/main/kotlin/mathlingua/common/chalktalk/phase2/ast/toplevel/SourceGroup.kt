@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -36,9 +33,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.validateSourceSection
 data class SourceGroup(
     val id: String,
     val sourceSection: SourceSection,
-    override val metaDataSection: MetaDataSection?,
-    override var row: Int,
-    override var column: Int
+    override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
@@ -50,26 +45,22 @@ data class SourceGroup(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent,
             IdStatement(
                     id,
-                    ValidationFailure(emptyList()),
-                    row,
-                    column
+                    validationFailure(emptyList())
             ), sourceSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(SourceGroup(
             id = id,
             sourceSection = sourceSection.transform(chalkTransformer) as SourceSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection,
-            row = row,
-            column = column
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection
     ))
 }
 
 fun isSourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Source")
 
-fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
+fun validateSourceGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<SourceGroup> {
     val id = groupNode.id
     if (id == null) {
-        return ValidationFailure(listOf(
+        return validationFailure(listOf(
                 ParseError("A Source group must have an id",
                         getRow(groupNode), getColumn(groupNode))
         ))
@@ -97,14 +88,14 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     }
 
     val sourceSection = sections[0]
-    val sourceValidation = validateSourceSection(sourceSection)
+    val sourceValidation = validateSourceSection(sourceSection, tracker)
     if (sourceValidation is ValidationFailure) {
         errors.addAll(sourceValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
     if (sections.size >= 2) {
-        val metadataValidation = validateMetaDataSection(sections[1])
+        val metadataValidation = validateMetaDataSection(sections[1], tracker)
         metaDataSection = when (metadataValidation) {
             is ValidationFailure -> {
                 errors.addAll(metadataValidation.errors)
@@ -124,16 +115,16 @@ fun validateSourceGroup(groupNode: Group): Validation<SourceGroup> {
     }
 
     if (errors.isNotEmpty()) {
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
-    return ValidationSuccess(
+    return validationSuccess(
+            tracker,
+            groupNode,
             SourceGroup(
                     id = idText,
                     sourceSection = (sourceValidation as ValidationSuccess).value,
-                    metaDataSection = metaDataSection,
-                    row = getRow(groupNode),
-                    column = getColumn(groupNode)
+                    metaDataSection = metaDataSection
             )
     )
 }

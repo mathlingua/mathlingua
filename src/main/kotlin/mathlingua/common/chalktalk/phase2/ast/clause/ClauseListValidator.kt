@@ -16,34 +16,30 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 data class ClauseListSection(val name: String, val clauses: List<Clause>)
 
-fun <T> validateClauseList(
+fun <T : Phase2Node> validateClauseList(
+    tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     expectedName: String,
     canBeEmpty: Boolean,
-    builder: (clauses: ClauseListNode, row: Int, column: Int) -> T
+    builder: (clauses: ClauseListNode) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-    val row = getRow(node)
-    val column = getColumn(node)
-    return when (val validation = validate(node, expectedName, canBeEmpty)) {
-        is ValidationSuccess -> ValidationSuccess(builder(ClauseListNode(validation.value.clauses, row, column),
-                row, column))
-        is ValidationFailure -> ValidationFailure(validation.errors)
+    return when (val validation = validate(node, expectedName, canBeEmpty, tracker)) {
+        is ValidationSuccess -> validationSuccess(tracker, rawNode, builder(ClauseListNode(validation.value.clauses)))
+        is ValidationFailure -> validationFailure(validation.errors)
     }
 }
 
-private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean): Validation<ClauseListSection> {
+private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean, tracker: MutableLocationTracker): Validation<ClauseListSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
         errors.add(
@@ -76,15 +72,15 @@ private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean
 
     val clauses = ArrayList<Clause>()
     for (arg in args) {
-        when (val validation = validateClause(arg)) {
+        when (val validation = validateClause(arg, tracker)) {
             is ValidationSuccess -> clauses.add(validation.value)
             is ValidationFailure -> errors.addAll(validation.errors)
         }
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(
+        validationFailure(errors)
+    } else validationSuccess(
             ClauseListSection(
                     name.text,
                     clauses

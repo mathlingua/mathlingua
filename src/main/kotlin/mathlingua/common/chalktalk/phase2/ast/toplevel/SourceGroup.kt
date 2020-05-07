@@ -25,9 +25,9 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.common.chalktalk.phase2.ast.section.MetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.SourceSection
-import mathlingua.common.chalktalk.phase2.ast.section.validateMetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateSourceSection
 
 data class SourceGroup(

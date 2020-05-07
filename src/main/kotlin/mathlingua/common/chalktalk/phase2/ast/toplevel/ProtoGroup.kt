@@ -24,6 +24,8 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.section.*
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
 
 class ProtoGroup(
     val textSection: TextSection,

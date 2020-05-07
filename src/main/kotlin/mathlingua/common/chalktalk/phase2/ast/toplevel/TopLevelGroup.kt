@@ -28,6 +28,8 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.common.chalktalk.phase2.ast.section.*
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
 import mathlingua.common.transform.getSignature
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node

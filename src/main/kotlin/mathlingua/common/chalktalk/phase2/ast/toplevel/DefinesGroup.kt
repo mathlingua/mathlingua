@@ -24,6 +24,7 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.section.*
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 
 data class DefinesGroup(
     val signature: String?,

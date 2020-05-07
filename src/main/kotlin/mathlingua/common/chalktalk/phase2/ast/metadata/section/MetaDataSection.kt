@@ -14,50 +14,56 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2.ast.section
+package mathlingua.common.chalktalk.phase2.ast.metadata.section
 
 import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.metadata.section.StringSection
+import mathlingua.common.chalktalk.phase2.ast.metadata.*
 import mathlingua.common.chalktalk.phase2.ast.metadata.isSingleSectionGroup
+import mathlingua.common.chalktalk.phase2.ast.metadata.item.MetaDataItem
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
+import mathlingua.common.chalktalk.phase2.ast.metadata.item.isReferenceGroup
+import mathlingua.common.chalktalk.phase2.ast.metadata.item.validateReferenceGroup
 
-val SOURCE_ITEM_CONSTRAINTS = mapOf(
-        "type" to 1,
-        "name" to 1,
+private val META_DATA_ITEM_CONSTRAINTS = mapOf(
+        "name" to -1,
+        "classification" to -1,
+        "tag" to -1,
         "author" to -1,
-        "date" to 1,
-        "homepage" to 1,
-        "url" to 1,
-        "offset" to 1)
+        "contributor" to -1,
+        "written" to -1,
+        "note" to -1,
+        "id" to 1,
+        "concept" to 1,
+        "summary" to 1)
 
-data class SourceSection(val items: List<StringSectionGroup>) : Phase2Node {
+data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("Source")
-        writer.writeNewline()
+        writer.writeHeader("Metadata")
         for (i in items.indices) {
+            writer.writeNewline()
             writer.append(items[i], true, indent + 2)
-            if (i != items.size - 1) {
-                writer.writeNewline()
-            }
         }
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(MetaDataSection(
+                    items = items.map { it.transform(chalkTransformer) as MetaDataItem }
+            ))
 }
 
-fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Validation<SourceSection> {
-    if (section.name.text != "Source") {
+fun validateMetaDataSection(section: Section, tracker: MutableLocationTracker): Validation<MetaDataSection> {
+    if (section.name.text != "Metadata") {
         return validationFailure(
                 listOf(
                         ParseError(
-                                "Expected a 'Source' but found '${section.name.text}'",
+                                "Expected a 'Metadata' but found '${section.name.text}'",
                                 getRow(section), getColumn(section)
                         )
                 )
@@ -65,34 +71,29 @@ fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Va
     }
 
     val errors = mutableListOf<ParseError>()
-    val items = mutableListOf<StringSectionGroup>()
+    val items = mutableListOf<MetaDataItem>()
     for (arg in section.args) {
-        if (isSingleSectionGroup(arg.chalkTalkTarget)) {
+        if (isReferenceGroup(arg.chalkTalkTarget)) {
+            when (val validation = validateMetaDataItem(arg, tracker)) {
+                is ValidationSuccess -> items.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
             val group = arg.chalkTalkTarget as Group
             val sect = group.sections[0]
             val name = sect.name.text
-            if (SOURCE_ITEM_CONSTRAINTS.containsKey(name)) {
-                val expectedCount = SOURCE_ITEM_CONSTRAINTS[name]!!
+            if (META_DATA_ITEM_CONSTRAINTS.containsKey(name)) {
+                val expectedCount = META_DATA_ITEM_CONSTRAINTS[name]!!
                 if (expectedCount >= 0 && sect.args.size != expectedCount) {
                     errors.add(
                             ParseError(
                                     message = "Expected $expectedCount arguments for " +
-                                            "section $name but found ${sect.args.size}",
-                                    row = getRow(sect),
-                                    column = getColumn(sect)
-                            )
-                    )
-                } else if (expectedCount < 0 && sect.args.size < -expectedCount) {
-                    errors.add(
-                            ParseError(
-                                    message = "Expected at least ${-expectedCount} arguments for " +
-                                            "section $name but found ${sect.args.size}",
+                                        "section $name but found ${sect.args.size}",
                                     row = getRow(sect),
                                     column = getColumn(sect)
                             )
                     )
                 }
-
                 val values = mutableListOf<String>()
                 for (a in sect.args) {
                     if (a.chalkTalkTarget is Phase1Token &&
@@ -108,10 +109,9 @@ fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Va
                         )
                     }
                 }
-
                 val location = Location(
-                        row = getRow(arg),
-                        column = getColumn(arg)
+                        row = getRow(sect),
+                        column = getColumn(sect)
                 )
 
                 val s = StringSection(
@@ -130,7 +130,7 @@ fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Va
                 errors.add(
                         ParseError(
                                 message = "Expected a section with one of " +
-                                        "the names ${SOURCE_ITEM_CONSTRAINTS.keys}",
+                                    "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
                                 row = getRow(arg),
                                 column = getColumn(arg)
                         )
@@ -150,6 +150,20 @@ fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Va
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else {
-        validationSuccess(tracker, section, SourceSection(items = items))
+        validationSuccess(tracker, section, MetaDataSection(items = items))
     }
+}
+
+private fun validateMetaDataItem(arg: Argument, tracker: MutableLocationTracker): Validation<MetaDataItem> {
+    if (arg.chalkTalkTarget !is Group) {
+        return validationFailure(listOf(
+                ParseError(
+                        message = "Expected a group",
+                        row = getRow(arg),
+                        column = getColumn(arg)
+                )
+        ))
+    }
+
+    return validateReferenceGroup(arg.chalkTalkTarget, tracker)
 }

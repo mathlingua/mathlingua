@@ -24,7 +24,7 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.section.AliasSection
 import mathlingua.common.chalktalk.phase2.ast.section.ConjectureSection
-import mathlingua.common.chalktalk.phase2.ast.section.MetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateConjectureSection
 
 data class ConjectureGroup(

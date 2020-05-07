@@ -16,19 +16,12 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-data class Text(
-    val text: String,
-    override var row: Int,
-    override var column: Int
-) : Clause {
+data class Text(val text: String) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -42,7 +35,7 @@ data class Text(
 
 fun isText(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.String
 
-fun validateText(rawNode: Phase1Node): Validation<Text> {
+fun validateText(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Text> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
@@ -63,8 +56,8 @@ fun validateText(rawNode: Phase1Node): Validation<Text> {
                         row, column
                 )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
-    return ValidationSuccess(Text(text, getRow(node), getColumn(node)))
+    return validationSuccess(tracker, rawNode, Text(text))
 }

@@ -20,11 +20,15 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
+import assertk.assertions.isTrue
 import mathlingua.GoldenType
+import mathlingua.common.LocationTracker
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
+import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
+import mathlingua.common.newLocationTracker
 import mathlingua.loadTestCases
 import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest
@@ -45,13 +49,23 @@ internal class ChalkTalkParserTest {
                 assertThat(result.errors.size).isEqualTo(0)
                 assertThat(result.root).isNotNull()
 
-                val validation = validateDocument(result.root!!)
+                val tracker = newLocationTracker()
+                val validation = validateDocument(result.root!!, tracker)
                 assertThat(validation).isInstanceOf(ValidationSuccess::class.java)
 
                 val doc = (validation as ValidationSuccess).value
                 assertThat(doc.toCode(false, 0).getCode().trim()).isEqualTo(it.phase2Output.trim())
                 assertThat(serialize(doc)).isEqualTo(it.phase2Structure)
+
+                assertTrackerContainsNode(tracker, doc)
             }
         }
+    }
+
+    private fun assertTrackerContainsNode(tracker: LocationTracker, node: Phase2Node) {
+        assertThat(tracker.hasLocationOf(node)).isTrue()
+        assertThat(tracker.getLocationOf(node)).isNotNull()
+
+        node.forEach { assertTrackerContainsNode(tracker, it) }
     }
 }

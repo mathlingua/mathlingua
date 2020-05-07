@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Group
@@ -57,16 +54,15 @@ fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, va
     return writer
 }
 
-fun <G, S> validateResultLikeGroup(
+fun <G : Phase2Node, S> validateResultLikeGroup(
+    tracker: MutableLocationTracker,
     groupNode: Group,
     resultLikeName: String,
-    validateResultLikeSection: (section: Section) -> Validation<S>,
+    validateResultLikeSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>,
     buildGroup: (
         sect: S,
         alias: AliasSection?,
-        metadata: MetaDataSection?,
-        row: Int,
-        column: Int
+        metadata: MetaDataSection?
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
@@ -89,7 +85,7 @@ fun <G, S> validateResultLikeGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val resultLike = sectionMap[resultLikeName]!!
@@ -97,14 +93,14 @@ fun <G, S> validateResultLikeGroup(
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var resultLikeSection: S? = null
-    when (val resultLikeValidation = validateResultLikeSection(resultLike[0])) {
+    when (val resultLikeValidation = validateResultLikeSection(resultLike[0], tracker)) {
         is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
         is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
     if (metadata.isNotEmpty()) {
-        when (val metaDataValidation = validateMetaDataSection(metadata[0])) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
@@ -112,28 +108,31 @@ fun <G, S> validateResultLikeGroup(
 
     var aliasSection: AliasSection? = null
     if (alias.isNotEmpty()) {
-        when (val aliasValidation = validateAliasSection(alias[0])) {
+        when (val aliasValidation = validateAliasSection(alias[0], tracker)) {
             is ValidationSuccess -> aliasSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(buildGroup(
-            resultLikeSection!!,
-            aliasSection,
-            metaDataSection,
-            getRow(group), getColumn(group)
-    ))
+        validationFailure(errors)
+    } else validationSuccess(
+            tracker,
+            groupNode,
+            buildGroup(
+                resultLikeSection!!,
+                aliasSection,
+                metaDataSection
+            ))
 }
 
-fun <G, S, E> validateDefinesLikeGroup(
+fun <G : Phase2Node, S, E> validateDefinesLikeGroup(
+    tracker: MutableLocationTracker,
     groupNode: Group,
     definesLikeSectionName: String,
-    validateDefinesLikeSection: (section: Section) -> Validation<S>,
+    validateDefinesLikeSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>,
     endSectionName: String,
-    validateEndSection: (section: Section) -> Validation<E>,
+    validateEndSection: (section: Section, tracker: MutableLocationTracker) -> Validation<E>,
     buildGroup: (
         signature: String?,
         id: IdStatement,
@@ -141,9 +140,7 @@ fun <G, S, E> validateDefinesLikeGroup(
         assuming: AssumingSection?,
         end: List<E>,
         alias: AliasSection?,
-        metadata: MetaDataSection?,
-        row: Int,
-        column: Int
+        metadata: MetaDataSection?
     ) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
@@ -158,7 +155,7 @@ fun <G, S, E> validateDefinesLikeGroup(
             statementText, ChalkTalkTokenType.Statement,
             row, column
         )
-        when (val idValidation = validateIdStatement(stmtToken)) {
+        when (val idValidation = validateIdStatement(stmtToken, tracker)) {
             is ValidationSuccess -> id = idValidation.value
             is ValidationFailure -> errors.addAll(idValidation.errors)
         }
@@ -181,7 +178,7 @@ fun <G, S, E> validateDefinesLikeGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val definesLike = sectionMap[definesLikeSectionName]!!
@@ -191,14 +188,14 @@ fun <G, S, E> validateDefinesLikeGroup(
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var definesLikeSection: S? = null
-    when (val definesLikeValidation = validateDefinesLikeSection(definesLike[0])) {
+    when (val definesLikeValidation = validateDefinesLikeSection(definesLike[0], tracker)) {
         is ValidationSuccess -> definesLikeSection = definesLikeValidation.value
         is ValidationFailure -> errors.addAll(definesLikeValidation.errors)
     }
 
     var assumingSection: AssumingSection? = null
     if (assuming.isNotEmpty()) {
-        when (val assumingValidation = validateAssumingSection(assuming[0])) {
+        when (val assumingValidation = validateAssumingSection(assuming[0], tracker)) {
             is ValidationSuccess -> assumingSection = assumingValidation.value
             is ValidationFailure -> errors.addAll(assumingValidation.errors)
         }
@@ -206,7 +203,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     val endSections = mutableListOf<E>()
     for (end in ends) {
-        when (val endValidation = validateEndSection(end)) {
+        when (val endValidation = validateEndSection(end, tracker)) {
             is ValidationSuccess -> endSections.add(endValidation.value)
             is ValidationFailure -> errors.addAll(endValidation.errors)
         }
@@ -214,7 +211,7 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     var aliasSection: AliasSection? = null
     if (alias.isNotEmpty()) {
-        when (val aliasValidation = validateAliasSection(alias[0])) {
+        when (val aliasValidation = validateAliasSection(alias[0], tracker)) {
             is ValidationSuccess -> aliasSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
@@ -222,21 +219,22 @@ fun <G, S, E> validateDefinesLikeGroup(
 
     var metaDataSection: MetaDataSection? = null
     if (metadata.isNotEmpty()) {
-        when (val metaDataValidation = validateMetaDataSection(metadata[0])) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(
+        validationFailure(errors)
+    } else validationSuccess(
+            tracker,
+            groupNode,
             buildGroup(
                 getSignature(id!!.toStatement()),
                 id, definesLikeSection!!,
                 assumingSection, endSections,
-                aliasSection, metaDataSection,
-                getRow(group), getColumn(group)
+                aliasSection, metaDataSection
             )
         )
 }

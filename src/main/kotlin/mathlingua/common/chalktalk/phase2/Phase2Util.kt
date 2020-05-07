@@ -16,6 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2
 
+import mathlingua.common.LocationTracker
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 internal fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {
@@ -45,26 +46,28 @@ private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: M
     }
 }
 
-internal fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
+internal fun findNode(tracker: LocationTracker, node: Phase2Node, row: Int, col: Int): Phase2Node {
     if (row < 0 || col < 0) {
         throw IllegalArgumentException("Row and column must be non-negative " +
                 "but found row=$row, column=$col")
     }
 
     val nodesAtRow = mutableSetOf<Phase2Node>()
-    findNodesAtRow(node, row, nodesAtRow)
+    findNodesAtRow(tracker, node, row, nodesAtRow)
     if (nodesAtRow.isEmpty()) {
         return if (row == 0) {
             node
         } else {
-            findNode(node, row - 1, col)
+            findNode(tracker, node, row - 1, col)
         }
     }
 
-    val sortedByCol = nodesAtRow.toList().sortedBy { it.column }
+    val sortedByCol = nodesAtRow.toList().sortedBy {
+        tracker.getLocationOf(it)?.column ?: -1
+    }
     var prev: Phase2Node = sortedByCol.first()
     for (n in sortedByCol) {
-        if (n.column > col) {
+        if ((tracker.getLocationOf(n)?.column ?: -1) > col) {
             return prev
         }
         prev = n
@@ -72,17 +75,15 @@ internal fun findNode(node: Phase2Node, row: Int, col: Int): Phase2Node {
     return prev
 }
 
-internal fun findNodesAtRow(node: Phase2Node, row: Int, result: MutableSet<Phase2Node>) {
-    if (node.row == row) {
+internal fun findNodesAtRow(tracker: LocationTracker, node: Phase2Node, row: Int, result: MutableSet<Phase2Node>) {
+    val location = tracker.getLocationOf(node)
+    if (location != null && location.row == row) {
         result.add(node)
     }
-    node.forEach { findNodesAtRow(it, row, result) }
+    node.forEach { findNodesAtRow(tracker, it, row, result) }
 }
 
 internal fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
-    resetRowColumn(node)
-    resetRowColumn(child)
-
     if (node == child) {
         return true
     }
@@ -95,10 +96,4 @@ internal fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
     }
 
     return found
-}
-
-internal fun resetRowColumn(node: Phase2Node) {
-    node.row = -1
-    node.column = -1
-    node.forEach { resetRowColumn(it) }
 }

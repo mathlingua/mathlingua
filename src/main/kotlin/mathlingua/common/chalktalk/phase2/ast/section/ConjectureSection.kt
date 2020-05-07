@@ -16,17 +16,14 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.validateClauseList
 
-data class ConjectureSection(
-    val clauses: ClauseListNode,
-    override var row: Int,
-    override var column: Int
-) : Phase2Node {
+data class ConjectureSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,13 +38,12 @@ data class ConjectureSection(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ConjectureSection(
-                    clauses = clauses.transform(chalkTransformer) as ClauseListNode,
-                    row = row,
-                    column = column
+                    clauses = clauses.transform(chalkTransformer) as ClauseListNode
             ))
 }
 
-fun validateConjectureSection(node: Phase1Node) = validateClauseList(
+fun validateConjectureSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+        tracker,
         node,
         "Conjecture",
         false,

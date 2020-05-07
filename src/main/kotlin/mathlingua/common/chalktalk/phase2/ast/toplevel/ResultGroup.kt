@@ -16,6 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
@@ -29,9 +30,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.validateResultSection
 data class ResultGroup(
     val resultSection: ResultSection,
     val aliasSection: AliasSection?,
-    override val metaDataSection: MetaDataSection?,
-    override var row: Int,
-    override var column: Int
+    override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -47,15 +46,14 @@ data class ResultGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ResultGroup(
             resultSection = resultSection.transform(chalkTransformer) as ResultSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            row = row,
-            column = column
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
     ))
 }
 
 fun isResultGroup(node: Phase1Node) = firstSectionMatchesName(node, "Result")
 
-fun validateResultGroup(groupNode: Group) = validateResultLikeGroup(
+fun validateResultGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
+        tracker,
         groupNode,
         "Result",
         ::validateResultSection,

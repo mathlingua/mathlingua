@@ -33,6 +33,7 @@ import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getTexTalkAncestry
+import mathlingua.common.validationSuccess
 
 internal fun getKey(node: Phase2Node): String {
     val str = node.toString()
@@ -80,11 +81,7 @@ internal fun moveInlineCommandsToIsNode(
                     newClauses.add(c)
                 }
             }
-            val result = ClauseListNode(
-                    clauses = newClauses,
-                    row = -1,
-                    column = -1
-            )
+            val result = ClauseListNode(clauses = newClauses)
             if (newTarget == null && hasChild(it, target)) {
                 newTarget = result
             }
@@ -145,25 +142,15 @@ internal fun moveStatementInlineCommandsToIsNode(
     }
 
     return ForGroup(
-            row = -1,
-            column = -1,
             forSection = ForSection(
                     targets = cmdsToProcess.map {
                         Identifier(
                                 name = cmdToReplacement[it]!!,
-                                row = -1,
-                                column = -1,
                                 isVarArgs = false)
-                    },
-                    row = -1,
-                    column = -1
+                    }
             ),
             whereSection = WhereSection(
-                    row = -1,
-                    column = -1,
                     clauses = ClauseListNode(
-                            row = -1,
-                            column = -1,
                             clauses = cmdsToProcess.map {
                                 val isNode = IsTexTalkNode(
                                         lhs = ParametersTexTalkNode(
@@ -189,10 +176,8 @@ internal fun moveStatementInlineCommandsToIsNode(
                                 )
 
                                 Statement(
-                                        row = -1,
-                                        column = -1,
                                         text = isNode.toCode(),
-                                        texTalkRoot = ValidationSuccess(
+                                        texTalkRoot = validationSuccess(
                                                 ExpressionTexTalkNode(
                                                         children = listOf(isNode)
                                                 )
@@ -202,11 +187,7 @@ internal fun moveStatementInlineCommandsToIsNode(
                     )
             ),
             thenSection = ThenSection(
-                    row = -1,
-                    column = -1,
                     clauses = ClauseListNode(
-                            row = -1,
-                            column = -1,
                             clauses = listOf(newNode)
                     )
             )
@@ -323,11 +304,7 @@ internal fun replaceRepresents(
                 newClauses.add(clause)
             }
         }
-        val result = ClauseListNode(
-                clauses = newClauses,
-                row = -1,
-                column = -1
-        )
+        val result = ClauseListNode(clauses = newClauses)
         if (newTarget == null && hasChild(node, target)) {
             newTarget = result
         }
@@ -479,11 +456,7 @@ internal fun replaceIsNodes(
                 newClauses.add(renameVars(ifThen, map) as Clause)
             }
         }
-        val result = ClauseListNode(
-                clauses = newClauses,
-                row = -1,
-                column = -1
-        )
+        val result = ClauseListNode(clauses = newClauses)
         if (newTarget == null && hasChild(node, target)) {
             newTarget = result
         }
@@ -498,19 +471,13 @@ internal fun replaceIsNodes(
 }
 
 internal fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
-        row = -1,
-        column = -1,
         signature = def.signature,
         id = def.id,
         definesSection = def.definesSection,
         assumingSection = null,
         meansSections = buildIfThens(def).map {
             MeansSection(
-                    row = -1,
-                    column = -1,
                     clauses = ClauseListNode(
-                            row = -1,
-                            column = -1,
                             clauses = listOf(it)
                     )
             )
@@ -521,21 +488,11 @@ internal fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
 
 internal fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
     IfGroup(
-            row = -1,
-            column = -1,
             ifSection = IfSection(
-                    row = -1,
-                    column = -1,
                     clauses = def.assumingSection?.clauses
-                            ?: ClauseListNode(
-                                    clauses = emptyList(),
-                                    row = -1,
-                                    column = -1
-                            )
+                            ?: ClauseListNode(clauses = emptyList())
             ),
             thenSection = ThenSection(
-                    row = -1,
-                    column = -1,
                     clauses = it.clauses
             )
     )
@@ -543,20 +500,13 @@ internal fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
 
 internal fun buildIfThens(rep: RepresentsGroup) = rep.thatSections.map {
     IfGroup(
-            row = -1,
-            column = -1,
             ifSection = IfSection(
-                    row = -1,
-                    column = -1,
                     clauses = rep.assumingSection?.clauses
                             ?: ClauseListNode(
-                                    clauses = emptyList(),
-                                    row = -1,
-                                    column = -1)
+                                    clauses = emptyList()
+                            )
             ),
             thenSection = ThenSection(
-                    row = -1,
-                    column = -1,
                     clauses = it.clauses
             )
     )
@@ -592,9 +542,6 @@ internal fun expandAtNode(
     defines: List<DefinesGroup>,
     represents: List<RepresentsGroup>
 ): Phase2Node {
-    resetRowColumn(root)
-    resetRowColumn(target)
-
     var transformed = root
     var realTarget = target
 
@@ -659,9 +606,7 @@ internal fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Nod
                             for (expanded in getExpandedInfixOperators(expRoot)) {
                                 newClauses.add(Statement(
                                         text = expanded.toCode(),
-                                        texTalkRoot = ValidationSuccess(expanded),
-                                        row = -1,
-                                        column = -1
+                                        texTalkRoot = validationSuccess(expanded)
                                 ))
                             }
                         }
@@ -672,9 +617,7 @@ internal fun separateInfixOperatorStatements(root: Phase2Node, follow: Phase2Nod
                 }
             }
             val result = ClauseListNode(
-                    clauses = newClauses,
-                    row = -1,
-                    column = -1
+                    clauses = newClauses
             )
             if (newFollow == null && hasChild(it, follow)) {
                 newFollow = result

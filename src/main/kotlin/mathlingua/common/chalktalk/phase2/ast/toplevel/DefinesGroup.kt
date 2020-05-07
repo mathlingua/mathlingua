@@ -16,6 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
@@ -31,9 +32,7 @@ data class DefinesGroup(
     val assumingSection: AssumingSection?,
     val meansSections: List<MeansSection>,
     val aliasSection: AliasSection?,
-    override val metaDataSection: MetaDataSection?,
-    override var row: Int,
-    override var column: Int
+    override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -68,15 +67,14 @@ data class DefinesGroup(
             assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
             meansSections = meansSections.map { chalkTransformer(it) as MeansSection },
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            row = row,
-            column = column
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
 
 fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
 
-fun validateDefinesGroup(groupNode: Group) = validateDefinesLikeGroup(
+fun validateDefinesGroup(groupNode: Group, tracker: MutableLocationTracker) = validateDefinesLikeGroup(
+        tracker,
         groupNode,
         "Defines",
         ::validateDefinesSection,

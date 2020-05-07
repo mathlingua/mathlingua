@@ -16,19 +16,14 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 data class TextSection(
     val name: String,
-    val text: String,
-    override var row: Int,
-    override var column: Int
+    val text: String
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
@@ -48,7 +43,8 @@ data class TextSection(
 
 fun validateTextSection(
     rawNode: Phase1Node,
-    name: String
+    name: String,
+    tracker: MutableLocationTracker
 ): Validation<TextSection> {
     val node = rawNode.resolve()
     val row = getRow(node)
@@ -82,7 +78,7 @@ fun validateTextSection(
                         row, column
                 )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val arg = sect.args[0].chalkTalkTarget
@@ -94,13 +90,14 @@ fun validateTextSection(
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
+        validationFailure(errors)
     } else {
-        ValidationSuccess(TextSection(
-                name = name,
-                text = (arg as Phase1Token).text,
-                row = row,
-                column = column
-        ))
+        validationSuccess(
+                tracker,
+                rawNode,
+                TextSection(
+                    name = name,
+                    text = (arg as Phase1Token).text
+                ))
     }
 }

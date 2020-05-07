@@ -24,8 +24,6 @@ Document(
                                               )
                                             ]
                                   )
-                                  row = 0
-                                  column = 8
                                 ),
                                 AbstractionNode(
                                   abstraction = Abstraction(
@@ -43,8 +41,6 @@ Document(
                                               )
                                             ]
                                   )
-                                  row = 0
-                                  column = 11
                                 ),
                                 AbstractionNode(
                                   abstraction = Abstraction(
@@ -62,20 +58,12 @@ Document(
                                               )
                                             ]
                                   )
-                                  row = 0
-                                  column = 14
                                 )
                               ]
-                    row = 0
-                    column = 0
                   )
-                  row = 0
-                  column = 0
                 )
                 aliasSection = null
                 metaDataSection = null
-                row = 0
-                column = 0
               )
             ]
   axioms = [
@@ -86,6 +74,4 @@ Document(
             ]
   protoGroups = [
                 ]
-  row = 0
-  column = 0
 )

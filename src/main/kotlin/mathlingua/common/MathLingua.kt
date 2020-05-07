@@ -28,8 +28,16 @@ import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.Command
 import mathlingua.common.transform.*
 
+data class Parse(val document: Document, val tracker: LocationTracker)
+
 object MathLingua {
-    fun parse(input: String): Validation<Document> {
+    fun parse(input: String): Validation<Document> =
+        when (val validation = parseWithLocations(input)) {
+            is ValidationSuccess -> validationSuccess(validation.value.document)
+            is ValidationFailure -> validationFailure(validation.errors)
+        }
+
+    fun parseWithLocations(input: String): Validation<Parse> {
         val lexer = newChalkTalkLexer(input)
 
         val allErrors = mutableListOf<ParseError>()
@@ -40,14 +48,18 @@ object MathLingua {
         allErrors.addAll(errors)
 
         if (root == null || allErrors.isNotEmpty()) {
-            return ValidationFailure(allErrors)
+            return validationFailure(allErrors)
         }
 
-        return when (val documentValidation = validateDocument(root)) {
-            is ValidationSuccess -> documentValidation
+        val tracker = newLocationTracker()
+        return when (val documentValidation = validateDocument(root, tracker)) {
+            is ValidationSuccess -> validationSuccess(Parse(
+                    document = documentValidation.value,
+                    tracker = tracker
+            ))
             is ValidationFailure -> {
                 allErrors.addAll(documentValidation.errors)
-                ValidationFailure(allErrors)
+                validationFailure(allErrors)
             }
         }
     }
@@ -72,13 +84,14 @@ object MathLingua {
         column: Int,
         defines: List<DefinesGroup>,
         represents: List<RepresentsGroup>
-    ) = when (val validation = parse(text)) {
-        is ValidationFailure -> validation
+    ): Validation<Document> = when (val validation = parseWithLocations(text)) {
+        is ValidationFailure -> validationFailure(validation.errors)
         is ValidationSuccess -> {
-            val doc = validation.value
-            val target = findNode(doc, row, column)
+            val doc = validation.value.document
+            val tracker = validation.value.tracker
+            val target = findNode(tracker, doc, row, column)
             val newDoc = expandAtNode(doc, target, defines, represents) as Document
-            ValidationSuccess(newDoc)
+            validationSuccess(newDoc)
         }
     }
 

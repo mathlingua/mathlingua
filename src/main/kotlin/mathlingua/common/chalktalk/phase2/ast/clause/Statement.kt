@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
@@ -29,9 +26,7 @@ import mathlingua.common.textalk.newTexTalkParser
 
 data class Statement(
     val text: String,
-    val texTalkRoot: Validation<ExpressionTexTalkNode>,
-    override var row: Int,
-    override var column: Int
+    val texTalkRoot: Validation<ExpressionTexTalkNode>
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -46,7 +41,7 @@ data class Statement(
 
 fun isStatement(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 
-fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
+fun validateStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Statement> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
@@ -67,7 +62,7 @@ fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
                         row, column
                 )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     // the text is of the form '...'
@@ -83,11 +78,11 @@ fun validateStatement(rawNode: Phase1Node): Validation<Statement> {
     val result = parser.parse(lexer)
     texTalkErrors.addAll(result.errors)
 
-    val validation = if (texTalkErrors.isEmpty()) {
-        ValidationSuccess(result.root)
+    val validation: Validation<ExpressionTexTalkNode> = if (texTalkErrors.isEmpty()) {
+        validationSuccess(result.root)
     } else {
-        ValidationFailure<ExpressionTexTalkNode>(texTalkErrors)
+        validationFailure(texTalkErrors)
     }
 
-    return ValidationSuccess(Statement(text, validation, getRow(node), getColumn(node)))
+    return validationSuccess(tracker, rawNode, Statement(text, validation))
 }

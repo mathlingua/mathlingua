@@ -16,9 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
@@ -26,9 +24,7 @@ import mathlingua.common.textalk.ExpressionTexTalkNode
 
 data class IdStatement(
     val text: String,
-    val texTalkRoot: Validation<ExpressionTexTalkNode>,
-    override var row: Int,
-    override var column: Int
+    val texTalkRoot: Validation<ExpressionTexTalkNode>
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -42,19 +38,15 @@ data class IdStatement(
 
     fun toStatement() = Statement(
             text = text,
-            texTalkRoot = texTalkRoot,
-            row = row,
-            column = column
+            texTalkRoot = texTalkRoot
     )
 }
 
-fun validateIdStatement(rawNode: Phase1Node): Validation<IdStatement> =
-        when (val validation = validateStatement(rawNode)) {
-            is ValidationSuccess -> ValidationSuccess(IdStatement(
+fun validateIdStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<IdStatement> =
+        when (val validation = validateStatement(rawNode, tracker)) {
+            is ValidationSuccess -> validationSuccess(tracker, rawNode, IdStatement(
                     text = validation.value.text,
-                    texTalkRoot = validation.value.texTalkRoot,
-                    row = validation.value.row,
-                    column = validation.value.column
+                    texTalkRoot = validation.value.texTalkRoot
             ))
-            is ValidationFailure -> ValidationFailure(validation.errors)
+            is ValidationFailure -> validationFailure(validation.errors)
         }

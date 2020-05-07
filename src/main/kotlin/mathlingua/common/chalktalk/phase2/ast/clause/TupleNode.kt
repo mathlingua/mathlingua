@@ -16,16 +16,13 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Tuple
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-data class TupleNode(
-    val tuple: Tuple,
-    override var row: Int,
-    override var column: Int
-) : Target {
+data class TupleNode(val tuple: Tuple) : Target {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, tuple)
@@ -35,7 +32,9 @@ data class TupleNode(
 
 fun isTuple(node: Phase1Node) = node is Tuple
 
-fun validateTupleNode(node: Phase1Node) = validateWrappedNode(node,
+fun validateTupleNode(node: Phase1Node, tracker: MutableLocationTracker) = validateWrappedNode(
+        tracker,
+        node,
         "TupleNode",
         { it as? Tuple },
         ::TupleNode

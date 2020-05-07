@@ -26,6 +26,7 @@ import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TextTexTalkNode
+import mathlingua.common.validationSuccess
 
 internal fun getVars(node: Phase1Node): List<String> {
     val vars = mutableListOf<String>()
@@ -61,9 +62,7 @@ internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node 
         if (node is Identifier) {
             return Identifier(
                     name = map[node.name] ?: node.name,
-                    isVarArgs = node.isVarArgs,
-                    row = node.row,
-                    column = node.column
+                    isVarArgs = node.isVarArgs
             )
         }
 
@@ -72,10 +71,8 @@ internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node 
                 is ValidationSuccess -> {
                     val exp = renameVars(validation.value, map) as ExpressionTexTalkNode
                     return Statement(
-                            row = -1,
-                            column = -1,
                             text = exp.toCode(),
-                            texTalkRoot = ValidationSuccess(exp)
+                            texTalkRoot = validationSuccess(exp)
                     )
                 }
                 is ValidationFailure -> node
@@ -86,11 +83,7 @@ internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node 
             for (key in keysLongToShort) {
                 newText = newText.replace("$key&", map[key]!!)
             }
-            return Text(
-                    text = newText,
-                    row = -1,
-                    column = -1
-            )
+            return Text(text = newText)
         }
 
         return node

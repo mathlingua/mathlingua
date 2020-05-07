@@ -16,19 +16,14 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 data class Identifier(
     val name: String,
-    val isVarArgs: Boolean,
-    override var row: Int,
-    override var column: Int
+    val isVarArgs: Boolean
 ) : Target {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -43,7 +38,7 @@ data class Identifier(
 
 fun isIdentifier(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Name
 
-fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
+fun validateIdentifier(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Identifier> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
@@ -54,7 +49,7 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
                         getRow(node), getColumn(node)
                 )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val (text, type, row, column) = node
@@ -65,7 +60,7 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
                         row, column
                 )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     var realText = text
@@ -75,12 +70,12 @@ fun validateIdentifier(rawNode: Phase1Node): Validation<Identifier> {
         isVarArgs = true
     }
 
-    return ValidationSuccess(
+    return validationSuccess(
+            tracker,
+            rawNode,
             Identifier(
                     name = realText,
-                    isVarArgs = isVarArgs,
-                    row = getRow(node),
-                    column = getColumn(node)
+                    isVarArgs = isVarArgs
             )
     )
 }

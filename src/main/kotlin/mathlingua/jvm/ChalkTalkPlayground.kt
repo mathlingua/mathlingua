@@ -16,9 +16,7 @@
 
 package mathlingua.jvm
 
-import mathlingua.common.MathLingua
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -115,11 +113,13 @@ fun main() {
         .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
     val expandButton = JButton("Expand At")
+    var tracker: LocationTracker? = null
     expandButton.addActionListener {
         val text = inputArea.text
-        val validation = MathLingua.parse(text)
+        val validation = MathLingua.parseWithLocations(text)
         if (validation is ValidationSuccess) {
-            val doc = validation.value
+            val doc = validation.value.document
+            tracker = validation.value.tracker
 
             val lines = inputArea.text.split('\n')
             val offset = inputArea.caretPosition
@@ -133,9 +133,9 @@ fun main() {
 
             println("row=$row, column=$col")
 
-            val root = toTreeNode(doc)
+            val root = toTreeNode(tracker!!, doc)
             phase2Tree.model = DefaultTreeModel(root)
-            val nearestNode = findNode(doc, row, col)
+            val nearestNode = findNode(tracker!!, doc, row, col)
 
             println("Found node: $nearestNode")
 
@@ -146,7 +146,7 @@ fun main() {
             val newDoc = expandAtNode(doc, nearestNode, doc.defines, doc.represents)
 
             outputArea.text = newDoc.toCode(false, 0).getCode()
-            outputTree.model = DefaultTreeModel(toTreeNode(newDoc))
+            outputTree.model = DefaultTreeModel(toTreeNode(tracker!!, newDoc))
         }
     }
     statusPanel.add(expandButton)
@@ -201,7 +201,8 @@ fun main() {
                             phase1Tree.expandRow(numPhase1Rows - 1)
                         }
 
-                        when (val documentValidation = validateDocument(root)) {
+                        val tracker = newLocationTracker()
+                        when (val documentValidation = validateDocument(root, tracker)) {
                             is ValidationSuccess -> doc = documentValidation.value
                             is ValidationFailure -> {
                                 for ((message, row, column) in documentValidation.errors) {
@@ -233,7 +234,7 @@ fun main() {
                     }
                     signaturesList.text = sigBuilder.toString()
 
-                    phase2Tree.model = DefaultTreeModel(toTreeNode(doc))
+                    phase2Tree.model = DefaultTreeModel(toTreeNode(tracker ?: newLocationTracker(), doc))
                     var transformed = doc
 
                     if (separateIsBox.isSelected) {
@@ -265,7 +266,7 @@ fun main() {
                     }
 
                     outputArea.text = transformed.toCode(false, 0).getCode()
-                    outputTree.model = DefaultTreeModel(toTreeNode(transformed))
+                    outputTree.model = DefaultTreeModel(toTreeNode(tracker!!, transformed))
                     val numRows = phase2Tree.rowCount
                     if (numRows > 0) {
                         phase2Tree.expandRow(numRows - 1)
@@ -328,8 +329,8 @@ private fun toTreeNode(phase1Node: Phase1Node): DefaultMutableTreeNode {
     return result
 }
 
-private fun toTreeNode(phase2Node: Phase2Node): DefaultMutableTreeNode {
-    val result = DefaultMutableTreeNode(Phase2Value(phase2Node, false))
+private fun toTreeNode(tracker: LocationTracker, phase2Node: Phase2Node): DefaultMutableTreeNode {
+    val result = DefaultMutableTreeNode(Phase2Value(tracker, phase2Node, false))
     var visited = false
     phase2Node.forEach {
         visited = true
@@ -351,10 +352,10 @@ private fun toTreeNode(phase2Node: Phase2Node): DefaultMutableTreeNode {
             result.add(toTreeNode(it))
         }
          */
-        result.add(toTreeNode(it))
+        result.add(toTreeNode(tracker, it))
     }
     if (!visited) {
-        result.add(DefaultMutableTreeNode(Phase2Value(phase2Node, true)))
+        result.add(DefaultMutableTreeNode(Phase2Value(tracker, phase2Node, true)))
     }
     return result
 }
@@ -372,13 +373,14 @@ private fun toTreeNode(texTalkNode: TexTalkNode): DefaultMutableTreeNode {
     return result
 }
 
-private data class Phase2Value(val value: Phase2Node, val showCode: Boolean) {
+private data class Phase2Value(val tracker: LocationTracker, val value: Phase2Node, val showCode: Boolean) {
     override fun toString(): String {
+        val location = tracker.getLocationOf(value) ?: Location(row = -1, column = -1)
         return if (showCode) {
-            value.toCode(false, 0).getCode() + " (${value.row}, ${value.column})"
+            value.toCode(false, 0).getCode() + " (${location.row}, ${location.column})"
         } else {
             value.javaClass.simpleName +
-                    " (${value.row}, ${value.column})"
+                    " (${location.row}, ${location.column})"
         }
     }
 }

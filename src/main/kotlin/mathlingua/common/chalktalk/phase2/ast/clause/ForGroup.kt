@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
@@ -29,9 +26,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 data class ForGroup(
     val forSection: ForSection,
     val whereSection: WhereSection?,
-    val thenSection: ThenSection,
-    override var row: Int,
-    override var column: Int
+    val thenSection: ThenSection
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(forSection)
@@ -47,15 +42,13 @@ data class ForGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ForGroup(
             forSection = forSection.transform(chalkTransformer) as ForSection,
             whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-            row = row,
-            column = column
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection
     ))
 }
 
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
 
-fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
+fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<ForGroup> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
@@ -66,7 +59,7 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
                         getRow(node), getColumn(node)
                 )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val (sections) = node
@@ -79,13 +72,13 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     var forSection: ForSection? = null
     val forNode = sectionMap["for"]
 
-    when (val forEvaluation = validateForSection(forNode!![0])) {
+    when (val forEvaluation = validateForSection(forNode!![0], tracker)) {
         is ValidationSuccess -> forSection = forEvaluation.value
         is ValidationFailure -> errors.addAll(forEvaluation.errors)
     }
@@ -93,7 +86,7 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
     var whereSection: WhereSection? = null
     if (sectionMap.containsKey("where") && sectionMap["where"]!!.isNotEmpty()) {
         val where = sectionMap["where"]!!
-        when (val whereValidation = validateWhereSection(where[0])) {
+        when (val whereValidation = validateWhereSection(where[0], tracker)) {
             is ValidationSuccess -> whereSection = whereValidation.value
             is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
@@ -101,13 +94,12 @@ fun validateForGroup(rawNode: Phase1Node): Validation<ForGroup> {
 
     var thenSection: ThenSection? = null
     val then = sectionMap["then"]
-    when (val thenValidation = validateThenSection(then!![0])) {
+    when (val thenValidation = validateThenSection(then!![0], tracker)) {
         is ValidationSuccess -> thenSection = thenValidation.value
         is ValidationFailure -> errors.addAll(thenValidation.errors)
     }
 
     return if (!errors.isEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(ForGroup(forSection!!, whereSection, thenSection!!,
-            getRow(node), getColumn((node))))
+        validationFailure(errors)
+    } else validationSuccess(tracker, rawNode, ForGroup(forSection!!, whereSection, thenSection!!))
 }

@@ -16,10 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Section
@@ -31,7 +28,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 
 private data class ValidationPair<T>(
     val matches: (node: Phase1Node) -> Boolean,
-    val validate: (node: Phase1Node) -> Validation<T>
+    val validate: (node: Phase1Node, tracker: MutableLocationTracker) -> Validation<T>
 )
 
 interface Clause : Phase2Node
@@ -88,19 +85,19 @@ private val CLAUSE_VALIDATORS = listOf(
         )
 )
 
-fun validateClause(rawNode: Phase1Node): Validation<Clause> {
+fun validateClause(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Clause> {
     val node = rawNode.resolve()
 
     for (pair in CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
-            return when (val validation = pair.validate(node)) {
-                is ValidationSuccess -> ValidationSuccess(validation.value)
-                is ValidationFailure -> ValidationFailure(validation.errors)
+            return when (val validation = pair.validate(node, tracker)) {
+                is ValidationSuccess -> validationSuccess(tracker, rawNode, validation.value)
+                is ValidationFailure -> validationFailure(validation.errors)
             }
         }
     }
 
-    return ValidationFailure(
+    return validationFailure(
         listOf(
             ParseError(
                 "Expected a Target",
@@ -121,11 +118,12 @@ fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     } else sections[0].name.text == name
 }
 
-fun <G, S> validateSingleSectionGroup(
+fun <G : Phase2Node, S> validateSingleSectionGroup(
+    tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     sectionName: String,
-    buildGroup: (sect: S, row: Int, column: Int) -> G,
-    validateSection: (section: Section) -> Validation<S>
+    buildGroup: (sect: S) -> G,
+    validateSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>
 ): Validation<G> {
     val node = rawNode.resolve()
 
@@ -137,7 +135,7 @@ fun <G, S> validateSingleSectionGroup(
                 getRow(node), getColumn(node)
             )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val (sections) = node
@@ -149,29 +147,29 @@ fun <G, S> validateSingleSectionGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     var section: S? = null
     val sect = sectionMap[sectionName]
-    when (val validation = validateSection(sect!![0])) {
+    when (val validation = validateSection(sect!![0], tracker)) {
         is ValidationSuccess -> section = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(buildGroup(section!!,
-            getRow(node), getColumn(node)))
+        validationFailure(errors)
+    } else validationSuccess(tracker, rawNode, buildGroup(section!!))
 }
 
-fun <G, S1, S2> validateDoubleSectionGroup(
+fun <G : Phase2Node, S1, S2> validateDoubleSectionGroup(
+    tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     section1Name: String,
-    validateSection1: (section: Section) -> Validation<S1>,
+    validateSection1: (section: Section, tracker: MutableLocationTracker) -> Validation<S1>,
     section2Name: String,
-    validateSection2: (section: Section) -> Validation<S2>,
-    buildGroup: (sect1: S1, sect2: S2, row: Int, column: Int) -> G
+    validateSection2: (section: Section, tracker: MutableLocationTracker) -> Validation<S2>,
+    buildGroup: (sect1: S1, sect2: S2) -> G
 ): Validation<G> {
     val node = rawNode.resolve()
 
@@ -183,7 +181,7 @@ fun <G, S1, S2> validateDoubleSectionGroup(
                 getRow(node), getColumn(node)
             )
         )
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     val (sections) = node
@@ -195,40 +193,40 @@ fun <G, S1, S2> validateDoubleSectionGroup(
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
-        return ValidationFailure(errors)
+        return validationFailure(errors)
     }
 
     var section1: S1? = null
     val sect1 = sectionMap[section1Name]
-    when (val section1Validation = validateSection1(sect1!![0])) {
+    when (val section1Validation = validateSection1(sect1!![0], tracker)) {
         is ValidationSuccess -> section1 = section1Validation.value
         is ValidationFailure -> errors.addAll(section1Validation.errors)
     }
 
     var section2: S2? = null
     val sect2 = sectionMap[section2Name]
-    when (val section2Validation = validateSection2(sect2!![0])) {
+    when (val section2Validation = validateSection2(sect2!![0], tracker)) {
         is ValidationSuccess -> section2 = section2Validation.value
         is ValidationFailure -> errors.addAll(section2Validation.errors)
     }
 
     return if (errors.isNotEmpty()) {
-        ValidationFailure(errors)
-    } else ValidationSuccess(buildGroup(section1!!, section2!!,
-            getRow(node), getColumn(node)))
+        validationFailure(errors)
+    } else validationSuccess(tracker, rawNode, buildGroup(section1!!, section2!!))
 }
 
-fun <Wrapped, Base> validateWrappedNode(
+fun <Wrapped : Phase2Node, Base> validateWrappedNode(
+    tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     expectedType: String,
     checkType: (node: Phase1Node) -> Base?,
-    build: (base: Base, row: Int, column: Int) -> Wrapped
+    build: (base: Base) -> Wrapped
 ): Validation<Wrapped> {
     val node = rawNode.resolve()
 
     val base = checkType(node)
     if (base == null) {
-        return ValidationFailure(
+        return validationFailure(
             listOf(
                 ParseError(
                     "Cannot convert ${node.toCode()} to a $expectedType",
@@ -238,7 +236,7 @@ fun <Wrapped, Base> validateWrappedNode(
         )
     }
 
-    return ValidationSuccess(build(base, getRow(node), getColumn(node)))
+    return validationSuccess(tracker, rawNode, build(base))
 }
 
 fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1Node): CodeWriter {

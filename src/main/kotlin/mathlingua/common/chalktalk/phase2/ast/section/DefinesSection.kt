@@ -16,17 +16,14 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
+import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Target
 import mathlingua.common.chalktalk.phase2.ast.clause.validateTargetList
 
-data class DefinesSection(
-    val targets: List<Target>,
-    override var row: Int,
-    override var column: Int
-) : Phase2Node {
+data class DefinesSection(val targets: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -38,13 +35,12 @@ data class DefinesSection(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(DefinesSection(
-                    targets = targets.map { it.transform(chalkTransformer) as Target },
-                    row = row,
-                    column = column
+                    targets = targets.map { it.transform(chalkTransformer) as Target }
             ))
 }
 
-fun validateDefinesSection(node: Phase1Node) = validateTargetList(
+fun validateDefinesSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTargetList(
+        tracker,
         node,
         "Defines",
         ::DefinesSection

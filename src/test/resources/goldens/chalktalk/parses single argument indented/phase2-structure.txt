@@ -24,20 +24,12 @@ Document(
                                               )
                                             ]
                                   )
-                                  row = 1
-                                  column = 3
                                 )
                               ]
-                    row = 0
-                    column = 0
                   )
-                  row = 0
-                  column = 0
                 )
                 aliasSection = null
                 metaDataSection = null
-                row = 0
-                column = 0
               )
             ]
   axioms = [
@@ -48,6 +40,4 @@ Document(
             ]
   protoGroups = [
                 ]
-  row = 0
-  column = 0
 )

@@ -26,6 +26,7 @@ import kotlin.system.exitProcess
 private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
 private fun green(text: String) = "\u001B[32m$text\u001B[0m"
 private fun red(text: String) = "\u001B[31m$text\u001B[0m"
+private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 
 private data class ErrorInfo(
     val file: File,
@@ -61,9 +62,12 @@ fun main(args: Array<String>) {
 
     val files = mutableListOf<File>()
     var printJson = false
+    var failOnWarnings = false
     for (arg in args) {
         if (arg == "--json") {
             printJson = true
+        } else if (arg == "--failOnWarnings") {
+            failOnWarnings = true
         } else {
             files.addAll(findFiles(File(arg), ".math"))
         }
@@ -90,29 +94,54 @@ fun main(args: Array<String>) {
         for (err in allErrorInfo) {
             println(err.toString(false))
         }
+    }
+
+    val prefix = if (failOnWarnings) {
+        "ERROR:"
+    } else {
+        "WARNING:"
+    }
+
+    val notDefinedSignatures = allSignatures.minus(defSignatures)
+    if (notDefinedSignatures.isNotEmpty()) {
+        val signatureOrSignatures = if (notDefinedSignatures.size == 1) {
+            "signature is"
+        } else {
+            "signatures are"
+        }
+        val coloredPrefix = if (failOnWarnings) {
+            bold(red(prefix))
+        } else {
+            bold(yellow(prefix))
+        }
+        println("$coloredPrefix The following ${notDefinedSignatures.size} " +
+            "$signatureOrSignatures used but not defined:")
+    }
+
+    val indent = " ".repeat(prefix.length + 1)
+    for (sig in notDefinedSignatures) {
+        println("$indent${bold(sig)}")
+    }
+
+    val failed = allErrorInfo.isNotEmpty() || (failOnWarnings && notDefinedSignatures.isNotEmpty())
+    if (!printJson) {
         val fileOrFiles = if (files.size > 1) {
             "files"
         } else {
             "file"
         }
-        if (allErrorInfo.isEmpty()) {
-            println("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles")
+        if (failed) {
+            if (failOnWarnings) {
+                println("${bold(red("FAILURE:"))} Found ${allErrorInfo.size + notDefinedSignatures.size} errors from ${files.size} $fileOrFiles")
+            } else {
+                println("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors and ${notDefinedSignatures.size} warnings in ${files.size} $fileOrFiles")
+            }
         } else {
-            println("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors from ${files.size} $fileOrFiles")
+            println("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles with ${notDefinedSignatures.size} warnings")
         }
     }
 
-    val notDefinedSignatures = allSignatures.minus(defSignatures)
-    if (notDefinedSignatures.isNotEmpty()) {
-        println("WARNING: The following ${notDefinedSignatures.size} " +
-            "signatures are used but not defined:")
-    }
-
-    for (sig in notDefinedSignatures) {
-        println("  $sig")
-    }
-
-    exitProcess(if (allErrorInfo.isEmpty()) 0 else 1)
+    exitProcess(if (failed) 1 else 0)
 }
 
 private fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>): ErrorInfo {

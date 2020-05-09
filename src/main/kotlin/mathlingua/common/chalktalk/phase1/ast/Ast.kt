@@ -78,6 +78,9 @@ data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
+            is AbstractionPart -> {
+                throw RuntimeException("Argument.print: Unexpected AbstractionPart encountered")
+            }
         }
     }
 

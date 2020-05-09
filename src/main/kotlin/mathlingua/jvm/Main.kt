@@ -23,8 +23,12 @@ import mathlingua.common.ValidationSuccess
 import java.io.File
 import kotlin.system.exitProcess
 
+private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
+private fun green(text: String) = "\u001B[32m$text\u001B[0m"
+private fun red(text: String) = "\u001B[31m$text\u001B[0m"
+
 private data class ErrorInfo(
-    val file: String,
+    val file: File,
     val message: String,
     val failedLine: String,
     val row: Int,
@@ -34,29 +38,34 @@ private data class ErrorInfo(
         val builder = StringBuilder()
         if (json) {
             println("{")
-            println("  \"file\": \"$file\",")
+            println("  \"file\": \"${file.normalize().absolutePath}\",")
             println("  \"message\": \"${message.replace("\n", "\\n")}\",")
             println("  \"failedLine\": \"${failedLine.replace("\n", "\\n")}\",")
             println("  \"row\": $row,")
             println("  \"column\": $column")
             println("}")
         } else {
-            println("File: $file")
-            println(failedLine)
-            println(message)
+            println(bold("File: $file"))
+            println(failedLine.trim())
+            println(message.trim())
         }
         return builder.toString()
     }
 }
 
 fun main(args: Array<String>) {
+    if (args.isEmpty() || args.contains("--help")) {
+        println("Usage: mlg [--json] <mathlingua file...>")
+        exitProcess(1)
+    }
+
     val files = mutableListOf<File>()
     var printJson = false
     for (arg in args) {
         if (arg == "--json") {
             printJson = true
         } else {
-            files.addAll(findFiles(File(arg), ".txt"))
+            files.addAll(findFiles(File(arg), ".math"))
         }
     }
 
@@ -80,12 +89,16 @@ fun main(args: Array<String>) {
     } else {
         for (err in allErrorInfo) {
             println(err.toString(false))
-            println()
+        }
+        val fileOrFiles = if (files.size > 1) {
+            "files"
+        } else {
+            "file"
         }
         if (allErrorInfo.isEmpty()) {
-            println("SUCCESS: Processed ${files.size} files")
+            println("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles")
         } else {
-            println("FAILURE: Found ${allErrorInfo.size} errors from ${files.size} files")
+            println("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors from ${files.size} $fileOrFiles")
         }
     }
 
@@ -108,7 +121,7 @@ private fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>):
     lineBuilder.append(lineNumber)
     lineBuilder.append(inputLines[err.row])
     lineBuilder.append('\n')
-    for (i in 0 until lineNumber.length) {
+    for (i in lineNumber.indices) {
         lineBuilder.append(' ')
     }
     for (i in 0 until err.column) {
@@ -117,7 +130,7 @@ private fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>):
     lineBuilder.append("^\n")
 
     return ErrorInfo(
-        file.absolutePath,
+        file,
         err.message,
         lineBuilder.toString(),
         err.row, err.column

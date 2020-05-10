@@ -176,11 +176,15 @@ private fun processFile(file: File, allSignatures: MutableSet<String>, defSignat
             allSignatures.addAll(MathLingua.findAllSignatures(document))
 
             for (def in document.defines) {
-                defSignatures.addAll(MathLingua.findAllSignatures(def))
+                if (def.signature != null) {
+                    defSignatures.add(def.signature)
+                }
             }
 
             for (rep in document.represents) {
-                defSignatures.addAll(MathLingua.findAllSignatures(rep))
+                if (rep.signature != null) {
+                    defSignatures.add(rep.signature)
+                }
             }
             emptyList()
         }

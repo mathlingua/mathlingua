@@ -28,6 +28,12 @@ private fun green(text: String) = "\u001B[32m$text\u001B[0m"
 private fun red(text: String) = "\u001B[31m$text\u001B[0m"
 private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 
+private enum class OutputType {
+    Json,
+    TestCase,
+    UserFocused
+}
+
 private data class ErrorInfo(
     val file: File,
     val message: String,
@@ -35,20 +41,30 @@ private data class ErrorInfo(
     val row: Int,
     val column: Int
 ) {
-    fun toString(json: Boolean): String {
+    fun toString(type: OutputType): String {
         val builder = StringBuilder()
-        if (json) {
-            println("{")
-            println("  \"file\": \"${file.normalize().absolutePath}\",")
-            println("  \"message\": \"${message.replace("\n", "\\n")}\",")
-            println("  \"failedLine\": \"${failedLine.replace("\n", "\\n")}\",")
-            println("  \"row\": $row,")
-            println("  \"column\": $column")
-            println("}")
-        } else {
-            println(bold("File: $file"))
-            println(failedLine.trim())
-            println(message.trim())
+        when (type) {
+            OutputType.Json -> {
+                println("{")
+                println("  \"file\": \"${file.normalize().absolutePath}\",")
+                println("  \"message\": \"${message.replace("\n", "\\n")}\",")
+                println("  \"failedLine\": \"${failedLine.replace("\n", "\\n")}\",")
+                println("  \"row\": $row,")
+                println("  \"column\": $column")
+                println("}")
+            }
+            OutputType.TestCase -> {
+                println("Row: $row")
+                println("Column: $column")
+                println("Message:")
+                println(message)
+                println("EndMessage:")
+            }
+            else -> {
+                println(bold("File: $file"))
+                println(failedLine.trim())
+                println(message.trim())
+            }
         }
         return builder.toString()
     }
@@ -63,11 +79,17 @@ fun main(args: Array<String>) {
     val files = mutableListOf<File>()
     var printJson = false
     var failOnWarnings = false
+    var generateTestCases = false
     for (arg in args) {
         if (arg == "--json") {
             printJson = true
         } else if (arg == "--failOnWarnings") {
             failOnWarnings = true
+        } else if (arg == "--generateTestCases") {
+            generateTestCases = true
+        } else if (arg.startsWith("--")) {
+            println("Unrecognized argument $arg")
+            exitProcess(1)
         } else {
             files.addAll(findFiles(File(arg), ".math"))
         }
@@ -81,18 +103,32 @@ fun main(args: Array<String>) {
         allErrorInfo.addAll(processFile(f, allSignatures, defSignatures))
     }
 
-    if (printJson) {
-        println("[")
-        for (i in 0 until allErrorInfo.size) {
-            print(allErrorInfo[i].toString(true))
-            if (i != allErrorInfo.size - 1) {
-                println(",")
+    if (printJson && generateTestCases) {
+        println("Cannot specify both --failOnWarnings and --generateTestCases")
+        exitProcess(1)
+    }
+
+    when {
+        printJson -> {
+            println("[")
+            for (i in 0 until allErrorInfo.size) {
+                print(allErrorInfo[i].toString(OutputType.Json))
+                if (i != allErrorInfo.size - 1) {
+                    println(",")
+                }
+            }
+            println("]")
+        }
+        generateTestCases -> {
+            for (err in allErrorInfo) {
+                println(err.toString(OutputType.TestCase))
+                println()
             }
         }
-        println("]")
-    } else {
-        for (err in allErrorInfo) {
-            println(err.toString(false))
+        else -> {
+            for (err in allErrorInfo) {
+                println(err.toString(OutputType.UserFocused))
+            }
         }
     }
 
@@ -124,7 +160,7 @@ fun main(args: Array<String>) {
     }
 
     val failed = allErrorInfo.isNotEmpty() || (failOnWarnings && notDefinedSignatures.isNotEmpty())
-    if (!printJson) {
+    if (!printJson && !generateTestCases) {
         val fileOrFiles = if (files.size > 1) {
             "files"
         } else {
@@ -148,15 +184,17 @@ private fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>):
     val lineNumber = "Line ${err.row + 1}: "
     val lineBuilder = StringBuilder()
     lineBuilder.append(lineNumber)
-    lineBuilder.append(inputLines[err.row])
-    lineBuilder.append('\n')
-    for (i in lineNumber.indices) {
-        lineBuilder.append(' ')
+    if (err.row >= 0 && err.row < inputLines.size) {
+        lineBuilder.append(inputLines[err.row])
+        lineBuilder.append('\n')
+        for (i in lineNumber.indices) {
+            lineBuilder.append(' ')
+        }
+        for (i in 0 until err.column) {
+            lineBuilder.append(' ')
+        }
+        lineBuilder.append("^\n")
     }
-    for (i in 0 until err.column) {
-        lineBuilder.append(' ')
-    }
-    lineBuilder.append("^\n")
 
     return ErrorInfo(
         file,

@@ -1,0 +1,14 @@
+Row: 0
+Column: 0
+Message:
+A result, axiom, or conjecture cannot have an Id
+EndMessage:
+
+
+Row: 1
+Column: 1
+Message:
+Section 'Axiom' requires at least one argument.
+EndMessage:
+
+

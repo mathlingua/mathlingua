@@ -1,0 +1,3 @@
+Result:
+. for: f(a, "b")
+  then: x

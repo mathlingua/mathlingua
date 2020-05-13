@@ -1,0 +1,15 @@
+Row: 2
+Column: 1
+Message:
+For pattern:
+
+Defines:
+assuming?:
+means:
+Alias?:
+Metadata?:
+
+Expected 'means' but found 'assumes'
+EndMessage:
+
+

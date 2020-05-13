@@ -12,3 +12,5 @@ target
 gradle-app.setting
 !gradle-wrapper.jar
 out
+
+.DS_Store

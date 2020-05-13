@@ -1,5 +1,3 @@
-# Mathlingua: The Official Guide
-
 Mathlingua is a language designed to describe mathematical definitions, theorems, axioms, and conjectures in a way that:
 
 * Prioritizes clarity with respect to the meaning of a statement

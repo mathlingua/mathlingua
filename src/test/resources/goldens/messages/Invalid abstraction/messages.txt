@@ -1,0 +1,49 @@
+Row: 1
+Column: 10
+Message:
+Expected a token of type Comma but found RParen
+EndMessage:
+
+
+Row: 1
+Column: 8
+Message:
+Expected an abstraction after a {
+EndMessage:
+
+
+Row: 1
+Column: 10
+Message:
+Expected a token of type RCurly but found RParen
+EndMessage:
+
+
+Row: 1
+Column: 10
+Message:
+Expected a token of type Comma but found RParen
+EndMessage:
+
+
+Row: 1
+Column: 10
+Message:
+Expected a name, but found )
+EndMessage:
+
+
+Row: 1
+Column: 11
+Message:
+Expected a token of type Comma but found RCurly
+EndMessage:
+
+
+Row: 1
+Column: 11
+Message:
+Expected a name, but found }
+EndMessage:
+
+

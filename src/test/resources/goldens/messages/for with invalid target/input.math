@@ -1,0 +1,4 @@
+Result:
+. for: 'x'
+  then: y
+

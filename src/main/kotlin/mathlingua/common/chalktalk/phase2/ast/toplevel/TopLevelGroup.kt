@@ -162,9 +162,14 @@ fun <G : Phase2Node, S, E> validateDefinesLikeGroup(
             is ValidationFailure -> errors.addAll(idValidation.errors)
         }
     } else {
+        val type = if (group.sections.isNotEmpty()) {
+            group.sections.first().name.text
+        } else {
+            "Defines or Represents"
+        }
         errors.add(
             ParseError(
-                "A definition must have an Id",
+                "A $type must have an Id",
                 getRow(group), getColumn(group)
             )
         )

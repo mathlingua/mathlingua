@@ -53,6 +53,7 @@ dependencies {
     testImplementation('org.junit.jupiter:junit-jupiter-api:5.5.1')
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.5.1')
     testImplementation "com.tylerthrailkill.helpers:pretty-print:2.0.2"
+    compile group: 'com.github.ajalt', name: 'clikt', version: '2.6.0'
 }
 
 jar {

@@ -16,6 +16,12 @@
 
 package mathlingua.jvm
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.output.TermUi
+import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
 import mathlingua.common.MathLingua
 import mathlingua.common.ParseError
 import mathlingua.common.ValidationFailure
@@ -45,54 +51,35 @@ private data class ErrorInfo(
         val builder = StringBuilder()
         when (type) {
             OutputType.Json -> {
-                println("{")
-                println("  \"file\": \"${file.normalize().absolutePath}\",")
-                println("  \"message\": \"${message.replace("\n", "\\n")}\",")
-                println("  \"failedLine\": \"${failedLine.replace("\n", "\\n")}\",")
-                println("  \"row\": $row,")
-                println("  \"column\": $column")
-                println("}")
+                TermUi.echo("{")
+                TermUi.echo("  \"file\": \"${file.normalize().absolutePath}\",")
+                TermUi.echo("  \"message\": \"${message.replace("\n", "\\n")}\",")
+                TermUi.echo("  \"failedLine\": \"${failedLine.replace("\n", "\\n")}\",")
+                TermUi.echo("  \"row\": $row,")
+                TermUi.echo("  \"column\": $column")
+                TermUi.echo("}")
             }
             OutputType.TestCase -> {
-                println("Row: $row")
-                println("Column: $column")
-                println("Message:")
-                println(message)
-                println("EndMessage:")
+                TermUi.echo("Row: $row")
+                TermUi.echo("Column: $column")
+                TermUi.echo("Message:")
+                TermUi.echo(message)
+                TermUi.echo("EndMessage:")
             }
             else -> {
-                println(bold("File: $file"))
-                println(failedLine.trim())
-                println(message.trim())
+                TermUi.echo(bold("File: $file"))
+                TermUi.echo(failedLine.trim())
+                TermUi.echo(message.trim())
             }
         }
         return builder.toString()
     }
 }
 
-fun main(args: Array<String>) {
-    if (args.isEmpty() || args.contains("--help")) {
-        println("Usage: mlg [--json] <mathlingua file...>")
-        exitProcess(1)
-    }
-
+private fun runMlg(printJson: Boolean, failOnWarnings: Boolean, generateTestCases: Boolean, inputs: List<File>): Int {
     val files = mutableListOf<File>()
-    var printJson = false
-    var failOnWarnings = false
-    var generateTestCases = false
-    for (arg in args) {
-        if (arg == "--json") {
-            printJson = true
-        } else if (arg == "--failOnWarnings") {
-            failOnWarnings = true
-        } else if (arg == "--generateTestCases") {
-            generateTestCases = true
-        } else if (arg.startsWith("--")) {
-            println("Unrecognized argument $arg")
-            exitProcess(1)
-        } else {
-            files.addAll(findFiles(File(arg), ".math"))
-        }
+    inputs.forEach {
+        files.addAll(findFiles(it, ".math"))
     }
 
     val allSignatures = mutableSetOf<String>()
@@ -104,30 +91,30 @@ fun main(args: Array<String>) {
     }
 
     if (printJson && generateTestCases) {
-        println("Cannot specify both --failOnWarnings and --generateTestCases")
-        exitProcess(1)
+        TermUi.echo("Cannot specify to output both to json and to generate test cases")
+        return 1
     }
 
     when {
         printJson -> {
-            println("[")
+            TermUi.echo("[")
             for (i in 0 until allErrorInfo.size) {
                 print(allErrorInfo[i].toString(OutputType.Json))
                 if (i != allErrorInfo.size - 1) {
-                    println(",")
+                    TermUi.echo(",")
                 }
             }
-            println("]")
+            TermUi.echo("]")
         }
         generateTestCases -> {
             for (err in allErrorInfo) {
-                println(err.toString(OutputType.TestCase))
-                println()
+                TermUi.echo(err.toString(OutputType.TestCase))
+                TermUi.echo("")
             }
         }
         else -> {
             for (err in allErrorInfo) {
-                println(err.toString(OutputType.UserFocused))
+                TermUi.echo(err.toString(OutputType.UserFocused))
             }
         }
     }
@@ -150,13 +137,13 @@ fun main(args: Array<String>) {
         } else {
             bold(yellow(prefix))
         }
-        println("$coloredPrefix The following ${notDefinedSignatures.size} " +
+        TermUi.echo("$coloredPrefix The following ${notDefinedSignatures.size} " +
             "$signatureOrSignatures used but not defined:")
     }
 
     val indent = " ".repeat(prefix.length + 1)
     for (sig in notDefinedSignatures) {
-        println("$indent${bold(sig)}")
+        TermUi.echo("$indent${bold(sig)}")
     }
 
     val failed = allErrorInfo.isNotEmpty() || (failOnWarnings && notDefinedSignatures.isNotEmpty())
@@ -168,16 +155,16 @@ fun main(args: Array<String>) {
         }
         if (failed) {
             if (failOnWarnings) {
-                println("${bold(red("FAILURE:"))} Found ${allErrorInfo.size + notDefinedSignatures.size} errors from ${files.size} $fileOrFiles")
+                TermUi.echo("${bold(red("FAILURE:"))} Found ${allErrorInfo.size + notDefinedSignatures.size} errors from ${files.size} $fileOrFiles")
             } else {
-                println("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors and ${notDefinedSignatures.size} warnings in ${files.size} $fileOrFiles")
+                TermUi.echo("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors and ${notDefinedSignatures.size} warnings in ${files.size} $fileOrFiles")
             }
         } else {
-            println("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles with ${notDefinedSignatures.size} warnings")
+            TermUi.echo("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles with ${notDefinedSignatures.size} warnings")
         }
     }
 
-    exitProcess(if (failed) 1 else 0)
+    return if (failed) 1 else 0
 }
 
 private fun getErrorInfo(err: ParseError, file: File, inputLines: List<String>): ErrorInfo {
@@ -249,3 +236,16 @@ private fun findFiles(file: File, ext: String): List<File> {
 
     return result
 }
+
+private class Mlg : CliktCommand() {
+    private val json: Boolean by option(help = "Print results in JSON").flag()
+    private val testCase: Boolean by option(help = "Print results as unit test cases").flag()
+    private val warningsAsErrors: Boolean by option(help = "Treat warnings as errors").flag()
+    private val file: List<String> by argument(help = "The *.math files to process").multiple(required = true)
+
+    override fun run() {
+        exitProcess(runMlg(json, warningsAsErrors, testCase, file.map { File(it) }))
+    }
+}
+
+fun main(args: Array<String>) = Mlg().main(args)

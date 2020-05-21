@@ -132,20 +132,20 @@ private fun findAllSignaturesImpl(texTalkNode: TexTalkNode, signatures: MutableS
             val sig = getMergedCommandSignature(expNode)
             if (sig != null) {
                 signatures.add(
-                  Signature(
-                    form = sig,
-                    location = location
-                ))
+                    Signature(
+                        form = sig,
+                        location = location
+                    ))
             }
         }
         return
     } else if (texTalkNode is Command) {
         val sig = getCommandSignature(texTalkNode)
         signatures.add(
-          Signature(
-            form = sig,
-            location = location
-        ))
+            Signature(
+                form = sig,
+                location = location
+            ))
     }
 
     texTalkNode.forEach { findAllSignaturesImpl(it, signatures, location) }

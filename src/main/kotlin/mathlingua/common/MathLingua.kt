@@ -30,6 +30,8 @@ import mathlingua.common.transform.*
 
 data class Parse(val document: Document, val tracker: LocationTracker)
 
+data class Signature(val form: String, val location: Location)
+
 object MathLingua {
     fun parse(input: String): Validation<Document> =
         when (val validation = parseWithLocations(input)) {
@@ -72,11 +74,46 @@ object MathLingua {
 
     fun signatureOf(command: Command) = getCommandSignature(command)
 
-    fun findAllSignatures(node: Phase2Node) = locateAllSignatures(node).toList()
+    fun findAllSignatures(node: Phase2Node, locationTracker: LocationTracker) = locateAllSignatures(node, locationTracker).toList()
 
     fun flattenSignature(signature: String) = mathlingua.common.transform.flattenSignature(signature)
 
     fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
+
+    fun findUndefinedSignatures(input: String, supplemental: List<String>): List<Signature> {
+        val definedSignatures = mutableSetOf<String>()
+        definedSignatures.addAll(getAllDefinedSignatures(input))
+        for (sup in supplemental) {
+            definedSignatures.addAll(getAllDefinedSignatures(sup))
+        }
+
+        return when (val validation = parseWithLocations(input)) {
+            is ValidationSuccess -> {
+                val result = mutableListOf<Signature>()
+                val signatures = findAllSignatures(validation.value.document, validation.value.tracker)
+                for (sig in signatures) {
+                    if (!definedSignatures.contains(sig.form)) {
+                        result.add(sig)
+                    }
+                }
+                result
+            }
+            is ValidationFailure -> emptyList()
+        }
+    }
+
+    private fun getAllDefinedSignatures(input: String): List<String> {
+        return when (val validation = parse(input)) {
+            is ValidationSuccess -> {
+                val result = mutableListOf<String>()
+                val document = validation.value
+                result.addAll(document.defines.mapNotNull { it.signature })
+                result.addAll(document.represents.mapNotNull { it.signature })
+                result
+            }
+            is ValidationFailure -> emptyList()
+        }
+    }
 
     fun expandAtPosition(
         text: String,

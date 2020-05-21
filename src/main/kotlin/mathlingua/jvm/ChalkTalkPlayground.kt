@@ -228,8 +228,8 @@ fun main() {
                     phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
                 } else {
                     val sigBuilder = StringBuilder()
-                    for (sig in MathLingua.findAllSignatures(doc)) {
-                        sigBuilder.append(sig)
+                    for (sig in MathLingua.findAllSignatures(doc, newLocationTracker())) {
+                        sigBuilder.append(sig.form)
                         sigBuilder.append('\n')
                     }
                     signaturesList.text = sigBuilder.toString()

@@ -195,10 +195,12 @@ private fun processFile(file: File, allSignatures: MutableSet<String>, defSignat
     val input = String(file.readBytes())
     val inputLines = input.split("\n")
 
-    return when (val validation = MathLingua.parse(input)) {
+    return when (val validation = MathLingua.parseWithLocations(input)) {
         is ValidationSuccess -> {
-            val document = validation.value
-            allSignatures.addAll(MathLingua.findAllSignatures(document))
+            val parse = validation.value
+            val document = parse.document
+            val tracker = parse.tracker
+            allSignatures.addAll(MathLingua.findAllSignatures(document, tracker).map { it.form })
 
             for (def in document.defines) {
                 if (def.signature != null) {

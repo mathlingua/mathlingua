@@ -18,8 +18,11 @@ package mathlingua.common.transform
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import mathlingua.common.Location
 import mathlingua.common.MathLingua
+import mathlingua.common.Signature
 import mathlingua.common.ValidationSuccess
+import mathlingua.common.newLocationTracker
 import org.junit.jupiter.api.Test
 
 internal class SignatureUtilKtTest {
@@ -30,8 +33,14 @@ internal class SignatureUtilKtTest {
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt)
-        assertThat(signatures).isEqualTo(setOf("\\xyz{}"))
+        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
+        assertThat(signatures).isEqualTo(setOf(Signature(
+            form = "\\xyz{}",
+            location = Location(
+                row = -1,
+                column = -1
+            )
+        )))
     }
 
     @Test
@@ -41,8 +50,14 @@ internal class SignatureUtilKtTest {
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt)
-        assertThat(signatures).isEqualTo(setOf("\\abc.xyz{}"))
+        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
+        assertThat(signatures).isEqualTo(setOf(Signature(
+            form = "\\abc.xyz{}",
+            location = Location(
+                row = -1,
+                column = -1
+            )
+        )))
     }
 
     @Test
@@ -52,7 +67,13 @@ internal class SignatureUtilKtTest {
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt)
-        assertThat(signatures).isEqualTo(setOf("\\abc"))
+        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
+        assertThat(signatures).isEqualTo(setOf(Signature(
+            form = "\\abc",
+            location = Location(
+                row = -1,
+                column = -1
+            )
+        )))
     }
 }

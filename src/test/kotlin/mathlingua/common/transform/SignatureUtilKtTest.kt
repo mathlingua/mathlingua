@@ -20,6 +20,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mathlingua.common.MathLingua
 import mathlingua.common.ValidationSuccess
+import mathlingua.common.newLocationTracker
 import org.junit.jupiter.api.Test
 
 internal class SignatureUtilKtTest {
@@ -30,7 +31,7 @@ internal class SignatureUtilKtTest {
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt)
+        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
         assertThat(signatures).isEqualTo(setOf("\\xyz{}"))
     }
 
@@ -41,7 +42,7 @@ internal class SignatureUtilKtTest {
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt)
+        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
         assertThat(signatures).isEqualTo(setOf("\\abc.xyz{}"))
     }
 
@@ -52,7 +53,7 @@ internal class SignatureUtilKtTest {
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt)
+        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
         assertThat(signatures).isEqualTo(setOf("\\abc"))
     }
 }

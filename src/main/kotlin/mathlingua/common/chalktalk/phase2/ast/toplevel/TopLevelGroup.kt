@@ -238,7 +238,7 @@ fun <G : Phase2Node, S, E> validateDefinesLikeGroup(
             tracker,
             groupNode,
             buildGroup(
-                getSignature(id!!.toStatement()),
+                getSignature(id!!.toStatement(), newLocationTracker())?.form,
                 id, definesLikeSection!!,
                 assumingSection, endSections,
                 aliasSection, metaDataSection

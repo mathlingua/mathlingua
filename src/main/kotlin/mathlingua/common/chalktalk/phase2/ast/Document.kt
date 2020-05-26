@@ -183,6 +183,21 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 is ValidationSuccess -> protoGroups.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
+        } else if (firstSectionMatchesName(group, "ProtoNotes")) {
+            when (val validation = validateProtoGroup(group, "ProtoNotes", tracker)) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (firstSectionMatchesName(group, "ProtoExample")) {
+            when (val validation = validateProtoGroup(group, "ProtoExample", tracker)) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        } else if (firstSectionMatchesName(group, "ProtoProblem")) {
+            when (val validation = validateProtoGroup(group, "ProtoProblem", tracker)) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
         } else {
             errors.add(
                 ParseError(

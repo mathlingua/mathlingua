@@ -28,17 +28,18 @@ import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.SourceSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
-import mathlingua.common.chalktalk.phase2.ast.section.validateSourceSection
+import mathlingua.common.chalktalk.phase2.ast.section.ResourceSection
+import mathlingua.common.chalktalk.phase2.ast.section.validateResourceSection
 
-open class SourceGroup(
-    open val id: String,
-    open val sourceSection: SourceSection,
+class ResourceGroup(
+    override val id: String,
+    override val sourceSection: ResourceSection,
     override val metaDataSection: MetaDataSection?
-) : TopLevelGroup(metaDataSection) {
+) : SourceGroup(id, sourceSection, metaDataSection) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
         if (metaDataSection != null) {
-            fn(metaDataSection as MetaDataSection)
+            fn(metaDataSection)
         }
     }
 
@@ -55,13 +56,13 @@ open class SourceGroup(
     ))
 }
 
-fun isSourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Source")
+fun isResourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Resource")
 
-fun validateSourceGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<SourceGroup> {
+fun validateResourceGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<ResourceGroup> {
     val id = groupNode.id
     if (id == null) {
         return validationFailure(listOf(
-                ParseError("A Source group must have an id",
+                ParseError("A Resource group must have an id",
                         getRow(groupNode), getColumn(groupNode))
         ))
     }
@@ -73,7 +74,7 @@ fun validateSourceGroup(groupNode: Group, tracker: MutableLocationTracker): Vali
     val errors = mutableListOf<ParseError>()
     if (!Regex("[a-zA-Z0-9]+").matches(idText)) {
         errors.add(
-                ParseError("A source id can only contain numbers and letters",
+                ParseError("A resource id can only contain numbers and letters",
                         getRow(groupNode), getColumn(groupNode)
                 )
         )
@@ -82,15 +83,15 @@ fun validateSourceGroup(groupNode: Group, tracker: MutableLocationTracker): Vali
     val sections = groupNode.sections
     if (sections.isEmpty()) {
         errors.add(
-                ParseError("Expected a Source section",
+                ParseError("Expected a resource section",
                         getRow(groupNode), getColumn(groupNode))
         )
     }
 
-    val sourceSection = sections[0]
-    val sourceValidation = validateSourceSection(sourceSection, tracker)
-    if (sourceValidation is ValidationFailure) {
-        errors.addAll(sourceValidation.errors)
+    val resourceSection = sections[0]
+    val resourceValidation = validateResourceSection(resourceSection, tracker)
+    if (resourceValidation is ValidationFailure) {
+        errors.addAll(resourceValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
@@ -121,9 +122,9 @@ fun validateSourceGroup(groupNode: Group, tracker: MutableLocationTracker): Vali
     return validationSuccess(
             tracker,
             groupNode,
-            SourceGroup(
+            ResourceGroup(
                     id = idText,
-                    sourceSection = (sourceValidation as ValidationSuccess).value,
+                    sourceSection = (resourceValidation as ValidationSuccess).value,
                     metaDataSection = metaDataSection
             )
     )

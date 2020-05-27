@@ -24,21 +24,12 @@ import mathlingua.common.chalktalk.phase2.ast.metadata.section.StringSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.isSingleSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
 
-val SOURCE_ITEM_CONSTRAINTS = mapOf(
-        "type" to 1,
-        "name" to 1,
-        "author" to -1,
-        "date" to 1,
-        "homepage" to 1,
-        "url" to 1,
-        "offset" to 1)
-
-open class SourceSection(open val items: List<StringSectionGroup>) : Phase2Node {
+class ResourceSection(override val items: List<StringSectionGroup>) : SourceSection(items) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("Source")
+        writer.writeHeader("Resource")
         writer.writeNewline()
         for (i in items.indices) {
             writer.append(items[i], true, indent + 2)
@@ -52,12 +43,12 @@ open class SourceSection(open val items: List<StringSectionGroup>) : Phase2Node 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Validation<SourceSection> {
-    if (section.name.text != "Source") {
+fun validateResourceSection(section: Section, tracker: MutableLocationTracker): Validation<ResourceSection> {
+    if (section.name.text != "Resource") {
         return validationFailure(
                 listOf(
                         ParseError(
-                                "Expected a 'Source' but found '${section.name.text}'",
+                                "Expected a 'Resource' but found '${section.name.text}'",
                                 getRow(section), getColumn(section)
                         )
                 )
@@ -150,6 +141,6 @@ fun validateSourceSection(section: Section, tracker: MutableLocationTracker): Va
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else {
-        validationSuccess(tracker, section, SourceSection(items = items))
+        validationSuccess(tracker, section, ResourceSection(items = items))
     }
 }

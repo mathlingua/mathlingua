@@ -138,6 +138,11 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 is ValidationSuccess -> results.add(resultValidation.value)
                 is ValidationFailure -> errors.addAll(resultValidation.errors)
             }
+        } else if (isTheoremGroup(group)) {
+            when (val resultValidation = validateTheoremGroup(group, tracker)) {
+                is ValidationSuccess -> results.add(resultValidation.value)
+                is ValidationFailure -> errors.addAll(resultValidation.errors)
+            }
         } else if (isAxiomGroup(group)) {
             when (val axiomValidation = validateAxiomGroup(group, tracker)) {
                 is ValidationSuccess -> axioms.add(axiomValidation.value)

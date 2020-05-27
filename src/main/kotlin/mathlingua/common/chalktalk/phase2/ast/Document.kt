@@ -168,6 +168,11 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 is ValidationSuccess -> sources.add(sourceValidation.value)
                 is ValidationFailure -> errors.addAll(sourceValidation.errors)
             }
+        } else if (isResourceGroup(group)) {
+            when (val resourceValidation = validateResourceGroup(group, tracker)) {
+                is ValidationSuccess -> sources.add(resourceValidation.value)
+                is ValidationFailure -> errors.addAll(resourceValidation.errors)
+            }
         } else if (firstSectionMatchesName(group, "ProtoDefines")) {
             when (val validation = validateProtoGroup(group, "ProtoDefines", tracker)) {
                 is ValidationSuccess -> protoGroups.add(validation.value)

@@ -22,21 +22,19 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.common.chalktalk.phase2.ast.section.AliasSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
-import mathlingua.common.chalktalk.phase2.ast.section.ResultSection
-import mathlingua.common.chalktalk.phase2.ast.section.validateResultSection
+import mathlingua.common.chalktalk.phase2.ast.section.*
 
-data class ResultGroup(
+open class ResultGroup(
     val resultSection: ResultSection,
-    val aliasSection: AliasSection?,
+    open val aliasSection: AliasSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(resultSection)
         if (metaDataSection != null) {
-            fn(metaDataSection)
+            fn(metaDataSection as MetaDataSection)
         }
     }
 
@@ -58,4 +56,37 @@ fun validateResultGroup(groupNode: Group, tracker: MutableLocationTracker) = val
         "Result",
         ::validateResultSection,
         ::ResultGroup
+)
+
+class TheoremGroup(
+    val theoremSection: TheoremSection,
+    override val aliasSection: AliasSection?,
+    override val metaDataSection: MetaDataSection?
+) : ResultGroup(theoremSection, aliasSection, metaDataSection) {
+
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(theoremSection)
+        if (metaDataSection != null) {
+            fn(metaDataSection)
+        }
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+            toCode(writer, isArg, indent, null, theoremSection, metaDataSection)
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(TheoremGroup(
+            theoremSection = theoremSection.transform(chalkTransformer) as TheoremSection,
+            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
+    ))
+}
+
+fun isTheoremGroup(node: Phase1Node) = firstSectionMatchesName(node, "Theorem")
+
+fun validateTheoremGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
+        tracker,
+        groupNode,
+        "Theorem",
+        ::validateTheoremSection,
+        ::TheoremGroup
 )

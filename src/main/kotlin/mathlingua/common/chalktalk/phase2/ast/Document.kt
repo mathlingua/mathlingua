@@ -183,6 +183,11 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 is ValidationSuccess -> protoGroups.add(validation.value)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
+        } else if (firstSectionMatchesName(group, "ProtoTheorem")) {
+            when (val validation = validateProtoGroup(group, "ProtoTheorem", tracker)) {
+                is ValidationSuccess -> protoGroups.add(validation.value)
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
         } else if (firstSectionMatchesName(group, "ProtoAxiom")) {
             when (val validation = validateProtoGroup(group, "ProtoAxiom", tracker)) {
                 is ValidationSuccess -> protoGroups.add(validation.value)

@@ -1,7 +1,7 @@
 Row: 0
 Column: 0
 Message:
-Section 'Result' requires at least one argument.
+Section 'Theorem' requires at least one argument.
 EndMessage:
 
 

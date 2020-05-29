@@ -3,38 +3,38 @@ Document(
             ]
   represents = [
                ]
-  results = [
-              ResultGroup(
-                resultSection = ResultSection(
-                  clauses = ClauseListNode(
-                    clauses = [
-                                Text(
-                                  text = ""something""
-                                )
-                              ]
-                  )
-                )
-                aliasSection = null
-                metaDataSection = MetaDataSection(
-                  items = [
-                            StringSectionGroup(
-                              section = StringSection(
-                                name = "tag"
-                                values = [
-                                           ""a""
-                                         ]
-                              )
-                            )
-                          ]
-                )
-              )
-            ]
+  theorems = [
+               TheoremGroup(
+                 theoremSection = TheoremSection(
+                   clauses = ClauseListNode(
+                     clauses = [
+                                 Text(
+                                   text = ""something""
+                                 )
+                               ]
+                   )
+                 )
+                 aliasSection = null
+                 metaDataSection = MetaDataSection(
+                   items = [
+                             StringSectionGroup(
+                               section = StringSection(
+                                 name = "tag"
+                                 values = [
+                                            ""a""
+                                          ]
+                               )
+                             )
+                           ]
+                 )
+               )
+             ]
   axioms = [
            ]
   conjectures = [
                 ]
-  sources = [
-            ]
+  resources = [
+              ]
   protoGroups = [
                 ]
 )

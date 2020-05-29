@@ -3,71 +3,71 @@ Document(
             ]
   represents = [
                ]
-  results = [
-              ResultGroup(
-                resultSection = ResultSection(
-                  clauses = ClauseListNode(
-                    clauses = [
-                                ForGroup(
-                                  forSection = ForSection(
-                                    targets = [
-                                                AbstractionNode(
-                                                  abstraction = Abstraction(
-                                                    isEnclosed = true
-                                                    parts = [
-                                                              AbstractionPart(
-                                                                name = Phase1Token(
-                                                                  text = "f"
-                                                                  type = ChalkTalkTokenType.Name
-                                                                  row = 1
-                                                                  column = 9
-                                                                )
-                                                                subParams = null
-                                                                params = null
-                                                              )
-                                                            ]
-                                                  )
-                                                )
-                                              ]
-                                  )
-                                  whereSection = null
-                                  thenSection = ThenSection(
-                                    clauses = ClauseListNode(
-                                      clauses = [
-                                                  AbstractionNode(
-                                                    abstraction = Abstraction(
-                                                      isEnclosed = false
-                                                      parts = [
-                                                                AbstractionPart(
-                                                                  name = Phase1Token(
-                                                                    text = "x"
-                                                                    type = ChalkTalkTokenType.Name
-                                                                    row = 2
-                                                                    column = 9
-                                                                  )
-                                                                  subParams = null
-                                                                  params = null
-                                                                )
-                                                              ]
-                                                    )
-                                                  )
-                                                ]
-                                    )
-                                  )
-                                )
-                              ]
-                  )
-                )
-                aliasSection = null
-                metaDataSection = null
-              )
-            ]
+  theorems = [
+               TheoremGroup(
+                 theoremSection = TheoremSection(
+                   clauses = ClauseListNode(
+                     clauses = [
+                                 ForGroup(
+                                   forSection = ForSection(
+                                     targets = [
+                                                 AbstractionNode(
+                                                   abstraction = Abstraction(
+                                                     isEnclosed = true
+                                                     parts = [
+                                                               AbstractionPart(
+                                                                 name = Phase1Token(
+                                                                   text = "f"
+                                                                   type = ChalkTalkTokenType.Name
+                                                                   row = 1
+                                                                   column = 9
+                                                                 )
+                                                                 subParams = null
+                                                                 params = null
+                                                               )
+                                                             ]
+                                                   )
+                                                 )
+                                               ]
+                                   )
+                                   whereSection = null
+                                   thenSection = ThenSection(
+                                     clauses = ClauseListNode(
+                                       clauses = [
+                                                   AbstractionNode(
+                                                     abstraction = Abstraction(
+                                                       isEnclosed = false
+                                                       parts = [
+                                                                 AbstractionPart(
+                                                                   name = Phase1Token(
+                                                                     text = "x"
+                                                                     type = ChalkTalkTokenType.Name
+                                                                     row = 2
+                                                                     column = 9
+                                                                   )
+                                                                   subParams = null
+                                                                   params = null
+                                                                 )
+                                                               ]
+                                                     )
+                                                   )
+                                                 ]
+                                     )
+                                   )
+                                 )
+                               ]
+                   )
+                 )
+                 aliasSection = null
+                 metaDataSection = null
+               )
+             ]
   axioms = [
            ]
   conjectures = [
                 ]
-  sources = [
-            ]
+  resources = [
+              ]
   protoGroups = [
                 ]
 )

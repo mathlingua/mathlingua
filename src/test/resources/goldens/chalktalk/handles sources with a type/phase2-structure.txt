@@ -3,38 +3,38 @@ Document(
             ]
   represents = [
                ]
-  results = [
-            ]
+  theorems = [
+             ]
   axioms = [
            ]
   conjectures = [
                 ]
-  sources = [
-              SourceGroup(
-                id = "id"
-                sourceSection = SourceSection(
-                  items = [
-                            StringSectionGroup(
-                              section = StringSection(
-                                name = "name"
-                                values = [
-                                           ""some name""
-                                         ]
+  resources = [
+                ResourceGroup(
+                  id = "id"
+                  sourceSection = ResourceSection(
+                    items = [
+                              StringSectionGroup(
+                                section = StringSection(
+                                  name = "name"
+                                  values = [
+                                             ""some name""
+                                           ]
+                                )
+                              ),
+                              StringSectionGroup(
+                                section = StringSection(
+                                  name = "type"
+                                  values = [
+                                             ""Book""
+                                           ]
+                                )
                               )
-                            ),
-                            StringSectionGroup(
-                              section = StringSection(
-                                name = "type"
-                                values = [
-                                           ""Book""
-                                         ]
-                              )
-                            )
-                          ]
+                            ]
+                  )
+                  metaDataSection = null
                 )
-                metaDataSection = null
-              )
-            ]
+              ]
   protoGroups = [
                 ]
 )

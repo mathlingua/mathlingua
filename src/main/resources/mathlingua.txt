@@ -1,6 +1,6 @@
 
 [AATA]
-Source:
+Resource:
 . name: "Abstract Algebra Theory and Applications"
 . author: "Thomas W. Judson"
 . date: "July 10, 2019"
@@ -9,7 +9,7 @@ Source:
 
 
 [TrenchRealAnalysis]
-Source:
+Resource:
 . name: "Introduction to Real Analysis"
 . author: "William F. Trench"
 . date: "December 2013"

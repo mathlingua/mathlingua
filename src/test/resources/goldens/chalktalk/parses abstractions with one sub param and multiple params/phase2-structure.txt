@@ -3,91 +3,91 @@ Document(
             ]
   represents = [
                ]
-  results = [
-              ResultGroup(
-                resultSection = ResultSection(
-                  clauses = ClauseListNode(
-                    clauses = [
-                                ForGroup(
-                                  forSection = ForSection(
-                                    targets = [
-                                                AbstractionNode(
-                                                  abstraction = Abstraction(
-                                                    isEnclosed = false
-                                                    parts = [
-                                                              AbstractionPart(
-                                                                name = Phase1Token(
-                                                                  text = "a"
-                                                                  type = ChalkTalkTokenType.Name
-                                                                  row = 1
-                                                                  column = 8
-                                                                )
-                                                                subParams = [
-                                                                              Phase1Token(
-                                                                                text = "n"
-                                                                                type = ChalkTalkTokenType.Name
-                                                                                row = 1
-                                                                                column = 10
-                                                                              )
-                                                                            ]
-                                                                params = [
-                                                                           Phase1Token(
-                                                                             text = "x"
-                                                                             type = ChalkTalkTokenType.Name
-                                                                             row = 1
-                                                                             column = 12
-                                                                           ),
-                                                                           Phase1Token(
-                                                                             text = "y"
-                                                                             type = ChalkTalkTokenType.Name
-                                                                             row = 1
-                                                                             column = 15
-                                                                           )
-                                                                         ]
-                                                              )
-                                                            ]
-                                                  )
-                                                )
-                                              ]
-                                  )
-                                  whereSection = null
-                                  thenSection = ThenSection(
-                                    clauses = ClauseListNode(
-                                      clauses = [
-                                                  AbstractionNode(
-                                                    abstraction = Abstraction(
-                                                      isEnclosed = false
-                                                      parts = [
-                                                                AbstractionPart(
-                                                                  name = Phase1Token(
-                                                                    text = "b"
-                                                                    type = ChalkTalkTokenType.Name
-                                                                    row = 2
-                                                                    column = 9
-                                                                  )
-                                                                  subParams = null
-                                                                  params = null
-                                                                )
-                                                              ]
-                                                    )
-                                                  )
-                                                ]
-                                    )
-                                  )
-                                )
-                              ]
-                  )
-                )
-                aliasSection = null
-                metaDataSection = null
-              )
-            ]
+  theorems = [
+               TheoremGroup(
+                 theoremSection = TheoremSection(
+                   clauses = ClauseListNode(
+                     clauses = [
+                                 ForGroup(
+                                   forSection = ForSection(
+                                     targets = [
+                                                 AbstractionNode(
+                                                   abstraction = Abstraction(
+                                                     isEnclosed = false
+                                                     parts = [
+                                                               AbstractionPart(
+                                                                 name = Phase1Token(
+                                                                   text = "a"
+                                                                   type = ChalkTalkTokenType.Name
+                                                                   row = 1
+                                                                   column = 8
+                                                                 )
+                                                                 subParams = [
+                                                                               Phase1Token(
+                                                                                 text = "n"
+                                                                                 type = ChalkTalkTokenType.Name
+                                                                                 row = 1
+                                                                                 column = 10
+                                                                               )
+                                                                             ]
+                                                                 params = [
+                                                                            Phase1Token(
+                                                                              text = "x"
+                                                                              type = ChalkTalkTokenType.Name
+                                                                              row = 1
+                                                                              column = 12
+                                                                            ),
+                                                                            Phase1Token(
+                                                                              text = "y"
+                                                                              type = ChalkTalkTokenType.Name
+                                                                              row = 1
+                                                                              column = 15
+                                                                            )
+                                                                          ]
+                                                               )
+                                                             ]
+                                                   )
+                                                 )
+                                               ]
+                                   )
+                                   whereSection = null
+                                   thenSection = ThenSection(
+                                     clauses = ClauseListNode(
+                                       clauses = [
+                                                   AbstractionNode(
+                                                     abstraction = Abstraction(
+                                                       isEnclosed = false
+                                                       parts = [
+                                                                 AbstractionPart(
+                                                                   name = Phase1Token(
+                                                                     text = "b"
+                                                                     type = ChalkTalkTokenType.Name
+                                                                     row = 2
+                                                                     column = 9
+                                                                   )
+                                                                   subParams = null
+                                                                   params = null
+                                                                 )
+                                                               ]
+                                                     )
+                                                   )
+                                                 ]
+                                     )
+                                   )
+                                 )
+                               ]
+                   )
+                 )
+                 aliasSection = null
+                 metaDataSection = null
+               )
+             ]
   axioms = [
            ]
   conjectures = [
                 ]
-  sources = [
-            ]
+  resources = [
+              ]
   protoGroups = [
                 ]
 )

@@ -25,44 +25,11 @@ import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.*
 
-open class ResultGroup(
-    val resultSection: ResultSection,
-    open val aliasSection: AliasSection?,
+data class TheoremGroup(
+    val theoremSection: TheoremSection,
+    val aliasSection: AliasSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
-
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(resultSection)
-        if (metaDataSection != null) {
-            fn(metaDataSection as MetaDataSection)
-        }
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, null, resultSection, metaDataSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ResultGroup(
-            resultSection = resultSection.transform(chalkTransformer) as ResultSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
-    ))
-}
-
-fun isResultGroup(node: Phase1Node) = firstSectionMatchesName(node, "Result")
-
-fun validateResultGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
-        tracker,
-        groupNode,
-        "Result",
-        ::validateResultSection,
-        ::ResultGroup
-)
-
-class TheoremGroup(
-    val theoremSection: TheoremSection,
-    override val aliasSection: AliasSection?,
-    override val metaDataSection: MetaDataSection?
-) : ResultGroup(theoremSection, aliasSection, metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(theoremSection)

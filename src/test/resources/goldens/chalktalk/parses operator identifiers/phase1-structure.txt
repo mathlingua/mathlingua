@@ -4,7 +4,7 @@ Root(
                sections = [
                             Section(
                               name = Phase1Token(
-                                text = "Result"
+                                text = "Theorem"
                                 type = ChalkTalkTokenType.Name
                                 row = 0
                                 column = 0
@@ -19,7 +19,7 @@ Root(
                                                          text = "*"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 0
-                                                         column = 8
+                                                         column = 9
                                                        )
                                                        subParams = null
                                                        params = null

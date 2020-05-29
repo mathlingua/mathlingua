@@ -4,7 +4,7 @@ Root(
                sections = [
                             Section(
                               name = Phase1Token(
-                                text = "Result"
+                                text = "Theorem"
                                 type = ChalkTalkTokenType.Name
                                 row = 0
                                 column = 0
@@ -19,7 +19,7 @@ Root(
                                                          text = "a"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 0
-                                                         column = 8
+                                                         column = 9
                                                        )
                                                        subParams = null
                                                        params = null
@@ -36,7 +36,7 @@ Root(
                                                          text = "b"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 0
-                                                         column = 11
+                                                         column = 12
                                                        )
                                                        subParams = null
                                                        params = null
@@ -53,7 +53,7 @@ Root(
                                                          text = "c"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 0
-                                                         column = 14
+                                                         column = 15
                                                        )
                                                        subParams = null
                                                        params = null

@@ -23,34 +23,7 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.validateClauseList
 
-open class ResultSection(open val clauses: ClauseListNode) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        writer.writeIndent(isArg, indent)
-        writer.writeHeader("Result")
-        if (clauses.clauses.isNotEmpty()) {
-            writer.writeNewline()
-        }
-        writer.append(clauses, true, indent + 2)
-        return writer
-    }
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(ResultSection(
-                    clauses = clauses.transform(chalkTransformer) as ClauseListNode
-            ))
-}
-
-fun validateResultSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-        tracker,
-        node,
-        "Result",
-        false,
-        ::ResultSection
-)
-
-class TheoremSection(override val clauses: ClauseListNode) : ResultSection(clauses) {
+data class TheoremSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {

@@ -4,7 +4,7 @@ Root(
                sections = [
                             Section(
                               name = Phase1Token(
-                                text = "Source"
+                                text = "Resource"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
                                 column = 1

@@ -25,10 +25,10 @@ import mathlingua.common.chalktalk.phase2.ast.toplevel.*
 data class Document(
     val defines: List<DefinesGroup>,
     val represents: List<RepresentsGroup>,
-    val results: List<ResultGroup>,
+    val theorems: List<TheoremGroup>,
     val axioms: List<AxiomGroup>,
     val conjectures: List<ConjectureGroup>,
-    val sources: List<SourceGroup>,
+    val resources: List<ResourceGroup>,
     val protoGroups: List<ProtoGroup>
 ) : Phase2Node {
 
@@ -36,10 +36,10 @@ data class Document(
         val result = mutableListOf<TopLevelGroup>()
         result.addAll(defines)
         result.addAll(represents)
-        result.addAll(results)
+        result.addAll(theorems)
         result.addAll(axioms)
         result.addAll(conjectures)
-        result.addAll(sources)
+        result.addAll(resources)
         result.addAll(protoGroups)
         return result
     }
@@ -47,10 +47,10 @@ data class Document(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         defines.forEach(fn)
         represents.forEach(fn)
-        results.forEach(fn)
+        theorems.forEach(fn)
         axioms.forEach(fn)
         conjectures.forEach(fn)
-        sources.forEach(fn)
+        resources.forEach(fn)
         protoGroups.forEach(fn)
     }
 
@@ -75,7 +75,7 @@ data class Document(
             writer.writeNewline(3)
         }
 
-        for (grp in results) {
+        for (grp in theorems) {
             writer.append(grp, false, 0)
             writer.writeNewline(3)
         }
@@ -85,7 +85,7 @@ data class Document(
             writer.writeNewline(3)
         }
 
-        for (src in sources) {
+        for (src in resources) {
             writer.append(src, false, 0)
             writer.writeNewline(3)
         }
@@ -100,8 +100,8 @@ data class Document(
                         axioms = axioms.map { it.transform(chalkTransformer) as AxiomGroup },
                         conjectures = conjectures.map { it.transform(chalkTransformer) as ConjectureGroup },
                         represents = represents.map { it.transform(chalkTransformer) as RepresentsGroup },
-                        results = results.map { it.transform(chalkTransformer) as ResultGroup },
-                        sources = sources.map { it.transform(chalkTransformer) as SourceGroup },
+                        theorems = theorems.map { it.transform(chalkTransformer) as TheoremGroup },
+                        resources = resources.map { it.transform(chalkTransformer) as ResourceGroup },
                         protoGroups = protoGroups.map { it.transform(chalkTransformer) as ProtoGroup }
                 )
         )
@@ -125,22 +125,22 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
 
     val defines = ArrayList<DefinesGroup>()
     val represents = ArrayList<RepresentsGroup>()
-    val results = ArrayList<ResultGroup>()
+    val theorems = ArrayList<TheoremGroup>()
     val axioms = ArrayList<AxiomGroup>()
     val conjectures = ArrayList<ConjectureGroup>()
     val protoGroups = ArrayList<ProtoGroup>()
-    val sources = ArrayList<SourceGroup>()
+    val resources = ArrayList<ResourceGroup>()
 
     val (groups) = node
     for (group in groups) {
-        if (isResultGroup(group)) {
-            when (val resultValidation = validateResultGroup(group, tracker)) {
-                is ValidationSuccess -> results.add(resultValidation.value)
+        if (isTheoremGroup(group)) {
+            when (val resultValidation = validateTheoremGroup(group, tracker)) {
+                is ValidationSuccess -> theorems.add(resultValidation.value)
                 is ValidationFailure -> errors.addAll(resultValidation.errors)
             }
         } else if (isTheoremGroup(group)) {
             when (val resultValidation = validateTheoremGroup(group, tracker)) {
-                is ValidationSuccess -> results.add(resultValidation.value)
+                is ValidationSuccess -> theorems.add(resultValidation.value)
                 is ValidationFailure -> errors.addAll(resultValidation.errors)
             }
         } else if (isAxiomGroup(group)) {
@@ -163,14 +163,9 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 is ValidationSuccess -> represents.add(representsValidation.value)
                 is ValidationFailure -> errors.addAll(representsValidation.errors)
             }
-        } else if (isSourceGroup(group)) {
-            when (val sourceValidation = validateSourceGroup(group, tracker)) {
-                is ValidationSuccess -> sources.add(sourceValidation.value)
-                is ValidationFailure -> errors.addAll(sourceValidation.errors)
-            }
         } else if (isResourceGroup(group)) {
             when (val resourceValidation = validateResourceGroup(group, tracker)) {
-                is ValidationSuccess -> sources.add(resourceValidation.value)
+                is ValidationSuccess -> resources.add(resourceValidation.value)
                 is ValidationFailure -> errors.addAll(resourceValidation.errors)
             }
         } else if (firstSectionMatchesName(group, "ProtoDefines")) {
@@ -231,10 +226,10 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             Document(
                     defines,
                     represents,
-                    results,
+                    theorems,
                     axioms,
                     conjectures,
-                    sources,
+                    resources,
                     protoGroups
             )
     )

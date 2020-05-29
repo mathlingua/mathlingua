@@ -26,16 +26,16 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
-import mathlingua.common.chalktalk.phase2.ast.section.SourceSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.ResourceSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateResourceSection
 
-class ResourceGroup(
-    override val id: String,
-    override val sourceSection: ResourceSection,
+data class ResourceGroup(
+    val id: String,
+    val sourceSection: ResourceSection,
     override val metaDataSection: MetaDataSection?
-) : SourceGroup(id, sourceSection, metaDataSection) {
+) : TopLevelGroup(metaDataSection) {
+
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
         if (metaDataSection != null) {
@@ -49,9 +49,9 @@ class ResourceGroup(
                     validationFailure(emptyList())
             ), sourceSection, metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(SourceGroup(
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ResourceGroup(
             id = id,
-            sourceSection = sourceSection.transform(chalkTransformer) as SourceSection,
+            sourceSection = sourceSection.transform(chalkTransformer) as ResourceSection,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection
     ))
 }

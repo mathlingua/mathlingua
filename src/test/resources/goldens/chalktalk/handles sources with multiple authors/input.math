@@ -1,5 +1,5 @@
 [id]
-Source:
+Resource:
 . name: "some name"
 . author:
   . "author1"

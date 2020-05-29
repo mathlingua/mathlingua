@@ -3,40 +3,40 @@ Document(
             ]
   represents = [
                ]
-  results = [
-              ResultGroup(
-                resultSection = ResultSection(
-                  clauses = ClauseListNode(
-                    clauses = [
-                                Text(
-                                  text = ""something""
-                                )
-                              ]
-                  )
-                )
-                aliasSection = null
-                metaDataSection = MetaDataSection(
-                  items = [
-                            StringSectionGroup(
-                              section = StringSection(
-                                name = "tag"
-                                values = [
-                                           ""a"",
-                                           ""b"",
-                                           ""c""
-                                         ]
-                              )
-                            )
-                          ]
-                )
-              )
-            ]
+  theorems = [
+               TheoremGroup(
+                 theoremSection = TheoremSection(
+                   clauses = ClauseListNode(
+                     clauses = [
+                                 Text(
+                                   text = ""something""
+                                 )
+                               ]
+                   )
+                 )
+                 aliasSection = null
+                 metaDataSection = MetaDataSection(
+                   items = [
+                             StringSectionGroup(
+                               section = StringSection(
+                                 name = "tag"
+                                 values = [
+                                            ""a"",
+                                            ""b"",
+                                            ""c""
+                                          ]
+                               )
+                             )
+                           ]
+                 )
+               )
+             ]
   axioms = [
            ]
   conjectures = [
                 ]
-  sources = [
-            ]
+  resources = [
+              ]
   protoGroups = [
                 ]
 )

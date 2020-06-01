@@ -31,7 +31,9 @@ val SOURCE_ITEM_CONSTRAINTS = mapOf(
         "date" to 1,
         "homepage" to 1,
         "url" to 1,
-        "offset" to 1)
+        "offset" to 1,
+        "related" to -1
+)
 
 open class SourceSection(open val items: List<StringSectionGroup>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)

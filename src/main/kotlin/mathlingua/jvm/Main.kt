@@ -20,12 +20,16 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
+import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.choice
 import mathlingua.common.MathLingua
 import mathlingua.common.ParseError
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
+import mathlingua.common.chalktalk.phase2.HtmlCodeWriter
+import mathlingua.common.chalktalk.phase2.MathLinguaCodeWriter
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -40,6 +44,9 @@ private enum class OutputType {
     UserFocused
 }
 
+private fun error(msg: String) = TermUi.echo(message = msg, err = true)
+private fun log(msg: String) = TermUi.echo(message = msg, err = false)
+
 private data class ErrorInfo(
     val file: File,
     val message: String,
@@ -51,32 +58,39 @@ private data class ErrorInfo(
         val builder = StringBuilder()
         when (type) {
             OutputType.Json -> {
-                TermUi.echo("{")
-                TermUi.echo("  \"file\": \"${file.normalize().absolutePath}\",")
-                TermUi.echo("  \"message\": \"${message.replace("\n", "\\n")}\",")
-                TermUi.echo("  \"failedLine\": \"${failedLine.replace("\n", "\\n")}\",")
-                TermUi.echo("  \"row\": $row,")
-                TermUi.echo("  \"column\": $column")
-                TermUi.echo("}")
+                builder.append("{")
+                builder.append("  \"file\": \"${file.normalize().absolutePath}\",")
+                builder.append("  \"message\": \"${message.replace("\n", "\\n")}\",")
+                builder.append("  \"failedLine\": \"${failedLine.replace("\n", "\\n")}\",")
+                builder.append("  \"row\": $row,")
+                builder.append("  \"column\": $column")
+                builder.append("}")
             }
             OutputType.TestCase -> {
-                TermUi.echo("Row: $row")
-                TermUi.echo("Column: $column")
-                TermUi.echo("Message:")
-                TermUi.echo(message)
-                TermUi.echo("EndMessage:")
+                builder.append("Row: $row")
+                builder.append("Column: $column")
+                builder.append("Message:")
+                builder.append(message)
+                builder.append("EndMessage:")
             }
             else -> {
-                TermUi.echo(bold("File: $file"))
-                TermUi.echo(failedLine.trim())
-                TermUi.echo(message.trim())
+                builder.append(bold("File: $file"))
+                builder.append(failedLine.trim())
+                builder.append(message.trim())
             }
         }
         return builder.toString()
     }
 }
 
-private fun runMlg(printJson: Boolean, failOnWarnings: Boolean, generateTestCases: Boolean, inputs: List<File>): Int {
+private fun runMlg(
+    printJson: Boolean,
+    failOnWarnings: Boolean,
+    generateTestCases: Boolean,
+    inputs: List<File>,
+    output: String,
+    expand: Boolean
+): Int {
     val files = mutableListOf<File>()
     inputs.forEach {
         files.addAll(findFiles(it, ".math"))
@@ -91,30 +105,63 @@ private fun runMlg(printJson: Boolean, failOnWarnings: Boolean, generateTestCase
     }
 
     if (printJson && generateTestCases) {
-        TermUi.echo("Cannot specify to output both to json and to generate test cases")
+        error("Cannot specify to output both to json and to generate test cases")
         return 1
     }
 
+    val outputBuilder = StringBuilder()
+
     when {
+        output.toLowerCase() == "html" || output.toLowerCase() == "mathlingua" -> {
+            val contents = StringBuilder()
+            for (f in files) {
+                contents.append(f.readText())
+                contents.append("\n\n\n")
+            }
+            when (val validation = MathLingua.parse(contents.toString())) {
+                is ValidationFailure -> {
+                    error("Could not output the contents due to the errors:")
+                    for (err in validation.errors) {
+                        error(err.toString())
+                    }
+                }
+                is ValidationSuccess -> {
+                    val doc = validation.value
+                    val defines = if (expand) {
+                        doc.defines
+                    } else {
+                        emptyList()
+                    }
+
+                    val writer = if (output.toLowerCase() == "html") {
+                        HtmlCodeWriter(defines = defines)
+                    } else {
+                        MathLinguaCodeWriter(defines = defines)
+                    }
+
+                    outputBuilder.append(doc.toCode(false, 0, writer = writer).getCode())
+                }
+            }
+        }
         printJson -> {
-            TermUi.echo("[")
+            log("[")
             for (i in 0 until allErrorInfo.size) {
                 print(allErrorInfo[i].toString(OutputType.Json))
                 if (i != allErrorInfo.size - 1) {
-                    TermUi.echo(",")
+                    log(",")
                 }
             }
-            TermUi.echo("]")
+            log("]")
         }
         generateTestCases -> {
             for (err in allErrorInfo) {
-                TermUi.echo(err.toString(OutputType.TestCase))
-                TermUi.echo("")
+                log(err.toString(OutputType.TestCase))
+                log("")
             }
         }
         else -> {
             for (err in allErrorInfo) {
-                TermUi.echo(err.toString(OutputType.UserFocused))
+                error(err.toString(OutputType.UserFocused))
             }
         }
     }
@@ -137,13 +184,13 @@ private fun runMlg(printJson: Boolean, failOnWarnings: Boolean, generateTestCase
         } else {
             bold(yellow(prefix))
         }
-        TermUi.echo("$coloredPrefix The following ${notDefinedSignatures.size} " +
+        error("$coloredPrefix The following ${notDefinedSignatures.size} " +
             "$signatureOrSignatures used but not defined:")
     }
 
     val indent = " ".repeat(prefix.length + 1)
     for (sig in notDefinedSignatures) {
-        TermUi.echo("$indent${bold(sig)}")
+        error("$indent${bold(sig)}")
     }
 
     val failed = allErrorInfo.isNotEmpty() || (failOnWarnings && notDefinedSignatures.isNotEmpty())
@@ -155,13 +202,19 @@ private fun runMlg(printJson: Boolean, failOnWarnings: Boolean, generateTestCase
         }
         if (failed) {
             if (failOnWarnings) {
-                TermUi.echo("${bold(red("FAILURE:"))} Found ${allErrorInfo.size + notDefinedSignatures.size} errors from ${files.size} $fileOrFiles")
+                error("${bold(red("FAILURE:"))} Found ${allErrorInfo.size + notDefinedSignatures.size} errors from ${files.size} $fileOrFiles")
             } else {
-                TermUi.echo("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors and ${notDefinedSignatures.size} warnings in ${files.size} $fileOrFiles")
+                error("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors and ${notDefinedSignatures.size} warnings in ${files.size} $fileOrFiles")
             }
         } else {
-            TermUi.echo("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles with ${notDefinedSignatures.size} warnings")
+            error("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles with ${notDefinedSignatures.size} warnings")
         }
+    }
+
+    if (output.toLowerCase() == "mathlingua") {
+        log(outputBuilder.toString())
+    } else if (output.toLowerCase() == "html") {
+        log(getHtml(outputBuilder.toString()))
     }
 
     return if (failed) 1 else 0
@@ -244,10 +297,129 @@ private class Mlg : CliktCommand() {
     private val testCase: Boolean by option(help = "Print results as unit test cases").flag()
     private val warningsAsErrors: Boolean by option(help = "Treat warnings as errors").flag()
     private val file: List<String> by argument(help = "The *.math files to process").multiple(required = true)
+    private val output by option(help = "Whether output the specified files as html, mathlingua, or none")
+            .choice("html", "mathlingua", "none").default("none")
+    private val expand: Boolean by option(help = "Whether to expand the contents of the entries.").flag()
 
     override fun run() {
-        exitProcess(runMlg(json, warningsAsErrors, testCase, file.map { File(it) }))
+        exitProcess(runMlg(json, warningsAsErrors, testCase, file.map { File(it) }, output, expand))
     }
 }
 
 fun main(args: Array<String>) = Mlg().main(args)
+
+private fun getHtml(body: String) = """
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
+              integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
+              crossorigin="anonymous">
+        <script defer
+                src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
+                integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
+                crossorigin="anonymous">
+        </script>
+        <script>
+            function buildMathFragment(text) {
+                const fragment = document.createDocumentFragment();
+                var buffer = '';
+                var i = 0;
+                while (i < text.length) {
+                    if (text[i] === '\\' && text[i+1] === '[') {
+                        i += 2; // skip over \ and [
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                            !(text[i] === '\\' && text[i+1] === ']')) {
+                            math += text[i++];
+                        }
+                        if (text[i] === '\\') {
+                            i++; // move past the \
+                        }
+                        if (text[i] === ']') {
+                            i++; // move past the ]
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else {
+                        buffer += text[i++];
+                    }
+                }
+
+                if (buffer.length > 0) {
+                    fragment.appendChild(document.createTextNode(buffer));
+                }
+
+                return fragment;
+            }
+
+            function render(node) {
+                for (let i = 0; i < node.childNodes.length; i++) {
+                    const child = node.childNodes[i];
+
+                    // node is an element node => nodeType === 1
+                    // node is an attribute node => nodeType === 2
+                    // node is a text node => nodeType === 3
+                    // node is a comment node => nodeType === 8
+                    if (child.nodeType === 3) {
+                        const text = child.textContent;
+                        if (text.trim()) {
+                            const fragment = buildMathFragment(text);
+                            i += fragment.childNodes.length - 1;
+                            node.replaceChild(fragment, child);
+                        }
+                    } else if (child.nodeType === 1) {
+                        render(child);
+                    }
+                }
+            }
+        </script>
+        <style>
+            .mathlingua {
+                font-family: monospace;
+            }
+
+            .mathlingua-header {
+                font-weight: bold;
+            }
+
+            .mathlingua-whitespace {
+                padding: 0;
+                margin: 0;
+                margin-left: 1ex;
+            }
+
+            .katex {
+                font-size: 0.75em;
+            }
+
+            .katex-display {
+                display: contents;
+            }
+
+            .katex-display > .katex {
+                display: contents;
+            }
+
+            .katex-display > .katex > .katex-html {
+                display: contents;
+            }
+        </style>
+    </head>
+    <body onload="render(document.body)">
+        $body
+    </body>
+</html>
+"""

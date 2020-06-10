@@ -21,6 +21,8 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Document
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.Statement
+import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
@@ -133,4 +135,58 @@ object MathLingua {
     }
 
     fun expand(doc: Document) = fullExpandComplete(doc)
+
+    fun getPatternsToWrittenAs(defines: List<DefinesGroup>): Map<Command, String> {
+        val result = mutableMapOf<Command, String>()
+        for (def in defines) {
+            val allItems = def.metaDataSection?.items
+            var writtenAs: String? = null
+            if (allItems != null) {
+                for (item in allItems) {
+                    if (item is StringSectionGroup &&
+                            item.section.name == "written" &&
+                            item.section.values.isNotEmpty()) {
+                        writtenAs = item.section.values[0].removeSurrounding("\"", "\"")
+                        break
+                    }
+                }
+            }
+
+            if (writtenAs == null) {
+                continue
+            }
+
+            val validation = def.id.texTalkRoot
+            if (validation is ValidationSuccess) {
+                val exp = validation.value
+                if (exp.children.size == 1 && exp.children[0] is Command) {
+                    result[exp.children[0] as Command] = writtenAs
+                }
+            }
+        }
+
+        return result
+    }
+
+    fun expandWrittenAs(
+        phase2Node: Phase2Node,
+        patternToExpansion: Map<Command, String>
+    ): Phase2Node {
+        return phase2Node.transform {
+            when (it) {
+                is Statement -> when (val validation = it.texTalkRoot) {
+                    is ValidationFailure -> it
+                    is ValidationSuccess -> {
+                        val texTalkNode = validation.value
+                        val newText = expandAsWritten(texTalkNode, patternToExpansion)
+                        Statement(
+                                text = newText,
+                                texTalkRoot = validation
+                        )
+                    }
+                }
+                else -> it
+            }
+        }
+    }
 }

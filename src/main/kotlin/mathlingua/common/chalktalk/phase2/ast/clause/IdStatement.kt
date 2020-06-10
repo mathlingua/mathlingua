@@ -30,7 +30,7 @@ data class IdStatement(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeStatement(text, texTalkRoot)
+        writer.writeId(this)
         return writer
     }
 

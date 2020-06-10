@@ -16,11 +16,17 @@
 
 package mathlingua.common.chalktalk.phase2
 
+import mathlingua.common.MathLingua
 import mathlingua.common.Validation
+import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
 import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.newTexTalkLexer
+import mathlingua.common.textalk.newTexTalkParser
+import mathlingua.common.transform.expandAsWritten
 
 interface CodeWriter {
     fun append(node: Phase2Node, hasDot: Boolean, indent: Int)
@@ -36,15 +42,15 @@ interface CodeWriter {
     fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
     fun writeDirect(text: String)
-    fun newCodeWriter(): CodeWriter
+    fun newCodeWriter(defines: List<DefinesGroup>): CodeWriter
     fun getCode(): String
 }
 
-open class HtmlCodeWriter : CodeWriter {
+open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
     protected val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
+        builder.append(node.toCode(hasDot, indent, newCodeWriter(defines)).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -108,7 +114,7 @@ open class HtmlCodeWriter : CodeWriter {
     override fun writeId(id: IdStatement) {
         builder.append("<span class='mathlingua-id'>")
         builder.append('[')
-        val stmt = id.toCode(false, 0, MathLinguaCodeWriter()).getCode()
+        val stmt = id.toStatement().toCode(false, 0, MathLinguaCodeWriter(emptyList())).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
         builder.append("</span>")
@@ -131,9 +137,21 @@ open class HtmlCodeWriter : CodeWriter {
             writeSpace()
             writeDirect("is")
             writeSpace()
-            writeDirect(stmtText.substring(index + IS.length).trim())
+            val lhs = stmtText.substring(index + IS.length).trim()
+            val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
+            if (lhsParsed.errors.isEmpty()) {
+                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines)
+                builder.append("\\[${expandAsWritten(lhsParsed.root, patternsToWrittenAs)}\\]")
+            } else {
+                writeDirect(lhs)
+            }
         } else {
-            builder.append("\\[$stmtText\\]")
+            if (root is ValidationSuccess && defines.isNotEmpty()) {
+                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines)
+                builder.append("\\[${expandAsWritten(root.value, patternsToWrittenAs)}\\]")
+            } else {
+                builder.append("\\[$stmtText\\]")
+            }
         }
         builder.append("</span>")
     }
@@ -151,7 +169,7 @@ open class HtmlCodeWriter : CodeWriter {
         builder.append(text)
     }
 
-    override fun newCodeWriter() = HtmlCodeWriter()
+    override fun newCodeWriter(defines: List<DefinesGroup>) = HtmlCodeWriter(defines)
 
     override fun getCode(): String {
         val text = builder.toString()
@@ -161,11 +179,11 @@ open class HtmlCodeWriter : CodeWriter {
     }
 }
 
-class MathLinguaCodeWriter : CodeWriter {
+class MathLinguaCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
     private val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, newCodeWriter()).getCode())
+        builder.append(node.toCode(hasDot, indent, newCodeWriter(defines)).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -213,7 +231,7 @@ class MathLinguaCodeWriter : CodeWriter {
 
     override fun writeId(id: IdStatement) {
         builder.append('[')
-        val stmt = id.toCode(false, 0, newCodeWriter()).getCode()
+        val stmt = id.toStatement().toCode(false, 0, newCodeWriter(emptyList())).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
     }
@@ -225,7 +243,12 @@ class MathLinguaCodeWriter : CodeWriter {
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        builder.append("'$stmtText'")
+        if (root is ValidationSuccess && defines.isNotEmpty()) {
+            val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines)
+            builder.append("'${expandAsWritten(root.value, patternsToWrittenAs)}'")
+        } else {
+            builder.append("'$stmtText'")
+        }
     }
 
     override fun writeIdentifier(name: String, isVarArgs: Boolean) {
@@ -239,7 +262,7 @@ class MathLinguaCodeWriter : CodeWriter {
         builder.append(text)
     }
 
-    override fun newCodeWriter() = MathLinguaCodeWriter()
+    override fun newCodeWriter(defines: List<DefinesGroup>) = MathLinguaCodeWriter(defines)
 
     override fun getCode() = builder.toString()
 }

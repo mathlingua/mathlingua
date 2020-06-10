@@ -21,6 +21,6 @@ import mathlingua.common.chalktalk.phase2.MathLinguaCodeWriter
 
 interface Phase2Node {
     fun forEach(fn: (node: Phase2Node) -> Unit)
-    fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter = MathLinguaCodeWriter()): CodeWriter
+    fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter = MathLinguaCodeWriter(defines = emptyList())): CodeWriter
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
 }

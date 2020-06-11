@@ -28,8 +28,6 @@ import mathlingua.common.MathLingua
 import mathlingua.common.ParseError
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.HtmlCodeWriter
-import mathlingua.common.chalktalk.phase2.MathLinguaCodeWriter
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -133,13 +131,10 @@ private fun runMlg(
                         emptyList()
                     }
 
-                    val writer = if (output.toLowerCase() == "html") {
-                        HtmlCodeWriter(defines = defines)
-                    } else {
-                        MathLinguaCodeWriter(defines = defines)
-                    }
-
-                    outputBuilder.append(doc.toCode(false, 0, writer = writer).getCode())
+                    outputBuilder.append(MathLingua.prettyPrint(
+                            node = doc,
+                            defines = defines,
+                            html = output.toLowerCase() == "html"))
                 }
             }
         }
@@ -211,10 +206,8 @@ private fun runMlg(
         }
     }
 
-    if (output.toLowerCase() == "mathlingua") {
+    if (output.toLowerCase() != "none") {
         log(outputBuilder.toString())
-    } else if (output.toLowerCase() == "html") {
-        log(getHtml(outputBuilder.toString().replace("<br/><br/><br/>", "<br/><br/>")))
     }
 
     return if (failed) 1 else 0
@@ -307,140 +300,3 @@ private class Mlg : CliktCommand() {
 }
 
 fun main(args: Array<String>) = Mlg().main(args)
-
-private fun getHtml(body: String) = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <link rel="stylesheet"
-              href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
-              integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
-              crossorigin="anonymous">
-        <script defer
-                src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
-                integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
-                crossorigin="anonymous">
-        </script>
-        <script>
-            function buildMathFragment(text) {
-                const fragment = document.createDocumentFragment();
-                var buffer = '';
-                var i = 0;
-                while (i < text.length) {
-                    if (text[i] === '\\' && text[i+1] === '[') {
-                        i += 2; // skip over \ and [
-                        fragment.appendChild(document.createTextNode(buffer));
-                        buffer = '';
-
-                        const span = document.createElement('span');
-                        var math = '';
-                        while (i < text.length &&
-                            !(text[i] === '\\' && text[i+1] === ']')) {
-                            math += text[i++];
-                        }
-                        if (text[i] === '\\') {
-                            i++; // move past the \
-                        }
-                        if (text[i] === ']') {
-                            i++; // move past the ]
-                        }
-                        try {
-                            katex.render(math, span, {
-                                throwOnError: true,
-                                displayMode: true
-                            });
-                        } catch {
-                            span.appendChild(document.createTextNode(math));
-                        }
-                        fragment.appendChild(span);
-                    } else {
-                        buffer += text[i++];
-                    }
-                }
-
-                if (buffer.length > 0) {
-                    fragment.appendChild(document.createTextNode(buffer));
-                }
-
-                return fragment;
-            }
-
-            function render(node) {
-                for (let i = 0; i < node.childNodes.length; i++) {
-                    const child = node.childNodes[i];
-
-                    // node is an element node => nodeType === 1
-                    // node is an attribute node => nodeType === 2
-                    // node is a text node => nodeType === 3
-                    // node is a comment node => nodeType === 8
-                    if (child.nodeType === 3) {
-                        const text = child.textContent;
-                        if (text.trim()) {
-                            const fragment = buildMathFragment(text);
-                            i += fragment.childNodes.length - 1;
-                            node.replaceChild(fragment, child);
-                        }
-                    } else if (child.nodeType === 1) {
-                        render(child);
-                    }
-                }
-            }
-        </script>
-        <style>
-            .mathlingua {
-                font-family: monospace;
-            }
-
-            .mathlingua-header {
-                font-weight: bold;
-                color: #0055bb;
-            }
-
-            .mathlingua-whitespace {
-                padding: 0;
-                margin: 0;
-                margin-left: 1ex;
-            }
-
-            .mathlingua-id {
-                margin-left: -0.2em;
-                font-weight: bold;
-                color: #5500aa;
-            }
-
-            .mathlingua-text {
-                color: #007700;
-            }
-
-            .mathlingua-top-level {
-                box-shadow: 0px 0px 2px 0px #888888;
-                padding: 1em;
-                display: block;
-                width: fit-content;
-                overflow: scroll;
-                margin-left: auto;
-                margin-right: auto;
-            }
-
-            .katex {
-                font-size: 0.75em;
-            }
-
-            .katex-display {
-                display: contents;
-            }
-
-            .katex-display > .katex {
-                display: contents;
-            }
-
-            .katex-display > .katex > .katex-html {
-                display: contents;
-            }
-        </style>
-    </head>
-    <body onload="render(document.body)">
-        $body
-    </body>
-</html>
-"""

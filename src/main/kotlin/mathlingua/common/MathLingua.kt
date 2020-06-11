@@ -190,14 +190,14 @@ object MathLingua {
         }
     }
 
-    fun printExpanded(input: String, html: Boolean): Validation<String> {
+    fun printExpanded(input: String, supplemental: String, html: Boolean): Validation<String> {
+        val defines = when (val validation = parse("$input\n\n\n$supplemental")) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> validation.value.defines
+        }
         return when (val validation = parse(input)) {
             is ValidationFailure -> validationFailure(validation.errors)
-            is ValidationSuccess -> {
-                val doc = validation.value
-                val defines = doc.defines
-                validationSuccess(prettyPrint(doc, defines, html))
-            }
+            is ValidationSuccess -> validationSuccess(prettyPrint(validation.value, defines, html))
         }
     }
 

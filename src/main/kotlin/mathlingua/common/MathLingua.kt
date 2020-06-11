@@ -291,6 +291,12 @@ private fun getHtml(body: String) = """
             }
         </script>
         <style>
+            .content {
+                margin-top: 2em;
+                margin-bottom: 2em;
+                font-size: 1.75em;
+            }
+
             .mathlingua {
                 font-family: monospace;
             }
@@ -344,7 +350,9 @@ private fun getHtml(body: String) = """
         </style>
     </head>
     <body onload="render(document.body)">
-        $body
+        <div class="content">
+            $body
+        </div>
     </body>
 </html>
 """

@@ -43,7 +43,7 @@ data class ResourceGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent,
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = topLevelToCode(writer, isArg, indent,
             IdStatement(
                     id,
                     validationFailure(emptyList())

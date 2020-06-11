@@ -52,7 +52,7 @@ data class SourceItemGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = mathlingua.common.chalktalk.phase2.ast.toplevel.toCode(
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = mathlingua.common.chalktalk.phase2.ast.toplevel.topLevelToCode(
             writer,
             isArg,
             indent,

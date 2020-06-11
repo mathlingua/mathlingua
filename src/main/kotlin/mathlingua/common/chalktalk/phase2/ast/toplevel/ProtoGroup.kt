@@ -39,7 +39,7 @@ class ProtoGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, null, textSection, metaDataSection)
+            topLevelToCode(writer, isArg, indent, null, textSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ProtoGroup(

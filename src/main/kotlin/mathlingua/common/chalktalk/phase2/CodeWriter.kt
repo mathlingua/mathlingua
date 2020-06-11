@@ -42,6 +42,8 @@ interface CodeWriter {
     fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
     fun writeDirect(text: String)
+    fun beginTopLevel()
+    fun endTopLevel()
     fun newCodeWriter(defines: List<DefinesGroup>): CodeWriter
     fun getCode(): String
 }
@@ -135,7 +137,7 @@ open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
             val index = stmtText.indexOf(IS)
             builder.append("\\[${stmtText.substring(0, index)}\\]")
             writeSpace()
-            writeDirect("is")
+            writeDirect("<span class='mathlingua-is'>is</span>")
             writeSpace()
             val lhs = stmtText.substring(index + IS.length).trim()
             val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
@@ -167,6 +169,14 @@ open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
 
     override fun writeDirect(text: String) {
         builder.append(text)
+    }
+
+    override fun beginTopLevel() {
+        builder.append("<span class='mathlingua-top-level'>")
+    }
+
+    override fun endTopLevel() {
+        builder.append("</span>")
     }
 
     override fun newCodeWriter(defines: List<DefinesGroup>) = HtmlCodeWriter(defines)
@@ -261,6 +271,10 @@ class MathLinguaCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
     override fun writeDirect(text: String) {
         builder.append(text)
     }
+
+    override fun beginTopLevel() {}
+
+    override fun endTopLevel() {}
 
     override fun newCodeWriter(defines: List<DefinesGroup>) = MathLinguaCodeWriter(defines)
 

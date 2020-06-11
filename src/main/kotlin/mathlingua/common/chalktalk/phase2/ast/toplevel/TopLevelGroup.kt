@@ -34,7 +34,8 @@ import mathlingua.common.transform.getSignature
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
-fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?): CodeWriter {
+fun topLevelToCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?): CodeWriter {
+    writer.beginTopLevel()
     var useAsArg = isArg
     if (id != null) {
         writer.writeIndent(isArg, indent)
@@ -52,6 +53,7 @@ fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, va
             writer.writeNewline()
         }
     }
+    writer.endTopLevel()
 
     return writer
 }

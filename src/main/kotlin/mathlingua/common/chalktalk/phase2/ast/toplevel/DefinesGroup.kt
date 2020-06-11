@@ -52,7 +52,7 @@ data class DefinesGroup(
         val sections = mutableListOf(definesSection, assumingSection)
         sections.addAll(meansSections)
         sections.add(metaDataSection)
-        return toCode(
+        return topLevelToCode(
                 writer,
                 isArg,
                 indent,

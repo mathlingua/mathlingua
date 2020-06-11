@@ -41,7 +41,7 @@ data class ConjectureGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, null, conjectureSection, metaDataSection)
+            topLevelToCode(writer, isArg, indent, null, conjectureSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ConjectureGroup(

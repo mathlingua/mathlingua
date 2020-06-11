@@ -41,7 +41,7 @@ data class AxiomGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, null, axiomSection, metaDataSection)
+            topLevelToCode(writer, isArg, indent, null, axiomSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(AxiomGroup(

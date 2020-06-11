@@ -122,7 +122,7 @@ private fun runMlg(
                 is ValidationFailure -> {
                     error("Could not output the contents due to the errors:")
                     for (err in validation.errors) {
-                        error(err.toString())
+                        error("  ${bold(red("ERROR(${err.row}, ${err.column}):  "))}${err.message}")
                     }
                 }
                 is ValidationSuccess -> {
@@ -214,7 +214,7 @@ private fun runMlg(
     if (output.toLowerCase() == "mathlingua") {
         log(outputBuilder.toString())
     } else if (output.toLowerCase() == "html") {
-        log(getHtml(outputBuilder.toString()))
+        log(getHtml(outputBuilder.toString().replace("<br/><br/><br/>", "<br/><br/>")))
     }
 
     return if (failed) 1 else 0
@@ -393,12 +393,33 @@ private fun getHtml(body: String) = """
 
             .mathlingua-header {
                 font-weight: bold;
+                color: #0055bb;
             }
 
             .mathlingua-whitespace {
                 padding: 0;
                 margin: 0;
                 margin-left: 1ex;
+            }
+
+            .mathlingua-id {
+                margin-left: -0.2em;
+                font-weight: bold;
+                color: #5500aa;
+            }
+
+            .mathlingua-text {
+                color: #007700;
+            }
+
+            .mathlingua-top-level {
+                box-shadow: 0px 0px 2px 0px #888888;
+                padding: 1em;
+                display: block;
+                width: fit-content;
+                overflow: scroll;
+                margin-left: auto;
+                margin-right: auto;
             }
 
             .katex {

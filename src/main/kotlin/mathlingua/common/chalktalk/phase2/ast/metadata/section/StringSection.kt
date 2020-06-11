@@ -30,12 +30,12 @@ class StringSection(
         writer.writeHeader(name)
         if (values.size == 1) {
             writer.writeSpace()
-            writer.writeDirect(values[0])
+            writer.writeText(values[0].removeSurrounding("\"", "\""))
         } else {
             for (value in values) {
                 writer.writeNewline()
                 writer.writeIndent(true, indent + 2)
-                writer.writeDirect(value)
+                writer.writeText(value.removeSurrounding("\"", "\""))
             }
         }
         return writer

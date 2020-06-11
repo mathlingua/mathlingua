@@ -39,7 +39,7 @@ data class TheoremGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, null, theoremSection, metaDataSection)
+            topLevelToCode(writer, isArg, indent, null, theoremSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(TheoremGroup(
             theoremSection = theoremSection.transform(chalkTransformer) as TheoremSection,

@@ -16,20 +16,13 @@
 
 package mathlingua.common.transform
 
+import mathlingua.common.ValidationFailure
+import mathlingua.common.ValidationSuccess
+import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.textalk.*
 import kotlin.math.max
 
-private fun CommandPart.signature(): String {
-    val builder = StringBuilder()
-    builder.append(this.name.text)
-    for (grp in this.namedGroups) {
-        builder.append(':')
-        builder.append(grp.name.text)
-    }
-    return builder.toString()
-}
-
-private fun Command.signature(): String {
+internal fun Command.signature(): String {
     val builder = StringBuilder()
     builder.append('\\')
     for (i in this.parts.indices) {
@@ -41,17 +34,81 @@ private fun Command.signature(): String {
     return builder.toString()
 }
 
-private data class MutableSubstitutions(
-    var doesMatch: Boolean,
-    val substitutions: MutableMap<String, MutableList<TexTalkNode>>,
-    val errors: MutableList<String>
-)
+fun IdStatement.signature() =
+    when (this.texTalkRoot) {
+        is ValidationFailure -> null
+        is ValidationSuccess -> {
+            val root = this.texTalkRoot.value
+            if (root.children.size == 1 && root.children[0] is Command) {
+                (root.children[0] as Command).signature()
+            } else {
+                // handle infix operators (for example 'a \in b')
+                null
+            }
+        }
+    }
 
 data class Substitutions(
     val doesMatch: Boolean,
     val substitutions: Map<String, List<TexTalkNode>>,
     val errors: List<String>
 )
+
+fun getSubstitutions(pattern: Command, value: Command): Substitutions {
+    val errors = validatePattern(pattern)
+    if (errors.isNotEmpty()) {
+        return Substitutions(
+                doesMatch = false,
+                substitutions = emptyMap(),
+                errors = errors
+        )
+    }
+
+    val subs = MutableSubstitutions(
+            doesMatch = true,
+            substitutions = mutableMapOf(),
+            errors = mutableListOf()
+    )
+
+    if (pattern.parts.size == value.parts.size) {
+        for (i in pattern.parts.indices) {
+            findSubstitutions(pattern.parts[i], value.parts[i], subs)
+        }
+    }
+
+    return Substitutions(
+            doesMatch = subs.doesMatch,
+            substitutions = subs.substitutions,
+            errors = subs.errors
+    )
+}
+
+internal fun expandAsWritten(node: TexTalkNode, patternToExpansion: Map<Command, String>): String {
+    val sigToPatternExpansion = mutableMapOf<String, PatternExpansion>()
+    for ((pattern, expansion) in patternToExpansion) {
+        sigToPatternExpansion[pattern.signature()] = PatternExpansion(
+                pattern = pattern,
+                expansion = expansion
+        )
+    }
+    return expandAsWrittenImpl(node, sigToPatternExpansion)
+}
+
+private data class MutableSubstitutions(
+    var doesMatch: Boolean,
+    val substitutions: MutableMap<String, MutableList<TexTalkNode>>,
+    val errors: MutableList<String>
+)
+
+private fun CommandPart.signature(): String {
+    val builder = StringBuilder()
+    builder.append(this.name.text)
+    for (grp in this.namedGroups) {
+        builder.append(':')
+        builder.append(grp.name.text)
+    }
+    return builder.toString()
+}
 
 private fun findSubstitutions(pattern: GroupTexTalkNode?, value: GroupTexTalkNode?, subs: MutableSubstitutions) {
     if ((pattern == null) != (value == null)) {
@@ -177,35 +234,6 @@ private fun findSubstitutions(pattern: CommandPart, value: CommandPart, subs: Mu
     }
 }
 
-fun getSubstitutions(pattern: Command, value: Command): Substitutions {
-    val errors = validatePattern(pattern)
-    if (errors.isNotEmpty()) {
-        return Substitutions(
-                doesMatch = false,
-                substitutions = emptyMap(),
-                errors = errors
-        )
-    }
-
-    val subs = MutableSubstitutions(
-            doesMatch = true,
-            substitutions = mutableMapOf(),
-            errors = mutableListOf()
-    )
-
-    if (pattern.parts.size == value.parts.size) {
-        for (i in pattern.parts.indices) {
-            findSubstitutions(pattern.parts[i], value.parts[i], subs)
-        }
-    }
-
-    return Substitutions(
-            doesMatch = subs.doesMatch,
-            substitutions = subs.substitutions,
-            errors = subs.errors
-    )
-}
-
 private fun validatePatternGroupImpl(
     group: GroupTexTalkNode?,
     canBeVarArg: Boolean,
@@ -270,17 +298,6 @@ private fun validatePattern(command: Command): List<String> {
         validatePatternImpl(part, errors)
     }
     return errors
-}
-
-fun expandAsWritten(node: TexTalkNode, patternToExpansion: Map<Command, String>): String {
-    val sigToPatternExpansion = mutableMapOf<String, PatternExpansion>()
-    for ((pattern, expansion) in patternToExpansion) {
-        sigToPatternExpansion[pattern.signature()] = PatternExpansion(
-                pattern = pattern,
-                expansion = expansion
-        )
-    }
-    return expandAsWrittenImpl(node, sigToPatternExpansion)
 }
 
 private data class PatternExpansion(val pattern: Command, val expansion: String)

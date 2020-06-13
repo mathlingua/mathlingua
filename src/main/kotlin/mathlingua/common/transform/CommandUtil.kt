@@ -69,7 +69,7 @@ internal fun replaceSignatures(
     signature: String,
     replacement: String
 ) = texTalkNode.transform {
-    if (it is Command && getCommandSignature(it) == signature) {
+    if (it is Command && it.signature() == signature) {
         TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement, isVarArg = false)
     } else {
         texTalkNode

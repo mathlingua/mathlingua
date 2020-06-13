@@ -49,7 +49,7 @@ internal fun moveInlineCommandsToIsNode(
 ): RootTarget<Phase2Node, Phase2Node> {
     val knownDefSigs = defs.map { it.signature }.filterNotNull().toSet()
     fun realShouldProcessTex(root: TexTalkNode, node: TexTalkNode): Boolean {
-        if (node is Command && !knownDefSigs.contains(getCommandSignature(node))) {
+        if (node is Command && !knownDefSigs.contains(node.signature())) {
             return false
         }
 
@@ -227,7 +227,7 @@ internal fun replaceRepresents(
             ) {
                 // a prefix command
                 val command = clause.texTalkRoot.value.children[0] as Command
-                val sig = getCommandSignature(command)
+                val sig = command.signature()
 
                 if (!repMap.containsKey(sig)) {
                     return node
@@ -260,7 +260,7 @@ internal fun replaceRepresents(
                 val op = clause.texTalkRoot.value.children[1] as Command
                 val right = clause.texTalkRoot.value.children[2] as TextTexTalkNode
 
-                val sig = getCommandSignature(op)
+                val sig = op.signature()
 
                 if (!repMap.containsKey(sig)) {
                     return node
@@ -362,7 +362,7 @@ internal fun replaceIsNodes(
             }
 
             val command = isNode.rhs.items[0].children[0] as Command
-            val sig = getCommandSignature(command)
+            val sig = command.signature()
 
             if (!defMap.containsKey(sig)) {
                 newClauses.add(c)

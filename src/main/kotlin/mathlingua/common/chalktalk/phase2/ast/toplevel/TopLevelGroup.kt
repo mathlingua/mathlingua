@@ -30,7 +30,7 @@ import mathlingua.common.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.common.chalktalk.phase2.ast.section.*
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
-import mathlingua.common.transform.getSignature
+import mathlingua.common.transform.signature
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
@@ -240,8 +240,8 @@ fun <G : Phase2Node, S, E> validateDefinesLikeGroup(
             tracker,
             groupNode,
             buildGroup(
-                getSignature(id!!.toStatement(), newLocationTracker())?.form,
-                id, definesLikeSection!!,
+                id?.signature(),
+                id!!, definesLikeSection!!,
                 assumingSection, endSections,
                 aliasSection, metaDataSection
             )

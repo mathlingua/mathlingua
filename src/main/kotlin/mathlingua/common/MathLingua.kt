@@ -28,6 +28,7 @@ import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.*
 
 data class Parse(val document: Document, val tracker: LocationTracker)
@@ -74,11 +75,9 @@ object MathLingua {
 
     fun signatureOf(group: TopLevelGroup) = getSignature(group)
 
-    fun signatureOf(command: Command) = getCommandSignature(command)
+    fun signatureOf(command: Command) = command.signature()
 
     fun findAllSignatures(node: Phase2Node, locationTracker: LocationTracker) = locateAllSignatures(node, locationTracker).toList()
-
-    fun flattenSignature(signature: String) = mathlingua.common.transform.flattenSignature(signature)
 
     fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
 
@@ -167,6 +166,9 @@ object MathLingua {
 
         return result
     }
+
+    fun expandWrittenAs(node: TexTalkNode, defines: List<DefinesGroup>) =
+        expandAsWritten(node, getPatternsToWrittenAs(defines))
 
     fun expandWrittenAs(
         phase2Node: Phase2Node,

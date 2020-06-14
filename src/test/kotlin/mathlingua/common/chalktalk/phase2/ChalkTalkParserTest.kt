@@ -23,6 +23,7 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import mathlingua.GoldenType
 import mathlingua.common.LocationTracker
+import mathlingua.common.ParseError
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
@@ -46,7 +47,7 @@ internal class ChalkTalkParserTest {
 
                 val parser = newChalkTalkParser()
                 val result = parser.parse(lexer)
-                assertThat(result.errors.size).isEqualTo(0)
+                assertThat(result.errors).isEqualTo(emptyList<ParseError>())
                 assertThat(result.root).isNotNull()
 
                 val tracker = newLocationTracker()

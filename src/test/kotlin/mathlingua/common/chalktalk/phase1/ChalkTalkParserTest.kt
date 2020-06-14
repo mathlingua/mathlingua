@@ -20,6 +20,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mathlingua.GoldenType
+import mathlingua.common.ParseError
 import mathlingua.loadTestCases
 import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest
@@ -42,7 +43,7 @@ internal class ChalkTalkParserTest {
                         println("ERROR: $err")
                     }
                 }
-                assertThat(result.errors.size).isEqualTo(0)
+                assertThat(result.errors).isEqualTo(emptyList<ParseError>())
                 assertThat(result.root).isNotNull()
 
                 assertThat(result.root!!.toCode()).isEqualTo(it.phase1Output)

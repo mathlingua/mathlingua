@@ -157,7 +157,7 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
     ))
 }
 
-data class Abstraction(val isEnclosed: Boolean, val parts: List<AbstractionPart>) : AssignmentRhs() {
+data class Abstraction(val isEnclosed: Boolean, val parts: List<AbstractionPart>, val subParams: List<Phase1Token>?) : AssignmentRhs() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = parts.forEach(fn)
 
@@ -174,6 +174,21 @@ data class Abstraction(val isEnclosed: Boolean, val parts: List<AbstractionPart>
         }
         if (isEnclosed) {
             builder.append('}')
+            if (subParams != null) {
+                builder.append('_')
+                if (subParams.size == 1) {
+                    builder.append(subParams[0].toCode())
+                } else {
+                    builder.append('{')
+                    for (i in subParams.indices) {
+                        builder.append(subParams[i].toCode())
+                        if (i != subParams.size - 1) {
+                            builder.append(", ")
+                        }
+                    }
+                    builder.append('}')
+                }
+            }
         }
 
         return builder.toString()
@@ -183,7 +198,8 @@ data class Abstraction(val isEnclosed: Boolean, val parts: List<AbstractionPart>
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Abstraction(
         isEnclosed = isEnclosed,
-        parts = parts.map { it.transform(transformer) as AbstractionPart }
+        parts = parts.map { it.transform(transformer) as AbstractionPart },
+        subParams = subParams?.map { it.transform(transformer) as Phase1Token }
     ))
 }
 

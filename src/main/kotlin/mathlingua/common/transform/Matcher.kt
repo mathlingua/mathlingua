@@ -316,9 +316,54 @@ private fun expandAsWrittenImpl(node: TexTalkNode, sigToPatternExpansion: Map<St
                     } else {
                         var expansion = patternExpansion.expansion
                         for ((name, exp) in subs.substitutions) {
-                            // TODO: HANDLE VARIADIC ARGS
-                            val newText = expandAsWrittenImpl(exp.first(), sigToPatternExpansion)
-                            expansion = expansion.replace("$name&", newText)
+                            val prefixRegex = Regex("$name\\{(.*)\\.\\.\\.\\}\\?")
+                            val infixRegex = Regex("$name\\{\\.\\.\\.(.*)\\.\\.\\.\\}\\?")
+                            val suffixRegex = Regex("$name\\{\\.\\.\\.(.*)}\\?")
+
+                            if (infixRegex.matches(expansion)) {
+                                val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+                                val result = infixRegex.find(expansion)
+                                if (result != null && result.groupValues.size >= 2) {
+                                    val separator = result.groupValues[1]
+                                    val joinedArgs = args.joinToString(separator)
+                                    val pattern = result.groupValues[0]
+                                    // pattern is of the form name{...separator...}?
+                                    expansion = expansion.replace(pattern, joinedArgs)
+                                }
+                            } else if (prefixRegex.matches(expansion)) {
+                                val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+                                val result = prefixRegex.find(expansion)
+                                if (result != null && result.groupValues.size >= 2) {
+                                    val separator = result.groupValues[1]
+                                    val joinedArgsBuilder = StringBuilder()
+                                    for (a in args) {
+                                        joinedArgsBuilder.append(separator)
+                                        joinedArgsBuilder.append(a)
+                                    }
+                                    val joinedArgs = joinedArgsBuilder.toString()
+                                    val pattern = result.groupValues[0]
+                                    // pattern is of the form name{separator...}?
+                                    expansion = expansion.replace(pattern, joinedArgs)
+                                }
+                            } else if (suffixRegex.matches(expansion)) {
+                                val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+                                val result = suffixRegex.find(expansion)
+                                if (result != null && result.groupValues.size >= 2) {
+                                    val separator = result.groupValues[1]
+                                    val joinedArgsBuilder = StringBuilder()
+                                    for (a in args) {
+                                        joinedArgsBuilder.append(a)
+                                        joinedArgsBuilder.append(separator)
+                                    }
+                                    val joinedArgs = joinedArgsBuilder.toString()
+                                    val pattern = result.groupValues[0]
+                                    // pattern is of the form name{...separator}?
+                                    expansion = expansion.replace(pattern, joinedArgs)
+                                }
+                            } else if (exp.isNotEmpty()) {
+                                val newText = expandAsWrittenImpl(exp.first(), sigToPatternExpansion)
+                                expansion = expansion.replace("$name?", newText)
+                            }
                         }
                         expansion
                     }

@@ -21,9 +21,22 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-data class ClauseListSection(val name: String, val clauses: List<Clause>)
+private data class ClauseListSection(val name: String, val clauses: List<Clause>) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        throw RuntimeException("forEach() called on a synthetic node: ClauseListSection")
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        throw RuntimeException("toCode() called on a synthetic node: ClauseListSection")
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        throw RuntimeException("transform() called on a synthetic node: ClauseListSection")
+    }
+}
 
 fun <T : Phase2Node> validateClauseList(
     tracker: MutableLocationTracker,
@@ -81,6 +94,8 @@ private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else validationSuccess(
+            tracker,
+            node,
             ClauseListSection(
                     name.text,
                     clauses

@@ -196,22 +196,85 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
                 this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
             } else if (isNameChar(c)) {
+                // a name can be of the form
+                //   name
+                //   name...
+                //   name#123
+                //   name...#other...
                 val startLine = line
                 val startColumn = column
                 var name = "" + c
+                var isComplete = false
+
+                // get the text portion
                 while (i < text.length && isNameChar(text[i])) {
                     name += text[i++]
                     column++
                 }
-                // a name can end in ...
-                if (i < text.length && text[i] == '.' &&
+
+                // process the name#123 case and if matching mark the match as complete
+                if (i < text.length && text[i] == '#' &&
+                        i + 1 < text.length && text[i + 1].isDigit()) {
+                    name += text[i++] // append #
+                    column++
+                    while (i < text.length && text[i].isDigit()) {
+                        name += text[i++]
+                        column++
+                    }
+                    isComplete = true
+                }
+
+                // if it is not complete, that means it is not of the form name#123
+                // so check if it is of the form name...
+                if (!isComplete &&
+                        i < text.length && text[i] == '.' &&
                         i + 1 < text.length && text[i + 1] == '.' &&
                         i + 2 < text.length && text[i + 2] == '.') {
                     for (tmp in 0 until "...".length) {
                         name += text[i++]
                         column++
                     }
+                    // it is not necessarily complete if it is of the form name...
+                    // at this point because it could actually be of the form name...#other...
                 }
+
+                // check if it is of the form name...#other...
+                if (!isComplete && i < text.length && text[i] == '#') {
+                    name += text[i++] // append the #
+                    column++
+                    // get the name portion
+                    while (i < text.length && isNameChar(text[i])) {
+                        name += text[i++]
+                        column++
+                    }
+                    // error if a name after # wasn't specified
+                    if (name.endsWith("#")) {
+                        errors.add(
+                                ParseError("If a name contains a # is must be of the form " +
+                                        "<identifier>...#<identifier>... but found '$name' " +
+                                        " (missing the name after '#')", startLine, startColumn)
+                        )
+                    }
+                    // get the ... portion
+                    if (i < text.length && text[i] == '.' &&
+                            i + 1 < text.length && text[i + 1] == '.' &&
+                            i + 2 < text.length && text[i + 2] == '.') {
+                        for (tmp in 0 until "...".length) {
+                            name += text[i++]
+                            column++
+                        }
+                    }
+                    // error if it is of the form <name>...#<name>
+                    // without the trailing ...
+                    if (!name.endsWith("...")) {
+                        errors.add(
+                                ParseError("If a name contains a # is must be of the form " +
+                                        "<identifier>...#<identifier>... but found '$name' " +
+                                        "(missing the trailing '...')", startLine, startColumn)
+                        )
+                    }
+                }
+
                 this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
             } else if (c == '"') {
                 val startLine = line
@@ -301,7 +364,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
 
     private fun isOperatorChar(c: Char) = "~!@%^&*-+<>\\/=".contains(c)
 
-    private fun isNameChar(c: Char) = Regex("[$#a-zA-Z0-9]+").matches("$c")
+    private fun isNameChar(c: Char) = Regex("[a-zA-Z0-9]+").matches("$c")
 
     override fun hasNext(): Boolean {
         ensureInitialized()

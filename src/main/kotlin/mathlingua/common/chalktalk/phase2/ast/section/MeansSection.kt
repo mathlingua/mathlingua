@@ -24,7 +24,7 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.validateClauseList
 
 data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(clauses)
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
@@ -36,9 +36,10 @@ data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(MeansSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
-    ))
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+            chalkTransformer(MeansSection(
+                    clauses = clauses.transform(chalkTransformer) as ClauseListNode
+            ))
 }
 
 fun validateMeansSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(

@@ -1,0 +1,69 @@
+Document(
+  defines = [
+              DefinesGroup(
+                signature = null
+                id = IdStatement(
+                  text = "A"
+                  texTalkRoot = ValidationSuccessImpl(
+                    v = ExpressionTexTalkNode(
+                      children = [
+                                   TextTexTalkNode(
+                                     type = TexTalkNodeType.Identifier
+                                     text = "A"
+                                     isVarArg = false
+                                   )
+                                 ]
+                    )
+                  )
+                )
+                definesSection = DefinesSection(
+                  targets = [
+                              AbstractionNode(
+                                abstraction = Abstraction(
+                                  isEnclosed = false
+                                  parts = [
+                                            AbstractionPart(
+                                              name = Phase1Token(
+                                                text = "B"
+                                                type = ChalkTalkTokenType.Name
+                                                row = 1
+                                                column = 10
+                                              )
+                                              subParams = null
+                                              params = null
+                                            )
+                                          ]
+                                  subParams = null
+                                )
+                              )
+                            ]
+                )
+                assumingSection = null
+                meansSections = [
+                                  MeansSection(
+                                    clauses = ClauseListNode(
+                                      clauses = [
+                                                  Text(
+                                                    text = ""C""
+                                                  )
+                                                ]
+                                    )
+                                  )
+                                ]
+                aliasSection = null
+                metaDataSection = null
+              )
+            ]
+  represents = [
+               ]
+  theorems = [
+             ]
+  axioms = [
+           ]
+  conjectures = [
+                ]
+  resources = [
+              ]
+  protoGroups = [
+                ]
+)

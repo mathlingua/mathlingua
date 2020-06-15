@@ -1,0 +1,98 @@
+Document(
+  defines = [
+              DefinesGroup(
+                signature = "\f"
+                id = IdStatement(
+                  text = "\f{x...}"
+                  texTalkRoot = ValidationSuccessImpl(
+                    v = ExpressionTexTalkNode(
+                      children = [
+                                   Command(
+                                     parts = [
+                                               CommandPart(
+                                                 name = TextTexTalkNode(
+                                                   type = TexTalkNodeType.Identifier
+                                                   text = "f"
+                                                   isVarArg = false
+                                                 )
+                                                 square = null
+                                                 subSup = null
+                                                 groups = [
+                                                            GroupTexTalkNode(
+                                                              type = TexTalkNodeType.CurlyGroup
+                                                              parameters = ParametersTexTalkNode(
+                                                                items = [
+                                                                          ExpressionTexTalkNode(
+                                                                            children = [
+                                                                                         TextTexTalkNode(
+                                                                                           type = TexTalkNodeType.Identifier
+                                                                                           text = "x"
+                                                                                           isVarArg = true
+                                                                                         )
+                                                                                       ]
+                                                                          )
+                                                                        ]
+                                                              )
+                                                              isVarArg = false
+                                                            )
+                                                          ]
+                                                 namedGroups = [
+                                                               ]
+                                               )
+                                             ]
+                                   )
+                                 ]
+                    )
+                  )
+                )
+                definesSection = DefinesSection(
+                  targets = [
+                              AbstractionNode(
+                                abstraction = Abstraction(
+                                  isEnclosed = false
+                                  parts = [
+                                            AbstractionPart(
+                                              name = Phase1Token(
+                                                text = "X...#x..."
+                                                type = ChalkTalkTokenType.Name
+                                                row = 1
+                                                column = 10
+                                              )
+                                              subParams = null
+                                              params = null
+                                            )
+                                          ]
+                                  subParams = null
+                                )
+                              )
+                            ]
+                )
+                assumingSection = null
+                meansSections = [
+                                  MeansSection(
+                                    clauses = ClauseListNode(
+                                      clauses = [
+                                                  Text(
+                                                    text = ""something for X...#x...""
+                                                  )
+                                                ]
+                                    )
+                                  )
+                                ]
+                aliasSection = null
+                metaDataSection = null
+              )
+            ]
+  represents = [
+               ]
+  theorems = [
+             ]
+  axioms = [
+           ]
+  conjectures = [
+                ]
+  resources = [
+              ]
+  protoGroups = [
+                ]
+)

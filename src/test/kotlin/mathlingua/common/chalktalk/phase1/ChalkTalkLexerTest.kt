@@ -18,14 +18,62 @@ package mathlingua.common.chalktalk.phase1
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import mathlingua.common.ParseError
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import org.junit.jupiter.api.Test
 
 internal class ChalkTalkLexerTest {
     @Test
-    fun `correctly identifies tokens`() {
-        val text = "someName:'some statement'\"some text\". [some id],:=$1 #2 abc...xyz_"
+    fun `correctly identifies names`() {
+        val text = "name1 name2... name3#123 name4...#name5..."
+        val lexer = newChalkTalkLexer(text)
+        val actual: MutableList<Phase1Token> = ArrayList()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected = listOf(
+                Phase1Token(
+                        text = "name1",
+                        type = ChalkTalkTokenType.Name,
+                        row = 0,
+                        column = 0),
+                Phase1Token(
+                        text = "name2...",
+                        type = ChalkTalkTokenType.Name,
+                        row = 0,
+                        column = 6),
+                Phase1Token(
+                        text = "name3#123",
+                        type = ChalkTalkTokenType.Name,
+                        row = 0,
+                        column = 15),
+                Phase1Token(
+                        text = "name4...#name5...",
+                        type = ChalkTalkTokenType.Name,
+                        row = 0,
+                        column = 25),
+                Phase1Token(
+                        text = "<Indent>",
+                        type = ChalkTalkTokenType.Begin,
+                        row = 1,
+                        column = 0),
+                Phase1Token(
+                        text = "<Unindent>",
+                        type = ChalkTalkTokenType.End,
+                        row = 1,
+                        column = 0
+                )
+        )
+
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
+    }
+
+    @Test
+    fun `correctly identifies tokens non-name`() {
+        val text = "someName:'some statement'\"some text\". [some id],:="
         val lexer = newChalkTalkLexer(text)
         val actual: MutableList<Phase1Token> = ArrayList()
         while (lexer.hasNext()) {
@@ -46,17 +94,12 @@ internal class ChalkTalkLexerTest {
             Phase1Token(text = "[some id]", type = ChalkTalkTokenType.Id, row = 0, column = 38),
             Phase1Token(text = ",", type = ChalkTalkTokenType.Comma, row = 0, column = 47),
             Phase1Token(text = ":=", type = ChalkTalkTokenType.ColonEquals, row = 0, column = 48),
-            Phase1Token(text = "$1", type = ChalkTalkTokenType.Name, row = 0, column = 50),
-            Phase1Token(text = "#2", type = ChalkTalkTokenType.Name, row = 0, column = 53),
-            Phase1Token(text = "abc...", type = ChalkTalkTokenType.Name, row = 0, column = 56),
-            Phase1Token(text = "xyz", type = ChalkTalkTokenType.Name, row = 0, column = 62),
-            Phase1Token(text = "_", type = ChalkTalkTokenType.Underscore, row = 0, column = 65),
             Phase1Token(text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
             Phase1Token(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 1, column = 0)
         )
 
         assertThat(actual).isEqualTo(expected)
-        assertThat(lexer.errors().size).isEqualTo(0)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
     }
 
     @Test
@@ -128,7 +171,7 @@ internal class ChalkTalkLexerTest {
         )
 
         assertThat(actual).isEqualTo(expected)
-        assertThat(lexer.errors().size).isEqualTo(0)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
     }
 
     @Test
@@ -147,7 +190,7 @@ internal class ChalkTalkLexerTest {
         )
 
         assertThat(actual).isEqualTo(expected)
-        assertThat(lexer.errors().size).isEqualTo(0)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
     }
 
     @Test
@@ -166,6 +209,6 @@ internal class ChalkTalkLexerTest {
         )
 
         assertThat(actual).isEqualTo(expected)
-        assertThat(lexer.errors().size).isEqualTo(0)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
     }
 }

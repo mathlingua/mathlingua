@@ -13,6 +13,7 @@ Root(
                                        Argument(
                                          chalkTalkTarget = Abstraction(
                                            isEnclosed = false
+                                           isVarArgs = false
                                            parts = [
                                                      AbstractionPart(
                                                        name = Phase1Token(
@@ -31,6 +32,7 @@ Root(
                                        Argument(
                                          chalkTalkTarget = Abstraction(
                                            isEnclosed = false
+                                           isVarArgs = false
                                            parts = [
                                                      AbstractionPart(
                                                        name = Phase1Token(
@@ -49,6 +51,7 @@ Root(
                                        Argument(
                                          chalkTalkTarget = Abstraction(
                                            isEnclosed = false
+                                           isVarArgs = false
                                            parts = [
                                                      AbstractionPart(
                                                        name = Phase1Token(

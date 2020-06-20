@@ -34,7 +34,8 @@ enum class ChalkTalkTokenType {
     RParen,
     LCurly,
     RCurly,
-    Underscore
+    Underscore,
+    DotDotDot
 }
 
 sealed class Phase1Target : Phase1Node
@@ -157,7 +158,12 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
     ))
 }
 
-data class Abstraction(val isEnclosed: Boolean, val parts: List<AbstractionPart>, val subParams: List<Phase1Token>?) : AssignmentRhs() {
+data class Abstraction(
+    val isEnclosed: Boolean,
+    val isVarArgs: Boolean,
+    val parts: List<AbstractionPart>,
+    val subParams: List<Phase1Token>?
+) : AssignmentRhs() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = parts.forEach(fn)
 
@@ -191,6 +197,10 @@ data class Abstraction(val isEnclosed: Boolean, val parts: List<AbstractionPart>
             }
         }
 
+        if (isVarArgs) {
+            builder.append("...")
+        }
+
         return builder.toString()
     }
 
@@ -198,6 +208,7 @@ data class Abstraction(val isEnclosed: Boolean, val parts: List<AbstractionPart>
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Abstraction(
         isEnclosed = isEnclosed,
+        isVarArgs = isVarArgs,
         parts = parts.map { it.transform(transformer) as AbstractionPart },
         subParams = subParams?.map { it.transform(transformer) as Phase1Token }
     ))

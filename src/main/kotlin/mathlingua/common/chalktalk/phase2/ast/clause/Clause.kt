@@ -82,6 +82,10 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
                 ::isIffGroup,
                 ::validateIffGroup
+        ),
+        ValidationPair(
+                ::isExpandsGroup,
+                ::validateExpandsGroup
         )
 )
 

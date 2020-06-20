@@ -237,6 +237,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 }
             }
 
+            var isVarArgs = false
             var subParams: List<Phase1Token>? = null
             if (isEnclosed) {
                 expect(ChalkTalkTokenType.RCurly)
@@ -250,12 +251,17 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                         subParams = listOf(expect(ChalkTalkTokenType.Name))
                     }
                 }
+
+                if (has(ChalkTalkTokenType.DotDotDot)) {
+                    expect(ChalkTalkTokenType.DotDotDot)
+                    isVarArgs = true
+                }
             }
 
             return if (!isEnclosed && parts.isEmpty()) {
                 null
             } else {
-                Abstraction(isEnclosed, parts, subParams)
+                Abstraction(isEnclosed, isVarArgs, parts, subParams)
             }
         }
 

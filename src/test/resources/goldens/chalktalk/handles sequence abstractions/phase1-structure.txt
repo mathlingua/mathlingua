@@ -24,6 +24,7 @@ Root(
                                                                    Argument(
                                                                      chalkTalkTarget = Abstraction(
                                                                        isEnclosed = true
+                                                                       isVarArgs = false
                                                                        parts = [
                                                                                  AbstractionPart(
                                                                                    name = Phase1Token(

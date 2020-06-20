@@ -82,7 +82,16 @@ private class ChalkTalkLexerImpl(private var text: String) :
 
             val c = text[i++]
             column++
-            if (c == '=') {
+            if (c == '.' && i < text.length &&
+                    text[i] == '.' && i + 1 < text.length && text[i + 1] == '.') {
+                val startColumn = column
+                // move past the ...
+                i += 2
+                column += 2
+                this.chalkTalkTokens!!.add(
+                    Phase1Token("...", ChalkTalkTokenType.DotDotDot, line, startColumn)
+                )
+            } else if (c == '=') {
                 this.chalkTalkTokens!!.add(
                     Phase1Token("=", ChalkTalkTokenType.Equals, line, column)
                 )

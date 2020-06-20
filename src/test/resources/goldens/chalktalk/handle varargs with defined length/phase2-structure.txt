@@ -50,6 +50,7 @@ Document(
                               AbstractionNode(
                                 abstraction = Abstraction(
                                   isEnclosed = false
+                                  isVarArgs = false
                                   parts = [
                                             AbstractionPart(
                                               name = Phase1Token(

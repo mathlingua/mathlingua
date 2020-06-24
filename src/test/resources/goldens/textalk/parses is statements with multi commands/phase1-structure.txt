@@ -7,6 +7,7 @@ ExpressionTexTalkNode(
                                children = [
                                             TextTexTalkNode(
                                               type = TexTalkNodeType.Identifier
+                                              tokenType = TexTalkTokenType.Identifier
                                               text = "x"
                                               isVarArg = false
                                             )
@@ -23,6 +24,7 @@ ExpressionTexTalkNode(
                                                         CommandPart(
                                                           name = TextTexTalkNode(
                                                             type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
                                                             text = "compact"
                                                             isVarArg = false
                                                           )
@@ -40,6 +42,7 @@ ExpressionTexTalkNode(
                                                         CommandPart(
                                                           name = TextTexTalkNode(
                                                             type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
                                                             text = "convex"
                                                             isVarArg = false
                                                           )
@@ -57,6 +60,7 @@ ExpressionTexTalkNode(
                                                         CommandPart(
                                                           name = TextTexTalkNode(
                                                             type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
                                                             text = "set"
                                                             isVarArg = false
                                                           )

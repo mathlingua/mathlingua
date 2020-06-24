@@ -1,9 +1,24 @@
 ExpressionTexTalkNode(
   children = [
-               TextTexTalkNode(
-                 type = TexTalkNodeType.Operator
-                 text = "**"
-                 isVarArg = false
+               OperatorTexTalkNode(
+                 lhs = TextTexTalkNode(
+                   type = TexTalkNodeType.Identifier
+                   tokenType = TexTalkTokenType.Identifier
+                   text = "a"
+                   isVarArg = false
+                 )
+                 command = TextTexTalkNode(
+                   type = TexTalkNodeType.Operator
+                   tokenType = TexTalkTokenType.Operator
+                   text = "**"
+                   isVarArg = false
+                 )
+                 rhs = TextTexTalkNode(
+                   type = TexTalkNodeType.Identifier
+                   tokenType = TexTalkTokenType.Identifier
+                   text = "b"
+                   isVarArg = false
+                 )
                )
              ]
 )

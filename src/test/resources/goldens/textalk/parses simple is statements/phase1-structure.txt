@@ -7,6 +7,7 @@ ExpressionTexTalkNode(
                                children = [
                                             TextTexTalkNode(
                                               type = TexTalkNodeType.Identifier
+                                              tokenType = TexTalkTokenType.Identifier
                                               text = "a"
                                               isVarArg = false
                                             )
@@ -20,6 +21,7 @@ ExpressionTexTalkNode(
                                children = [
                                             TextTexTalkNode(
                                               type = TexTalkNodeType.Identifier
+                                              tokenType = TexTalkTokenType.Identifier
                                               text = "b"
                                               isVarArg = false
                                             )

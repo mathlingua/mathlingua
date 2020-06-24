@@ -48,34 +48,34 @@ class MatcherKtTest {
 
     @Test
     fun testVarArgInfixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} with \\and{A = 0}{B < 0}")
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
                 buildCommand("\\and{form}...") to "form{... \\textrm{and} ...}?"
         )
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
-                "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 with A = 0 \\textrm{and} B < 0")
+                "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 + A = 0 \\textrm{and} B < 0")
     }
 
     @Test
     fun testVarArgPrefixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} with \\and{A = 0}{B < 0}")
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
                 buildCommand("\\and{form}...") to "form{ \\textrm{and} ...}?"
         )
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
-                " \\textrm{and} a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 with  \\textrm{and} A = 0 \\textrm{and} B < 0")
+                " \\textrm{and} a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 +  \\textrm{and} A = 0 \\textrm{and} B < 0")
     }
 
     @Test
     fun testVarArgSuffixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} with \\and{A = 0}{B < 0}")
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
                 buildCommand("\\and{form}...") to "form{... \\textrm{and} }?"
         )
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
-                "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 \\textrm{and}  with A = 0 \\textrm{and} B < 0 \\textrm{and} ")
+                "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 \\textrm{and}  + A = 0 \\textrm{and} B < 0 \\textrm{and} ")
     }
 }

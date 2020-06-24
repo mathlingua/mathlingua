@@ -5,6 +5,7 @@ ExpressionTexTalkNode(
                            CommandPart(
                              name = TextTexTalkNode(
                                type = TexTalkNodeType.Identifier
+                               tokenType = TexTalkTokenType.Identifier
                                text = "cos"
                                isVarArg = false
                              )

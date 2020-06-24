@@ -31,6 +31,7 @@ import mathlingua.common.textalk.IsTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
+import mathlingua.common.textalk.TexTalkTokenType
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getTexTalkAncestry
 import mathlingua.common.validationSuccess
@@ -159,6 +160,7 @@ internal fun moveStatementInlineCommandsToIsNode(
                                                                 children = listOf(
                                                                         TextTexTalkNode(
                                                                                 type = TexTalkNodeType.Identifier,
+                                                                                tokenType = TexTalkTokenType.Identifier,
                                                                                 text = cmdToReplacement[it]!!,
                                                                                 isVarArg = false
                                                                         )

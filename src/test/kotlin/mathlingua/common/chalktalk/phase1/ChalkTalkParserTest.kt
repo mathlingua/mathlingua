@@ -20,6 +20,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mathlingua.GoldenType
+import mathlingua.OVERWRITE_GOLDEN_FILES
 import mathlingua.common.ParseError
 import mathlingua.loadTestCases
 import mathlingua.serialize
@@ -33,7 +34,7 @@ internal class ChalkTalkParserTest {
 
         return testCases.map {
             DynamicTest.dynamicTest("ChalkTalk Parser: ${it.name}") {
-                val lexer = newChalkTalkLexer(it.input)
+                val lexer = newChalkTalkLexer(it.input.readText())
                 assertThat(lexer.errors().size).isEqualTo(0)
 
                 val parser = newChalkTalkParser()
@@ -46,8 +47,16 @@ internal class ChalkTalkParserTest {
                 assertThat(result.errors).isEqualTo(emptyList<ParseError>())
                 assertThat(result.root).isNotNull()
 
-                assertThat(result.root!!.toCode()).isEqualTo(it.phase1Output)
-                assertThat(serialize(result.root!!)).isEqualTo(it.phase1Structure)
+                val actualOutput = result.root!!.toCode()
+                val actualStructure = serialize(result.root!!)
+                if (OVERWRITE_GOLDEN_FILES) {
+                    println("Overwriting phase1 ChalkTalk test: ${it.name}")
+                    it.phase1Output.writeText(actualOutput)
+                    it.phase1Structure.writeText(actualStructure)
+                } else {
+                    assertThat(actualOutput).isEqualTo(it.phase1Output.readText())
+                    assertThat(actualStructure).isEqualTo(it.phase1Structure.readText())
+                }
             }
         }
     }

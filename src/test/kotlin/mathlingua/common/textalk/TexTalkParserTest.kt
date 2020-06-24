@@ -20,6 +20,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mathlingua.GoldenType
+import mathlingua.OVERWRITE_GOLDEN_FILES
 import mathlingua.loadTestCases
 import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest
@@ -32,7 +33,7 @@ internal class TexTalkParserTest {
 
         return testCases.map {
             DynamicTest.dynamicTest("TexTalk Parser: ${it.name}") {
-                val lexer = newTexTalkLexer(it.input)
+                val lexer = newTexTalkLexer(it.input.readText())
                 assertThat(lexer.errors.size).isEqualTo(0)
 
                 val parser = newTexTalkParser()
@@ -43,8 +44,16 @@ internal class TexTalkParserTest {
                 assertThat(result.errors.size).isEqualTo(0)
                 assertThat(result.root).isNotNull()
 
-                assertThat(result.root.toCode().trim()).isEqualTo(it.phase1Output.trim())
-                assertThat(serialize(result.root)).isEqualTo(it.phase1Structure)
+                val actualCode = result.root.toCode().trim()
+                val actualStructure = serialize(result.root)
+                if (OVERWRITE_GOLDEN_FILES) {
+                    println("Overwriting TexTalk test: ${it.name}")
+                    it.phase1Output.writeText(actualCode)
+                    it.phase1Structure.writeText(actualStructure)
+                } else {
+                    assertThat(actualCode).isEqualTo(it.phase1Output.readText().trim())
+                    assertThat(actualStructure).isEqualTo(it.phase1Structure.readText())
+                }
             }
         }
     }

@@ -66,6 +66,7 @@ fun main() {
                 val errorBuilder = StringBuilder()
                 try {
                     val input = inputArea.text
+                    outputArea.text = ""
 
                     val lexer = newTexTalkLexer(input)
 
@@ -142,7 +143,7 @@ private fun toTreeNode(texTalkNode: TexTalkNode): DefaultMutableTreeNode {
         result.add(toTreeNode(it))
     }
     if (!visited) {
-        result.add(DefaultMutableTreeNode(texTalkNode.toCode()))
+        result.add(DefaultMutableTreeNode("${texTalkNode.toCode()} (${texTalkNode.type})"))
     }
     return result
 }

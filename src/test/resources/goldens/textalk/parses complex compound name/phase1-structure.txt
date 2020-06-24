@@ -5,6 +5,7 @@ ExpressionTexTalkNode(
                            CommandPart(
                              name = TextTexTalkNode(
                                type = TexTalkNodeType.Identifier
+                               tokenType = TexTalkTokenType.Identifier
                                text = "some"
                                isVarArg = false
                              )
@@ -16,6 +17,7 @@ ExpressionTexTalkNode(
                                              children = [
                                                           TextTexTalkNode(
                                                             type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
                                                             text = "x"
                                                             isVarArg = false
                                                           )
@@ -34,6 +36,7 @@ ExpressionTexTalkNode(
                                                children = [
                                                             TextTexTalkNode(
                                                               type = TexTalkNodeType.Identifier
+                                                              tokenType = TexTalkTokenType.Identifier
                                                               text = "a"
                                                               isVarArg = false
                                                             )
@@ -51,6 +54,7 @@ ExpressionTexTalkNode(
                                                children = [
                                                             TextTexTalkNode(
                                                               type = TexTalkNodeType.Identifier
+                                                              tokenType = TexTalkTokenType.Identifier
                                                               text = "b"
                                                               isVarArg = false
                                                             )
@@ -70,6 +74,7 @@ ExpressionTexTalkNode(
                                                         children = [
                                                                      TextTexTalkNode(
                                                                        type = TexTalkNodeType.Identifier
+                                                                       tokenType = TexTalkTokenType.Identifier
                                                                        text = "x"
                                                                        isVarArg = false
                                                                      )
@@ -86,6 +91,7 @@ ExpressionTexTalkNode(
                            CommandPart(
                              name = TextTexTalkNode(
                                type = TexTalkNodeType.Identifier
+                               tokenType = TexTalkTokenType.Identifier
                                text = "compound"
                                isVarArg = false
                              )
@@ -99,6 +105,7 @@ ExpressionTexTalkNode(
                            CommandPart(
                              name = TextTexTalkNode(
                                type = TexTalkNodeType.Identifier
+                               tokenType = TexTalkTokenType.Identifier
                                text = "name"
                                isVarArg = false
                              )
@@ -113,6 +120,7 @@ ExpressionTexTalkNode(
                                                         children = [
                                                                      TextTexTalkNode(
                                                                        type = TexTalkNodeType.Identifier
+                                                                       tokenType = TexTalkTokenType.Identifier
                                                                        text = "x"
                                                                        isVarArg = false
                                                                      )
@@ -129,6 +137,7 @@ ExpressionTexTalkNode(
                            CommandPart(
                              name = TextTexTalkNode(
                                type = TexTalkNodeType.Identifier
+                               tokenType = TexTalkTokenType.Identifier
                                text = "function"
                                isVarArg = false
                              )
@@ -140,6 +149,7 @@ ExpressionTexTalkNode(
                                              children = [
                                                           TextTexTalkNode(
                                                             type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
                                                             text = "x"
                                                             isVarArg = false
                                                           )
@@ -159,6 +169,7 @@ ExpressionTexTalkNode(
                                                         children = [
                                                                      TextTexTalkNode(
                                                                        type = TexTalkNodeType.Identifier
+                                                                       tokenType = TexTalkTokenType.Identifier
                                                                        text = "a"
                                                                        isVarArg = false
                                                                      )
@@ -168,6 +179,7 @@ ExpressionTexTalkNode(
                                                         children = [
                                                                      TextTexTalkNode(
                                                                        type = TexTalkNodeType.Identifier
+                                                                       tokenType = TexTalkTokenType.Identifier
                                                                        text = "b"
                                                                        isVarArg = false
                                                                      )

@@ -30,6 +30,7 @@ import mathlingua.common.textalk.IsTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
+import mathlingua.common.textalk.TexTalkTokenType
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.validationSuccess
 
@@ -70,7 +71,12 @@ internal fun replaceSignatures(
     replacement: String
 ) = texTalkNode.transform {
     if (it is Command && it.signature() == signature) {
-        TextTexTalkNode(type = TexTalkNodeType.Identifier, text = replacement, isVarArg = false)
+        TextTexTalkNode(
+            type = TexTalkNodeType.Identifier,
+            tokenType = TexTalkTokenType.Identifier,
+            text = replacement,
+            isVarArg = false
+        )
     } else {
         texTalkNode
     }
@@ -112,7 +118,12 @@ internal fun replaceCommands(
             it
         } else {
             val name = cmdToReplacement[it]
-            TextTexTalkNode(type = TexTalkNodeType.Identifier, text = name!!, isVarArg = false)
+            TextTexTalkNode(
+                type = TexTalkNodeType.Identifier,
+                tokenType = TexTalkTokenType.Identifier,
+                text = name!!,
+                isVarArg = false
+            )
         }
     }
 }
@@ -206,31 +217,10 @@ internal fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phas
     val newRoot = root.transform {
         val result = if (it is Statement &&
             it.texTalkRoot is ValidationSuccess &&
-            it.texTalkRoot.value.children.isNotEmpty() &&
-            it.texTalkRoot.value.children.all { c -> c is Command }) {
-            val exp = it.texTalkRoot.value
-            val cmds = getCommandsToGlue(exp)
-            val gluedCmds = glueCommands(cmds)
-            if (gluedCmds.size != 1) {
-                throw Error("Expected id $it to only contain a single glued command")
-            }
-            val newExp = ExpressionTexTalkNode(
-                children = listOf(
-                    gluedCmds[0]
-                )
-            )
-            val result = Statement(
-                    text = newExp.toCode(),
-                    texTalkRoot = validationSuccess(newExp)
-            )
-            if (newFollow == null && hasChild(it, follow)) {
-                newFollow = result
-            }
-            result
-        } else if (it is Statement &&
-            it.texTalkRoot is ValidationSuccess &&
             it.texTalkRoot.value.children.size == 1 &&
-            it.texTalkRoot.value.children[0] is IsTexTalkNode) {
+            it.texTalkRoot.value.children[0] is IsTexTalkNode &&
+            (it.texTalkRoot.value.children[0] as IsTexTalkNode)
+                .rhs.items.getOrNull(0)?.children?.all { it is Command } == true) {
             val isNode = it.texTalkRoot.value.children[0] as IsTexTalkNode
             if (isNode.rhs.items.size != 1) {
                 throw Error("Expected 'is' node $isNode to only contain a single rhs item")

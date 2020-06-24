@@ -113,13 +113,12 @@ fun main() {
         .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
     val expandButton = JButton("Expand At")
-    var tracker: LocationTracker? = null
     expandButton.addActionListener {
         val text = inputArea.text
         val validation = MathLingua.parseWithLocations(text)
         if (validation is ValidationSuccess) {
             val doc = validation.value.document
-            tracker = validation.value.tracker
+            val tracker = validation.value.tracker
 
             val lines = inputArea.text.split('\n')
             val offset = inputArea.caretPosition
@@ -133,9 +132,9 @@ fun main() {
 
             println("row=$row, column=$col")
 
-            val root = toTreeNode(tracker!!, doc)
+            val root = toTreeNode(tracker, doc)
             phase2Tree.model = DefaultTreeModel(root)
-            val nearestNode = findNode(tracker!!, doc, row, col)
+            val nearestNode = findNode(tracker, doc, row, col)
 
             println("Found node: $nearestNode")
 
@@ -146,7 +145,7 @@ fun main() {
             val newDoc = expandAtNode(doc, nearestNode, doc.defines, doc.represents)
 
             outputArea.text = newDoc.toCode(false, 0).getCode()
-            outputTree.model = DefaultTreeModel(toTreeNode(tracker!!, newDoc))
+            outputTree.model = DefaultTreeModel(toTreeNode(tracker, newDoc))
         }
     }
     statusPanel.add(expandButton)
@@ -162,6 +161,7 @@ fun main() {
             SwingUtilities.invokeLater {
                 var doc: Document? = null
                 val errorBuilder = StringBuilder()
+                val tracker = newLocationTracker()
                 try {
                     val input = inputArea.text
 
@@ -201,7 +201,6 @@ fun main() {
                             phase1Tree.expandRow(numPhase1Rows - 1)
                         }
 
-                        val tracker = newLocationTracker()
                         when (val documentValidation = validateDocument(root, tracker)) {
                             is ValidationSuccess -> doc = documentValidation.value
                             is ValidationFailure -> {
@@ -234,7 +233,7 @@ fun main() {
                     }
                     signaturesList.text = sigBuilder.toString()
 
-                    phase2Tree.model = DefaultTreeModel(toTreeNode(tracker ?: newLocationTracker(), doc))
+                    phase2Tree.model = DefaultTreeModel(toTreeNode(tracker, doc))
                     var transformed = doc
 
                     if (separateIsBox.isSelected) {
@@ -266,7 +265,7 @@ fun main() {
                     }
 
                     outputArea.text = transformed.toCode(false, 0).getCode()
-                    outputTree.model = DefaultTreeModel(toTreeNode(tracker!!, transformed))
+                    outputTree.model = DefaultTreeModel(toTreeNode(tracker, transformed))
                     val numRows = phase2Tree.rowCount
                     if (numRows > 0) {
                         phase2Tree.expandRow(numRows - 1)

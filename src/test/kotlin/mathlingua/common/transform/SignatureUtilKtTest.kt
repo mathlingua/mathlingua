@@ -20,7 +20,9 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mathlingua.common.Location
 import mathlingua.common.MathLingua
+import mathlingua.common.ParseError
 import mathlingua.common.Signature
+import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.newLocationTracker
 import org.junit.jupiter.api.Test
@@ -44,19 +46,20 @@ internal class SignatureUtilKtTest {
     }
 
     @Test
-    fun findAllStatementSignaturesGluedTest() {
+    fun statementSignaturesNotAllowedToBeGluedTest() {
         val validation = MathLingua.parse("[\\abc \\xyz{x}]\nDefines: y\nmeans: 'something'")
         val doc = (validation as ValidationSuccess).value
         assertThat(doc.defines.size).isEqualTo(1)
         val def = doc.defines[0]
-        val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
-        assertThat(signatures).isEqualTo(setOf(Signature(
-            form = "\\abc.xyz",
-            location = Location(
-                row = -1,
-                column = -1
-            )
+        val texTalkValidation = def.id.texTalkRoot
+        assertThat(texTalkValidation is ValidationFailure)
+        val failure = texTalkValidation as ValidationFailure
+        assertThat(failure.errors).isEqualTo(listOf(ParseError(
+            message = "Multiple infix operators cannot be side by side ('\\abc \\xyz{x}').  They " +
+                "can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', " +
+                "or 'x \\op y'",
+            row = -1,
+            column = -1
         )))
     }
 

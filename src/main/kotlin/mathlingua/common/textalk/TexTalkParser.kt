@@ -43,7 +43,18 @@ private class TexTalkParserImpl : TexTalkParser {
         val worker = ParserWorker(texTalkLexer)
         val root = worker.parse()
         val errors = worker.getErrors()
-        return TexTalkParseResult(root, errors)
+        val result = TexTalkParseResult(root, errors)
+        if (errors.isNotEmpty()) {
+            return result
+        }
+        val operatorResult = parseOperators(result.root)
+        if (operatorResult.errors.isNotEmpty()) {
+            return TexTalkParseResult(
+                root = result.root,
+                errors = result.errors.plus(operatorResult.errors)
+            )
+        }
+        return operatorResult
     }
 
     private class ParserWorker(private val texTalkLexer: TexTalkLexer) {
@@ -235,6 +246,7 @@ private class TexTalkParserImpl : TexTalkParser {
                                                 children = listOf(
                                                         TextTexTalkNode(
                                                                 type = TexTalkNodeType.Identifier,
+                                                                tokenType = id.tokenType,
                                                                 text = id.text,
                                                                 isVarArg = false
                                                         )
@@ -286,6 +298,7 @@ private class TexTalkParserImpl : TexTalkParser {
                                                 children = listOf(
                                                         TextTexTalkNode(
                                                                 type = TexTalkNodeType.Identifier,
+                                                                tokenType = id.tokenType,
                                                                 text = id.text,
                                                                 isVarArg = false
                                                         )
@@ -385,7 +398,7 @@ private class TexTalkParserImpl : TexTalkParser {
                 rawText
             } else {
                 addError("Expected an identifier in a named group")
-                TextTexTalkNode(TexTalkNodeType.Identifier, "INVALID", false)
+                TextTexTalkNode(TexTalkNodeType.Identifier, TexTalkTokenType.Invalid, "INVALID", false)
             }
 
             val rawGroup = group(TexTalkNodeType.CurlyGroup)
@@ -427,6 +440,7 @@ private class TexTalkParserImpl : TexTalkParser {
 
             return TextTexTalkNode(
                     type = nodeType,
+                    tokenType = tokenType,
                     text = textToken.text,
                     isVarArg = isVarArg
             )

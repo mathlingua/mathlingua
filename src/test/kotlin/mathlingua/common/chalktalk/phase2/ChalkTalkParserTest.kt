@@ -22,6 +22,7 @@ import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import mathlingua.GoldenType
+import mathlingua.OVERWRITE_GOLDEN_FILES
 import mathlingua.common.LocationTracker
 import mathlingua.common.ParseError
 import mathlingua.common.ValidationSuccess
@@ -42,7 +43,7 @@ internal class ChalkTalkParserTest {
 
         return testCases.map {
             DynamicTest.dynamicTest("ChalkTalk Validation: ${it.name}") {
-                val lexer = newChalkTalkLexer(it.input)
+                val lexer = newChalkTalkLexer(it.input.readText())
                 assertThat(lexer.errors().size).isEqualTo(0)
 
                 val parser = newChalkTalkParser()
@@ -55,8 +56,17 @@ internal class ChalkTalkParserTest {
                 assertThat(validation).isInstanceOf(ValidationSuccess::class.java)
 
                 val doc = (validation as ValidationSuccess).value
-                assertThat(doc.toCode(false, 0).getCode().trim()).isEqualTo(it.phase2Output.trim())
-                assertThat(serialize(doc)).isEqualTo(it.phase2Structure)
+                val actualOutput = doc.toCode(false, 0).getCode().trim()
+                val actualStructure = serialize(doc)
+
+                if (OVERWRITE_GOLDEN_FILES) {
+                    println("Overwriting phase 2 test: ${it.name}")
+                    it.phase2Output.writeText(actualOutput)
+                    it.phase2Structure.writeText(actualStructure)
+                } else {
+                    assertThat(actualOutput).isEqualTo(it.phase2Output.readText().trim())
+                    assertThat(actualStructure).isEqualTo(it.phase2Structure.readText())
+                }
 
                 assertTrackerContainsNode(tracker, doc)
             }

@@ -7,6 +7,7 @@ ExpressionTexTalkNode(
                                children = [
                                             TextTexTalkNode(
                                               type = TexTalkNodeType.Identifier
+                                              tokenType = TexTalkTokenType.Identifier
                                               text = "xyz"
                                               isVarArg = true
                                             )
@@ -20,6 +21,7 @@ ExpressionTexTalkNode(
                                children = [
                                             TextTexTalkNode(
                                               type = TexTalkNodeType.Identifier
+                                              tokenType = TexTalkTokenType.Identifier
                                               text = "f"
                                               isVarArg = false
                                             ),
@@ -29,20 +31,25 @@ ExpressionTexTalkNode(
                                                 items = [
                                                           ExpressionTexTalkNode(
                                                             children = [
-                                                                         TextTexTalkNode(
-                                                                           type = TexTalkNodeType.Identifier
-                                                                           text = "abc"
-                                                                           isVarArg = true
-                                                                         ),
-                                                                         TextTexTalkNode(
-                                                                           type = TexTalkNodeType.Operator
-                                                                           text = "+"
-                                                                           isVarArg = false
-                                                                         ),
-                                                                         TextTexTalkNode(
-                                                                           type = TexTalkNodeType.Identifier
-                                                                           text = "x"
-                                                                           isVarArg = false
+                                                                         OperatorTexTalkNode(
+                                                                           lhs = TextTexTalkNode(
+                                                                             type = TexTalkNodeType.Identifier
+                                                                             tokenType = TexTalkTokenType.Identifier
+                                                                             text = "abc"
+                                                                             isVarArg = false
+                                                                           )
+                                                                           command = TextTexTalkNode(
+                                                                             type = TexTalkNodeType.Operator
+                                                                             tokenType = TexTalkTokenType.Operator
+                                                                             text = "+"
+                                                                             isVarArg = false
+                                                                           )
+                                                                           rhs = TextTexTalkNode(
+                                                                             type = TexTalkNodeType.Identifier
+                                                                             tokenType = TexTalkTokenType.Identifier
+                                                                             text = "x"
+                                                                             isVarArg = false
+                                                                           )
                                                                          )
                                                                        ]
                                                           )

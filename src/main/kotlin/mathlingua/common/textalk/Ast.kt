@@ -20,6 +20,7 @@ enum class TexTalkNodeType {
     Token,
     Identifier,
     Operator,
+    SyntheticGroup,
     ParenGroup,
     SquareGroup,
     CurlyGroup,
@@ -297,6 +298,10 @@ data class GroupTexTalkNode(
                 prefix = "{"
                 suffix = "}"
             }
+            TexTalkNodeType.SyntheticGroup -> {
+                prefix = ""
+                suffix = ""
+            }
             else -> throw RuntimeException("Unrecognized group type $type")
         }
 
@@ -411,6 +416,7 @@ data class SubSupTexTalkNode(
 
 data class TextTexTalkNode(
     override val type: TexTalkNodeType,
+    val tokenType: TexTalkTokenType,
     val text: String,
     val isVarArg: Boolean
 ) : TexTalkNode {
@@ -428,6 +434,63 @@ data class TextTexTalkNode(
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(this)
+}
+
+data class OperatorTexTalkNode(
+    val lhs: TexTalkNode?,
+    val command: TexTalkNode,
+    val rhs: TexTalkNode?
+) : TexTalkNode {
+
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Operator
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val builder = StringBuilder()
+        if (lhs != null) {
+            builder.append(lhs.toCode(interceptor))
+            if (rhs != null) {
+                // it is a infix operator so put spaces between
+                // the operator and operands
+                builder.append(' ')
+            }
+        }
+
+        builder.append(command.toCode(interceptor))
+
+        if (rhs != null) {
+            if (lhs != null) {
+                // it is a infix operator so put spaces between
+                // the operator and operands
+                builder.append(' ')
+            }
+            builder.append(rhs.toCode(interceptor))
+        }
+
+        return builder.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        if (lhs != null) {
+            fn(lhs)
+        }
+        fn(command)
+        if (rhs != null) {
+            fn(rhs)
+        }
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(OperatorTexTalkNode(
+            lhs = lhs?.transform(transformer),
+            command = command.transform(transformer),
+            rhs = rhs?.transform(transformer)
+        ))
 }
 
 data class TexTalkToken(

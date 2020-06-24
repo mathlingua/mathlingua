@@ -12,6 +12,7 @@ Document(
                                                CommandPart(
                                                  name = TextTexTalkNode(
                                                    type = TexTalkNodeType.Identifier
+                                                   tokenType = TexTalkTokenType.Identifier
                                                    text = "f"
                                                    isVarArg = false
                                                  )
@@ -26,6 +27,7 @@ Document(
                                                                             children = [
                                                                                          TextTexTalkNode(
                                                                                            type = TexTalkNodeType.Identifier
+                                                                                           tokenType = TexTalkTokenType.Identifier
                                                                                            text = "x"
                                                                                            isVarArg = true
                                                                                          )

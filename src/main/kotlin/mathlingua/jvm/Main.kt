@@ -131,9 +131,16 @@ private fun runMlg(
                         emptyList()
                     }
 
+                    val represents = if (expand) {
+                        doc.represents
+                    } else {
+                        emptyList()
+                    }
+
                     outputBuilder.append(MathLingua.prettyPrint(
                             node = doc,
                             defines = defines,
+                            represents = represents,
                             html = output.toLowerCase() == "html"))
                 }
             }

@@ -20,6 +20,10 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.OperatorTexTalkNode
+import mathlingua.common.textalk.TexTalkNodeType
+import mathlingua.common.textalk.TexTalkTokenType
+import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
 import org.junit.jupiter.api.Test
@@ -35,12 +39,53 @@ private fun buildNode(code: String): ExpressionTexTalkNode {
 
 private fun buildCommand(code: String) = buildNode(code).children[0] as Command
 
+private fun buildOperator(cmd: Command) = OperatorTexTalkNode(
+    lhs = null,
+    command = cmd,
+    rhs = null
+)
+
+private fun buildText(text: String) = TextTexTalkNode(
+    text = text,
+    type = TexTalkNodeType.Identifier,
+    tokenType = TexTalkTokenType.Identifier,
+    isVarArg = false
+)
+
 class MatcherKtTest {
     @Test
-    fun testSimpleExpandAsWritten() {
+    fun testSimpleOperatorExpandAsWritten() {
+        val patternToExpansion = mapOf(
+            OperatorTexTalkNode(
+                lhs = buildText("A"),
+                command = buildCommand("\\set.in"),
+                rhs = buildText("B")
+            ) to "A? \\in B?"
+        )
+        val node = buildNode("X \\set.in Y")
+        val expanded = expandAsWritten(node, patternToExpansion)
+        assertThat(expanded).isEqualTo("X \\in Y")
+    }
+
+    @Test
+    fun testOperatorWithArgumentExpandAsWritten() {
+        val patternToExpansion = mapOf(
+            OperatorTexTalkNode(
+                lhs = buildText("A"),
+                command = buildCommand("\\set.in{T}"),
+                rhs = buildText("B")
+            ) to "A? \\in B? (with respect to T?)"
+        )
+        val node = buildNode("X \\set.in{Z} Y")
+        val expanded = expandAsWritten(node, patternToExpansion)
+        assertThat(expanded).isEqualTo("X \\in Y (with respect to Z)")
+    }
+
+    @Test
+    fun testSimpleCommandExpandAsWritten() {
         val node = buildNode("\\function:on{X}to{Y}")
         val patternToExpansion = mapOf(
-                buildCommand("\\function:on{A}to{B}") to "\\cdot : A? \\rightarrow B?"
+                buildOperator(buildCommand("\\function:on{A}to{B}")) to "\\cdot : A? \\rightarrow B?"
         )
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo("\\cdot : X \\rightarrow Y")
@@ -50,7 +95,7 @@ class MatcherKtTest {
     fun testVarArgInfixExpandAsWritten() {
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
-                buildCommand("\\and{form}...") to "form{... \\textrm{and} ...}?"
+            buildOperator(buildCommand("\\and{form}...")) to "form{... \\textrm{and} ...}?"
         )
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
@@ -61,7 +106,7 @@ class MatcherKtTest {
     fun testVarArgPrefixExpandAsWritten() {
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
-                buildCommand("\\and{form}...") to "form{ \\textrm{and} ...}?"
+            buildOperator(buildCommand("\\and{form}...")) to "form{ \\textrm{and} ...}?"
         )
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
@@ -72,7 +117,7 @@ class MatcherKtTest {
     fun testVarArgSuffixExpandAsWritten() {
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
-                buildCommand("\\and{form}...") to "form{... \\textrm{and} }?"
+            buildOperator(buildCommand("\\and{form}...")) to "form{... \\textrm{and} }?"
         )
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(

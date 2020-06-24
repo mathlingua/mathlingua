@@ -28,6 +28,7 @@ import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.OperatorTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.*
 
@@ -135,8 +136,38 @@ object MathLingua {
 
     fun expand(doc: Document) = fullExpandComplete(doc)
 
-    fun getPatternsToWrittenAs(defines: List<DefinesGroup>): Map<Command, String> {
-        val result = mutableMapOf<Command, String>()
+    fun getPatternsToWrittenAs(
+        defines: List<DefinesGroup>,
+        represents: List<RepresentsGroup>
+    ): Map<OperatorTexTalkNode, String> {
+        val result = mutableMapOf<OperatorTexTalkNode, String>()
+        for (rep in represents) {
+            val allItems = rep.metaDataSection?.items
+            var writtenAs: String? = null
+            if (allItems != null) {
+                for (item in allItems) {
+                    if (item is StringSectionGroup &&
+                        item.section.name == "written" &&
+                        item.section.values.isNotEmpty()) {
+                        writtenAs = item.section.values[0].removeSurrounding("\"", "\"")
+                        break
+                    }
+                }
+            }
+
+            if (writtenAs == null) {
+                continue
+            }
+
+            val validation = rep.id.texTalkRoot
+            if (validation is ValidationSuccess) {
+                val exp = validation.value
+                if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
+                    result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+                }
+            }
+        }
+
         for (def in defines) {
             val allItems = def.metaDataSection?.items
             var writtenAs: String? = null
@@ -159,7 +190,12 @@ object MathLingua {
             if (validation is ValidationSuccess) {
                 val exp = validation.value
                 if (exp.children.size == 1 && exp.children[0] is Command) {
-                    result[exp.children[0] as Command] = writtenAs
+                    val cmd = exp.children[0] as Command
+                    result[OperatorTexTalkNode(
+                        lhs = null,
+                        command = cmd,
+                        rhs = null
+                    )] = writtenAs
                 }
             }
         }
@@ -167,12 +203,12 @@ object MathLingua {
         return result
     }
 
-    fun expandWrittenAs(node: TexTalkNode, defines: List<DefinesGroup>) =
-        expandAsWritten(node, getPatternsToWrittenAs(defines))
+    fun expandWrittenAs(node: TexTalkNode, defines: List<DefinesGroup>, represents: List<RepresentsGroup>) =
+        expandAsWritten(node, getPatternsToWrittenAs(defines, represents))
 
     fun expandWrittenAs(
         phase2Node: Phase2Node,
-        patternToExpansion: Map<Command, String>
+        patternToExpansion: Map<OperatorTexTalkNode, String>
     ): Phase2Node {
         return phase2Node.transform {
             when (it) {
@@ -193,21 +229,32 @@ object MathLingua {
     }
 
     fun printExpanded(input: String, supplemental: String, html: Boolean): Validation<String> {
-        val defines = when (val validation = parse("$input\n\n\n$supplemental")) {
+        val totalText = "$input\n\n\n$supplemental"
+        val totalTextValidation = parse(totalText)
+        val defines = when (totalTextValidation) {
             is ValidationFailure -> emptyList()
-            is ValidationSuccess -> validation.value.defines
+            is ValidationSuccess -> totalTextValidation.value.defines
+        }
+        val represents = when (totalTextValidation) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> totalTextValidation.value.represents
         }
         return when (val validation = parse(input)) {
             is ValidationFailure -> validationFailure(validation.errors)
-            is ValidationSuccess -> validationSuccess(prettyPrint(validation.value, defines, html))
+            is ValidationSuccess -> validationSuccess(prettyPrint(validation.value, defines, represents, html))
         }
     }
 
-    fun prettyPrint(node: Phase2Node, defines: List<DefinesGroup>, html: Boolean): String {
+    fun prettyPrint(
+        node: Phase2Node,
+        defines: List<DefinesGroup>,
+        represents: List<RepresentsGroup>,
+        html: Boolean
+    ): String {
         val writer = if (html) {
-            HtmlCodeWriter(defines = defines)
+            HtmlCodeWriter(defines = defines, represents = represents)
         } else {
-            MathLinguaCodeWriter(defines = defines)
+            MathLinguaCodeWriter(defines = defines, represents = represents)
         }
         val code = node.toCode(false, 0, writer = writer).getCode()
         return getHtml(code.replace("<br/><br/><br/>", "<br/><br/>"))

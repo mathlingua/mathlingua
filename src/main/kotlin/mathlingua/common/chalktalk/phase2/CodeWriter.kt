@@ -23,6 +23,7 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
@@ -48,7 +49,10 @@ interface CodeWriter {
     fun getCode(): String
 }
 
-open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
+open class HtmlCodeWriter(
+    val defines: List<DefinesGroup>,
+    val represents: List<RepresentsGroup>
+) : CodeWriter {
     protected val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
@@ -116,7 +120,7 @@ open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
     override fun writeId(id: IdStatement) {
         builder.append("<span class='mathlingua-id'>")
         builder.append('[')
-        val stmt = id.toStatement().toCode(false, 0, MathLinguaCodeWriter(emptyList())).getCode()
+        val stmt = id.toStatement().toCode(false, 0, MathLinguaCodeWriter(emptyList(), emptyList())).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
         builder.append("</span>")
@@ -142,14 +146,14 @@ open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
             val lhs = stmtText.substring(index + IS.length).trim()
             val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
             if (lhsParsed.errors.isEmpty()) {
-                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines)
+                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
                 builder.append("\\[${expandAsWritten(lhsParsed.root, patternsToWrittenAs)}\\]")
             } else {
                 writeDirect(lhs)
             }
         } else {
             if (root is ValidationSuccess && defines.isNotEmpty()) {
-                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines)
+                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
                 builder.append("\\[${expandAsWritten(root.value, patternsToWrittenAs)}\\]")
             } else {
                 builder.append("\\[$stmtText\\]")
@@ -179,7 +183,7 @@ open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
         builder.append("</span>")
     }
 
-    override fun newCodeWriter(defines: List<DefinesGroup>) = HtmlCodeWriter(defines)
+    override fun newCodeWriter(defines: List<DefinesGroup>) = HtmlCodeWriter(defines, represents)
 
     override fun getCode(): String {
         val text = builder.toString()
@@ -189,7 +193,10 @@ open class HtmlCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
     }
 }
 
-class MathLinguaCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
+class MathLinguaCodeWriter(
+    val defines: List<DefinesGroup>,
+    val represents: List<RepresentsGroup>
+) : CodeWriter {
     private val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
@@ -254,7 +261,7 @@ class MathLinguaCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
         if (root is ValidationSuccess && defines.isNotEmpty()) {
-            val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines)
+            val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
             builder.append("'${expandAsWritten(root.value, patternsToWrittenAs)}'")
         } else {
             builder.append("'$stmtText'")
@@ -276,7 +283,7 @@ class MathLinguaCodeWriter(val defines: List<DefinesGroup>) : CodeWriter {
 
     override fun endTopLevel() {}
 
-    override fun newCodeWriter(defines: List<DefinesGroup>) = MathLinguaCodeWriter(defines)
+    override fun newCodeWriter(defines: List<DefinesGroup>) = MathLinguaCodeWriter(defines, represents)
 
     override fun getCode() = builder.toString()
 }

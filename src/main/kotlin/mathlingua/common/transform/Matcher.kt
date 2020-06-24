@@ -22,6 +22,14 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.textalk.*
 import kotlin.math.max
 
+internal fun OperatorTexTalkNode.signature() =
+    when (this.command) {
+        is Command -> this.command.signature()
+        is TextTexTalkNode -> this.command.text
+        else -> throw RuntimeException("Cannot get a signature of an " +
+            "operator with command ${this.command.toCode()}")
+    }
+
 internal fun Command.signature(): String {
     val builder = StringBuilder()
     builder.append('\\')
@@ -41,8 +49,9 @@ fun IdStatement.signature() =
             val root = this.texTalkRoot.value
             if (root.children.size == 1 && root.children[0] is Command) {
                 (root.children[0] as Command).signature()
+            } else if (root.children.size == 1 && root.children[0] is OperatorTexTalkNode) {
+                (root.children[0] as OperatorTexTalkNode).signature()
             } else {
-                // handle infix operators (for example 'a \in b')
                 null
             }
         }
@@ -54,7 +63,67 @@ data class Substitutions(
     val errors: List<String>
 )
 
-fun getSubstitutions(pattern: Command, value: Command): Substitutions {
+internal fun getSubstitutions(pattern: OperatorTexTalkNode, value: OperatorTexTalkNode): Substitutions {
+    val subs = MutableSubstitutions(
+        doesMatch = true,
+        substitutions = mutableMapOf(),
+        errors = mutableListOf()
+    )
+
+    if ((pattern.lhs == null) != (value.lhs == null)) {
+        subs.doesMatch = false
+        return subs.toImmutable()
+    }
+
+    if (pattern.lhs != null) {
+        if (pattern.lhs !is TextTexTalkNode) {
+            subs.doesMatch = false
+            subs.errors.add("The left-hand-side of an infix operator " +
+                "pattern must be an identifier but found ${pattern.lhs.toCode()}")
+            return subs.toImmutable()
+        }
+
+        subs.substitutions[pattern.lhs.text] = mutableListOf(value.lhs!!)
+    }
+
+    if ((pattern.rhs == null) != (value.rhs == null)) {
+        subs.doesMatch = false
+        return subs.toImmutable()
+    }
+
+    if (pattern.rhs != null) {
+        if (pattern.rhs !is TextTexTalkNode) {
+            subs.doesMatch = false
+            subs.errors.add("The right-hand-side of an infix operator " +
+                "pattern must be an identifier but found ${pattern.rhs.toCode()}")
+            return subs.toImmutable()
+        }
+
+        subs.substitutions[pattern.rhs.text] = mutableListOf(value.rhs!!)
+    }
+
+    if ((pattern.command is TextTexTalkNode) && (value.command is TextTexTalkNode)) {
+        if (pattern.command.text != value.command.text) {
+            subs.doesMatch = false
+        }
+        return subs.toImmutable()
+    }
+
+    if ((pattern.command is Command) && (value.command is Command)) {
+        val cmdSubs = getSubstitutions(pattern.command, value.command)
+        subs.errors.addAll(cmdSubs.errors)
+        subs.doesMatch = subs.doesMatch && cmdSubs.doesMatch
+        for ((name, values) in cmdSubs.substitutions) {
+            subs.substitutions[name] = values.toMutableList()
+        }
+        return subs.toImmutable()
+    }
+
+    throw RuntimeException("Encountered a pattern or value operator with a " +
+        "command that is an expression.  Pattern: ${pattern.toCode()}, Value: ${value.toCode()}")
+}
+
+private fun getSubstitutions(pattern: Command, value: Command): Substitutions {
     val errors = validatePattern(pattern)
     if (errors.isNotEmpty()) {
         return Substitutions(
@@ -76,19 +145,23 @@ fun getSubstitutions(pattern: Command, value: Command): Substitutions {
         }
     }
 
-    return Substitutions(
-            doesMatch = subs.doesMatch,
-            substitutions = subs.substitutions,
-            errors = subs.errors
-    )
+    return subs.toImmutable()
 }
 
-internal fun expandAsWritten(node: TexTalkNode, patternToExpansion: Map<Command, String>): String {
+// if there is a Command -> String pattern match and 'cmd' is the command
+// then the match is store in 'operatorPatternToExpansion' as
+//   OperatorTexTalkNode(lhs = null, command = cmd, rhs = null) -> String
+// That is Command patterns, are OperatorTexTalkNode pattern with a
+// left-hand-side or right-hand-side argument.
+internal fun expandAsWritten(
+    node: TexTalkNode,
+    operatorPatternToExpansion: Map<OperatorTexTalkNode, String>
+): String {
     val sigToPatternExpansion = mutableMapOf<String, PatternExpansion>()
-    for ((pattern, expansion) in patternToExpansion) {
-        sigToPatternExpansion[pattern.signature()] = PatternExpansion(
-                pattern = pattern,
-                expansion = expansion
+    for ((opPattern, expansion) in operatorPatternToExpansion) {
+        sigToPatternExpansion[opPattern.signature()] = PatternExpansion(
+            pattern = opPattern,
+            expansion = expansion
         )
     }
     return expandAsWrittenImpl(node, sigToPatternExpansion)
@@ -98,7 +171,13 @@ private data class MutableSubstitutions(
     var doesMatch: Boolean,
     val substitutions: MutableMap<String, MutableList<TexTalkNode>>,
     val errors: MutableList<String>
-)
+) {
+    fun toImmutable() = Substitutions(
+        doesMatch = doesMatch,
+        substitutions = substitutions,
+        errors = errors
+    )
+}
 
 private fun CommandPart.signature(): String {
     val builder = StringBuilder()
@@ -116,7 +195,7 @@ private fun findSubstitutions(pattern: GroupTexTalkNode?, value: GroupTexTalkNod
         if (pattern == null) {
             subs.errors.add("Unexpected group '${value?.toCode()}'")
         } else {
-            subs.errors.add("Unxpected a match for '${pattern.toCode()}'")
+            subs.errors.add("Unexpected a match for '${pattern.toCode()}'")
         }
         return
     }
@@ -300,75 +379,84 @@ private fun validatePattern(command: Command): List<String> {
     return errors
 }
 
-private data class PatternExpansion(val pattern: Command, val expansion: String)
+private data class PatternExpansion(val pattern: OperatorTexTalkNode, val expansion: String)
+
+private fun expandAsWrittenImplImpl(cmd: Command, sigToPatternExpansion: Map<String, PatternExpansion>) =
+    expandAsWrittenImplImpl(
+        OperatorTexTalkNode(
+        lhs = null,
+        command = cmd,
+        rhs = null
+    ), sigToPatternExpansion)
+
+private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>): String? {
+    val patternExpansion = sigToPatternExpansion[op.signature()] ?: return null
+
+    val subs = getSubstitutions(patternExpansion.pattern, op)
+    if (!subs.doesMatch) {
+        return null
+    }
+
+    var expansion = patternExpansion.expansion
+    for ((name, exp) in subs.substitutions) {
+        val prefixRegex = Regex("$name\\{(.*)\\.\\.\\.\\}\\?")
+        val infixRegex = Regex("$name\\{\\.\\.\\.(.*)\\.\\.\\.\\}\\?")
+        val suffixRegex = Regex("$name\\{\\.\\.\\.(.*)}\\?")
+
+        if (infixRegex.matches(expansion)) {
+            val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+            val result = infixRegex.find(expansion)
+            if (result != null && result.groupValues.size >= 2) {
+                val separator = result.groupValues[1]
+                val joinedArgs = args.joinToString(separator)
+                val pattern = result.groupValues[0]
+                // pattern is of the form name{...separator...}?
+                expansion = expansion.replace(pattern, joinedArgs)
+            }
+        } else if (prefixRegex.matches(expansion)) {
+            val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+            val result = prefixRegex.find(expansion)
+            if (result != null && result.groupValues.size >= 2) {
+                val separator = result.groupValues[1]
+                val joinedArgsBuilder = StringBuilder()
+                for (a in args) {
+                    joinedArgsBuilder.append(separator)
+                    joinedArgsBuilder.append(a)
+                }
+                val joinedArgs = joinedArgsBuilder.toString()
+                val pattern = result.groupValues[0]
+                // pattern is of the form name{separator...}?
+                expansion = expansion.replace(pattern, joinedArgs)
+            }
+        } else if (suffixRegex.matches(expansion)) {
+            val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+            val result = suffixRegex.find(expansion)
+            if (result != null && result.groupValues.size >= 2) {
+                val separator = result.groupValues[1]
+                val joinedArgsBuilder = StringBuilder()
+                for (a in args) {
+                    joinedArgsBuilder.append(a)
+                    joinedArgsBuilder.append(separator)
+                }
+                val joinedArgs = joinedArgsBuilder.toString()
+                val pattern = result.groupValues[0]
+                // pattern is of the form name{...separator}?
+                expansion = expansion.replace(pattern, joinedArgs)
+            }
+        } else if (exp.isNotEmpty()) {
+            val newText = expandAsWrittenImpl(exp.first(), sigToPatternExpansion)
+            expansion = expansion.replace("$name?", newText)
+        }
+    }
+
+    return expansion
+}
 
 private fun expandAsWrittenImpl(node: TexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>): String {
     return node.toCode {
         when (it) {
-            is Command -> {
-                val patternExpansion = sigToPatternExpansion[it.signature()]
-                if (patternExpansion == null) {
-                    null
-                } else {
-                    val subs = getSubstitutions(patternExpansion.pattern, it)
-                    if (!subs.doesMatch) {
-                        null
-                    } else {
-                        var expansion = patternExpansion.expansion
-                        for ((name, exp) in subs.substitutions) {
-                            val prefixRegex = Regex("$name\\{(.*)\\.\\.\\.\\}\\?")
-                            val infixRegex = Regex("$name\\{\\.\\.\\.(.*)\\.\\.\\.\\}\\?")
-                            val suffixRegex = Regex("$name\\{\\.\\.\\.(.*)}\\?")
-
-                            if (infixRegex.matches(expansion)) {
-                                val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
-                                val result = infixRegex.find(expansion)
-                                if (result != null && result.groupValues.size >= 2) {
-                                    val separator = result.groupValues[1]
-                                    val joinedArgs = args.joinToString(separator)
-                                    val pattern = result.groupValues[0]
-                                    // pattern is of the form name{...separator...}?
-                                    expansion = expansion.replace(pattern, joinedArgs)
-                                }
-                            } else if (prefixRegex.matches(expansion)) {
-                                val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
-                                val result = prefixRegex.find(expansion)
-                                if (result != null && result.groupValues.size >= 2) {
-                                    val separator = result.groupValues[1]
-                                    val joinedArgsBuilder = StringBuilder()
-                                    for (a in args) {
-                                        joinedArgsBuilder.append(separator)
-                                        joinedArgsBuilder.append(a)
-                                    }
-                                    val joinedArgs = joinedArgsBuilder.toString()
-                                    val pattern = result.groupValues[0]
-                                    // pattern is of the form name{separator...}?
-                                    expansion = expansion.replace(pattern, joinedArgs)
-                                }
-                            } else if (suffixRegex.matches(expansion)) {
-                                val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
-                                val result = suffixRegex.find(expansion)
-                                if (result != null && result.groupValues.size >= 2) {
-                                    val separator = result.groupValues[1]
-                                    val joinedArgsBuilder = StringBuilder()
-                                    for (a in args) {
-                                        joinedArgsBuilder.append(a)
-                                        joinedArgsBuilder.append(separator)
-                                    }
-                                    val joinedArgs = joinedArgsBuilder.toString()
-                                    val pattern = result.groupValues[0]
-                                    // pattern is of the form name{...separator}?
-                                    expansion = expansion.replace(pattern, joinedArgs)
-                                }
-                            } else if (exp.isNotEmpty()) {
-                                val newText = expandAsWrittenImpl(exp.first(), sigToPatternExpansion)
-                                expansion = expansion.replace("$name?", newText)
-                            }
-                        }
-                        expansion
-                    }
-                }
-            }
+            is Command -> expandAsWrittenImplImpl(it, sigToPatternExpansion)
+            is OperatorTexTalkNode -> expandAsWrittenImplImpl(it, sigToPatternExpansion)
             else -> null
         }
     }

@@ -400,18 +400,25 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
     var expansion = patternExpansion.expansion
     for ((name, exp) in subs.substitutions) {
         val prefixRegex = Regex("$name\\{(.*)\\.\\.\\.\\}\\?")
-        val infixRegex = Regex("$name\\{\\.\\.\\.(.*)\\.\\.\\.\\}\\?")
-        val suffixRegex = Regex("$name\\{\\.\\.\\.(.*)}\\?")
+        val infixRegex = Regex("$name\\{(.*)\\.\\.\\.(.*)\\.\\.\\.(.*)\\}\\?")
+        val suffixRegex = Regex("$name\\{\\.\\.\\.(.*)\\}\\?")
 
         if (infixRegex.matches(expansion)) {
             val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
             val result = infixRegex.find(expansion)
-            if (result != null && result.groupValues.size >= 2) {
-                val separator = result.groupValues[1]
+            if (result != null && result.groupValues.size >= 4) {
+                val prefix = result.groupValues[1]
+                val separator = result.groupValues[2]
+                val suffix = result.groupValues[3]
                 val joinedArgs = args.joinToString(separator)
                 val pattern = result.groupValues[0]
-                // pattern is of the form name{...separator...}?
+                // pattern is of the form name{prefix...separator...suffix}?
+                // Note: if 'name{...a...b}? is given, for example, then
+                //       'prefix' above will be the empty string
+                //       'separator' will be 'a' and
+                //       'suffix' will be 'b'
                 expansion = expansion.replace(pattern, joinedArgs)
+                expansion = "$prefix$expansion$suffix"
             }
         } else if (prefixRegex.matches(expansion)) {
             val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }

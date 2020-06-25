@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.jvm
+package mathlingua.mathlingua.playground
 
 import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
@@ -145,7 +145,12 @@ fun main() {
             val newDoc = expandAtNode(doc, nearestNode, doc.defines, doc.represents)
 
             outputArea.text = newDoc.toCode(false, 0).getCode()
-            outputTree.model = DefaultTreeModel(toTreeNode(tracker, newDoc))
+            outputTree.model = DefaultTreeModel(
+                toTreeNode(
+                    tracker,
+                    newDoc
+                )
+            )
         }
     }
     statusPanel.add(expandButton)
@@ -195,7 +200,11 @@ fun main() {
                     }
 
                     if (root != null) {
-                        phase1Tree.model = DefaultTreeModel(toTreeNode(root))
+                        phase1Tree.model = DefaultTreeModel(
+                            toTreeNode(
+                                root
+                            )
+                        )
                         val numPhase1Rows = phase1Tree.rowCount
                         if (numPhase1Rows > 0) {
                             phase1Tree.expandRow(numPhase1Rows - 1)
@@ -233,7 +242,12 @@ fun main() {
                     }
                     signaturesList.text = sigBuilder.toString()
 
-                    phase2Tree.model = DefaultTreeModel(toTreeNode(tracker, doc))
+                    phase2Tree.model = DefaultTreeModel(
+                        toTreeNode(
+                            tracker,
+                            doc
+                        )
+                    )
                     var transformed = doc
 
                     if (separateIsBox.isSelected) {
@@ -265,7 +279,12 @@ fun main() {
                     }
 
                     outputArea.text = transformed.toCode(false, 0).getCode()
-                    outputTree.model = DefaultTreeModel(toTreeNode(tracker, transformed))
+                    outputTree.model = DefaultTreeModel(
+                        toTreeNode(
+                            tracker,
+                            transformed
+                        )
+                    )
                     val numRows = phase2Tree.rowCount
                     if (numRows > 0) {
                         phase2Tree.expandRow(numRows - 1)
@@ -329,7 +348,13 @@ private fun toTreeNode(phase1Node: Phase1Node): DefaultMutableTreeNode {
 }
 
 private fun toTreeNode(tracker: LocationTracker, phase2Node: Phase2Node): DefaultMutableTreeNode {
-    val result = DefaultMutableTreeNode(Phase2Value(tracker, phase2Node, false))
+    val result = DefaultMutableTreeNode(
+        Phase2Value(
+            tracker,
+            phase2Node,
+            false
+        )
+    )
     var visited = false
     phase2Node.forEach {
         visited = true
@@ -354,7 +379,13 @@ private fun toTreeNode(tracker: LocationTracker, phase2Node: Phase2Node): Defaul
         result.add(toTreeNode(tracker, it))
     }
     if (!visited) {
-        result.add(DefaultMutableTreeNode(Phase2Value(tracker, phase2Node, true)))
+        result.add(DefaultMutableTreeNode(
+            Phase2Value(
+                tracker,
+                phase2Node,
+                true
+            )
+        ))
     }
     return result
 }
@@ -410,7 +441,12 @@ private fun getPathImpl(
     path.add(root)
     for (i in 0 until root.childCount) {
         val child = root.getChildAt(i)
-        getPathImpl(child as DefaultMutableTreeNode, target, path, found)
+        getPathImpl(
+            child as DefaultMutableTreeNode,
+            target,
+            path,
+            found
+        )
     }
     path.removeAt(path.size - 1)
 }

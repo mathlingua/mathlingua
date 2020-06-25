@@ -1,4 +1,4 @@
-package mathlingua.jvm
+package mathlingua.mathlingua.playground
 
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.TexTalkNode
@@ -84,7 +84,11 @@ fun main() {
                     }
 
                     outputArea.text = root.toCode()
-                    outputTree.model = DefaultTreeModel(toTreeNode(root))
+                    outputTree.model = DefaultTreeModel(
+                        toTreeNode(
+                            root
+                        )
+                    )
 
                     val sigBuilder = StringBuilder()
                     for (node in root.children) {

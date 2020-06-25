@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.jvm
+package mathlingua
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.output.TermUi
@@ -120,7 +120,13 @@ private fun runMlg(
                 is ValidationFailure -> {
                     error("Could not output the contents due to the errors:")
                     for (err in validation.errors) {
-                        error("  ${bold(red("ERROR(${err.row}, ${err.column}):  "))}${err.message}")
+                        error(
+                            "  ${bold(
+                                red(
+                                    "ERROR(${err.row}, ${err.column}):  "
+                                )
+                            )}${err.message}"
+                        )
                     }
                 }
                 is ValidationSuccess -> {
@@ -186,8 +192,10 @@ private fun runMlg(
         } else {
             bold(yellow(prefix))
         }
-        error("$coloredPrefix The following ${notDefinedSignatures.size} " +
-            "$signatureOrSignatures used but not defined:")
+        error(
+            "$coloredPrefix The following ${notDefinedSignatures.size} " +
+                "$signatureOrSignatures used but not defined:"
+        )
     }
 
     val indent = " ".repeat(prefix.length + 1)
@@ -204,12 +212,30 @@ private fun runMlg(
         }
         if (failed) {
             if (failOnWarnings) {
-                error("${bold(red("FAILURE:"))} Found ${allErrorInfo.size + notDefinedSignatures.size} errors from ${files.size} $fileOrFiles")
+                error(
+                    "${bold(
+                        red(
+                            "FAILURE:"
+                        )
+                    )} Found ${allErrorInfo.size + notDefinedSignatures.size} errors from ${files.size} $fileOrFiles"
+                )
             } else {
-                error("${bold(red("FAILURE:"))} Found ${allErrorInfo.size} errors and ${notDefinedSignatures.size} warnings in ${files.size} $fileOrFiles")
+                error(
+                    "${bold(
+                        red(
+                            "FAILURE:"
+                        )
+                    )} Found ${allErrorInfo.size} errors and ${notDefinedSignatures.size} warnings in ${files.size} $fileOrFiles"
+                )
             }
         } else {
-            error("${bold(green("SUCCESS:"))} Processed ${files.size} $fileOrFiles with ${notDefinedSignatures.size} warnings")
+            error(
+                "${bold(
+                    green(
+                        "SUCCESS:"
+                    )
+                )} Processed ${files.size} $fileOrFiles with ${notDefinedSignatures.size} warnings"
+            )
         }
     }
 
@@ -302,7 +328,16 @@ private class Mlg : CliktCommand() {
     private val expand: Boolean by option(help = "Whether to expand the contents of the entries.").flag()
 
     override fun run() {
-        exitProcess(runMlg(json, warningsAsErrors, testCase, file.map { File(it) }, output, expand))
+        exitProcess(
+            runMlg(
+                json,
+                warningsAsErrors,
+                testCase,
+                file.map { File(it) },
+                output,
+                expand
+            )
+        )
     }
 }
 

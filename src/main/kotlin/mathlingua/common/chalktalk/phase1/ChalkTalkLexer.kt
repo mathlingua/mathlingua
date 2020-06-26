@@ -36,6 +36,12 @@ fun newChalkTalkLexer(text: String): ChalkTalkLexer {
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
+// this function is needed to support transpiling to JavaScript since kotlinc-js states
+// that Character.isDigit() is an unresolved reference
+private fun isDigit(c: Char): Boolean {
+    return c in '0'..'9'
+}
+
 private class ChalkTalkLexerImpl(private var text: String) :
     ChalkTalkLexer {
 
@@ -223,10 +229,10 @@ private class ChalkTalkLexerImpl(private var text: String) :
 
                 // process the name#123 case and if matching mark the match as complete
                 if (i < text.length && text[i] == '#' &&
-                        i + 1 < text.length && text[i + 1].isDigit()) {
+                        i + 1 < text.length && isDigit(text[i + 1])) {
                     name += text[i++] // append #
                     column++
-                    while (i < text.length && text[i].isDigit()) {
+                    while (i < text.length && isDigit(text[i])) {
                         name += text[i++]
                         column++
                     }

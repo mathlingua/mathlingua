@@ -152,7 +152,7 @@ open class HtmlCodeWriter(
                 writeDirect(lhs)
             }
         } else {
-            if (root is ValidationSuccess && defines.isNotEmpty()) {
+            if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
                 val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
                 builder.append("\\[${expandAsWritten(root.value, patternsToWrittenAs)}\\]")
             } else {
@@ -260,7 +260,7 @@ class MathLinguaCodeWriter(
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        if (root is ValidationSuccess && defines.isNotEmpty()) {
+        if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
             val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
             builder.append("'${expandAsWritten(root.value, patternsToWrittenAs)}'")
         } else {

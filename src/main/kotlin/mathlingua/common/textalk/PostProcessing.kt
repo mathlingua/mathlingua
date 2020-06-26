@@ -18,7 +18,6 @@ package mathlingua.common.textalk
 
 import mathlingua.common.ParseError
 import mathlingua.common.collections.newStack
-import java.lang.Exception
 
 /*
  * The following is the algorithm for parsing operators and identifying their arguments.

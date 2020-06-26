@@ -345,9 +345,9 @@ private fun getHtml(body: String) = """
         </script>
         <style>
             .content {
-                margin-top: 2em;
-                margin-bottom: 2em;
-                font-size: 1.75em;
+                margin-top: 1em;
+                margin-bottom: 1em;
+                font-size: 1em;
             }
 
             .mathlingua {
@@ -366,7 +366,6 @@ private fun getHtml(body: String) = """
             }
 
             .mathlingua-id {
-                margin-left: -0.2em;
                 font-weight: bold;
                 color: #5500aa;
             }

@@ -257,7 +257,11 @@ object MathLingua {
             MathLinguaCodeWriter(defines = defines, represents = represents)
         }
         val code = node.toCode(false, 0, writer = writer).getCode()
-        return getHtml(code.replace("<br/><br/><br/>", "<br/><br/>"))
+        return if (html) {
+            getHtml(code.replace("<br/><br/><br/>", "<br/><br/>"))
+        } else {
+            code
+        }
     }
 }
 
@@ -372,13 +376,10 @@ private fun getHtml(body: String) = """
             }
 
             .mathlingua-top-level {
-                box-shadow: 0px 0px 2px 0px #888888;
-                padding: 1em;
                 display: block;
                 width: fit-content;
                 overflow: scroll;
-                margin-left: auto;
-                margin-right: auto;
+                margin-left: 1em;
             }
 
             .katex {

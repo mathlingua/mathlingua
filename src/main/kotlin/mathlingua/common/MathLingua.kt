@@ -239,9 +239,24 @@ object MathLingua {
             is ValidationFailure -> emptyList()
             is ValidationSuccess -> totalTextValidation.value.represents
         }
-        return when (val validation = parse(input)) {
-            is ValidationFailure -> validationFailure(validation.errors)
-            is ValidationSuccess -> validationSuccess(prettyPrint(validation.value, defines, represents, html))
+
+        val result = StringBuilder()
+        val errors = mutableListOf<ParseError>()
+        for (part in input.split("\n\n").filter { it.isNotBlank() }) {
+            when (val validation = parse(part)) {
+                is ValidationFailure -> {
+                    errors.addAll(validation.errors)
+                }
+                is ValidationSuccess -> {
+                    result.append(prettyPrint(validation.value, defines, represents, html))
+                }
+            }
+        }
+
+        return if (errors.isNotEmpty()) {
+            validationFailure(errors)
+        } else {
+            validationSuccess(result.toString())
         }
     }
 

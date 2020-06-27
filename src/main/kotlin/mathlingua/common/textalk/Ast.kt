@@ -328,7 +328,7 @@ data class GroupTexTalkNode(
 
 data class NamedGroupTexTalkNode(
     val name: TextTexTalkNode,
-    val group: GroupTexTalkNode
+    val groups: List<GroupTexTalkNode>
 ) : TexTalkNode {
 
     override val type: TexTalkNodeType
@@ -342,19 +342,21 @@ data class NamedGroupTexTalkNode(
 
         val buffer = StringBuilder()
         buffer.append(name.toCode(interceptor))
-        buffer.append(group.toCode(interceptor))
+        for (grp in groups) {
+            buffer.append(grp.toCode(interceptor))
+        }
         return buffer.toString()
     }
 
     override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
         fn(name)
-        fn(group)
+        groups.forEach(fn)
     }
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(NamedGroupTexTalkNode(
             name = name.transform(transformer) as TextTexTalkNode,
-            group = group.transform(transformer) as GroupTexTalkNode
+            groups = groups.map { it.transform(transformer) as GroupTexTalkNode }
         ))
 }
 

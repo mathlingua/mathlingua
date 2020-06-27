@@ -83,20 +83,20 @@ class MatcherKtTest {
 
     @Test
     fun testSimpleCommandExpandAsWritten() {
-        val node = buildNode("\\function:on{X}to{Y}")
         val patternToExpansion = mapOf(
                 buildOperator(buildCommand("\\function:on{A}to{B}")) to "\\cdot : A? \\rightarrow B?"
         )
+        val node = buildNode("\\function:on{X}to{Y}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo("\\cdot : X \\rightarrow Y")
     }
 
     @Test
     fun testVarArgInfixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
             buildOperator(buildCommand("\\and{form}...")) to "form{... \\textrm{and} ...}?"
         )
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
                 "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 + A = 0 \\textrm{and} B < 0")
@@ -104,10 +104,10 @@ class MatcherKtTest {
 
     @Test
     fun testVarArgInfixWithPrefixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
             buildOperator(buildCommand("\\and{form}...")) to "form{prefix ... \\textrm{and} ...}?"
         )
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
             "prefix a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 + prefix A = 0 \\textrm{and} B < 0")
@@ -115,10 +115,10 @@ class MatcherKtTest {
 
     @Test
     fun testVarArgPrefixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
             buildOperator(buildCommand("\\and{form}...")) to "form{ \\textrm{and} ...}?"
         )
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
                 " \\textrm{and} a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 +  \\textrm{and} A = 0 \\textrm{and} B < 0")
@@ -126,10 +126,10 @@ class MatcherKtTest {
 
     @Test
     fun testVarArgInfixWithSuffixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
             buildOperator(buildCommand("\\and{form}...")) to "form{... \\textrm{and} ... suffix}?"
         )
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
             "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 suffix + A = 0 \\textrm{and} B < 0 suffix")
@@ -137,10 +137,10 @@ class MatcherKtTest {
 
     @Test
     fun testVarArgInfixWithPrefixAndSuffixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
             buildOperator(buildCommand("\\and{form}...")) to "form{prefix ... \\textrm{and} ... suffix}?"
         )
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
             "prefix a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 suffix + prefix A = 0 \\textrm{and} B < 0 suffix")
@@ -148,10 +148,10 @@ class MatcherKtTest {
 
     @Test
     fun testVarArgInfixExpectedUsageExpandAsWritten() {
-        val node = buildNode("\\sequence{x}{y}{z} + \\sequence{X}{Y}")
         val patternToExpansion = mapOf(
             buildOperator(buildCommand("\\sequence{form}...")) to "form{... , ... \\cdots}?"
         )
+        val node = buildNode("\\sequence{x}{y}{z} + \\sequence{X}{Y}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
             "x , y , z \\cdots + X , Y \\cdots")
@@ -159,12 +159,23 @@ class MatcherKtTest {
 
     @Test
     fun testVarArgSuffixExpandAsWritten() {
-        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val patternToExpansion = mapOf(
             buildOperator(buildCommand("\\and{form}...")) to "form{... \\textrm{and} }?"
         )
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded).isEqualTo(
                 "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 \\textrm{and}  + A = 0 \\textrm{and} B < 0 \\textrm{and} ")
+    }
+
+    @Test
+    fun testSetOfWhere() {
+        val patternToExpansion = mapOf(
+            buildOperator(buildCommand("\\set[x...]:of{form...}where{condition}...")) to "\\left \\{ form{... , ...}? \\: : \\: condition{... \\text{ and } ...}? \\right \\}"
+        )
+        val node = buildNode("\\set[x, y]:of{f(x), g(y)}where{x > 0}{f(x) > 0}{y < 0}{g(y) < 0}")
+        val expanded = expandAsWritten(node, patternToExpansion)
+        assertThat(expanded).isEqualTo(
+            "\\left \\{ f (x) , g (y) \\: : \\: x > 0 \\text{ and } f (x) > 0 \\text{ and } y < 0 \\text{ and } g (y) < 0 \\right \\}")
     }
 }

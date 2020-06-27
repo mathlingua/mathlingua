@@ -242,6 +242,56 @@ private fun findSubstitutions(pattern: GroupTexTalkNode?, value: GroupTexTalkNod
     }
 }
 
+private fun handleVariadicGroupSubstitutions(
+    patternGroups: List<GroupTexTalkNode>,
+    valueGroups: List<GroupTexTalkNode>,
+    subs: MutableSubstitutions
+) {
+    val isLastVarArg = patternGroups.isNotEmpty() && patternGroups.last().isVarArg
+    if (isLastVarArg) {
+        if (valueGroups.size >= patternGroups.size) {
+            for (i in patternGroups.indices) {
+                findSubstitutions(patternGroups[i], valueGroups[i], subs)
+            }
+
+            val variadicName = (patternGroups.last().parameters.items[0].children[0] as TextTexTalkNode).text
+            // this function assumes if there is a variadic group it is only the last group and that group
+            // has a single parameter that is a TextTexTalk node that is not variadic itself
+            for (i in patternGroups.size until valueGroups.size) {
+                val items = valueGroups[i].parameters.items
+                if (items.size != 1) {
+                    subs.doesMatch = false
+                    subs.errors.add("A variadic group can only contain a single item but found ${items.size} for '${valueGroups[i]}")
+                    continue
+                }
+
+                if (!subs.substitutions.containsKey(variadicName)) {
+                    subs.substitutions[variadicName] = mutableListOf()
+                }
+
+                if (items.size != 1) {
+                    subs.errors.add("A variadic group can only contain a single item but found ${items.size} for '${valueGroups[i].toCode()}'")
+                    subs.doesMatch = false
+                } else {
+                    subs.substitutions[variadicName]!!.add(valueGroups[i].parameters.items[0])
+                }
+            }
+        } else {
+            subs.doesMatch = false
+            subs.errors.add("Expected at least ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
+        }
+    } else {
+        if (valueGroups.size == patternGroups.size) {
+            for (i in patternGroups.indices) {
+                findSubstitutions(patternGroups[i], valueGroups[i], subs)
+            }
+        } else {
+            subs.doesMatch = false
+            subs.errors.add("Expected exactly ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
+        }
+    }
+}
+
 private fun findSubstitutions(pattern: CommandPart, value: CommandPart, subs: MutableSubstitutions) {
     if (pattern.name != value.name) {
         subs.doesMatch = false
@@ -253,49 +303,7 @@ private fun findSubstitutions(pattern: CommandPart, value: CommandPart, subs: Mu
     findSubstitutions(pattern.subSup?.sub, value.subSup?.sub, subs)
     findSubstitutions(pattern.subSup?.sup, value.subSup?.sup, subs)
 
-    val isLastVarArg = pattern.groups.isNotEmpty() && pattern.groups.last().isVarArg
-    if (isLastVarArg) {
-        if (value.groups.size >= pattern.groups.size) {
-            for (i in pattern.groups.indices) {
-                findSubstitutions(pattern.groups[i], value.groups[i], subs)
-            }
-
-            val variadicName = (pattern.groups.last().parameters.items[0].children[0] as TextTexTalkNode).text
-            // this function assumes if there is a variadic group it is only the last group and that group
-            // has a single parameter that is a TextTexTalk node that is not variadic itself
-            for (i in pattern.groups.size until value.groups.size) {
-                val items = value.groups[i].parameters.items
-                if (items.size != 1) {
-                    subs.doesMatch = false
-                    subs.errors.add("A variadic group can only contain a single item but found ${items.size} for '${value.groups[i]}")
-                    continue
-                }
-
-                if (!subs.substitutions.containsKey(variadicName)) {
-                    subs.substitutions[variadicName] = mutableListOf()
-                }
-
-                if (items.size != 1) {
-                    subs.errors.add("A variadic group can only contain a single item but found ${items.size} for '${value.groups[i].toCode()}'")
-                    subs.doesMatch = false
-                } else {
-                    subs.substitutions[variadicName]!!.add(value.groups[i].parameters.items[0])
-                }
-            }
-        } else {
-            subs.doesMatch = false
-            subs.errors.add("Expected at least ${pattern.groups.size} groups but found ${value.groups.size} for '${value.toCode()}'")
-        }
-    } else {
-        if (value.groups.size == pattern.groups.size) {
-            for (i in pattern.groups.indices) {
-                findSubstitutions(pattern.groups[i], value.groups[i], subs)
-            }
-        } else {
-            subs.doesMatch = false
-            subs.errors.add("Expected exactly ${pattern.groups.size} groups but found ${value.groups.size} for '${value.toCode()}'")
-        }
-    }
+    handleVariadicGroupSubstitutions(pattern.groups, value.groups, subs)
 
     if (pattern.namedGroups.size == value.namedGroups.size) {
         for (i in pattern.namedGroups.indices) {
@@ -304,8 +312,9 @@ private fun findSubstitutions(pattern: CommandPart, value: CommandPart, subs: Mu
             if (patternGrp.name != valGrp.name) {
                 subs.doesMatch = false
                 subs.errors.add("Mismatched named group: Expected ${patternGrp.name} groups but found ${valGrp.name} for '${value.toCode()}'")
+            } else {
+                handleVariadicGroupSubstitutions(patternGrp.groups, valGrp.groups, subs)
             }
-            findSubstitutions(patternGrp.group, valGrp.group, subs)
         }
     } else {
         subs.doesMatch = false
@@ -367,7 +376,16 @@ private fun validatePatternImpl(part: CommandPart, errors: MutableList<String>) 
         validatePatternGroupImpl(part.groups[i], canBeVarArg, description, errors)
     }
     for (i in part.namedGroups.indices) {
-        validatePatternGroupImpl(part.namedGroups[i].group, false, "A named group", errors)
+        val namedGroup = part.namedGroups[i]
+        for (j in namedGroup.groups.indices) {
+            val canBeVarArg = j == namedGroup.groups.size - 1
+            val description = if (canBeVarArg) {
+                "The last group of a named group"
+            } else {
+                "A named group"
+            }
+            validatePatternGroupImpl(namedGroup.groups[j], canBeVarArg, description, errors)
+        }
     }
 }
 

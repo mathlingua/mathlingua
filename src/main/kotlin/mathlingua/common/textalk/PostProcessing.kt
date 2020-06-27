@@ -35,7 +35,15 @@ import mathlingua.common.collections.newStack
  *                  the input '\pi \in X'
  * - Value: A sequence that can be the right-hand-side or left-hand-side of an operator.
  *
- * 1. ** identify prefix special operators **
+ * 1. ** identify identifier function calls **
+ *    Reading left to right, identify any identifier functions calls such as `f(x)`.
+ *    These consist of a TextTexTalkNode and a GroupTexTalkNode side-by-side and are
+ *    different from `\f{x}` in that that is a command.  Those two nodes should be
+ *    group together in a sythetic group so that, for example,
+ *       f(x) > 0
+ *    is treated as
+ *       {f(x)} > 0
+ * 2. ** identify prefix special operators **
  *    Reading the input from left to right (technically, scan the children of an
  *    ExpressionTexTalkNode from left to right), for any special operator where there is a
  *    non-special operator to the right of it, group the special operator and non-special
@@ -45,7 +53,7 @@ import mathlingua.common.collections.newStack
  *
  *       {+\x}! * y! \plus x! + {-y} \times z
  *
- * 2. ** identify postfix special operators **
+ * 3. ** identify postfix special operators **
  *    Reading the input from left to right, at any special operator, if there is either nothing
  *    to the left of that operator, or there is a non-special operator, group the special operator
  *    and the non-special operator so that the special operator is a postfix operator with the
@@ -55,7 +63,7 @@ import mathlingua.common.collections.newStack
  *
  *       {{+\x}!} * {y!} \plus {x!} + {-y} \times z
  *
- * 3. ** identify infix command operators **
+ * 4. ** identify infix command operators **
  *    Note that an command (\pi or \in for example), can only be interpreted as a value or
  *    an infix operator.  Prefix and postfix operators are not supported.
  *
@@ -135,8 +143,7 @@ import mathlingua.common.collections.newStack
  *    - {-y} \times z
  *      Interpretation: '\times' is an infix operator with {-y} its left value and z
  *                      its right value.
-
- * 4. ** identify infix special operators **
+ * 5. ** identify infix special operators **
  *    At this point there is only a single value (either in parentheses or an individual item
  *    between any two special operators in the input.  Perform the shunting hard algorithm
  *    to parse the input into a tree structure using the following precedence and associativity.
@@ -167,7 +174,8 @@ import mathlingua.common.collections.newStack
 internal fun parseOperators(root: ExpressionTexTalkNode): TexTalkParseResult {
     try {
         val isRhsExpressions = findIsRhsExpressions(root)
-        val idPrefixOpRoot = identifySpecialPrefixOperators(root, isRhsExpressions)
+        val funcCallRoot = identifyIdentifierFunctionCalls(root)
+        val idPrefixOpRoot = identifySpecialPrefixOperators(funcCallRoot, isRhsExpressions)
         val idPostfixOpRoot = identifySpecialPostfixOperators(idPrefixOpRoot, isRhsExpressions)
         val idInfixOpRoot = identifyInfixCommandOperators(idPostfixOpRoot, isRhsExpressions)
         val final = runShuntingYard(idInfixOpRoot, isRhsExpressions)
@@ -203,6 +211,44 @@ private fun findIsRhsExpressionsImpl(
 
     node.forEach { findIsRhsExpressionsImpl(it, result) }
 }
+
+private fun identifyIdentifierFunctionCalls(root: ExpressionTexTalkNode) =
+    root.transform {
+        if (it is ExpressionTexTalkNode) {
+            val newChildren = mutableListOf<TexTalkNode>()
+            var i = 0
+            while (i < it.children.size) {
+                val cur = it.children[i]
+                val next = it.children.getOrNull(i + 1)
+                // is if `f   (x)`
+                //        ^   ^
+                //        cur next
+                if (cur is TextTexTalkNode && cur.tokenType == TexTalkTokenType.Identifier &&
+                    next != null && next is GroupTexTalkNode && next.type == TexTalkNodeType.ParenGroup) {
+                    newChildren.add(GroupTexTalkNode(
+                        type = TexTalkNodeType.SyntheticGroup,
+                        isVarArg = false,
+                        parameters = ParametersTexTalkNode(
+                            items = listOf(
+                                ExpressionTexTalkNode(
+                                    children = listOf(cur, next)
+                                )
+                            )
+                        )
+                    ))
+                    i += 2
+                } else {
+                    newChildren.add(cur)
+                    i++
+                }
+            }
+            ExpressionTexTalkNode(
+                children = newChildren
+            )
+        } else {
+            it
+        }
+    } as ExpressionTexTalkNode
 
 private fun isSpecialOperator(node: TexTalkNode?) =
     node != null &&

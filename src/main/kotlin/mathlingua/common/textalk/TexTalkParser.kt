@@ -402,13 +402,20 @@ private class TexTalkParserImpl : TexTalkParser {
             }
 
             val rawGroup = group(TexTalkNodeType.CurlyGroup)
-            val group = if (rawGroup != null) {
+            val first = if (rawGroup != null) {
                 rawGroup
             } else {
                 addError("Expected a group in a named group")
                 GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
             }
-            return NamedGroupTexTalkNode(text, group)
+            val groups = mutableListOf<GroupTexTalkNode>()
+            groups.add(first)
+            while (true) {
+                val grp = group(TexTalkNodeType.CurlyGroup)
+                grp ?: break
+                groups.add(grp)
+            }
+            return NamedGroupTexTalkNode(text, groups)
         }
 
         private fun text(

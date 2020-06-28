@@ -39,7 +39,7 @@ group = 'mathlingua'
 version = '1.0-SNAPSHOT'
 sourceCompatibility = '1.8'
 
-mainClassName = 'mathlingua.jvm.MainKt'
+mainClassName = 'mathlingua.MainKt'
 
 repositories {
     mavenCentral()
@@ -58,7 +58,7 @@ dependencies {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'mathlingua.jvm.MainKt'
+        attributes 'Main-Class': mainClassName
     }
     from {
         configurations.compile.collect {

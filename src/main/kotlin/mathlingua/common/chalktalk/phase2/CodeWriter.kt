@@ -127,7 +127,7 @@ open class HtmlCodeWriter(
     }
 
     override fun writeText(text: String) {
-        builder.append("<span class='mathlingua-text'>")
+        builder.append("<span class='mathlingua-text' title=\"${text.removeSurrounding("\"", "\"")}\">")
         builder.append('"')
         builder.append(text.replace("&", ""))
         builder.append('"')
@@ -135,7 +135,7 @@ open class HtmlCodeWriter(
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        builder.append("<span class='mathlingua-statement'>")
+        builder.append("<span class='mathlingua-statement' title='${stmtText.removeSurrounding("'", "'")}'>")
         val IS = "is"
         if (stmtText.contains(IS)) {
             val index = stmtText.indexOf(IS)

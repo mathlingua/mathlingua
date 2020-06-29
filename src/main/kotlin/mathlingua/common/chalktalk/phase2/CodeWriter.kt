@@ -181,6 +181,7 @@ open class HtmlCodeWriter(
 
     override fun endTopLevel() {
         builder.append("</span>")
+        builder.append("<span class='end-mathlingua-top-level'/>")
     }
 
     override fun newCodeWriter(defines: List<DefinesGroup>) = HtmlCodeWriter(defines, represents)

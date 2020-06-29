@@ -164,6 +164,12 @@ object MathLingua {
                 val exp = validation.value
                 if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
                     result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+                } else if (exp.children.size == 1 && exp.children[0] is Command) {
+                    result[OperatorTexTalkNode(
+                        lhs = null,
+                        command = exp.children[0] as Command,
+                        rhs = null
+                    )] = writtenAs
                 }
             }
         }
@@ -189,7 +195,9 @@ object MathLingua {
             val validation = def.id.texTalkRoot
             if (validation is ValidationSuccess) {
                 val exp = validation.value
-                if (exp.children.size == 1 && exp.children[0] is Command) {
+                if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
+                    result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+                } else if (exp.children.size == 1 && exp.children[0] is Command) {
                     val cmd = exp.children[0] as Command
                     result[OperatorTexTalkNode(
                         lhs = null,
@@ -273,7 +281,7 @@ object MathLingua {
         }
         val code = node.toCode(false, 0, writer = writer).getCode()
         return if (html) {
-            getHtml(code.replace("<br/><br/><br/>", "<br/><br/>"))
+            getHtml(code)
         } else {
             code
         }

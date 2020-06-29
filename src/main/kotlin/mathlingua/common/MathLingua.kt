@@ -310,7 +310,7 @@ private fun getHtml(body: String) = """
                 if (text[text.length - 1] === '"') {
                     text = text.substring(0, text.length - 1);
                 }
-                text = text.replace(/([a-zA-Z0-9])\?/g, '${'$'}1');
+                text = text.replace(/([a-zA-Z0-9])\?\??/g, '${'$'}1');
                 const fragment = document.createDocumentFragment();
                 var buffer = '';
                 var i = 0;

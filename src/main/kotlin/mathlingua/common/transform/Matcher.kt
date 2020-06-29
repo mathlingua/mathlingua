@@ -164,7 +164,7 @@ internal fun expandAsWritten(
             expansion = expansion
         )
     }
-    return expandAsWrittenImpl(node, sigToPatternExpansion)
+    return expandAsWrittenImpl(node, sigToPatternExpansion, false)
 }
 
 private data class MutableSubstitutions(
@@ -420,12 +420,16 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
         // replace any 'name?' with the expansions of the list of expressions 'exp'
         // separated by a space
         if (exp.isNotEmpty()) {
-            val expToString = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion) }
+            val expToStringParen = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, true) }
+            expansion = expansion.replace("$name??", expToStringParen)
+
+            val expToString = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, false) }
             expansion = expansion.replace("$name?", expToString)
         }
 
         // now handle the case where the substitution is specified as 'name{...}?'
         // instead of just 'name?'
+        var hasDoubleQuestion = false
         var startIndex = 0
         val target = "$name{"
         while (true) {
@@ -455,6 +459,10 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                 i++
                 if (c == '}' && leftCurlyCount == 0 && i < expansion.length && expansion[i] == '?') {
                     isValid = true
+                    i++ // move past the ?
+                    if (i < expansion.length && expansion[i] == '?') {
+                        hasDoubleQuestion = true
+                    }
                     break
                 } else {
                     innerTextBuffer.append(c)
@@ -465,14 +473,19 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                 var innerText = innerTextBuffer.toString()
                 val expansionPrefix = expansion.substring(0, index)
                 // add 2 at the end for the trailing }?
-                val expansionSuffix = expansion.substring(index + target.length + innerText.length + 2)
+                // or  3 at the end for the trailing }??
+                val delta = if (hasDoubleQuestion) { 3 } else { 2 }
+                val expansionSuffix = expansion.substring(index + target.length + innerText.length + delta)
 
                 val prefixRegex = Regex("(.*)\\.\\.\\.")
                 val infixRegex = Regex("(.*)\\.\\.\\.(.*)\\.\\.\\.(.*)")
                 val suffixRegex = Regex("\\.\\.\\.(.*)")
 
+                // if the pattern is name{}?? then the user has requested parens be added around
+                // a match if it is of a complex form (i.e. 'a + b' but not 'a')
+                val addParens = hasDoubleQuestion
                 if (infixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens) }
                     val result = infixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 4) {
                         val prefix = result.groupValues[1]
@@ -489,7 +502,7 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                         innerText = "$prefix$innerText$suffix"
                     }
                 } else if (prefixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens) }
                     val result = prefixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 2) {
                         val separator = result.groupValues[1]
@@ -504,7 +517,7 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                         innerText = innerText.replace(pattern, joinedArgs)
                     }
                 } else if (suffixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion) }
+                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens) }
                     val result = suffixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 2) {
                         val separator = result.groupValues[1]
@@ -520,7 +533,7 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                     }
                 }
 
-                // replace 'name{...}?' with 'innerText'
+                // replace 'name{...}?' (or 'name{}??') with 'innerText'
                 expansion = expansionPrefix + innerText + expansionSuffix
             }
         }
@@ -529,12 +542,37 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
     return expansion
 }
 
-private fun expandAsWrittenImpl(node: TexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>): String {
-    return node.toCode {
+private fun shouldHaveParen(node: TexTalkNode): Boolean {
+    if (node is TextTexTalkNode || node is Command) {
+        return false
+    }
+
+    if (node is OperatorTexTalkNode) {
+        return node.lhs != null || node.rhs != null
+    }
+
+    if (node is ExpressionTexTalkNode) {
+        if (node.children.isEmpty()) {
+            return false
+        }
+        return node.children.size > 1 || shouldHaveParen(node.children[0])
+    }
+
+    return true
+}
+
+private fun expandAsWrittenImpl(node: TexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>, addParens: Boolean): String {
+    val code = node.toCode {
         when (it) {
             is Command -> expandAsWrittenImplImpl(it, sigToPatternExpansion)
             is OperatorTexTalkNode -> expandAsWrittenImplImpl(it, sigToPatternExpansion)
             else -> null
         }
+    }
+
+    return if (addParens && shouldHaveParen(node)) {
+        "\\left ( $code \\right )"
+    } else {
+        code
     }
 }

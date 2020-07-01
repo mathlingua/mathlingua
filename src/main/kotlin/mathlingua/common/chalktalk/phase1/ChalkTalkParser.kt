@@ -270,7 +270,7 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 return null
             }
 
-            val id = expect(ChalkTalkTokenType.Name)
+            var id = expect(ChalkTalkTokenType.Name)
 
             var subParams: List<Phase1Token>? = null
             if (has(ChalkTalkTokenType.Underscore)) {
@@ -291,7 +291,31 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
                 expect(ChalkTalkTokenType.RParen)
             }
 
-            return AbstractionPart(id, subParams, names)
+            // handle the case a...b
+            // here the parser parses a.... as a name
+            // so recognize the b as a tail
+            var tail: AbstractionPart? = null
+            val dotDotDot = "..."
+            if (id.text.endsWith(dotDotDot)) {
+                tail = abstractionPart()
+                if (tail != null) {
+                    id = id.copy(
+                        text = id.text.substring(0, id.text.length - dotDotDot.length)
+                    )
+                }
+            }
+
+            // handle the a ... b
+            // here the parser recognizes a as a name
+            // and the ... and b need to be parsed below
+            if (has(ChalkTalkTokenType.DotDotDot) &&
+                !hasHas(ChalkTalkTokenType.DotDotDot, ChalkTalkTokenType.RCurly) &&
+                !hasHas(ChalkTalkTokenType.DotDotDot, ChalkTalkTokenType.Comma)) {
+                expect(ChalkTalkTokenType.DotDotDot) // absorb the ...
+                tail = abstractionPart()
+            }
+
+            return AbstractionPart(id, subParams, names, tail)
         }
 
         private fun name(): Phase1Token {

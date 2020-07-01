@@ -71,7 +71,21 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 // skip past the next two '.' characters
                 i += 2
                 column += 2
-                this.tokens.add(TexTalkToken("...", TexTalkTokenType.DotDotDot, startLine, startColumn))
+
+                val builder = StringBuilder("...")
+                var isOp = false
+                while (i < text.length && isOpChar(text[i])) {
+                    isOp = true
+                    builder.append(text[i++])
+                    column++
+                }
+
+                this.tokens.add(TexTalkToken(builder.toString(),
+                    if (isOp) {
+                        TexTalkTokenType.Operator
+                    } else {
+                        TexTalkTokenType.DotDotDot
+                    }, startLine, startColumn))
             } else if (c == ':') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Colon, line, column))
             } else if (c == '.') {
@@ -119,6 +133,14 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                     op.append(text[i++])
                     column++
                 }
+                if (i < text.length && text[i] == '.' &&
+                    i + 1 < text.length && text[i + 1] == '.' &&
+                    i + 2 < text.length && text[i + 2] == '.') {
+                    i += 3
+                    column += 3
+                    op.append("...")
+                }
+
                 this.tokens.add(TexTalkToken(op.toString(), TexTalkTokenType.Operator, startLine, startColumn))
             } else if (c != ' ') {
                 this.errors.add(

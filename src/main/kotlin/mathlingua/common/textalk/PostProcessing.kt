@@ -151,7 +151,8 @@ import mathlingua.common.collections.newStack
  *    Precedence from most binding to least binding
  *      :=
  *      =
- *      any custom special operator (such as !, **, ++, etc.)
+ *      ... or any operator with ... prefix or suffix (such as ...+ or +...)
+ *      any custom special operator (such as !, **, ++, \oplus etc.)
  *      ^
  *      * /
  *      + -
@@ -254,7 +255,8 @@ private fun isSpecialOperator(node: TexTalkNode?) =
     node != null &&
         node is TextTexTalkNode &&
         (node.tokenType == TexTalkTokenType.Operator ||
-        node.tokenType == TexTalkTokenType.Caret)
+        node.tokenType == TexTalkTokenType.Caret ||
+        node.tokenType == TexTalkTokenType.DotDotDot)
 
 private fun identifySpecialPrefixOperators(
     root: ExpressionTexTalkNode,
@@ -459,9 +461,6 @@ private enum class Associativity {
     Unknown
 }
 
-// private fun isValue(node: TexTalkNode) =
-//     node !is Command && node !is OperatorTexTalkNode && !isTextOperator(node)
-
 private fun getPrecedence(node: TexTalkNode) =
     when {
         isSpecialOperator(node) -> {
@@ -470,10 +469,14 @@ private fun getPrecedence(node: TexTalkNode) =
                 (op == "+" || op == "-") -> 1
                 (op == "*" || op == "/") -> 2
                 op == "^" -> 3
-                else -> 0
+                // ... operators are higher precedence than custom ops
+                op.contains("...") -> 5
+                op == "=" -> 6
+                op == ":=" -> 7
+                // custom operators such as ++
+                else -> 4
             }
         }
-        node is Command -> 0
         else -> throw ParseException(
             ParseError(
                 message = "Cannot get precedence of node '${node.toCode()}'",

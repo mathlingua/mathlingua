@@ -237,7 +237,14 @@ private fun findSubstitutions(pattern: GroupTexTalkNode?, value: GroupTexTalkNod
 
         for (i in paramNames.indices) {
             val exps: MutableList<TexTalkNode> = mutableListOf(values[i])
-            subs.substitutions[paramNames[i]] = exps
+            if (asDotDotDotOperator(exps) != null) {
+                // a non-variadic variable (i.e. x as compared to x?)
+                // cannot match a sequence `a...b` so if exps describes
+                // such as sequence then there isn't a match
+                subs.doesMatch = false
+            } else {
+                subs.substitutions[paramNames[i]] = exps
+            }
         }
     }
 }
@@ -407,6 +414,28 @@ private fun expandAsWrittenImplImpl(cmd: Command, sigToPatternExpansion: Map<Str
         rhs = null
     ), sigToPatternExpansion)
 
+private fun asDotDotDotOperator(nodes: List<TexTalkNode>): OperatorTexTalkNode? {
+    if (nodes.size != 1 || nodes[0] !is ExpressionTexTalkNode) {
+        return null
+    }
+
+    val exp = nodes[0] as ExpressionTexTalkNode
+    if (exp.children.size != 1 || exp.children[0] !is OperatorTexTalkNode) {
+        return null
+    }
+
+    val op = exp.children[0] as OperatorTexTalkNode
+    if (op.command !is TextTexTalkNode) {
+        return null
+    }
+
+    return if (op.command.text == "...") {
+        op
+    } else {
+        null
+    }
+}
+
 private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>): String? {
     val patternExpansion = sigToPatternExpansion[op.signature()] ?: return null
 
@@ -491,7 +520,12 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                         val prefix = result.groupValues[1]
                         val separator = result.groupValues[2]
                         val suffix = result.groupValues[3]
-                        val joinedArgs = args.joinToString(separator)
+                        val opNode = asDotDotDotOperator(exp)
+                        val joinedArgs = if (opNode != null) {
+                            "${opNode.lhs?.toCode() ?: ""}$separator${opNode.command.toCode()}$separator${opNode.rhs?.toCode() ?: ""}"
+                        } else {
+                            args.joinToString(separator)
+                        }
                         val pattern = result.groupValues[0]
                         // pattern is of the form name{prefix...separator...suffix}?
                         // Note: if 'name{...a...b}? is given, for example, then

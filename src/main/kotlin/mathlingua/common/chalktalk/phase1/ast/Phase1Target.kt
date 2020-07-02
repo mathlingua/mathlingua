@@ -214,13 +214,16 @@ data class Abstraction(
     ))
 }
 
-data class AbstractionPart(val name: Phase1Token, val subParams: List<Phase1Token>?, val params: List<Phase1Token>?) :
+data class AbstractionPart(val name: Phase1Token, val subParams: List<Phase1Token>?, val params: List<Phase1Token>?, val tail: AbstractionPart?) :
     AssignmentRhs() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)
         subParams?.forEach(fn)
         params?.forEach(fn)
+        if (tail != null) {
+            fn(tail)
+        }
     }
 
     override fun toCode(): String {
@@ -253,14 +256,22 @@ data class AbstractionPart(val name: Phase1Token, val subParams: List<Phase1Toke
             builder.append(')')
         }
 
+        if (tail != null) {
+            builder.append(" ... ")
+            builder.append(tail.toCode())
+        }
+
         return builder.toString()
     }
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(AbstractionPart(
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
+        return transformer(AbstractionPart(
             name = name.transform(transformer) as Phase1Token,
             subParams = subParams?.map { it.transform(transformer) as Phase1Token },
-            params = params?.map { it.transform(transformer) as Phase1Token }
-    ))
+            params = params?.map { it.transform(transformer) as Phase1Token },
+            tail = tail?.transform(transformer) as AbstractionPart?
+        ))
+    }
 }

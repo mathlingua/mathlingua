@@ -210,9 +210,11 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     column++
                 }
                 this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
-            } else if (isNameChar(c)) {
+            } else if (isNameChar(c) || c == '?') {
                 // a name can be of the form
+                //   ?
                 //   name
+                //   name?
                 //   name...
                 //   name#123
                 //   name...#other...
@@ -227,66 +229,82 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     column++
                 }
 
-                // process the name#123 case and if matching mark the match as complete
-                if (i < text.length && text[i] == '#' &&
-                        i + 1 < text.length && isDigit(text[i + 1])) {
-                    name += text[i++] // append #
+                var hasQuestionMark = false
+                if (i < text.length && text[i] == '?') {
+                    hasQuestionMark = true
+                    name += text[i++]
                     column++
-                    while (i < text.length && isDigit(text[i])) {
-                        name += text[i++]
-                        column++
-                    }
-                    isComplete = true
                 }
 
-                // if it is not complete, that means it is not of the form name#123
-                // so check if it is of the form name...
-                if (!isComplete &&
+                if (!hasQuestionMark) {
+                    // process the name#123 case and if matching mark the match as complete
+                    if (i < text.length && text[i] == '#' &&
+                        i + 1 < text.length && isDigit(text[i + 1])
+                    ) {
+                        name += text[i++] // append #
+                        column++
+                        while (i < text.length && isDigit(text[i])) {
+                            name += text[i++]
+                            column++
+                        }
+                        isComplete = true
+                    }
+
+                    // if it is not complete, that means it is not of the form name#123
+                    // so check if it is of the form name...
+                    if (!isComplete &&
                         i < text.length && text[i] == '.' &&
                         i + 1 < text.length && text[i + 1] == '.' &&
-                        i + 2 < text.length && text[i + 2] == '.') {
-                    for (tmp in 0 until "...".length) {
-                        name += text[i++]
-                        column++
-                    }
-                    // it is not necessarily complete if it is of the form name...
-                    // at this point because it could actually be of the form name...#other...
-                }
-
-                // check if it is of the form name...#other...
-                if (!isComplete && i < text.length && text[i] == '#') {
-                    name += text[i++] // append the #
-                    column++
-                    // get the name portion
-                    while (i < text.length && isNameChar(text[i])) {
-                        name += text[i++]
-                        column++
-                    }
-                    // error if a name after # wasn't specified
-                    if (name.endsWith("#")) {
-                        errors.add(
-                                ParseError("If a name contains a # is must be of the form " +
-                                        "<identifier>...#<identifier>... but found '$name' " +
-                                        " (missing the name after '#')", startLine, startColumn)
-                        )
-                    }
-                    // get the ... portion
-                    if (i < text.length && text[i] == '.' &&
-                            i + 1 < text.length && text[i + 1] == '.' &&
-                            i + 2 < text.length && text[i + 2] == '.') {
+                        i + 2 < text.length && text[i + 2] == '.'
+                    ) {
                         for (tmp in 0 until "...".length) {
                             name += text[i++]
                             column++
                         }
+                        // it is not necessarily complete if it is of the form name...
+                        // at this point because it could actually be of the form name...#other...
                     }
-                    // error if it is of the form <name>...#<name>
-                    // without the trailing ...
-                    if (!name.endsWith("...")) {
-                        errors.add(
-                                ParseError("If a name contains a # is must be of the form " +
+
+                    // check if it is of the form name...#other...
+                    if (!isComplete && i < text.length && text[i] == '#') {
+                        name += text[i++] // append the #
+                        column++
+                        // get the name portion
+                        while (i < text.length && isNameChar(text[i])) {
+                            name += text[i++]
+                            column++
+                        }
+                        // error if a name after # wasn't specified
+                        if (name.endsWith("#")) {
+                            errors.add(
+                                ParseError(
+                                    "If a name contains a # is must be of the form " +
                                         "<identifier>...#<identifier>... but found '$name' " +
-                                        "(missing the trailing '...')", startLine, startColumn)
-                        )
+                                        " (missing the name after '#')", startLine, startColumn
+                                )
+                            )
+                        }
+                        // get the ... portion
+                        if (i < text.length && text[i] == '.' &&
+                            i + 1 < text.length && text[i + 1] == '.' &&
+                            i + 2 < text.length && text[i + 2] == '.'
+                        ) {
+                            for (tmp in 0 until "...".length) {
+                                name += text[i++]
+                                column++
+                            }
+                        }
+                        // error if it is of the form <name>...#<name>
+                        // without the trailing ...
+                        if (!name.endsWith("...")) {
+                            errors.add(
+                                ParseError(
+                                    "If a name contains a # is must be of the form " +
+                                        "<identifier>...#<identifier>... but found '$name' " +
+                                        "(missing the trailing '...')", startLine, startColumn
+                                )
+                            )
+                        }
                     }
                 }
 

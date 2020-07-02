@@ -428,7 +428,8 @@ private class TexTalkParserImpl : TexTalkParser {
             }
 
             val textToken = next()
-            val nextIsDotDotDot = has(TexTalkTokenType.DotDotDot)
+            val nextIsDotDotDot = has(TexTalkTokenType.DotDotDot) &&
+                !hasHas(TexTalkTokenType.DotDotDot, TexTalkTokenType.Identifier)
 
             var isVarArg = false
             if (canBeVarArg) {
@@ -468,6 +469,7 @@ private class TexTalkParserImpl : TexTalkParser {
                     ?: text(TexTalkTokenType.Caret, TexTalkNodeType.Operator, false)
                     ?: text(TexTalkTokenType.Underscore, TexTalkNodeType.Operator, false)
                     ?: text(TexTalkTokenType.ColonEquals, TexTalkNodeType.ColonEquals, false)
+                    ?: text(TexTalkTokenType.DotDotDot, TexTalkNodeType.Operator, false)
 
                 if (child == null) {
                     val peek = texTalkLexer.peek()

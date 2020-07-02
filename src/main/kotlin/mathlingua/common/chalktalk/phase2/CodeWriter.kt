@@ -50,6 +50,8 @@ interface CodeWriter {
     fun getCode(): String
 }
 
+const val IS = " is "
+
 open class HtmlCodeWriter(
     val defines: List<DefinesGroup>,
     val represents: List<RepresentsGroup>
@@ -137,7 +139,6 @@ open class HtmlCodeWriter(
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
         builder.append("<span class='mathlingua-statement' title='${stmtText.removeSurrounding("'", "'")}'>")
-        val IS = "is"
         if (stmtText.contains(IS)) {
             val index = stmtText.indexOf(IS)
             builder.append("\\[${stmtText.substring(0, index)}\\]")

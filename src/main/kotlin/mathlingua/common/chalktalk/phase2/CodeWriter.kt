@@ -25,6 +25,7 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.textalk.ExpressionTexTalkNode
+import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
 import mathlingua.common.transform.expandAsWritten
@@ -147,14 +148,24 @@ open class HtmlCodeWriter(
             val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
             if (lhsParsed.errors.isEmpty()) {
                 val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
-                builder.append("\\[${expandAsWritten(lhsParsed.root, patternsToWrittenAs)}\\]")
+                builder.append("\\[${expandAsWritten(lhsParsed.root.transform {
+                    when (it) {
+                        is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
+                        else -> it
+                    }
+                }, patternsToWrittenAs)}\\]")
             } else {
                 writeDirect(lhs)
             }
         } else {
             if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
                 val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
-                builder.append("\\[${expandAsWritten(root.value, patternsToWrittenAs)}\\]")
+                builder.append("\\[${expandAsWritten(root.value.transform {
+                    when (it) {
+                        is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
+                        else -> it
+                    }
+                }, patternsToWrittenAs)}\\]")
             } else {
                 builder.append("\\[$stmtText\\]")
             }

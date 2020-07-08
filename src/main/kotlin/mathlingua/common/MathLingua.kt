@@ -21,13 +21,13 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Document
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
+import mathlingua.common.chalktalk.phase2.ast.toplevel.*
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.Command
+import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.OperatorTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.*
@@ -78,15 +78,116 @@ object MathLingua {
 
     fun signatureOf(command: Command) = command.signature()
 
-    fun findAllSignatures(node: Phase2Node, locationTracker: LocationTracker) = locateAllSignatures(node, locationTracker).toList()
+    fun findAllSignatures(node: Phase2Node, locationTracker: LocationTracker) = locateAllSignatures(node, locationTracker)
 
     fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
 
+    private fun getContent(group: TopLevelGroup) =
+            when (group) {
+                is RepresentsGroup -> group.copy(
+                        id = IdStatement(
+                                text = "",
+                                texTalkRoot = validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList())
+                                )
+                        ),
+                        metaDataSection = null
+                )
+                is DefinesGroup -> group.copy(
+                        id = IdStatement(
+                                text = "",
+                                texTalkRoot = validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList())
+                                )
+                        ),
+                        metaDataSection = null
+                )
+                is ResourceGroup -> group.copy(
+                        id = "",
+                        metaDataSection = null
+                )
+                is TheoremGroup -> group.copy(
+                        metaDataSection = null
+                )
+                is AxiomGroup -> group.copy(
+                        metaDataSection = null
+                )
+                is ConjectureGroup -> group.copy(
+                        metaDataSection = null
+                )
+                is ProtoGroup -> ProtoGroup(
+                        textSection = group.textSection,
+                        metaDataSection = null
+                )
+                else -> throw RuntimeException("Unknown group: ${group.toCode(false, 0).getCode()}")
+            }.toCode(false, 0).getCode()
+
+    fun findDuplicateContent(input: String, supplemental: List<String>): List<Location> {
+        val suppContent = when (val validation = parse(supplemental.joinToString("\n\n\n"))) {
+            is ValidationFailure -> emptySet()
+            is ValidationSuccess -> {
+                validation.value.all().map {
+                    getContent(it)
+                }.toSet()
+            }
+        }
+
+        return when (val validation = parseWithLocations(input)) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> {
+                val doc = validation.value.document
+                val tracker = validation.value.tracker
+
+                val result = mutableListOf<Location>()
+
+                val inputContentSet = mutableSetOf<String>()
+                for (group in doc.all()) {
+                    val content = getContent(group)
+                    val location = tracker.getLocationOf(group)
+                    if (location != null &&
+                            (suppContent.contains(content) ||
+                                    inputContentSet.contains(content))) {
+                        result.add(location)
+                    }
+                    inputContentSet.add(content)
+                }
+
+                result
+            }
+        }
+    }
+
+    fun findDuplicateSignatures(input: String, supplemental: List<String>): List<Signature> {
+        val suppSignatures = mutableSetOf<String>()
+        for (sup in supplemental) {
+            suppSignatures.addAll(getAllDefinedSignatures(sup).map { it.form })
+        }
+
+        val result = mutableListOf<Signature>()
+        val signatures = getAllDefinedSignatures(input)
+
+        val dupSet = mutableSetOf<String>()
+        for (sig in signatures) {
+            if (dupSet.contains(sig.form)) {
+                result.add(sig)
+            }
+            dupSet.add(sig.form)
+        }
+
+        for (sig in signatures) {
+            if (suppSignatures.contains(sig.form)) {
+                result.add(sig)
+            }
+        }
+
+        return result
+    }
+
     fun findUndefinedSignatures(input: String, supplemental: List<String>): List<Signature> {
         val definedSignatures = mutableSetOf<String>()
-        definedSignatures.addAll(getAllDefinedSignatures(input))
+        definedSignatures.addAll(getAllDefinedSignatures(input).map { it.form })
         for (sup in supplemental) {
-            definedSignatures.addAll(getAllDefinedSignatures(sup))
+            definedSignatures.addAll(getAllDefinedSignatures(sup).map { it.form })
         }
 
         return when (val validation = parseWithLocations(input)) {
@@ -104,13 +205,38 @@ object MathLingua {
         }
     }
 
-    private fun getAllDefinedSignatures(input: String): List<String> {
-        return when (val validation = parse(input)) {
+    private fun getAllDefinedSignatures(input: String): List<Signature> {
+        return when (val validation = parseWithLocations(input)) {
             is ValidationSuccess -> {
-                val result = mutableListOf<String>()
-                val document = validation.value
-                result.addAll(document.defines.mapNotNull { it.signature })
-                result.addAll(document.represents.mapNotNull { it.signature })
+                val result = mutableListOf<Signature>()
+                val document = validation.value.document
+                val tracker = validation.value.tracker
+                result.addAll(document.defines.mapNotNull {
+                    if (it.signature == null) {
+                        null
+                    } else {
+                        Signature(
+                                form = it.signature,
+                                location = tracker.getLocationOf(it) ?: Location(
+                                        row = -1,
+                                        column = -1
+                                )
+                        )
+                    }
+                })
+                result.addAll(document.represents.mapNotNull {
+                    if (it.signature == null) {
+                        null
+                    } else {
+                        Signature(
+                                form = it.signature,
+                                location = tracker.getLocationOf(it) ?: Location(
+                                        row = -1,
+                                        column = -1
+                                )
+                        )
+                    }
+                })
                 result
             }
             is ValidationFailure -> emptyList()

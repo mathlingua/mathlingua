@@ -1,6 +1,7 @@
 package mathlingua.common
 
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
@@ -14,6 +15,236 @@ import mathlingua.common.textalk.TextTexTalkNode
 import org.junit.jupiter.api.Test
 
 internal class MathLinguaTest {
+
+    @Test
+    fun findDuplicateContentNoDuplicates() {
+        val input = """
+            [\finite.set]
+            Defines: X
+            means: '\something'
+
+            [\infinite.set]
+            Defines: X
+            means: '\something.else'
+        """.trimIndent()
+
+        val supplemental = listOf("""
+            [\set]
+            Defines: X
+            means:
+            . if: X
+              then: '\something.else'
+        """.trimIndent(), """
+            Theorem:
+            . '\finite.set'
+        """.trimIndent())
+
+        val dups = MathLingua.findDuplicateContent(input, supplemental)
+        assertThat(dups).isEmpty()
+    }
+
+    @Test
+    fun findDuplicateContentDuplicatesInInput() {
+        val input = """
+            [\finite.set]
+            Defines: X
+            means: '\something'
+
+            [\another.name]
+            Defines: X
+            means: '\something'
+
+            [\infinite.set]
+            Defines: X
+            means: '\something.else'
+        """.trimIndent()
+
+        val supplemental = listOf("""
+            [\set]
+            Defines: X
+            means:
+            . if: X
+              then: '\something.else'
+        """.trimIndent(), """
+            Theorem:
+            . '\finite.set'
+        """.trimIndent())
+
+        val dups = MathLingua.findDuplicateContent(input, supplemental)
+        assertThat(dups).isEqualTo(listOf(Location(
+                row = 4,
+                column = 1
+        )))
+    }
+
+    @Test
+    fun findDuplicateSignaturesDuplicatesInInput() {
+        val input = """
+            [\finite.set]
+            Defines: X
+            means: '\something'
+
+            [\infinite.set]
+            Defines: X
+            means: '\something.else'
+
+            [\finite.set]
+            Defines: Y
+            means: '\yet.something.else'
+        """.trimIndent()
+
+        val supplemental = listOf("""
+            [\set]
+            Defines: X
+            means:
+            . if: X
+              then: '\something.else'
+        """.trimIndent(), """
+            Theorem:
+            . '\finite.set'
+        """.trimIndent())
+
+        val dups = MathLingua.findDuplicateSignatures(input, supplemental)
+        assertThat(dups).isEqualTo(listOf(Signature(
+                form = "\\finite.set",
+                location = Location(
+                        row = 8,
+                        column = 1
+                )
+        )))
+    }
+
+    @Test
+    fun findDuplicateContentDuplicatesWithSupplemental() {
+        val input = """
+            [\finite.set]
+            Defines: X
+            means: '\something'
+
+            [\infinite.set]
+            Defines: X
+            means: '\something.else'
+        """.trimIndent()
+
+        val supplemental = listOf("""
+            [\set]
+            Defines: X
+            means:
+            . if: X
+              then: '\something.else'
+
+            [\another.name]
+            Defines: X
+            means: '\something'
+        """.trimIndent(), """
+            Theorem:
+            . '\finite.set'
+        """.trimIndent())
+
+        val dups = MathLingua.findDuplicateContent(input, supplemental)
+        assertThat(dups).isEqualTo(listOf(Location(
+                row = 0,
+                column = 0
+        )))
+    }
+
+    @Test
+    fun findDuplicateSignaturesDuplicatesWithSupplemental() {
+        val input = """
+            [\finite.set]
+            Defines: X
+            means: '\something'
+
+            [\infinite.set]
+            Defines: X
+            means: '\something.else'
+        """.trimIndent()
+
+        val supplemental = listOf("""
+            [\set]
+            Defines: X
+            means:
+            . if: X
+              then: '\something.else'
+        """.trimIndent(), """
+            Theorem:
+            . '\finite.set'
+
+            [\finite.set]
+            Defines: Y
+            means: '\yet.something.else'
+        """.trimIndent())
+
+        val dups = MathLingua.findDuplicateSignatures(input, supplemental)
+        assertThat(dups).isEqualTo(listOf(Signature(
+                form = "\\finite.set",
+                location = Location(
+                        row = 0,
+                        column = 0
+                )
+        )))
+    }
+
+    @Test
+    fun findDuplicateContentDuplicatesAllInSupplemental() {
+        val input = """
+            [\finite.set]
+            Defines: X
+            means: '\something'
+
+            [\infinite.set]
+            Defines: X
+            means: '\something.else'
+        """.trimIndent()
+
+        val supplemental = listOf("""
+            [\set]
+            Defines: X
+            means:
+            . if: X
+              then: '\something.else'
+
+            Theorem:
+            . '\finite.set'
+        """.trimIndent(), """
+            Theorem:
+            . '\finite.set'
+        """.trimIndent())
+
+        val dups = MathLingua.findDuplicateContent(input, supplemental)
+        assertThat(dups).isEmpty()
+    }
+
+    @Test
+    fun findDuplicateSignaturesDuplicatesAllInSupplemental() {
+        val input = """
+            [\finite.set]
+            Defines: X
+            means: '\something'
+
+            [\infinite.set]
+            Defines: X
+            means: '\something.else'
+        """.trimIndent()
+
+        val supplemental = listOf("""
+            [\set]
+            Defines: X
+            means:
+            . if: X
+              then: '\something.else'
+        """.trimIndent(), """
+            Theorem:
+            . '\finite.set'
+
+            [\set]
+            Defines: Y
+            means: '\yet.something.else'
+        """.trimIndent())
+
+        val dups = MathLingua.findDuplicateSignatures(input, supplemental)
+        assertThat(dups).isEmpty()
+    }
 
     @Test
     fun expandWrittenAs() {

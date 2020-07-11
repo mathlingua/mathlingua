@@ -36,6 +36,8 @@ data class Parse(val document: Document, val tracker: LocationTracker)
 
 data class Signature(val form: String, val location: Location)
 
+data class ContentLocation(val path: String, val location: Location)
+
 object MathLingua {
     fun parse(input: String): Validation<Document> =
         when (val validation = parseWithLocations(input)) {
@@ -116,11 +118,107 @@ object MathLingua {
                         metaDataSection = null
                 )
                 is ProtoGroup -> ProtoGroup(
-                        textSection = group.textSection,
+                        textSection = group.textSection.copy(
+                                text =
+                                    justify(group.textSection.text.replace("\\s+".toRegex(), " "), 80)
+                                            .joinToString("\n").replace("\n", "\n   ")
+                        ),
                         metaDataSection = null
                 )
                 else -> throw RuntimeException("Unknown group: ${group.toCode(false, 0).getCode()}")
-            }.toCode(false, 0).getCode()
+            }.toCode(false, 0).getCode().replace("^\\[]\\n".toRegex(), "")
+
+    fun findUndefinedSignatureLocations(files: Map<String, String>): Map<String, Set<ContentLocation>> {
+        val definedSignatures = mutableSetOf<String>()
+        for (content in files.values) {
+            definedSignatures.addAll(getAllDefinedSignatures(content).map { it.form })
+        }
+
+        val result = mutableMapOf<String, MutableSet<ContentLocation>>()
+        for ((path, content) in files.entries.sortedBy { it.key }) {
+            val validation = parseWithLocations(content)
+            if (validation is ValidationSuccess) {
+                val doc = validation.value.document
+                val tracker = validation.value.tracker
+                for (signature in findAllSignatures(doc, tracker)) {
+                    val key = signature.form
+                    if (!definedSignatures.contains(key)) {
+                        if (!result.containsKey(key)) {
+                            result[key] = mutableSetOf()
+                        }
+                        result[key]!!.add(ContentLocation(
+                                path = path,
+                                location = signature.location
+                        ))
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    fun findContentLocations(files: Map<String, String>): Map<String, Set<ContentLocation>> {
+        val result = mutableMapOf<String, MutableSet<ContentLocation>>()
+        for ((path, content) in files.entries.sortedBy { it.key }) {
+            val validation = parseWithLocations(content)
+            if (validation is ValidationSuccess) {
+                val doc = validation.value.document
+                val tracker = validation.value.tracker
+                for (group in doc.all()) {
+                    val groupContent = getContent(group)
+                    if (!result.containsKey(groupContent)) {
+                        result[groupContent] = mutableSetOf()
+                    }
+                    result[groupContent]!!.add(ContentLocation(
+                            path = path,
+                            location = tracker.getLocationOf(group) ?: Location(
+                                    row = -1,
+                                    column = -1
+                            )
+                    ))
+                }
+            }
+        }
+        return result
+    }
+
+    fun findSignatureLocations(files: Map<String, String>): Map<String, Set<ContentLocation>> {
+        val result = mutableMapOf<String, MutableSet<ContentLocation>>()
+        for ((path, content) in files.entries.sortedBy { it.key }) {
+            val validation = parseWithLocations(content)
+            if (validation is ValidationSuccess) {
+                val doc = validation.value.document
+                val tracker = validation.value.tracker
+                for (group in doc.all()) {
+                    val signature = when (group) {
+                        is DefinesGroup -> {
+                            group.signature
+                        }
+                        is RepresentsGroup -> {
+                            group.signature
+                        }
+                        else -> {
+                            null
+                        }
+                    }
+
+                    if (signature != null) {
+                        if (!result.containsKey(signature)) {
+                            result[signature] = mutableSetOf()
+                        }
+                        result[signature]!!.add(ContentLocation(
+                                path = path,
+                                location = tracker.getLocationOf(group) ?: Location(
+                                        row = -1,
+                                        column = -1
+                                )
+                        ))
+                    }
+                }
+            }
+        }
+        return result
+    }
 
     fun findDuplicateContent(input: String, supplemental: List<String>): List<Location> {
         val suppContent = when (val validation = parse(supplemental.joinToString("\n\n\n"))) {

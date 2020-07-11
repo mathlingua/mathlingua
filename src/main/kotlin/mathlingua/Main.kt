@@ -17,6 +17,7 @@
 package mathlingua
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
@@ -29,6 +30,7 @@ import mathlingua.common.ParseError
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import java.io.File
+import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
@@ -90,8 +92,13 @@ private fun runMlg(
     expand: Boolean
 ): Int {
     val files = mutableListOf<File>()
-    inputs.forEach {
-        files.addAll(findFiles(it, ".math"))
+    for (curFile in inputs) {
+        if (curFile.isFile && curFile.name.endsWith(".math")) {
+            files.add(curFile)
+        } else if (curFile.isDirectory) {
+            files.addAll(curFile.walk()
+                    .filter { it.isFile && it.name.endsWith(".math") })
+        }
     }
 
     val allSignatures = mutableSetOf<String>()
@@ -180,7 +187,8 @@ private fun runMlg(
         "WARNING:"
     }
 
-    val notDefinedSignatures = allSignatures.minus(defSignatures)
+    // filter out signatures from proto groups
+    val notDefinedSignatures = allSignatures.minus(defSignatures).filter { it.trim().startsWith("\\") }
     if (notDefinedSignatures.isNotEmpty()) {
         val signatureOrSignatures = if (notDefinedSignatures.size == 1) {
             "signature is"
@@ -319,26 +327,214 @@ private fun findFiles(file: File, ext: String): List<File> {
 }
 
 private class Mlg : CliktCommand() {
-    private val json: Boolean by option(help = "Print results in JSON").flag()
-    private val testCase: Boolean by option(help = "Print results as unit test cases").flag()
-    private val warningsAsErrors: Boolean by option(help = "Treat warnings as errors").flag()
-    private val file: List<String> by argument(help = "The *.math files to process").multiple(required = true)
+    override fun run() = Unit
+}
+
+private class Check : CliktCommand() {
+    private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
+    private val failOnWarnings: Boolean by option(help = "Treat warnings as errors").flag()
+
+    override fun run() = exitProcess(
+            runMlg(
+                    printJson = false,
+                    failOnWarnings = failOnWarnings,
+                    generateTestCases = false,
+                    inputs = if (file.isEmpty()) {
+                        listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
+                    } else {
+                        file.map { File(it) }
+                    },
+                    output = "none",
+                    expand = false
+            )
+    )
+}
+
+private class Render : CliktCommand() {
+    private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
     private val output by option(help = "Whether output the specified files as html, mathlingua, or none")
-            .choice("html", "mathlingua", "none").default("none")
+            .choice("html", "mathlingua").default("html")
     private val expand: Boolean by option(help = "Whether to expand the contents of the entries.").flag()
 
-    override fun run() {
-        exitProcess(
+    override fun run() = exitProcess(
             runMlg(
-                json,
-                warningsAsErrors,
-                testCase,
-                file.map { File(it) },
-                output,
-                expand
+                    printJson = false,
+                    failOnWarnings = false,
+                    generateTestCases = false,
+                    inputs = if (file.isEmpty()) {
+                        listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
+                    } else {
+                        file.map { File(it) }
+                    },
+                    output = output,
+                    expand = expand
             )
-        )
+    )
+}
+
+private class DuplicateContent : CliktCommand(name = "dup-content") {
+    private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
+
+    override fun run() {
+        val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+        val inputFiles = if (file.isEmpty()) {
+            listOf(cwd.absolutePath)
+        } else {
+            file
+        }
+
+        val allFiles = mutableListOf<File>()
+        for (curPath in inputFiles) {
+            val curFile = File(curPath)
+            if (curFile.isFile && curPath.endsWith(".math")) {
+                allFiles.add(curFile)
+            } else if (curFile.isDirectory) {
+                allFiles.addAll(curFile.walk()
+                        .filter { it.isFile && it.name.endsWith(".math") })
+            }
+        }
+
+        val filesMap = allFiles.map {
+            it.path to it.readText()
+        }.toMap()
+
+        var count = 0
+        val contentLocations = MathLingua.findContentLocations(filesMap)
+        for ((content, locationSet) in contentLocations) {
+            if (locationSet.size > 1) {
+                count++
+                log(bold(content))
+                log("-".repeat(content.split("\n").map { it.length }.max() ?: 1))
+                val cwdPath = cwd.absolutePath
+                for (loc in locationSet) {
+                    log("- ${loc.path.relativeTo(cwdPath)} (${loc.location.row + 1}, ${loc.location.column + 1})")
+                }
+                log("")
+                log("")
+            }
+        }
+
+        log("Found $count duplicate content${if (count > 1) { "s" } else {""}}")
+
+        exitProcess(0)
     }
 }
 
-fun main(args: Array<String>) = Mlg().main(args)
+private class DuplicateSignatures : CliktCommand(name = "dup-sig") {
+    private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
+
+    override fun run() {
+        val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+        val inputFiles = if (file.isEmpty()) {
+            listOf(cwd.absolutePath)
+        } else {
+            file
+        }
+
+        val allFiles = mutableListOf<File>()
+        for (curPath in inputFiles) {
+            val curFile = File(curPath)
+            if (curFile.isFile && curPath.endsWith(".math")) {
+                allFiles.add(curFile)
+            } else if (curFile.isDirectory) {
+                allFiles.addAll(curFile.walk()
+                        .filter { it.isFile && it.name.endsWith(".math") })
+            }
+        }
+
+        val filesMap = allFiles.map {
+            it.path to it.readText()
+        }.toMap()
+
+        var count = 0
+        val sigLocations = MathLingua.findSignatureLocations(filesMap)
+        for ((signature, locationSet) in sigLocations) {
+            if (!signature.trim().startsWith("\\")) {
+                // only process non-proto signatures
+                continue
+            }
+
+            if (locationSet.size > 1) {
+                count++
+                log(bold(signature))
+                log("-".repeat(signature.split("\n").map { it.length }.max() ?: 1))
+                val cwdPath = cwd.absolutePath
+                for (loc in locationSet) {
+                    log("- ${loc.path.relativeTo(cwdPath)} (${loc.location.row + 1}, ${loc.location.column + 1})")
+                }
+                log("")
+                log("")
+            }
+        }
+        log("Found $count duplicate signature${if (count > 1) { "s" } else {""}}")
+        exitProcess(0)
+    }
+}
+
+private class UndefinedSignatures : CliktCommand(name = "undef-sig") {
+    private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
+
+    override fun run() {
+        val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+        val inputFiles = if (file.isEmpty()) {
+            listOf(cwd.absolutePath)
+        } else {
+            file
+        }
+
+        val allFiles = mutableListOf<File>()
+        for (curPath in inputFiles) {
+            val curFile = File(curPath)
+            if (curFile.isFile && curPath.endsWith(".math")) {
+                allFiles.add(curFile)
+            } else if (curFile.isDirectory) {
+                allFiles.addAll(curFile.walk()
+                        .filter { it.isFile && it.name.endsWith(".math") })
+            }
+        }
+
+        val filesMap = allFiles.map {
+            it.path to it.readText()
+        }.toMap()
+
+        var count = 0
+        val sigLocations = MathLingua.findUndefinedSignatureLocations(filesMap)
+        for ((signature, locationSet) in sigLocations) {
+            if (!signature.trim().startsWith("\\")) {
+                // only process non-proto signatures
+                continue
+            }
+
+            count++
+            log(bold(signature))
+            log("-".repeat(signature.split("\n").map { it.length }.max() ?: 1))
+            val cwdPath = cwd.absolutePath
+            for (loc in locationSet) {
+                log("- ${loc.path.relativeTo(cwdPath)} (${loc.location.row + 1}, ${loc.location.column + 1})")
+            }
+            log("")
+            log("")
+        }
+        log("Found $count reference${if (count > 1) { "s" } else {""}} to undefined signatures")
+        exitProcess(0)
+    }
+}
+
+private fun String.relativeTo(dir: String): String {
+    val separator = File.separator
+    val prefix = if (dir.endsWith(separator)) {
+        dir
+    } else {
+        dir + separator
+    }
+
+    return if (this.startsWith(prefix)) {
+        this.substring(prefix.length)
+    } else {
+        this
+    }
+}
+
+fun main(args: Array<String>) = Mlg().subcommands(
+        Check(), Render(), DuplicateContent(), DuplicateSignatures(), UndefinedSignatures()
+).main(args)

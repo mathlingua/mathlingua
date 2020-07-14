@@ -54,6 +54,7 @@ dependencies {
     testRuntime('org.junit.jupiter:junit-jupiter-engine:5.5.1')
     testImplementation "com.tylerthrailkill.helpers:pretty-print:2.0.2"
     compile group: 'com.github.ajalt', name: 'clikt', version: '2.6.0'
+    compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.3.7'
 }
 
 jar {

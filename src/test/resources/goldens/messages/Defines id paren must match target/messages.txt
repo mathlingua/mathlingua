@@ -1,0 +1,24 @@
+Row: 1
+Column: 10
+Message:
+If the signature of a Defines contains a parens then then the defines must define a function like that has the exact same signature as the parens in the signature of the Defines.
+EndMessage:
+
+Row: 5
+Column: 10
+Message:
+If the signature of a Defines contains a parens then then the defines must define a function like that has the exact same signature as the parens in the signature of the Defines.
+EndMessage:
+
+Row: 9
+Column: 11
+Message:
+If the signature of a Defines contains a parens then the function type it defines cannot describe a sequence like, set like, or variadic form.
+EndMessage:
+
+Row: 13
+Column: 10
+Message:
+If the signature of a Defines contains a parens then then the defines must define a function like that has the exact same signature as the parens in the signature of the Defines.
+EndMessage:
+

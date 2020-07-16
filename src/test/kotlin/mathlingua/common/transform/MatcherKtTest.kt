@@ -82,6 +82,66 @@ class MatcherKtTest {
     }
 
     @Test
+    fun testParenCommandValueWithParenExpandAsWritten() {
+        val patternToExpression = mapOf(
+            buildOperator(buildCommand("\\function(x)")) to "f(x?)"
+        )
+        val node = buildNode("\\function(y)")
+        val expanded = expandAsWritten(node, patternToExpression)
+        assertThat(expanded).isEqualTo("f(y)")
+    }
+
+    @Test
+    fun testParenCommandValueWithoutParenExpandAsWritten() {
+        val patternToExpression = mapOf(
+            buildOperator(buildCommand("\\function(x)")) to "f(x?)"
+        )
+        val node = buildNode("\\function")
+        val expanded = expandAsWritten(node, patternToExpression)
+        assertThat(expanded).isEqualTo("f(x?)")
+    }
+
+    @Test
+    fun testParenCommandValueWithParenVarargExpandAsWritten() {
+        val patternToExpression = mapOf(
+            buildOperator(buildCommand("\\function(x...)")) to "f(x{...;...}?)"
+        )
+        val node = buildNode("\\function(a, b, c)")
+        val expanded = expandAsWritten(node, patternToExpression)
+        assertThat(expanded).isEqualTo("f(a;b;c)")
+    }
+
+    @Test
+    fun testParenCommandValueWithParenAndCurlyExpandAsWritten() {
+        val patternToExpression = mapOf(
+            buildOperator(buildCommand("\\function{a}(x)")) to "f_{a?}(x?)"
+        )
+        val node = buildNode("\\function{b}(y)")
+        val expanded = expandAsWritten(node, patternToExpression)
+        assertThat(expanded).isEqualTo("f_{b}(y)")
+    }
+
+    @Test
+    fun testParenCommandValueWithParenAndNamedGroupExpandAsWritten() {
+        val patternToExpression = mapOf(
+            buildOperator(buildCommand("\\function(x):given{a}")) to "f_{a?}(x?)"
+        )
+        val node = buildNode("\\function(y):given{b}")
+        val expanded = expandAsWritten(node, patternToExpression)
+        assertThat(expanded).isEqualTo("f_{b}(y)")
+    }
+
+    @Test
+    fun testParenCommandNoMatchExpandAsWritten() {
+        val patternToExpression = mapOf(
+            buildOperator(buildCommand("\\function(x)")) to "f(x?)"
+        )
+        val node = buildNode("\\function(a,b)")
+        val expanded = expandAsWritten(node, patternToExpression)
+        assertThat(expanded).isEqualTo("\\function(a, b)")
+    }
+
+    @Test
     fun testSimpleCommandExpandAsWritten() {
         val patternToExpansion = mapOf(
                 buildOperator(buildCommand("\\function:on{A}to{B}")) to "\\cdot : A? \\rightarrow B?"

@@ -312,6 +312,23 @@ private fun findSubstitutions(pattern: CommandPart, value: CommandPart, subs: Mu
 
     handleVariadicGroupSubstitutions(pattern.groups, value.groups, subs)
 
+    if (pattern.paren == null && value.paren != null) {
+        // if the pattern doesn't accept a paren but the value has one,
+        // then it isn't a match
+        subs.doesMatch = false
+    } else if (pattern.paren != null && value.paren != null) {
+        // if the value and pattern both have parens, they have to match
+        // in the number of parameters
+        findSubstitutions(pattern.paren, value.paren, subs)
+    }
+
+    // it is fine if the pattern has a paren but the value does not
+    // because then the value is assumed to have (?,?) with the number
+    // of ? matching the number of parameters that are expected
+
+    // it is also fine if neither the pattern or the value have parens
+    // in that case it is a match but there are no substitutions needed
+
     if (pattern.namedGroups.size == value.namedGroups.size) {
         for (i in pattern.namedGroups.indices) {
             val patternGrp = pattern.namedGroups[i]
@@ -373,6 +390,8 @@ private fun validatePatternImpl(part: CommandPart, errors: MutableList<String>) 
     validatePatternGroupImpl(part.square, false, "A square group", errors)
     validatePatternGroupImpl(part.subSup?.sub, false, "A ^ group", errors)
     validatePatternGroupImpl(part.subSup?.sup, false, "A _ group", errors)
+    validatePatternGroupImpl(part.paren, true, "A paren group", errors)
+
     for (i in part.groups.indices) {
         val canBeVarArg = i == part.groups.size - 1
         val description = if (i == part.groups.size - 1) {

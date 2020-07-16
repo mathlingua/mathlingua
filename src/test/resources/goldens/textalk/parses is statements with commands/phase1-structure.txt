@@ -32,6 +32,7 @@ ExpressionTexTalkNode(
                                                           subSup = null
                                                           groups = [
                                                                    ]
+                                                          paren = null
                                                           namedGroups = [
                                                                         ]
                                                         )

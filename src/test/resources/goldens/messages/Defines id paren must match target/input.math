@@ -1,0 +1,23 @@
+[\f(x, y)]
+Defines: f(x)
+means: 'something'
+
+[\g(x)]
+Defines: f
+means: 'something'
+
+[\h(x)]
+Defines: {h}
+means: 'something'
+
+[\j(x)]
+Defines: j_x
+means: 'something'
+
+[\k(x, y)]
+Defines: k(  x,    y  )
+means: 'something'
+
+[\n]
+Defines: n(x)
+means: 'something'

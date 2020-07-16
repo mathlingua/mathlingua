@@ -178,29 +178,13 @@ private class TexTalkParserImpl : TexTalkParser {
             val subSup = subSup()
             val groups = mutableListOf<GroupTexTalkNode>()
 
-            var startGroup: GroupTexTalkNode? = null
+            while (texTalkLexer.hasNext()) {
+                val grp = group(TexTalkNodeType.CurlyGroup)
+                grp ?: break
+                groups.add(grp)
+            }
+
             val paren = group(TexTalkNodeType.ParenGroup)
-            if (paren != null) {
-                startGroup = paren
-            }
-
-            if (startGroup == null) {
-                val curly = group(TexTalkNodeType.CurlyGroup)
-                if (curly != null) {
-                    startGroup = curly
-                }
-            }
-
-            if (startGroup != null) {
-                groups.add(startGroup)
-
-                while (hasNext()) {
-                    val grp = group(startGroup.type)
-                    grp ?: break
-                    groups.add(grp)
-                }
-            }
-
             val namedGroups = mutableListOf<NamedGroupTexTalkNode>()
             if (has(TexTalkTokenType.Colon)) {
                 expect(TexTalkTokenType.Colon) // absorb the colon
@@ -216,6 +200,7 @@ private class TexTalkParserImpl : TexTalkParser {
                 square,
                 subSup,
                 groups,
+                paren,
                 namedGroups
             )
         }

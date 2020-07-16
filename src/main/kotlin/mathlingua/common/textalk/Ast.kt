@@ -110,6 +110,7 @@ data class CommandPart(
     val square: GroupTexTalkNode?,
     val subSup: SubSupTexTalkNode?,
     val groups: List<GroupTexTalkNode>,
+    val paren: GroupTexTalkNode?,
     val namedGroups: List<NamedGroupTexTalkNode>
 ) : TexTalkNode {
 
@@ -138,6 +139,10 @@ data class CommandPart(
             buffer.append(grp.toCode(interceptor))
         }
 
+        if (paren != null) {
+            buffer.append(paren.toCode(interceptor))
+        }
+
         if (namedGroups.isNotEmpty()) {
             buffer.append(":")
         }
@@ -159,6 +164,11 @@ data class CommandPart(
         }
 
         groups.forEach(fn)
+
+        if (paren != null) {
+            fn(paren)
+        }
+
         namedGroups.forEach(fn)
     }
 
@@ -168,6 +178,7 @@ data class CommandPart(
             square = square?.transform(transformer) as GroupTexTalkNode?,
             subSup = subSup?.transform(transformer) as SubSupTexTalkNode?,
             groups = groups.map { it.transform(transformer) as GroupTexTalkNode },
+            paren = paren?.transform(transformer) as GroupTexTalkNode?,
             namedGroups = namedGroups.map { it.transform(transformer) as NamedGroupTexTalkNode }
         ))
 }

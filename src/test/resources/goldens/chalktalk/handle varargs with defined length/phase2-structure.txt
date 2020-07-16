@@ -38,6 +38,7 @@ Document(
                                                               isVarArg = false
                                                             )
                                                           ]
+                                                 paren = null
                                                  namedGroups = [
                                                                ]
                                                )

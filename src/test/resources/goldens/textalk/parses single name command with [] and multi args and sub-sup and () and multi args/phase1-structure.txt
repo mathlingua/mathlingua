@@ -86,45 +86,45 @@ ExpressionTexTalkNode(
                                )
                              )
                              groups = [
-                                        GroupTexTalkNode(
-                                          type = TexTalkNodeType.ParenGroup
-                                          parameters = ParametersTexTalkNode(
-                                            items = [
-                                                      ExpressionTexTalkNode(
-                                                        children = [
-                                                                     TextTexTalkNode(
-                                                                       type = TexTalkNodeType.Identifier
-                                                                       tokenType = TexTalkTokenType.Identifier
-                                                                       text = "x"
-                                                                       isVarArg = false
-                                                                     )
-                                                                   ]
-                                                      ),
-                                                      ExpressionTexTalkNode(
-                                                        children = [
-                                                                     TextTexTalkNode(
-                                                                       type = TexTalkNodeType.Identifier
-                                                                       tokenType = TexTalkTokenType.Identifier
-                                                                       text = "y"
-                                                                       isVarArg = false
-                                                                     )
-                                                                   ]
-                                                      ),
-                                                      ExpressionTexTalkNode(
-                                                        children = [
-                                                                     TextTexTalkNode(
-                                                                       type = TexTalkNodeType.Identifier
-                                                                       tokenType = TexTalkTokenType.Identifier
-                                                                       text = "z"
-                                                                       isVarArg = false
-                                                                     )
-                                                                   ]
-                                                      )
-                                                    ]
-                                          )
-                                          isVarArg = false
-                                        )
                                       ]
+                             paren = GroupTexTalkNode(
+                               type = TexTalkNodeType.ParenGroup
+                               parameters = ParametersTexTalkNode(
+                                 items = [
+                                           ExpressionTexTalkNode(
+                                             children = [
+                                                          TextTexTalkNode(
+                                                            type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
+                                                            text = "x"
+                                                            isVarArg = false
+                                                          )
+                                                        ]
+                                           ),
+                                           ExpressionTexTalkNode(
+                                             children = [
+                                                          TextTexTalkNode(
+                                                            type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
+                                                            text = "y"
+                                                            isVarArg = false
+                                                          )
+                                                        ]
+                                           ),
+                                           ExpressionTexTalkNode(
+                                             children = [
+                                                          TextTexTalkNode(
+                                                            type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
+                                                            text = "z"
+                                                            isVarArg = false
+                                                          )
+                                                        ]
+                                           )
+                                         ]
+                               )
+                               isVarArg = false
+                             )
                              namedGroups = [
                                            ]
                            )

@@ -105,6 +105,7 @@ ExpressionTexTalkNode(
                                           isVarArg = false
                                         )
                                       ]
+                             paren = null
                              namedGroups = [
                                            ]
                            )

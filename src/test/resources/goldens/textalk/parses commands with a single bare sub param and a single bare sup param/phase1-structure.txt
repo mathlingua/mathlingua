@@ -67,6 +67,7 @@ ExpressionTexTalkNode(
                              )
                              groups = [
                                       ]
+                             paren = null
                              namedGroups = [
                                            ]
                            )

@@ -307,6 +307,7 @@ internal class MathLinguaTest {
                             isVarArg = false
                         )
                     ),
+                    paren = null,
                     namedGroups = emptyList()
                 )
             )

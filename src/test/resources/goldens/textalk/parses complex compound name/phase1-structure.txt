@@ -85,6 +85,7 @@ ExpressionTexTalkNode(
                                           isVarArg = false
                                         )
                                       ]
+                             paren = null
                              namedGroups = [
                                            ]
                            ),
@@ -99,6 +100,7 @@ ExpressionTexTalkNode(
                              subSup = null
                              groups = [
                                       ]
+                             paren = null
                              namedGroups = [
                                            ]
                            ),
@@ -112,25 +114,25 @@ ExpressionTexTalkNode(
                              square = null
                              subSup = null
                              groups = [
-                                        GroupTexTalkNode(
-                                          type = TexTalkNodeType.ParenGroup
-                                          parameters = ParametersTexTalkNode(
-                                            items = [
-                                                      ExpressionTexTalkNode(
-                                                        children = [
-                                                                     TextTexTalkNode(
-                                                                       type = TexTalkNodeType.Identifier
-                                                                       tokenType = TexTalkTokenType.Identifier
-                                                                       text = "x"
-                                                                       isVarArg = false
-                                                                     )
-                                                                   ]
-                                                      )
-                                                    ]
-                                          )
-                                          isVarArg = false
-                                        )
                                       ]
+                             paren = GroupTexTalkNode(
+                               type = TexTalkNodeType.ParenGroup
+                               parameters = ParametersTexTalkNode(
+                                 items = [
+                                           ExpressionTexTalkNode(
+                                             children = [
+                                                          TextTexTalkNode(
+                                                            type = TexTalkNodeType.Identifier
+                                                            tokenType = TexTalkTokenType.Identifier
+                                                            text = "x"
+                                                            isVarArg = false
+                                                          )
+                                                        ]
+                                           )
+                                         ]
+                               )
+                               isVarArg = false
+                             )
                              namedGroups = [
                                            ]
                            ),
@@ -190,6 +192,7 @@ ExpressionTexTalkNode(
                                           isVarArg = false
                                         )
                                       ]
+                             paren = null
                              namedGroups = [
                                            ]
                            )

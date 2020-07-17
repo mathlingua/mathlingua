@@ -404,7 +404,6 @@ private class Render : CliktCommand() {
                         .filter { it.isFile && it.name.endsWith(".math") }
                         .filter {
                             if (filterItems.isEmpty()) {
-                                log("returning true")
                                 return@filter true
                             }
 

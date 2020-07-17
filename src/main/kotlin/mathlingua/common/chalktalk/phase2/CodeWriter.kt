@@ -131,9 +131,7 @@ open class HtmlCodeWriter(
 
     override fun writeText(text: String) {
         builder.append("<span class='mathlingua-text' title=\"${text.removeSurrounding("\"", "\"")}\">")
-        builder.append('"')
-        builder.append(text.replace("&", ""))
-        builder.append('"')
+        builder.append(expandTextAsWritten(text, false, defines, represents).replace("?", ""))
         builder.append("</span>")
     }
 
@@ -268,7 +266,7 @@ class MathLinguaCodeWriter(
 
     override fun writeText(text: String) {
         builder.append('"')
-        builder.append(text)
+        builder.append(expandTextAsWritten(text, true, defines, represents))
         builder.append('"')
     }
 
@@ -374,3 +372,95 @@ private fun isGreekLetter(letter: String) =
                 "Chi",
                 "Psi",
                 "Omega").contains(letter)
+
+const val ESCAPED_SINGLE_QUOTE = "MATHLINGUA_ESCAPED_SINGLE_QUOTE"
+
+private data class TextRange(
+    val text: String,
+    val isMathlingua: Boolean
+)
+
+private fun splitByMathlingua(text: String): List<TextRange> {
+    var remaining = text.replace("\\'", ESCAPED_SINGLE_QUOTE)
+    val result = mutableListOf<TextRange>()
+    while (remaining.isNotEmpty()) {
+        val startIndex = remaining.indexOf("'")
+        if (startIndex < 0) {
+            result.add(
+                TextRange(
+                    text = remaining.replace(ESCAPED_SINGLE_QUOTE, "\\'"),
+                    isMathlingua = false
+                )
+            )
+            break
+        }
+
+        result.add(
+            TextRange(
+                text = remaining.substring(0, startIndex).replace(ESCAPED_SINGLE_QUOTE, "\\'"),
+                isMathlingua = false
+            )
+        )
+
+        // the index right after the starting '
+        val newStart = (startIndex + 1).coerceAtMost(remaining.length - 1)
+        remaining = remaining.substring(newStart)
+
+        val endIndex = remaining.indexOf("'")
+        if (endIndex < 0) {
+            result.add(
+                TextRange(
+                    text = "'$remaining".replace(ESCAPED_SINGLE_QUOTE, "\\'"),
+                    isMathlingua = false
+                )
+            )
+            break
+        }
+
+        result.add(
+            TextRange(
+                text = remaining.substring(0, endIndex).replace(ESCAPED_SINGLE_QUOTE, "\\'"),
+                isMathlingua = true
+            )
+        )
+
+        remaining = remaining.substring((endIndex + 1).coerceAtMost(remaining.length - 1))
+    }
+    return result
+}
+
+/*
+if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
+            val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
+            builder.append("'${expandAsWritten(root.value, patternsToWrittenAs)}'")
+        }
+ */
+
+private fun expandTextAsWritten(text: String, addQuotes: Boolean, defines: List<DefinesGroup>, represents: List<RepresentsGroup>): String {
+    if (defines.isEmpty() && represents.isEmpty()) {
+        return text
+    }
+
+    val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
+    val parts = splitByMathlingua(text)
+    val builder = StringBuilder()
+    for (part in parts) {
+        if (part.isMathlingua) {
+            val parser = newTexTalkParser()
+            val lexer = newTexTalkLexer(part.text)
+            val result = parser.parse(lexer)
+            if (result.errors.isEmpty()) {
+                if (addQuotes) {
+                    builder.append('\'')
+                }
+                builder.append(expandAsWritten(result.root, patternsToWrittenAs))
+                if (addQuotes) {
+                    builder.append('\'')
+                }
+            }
+        } else {
+            builder.append(part.text)
+        }
+    }
+    return builder.toString()
+}

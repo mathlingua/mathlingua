@@ -164,7 +164,7 @@ object MathLingua {
             if (validation is ValidationSuccess) {
                 val doc = validation.value.document
                 val tracker = validation.value.tracker
-                for (group in doc.all()) {
+                for (group in doc.groups) {
                     val groupContent = getContent(group)
                     if (!result.containsKey(groupContent)) {
                         result[groupContent] = mutableSetOf()
@@ -189,7 +189,7 @@ object MathLingua {
             if (validation is ValidationSuccess) {
                 val doc = validation.value.document
                 val tracker = validation.value.tracker
-                for (group in doc.all()) {
+                for (group in doc.groups) {
                     val signature = when (group) {
                         is DefinesGroup -> {
                             group.signature
@@ -224,7 +224,7 @@ object MathLingua {
         val suppContent = when (val validation = parse(supplemental.joinToString("\n\n\n"))) {
             is ValidationFailure -> emptySet()
             is ValidationSuccess -> {
-                validation.value.all().map {
+                validation.value.groups.map {
                     getContent(it)
                 }.toSet()
             }
@@ -239,7 +239,7 @@ object MathLingua {
                 val result = mutableListOf<Location>()
 
                 val inputContentSet = mutableSetOf<String>()
-                for (group in doc.all()) {
+                for (group in doc.groups) {
                     val content = getContent(group)
                     val location = tracker.getLocationOf(group)
                     if (location != null &&
@@ -309,7 +309,7 @@ object MathLingua {
                 val result = mutableListOf<Signature>()
                 val document = validation.value.document
                 val tracker = validation.value.tracker
-                result.addAll(document.defines.mapNotNull {
+                result.addAll(document.defines().mapNotNull {
                     if (it.signature == null) {
                         null
                     } else {
@@ -322,7 +322,7 @@ object MathLingua {
                         )
                     }
                 })
-                result.addAll(document.represents.mapNotNull {
+                result.addAll(document.represents().mapNotNull {
                     if (it.signature == null) {
                         null
                     } else {
@@ -465,11 +465,11 @@ object MathLingua {
         val totalTextValidation = parse(totalText)
         val defines = when (totalTextValidation) {
             is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.defines
+            is ValidationSuccess -> totalTextValidation.value.defines()
         }
         val represents = when (totalTextValidation) {
             is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.represents
+            is ValidationSuccess -> totalTextValidation.value.represents()
         }
 
         val result = StringBuilder()

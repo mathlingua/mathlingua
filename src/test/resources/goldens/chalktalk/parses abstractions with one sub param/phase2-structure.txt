@@ -1,16 +1,45 @@
 Document(
-  defines = [
-            ]
-  represents = [
-               ]
-  theorems = [
-               TheoremGroup(
-                 theoremSection = TheoremSection(
-                   clauses = ClauseListNode(
-                     clauses = [
-                                 ForGroup(
-                                   forSection = ForSection(
-                                     targets = [
+  groups = [
+             TheoremGroup(
+               theoremSection = TheoremSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               ForGroup(
+                                 forSection = ForSection(
+                                   targets = [
+                                               AbstractionNode(
+                                                 abstraction = Abstraction(
+                                                   isEnclosed = false
+                                                   isVarArgs = false
+                                                   parts = [
+                                                             AbstractionPart(
+                                                               name = Phase1Token(
+                                                                 text = "a"
+                                                                 type = ChalkTalkTokenType.Name
+                                                                 row = 1
+                                                                 column = 8
+                                                               )
+                                                               subParams = [
+                                                                             Phase1Token(
+                                                                               text = "n"
+                                                                               type = ChalkTalkTokenType.Name
+                                                                               row = 1
+                                                                               column = 10
+                                                                             )
+                                                                           ]
+                                                               params = null
+                                                               tail = null
+                                                             )
+                                                           ]
+                                                   subParams = null
+                                                 )
+                                               )
+                                             ]
+                                 )
+                                 whereSection = null
+                                 thenSection = ThenSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
                                                  AbstractionNode(
                                                    abstraction = Abstraction(
                                                      isEnclosed = false
@@ -18,19 +47,12 @@ Document(
                                                      parts = [
                                                                AbstractionPart(
                                                                  name = Phase1Token(
-                                                                   text = "a"
+                                                                   text = "b"
                                                                    type = ChalkTalkTokenType.Name
-                                                                   row = 1
-                                                                   column = 8
+                                                                   row = 2
+                                                                   column = 9
                                                                  )
-                                                                 subParams = [
-                                                                               Phase1Token(
-                                                                                 text = "n"
-                                                                                 type = ChalkTalkTokenType.Name
-                                                                                 row = 1
-                                                                                 column = 10
-                                                                               )
-                                                                             ]
+                                                                 subParams = null
                                                                  params = null
                                                                  tail = null
                                                                )
@@ -40,47 +62,13 @@ Document(
                                                  )
                                                ]
                                    )
-                                   whereSection = null
-                                   thenSection = ThenSection(
-                                     clauses = ClauseListNode(
-                                       clauses = [
-                                                   AbstractionNode(
-                                                     abstraction = Abstraction(
-                                                       isEnclosed = false
-                                                       isVarArgs = false
-                                                       parts = [
-                                                                 AbstractionPart(
-                                                                   name = Phase1Token(
-                                                                     text = "b"
-                                                                     type = ChalkTalkTokenType.Name
-                                                                     row = 2
-                                                                     column = 9
-                                                                   )
-                                                                   subParams = null
-                                                                   params = null
-                                                                   tail = null
-                                                                 )
-                                                               ]
-                                                       subParams = null
-                                                     )
-                                                   )
-                                                 ]
-                                     )
-                                   )
                                  )
-                               ]
-                   )
+                               )
+                             ]
                  )
-                 aliasSection = null
-                 metaDataSection = null
                )
-             ]
-  axioms = [
+               aliasSection = null
+               metaDataSection = null
+             )
            ]
-  conjectures = [
-                ]
-  resources = [
-              ]
-  protoGroups = [
-                ]
 )

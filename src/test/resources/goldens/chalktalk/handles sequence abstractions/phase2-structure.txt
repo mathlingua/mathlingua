@@ -1,76 +1,64 @@
 Document(
-  defines = [
-            ]
-  represents = [
-               ]
-  theorems = [
-               TheoremGroup(
-                 theoremSection = TheoremSection(
-                   clauses = ClauseListNode(
-                     clauses = [
-                                 ForGroup(
-                                   forSection = ForSection(
-                                     targets = [
-                                                 AbstractionNode(
-                                                   abstraction = Abstraction(
-                                                     isEnclosed = true
-                                                     isVarArgs = false
-                                                     parts = [
-                                                               AbstractionPart(
-                                                                 name = Phase1Token(
-                                                                   text = "a"
+  groups = [
+             TheoremGroup(
+               theoremSection = TheoremSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               ForGroup(
+                                 forSection = ForSection(
+                                   targets = [
+                                               AbstractionNode(
+                                                 abstraction = Abstraction(
+                                                   isEnclosed = true
+                                                   isVarArgs = false
+                                                   parts = [
+                                                             AbstractionPart(
+                                                               name = Phase1Token(
+                                                                 text = "a"
+                                                                 type = ChalkTalkTokenType.Name
+                                                                 row = 1
+                                                                 column = 9
+                                                               )
+                                                               subParams = [
+                                                                             Phase1Token(
+                                                                               text = "k"
+                                                                               type = ChalkTalkTokenType.Name
+                                                                               row = 1
+                                                                               column = 11
+                                                                             )
+                                                                           ]
+                                                               params = null
+                                                               tail = null
+                                                             )
+                                                           ]
+                                                   subParams = [
+                                                                 Phase1Token(
+                                                                   text = "k"
                                                                    type = ChalkTalkTokenType.Name
                                                                    row = 1
-                                                                   column = 9
+                                                                   column = 14
                                                                  )
-                                                                 subParams = [
-                                                                               Phase1Token(
-                                                                                 text = "k"
-                                                                                 type = ChalkTalkTokenType.Name
-                                                                                 row = 1
-                                                                                 column = 11
-                                                                               )
-                                                                             ]
-                                                                 params = null
-                                                                 tail = null
-                                                               )
-                                                             ]
-                                                     subParams = [
-                                                                   Phase1Token(
-                                                                     text = "k"
-                                                                     type = ChalkTalkTokenType.Name
-                                                                     row = 1
-                                                                     column = 14
-                                                                   )
-                                                                 ]
-                                                   )
+                                                               ]
+                                                 )
+                                               )
+                                             ]
+                                 )
+                                 whereSection = null
+                                 thenSection = ThenSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
+                                                 Text(
+                                                   text = ""something""
                                                  )
                                                ]
                                    )
-                                   whereSection = null
-                                   thenSection = ThenSection(
-                                     clauses = ClauseListNode(
-                                       clauses = [
-                                                   Text(
-                                                     text = ""something""
-                                                   )
-                                                 ]
-                                     )
-                                   )
                                  )
-                               ]
-                   )
+                               )
+                             ]
                  )
-                 aliasSection = null
-                 metaDataSection = null
                )
-             ]
-  axioms = [
+               aliasSection = null
+               metaDataSection = null
+             )
            ]
-  conjectures = [
-                ]
-  resources = [
-              ]
-  protoGroups = [
-                ]
 )

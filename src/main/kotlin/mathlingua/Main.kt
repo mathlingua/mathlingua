@@ -162,13 +162,13 @@ private suspend fun runMlg(
                 is ValidationSuccess -> {
                     val doc = validation.value
                     val defines = if (expand) {
-                        doc.defines
+                        doc.defines()
                     } else {
                         emptyList()
                     }
 
                     val represents = if (expand) {
-                        doc.represents
+                        doc.represents()
                     } else {
                         emptyList()
                     }
@@ -315,13 +315,13 @@ private fun processFile(file: File, allSignatures: MutableSet<String>, defSignat
             val tracker = parse.tracker
             allSignatures.addAll(MathLingua.findAllSignatures(document, tracker).map { it.form })
 
-            for (def in document.defines) {
+            for (def in document.defines()) {
                 if (def.signature != null) {
                     defSignatures.add(def.signature)
                 }
             }
 
-            for (rep in document.represents) {
+            for (rep in document.represents()) {
                 if (rep.signature != null) {
                     defSignatures.add(rep.signature)
                 }
@@ -421,8 +421,8 @@ private class Render : CliktCommand() {
                             async {
                                 val result = MathLingua.parse(it.readText())
                                 if (result is ValidationSuccess) {
-                                    defines.addAll(result.value.defines)
-                                    represents.addAll(result.value.represents)
+                                    defines.addAll(result.value.defines())
+                                    represents.addAll(result.value.represents())
                                 }
                             }
                         }.toTypedArray())

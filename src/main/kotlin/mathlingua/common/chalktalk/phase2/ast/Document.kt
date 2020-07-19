@@ -23,86 +23,33 @@ import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.toplevel.*
 
 data class Document(
-    val defines: List<DefinesGroup>,
-    val represents: List<RepresentsGroup>,
-    val theorems: List<TheoremGroup>,
-    val axioms: List<AxiomGroup>,
-    val conjectures: List<ConjectureGroup>,
-    val resources: List<ResourceGroup>,
-    val protoGroups: List<ProtoGroup>
+    val groups: List<TopLevelGroup>
 ) : Phase2Node {
 
-    fun all(): List<TopLevelGroup> {
-        val result = mutableListOf<TopLevelGroup>()
-        result.addAll(defines)
-        result.addAll(represents)
-        result.addAll(theorems)
-        result.addAll(axioms)
-        result.addAll(conjectures)
-        result.addAll(resources)
-        result.addAll(protoGroups)
-        return result
-    }
+    fun defines() = groups.filterIsInstance<DefinesGroup>()
+    fun represents() = groups.filterIsInstance<RepresentsGroup>()
+    fun theorems() = groups.filterIsInstance<TheoremGroup>()
+    fun axioms() = groups.filterIsInstance<AxiomGroup>()
+    fun conjectures() = groups.filterIsInstance<ConjectureGroup>()
+    fun resources() = groups.filterIsInstance<ResourceGroup>()
+    fun protoGroups() = groups.filterIsInstance<ProtoGroup>()
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        defines.forEach(fn)
-        represents.forEach(fn)
-        theorems.forEach(fn)
-        axioms.forEach(fn)
-        conjectures.forEach(fn)
-        resources.forEach(fn)
-        protoGroups.forEach(fn)
+        groups.forEach(fn)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        for (grp in defines) {
+        for (grp in groups) {
             writer.append(grp, false, 0)
             writer.writeNewline(3)
         }
-
-        for (grp in represents) {
-            writer.append(grp, false, 0)
-            writer.writeNewline(3)
-        }
-
-        for (grp in axioms) {
-            writer.append(grp, false, 0)
-            writer.writeNewline(3)
-        }
-
-        for (grp in conjectures) {
-            writer.append(grp, false, 0)
-            writer.writeNewline(3)
-        }
-
-        for (grp in theorems) {
-            writer.append(grp, false, 0)
-            writer.writeNewline(3)
-        }
-
-        for (grp in protoGroups) {
-            writer.append(grp, false, 0)
-            writer.writeNewline(3)
-        }
-
-        for (src in resources) {
-            writer.append(src, false, 0)
-            writer.writeNewline(3)
-        }
-
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(
                 Document(
-                        defines = defines.map { it.transform(chalkTransformer) as DefinesGroup },
-                        axioms = axioms.map { it.transform(chalkTransformer) as AxiomGroup },
-                        conjectures = conjectures.map { it.transform(chalkTransformer) as ConjectureGroup },
-                        represents = represents.map { it.transform(chalkTransformer) as RepresentsGroup },
-                        theorems = theorems.map { it.transform(chalkTransformer) as TheoremGroup },
-                        resources = resources.map { it.transform(chalkTransformer) as ResourceGroup },
-                        protoGroups = protoGroups.map { it.transform(chalkTransformer) as ProtoGroup }
+                        groups = groups.map { it.transform(chalkTransformer) as TopLevelGroup }
                 )
         )
     }
@@ -123,98 +70,102 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
         return validationFailure(errors)
     }
 
-    val defines = ArrayList<DefinesGroup>()
-    val represents = ArrayList<RepresentsGroup>()
-    val theorems = ArrayList<TheoremGroup>()
-    val axioms = ArrayList<AxiomGroup>()
-    val conjectures = ArrayList<ConjectureGroup>()
-    val protoGroups = ArrayList<ProtoGroup>()
-    val resources = ArrayList<ResourceGroup>()
+    val allGroups = mutableListOf<TopLevelGroup>()
 
-    val (groups) = node
-    for (group in groups) {
-        if (isTheoremGroup(group)) {
-            when (val resultValidation = validateTheoremGroup(group, tracker)) {
-                is ValidationSuccess -> theorems.add(resultValidation.value)
-                is ValidationFailure -> errors.addAll(resultValidation.errors)
+    for (group in node.groups) {
+        when {
+            isTheoremGroup(group) -> {
+                when (val resultValidation = validateTheoremGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(resultValidation.value)
+                    is ValidationFailure -> errors.addAll(resultValidation.errors)
+                }
             }
-        } else if (isTheoremGroup(group)) {
-            when (val resultValidation = validateTheoremGroup(group, tracker)) {
-                is ValidationSuccess -> theorems.add(resultValidation.value)
-                is ValidationFailure -> errors.addAll(resultValidation.errors)
+            isAxiomGroup(group) -> {
+                when (val axiomValidation = validateAxiomGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(axiomValidation.value)
+                    is ValidationFailure -> errors.addAll(axiomValidation.errors)
+                }
             }
-        } else if (isAxiomGroup(group)) {
-            when (val axiomValidation = validateAxiomGroup(group, tracker)) {
-                is ValidationSuccess -> axioms.add(axiomValidation.value)
-                is ValidationFailure -> errors.addAll(axiomValidation.errors)
+            isConjectureGroup(group) -> {
+                when (val conjectureValidation = validateConjectureGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(conjectureValidation.value)
+                    is ValidationFailure -> errors.addAll(conjectureValidation.errors)
+                }
             }
-        } else if (isConjectureGroup(group)) {
-            when (val conjectureValidation = validateConjectureGroup(group, tracker)) {
-                is ValidationSuccess -> conjectures.add(conjectureValidation.value)
-                is ValidationFailure -> errors.addAll(conjectureValidation.errors)
+            isDefinesGroup(group) -> {
+                when (val definesValidation = validateDefinesGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(definesValidation.value)
+                    is ValidationFailure -> errors.addAll(definesValidation.errors)
+                }
             }
-        } else if (isDefinesGroup(group)) {
-            when (val definesValidation = validateDefinesGroup(group, tracker)) {
-                is ValidationSuccess -> defines.add(definesValidation.value)
-                is ValidationFailure -> errors.addAll(definesValidation.errors)
+            isRepresentsGroup(group) -> {
+                when (val representsValidation = validateRepresentsGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(representsValidation.value)
+                    is ValidationFailure -> errors.addAll(representsValidation.errors)
+                }
             }
-        } else if (isRepresentsGroup(group)) {
-            when (val representsValidation = validateRepresentsGroup(group, tracker)) {
-                is ValidationSuccess -> represents.add(representsValidation.value)
-                is ValidationFailure -> errors.addAll(representsValidation.errors)
+            isResourceGroup(group) -> {
+                when (val resourceValidation = validateResourceGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(resourceValidation.value)
+                    is ValidationFailure -> errors.addAll(resourceValidation.errors)
+                }
             }
-        } else if (isResourceGroup(group)) {
-            when (val resourceValidation = validateResourceGroup(group, tracker)) {
-                is ValidationSuccess -> resources.add(resourceValidation.value)
-                is ValidationFailure -> errors.addAll(resourceValidation.errors)
+            firstSectionMatchesName(group, "ProtoDefines") -> {
+                when (val validation = validateProtoGroup(group, "ProtoDefines", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoDefines")) {
-            when (val validation = validateProtoGroup(group, "ProtoDefines", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
+            firstSectionMatchesName(group, "ProtoResult") -> {
+                when (val validation = validateProtoGroup(group, "ProtoResult", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoResult")) {
-            when (val validation = validateProtoGroup(group, "ProtoResult", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
+            firstSectionMatchesName(group, "ProtoTheorem") -> {
+                when (val validation = validateProtoGroup(group, "ProtoTheorem", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoTheorem")) {
-            when (val validation = validateProtoGroup(group, "ProtoTheorem", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
+            firstSectionMatchesName(group, "ProtoAxiom") -> {
+                when (val validation = validateProtoGroup(group, "ProtoAxiom", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoAxiom")) {
-            when (val validation = validateProtoGroup(group, "ProtoAxiom", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
+            firstSectionMatchesName(group, "ProtoConjecture") -> {
+                when (val validation = validateProtoGroup(group, "ProtoConjecture", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoConjecture")) {
-            when (val validation = validateProtoGroup(group, "ProtoConjecture", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
+            firstSectionMatchesName(group, "ProtoNotes") -> {
+                when (val validation = validateProtoGroup(group, "ProtoNotes", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoNotes")) {
-            when (val validation = validateProtoGroup(group, "ProtoNotes", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
+            firstSectionMatchesName(group, "ProtoExample") -> {
+                when (val validation = validateProtoGroup(group, "ProtoExample", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoExample")) {
-            when (val validation = validateProtoGroup(group, "ProtoExample", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
+            firstSectionMatchesName(group, "ProtoProblem") -> {
+                when (val validation = validateProtoGroup(group, "ProtoProblem", tracker)) {
+                    is ValidationSuccess -> allGroups.add(validation.value)
+                    is ValidationFailure -> errors.addAll(validation.errors)
+                }
             }
-        } else if (firstSectionMatchesName(group, "ProtoProblem")) {
-            when (val validation = validateProtoGroup(group, "ProtoProblem", tracker)) {
-                is ValidationSuccess -> protoGroups.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-        } else {
-            errors.add(
-                ParseError(
-                    "Expected a top level group but found " + group.toCode(),
-                    getRow(group), getColumn(group)
+            else -> {
+                errors.add(
+                    ParseError(
+                        "Expected a top level group but found " + group.toCode(),
+                        getRow(group), getColumn(group)
+                    )
                 )
-            )
+            }
         }
     }
 
@@ -223,14 +174,6 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
     } else validationSuccess(
             tracker,
             rawNode,
-            Document(
-                    defines,
-                    represents,
-                    theorems,
-                    axioms,
-                    conjectures,
-                    resources,
-                    protoGroups
-            )
+            Document(groups = allGroups)
     )
 }

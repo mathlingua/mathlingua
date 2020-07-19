@@ -242,7 +242,10 @@ fun <G : Phase2Node, S, E> validateDefinesLikeGroup(
             buildGroup(
                 id?.signature(),
                 id!!, definesLikeSection!!,
-                assumingSection, endSections,
+                assumingSection,
+                // the end sections are in reverse order so they
+                // must be reversed here to be in the correct order
+                endSections.reversed(),
                 aliasSection, metaDataSection
             )
         )

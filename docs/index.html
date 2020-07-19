@@ -1,0 +1,169 @@
+
+<!doctype html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+<!-- Begin Jekyll SEO tag v2.6.1 -->
+<title>MathLingua: The Official Guide</title>
+<meta name="generator" content="Jekyll v3.8.7" />
+<meta property="og:title" content="MathLingua: The Official Guide" />
+<meta property="og:locale" content="en_US" />
+<link rel="canonical" href="http://www.mathlingua.org/" />
+<meta property="og:url" content="http://www.mathlingua.org/" />
+<meta property="og:site_name" content="MathLingua: The Official Guide" />
+<script type="application/ld+json">
+{"@type":"WebSite","headline":"MathLingua: The Official Guide","url":"http://www.mathlingua.org/","name":"MathLingua: The Official Guide","@context":"https://schema.org"}</script>
+<!-- End Jekyll SEO tag -->
+
+    <link rel="stylesheet" href="assets/css/style.css">
+    <script src="https://code.jquery.com/jquery-3.3.0.min.js" integrity="sha256-RTQy8VOmNlT6b2PIRur37p6JEBZUE7o8wPgMvu18MC4=" crossorigin="anonymous"></script>
+    <script src="assets/js/main.js"></script>
+    <!--[if lt IE 9]>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.min.js" integrity="sha256-3Jy/GbSLrg0o9y5Z5n1uw0qxZECH7C6OQpVBgNFYa0g=" crossorigin="anonymous"></script>
+    <![endif]-->
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+
+  </head>
+  <body>
+
+      <header>
+        <h1>MathLingua: The Official Guide</h1>
+      </header>
+
+      <div id="banner" style="display: none;">
+          <span id="logo"></span>
+
+          <a href="https://github.com/DominicKramer/mathlingua" class="button fork"><strong>View On GitHub</strong></a>
+
+          <div class="downloads">
+              <span>Downloads:</span>
+              <ul>
+                  <li><a href="https://github.com/pages-themes/leap-day/zipball/master" class="button">ZIP</a></li>
+                  <li><a href="https://github.com/pages-themes/leap-day/tarball/master" class="button">TAR</a></li>
+              </ul>
+          </div>
+
+      </div><!-- end banner -->
+
+      <nav style="display: none;">
+          <ul>
+          </ul>
+      </nav>
+
+    <div class="wrapper">
+      <section>
+        <p>Mathlingua is a language designed to describe mathematical definitions, theorems, axioms, and conjectures in a way that:</p>
+
+<ul>
+  <li>Prioritizes clarity with respect to the meaning of a statement</li>
+  <li>Is easy for both computers and people to read and write</li>
+  <li>Has the same level of mathematical rigour as found in mathematical texts</li>
+  <li>Allows a collection of theorems and definitions written in Mathlingua to be easily built from the ground up from more basic definitions</li>
+  <li>Allows for a range of rigour ranging from a LaTeX description of a result to a fully structured description with connections to dependent definitions</li>
+</ul>
+
+<h2 id="motivating-examples">Motivating Examples</h2>
+
+<h3 id="definitions">Definitions</h3>
+
+<p>The following illustrates how to encode the delta-epsilon definition of a continuous real valued function.  Note that the definition also includes metadata that shows how an assertion that a function is a real continuous function could appear in math literature.</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">[</span><span class="nv">\real.continuous.function</span><span class="pi">:</span><span class="nv">on</span><span class="pi">{</span><span class="nv">A</span><span class="pi">}]</span>
+<span class="na">Defines</span><span class="pi">:</span> <span class="s">f(x)</span>
+<span class="na">assuming</span><span class="pi">:</span> <span class="s1">'</span><span class="s">A</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">\set'</span>
+<span class="na">means</span><span class="pi">:</span>
+<span class="s">. 'f is \real.function:on{A}'</span>
+<span class="s">. for</span><span class="pi">:</span> <span class="s">x0, epsilon</span>
+  <span class="s">where</span><span class="pi">:</span>
+  <span class="s">. 'x0 \in A'</span>
+  <span class="s">. 'epsilon &gt; 0'</span>
+  <span class="s">then</span><span class="pi">:</span>
+  <span class="s">. exists</span><span class="pi">:</span> <span class="s">delta</span>
+    <span class="s">suchThat</span><span class="pi">:</span>
+    <span class="s">. 'delta &gt; 0'</span>
+    <span class="s">. for</span><span class="pi">:</span> <span class="s">x</span>
+      <span class="s">where</span><span class="pi">:</span>
+      <span class="s">. 'x \in A'</span>
+      <span class="s">. '\abs{x - x0} &lt; delta'</span>
+      <span class="s">then</span><span class="pi">:</span>
+      <span class="s">. '\abs{f(x) - f(x0)} &lt; epsilon'</span>
+<span class="na">Metadata</span><span class="pi">:</span>
+<span class="s">. written</span><span class="pi">:</span> <span class="s1">'</span><span class="s">f</span><span class="nv"> </span><span class="s">\in</span><span class="nv"> </span><span class="s">C^0(\mathbb{R})'</span>
+</code></pre></div></div>
+
+<h3 id="theorems">Theorems</h3>
+
+<p>Further, the following shows how to encode the result that a real-valued function is continuous where it is differentiable.  It makes reference to the definition <code class="language-plaintext highlighter-rouge">\real.differentiable.function:on{?}</code> that has been omitted for brevity.</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">Result</span><span class="pi">:</span>
+<span class="s">. for</span><span class="pi">:</span> <span class="s">f, A</span>
+  <span class="s">where</span><span class="pi">:</span>
+  <span class="s">. 'f is \real.differential.function:on{A}'</span>
+  <span class="s">then</span><span class="pi">:</span>
+  <span class="s">. 'f is \real.continuous.function:on{A}'</span>
+</code></pre></div></div>
+
+<h3 id="conjectures">Conjectures</h3>
+
+<p>The following illustrates how the Goldbach Conjecture could be encoded.  Note that the metadata of the conjecture also states the name of the conjecture.</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">Conjecture</span><span class="pi">:</span>
+<span class="s">. for</span><span class="pi">:</span> <span class="s">k</span>
+  <span class="s">where</span><span class="pi">:</span>
+  <span class="s">. 'k is \even.integer'</span>
+  <span class="s">. 'k &gt; 2'</span>
+  <span class="s">then</span><span class="pi">:</span>
+  <span class="s">. exists</span><span class="pi">:</span> <span class="s">p, q</span>
+    <span class="s">suchThat</span><span class="pi">:</span>
+    <span class="s">. 'p, q is \prime'</span>
+    <span class="s">. 'k = p + q'</span>
+<span class="na">Metadata</span><span class="pi">:</span>
+<span class="s">. name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Goldbach</span><span class="nv"> </span><span class="s">Conjecture"</span>
+</code></pre></div></div>
+
+<h3 id="less-formal-descriptions">Less Formal Descriptions</h3>
+
+<p>The following illustrates how a theorem could be describe in a less structured way by describing it in LaTeX.  Note that the source material for the result is provided, and the result references the page number of that source.  In addition, tags are specified for categorization purposes.</p>
+
+<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">[</span><span class="nv">AbstractAlgebraTheoryAndApplications</span><span class="pi">]</span>
+<span class="na">Source</span><span class="pi">:</span>
+<span class="s">. type</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Book"</span>
+<span class="s">. name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Abstract</span><span class="nv"> </span><span class="s">Algebra</span><span class="nv"> </span><span class="s">Theory</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">Applications"</span>
+<span class="s">. author</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Thomas</span><span class="nv"> </span><span class="s">W.</span><span class="nv"> </span><span class="s">Judson"</span>
+<span class="s">. date</span><span class="pi">:</span> <span class="s2">"</span><span class="s">August</span><span class="nv"> </span><span class="s">15,</span><span class="nv"> </span><span class="s">2014"</span>
+<span class="s">. url</span><span class="pi">:</span> <span class="s2">"</span><span class="s">http://abstract.ups.edu/download/aata-20140815.pdf"</span>
+<span class="s">. offset</span><span class="pi">:</span> <span class="s2">"</span><span class="s">10"</span>
+<span class="na">Metadata</span><span class="pi">:</span>
+<span class="s">. tag</span><span class="pi">:</span>
+  <span class="s">. "Abstract Algebra"</span>
+  <span class="s">. "Algebra"</span>
+
+
+<span class="na">ProtoResult</span><span class="pi">:</span>
+<span class="s">. "All cyclic groups of infinite order are isomorphic to $\mathbb Z$."</span>
+<span class="na">Metadata</span><span class="pi">:</span>
+<span class="s">. reference</span><span class="pi">:</span>
+  <span class="s">. source</span><span class="pi">:</span> <span class="s2">"</span><span class="s">@AbstractAlgebraTheoryAndApplications"</span>
+    <span class="na">page</span><span class="pi">:</span> <span class="s2">"</span><span class="s">146"</span>
+<span class="s">. tag</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Abstract</span><span class="nv"> </span><span class="s">Algebra"</span>
+</code></pre></div></div>
+
+
+
+      </section>
+      <!--
+      <footer>
+        
+          <p>Project maintained by <a href="https://github.com/DominicKramer">DominicKramer</a></p>
+        
+        <p><small>Hosted on GitHub Pages &mdash; Theme by <a href="https://twitter.com/michigangraham">mattgraham</a></small></p>
+      </footer>
+      -->
+    </div>
+
+    
+  </body>
+</html>
+

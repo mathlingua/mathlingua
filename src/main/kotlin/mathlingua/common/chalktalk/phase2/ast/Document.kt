@@ -19,7 +19,6 @@ package mathlingua.common.chalktalk.phase2.ast
 import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.toplevel.*
 
 data class Document(
@@ -32,7 +31,6 @@ data class Document(
     fun axioms() = groups.filterIsInstance<AxiomGroup>()
     fun conjectures() = groups.filterIsInstance<ConjectureGroup>()
     fun resources() = groups.filterIsInstance<ResourceGroup>()
-    fun protoGroups() = groups.filterIsInstance<ProtoGroup>()
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         groups.forEach(fn)
@@ -110,50 +108,20 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                     is ValidationFailure -> errors.addAll(resourceValidation.errors)
                 }
             }
-            firstSectionMatchesName(group, "ProtoDefines") -> {
-                when (val validation = validateProtoGroup(group, "ProtoDefines", tracker)) {
+            isDefinitionGroup(group) -> {
+                when (val validation = validateDefinitionGroup(group, tracker)) {
                     is ValidationSuccess -> allGroups.add(validation.value)
                     is ValidationFailure -> errors.addAll(validation.errors)
                 }
             }
-            firstSectionMatchesName(group, "ProtoResult") -> {
-                when (val validation = validateProtoGroup(group, "ProtoResult", tracker)) {
+            isNoteGroup(group) -> {
+                when (val validation = validateNoteGroup(group, tracker)) {
                     is ValidationSuccess -> allGroups.add(validation.value)
                     is ValidationFailure -> errors.addAll(validation.errors)
                 }
             }
-            firstSectionMatchesName(group, "ProtoTheorem") -> {
-                when (val validation = validateProtoGroup(group, "ProtoTheorem", tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-            firstSectionMatchesName(group, "ProtoAxiom") -> {
-                when (val validation = validateProtoGroup(group, "ProtoAxiom", tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-            firstSectionMatchesName(group, "ProtoConjecture") -> {
-                when (val validation = validateProtoGroup(group, "ProtoConjecture", tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-            firstSectionMatchesName(group, "ProtoNotes") -> {
-                when (val validation = validateProtoGroup(group, "ProtoNotes", tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-            firstSectionMatchesName(group, "ProtoExample") -> {
-                when (val validation = validateProtoGroup(group, "ProtoExample", tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-            firstSectionMatchesName(group, "ProtoProblem") -> {
-                when (val validation = validateProtoGroup(group, "ProtoProblem", tracker)) {
+            isProblemGroup(group) -> {
+                when (val validation = validateProblemGroup(group, tracker)) {
                     is ValidationSuccess -> allGroups.add(validation.value)
                     is ValidationFailure -> errors.addAll(validation.errors)
                 }

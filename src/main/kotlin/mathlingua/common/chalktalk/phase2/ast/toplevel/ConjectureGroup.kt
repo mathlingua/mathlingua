@@ -35,6 +35,9 @@ data class ConjectureGroup(
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(conjectureSection)
+        if (aliasSection != null) {
+            fn(aliasSection)
+        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }

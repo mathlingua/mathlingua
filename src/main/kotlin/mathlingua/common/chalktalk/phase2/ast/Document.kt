@@ -138,11 +138,6 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 is ValidationSuccess -> theorems.add(resultValidation.value)
                 is ValidationFailure -> errors.addAll(resultValidation.errors)
             }
-        } else if (isTheoremGroup(group)) {
-            when (val resultValidation = validateTheoremGroup(group, tracker)) {
-                is ValidationSuccess -> theorems.add(resultValidation.value)
-                is ValidationFailure -> errors.addAll(resultValidation.errors)
-            }
         } else if (isAxiomGroup(group)) {
             when (val axiomValidation = validateAxiomGroup(group, tracker)) {
                 is ValidationSuccess -> axioms.add(axiomValidation.value)
@@ -167,6 +162,10 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             when (val resourceValidation = validateResourceGroup(group, tracker)) {
                 is ValidationSuccess -> resources.add(resourceValidation.value)
                 is ValidationFailure -> errors.addAll(resourceValidation.errors)
+            }
+        } else if (isDefinitionGroup(group)) {
+            when (val validation = validateDefinitionGroup(group, tracker)) {
+                is ValidationSuccess -> 
             }
         } else if (firstSectionMatchesName(group, "ProtoDefines")) {
             when (val validation = validateProtoGroup(group, "ProtoDefines", tracker)) {

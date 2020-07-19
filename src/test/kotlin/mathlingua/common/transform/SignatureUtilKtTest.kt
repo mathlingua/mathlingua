@@ -32,8 +32,9 @@ internal class SignatureUtilKtTest {
     fun findAllStatementSignaturesNonGluedTest() {
         val validation = MathLingua.parse("[\\xyz{x}]\nDefines: y\nmeans: 'something'")
         val doc = (validation as ValidationSuccess).value
-        assertThat(doc.defines.size).isEqualTo(1)
-        val def = doc.defines[0]
+        val defines = doc.defines()
+        assertThat(defines.size).isEqualTo(1)
+        val def = defines[0]
         val stmt = def.id.toStatement()
         val signatures = findAllStatementSignatures(stmt, newLocationTracker())
         assertThat(signatures).isEqualTo(setOf(Signature(
@@ -49,8 +50,9 @@ internal class SignatureUtilKtTest {
     fun statementSignaturesNotAllowedToBeGluedTest() {
         val validation = MathLingua.parse("[\\abc \\xyz{x}]\nDefines: y\nmeans: 'something'")
         val doc = (validation as ValidationSuccess).value
-        assertThat(doc.defines.size).isEqualTo(1)
-        val def = doc.defines[0]
+        val defines = doc.defines()
+        assertThat(defines.size).isEqualTo(1)
+        val def = defines[0]
         val texTalkValidation = def.id.texTalkRoot
         assertThat(texTalkValidation is ValidationFailure)
         val failure = texTalkValidation as ValidationFailure
@@ -67,8 +69,9 @@ internal class SignatureUtilKtTest {
     fun findAllStatementSignaturesInfixTest() {
         val validation = MathLingua.parse("[x \\abc y]\nDefines: y\nmeans: 'something'")
         val doc = (validation as ValidationSuccess).value
-        assertThat(doc.defines.size).isEqualTo(1)
-        val def = doc.defines[0]
+        val defines = doc.defines()
+        assertThat(defines.size).isEqualTo(1)
+        val def = defines[0]
         val stmt = def.id.toStatement()
         val signatures = findAllStatementSignatures(stmt, newLocationTracker())
         assertThat(signatures).isEqualTo(setOf(Signature(

@@ -1,53 +1,41 @@
 Document(
-  defines = [
-            ]
-  represents = [
-               ]
-  theorems = [
-               TheoremGroup(
-                 theoremSection = TheoremSection(
-                   clauses = ClauseListNode(
-                     clauses = [
-                                 AbstractionNode(
-                                   abstraction = Abstraction(
-                                     isEnclosed = false
-                                     isVarArgs = false
-                                     parts = [
-                                               AbstractionPart(
-                                                 name = Phase1Token(
-                                                   text = "f"
-                                                   type = ChalkTalkTokenType.Name
-                                                   row = 0
-                                                   column = 9
-                                                 )
-                                                 subParams = null
-                                                 params = [
-                                                            Phase1Token(
-                                                              text = "abc..."
-                                                              type = ChalkTalkTokenType.Name
-                                                              row = 0
-                                                              column = 11
-                                                            )
-                                                          ]
-                                                 tail = null
+  groups = [
+             TheoremGroup(
+               theoremSection = TheoremSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               AbstractionNode(
+                                 abstraction = Abstraction(
+                                   isEnclosed = false
+                                   isVarArgs = false
+                                   parts = [
+                                             AbstractionPart(
+                                               name = Phase1Token(
+                                                 text = "f"
+                                                 type = ChalkTalkTokenType.Name
+                                                 row = 0
+                                                 column = 9
                                                )
-                                             ]
-                                     subParams = null
-                                   )
+                                               subParams = null
+                                               params = [
+                                                          Phase1Token(
+                                                            text = "abc..."
+                                                            type = ChalkTalkTokenType.Name
+                                                            row = 0
+                                                            column = 11
+                                                          )
+                                                        ]
+                                               tail = null
+                                             )
+                                           ]
+                                   subParams = null
                                  )
-                               ]
-                   )
+                               )
+                             ]
                  )
-                 aliasSection = null
-                 metaDataSection = null
                )
-             ]
-  axioms = [
+               aliasSection = null
+               metaDataSection = null
+             )
            ]
-  conjectures = [
-                ]
-  resources = [
-              ]
-  protoGroups = [
-                ]
 )

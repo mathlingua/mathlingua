@@ -142,7 +142,7 @@ fun main() {
             phase2Tree.expandPath(path)
             phase2Tree.selectionPath = path
 
-            val newDoc = expandAtNode(doc, nearestNode, doc.defines, doc.represents)
+            val newDoc = expandAtNode(doc, nearestNode, doc.defines(), doc.represents())
 
             outputArea.text = newDoc.toCode(false, 0).getCode()
             outputTree.model = DefaultTreeModel(
@@ -263,15 +263,15 @@ fun main() {
                     }
 
                     if (moveInLineIs.isSelected) {
-                        transformed = moveInlineCommandsToIsNode(transformed.defines, transformed, transformed).root as Document
+                        transformed = moveInlineCommandsToIsNode(transformed.defines(), transformed, transformed).root as Document
                     }
 
                     if (replaceReps.isSelected) {
-                        transformed = replaceRepresents(transformed, transformed.represents, transformed).root as Document
+                        transformed = replaceRepresents(transformed, transformed.represents(), transformed).root as Document
                     }
 
                     if (replaceIsNodes.isSelected) {
-                        transformed = replaceIsNodes(transformed, transformed.defines, transformed).root as Document
+                        transformed = replaceIsNodes(transformed, transformed.defines(), transformed).root as Document
                     }
 
                     if (completeExpand.isSelected) {

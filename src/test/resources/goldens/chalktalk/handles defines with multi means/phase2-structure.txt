@@ -1,166 +1,154 @@
 Document(
-  defines = [
-              DefinesGroup(
-                signature = "\f"
-                id = IdStatement(
-                  text = "\f"
-                  texTalkRoot = ValidationSuccessImpl(
-                    v = ExpressionTexTalkNode(
-                      children = [
-                                   Command(
-                                     parts = [
-                                               CommandPart(
-                                                 name = TextTexTalkNode(
-                                                   type = TexTalkNodeType.Identifier
-                                                   tokenType = TexTalkTokenType.Identifier
-                                                   text = "f"
-                                                   isVarArg = false
-                                                 )
-                                                 square = null
-                                                 subSup = null
-                                                 groups = [
-                                                          ]
-                                                 paren = null
-                                                 namedGroups = [
-                                                               ]
-                                               )
-                                             ]
-                                   )
-                                 ]
-                    )
-                  )
-                )
-                definesSection = DefinesSection(
-                  targets = [
-                              AbstractionNode(
-                                abstraction = Abstraction(
-                                  isEnclosed = false
-                                  isVarArgs = false
-                                  parts = [
-                                            AbstractionPart(
-                                              name = Phase1Token(
-                                                text = "X"
-                                                type = ChalkTalkTokenType.Name
-                                                row = 1
-                                                column = 10
+  groups = [
+             DefinesGroup(
+               signature = "\f"
+               id = IdStatement(
+                 text = "\f"
+                 texTalkRoot = ValidationSuccessImpl(
+                   v = ExpressionTexTalkNode(
+                     children = [
+                                  Command(
+                                    parts = [
+                                              CommandPart(
+                                                name = TextTexTalkNode(
+                                                  type = TexTalkNodeType.Identifier
+                                                  tokenType = TexTalkTokenType.Identifier
+                                                  text = "f"
+                                                  isVarArg = false
+                                                )
+                                                square = null
+                                                subSup = null
+                                                groups = [
+                                                         ]
+                                                paren = null
+                                                namedGroups = [
+                                                              ]
                                               )
-                                              subParams = null
-                                              params = null
-                                              tail = null
-                                            )
-                                          ]
-                                  subParams = null
-                                )
-                              )
-                            ]
-                )
-                assumingSection = null
-                meansSections = [
-                                  MeansSection(
-                                    clauses = ClauseListNode(
-                                      clauses = [
-                                                  Statement(
-                                                    text = "a"
-                                                    texTalkRoot = ValidationSuccessImpl(
-                                                      v = ExpressionTexTalkNode(
-                                                        children = [
-                                                                     TextTexTalkNode(
-                                                                       type = TexTalkNodeType.Identifier
-                                                                       tokenType = TexTalkTokenType.Identifier
-                                                                       text = "a"
-                                                                       isVarArg = false
-                                                                     )
-                                                                   ]
-                                                      )
-                                                    )
-                                                  )
-                                                ]
-                                    )
-                                  ),
-                                  MeansSection(
-                                    clauses = ClauseListNode(
-                                      clauses = [
-                                                  Text(
-                                                    text = ""b""
-                                                  )
-                                                ]
-                                    )
-                                  ),
-                                  MeansSection(
-                                    clauses = ClauseListNode(
-                                      clauses = [
-                                                  IfGroup(
-                                                    ifSection = IfSection(
-                                                      clauses = ClauseListNode(
-                                                        clauses = [
-                                                                    AbstractionNode(
-                                                                      abstraction = Abstraction(
-                                                                        isEnclosed = false
-                                                                        isVarArgs = false
-                                                                        parts = [
-                                                                                  AbstractionPart(
-                                                                                    name = Phase1Token(
-                                                                                      text = "x"
-                                                                                      type = ChalkTalkTokenType.Name
-                                                                                      row = 7
-                                                                                      column = 7
-                                                                                    )
-                                                                                    subParams = null
-                                                                                    params = null
-                                                                                    tail = null
-                                                                                  )
-                                                                                ]
-                                                                        subParams = null
-                                                                      )
-                                                                    )
-                                                                  ]
-                                                      )
-                                                    )
-                                                    thenSection = ThenSection(
-                                                      clauses = ClauseListNode(
-                                                        clauses = [
-                                                                    AbstractionNode(
-                                                                      abstraction = Abstraction(
-                                                                        isEnclosed = false
-                                                                        isVarArgs = false
-                                                                        parts = [
-                                                                                  AbstractionPart(
-                                                                                    name = Phase1Token(
-                                                                                      text = "y"
-                                                                                      type = ChalkTalkTokenType.Name
-                                                                                      row = 8
-                                                                                      column = 9
-                                                                                    )
-                                                                                    subParams = null
-                                                                                    params = null
-                                                                                    tail = null
-                                                                                  )
-                                                                                ]
-                                                                        subParams = null
-                                                                      )
-                                                                    )
-                                                                  ]
-                                                      )
-                                                    )
-                                                  )
-                                                ]
-                                    )
+                                            ]
                                   )
                                 ]
-                aliasSection = null
-                metaDataSection = null
-              )
-            ]
-  represents = [
-               ]
-  theorems = [
-             ]
-  axioms = [
+                   )
+                 )
+               )
+               definesSection = DefinesSection(
+                 targets = [
+                             AbstractionNode(
+                               abstraction = Abstraction(
+                                 isEnclosed = false
+                                 isVarArgs = false
+                                 parts = [
+                                           AbstractionPart(
+                                             name = Phase1Token(
+                                               text = "X"
+                                               type = ChalkTalkTokenType.Name
+                                               row = 1
+                                               column = 10
+                                             )
+                                             subParams = null
+                                             params = null
+                                             tail = null
+                                           )
+                                         ]
+                                 subParams = null
+                               )
+                             )
+                           ]
+               )
+               assumingSection = null
+               meansSections = [
+                                 MeansSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
+                                                 Statement(
+                                                   text = "a"
+                                                   texTalkRoot = ValidationSuccessImpl(
+                                                     v = ExpressionTexTalkNode(
+                                                       children = [
+                                                                    TextTexTalkNode(
+                                                                      type = TexTalkNodeType.Identifier
+                                                                      tokenType = TexTalkTokenType.Identifier
+                                                                      text = "a"
+                                                                      isVarArg = false
+                                                                    )
+                                                                  ]
+                                                     )
+                                                   )
+                                                 )
+                                               ]
+                                   )
+                                 ),
+                                 MeansSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
+                                                 Text(
+                                                   text = ""b""
+                                                 )
+                                               ]
+                                   )
+                                 ),
+                                 MeansSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
+                                                 IfGroup(
+                                                   ifSection = IfSection(
+                                                     clauses = ClauseListNode(
+                                                       clauses = [
+                                                                   AbstractionNode(
+                                                                     abstraction = Abstraction(
+                                                                       isEnclosed = false
+                                                                       isVarArgs = false
+                                                                       parts = [
+                                                                                 AbstractionPart(
+                                                                                   name = Phase1Token(
+                                                                                     text = "x"
+                                                                                     type = ChalkTalkTokenType.Name
+                                                                                     row = 7
+                                                                                     column = 7
+                                                                                   )
+                                                                                   subParams = null
+                                                                                   params = null
+                                                                                   tail = null
+                                                                                 )
+                                                                               ]
+                                                                       subParams = null
+                                                                     )
+                                                                   )
+                                                                 ]
+                                                     )
+                                                   )
+                                                   thenSection = ThenSection(
+                                                     clauses = ClauseListNode(
+                                                       clauses = [
+                                                                   AbstractionNode(
+                                                                     abstraction = Abstraction(
+                                                                       isEnclosed = false
+                                                                       isVarArgs = false
+                                                                       parts = [
+                                                                                 AbstractionPart(
+                                                                                   name = Phase1Token(
+                                                                                     text = "y"
+                                                                                     type = ChalkTalkTokenType.Name
+                                                                                     row = 8
+                                                                                     column = 9
+                                                                                   )
+                                                                                   subParams = null
+                                                                                   params = null
+                                                                                   tail = null
+                                                                                 )
+                                                                               ]
+                                                                       subParams = null
+                                                                     )
+                                                                   )
+                                                                 ]
+                                                     )
+                                                   )
+                                                 )
+                                               ]
+                                   )
+                                 )
+                               ]
+               aliasSection = null
+               metaDataSection = null
+             )
            ]
-  conjectures = [
-                ]
-  resources = [
-              ]
-  protoGroups = [
-                ]
 )

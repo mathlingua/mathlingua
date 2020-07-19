@@ -573,7 +573,7 @@ internal fun expandAtNode(
     return transformed
 }
 
-internal fun fullExpandOnce(doc: Document) = expandAtNode(doc, doc, doc.defines, doc.represents) as Document
+internal fun fullExpandOnce(doc: Document) = expandAtNode(doc, doc, doc.defines(), doc.represents()) as Document
 
 internal fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     val snapshots = mutableSetOf<String>()

@@ -1,0 +1,157 @@
+Root(
+  groups = [
+             Group(
+               sections = [
+                            Section(
+                              name = Phase1Token(
+                                text = "Defines"
+                                type = ChalkTalkTokenType.Name
+                                row = 1
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Abstraction(
+                                           isEnclosed = false
+                                           isVarArgs = false
+                                           parts = [
+                                                     AbstractionPart(
+                                                       name = Phase1Token(
+                                                         text = "X"
+                                                         type = ChalkTalkTokenType.Name
+                                                         row = 1
+                                                         column = 10
+                                                       )
+                                                       subParams = null
+                                                       params = null
+                                                       tail = null
+                                                     )
+                                                   ]
+                                           subParams = null
+                                         )
+                                       )
+                                     ]
+                            ),
+                            Section(
+                              name = Phase1Token(
+                                text = "means"
+                                type = ChalkTalkTokenType.Name
+                                row = 2
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Phase1Token(
+                                           text = "'a'"
+                                           type = ChalkTalkTokenType.Statement
+                                           row = 3
+                                           column = 3
+                                         )
+                                       )
+                                     ]
+                            ),
+                            Section(
+                              name = Phase1Token(
+                                text = "means"
+                                type = ChalkTalkTokenType.Name
+                                row = 4
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Phase1Token(
+                                           text = ""b""
+                                           type = ChalkTalkTokenType.String
+                                           row = 5
+                                           column = 3
+                                         )
+                                       )
+                                     ]
+                            ),
+                            Section(
+                              name = Phase1Token(
+                                text = "means"
+                                type = ChalkTalkTokenType.Name
+                                row = 6
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Group(
+                                           sections = [
+                                                        Section(
+                                                          name = Phase1Token(
+                                                            text = "if"
+                                                            type = ChalkTalkTokenType.Name
+                                                            row = 7
+                                                            column = 3
+                                                          )
+                                                          args = [
+                                                                   Argument(
+                                                                     chalkTalkTarget = Abstraction(
+                                                                       isEnclosed = false
+                                                                       isVarArgs = false
+                                                                       parts = [
+                                                                                 AbstractionPart(
+                                                                                   name = Phase1Token(
+                                                                                     text = "x"
+                                                                                     type = ChalkTalkTokenType.Name
+                                                                                     row = 7
+                                                                                     column = 7
+                                                                                   )
+                                                                                   subParams = null
+                                                                                   params = null
+                                                                                   tail = null
+                                                                                 )
+                                                                               ]
+                                                                       subParams = null
+                                                                     )
+                                                                   )
+                                                                 ]
+                                                        ),
+                                                        Section(
+                                                          name = Phase1Token(
+                                                            text = "then"
+                                                            type = ChalkTalkTokenType.Name
+                                                            row = 8
+                                                            column = 3
+                                                          )
+                                                          args = [
+                                                                   Argument(
+                                                                     chalkTalkTarget = Abstraction(
+                                                                       isEnclosed = false
+                                                                       isVarArgs = false
+                                                                       parts = [
+                                                                                 AbstractionPart(
+                                                                                   name = Phase1Token(
+                                                                                     text = "y"
+                                                                                     type = ChalkTalkTokenType.Name
+                                                                                     row = 8
+                                                                                     column = 9
+                                                                                   )
+                                                                                   subParams = null
+                                                                                   params = null
+                                                                                   tail = null
+                                                                                 )
+                                                                               ]
+                                                                       subParams = null
+                                                                     )
+                                                                   )
+                                                                 ]
+                                                        )
+                                                      ]
+                                           id = null
+                                         )
+                                       )
+                                     ]
+                            )
+                          ]
+               id = Phase1Token(
+                 text = "[\f]"
+                 type = ChalkTalkTokenType.Id
+                 row = 0
+                 column = 0
+               )
+             )
+           ]
+)

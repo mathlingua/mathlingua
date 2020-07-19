@@ -1,0 +1,9 @@
+[\f]
+Defines: X
+means:
+. 'a'
+means:
+. "b"
+means:
+. if: x
+  then: y

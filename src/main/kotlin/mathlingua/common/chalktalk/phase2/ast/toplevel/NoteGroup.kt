@@ -22,19 +22,17 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.common.chalktalk.phase2.ast.section.AliasSection
-import mathlingua.common.chalktalk.phase2.ast.section.AxiomSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
-import mathlingua.common.chalktalk.phase2.ast.section.validateAxiomSection
+import mathlingua.common.chalktalk.phase2.ast.section.*
 
-data class AxiomGroup(
-    val axiomSection: AxiomSection,
+data class NoteGroup(
+    val noteSection: NoteSection,
     val aliasSection: AliasSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(axiomSection)
+        fn(noteSection)
         if (aliasSection != null) {
             fn(aliasSection)
         }
@@ -44,22 +42,21 @@ data class AxiomGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            topLevelToCode(writer, isArg, indent, null, axiomSection, metaDataSection)
+        topLevelToCode(writer, isArg, indent, null, noteSection, metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(AxiomGroup(
-                    axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
-                    aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
-                    metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
-            ))
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(NoteGroup(
+        noteSection = noteSection.transform(chalkTransformer) as NoteSection,
+        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+        aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
+    ))
 }
 
-fun isAxiomGroup(node: Phase1Node) = firstSectionMatchesName(node, "Axiom")
+fun isNoteGroup(node: Phase1Node) = firstSectionMatchesName(node, "Note")
 
-fun validateAxiomGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
-        tracker,
-        groupNode,
-        "Axiom",
-        ::validateAxiomSection,
-        ::AxiomGroup
+fun validateNoteGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
+    tracker,
+    groupNode,
+    "Note",
+    ::validateNoteSection,
+    ::NoteGroup
 )

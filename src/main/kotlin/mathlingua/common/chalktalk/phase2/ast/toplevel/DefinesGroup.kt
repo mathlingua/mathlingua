@@ -51,6 +51,9 @@ data class DefinesGroup(
             fn(assumingSection)
         }
         meansSections.forEach(fn)
+        if (aliasSection != null) {
+            fn(aliasSection)
+        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }

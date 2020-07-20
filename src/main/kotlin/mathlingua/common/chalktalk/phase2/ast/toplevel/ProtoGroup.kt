@@ -27,15 +27,13 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
 
-class ProtoGroup(
-    val textSection: TextSection,
+open class ProtoGroup(
+    open val textSection: TextSection,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(textSection)
-        if (metaDataSection != null) {
-            fn(metaDataSection)
-        }
+        metaDataSection?.let { fn(it) }
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
@@ -48,11 +46,12 @@ class ProtoGroup(
             ))
 }
 
-fun validateProtoGroup(
+fun <T : ProtoGroup> validateProtoGroup(
     groupNode: Group,
     name: String,
-    tracker: MutableLocationTracker
-): Validation<ProtoGroup> {
+    tracker: MutableLocationTracker,
+    newGroup: (textSection: TextSection, metadataSection: MetaDataSection?) -> T
+): Validation<T> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
     if (group.id != null) {
@@ -108,9 +107,6 @@ fun validateProtoGroup(
         validationSuccess(
                 tracker,
                 groupNode,
-                ProtoGroup(
-                    textSection = textSection!!,
-                    metaDataSection = metaDataSection
-                ))
+                newGroup(textSection!!, metaDataSection))
     }
 }

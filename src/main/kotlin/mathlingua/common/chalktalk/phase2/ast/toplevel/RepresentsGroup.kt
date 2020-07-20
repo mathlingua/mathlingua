@@ -43,6 +43,9 @@ data class RepresentsGroup(
             fn(assumingSection)
         }
         thatSections.forEach(fn)
+        if (aliasSection != null) {
+            fn(aliasSection)
+        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }

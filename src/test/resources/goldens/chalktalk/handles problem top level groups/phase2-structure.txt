@@ -1,0 +1,46 @@
+Document(
+  groups = [
+             ProblemGroup(
+               problemSection = ProblemSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               Text(
+                                 text = ""This is a problem""
+                               ),
+                               Statement(
+                                 text = "a + b"
+                                 texTalkRoot = ValidationSuccessImpl(
+                                   v = ExpressionTexTalkNode(
+                                     children = [
+                                                  OperatorTexTalkNode(
+                                                    lhs = TextTexTalkNode(
+                                                      type = TexTalkNodeType.Identifier
+                                                      tokenType = TexTalkTokenType.Identifier
+                                                      text = "a"
+                                                      isVarArg = false
+                                                    )
+                                                    command = TextTexTalkNode(
+                                                      type = TexTalkNodeType.Operator
+                                                      tokenType = TexTalkTokenType.Operator
+                                                      text = "+"
+                                                      isVarArg = false
+                                                    )
+                                                    rhs = TextTexTalkNode(
+                                                      type = TexTalkNodeType.Identifier
+                                                      tokenType = TexTalkTokenType.Identifier
+                                                      text = "b"
+                                                      isVarArg = false
+                                                    )
+                                                  )
+                                                ]
+                                   )
+                                 )
+                               )
+                             ]
+                 )
+               )
+               aliasSection = null
+               metaDataSection = null
+             )
+           ]
+)

@@ -151,11 +151,16 @@ import mathlingua.common.collections.newStack
  *    Precedence from most binding to least binding
  *      :=
  *      =
- *      ... or any operator with ... prefix or suffix (such as ...+ or +...)
- *      any custom special operator (such as !, **, ++, \oplus etc.)
+ *      ...
+ *      _
  *      ^
  *      * /
  *      + -
+ *      any custom special operator (such as !, **, ++, \oplus etc.)
+ *
+ *    Any operator with ... as a prefix or suffix has its precedence determined by the
+ *    associated operator.  That is, ...+ will have the precedence of + while ...* will
+ *    have the precedence of *.
  *
  *    Associativity:
  *      :=, =, ^          -> right associative
@@ -256,6 +261,7 @@ private fun isSpecialOperator(node: TexTalkNode?) =
         node is TextTexTalkNode &&
         (node.tokenType == TexTalkTokenType.Operator ||
         node.tokenType == TexTalkTokenType.Caret ||
+        node.tokenType == TexTalkTokenType.Underscore ||
         node.tokenType == TexTalkTokenType.DotDotDot)
 
 private fun identifySpecialPrefixOperators(
@@ -461,22 +467,26 @@ private enum class Associativity {
     Unknown
 }
 
+private fun getPrecedence(op: String): Int {
+    return when {
+        (op == "+" || op == "-") -> 1
+        (op == "*" || op == "/") -> 2
+        op == "^" -> 3
+        op == "_" -> 4
+        // the ... operator is special and has high precedence
+        op == "..." -> 5
+        op == "=" -> 6
+        op == ":=" -> 7
+        // operator ...+ has the precedence +
+        // and ...* has the precedence of *
+        op.contains("...") -> getPrecedence(op.replace("...", ""))
+        else -> 0
+    }
+}
+
 private fun getPrecedence(node: TexTalkNode) =
     when {
-        isSpecialOperator(node) -> {
-            val op = (node as TextTexTalkNode).text
-            when {
-                (op == "+" || op == "-") -> 1
-                (op == "*" || op == "/") -> 2
-                op == "^" -> 3
-                // ... operators are higher precedence than custom ops
-                op.contains("...") -> 5
-                op == "=" -> 6
-                op == ":=" -> 7
-                // custom operators such as ++
-                else -> 4
-            }
-        }
+        isSpecialOperator(node) -> getPrecedence((node as TextTexTalkNode).text)
         else -> throw ParseException(
             ParseError(
                 message = "Cannot get precedence of node '${node.toCode()}'",
@@ -492,7 +502,7 @@ private fun getAssociativity(node: TexTalkNode) =
             val op = (node as TextTexTalkNode).text
             when {
                 (op == "+" || op == "-" ||
-                    op == "*" || op == "/") -> Associativity.Left
+                    op == "*" || op == "/" || op == "_") -> Associativity.Left
                 op == "^" -> Associativity.Right
                 else -> Associativity.Unknown
             }

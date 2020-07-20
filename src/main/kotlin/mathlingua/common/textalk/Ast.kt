@@ -464,6 +464,7 @@ data class OperatorTexTalkNode(
             return res
         }
 
+        val cmd = command.toCode()
         val builder = StringBuilder()
         if (lhs != null) {
             builder.append(lhs.toCode(interceptor))

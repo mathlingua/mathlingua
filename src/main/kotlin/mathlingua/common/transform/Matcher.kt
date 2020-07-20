@@ -22,6 +22,11 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.textalk.*
 import kotlin.math.max
 
+data class Expansion(
+    val text: String?,
+    val errors: List<String>
+)
+
 internal fun OperatorTexTalkNode.signature() =
     when (this.command) {
         is Command -> this.command.signature()
@@ -156,7 +161,7 @@ private fun getSubstitutions(pattern: Command, value: Command): Substitutions {
 internal fun expandAsWritten(
     node: TexTalkNode,
     operatorPatternToExpansion: Map<OperatorTexTalkNode, String>
-): String {
+): Expansion {
     val sigToPatternExpansion = mutableMapOf<String, PatternExpansion>()
     for ((opPattern, expansion) in operatorPatternToExpansion) {
         sigToPatternExpansion[opPattern.signature()] = PatternExpansion(
@@ -455,12 +460,32 @@ private fun asDotDotDotOperator(nodes: List<TexTalkNode>): OperatorTexTalkNode? 
     }
 }
 
-private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>): String? {
-    val patternExpansion = sigToPatternExpansion[op.signature()] ?: return null
+private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>): Expansion {
+    val patternExpansion = sigToPatternExpansion[op.signature()]
+
+    if (patternExpansion == null &&
+        op.command is TextTexTalkNode &&
+        op.command.tokenType == TexTalkTokenType.Operator) {
+        // There isn't a matching pattern.  However, the operator is a non-backslash
+        // command such as +, -, ++, etc. and so it is not an error to not find the
+        // matching pattern.  Instead, the operator itself can be rendered.
+        return Expansion(
+            text = null,
+            errors = emptyList()
+        )
+    } else if (patternExpansion == null) {
+        return Expansion(
+            text = null,
+            errors = listOf("No matching definition found for ${op.toCode()}")
+        )
+    }
 
     val subs = getSubstitutions(patternExpansion.pattern, op)
     if (!subs.doesMatch) {
-        return null
+        return Expansion(
+            text = null,
+            errors = subs.errors
+        )
     }
 
     var expansion = patternExpansion.expansion
@@ -468,10 +493,10 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
         // replace any 'name?' with the expansions of the list of expressions 'exp'
         // separated by a space
         if (exp.isNotEmpty()) {
-            val expToStringParen = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, true) }
+            val expToStringParen = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, true).text ?: it.toCode() }
             expansion = expansion.replace("$name??", expToStringParen)
 
-            val expToString = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, false) }
+            val expToString = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, false).text ?: it.toCode() }
             expansion = expansion.replace("$name?", expToString)
         }
 
@@ -533,7 +558,7 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                 // a match if it is of a complex form (i.e. 'a + b' but not 'a')
                 val addParens = hasDoubleQuestion
                 if (infixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens) }
+                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text ?: it.toCode() }
                     val result = infixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 4) {
                         val prefix = result.groupValues[1]
@@ -555,7 +580,7 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                         innerText = "$prefix$innerText$suffix"
                     }
                 } else if (prefixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens) }
+                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text ?: it.toCode() }
                     val result = prefixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 2) {
                         val separator = result.groupValues[1]
@@ -570,7 +595,7 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                         innerText = innerText.replace(pattern, joinedArgs)
                     }
                 } else if (suffixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens) }
+                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text ?: it.toCode() }
                     val result = suffixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 2) {
                         val separator = result.groupValues[1]
@@ -592,7 +617,10 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
         }
     }
 
-    return expansion
+    return Expansion(
+        text = expansion,
+        errors = emptyList()
+    )
 }
 
 private fun shouldHaveParen(node: TexTalkNode): Boolean {
@@ -614,18 +642,30 @@ private fun shouldHaveParen(node: TexTalkNode): Boolean {
     return true
 }
 
-private fun expandAsWrittenImpl(node: TexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>, addParens: Boolean): String {
+private fun expandAsWrittenImpl(node: TexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>, addParens: Boolean): Expansion {
+    val errors = mutableListOf<String>()
     val code = node.toCode {
         when (it) {
-            is Command -> expandAsWrittenImplImpl(it, sigToPatternExpansion)
-            is OperatorTexTalkNode -> expandAsWrittenImplImpl(it, sigToPatternExpansion)
+            is Command -> {
+                val result = expandAsWrittenImplImpl(it, sigToPatternExpansion)
+                errors.addAll(result.errors)
+                result.text
+            }
+            is OperatorTexTalkNode -> {
+                val result = expandAsWrittenImplImpl(it, sigToPatternExpansion)
+                errors.addAll(result.errors)
+                result.text
+            }
             else -> null
         }
     }
 
-    return if (addParens && shouldHaveParen(node)) {
-        "\\left ( $code \\right )"
-    } else {
-        code
-    }
+    return Expansion(
+        text = if (addParens && shouldHaveParen(node)) {
+            "\\left ( $code \\right )"
+        } else {
+            code
+        },
+        errors = errors
+    )
 }

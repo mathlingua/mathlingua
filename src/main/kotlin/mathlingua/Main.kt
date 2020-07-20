@@ -338,7 +338,7 @@ private class Mlg : CliktCommand() {
     override fun run() = Unit
 }
 
-private class Check : CliktCommand() {
+private class Check : CliktCommand(help = "Analyzes input files for errors.") {
     private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
     private val failOnWarnings: Boolean by option(help = "Treat warnings as errors").flag()
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
@@ -361,18 +361,50 @@ private class Check : CliktCommand() {
     )
 }
 
-private class Render : CliktCommand() {
+private class Render : CliktCommand("Generates either HTML or MathLingua code with definitions expanded.") {
     private val file: String by argument(help = "The .math file to process")
     private val filter: String? by option(help = "If a file path contains this string(s) it will be " +
         "processed for definitions.  Separate multiple filters with commas.")
-    private val output by option(help = "Whether output the specified files as html, mathlingua, or none")
+    private val format by option(help = "Whether to generate HTML or Mathlingua.")
             .choice("html", "mathlingua").default("html")
-    private val expand: Boolean by option(help = "Whether to expand the contents of the entries.").flag()
+    private val noexpand: Boolean by option(help = "Specifies to not expand the contents of entries.").flag()
+    private val stdout: Boolean by option(help = "If specified, the rendered content will be printed to standard" +
+        "out.  Otherwise, it is written to a file with the same path as the input file except for a '.html' or " +
+        "'.out.math' extension.").flag()
 
     override fun run() = runBlocking {
-        when (val validation = MathLingua.parse(File(file).readText())) {
+        val f = File(file)
+        if (f.isFile) {
+            processFile(f)
+        } else {
+            f.walk()
+                .filter { it.isFile && it.name.endsWith(".math") }
+                .forEach {
+                    processFile(it)
+                }
+        }
+    }
+
+    private fun write(content: String, fileBeingProcessed: File) {
+        if (stdout) {
+            log(content)
+        } else {
+            val ext = if (format == "html") {
+                ".html"
+            } else {
+                ".out.math"
+            }
+            val outFile = File(fileBeingProcessed.parentFile,
+                fileBeingProcessed.nameWithoutExtension + ext)
+            outFile.writeText(content)
+            log("Wrote ${outFile.absolutePath}")
+        }
+    }
+
+    private suspend fun processFile(fileToProcess: File) {
+        when (val validation = MathLingua.parse(fileToProcess.readText())) {
             is ValidationFailure -> {
-                when (output) {
+                when (format) {
                     "html" -> {
                         val builder = StringBuilder()
                         builder.append("<html><head><style>.content { font-size: 1em; }" +
@@ -382,12 +414,14 @@ private class Render : CliktCommand() {
                                 "${err.message} (${err.row + 1}, ${err.column + 1})</li>")
                         }
                         builder.append("</ul></body></html>")
-                        log(builder.toString())
+                        write(builder.toString(), fileToProcess)
                     }
                     "mathlingua" -> {
+                        val builder = StringBuilder()
                         for (err in validation.errors) {
-                            log("ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})")
+                            builder.append("ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})")
                         }
+                        write(builder.toString(), fileToProcess)
                     }
                 }
             }
@@ -399,7 +433,7 @@ private class Render : CliktCommand() {
                 val filterItems = (filter ?: "").split(",")
                     .map { it.trim() }.filter { it.isNotEmpty() }
 
-                if (expand) {
+                if (!noexpand) {
                     val allFiles = cwd.walk()
                         .filter { it.isFile && it.name.endsWith(".math") }
                         .filter {
@@ -417,29 +451,31 @@ private class Render : CliktCommand() {
                             matchesOne
                         }.toList()
 
-                        awaitAll(*allFiles.map {
-                            async {
-                                val result = MathLingua.parse(it.readText())
-                                if (result is ValidationSuccess) {
-                                    defines.addAll(result.value.defines())
-                                    represents.addAll(result.value.represents())
-                                }
+                    awaitAll(*allFiles.map {
+                        GlobalScope.async {
+                            val result = MathLingua.parse(it.readText())
+                            if (result is ValidationSuccess) {
+                                defines.addAll(result.value.defines())
+                                represents.addAll(result.value.represents())
                             }
-                        }.toTypedArray())
+                        }
+                    }.toTypedArray())
                 }
 
-                log(MathLingua.prettyPrint(
+                val content = MathLingua.prettyPrint(
                     node = validation.value,
                     defines = defines,
                     represents = represents,
-                    html = output == "html")
+                    html = format == "html"
                 )
+
+                write(content, fileToProcess)
             }
         }
     }
 }
 
-private class DuplicateContent : CliktCommand(name = "dup-content") {
+private class DuplicateContent : CliktCommand(name = "dup-content", help = "Identifies duplicate content.") {
     private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
@@ -524,7 +560,9 @@ private class DuplicateContent : CliktCommand(name = "dup-content") {
     }
 }
 
-private class DuplicateSignatures : CliktCommand(name = "dup-sig") {
+private class DuplicateSignatures : CliktCommand(
+        name = "dup-sig",
+        help = "Identifies duplicate signature definitions.") {
     private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
@@ -614,7 +652,9 @@ private class DuplicateSignatures : CliktCommand(name = "dup-sig") {
     }
 }
 
-private class UndefinedSignatures : CliktCommand(name = "undef-sig") {
+private class UndefinedSignatures : CliktCommand(
+        name = "undef-sig",
+        help = "Identifies command that have been used but have not been defined.") {
     private val file: List<String> by argument(help = "The *.math files to process").multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 

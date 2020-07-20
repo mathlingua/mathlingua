@@ -448,9 +448,9 @@ object MathLingua {
                     is ValidationFailure -> it
                     is ValidationSuccess -> {
                         val texTalkNode = validation.value
-                        val newText = expandAsWritten(texTalkNode, patternToExpansion)
+                        val expansion = expandAsWritten(texTalkNode, patternToExpansion)
                         Statement(
-                                text = newText,
+                                text = expansion.text ?: it.toCode(false, 0).getCode(),
                                 texTalkRoot = validation
                         )
                     }

@@ -18,6 +18,7 @@ package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.MathLingua
 import mathlingua.common.Validation
+import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
@@ -28,6 +29,7 @@ import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer
 import mathlingua.common.textalk.newTexTalkParser
+import mathlingua.common.transform.Expansion
 import mathlingua.common.transform.expandAsWritten
 
 interface CodeWriter {
@@ -130,13 +132,43 @@ open class HtmlCodeWriter(
     }
 
     override fun writeText(text: String) {
-        builder.append("<span class='mathlingua-text' title=\"${text.removeSurrounding("\"", "\"")}\">")
-        builder.append(expandTextAsWritten(text, false, defines, represents).replace("?", ""))
+        val expansion = expandTextAsWritten(text, false, defines, represents)
+        val title = text + if (expansion.errors.isNotEmpty()) {
+            "\n\nWarning:\n" + expansion.errors.joinToString("\n\n")
+        } else {
+            ""
+        }.removeSurrounding("\"", "\"")
+        builder.append("<span class='mathlingua-text' title=\"$title\">")
+        builder.append((expansion.text ?: text).replace("?", ""))
         builder.append("</span>")
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        builder.append("<span class='mathlingua-statement' title='${stmtText.removeSurrounding("'", "'")}'>")
+        val expansionErrors = mutableListOf<String>()
+        if (root is ValidationFailure) {
+            expansionErrors.addAll(root.errors.map { it.message })
+        }
+        val fullExpansion = if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
+            val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
+            val result = expandAsWritten(root.value.transform {
+                when (it) {
+                    is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
+                    else -> it
+                }
+            }, patternsToWrittenAs)
+            expansionErrors.addAll(result.errors)
+            result.text
+        } else {
+            ""
+        }
+
+        val title = stmtText.removeSurrounding("'", "'") + if (expansionErrors.isNotEmpty()) {
+            "\n\nWarning:\n" + expansionErrors.joinToString("\n\n")
+        } else {
+            ""
+        }.replace("'", "")
+
+        builder.append("<span class='mathlingua-statement' title='$title'>")
         if (stmtText.contains(IS)) {
             val index = stmtText.indexOf(IS)
             builder.append("\\[${stmtText.substring(0, index)}\\]")
@@ -152,19 +184,13 @@ open class HtmlCodeWriter(
                         is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
                         else -> it
                     }
-                }, patternsToWrittenAs)}\\]")
+                }, patternsToWrittenAs).text ?: lhsParsed.root.toCode()}\\]")
             } else {
                 writeDirect(lhs)
             }
         } else {
             if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
-                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
-                builder.append("\\[${expandAsWritten(root.value.transform {
-                    when (it) {
-                        is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
-                        else -> it
-                    }
-                }, patternsToWrittenAs)}\\]")
+                builder.append("\\[$fullExpansion\\]")
             } else {
                 builder.append("\\[$stmtText\\]")
             }
@@ -266,14 +292,19 @@ class MathLinguaCodeWriter(
 
     override fun writeText(text: String) {
         builder.append('"')
-        builder.append(expandTextAsWritten(text, true, defines, represents))
+        builder.append(expandTextAsWritten(text, true, defines, represents).text ?: text)
         builder.append('"')
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
         if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
             val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
-            builder.append("'${expandAsWritten(root.value, patternsToWrittenAs)}'")
+            val expansion = expandAsWritten(root.value, patternsToWrittenAs)
+            builder.append(if (expansion.text != null) {
+                "'${expansion.text}'"
+            } else {
+                "'$stmtText'"
+            })
         } else {
             builder.append("'$stmtText'")
         }
@@ -429,18 +460,15 @@ private fun splitByMathlingua(text: String): List<TextRange> {
     return result
 }
 
-/*
-if (root is ValidationSuccess && (defines.isNotEmpty() || represents.isNotEmpty())) {
-            val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
-            builder.append("'${expandAsWritten(root.value, patternsToWrittenAs)}'")
-        }
- */
-
-private fun expandTextAsWritten(text: String, addQuotes: Boolean, defines: List<DefinesGroup>, represents: List<RepresentsGroup>): String {
+private fun expandTextAsWritten(text: String, addQuotes: Boolean, defines: List<DefinesGroup>, represents: List<RepresentsGroup>): Expansion {
     if (defines.isEmpty() && represents.isEmpty()) {
-        return text
+        return Expansion(
+            text = text,
+            errors = emptyList()
+        )
     }
 
+    val errors = mutableListOf<String>()
     val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, represents)
     val parts = splitByMathlingua(text)
     val builder = StringBuilder()
@@ -453,14 +481,21 @@ private fun expandTextAsWritten(text: String, addQuotes: Boolean, defines: List<
                 if (addQuotes) {
                     builder.append('\'')
                 }
-                builder.append(expandAsWritten(result.root, patternsToWrittenAs))
+                val expansion = expandAsWritten(result.root, patternsToWrittenAs)
+                builder.append(expansion.text)
+                errors.addAll(expansion.errors)
                 if (addQuotes) {
                     builder.append('\'')
                 }
+            } else {
+                errors.addAll(result.errors.map { it.message })
             }
         } else {
             builder.append(part.text)
         }
     }
-    return builder.toString()
+    return Expansion(
+        text = builder.toString(),
+        errors = errors
+    )
 }

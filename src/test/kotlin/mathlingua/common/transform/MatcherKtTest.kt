@@ -17,6 +17,7 @@
 package mathlingua.common.transform
 
 import assertk.assertThat
+import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
@@ -64,7 +65,8 @@ class MatcherKtTest {
         )
         val node = buildNode("X \\set.in Y")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo("X \\in Y")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("X \\in Y")
     }
 
     @Test
@@ -78,7 +80,8 @@ class MatcherKtTest {
         )
         val node = buildNode("X \\set.in{Z} Y")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo("X \\in Y (with respect to Z)")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("X \\in Y (with respect to Z)")
     }
 
     @Test
@@ -88,7 +91,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\function(y)")
         val expanded = expandAsWritten(node, patternToExpression)
-        assertThat(expanded).isEqualTo("f(y)")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("f(y)")
     }
 
     @Test
@@ -98,7 +102,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\function")
         val expanded = expandAsWritten(node, patternToExpression)
-        assertThat(expanded).isEqualTo("f(x?)")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("f(x?)")
     }
 
     @Test
@@ -108,7 +113,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\function(a, b, c)")
         val expanded = expandAsWritten(node, patternToExpression)
-        assertThat(expanded).isEqualTo("f(a;b;c)")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("f(a;b;c)")
     }
 
     @Test
@@ -118,7 +124,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\function{b}(y)")
         val expanded = expandAsWritten(node, patternToExpression)
-        assertThat(expanded).isEqualTo("f_{b}(y)")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("f_{b}(y)")
     }
 
     @Test
@@ -128,7 +135,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\function(y):given{b}")
         val expanded = expandAsWritten(node, patternToExpression)
-        assertThat(expanded).isEqualTo("f_{b}(y)")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("f_{b}(y)")
     }
 
     @Test
@@ -138,7 +146,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\function(a,b)")
         val expanded = expandAsWritten(node, patternToExpression)
-        assertThat(expanded).isEqualTo("\\function(a, b)")
+        assertThat(expanded.errors).isEqualTo(listOf("Expected exactly 1 arguments but found 2 for '(a, b)'"))
+        assertThat(expanded.text).isEqualTo("\\function(a, b)")
     }
 
     @Test
@@ -148,7 +157,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\function:on{X}to{Y}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo("\\cdot : X \\rightarrow Y")
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("\\cdot : X \\rightarrow Y")
     }
 
     @Test
@@ -158,7 +168,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
                 "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 + A = 0 \\textrm{and} B < 0")
     }
 
@@ -169,7 +180,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
             "prefix a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 + prefix A = 0 \\textrm{and} B < 0")
     }
 
@@ -180,7 +192,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
                 " \\textrm{and} a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 +  \\textrm{and} A = 0 \\textrm{and} B < 0")
     }
 
@@ -191,7 +204,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
             "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 suffix + A = 0 \\textrm{and} B < 0 suffix")
     }
 
@@ -202,7 +216,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
             "prefix a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 suffix + prefix A = 0 \\textrm{and} B < 0 suffix")
     }
 
@@ -213,7 +228,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\sequence{x}{y}{z} + \\sequence{X}{Y}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
             "x , y , z \\cdots + X , Y \\cdots")
     }
 
@@ -224,7 +240,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
                 "a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 \\textrm{and}  + A = 0 \\textrm{and} B < 0 \\textrm{and} ")
     }
 
@@ -235,7 +252,8 @@ class MatcherKtTest {
         )
         val node = buildNode("\\set[x, y]:of{f(x), g(y)}where{x > 0}{f(x) > 0}{y < 0}{g(y) < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
-        assertThat(expanded).isEqualTo(
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo(
             "\\left \\{ f (x) , g (y) \\: : \\: x > 0 \\text{ and } f (x) > 0 \\text{ and } y < 0 \\text{ and } g (y) < 0 \\right \\}")
     }
 }

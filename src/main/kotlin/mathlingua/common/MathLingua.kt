@@ -653,6 +653,10 @@ private fun getHtml(body: String) = """
             }
 
             function render(node) {
+                if (node.className && node.className.indexOf('no-render') >= 0) {
+                    return;
+                }
+
                 /*
                  * The layout for nodes corresponding to text in a "written:" section
                  * looks like the following.  Determine if any child nodes of 'node'
@@ -745,6 +749,14 @@ private fun getHtml(body: String) = """
 
             .mathlingua-text {
                 color: #007700;
+            }
+
+            .mathlingua-text-no-render {
+                color: #007700;
+            }
+
+            .mathlingua-statement-no-render {
+                color: #007377;
             }
 
             .katex {

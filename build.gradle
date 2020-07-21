@@ -36,7 +36,7 @@ apply plugin: 'application'
 apply plugin: 'jacoco'
 
 group = 'mathlingua'
-version = '1.0-SNAPSHOT'
+version = '0.7'
 sourceCompatibility = '1.8'
 
 mainClassName = 'mathlingua.MainKt'

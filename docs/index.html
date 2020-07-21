@@ -25,23 +25,283 @@
     <![endif]-->
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 
+      <link rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
+            integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
+            crossorigin="anonymous">
+      <script defer
+              src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
+              integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
+              crossorigin="anonymous">
+      </script>
+      <script>
+            function buildMathFragment(rawText) {
+                var text = rawText;
+                if (text[0] === '"') {
+                    text = text.substring(1);
+                }
+                if (text[text.length - 1] === '"') {
+                    text = text.substring(0, text.length - 1);
+                }
+                text = text.replace(/([a-zA-Z0-9])\?\??/g, '$1');
+                const fragment = document.createDocumentFragment();
+                var buffer = '';
+                var i = 0;
+                while (i < text.length) {
+                    if (text[i] === '\\' && text[i+1] === '[') {
+                        i += 2; // skip over \ and [
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                            !(text[i] === '\\' && text[i+1] === ']')) {
+                            math += text[i++];
+                        }
+                        if (text[i] === '\\') {
+                            i++; // move past the \
+                        }
+                        if (text[i] === ']') {
+                            i++; // move past the ]
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else if (text[i] === '\\' && text[i+1] === '(') {
+                        i += 2; // skip over \ and ()
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                            !(text[i] === '\\' && text[i+1] === ')')) {
+                            math += text[i++];
+                        }
+                        if (text[i] === '\\') {
+                            i++; // move past the \
+                        }
+                        if (text[i] === ')') {
+                            i++; // move past the )
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else if (text[i] === '$' && text[i+1] === '$') {
+                        i += 2; // skip over $ and $
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                            !(text[i] === '$' && text[i+1] === '$')) {
+                            math += text[i++];
+                        }
+                        if (text[i] === '$') {
+                            i++; // move past the $
+                        }
+                        if (text[i] === '$') {
+                            i++; // move past the $
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else if (text[i] === '$') {
+                        i++; // skip over the $
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                             text[i] !== '$') {
+                            math += text[i++];
+                        }
+                        if (text[i] === '$') {
+                            i++; // move past the $
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else {
+                        buffer += text[i++];
+                    }
+                }
+
+                if (buffer.length > 0) {
+                    fragment.appendChild(document.createTextNode(buffer));
+                }
+
+                return fragment;
+            }
+
+            function render(node) {
+                if (node.className && node.className.indexOf('no-render') >= 0) {
+                    return;
+                }
+
+                /*
+                 * The layout for nodes corresponding to text in a "written:" section
+                 * looks like the following.  Determine if any child nodes of 'node'
+                 * that are text nodes are in a "written:" section so that the text
+                 * can be trated as if it is in math mode.
+                 *
+                 * <span class='mathlingua'>
+                 *   ...
+                 *   <span class='mathlingua-header'>
+                 *     written:
+                 *   </span>
+                 *   ...
+                 *   <span class='mathlingua-text'>
+                 *     "some text"
+                 *   </span>
+                 * </span>
+                 */
+                let isInWritten = false;
+                const parent = node.parentNode;
+                if (parent && node.className === 'mathlingua-text') {
+                    for (let j=0; j<parent.childNodes.length; j++) {
+                        const sibling = parent.childNodes[j];
+                        if (sibling.childNodes.length > 0 &&
+                            sibling.childNodes[0].nodeType === 3 &&
+                            sibling.childNodes[0].textContent === 'written:') {
+                            isInWritten = true;
+                            break;
+                        }
+                    }
+                }
+
+                for (let i = 0; i < node.childNodes.length; i++) {
+                    const child = node.childNodes[i];
+
+                    // node is an element node => nodeType === 1
+                    // node is an attribute node => nodeType === 2
+                    // node is a text node => nodeType === 3
+                    // node is a comment node => nodeType === 8
+                    if (child.nodeType === 3) {
+                        let text = child.textContent;
+                        if (text.trim()) {
+                            if (isInWritten) {
+                                // if the text is in a written: section
+                                // turn "some text" to \[some text\]
+                                // so the text is in math mode
+                                if (text[0] === '"') {
+                                    text = text.substring(1);
+                                }
+                                if (text[text.length - 1] === '"') {
+                                    text = text.substring(0, text.length - 1);
+                                }
+                                text = '\\[' + text + '\\]';
+                            }
+                            const fragment = buildMathFragment(text);
+                            i += fragment.childNodes.length - 1;
+                            node.replaceChild(fragment, child);
+                        }
+                    } else if (child.nodeType === 1) {
+                        render(child);
+                    }
+                }
+            }
+        </script>
+      <style>
+        .content {
+            margin-top: 1em;
+            margin-bottom: 1em;
+            font-size: 1em;
+        }
+
+        .mathlingua {
+            font-family: monospace;
+        }
+
+        .mathlingua-header {
+            font-weight: bold;
+            color: #0055bb;
+        }
+
+        .mathlingua-whitespace {
+            padding: 0;
+            margin: 0;
+            margin-left: 1ex;
+        }
+
+        .mathlingua-id {
+            font-weight: bold;
+            color: #5500aa;
+        }
+
+        .mathlingua-text {
+            color: #007700;
+        }
+
+        .mathlingua-text-no-render {
+            color: #007700;
+        }
+
+        .mathlingua-statement-no-render {
+            font-family: monospace;
+            color: #007377;
+        }
+
+        .katex {
+            font-size: 0.75em;
+        }
+
+        .katex-display {
+            display: contents;
+        }
+
+        .katex-display > .katex {
+            display: contents;
+        }
+
+        .katex-display > .katex > .katex-html {
+            display: contents;
+        }
+    </style>
+
   </head>
-  <body>
+  <body onload="render(document.body)">
 
       <header>
-        <h1>MathLingua: The Official Guide</h1>
+        <h1>MathLingua</h1>
       </header>
 
-      <div id="banner" style="display: none;">
+      <div id="banner">
           <span id="logo"></span>
 
-          <a href="https://github.com/DominicKramer/mathlingua" class="button fork"><strong>View On GitHub</strong></a>
+          <a href="https://github.com/DominicKramer/mathlingua" class="button fork"><strong>View on GitHub</strong></a>
 
           <div class="downloads">
               <span>Downloads:</span>
               <ul>
-                  <li><a href="https://github.com/pages-themes/leap-day/zipball/master" class="button">ZIP</a></li>
-                  <li><a href="https://github.com/pages-themes/leap-day/tarball/master" class="button">TAR</a></li>
+                  <li><a href="https://github.com/DominicKramer/mathlingua/releases" class="button">ZIP</a></li>
               </ul>
           </div>
 
@@ -54,15 +314,11 @@
 
     <div class="wrapper">
       <section>
-        <p>Mathlingua is a language designed to describe mathematical definitions, theorems, axioms, and conjectures in a way that:</p>
-
-<ul>
-  <li>Prioritizes clarity with respect to the meaning of a statement</li>
-  <li>Is easy for both computers and people to read and write</li>
-  <li>Has the same level of mathematical rigour as found in mathematical texts</li>
-  <li>Allows a collection of theorems and definitions written in Mathlingua to be easily built from the ground up from more basic definitions</li>
-  <li>Allows for a range of rigour ranging from a LaTeX description of a result to a fully structured description with connections to dependent definitions</li>
-</ul>
+        <p>
+            MathLingua is a language designed to clearly and concisely describe mathematical definitions, theorems,
+            axioms, conjectures with a focus on building a collection of facts that can be easily searched,
+            organized, and grown.
+        </p>
 
 <h2 id="motivating-examples">Motivating Examples</h2>
 
@@ -70,85 +326,37 @@
 
 <p>The following illustrates how to encode the delta-epsilon definition of a continuous real valued function.  Note that the definition also includes metadata that shows how an assertion that a function is a real continuous function could appear in math literature.</p>
 
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">[</span><span class="nv">\real.continuous.function</span><span class="pi">:</span><span class="nv">on</span><span class="pi">{</span><span class="nv">A</span><span class="pi">}]</span>
-<span class="na">Defines</span><span class="pi">:</span> <span class="s">f(x)</span>
-<span class="na">assuming</span><span class="pi">:</span> <span class="s1">'</span><span class="s">A</span><span class="nv"> </span><span class="s">is</span><span class="nv"> </span><span class="s">\set'</span>
-<span class="na">means</span><span class="pi">:</span>
-<span class="s">. 'f is \real.function:on{A}'</span>
-<span class="s">. for</span><span class="pi">:</span> <span class="s">x0, epsilon</span>
-  <span class="s">where</span><span class="pi">:</span>
-  <span class="s">. 'x0 \in A'</span>
-  <span class="s">. 'epsilon &gt; 0'</span>
-  <span class="s">then</span><span class="pi">:</span>
-  <span class="s">. exists</span><span class="pi">:</span> <span class="s">delta</span>
-    <span class="s">suchThat</span><span class="pi">:</span>
-    <span class="s">. 'delta &gt; 0'</span>
-    <span class="s">. for</span><span class="pi">:</span> <span class="s">x</span>
-      <span class="s">where</span><span class="pi">:</span>
-      <span class="s">. 'x \in A'</span>
-      <span class="s">. '\abs{x - x0} &lt; delta'</span>
-      <span class="s">then</span><span class="pi">:</span>
-      <span class="s">. '\abs{f(x) - f(x0)} &lt; epsilon'</span>
-<span class="na">Metadata</span><span class="pi">:</span>
-<span class="s">. written</span><span class="pi">:</span> <span class="s1">'</span><span class="s">f</span><span class="nv"> </span><span class="s">\in</span><span class="nv"> </span><span class="s">C^0(\mathbb{R})'</span>
-</code></pre></div></div>
+<div class="content">
+  <span class='mathlingua'><span class='mathlingua'><span class='mathlingua-top-level'><span class='mathlingua-id'>[\real.continuous.function:on{A}]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>f(x)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>assuming:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'A is \set'</span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'f is \real.function:on{A}'</span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>for:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x0</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>epsilon</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>where:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'x0 \in A'</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'epsilon > 0'</span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>exists:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>delta</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'delta > 0'</span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>for:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>where:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'x \in A'</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'\abs{x - x0} < delta'</span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'\abs{f(x) - f(x0)} < epsilon'</span></span></span></span></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>Metadata:</span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>written:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"f \in C^0(\mathbb{R})"</span></span></span></span><span class='end-mathlingua-top-level'/></span></span>
+</div>
 
 <h3 id="theorems">Theorems</h3>
 
-<p>Further, the following shows how to encode the result that a real-valued function is continuous where it is differentiable.  It makes reference to the definition <code class="language-plaintext highlighter-rouge">\real.differentiable.function:on{?}</code> that has been omitted for brevity.</p>
+<p>
+    Further, the following shows how to encode the result that a real-valued function is continuous where
+    it is differentiable.  It makes reference to the definition
+    <span class="mathlingua-statement-no-render">\real.differentiable.function:on{?}</span> that has been
+    omitted for brevity.</p>
 
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">Result</span><span class="pi">:</span>
-<span class="s">. for</span><span class="pi">:</span> <span class="s">f, A</span>
-  <span class="s">where</span><span class="pi">:</span>
-  <span class="s">. 'f is \real.differential.function:on{A}'</span>
-  <span class="s">then</span><span class="pi">:</span>
-  <span class="s">. 'f is \real.continuous.function:on{A}'</span>
-</code></pre></div></div>
+<div class="content">
+  <span class='mathlingua'><span class='mathlingua'><span class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header'>Theorem:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>for:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>f</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>A</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>where:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'f is \real.differential.function:on{A}'</span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'f is \real.continuous.function:on{A}'</span></span></span></span></span></span></span></span><span class='end-mathlingua-top-level'/></span></span>
+</div>
 
 <h3 id="conjectures">Conjectures</h3>
 
 <p>The following illustrates how the Goldbach Conjecture could be encoded.  Note that the metadata of the conjecture also states the name of the conjecture.</p>
 
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="na">Conjecture</span><span class="pi">:</span>
-<span class="s">. for</span><span class="pi">:</span> <span class="s">k</span>
-  <span class="s">where</span><span class="pi">:</span>
-  <span class="s">. 'k is \even.integer'</span>
-  <span class="s">. 'k &gt; 2'</span>
-  <span class="s">then</span><span class="pi">:</span>
-  <span class="s">. exists</span><span class="pi">:</span> <span class="s">p, q</span>
-    <span class="s">suchThat</span><span class="pi">:</span>
-    <span class="s">. 'p, q is \prime'</span>
-    <span class="s">. 'k = p + q'</span>
-<span class="na">Metadata</span><span class="pi">:</span>
-<span class="s">. name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Goldbach</span><span class="nv"> </span><span class="s">Conjecture"</span>
-</code></pre></div></div>
+<div class="content">
+  <span class='mathlingua'><span class='mathlingua'><span class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header'>Conjecture:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>for:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>k</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>where:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'k is \even.integer'</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'k > 2'</span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>exists:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>p</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>q</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'p, q is \prime'</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-statement-no-render'>'k = p + q'</span></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>Metadata:</span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>name:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"Goldbach Conjecture"</span></span></span></span><span class='end-mathlingua-top-level'/></span></span>
+</div>
 
 <h3 id="less-formal-descriptions">Less Formal Descriptions</h3>
 
 <p>The following illustrates how a theorem could be describe in a less structured way by describing it in LaTeX.  Note that the source material for the result is provided, and the result references the page number of that source.  In addition, tags are specified for categorization purposes.</p>
 
-<div class="language-yaml highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="pi">[</span><span class="nv">AbstractAlgebraTheoryAndApplications</span><span class="pi">]</span>
-<span class="na">Source</span><span class="pi">:</span>
-<span class="s">. type</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Book"</span>
-<span class="s">. name</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Abstract</span><span class="nv"> </span><span class="s">Algebra</span><span class="nv"> </span><span class="s">Theory</span><span class="nv"> </span><span class="s">and</span><span class="nv"> </span><span class="s">Applications"</span>
-<span class="s">. author</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Thomas</span><span class="nv"> </span><span class="s">W.</span><span class="nv"> </span><span class="s">Judson"</span>
-<span class="s">. date</span><span class="pi">:</span> <span class="s2">"</span><span class="s">August</span><span class="nv"> </span><span class="s">15,</span><span class="nv"> </span><span class="s">2014"</span>
-<span class="s">. url</span><span class="pi">:</span> <span class="s2">"</span><span class="s">http://abstract.ups.edu/download/aata-20140815.pdf"</span>
-<span class="s">. offset</span><span class="pi">:</span> <span class="s2">"</span><span class="s">10"</span>
-<span class="na">Metadata</span><span class="pi">:</span>
-<span class="s">. tag</span><span class="pi">:</span>
-  <span class="s">. "Abstract Algebra"</span>
-  <span class="s">. "Algebra"</span>
-
-
-<span class="na">ProtoResult</span><span class="pi">:</span>
-<span class="s">. "All cyclic groups of infinite order are isomorphic to $\mathbb Z$."</span>
-<span class="na">Metadata</span><span class="pi">:</span>
-<span class="s">. reference</span><span class="pi">:</span>
-  <span class="s">. source</span><span class="pi">:</span> <span class="s2">"</span><span class="s">@AbstractAlgebraTheoryAndApplications"</span>
-    <span class="na">page</span><span class="pi">:</span> <span class="s2">"</span><span class="s">146"</span>
-<span class="s">. tag</span><span class="pi">:</span> <span class="s2">"</span><span class="s">Abstract</span><span class="nv"> </span><span class="s">Algebra"</span>
-</code></pre></div></div>
+<div class="content">
+  <span class='mathlingua'><span class='mathlingua'><span class='mathlingua-top-level'><span class='mathlingua-id'>[AbstractAlgebraTheoryAndApplications]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Resource:</span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>type:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"Book"</span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>name:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"Abstract Algebra Theory and Applications"</span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>author:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"Thomas W. Judson"</span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>date:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"August 15, 2014"</span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>url:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"http://abstract.ups.edu/download/aata-20140815.pdf"</span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>offset:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"10"</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>Metadata:</span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>tag:</span><br/><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"Abstract Algebra"</span><br/><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"Algebra"</span></span></span></span><span class='end-mathlingua-top-level'/></span><br/><br/><br/><span class='mathlingua'><span class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header'>Theorem:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"All cyclic groups of infinite order are isomorphic to $\mathbb{Z}$"</span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>Metadata:</span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>reference:</span><br/><span class='mathlingua'><span class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>source:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"@AbstractAlgebraTheoryAndApplications"</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>page:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"146"</span></span></span><span class='end-mathlingua-top-level'/></span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>tag:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text-no-render'>"Abstract Algebra"</span></span></span></span><span class='end-mathlingua-top-level'/></span></span>
+</div>
 
 
 

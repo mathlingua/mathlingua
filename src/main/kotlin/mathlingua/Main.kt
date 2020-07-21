@@ -88,16 +88,19 @@ private data class MessageInfo(
                 builder.append("}")
             }
             OutputType.TestCase -> {
-                builder.append("Row: $row")
-                builder.append("Column: $column")
-                builder.append("Message:")
+                builder.append("Row: $row\n")
+                builder.append("Column: $column\n")
+                builder.append("Message:\n")
                 builder.append(message)
-                builder.append("EndMessage:")
+                builder.append("\nEndMessage:\n")
             }
             else -> {
-                builder.append(bold("${messageType.text} File: $file"))
+                builder.append(bold(red("${messageType.text}: ")))
+                builder.append(bold("$file\n"))
                 builder.append(failedLine.trim())
+                builder.append("\n")
                 builder.append(message.trim())
+                builder.append("\n")
             }
         }
         return builder.toString()
@@ -419,7 +422,7 @@ private class Render : CliktCommand("Generates either HTML or MathLingua code wi
                     "mathlingua" -> {
                         val builder = StringBuilder()
                         for (err in validation.errors) {
-                            builder.append("ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})")
+                            builder.append("ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})\n")
                         }
                         write(builder.toString(), fileToProcess)
                     }

@@ -39,6 +39,9 @@ import java.nio.file.Paths
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 
+private const val TOOL_VERSION = "0.7"
+private const val MATHLINGUA_VERSION = "0.7"
+
 private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
 private fun green(text: String) = "\u001B[32m$text\u001B[0m"
 private fun red(text: String) = "\u001B[31m$text\u001B[0m"
@@ -745,6 +748,13 @@ private class UndefinedSignatures : CliktCommand(
     }
 }
 
+private class Version : CliktCommand(help = "Prints the tool and MathLingua language version.") {
+    override fun run() {
+        log("MathLingua CLI Version:      $TOOL_VERSION")
+        log("MathLingua Language Version: $MATHLINGUA_VERSION")
+    }
+}
+
 private fun String.relativeTo(dir: String): String {
     val separator = File.separator
     val prefix = if (dir.endsWith(separator)) {
@@ -761,5 +771,5 @@ private fun String.relativeTo(dir: String): String {
 }
 
 fun main(args: Array<String>) = Mlg().subcommands(
-        Check(), Render(), DuplicateContent(), DuplicateSignatures(), UndefinedSignatures()
+        Check(), Render(), DuplicateContent(), DuplicateSignatures(), UndefinedSignatures(), Version()
 ).main(args)

@@ -598,7 +598,7 @@ dt {
 }
 
 header {
-    padding: 25px 20px 25px 20px;
+    padding: 25px 0px 25px 0px;
 	margin: 0;
 	/* position: fixed; */
 	top: 0;
@@ -678,22 +678,12 @@ header p {
 
 #banner .fork {
     float: left;
-    margin-left: 45px;
-	/*
-	position: fixed;
-	left: 50%;
-	margin-left: -325px;
-	padding: 10px 12px;
-	margin-top: 6px;
-	line-height: 14px;
-	font-size: 14px;
-	background-color: #FFE788
-	*/
+    margin-left: 20px;
 }
 
 #banner .downloads {
 	float: right;
-	margin: 0 45px 0 0
+	margin-right: 20px;
 }
 
 #banner .downloads span {
@@ -826,7 +816,7 @@ screen and (max-width: 1060px) {
 		width: 100%
 	}
 	#banner .downloads {
-		margin-right: 60px
+		margin-right: 20px
 	}
 	#banner #logo {
 		margin-right: 15px
@@ -854,7 +844,6 @@ screen and (max-width: 720px) {
 		word-wrap: break-word
 	}
 	header {
-		padding: 20px 20px;
 		margin: 0
 	}
 	header h1 {
@@ -871,13 +860,6 @@ screen and (max-width: 720px) {
 	#banner {
 		top: 80px
 	}
-	#banner .fork {
-		float: left;
-		display: inline-block;
-		margin-left: 0px;
-		position: fixed;
-		left: 20px
-	}
 	section {
 		margin-top: 20px;
 		margin-bottom: 0px;
@@ -892,8 +874,8 @@ screen and (max-width: 720px) {
 @media print,
 screen and (max-width: 480px) {
 	header {
-		position: relative;
-		padding: 5px 0px;
+		/* position: relative; */
+		padding: 0px 0px;
 		min-height: 0px
 	}
 	header h1 {
@@ -907,11 +889,19 @@ screen and (max-width: 480px) {
 	section {
 		margin-top: 5px
 	}
-	#banner {
-		display: none
-	}
 	header ul {
 		display: none
+	}
+	#banner .fork {
+		float: left;
+		margin-left: 10px;
+	}
+	#banner .downloads {
+		float: right;
+		margin-right: 10px;
+	}
+	#banner .downloads-label {
+		display: none;
 	}
 }
 

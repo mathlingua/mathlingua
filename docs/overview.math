@@ -1,0 +1,96 @@
+
+Theorem:
+. for:
+  . G := (X, *, e)
+  . a, b, c
+  where:
+  . 'G is \group'
+  . 'a, b, c \in X'
+  then:
+  . if: 'a*b = a*c'
+    then: 'b = c'
+Metadata:
+. concept: "This result shows that the $\textbf{left
+            cancellation law}$ is true in a group."
+. reference:
+  . source: "@AbstractAlgebraTheoryAndApplications"
+    page: "47"
+
+
+
+[AbstractAlgebraTheoryAndApplications]
+Resource:
+. type: "Book"
+. name: "Abstract Algebra Theory and Applications"
+. author: "Thomas W. Judson"
+. date: "August 15, 2014"
+. url: "http://abstract.ups.edu/download/aata-20140815.pdf"
+. offset: "10"
+Metadata:
+. tag:
+  . "Abstract Algebra"
+
+
+
+[\group]
+Defines: G := (X, *, e)
+assuming:
+. 'X is \set'
+. '* is \binary.operation:on{X}'
+. 'e \in X'
+means:
+. for: a, b, c
+  where: 'a, b, c \in X'
+  then:
+  . '(a * b) * c = a * (b * c)'
+. for: a
+  where: 'a \in X'
+  then:
+  . 'a * e = e * a = a'
+. for: a
+  where: 'a \in X'
+  then:
+  . exists: b
+    suchThat:
+    . 'b \in X'
+    . 'a * b = b * a = e'
+Metadata:
+. written: "\textrm{group}"
+. concept: "The integers have a nice property that zero is
+            an integer and any integer $x$ has a negative
+            $-x$ such that $x + -x = 0$, along with the
+            fact that addition is $\textbf{associative}$.
+            A $\textbf{group}$ abstracts this notion of a
+            set and an operation with these nice properties."
+. note: "$*$ is said to be $\textbf{associative}$ because
+         $a*(b*c) = (a*b)*c$ for any $a,b,c \in X$."
+. reference:
+  . source: "@AbstractAlgebraTheoryAndApplications"
+    page: "43"
+
+
+
+[\binary.operation:on{A}]
+Defines: *
+assuming: 'A is \set'
+means:
+. "$*?$ is a function that assigns to each pair
+  $(a?, b?) \in A? \times A?$ a unique element
+  $a? *? b? \in A."
+Metadata:
+. written: "A?? \times A?? \mapsto A??"
+. name:
+  . "binary operation"
+  . "law of composition"
+. reference:
+  . source: "@AbstractAlgebraTheoryAndApplications"
+    page: "42"
+
+
+
+[\set]
+Defines: X
+means: "A well defined collection of distinct objects."
+Metadata:
+. written: "\textrm{set}"
+

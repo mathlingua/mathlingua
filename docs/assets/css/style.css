@@ -876,15 +876,14 @@ screen and (max-width: 480px) {
 	header {
 		/* position: relative; */
 		padding: 0px 0px;
-		min-height: 0px
+		min-height: 60px;
 	}
 	header h1 {
-		font-size: 24px;
 		white-space: nowrap;
 		overflow: hidden;
 		text-overflow: ellipsis;
 		-o-text-overflow: ellipsis;
-		-ms-text-overflow: ellipsis
+		-ms-text-overflow: ellipsis;
 	}
 	section {
 		margin-top: 5px

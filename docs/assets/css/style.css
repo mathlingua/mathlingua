@@ -63,26 +63,31 @@ h1 {
 }
 
 h2 {
+	text-align: center;
 	font-size: 1.5em;
 	margin: 0.83em 0
 }
 
 h3 {
+	text-align: center;
 	font-size: 1.17em;
 	margin: 1em 0
 }
 
 h4 {
+	text-align: center;
 	font-size: 1em;
 	margin: 1.33em 0
 }
 
 h5 {
+	text-align: center;
 	font-size: 0.83em;
 	margin: 1.67em 0
 }
 
 h6 {
+	text-align: center;
 	font-size: 0.75em;
 	margin: 2.33em 0
 }
@@ -722,6 +727,7 @@ header p {
 }
 
 section {
+	height: fit-content;
 	width: 590px;
 	padding: 30px 30px 50px 30px;
 	margin: 20px 0;

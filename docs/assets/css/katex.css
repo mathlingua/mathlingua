@@ -37,6 +37,24 @@
 	color: #007377;
 }
 
+.chalktalk {
+    font-weight: bold;
+	color: #0055bb;
+}
+
+.textalk {
+	font-family: monospace;
+	color: #007377;
+}
+
+.text {
+    color: #007700;
+}
+
+.target {
+    font-family: monospace;
+}
+
 .katex {
 	font-size: 1em;
 }

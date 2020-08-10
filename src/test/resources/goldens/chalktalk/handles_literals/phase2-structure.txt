@@ -1,0 +1,18 @@
+Document(
+  groups = [
+             TheoremGroup(
+               theoremSection = TheoremSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               Literal(
+                                 literal = "`some literal
+      text`"
+                               )
+                             ]
+                 )
+               )
+               aliasSection = null
+               metaDataSection = null
+             )
+           ]
+)

@@ -35,7 +35,8 @@ enum class ChalkTalkTokenType {
     LCurly,
     RCurly,
     Underscore,
-    DotDotDot
+    DotDotDot,
+    Literal
 }
 
 sealed class Phase1Target : Phase1Node

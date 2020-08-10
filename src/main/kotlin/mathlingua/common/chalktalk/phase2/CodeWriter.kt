@@ -23,6 +23,7 @@ import mathlingua.common.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.common.chalktalk.phase2.ast.clause.Literal
 import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.textalk.ExpressionTexTalkNode
@@ -42,9 +43,11 @@ interface CodeWriter {
     fun writeIndent(hasDot: Boolean, indent: Int)
     fun writePhase1Node(phase1Node: Phase1Node)
     fun writeId(id: IdStatement)
+    fun writeId(id: Literal)
     fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>)
     fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
+    fun writeLiteral(text: String)
     fun writeDirect(text: String)
     fun beginTopLevel()
     fun endTopLevel()
@@ -136,6 +139,20 @@ open class HtmlCodeWriter(
         val stmt = id.toStatement().toCode(false, 0, MathLinguaCodeWriter(emptyList(), emptyList())).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
+        builder.append("</span>")
+    }
+
+    override fun writeId(id: Literal) {
+        builder.append("<span class='mathlingua-id'>")
+        builder.append('[')
+        builder.append(id.literal)
+        builder.append(']')
+        builder.append("</span>")
+    }
+
+    override fun writeLiteral(text: String) {
+        builder.append("<span class='mathlingua-literal'>")
+        builder.append("`$text`")
         builder.append("</span>")
     }
 
@@ -310,6 +327,18 @@ class MathLinguaCodeWriter(
         val stmt = id.toStatement().toCode(false, 0, newCodeWriter(emptyList(), emptyList())).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
+    }
+
+    override fun writeId(id: Literal) {
+        builder.append('[')
+        builder.append(id.literal)
+        builder.append(']')
+    }
+
+    override fun writeLiteral(text: String) {
+        builder.append('`')
+        builder.append(text)
+        builder.append('`')
     }
 
     override fun writeText(text: String) {

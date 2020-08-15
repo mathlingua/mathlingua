@@ -309,25 +309,6 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
 
                 this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
-            } else if (c == '`') {
-                val startLine = line
-                val startColumn = column
-                var str = "" + c
-                while (i < text.length && text[i] != '`') {
-                    str += text[i++]
-                    column++
-                }
-                if (i == text.length) {
-                    errors.add(
-                        ParseError("Expected a terminating `", line, column)
-                    )
-                    str += "`"
-                } else {
-                    // include the terminating `
-                    str += text[i++]
-                    column++
-                }
-                this.chalkTalkTokens!!.add(Phase1Token(str, ChalkTalkTokenType.Literal, startLine, startColumn))
             } else if (c == '"') {
                 val startLine = line
                 val startColumn = column

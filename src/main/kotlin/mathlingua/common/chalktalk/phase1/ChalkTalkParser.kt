@@ -154,11 +154,10 @@ private class ChalkTalkParserImpl : ChalkTalkParser {
         }
 
         private fun argument(): Argument? {
-            val text = token(ChalkTalkTokenType.Statement)
+            val literal = token(ChalkTalkTokenType.Statement)
                 ?: token(ChalkTalkTokenType.String)
-                ?: token(ChalkTalkTokenType.Literal)
-            if (text != null) {
-                return Argument(text)
+            if (literal != null) {
+                return Argument(literal)
             }
 
             val mapping = mapping()

@@ -60,10 +60,6 @@ private val CLAUSE_VALIDATORS = listOf(
                 ::validateText
         ),
         ValidationPair(
-                ::isLiteral,
-                ::validateLiteral
-        ),
-        ValidationPair(
                 ::isForGroup,
                 ::validateForGroup
         ),

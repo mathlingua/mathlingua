@@ -1,0 +1,19 @@
+Document(
+  groups = [
+             TheoremGroup(
+               theoremSection = TheoremSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               LatexGroup(
+                                 latexSection = LatexSection(
+                                   text = ""Let $x$ be something.""
+                                 )
+                               )
+                             ]
+                 )
+               )
+               aliasSection = null
+               metaDataSection = null
+             )
+           ]
+)

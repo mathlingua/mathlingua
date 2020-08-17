@@ -75,8 +75,10 @@ import mathlingua.common.chalktalk.phase2.ast.toplevel.ResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TheoremGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
 
-class LatexTranslator(val defines: List<DefinesGroup>,
-                      val represents: List<RepresentsGroup>) {
+class LatexTranslator(
+    val defines: List<DefinesGroup>,
+    val represents: List<RepresentsGroup>
+) {
     val buffer = mutableListOf<String>()
 
     fun translate(doc: Document?) {
@@ -368,7 +370,7 @@ class LatexTranslator(val defines: List<DefinesGroup>,
     }
 
     fun translate(latexSection: LatexSection?) {
-        if (latexSection!= null) {
+        if (latexSection != null) {
             append(latexSection.text.removeSurrounding("\"", "\"").replace("?", ""))
         }
     }
@@ -489,17 +491,3 @@ class LatexTranslator(val defines: List<DefinesGroup>,
 
     private fun append(text: String) = buffer.add(text)
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-

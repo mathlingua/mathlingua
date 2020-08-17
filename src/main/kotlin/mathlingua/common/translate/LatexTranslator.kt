@@ -31,6 +31,7 @@ import mathlingua.common.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.common.chalktalk.phase2.ast.clause.IfGroup
 import mathlingua.common.chalktalk.phase2.ast.clause.IffGroup
 import mathlingua.common.chalktalk.phase2.ast.clause.LatexGroup
+import mathlingua.common.chalktalk.phase2.ast.clause.LeanGroup
 import mathlingua.common.chalktalk.phase2.ast.clause.NotGroup
 import mathlingua.common.chalktalk.phase2.ast.clause.OrGroup
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
@@ -277,7 +278,29 @@ class LatexTranslator(
             is Text -> translate(clause)
             is TupleNode -> translate(clause)
             is LatexGroup -> translate(clause)
+            is LeanGroup -> translate(clause)
             else -> throw RuntimeException("Unknown clause ${clause?.toCode(false, 0)?.getCode()}")
+        }
+    }
+
+    fun translate(leanGroup: LeanGroup?) {
+        if (leanGroup != null) {
+            append("\\begin{verbatim}\n")
+            if (leanGroup.importSection != null) {
+                for (imp in leanGroup.importSection.imports) {
+                    append("import $imp\n")
+                }
+                append("\n")
+            }
+            if (leanGroup.variableSection != null) {
+                for (v in leanGroup.variableSection.variables) {
+                    append("variables $v\n")
+                }
+                append("\n")
+            }
+            append(leanGroup.leanSection.text)
+            append("\n")
+            append("\\end{verbatim}\n")
         }
     }
 

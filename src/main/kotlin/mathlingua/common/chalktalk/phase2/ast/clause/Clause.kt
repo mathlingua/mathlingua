@@ -90,6 +90,10 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
                 ::isLatexGroup,
                 ::validateLatexGroup
+        ),
+        ValidationPair(
+                ::isLeanGroup,
+                ::validateLeanGroup
         )
 )
 
@@ -221,6 +225,72 @@ fun <G : Phase2Node, S1, S2> validateDoubleSectionGroup(
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else validationSuccess(tracker, rawNode, buildGroup(section1!!, section2!!))
+}
+
+fun <G : Phase2Node, S1, S2, S3> validateTripleSectionGroup(
+    tracker: MutableLocationTracker,
+    rawNode: Phase1Node,
+    section1Name: String,
+    validateSection1: (section: Section, tracker: MutableLocationTracker) -> Validation<S1>,
+    section2Name: String,
+    validateSection2: (section: Section, tracker: MutableLocationTracker) -> Validation<S2>,
+    section3Name: String,
+    validateSection3: (section: Section, tracker: MutableLocationTracker) -> Validation<S3>,
+    buildGroup: (sect1: S1, sect2: S2?, sect3: S3?) -> G
+): Validation<G> {
+    val node = rawNode.resolve()
+
+    val errors = ArrayList<ParseError>()
+    if (node !is Group) {
+        errors.add(
+            ParseError(
+                "Expected a Group",
+                getRow(node), getColumn(node)
+            )
+        )
+        return validationFailure(errors)
+    }
+
+    val (sections) = node
+
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+            sections, section1Name, section2Name, section3Name
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return validationFailure(errors)
+    }
+
+    var section1: S1? = null
+    val sect1 = sectionMap[section1Name]
+    when (val section1Validation = validateSection1(sect1!![0], tracker)) {
+        is ValidationSuccess -> section1 = section1Validation.value
+        is ValidationFailure -> errors.addAll(section1Validation.errors)
+    }
+
+    var section2: S2? = null
+    val sect2 = sectionMap[section2Name.replace("?", "")]
+    if (sect2 != null) {
+        when (val section2Validation = validateSection2(sect2[0], tracker)) {
+            is ValidationSuccess -> section2 = section2Validation.value
+            is ValidationFailure -> errors.addAll(section2Validation.errors)
+        }
+    }
+
+    var section3: S3? = null
+    val sect3 = sectionMap[section3Name.replace("?", "")]
+    if (sect3 != null) {
+        when (val section3Validation = validateSection3(sect3[0], tracker)) {
+            is ValidationSuccess -> section3 = section3Validation.value
+            is ValidationFailure -> errors.addAll(section3Validation.errors)
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else validationSuccess(tracker, rawNode, buildGroup(section1!!, section2, section3))
 }
 
 fun <Wrapped : Phase2Node, Base> validateWrappedNode(

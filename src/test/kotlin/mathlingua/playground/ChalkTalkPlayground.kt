@@ -28,6 +28,7 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.*
+import mathlingua.common.translate.LatexTranslator
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -101,6 +102,7 @@ fun main() {
     outputArea.isCodeFoldingEnabled = true
     outputArea.highlightCurrentLine = false
     outputArea.font = font
+    outputArea.lineWrap = true
     outputArea.syntaxScheme
         .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
@@ -278,7 +280,10 @@ fun main() {
                         transformed = fullExpandComplete(doc)
                     }
 
-                    outputArea.text = transformed.toCode(false, 0).getCode()
+                    val translator = LatexTranslator(transformed.defines(), transformed.represents())
+                    translator.translate(transformed)
+                    outputArea.text = translator.toText()
+
                     outputTree.model = DefaultTreeModel(
                         toTreeNode(
                             tracker,

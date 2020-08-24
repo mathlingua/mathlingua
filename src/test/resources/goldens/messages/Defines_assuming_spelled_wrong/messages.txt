@@ -5,11 +5,10 @@ For pattern:
 
 Defines:
 assuming?:
-means:
+means?:
+computes?:
 Alias?:
 Metadata?:
 
-Expected 'means' but found 'assumes'
+Unexpected Section 'assumes'
 EndMessage:
-
-

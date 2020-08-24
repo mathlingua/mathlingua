@@ -211,9 +211,7 @@ class LatexTranslator(
             }
             translate(definesGroup.definesSection)
             translate(definesGroup.assumingSection)
-            for (ms in definesGroup.meansSections) {
-                translate(ms)
-            }
+            translate(definesGroup.meansSection)
         }
     }
 

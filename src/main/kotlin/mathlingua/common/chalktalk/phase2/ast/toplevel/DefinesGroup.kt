@@ -21,16 +21,24 @@ import mathlingua.common.ParseError
 import mathlingua.common.Validation
 import mathlingua.common.ValidationFailure
 import mathlingua.common.ValidationSuccess
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
+import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.common.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.common.chalktalk.phase2.ast.section.*
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
 import mathlingua.common.textalk.Command
+import mathlingua.common.transform.signature
 import mathlingua.common.validationFailure
 import mathlingua.common.validationSuccess
 
@@ -39,7 +47,8 @@ data class DefinesGroup(
     val id: IdStatement,
     val definesSection: DefinesSection,
     val assumingSection: AssumingSection?,
-    val meansSections: List<MeansSection>,
+    val meansSection: MeansSection?,
+    val computesSection: ComputesSection?,
     val aliasSection: AliasSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
@@ -50,7 +59,12 @@ data class DefinesGroup(
         if (assumingSection != null) {
             fn(assumingSection)
         }
-        meansSections.forEach(fn)
+        if (meansSection != null) {
+            fn(meansSection)
+        }
+        if (computesSection != null) {
+            fn(computesSection)
+        }
         if (aliasSection != null) {
             fn(aliasSection)
         }
@@ -61,7 +75,8 @@ data class DefinesGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(definesSection, assumingSection)
-        sections.addAll(meansSections)
+        sections.add(meansSection)
+        sections.add(computesSection)
         sections.add(metaDataSection)
         return topLevelToCode(
                 writer,
@@ -77,7 +92,8 @@ data class DefinesGroup(
             id = id.transform(chalkTransformer) as IdStatement,
             definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
             assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
-            meansSections = meansSections.map { chalkTransformer(it) as MeansSection },
+            meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
+            computesSection = computesSection?.transform(chalkTransformer) as ComputesSection?,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
@@ -86,16 +102,7 @@ data class DefinesGroup(
 fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
 
 fun validateDefinesGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<DefinesGroup> {
-    val validation = validateDefinesLikeGroup(
-        tracker,
-        groupNode,
-        "Defines",
-        ::validateDefinesSection,
-        "means",
-        ::validateMeansSection,
-        ::DefinesGroup
-    )
-
+    val validation = validateDefinesGroup(tracker, groupNode)
     if (validation is ValidationFailure) {
         return validation
     }
@@ -190,4 +197,130 @@ fun validateDefinesGroup(groupNode: Group, tracker: MutableLocationTracker): Val
     } else {
         validationFailure(errors)
     }
+}
+
+private fun validateDefinesGroup(
+    tracker: MutableLocationTracker,
+    groupNode: Group
+): Validation<DefinesGroup> {
+    val errors = ArrayList<ParseError>()
+    val group = groupNode.resolve()
+    var id: IdStatement? = null
+    if (group.id != null) {
+        val (rawText, _, row, column) = group.id
+        // The id token is of type Id and the text is of the form "[...]"
+        // Convert it to look like a statement.
+        val statementText = "'" + rawText.substring(1, rawText.length - 1) + "'"
+        val stmtToken = Phase1Token(
+            statementText, ChalkTalkTokenType.Statement,
+            row, column
+        )
+        when (val idValidation = validateIdStatement(stmtToken, tracker)) {
+            is ValidationSuccess -> id = idValidation.value
+            is ValidationFailure -> errors.addAll(idValidation.errors)
+        }
+    } else {
+        val type = if (group.sections.isNotEmpty()) {
+            group.sections.first().name.text
+        } else {
+            "Defines or Represents"
+        }
+        errors.add(
+            ParseError(
+                "A $type must have an Id",
+                getRow(group), getColumn(group)
+            )
+        )
+    }
+
+    val sections = group.sections
+
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+            sections,
+            "Defines", "assuming?", "means?", "computes?",
+            "Alias?", "Metadata?"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return validationFailure(errors)
+    }
+
+    val definesLike = sectionMap["Defines"]!!
+    val assuming = sectionMap["assuming"] ?: emptyList()
+    val means = sectionMap["means"]
+    val computes = sectionMap["computes"]
+    val alias = sectionMap["Alias"] ?: emptyList()
+    val metadata = sectionMap["Metadata"] ?: emptyList()
+
+    var definesLikeSection: DefinesSection? = null
+    when (val definesLikeValidation = validateDefinesSection(definesLike[0], tracker)) {
+        is ValidationSuccess -> definesLikeSection = definesLikeValidation.value
+        is ValidationFailure -> errors.addAll(definesLikeValidation.errors)
+    }
+
+    var assumingSection: AssumingSection? = null
+    if (assuming.isNotEmpty()) {
+        when (val assumingValidation = validateAssumingSection(assuming[0], tracker)) {
+            is ValidationSuccess -> assumingSection = assumingValidation.value
+            is ValidationFailure -> errors.addAll(assumingValidation.errors)
+        }
+    }
+
+    var meansSection: MeansSection? = null
+    if (means != null) {
+        when (val endValidation = validateMeansSection(means[0], tracker)) {
+            is ValidationSuccess -> meansSection = endValidation.value
+            is ValidationFailure -> errors.addAll(endValidation.errors)
+        }
+    }
+
+    var computesSection: ComputesSection? = null
+    if (computes != null) {
+        when (val computesValidation = validateComputesSection(computes[0], tracker)) {
+            is ValidationSuccess -> computesSection = computesValidation.value
+            is ValidationFailure -> errors.addAll(computesValidation.errors)
+        }
+    }
+
+    var aliasSection: AliasSection? = null
+    if (alias.isNotEmpty()) {
+        when (val aliasValidation = validateAliasSection(alias[0], tracker)) {
+            is ValidationSuccess -> aliasSection = aliasValidation.value
+            is ValidationFailure -> errors.addAll(aliasValidation.errors)
+        }
+    }
+
+    var metaDataSection: MetaDataSection? = null
+    if (metadata.isNotEmpty()) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
+            is ValidationSuccess -> metaDataSection = metaDataValidation.value
+            is ValidationFailure -> errors.addAll(metaDataValidation.errors)
+        }
+    }
+
+    if (meansSection == null && computesSection == null) {
+        errors.add(
+            ParseError(
+                "A Defines must have either a 'means' or 'computes' section",
+                getRow(group), getColumn(group)
+            )
+        )
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else validationSuccess(
+        tracker,
+        groupNode,
+        DefinesGroup(
+            id?.signature(),
+            id!!, definesLikeSection!!,
+            assumingSection,
+            meansSection,
+            computesSection,
+            aliasSection, metaDataSection
+        )
+    )
 }

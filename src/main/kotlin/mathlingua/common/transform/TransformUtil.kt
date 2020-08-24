@@ -449,7 +449,7 @@ internal fun replaceIsNodes(
                 map[defDirectVars[i]] = lhsVars[i]
             }
 
-            val ifThen = buildIfThens(def)[0]
+            val ifThen = buildIfThens(def)
             if (ifThen.ifSection.clauses.clauses.isEmpty()) {
                 for (thenClause in ifThen.thenSection.clauses.clauses) {
                     newClauses.add(renameVars(thenClause, map) as Clause)
@@ -477,28 +477,28 @@ internal fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
         id = def.id,
         definesSection = def.definesSection,
         assumingSection = null,
-        meansSections = buildIfThens(def).map {
-            MeansSection(
-                    clauses = ClauseListNode(
-                            clauses = listOf(it)
-                    )
-            )
-        },
+        meansSection = MeansSection(
+                clauses = ClauseListNode(
+                        clauses = listOf(buildIfThens(def))
+                )
+        ),
         aliasSection = def.aliasSection,
-        metaDataSection = def.metaDataSection
+        metaDataSection = def.metaDataSection,
+        computesSection = def.computesSection
 )
 
-internal fun buildIfThens(def: DefinesGroup) = def.meansSections.map {
+internal fun buildIfThens(def: DefinesGroup) =
     IfGroup(
             ifSection = IfSection(
                     clauses = def.assumingSection?.clauses
                             ?: ClauseListNode(clauses = emptyList())
             ),
             thenSection = ThenSection(
-                    clauses = it.clauses
+                    clauses = def.meansSection?.clauses ?: ClauseListNode(
+                        clauses = emptyList()
+                    )
             )
     )
-}
 
 internal fun buildIfThens(rep: RepresentsGroup) = rep.thatSections.map {
     IfGroup(

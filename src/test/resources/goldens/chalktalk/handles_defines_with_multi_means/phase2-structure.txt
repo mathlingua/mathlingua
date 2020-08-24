@@ -55,98 +55,67 @@ Document(
                            ]
                )
                assumingSection = null
-               meansSections = [
-                                 MeansSection(
+               meansSection = MeansSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               IfGroup(
+                                 ifSection = IfSection(
                                    clauses = ClauseListNode(
                                      clauses = [
-                                                 Statement(
-                                                   text = "a"
-                                                   texTalkRoot = ValidationSuccessImpl(
-                                                     v = ExpressionTexTalkNode(
-                                                       children = [
-                                                                    TextTexTalkNode(
-                                                                      type = TexTalkNodeType.Identifier
-                                                                      tokenType = TexTalkTokenType.Identifier
-                                                                      text = "a"
-                                                                      isVarArg = false
-                                                                    )
-                                                                  ]
-                                                     )
-                                                   )
-                                                 )
-                                               ]
-                                   )
-                                 ),
-                                 MeansSection(
-                                   clauses = ClauseListNode(
-                                     clauses = [
-                                                 Text(
-                                                   text = ""b""
-                                                 )
-                                               ]
-                                   )
-                                 ),
-                                 MeansSection(
-                                   clauses = ClauseListNode(
-                                     clauses = [
-                                                 IfGroup(
-                                                   ifSection = IfSection(
-                                                     clauses = ClauseListNode(
-                                                       clauses = [
-                                                                   AbstractionNode(
-                                                                     abstraction = Abstraction(
-                                                                       isEnclosed = false
-                                                                       isVarArgs = false
-                                                                       parts = [
-                                                                                 AbstractionPart(
-                                                                                   name = Phase1Token(
-                                                                                     text = "x"
-                                                                                     type = ChalkTalkTokenType.Name
-                                                                                     row = 7
-                                                                                     column = 7
-                                                                                   )
-                                                                                   subParams = null
-                                                                                   params = null
-                                                                                   tail = null
-                                                                                 )
-                                                                               ]
-                                                                       subParams = null
-                                                                     )
-                                                                   )
-                                                                 ]
-                                                     )
-                                                   )
-                                                   thenSection = ThenSection(
-                                                     clauses = ClauseListNode(
-                                                       clauses = [
-                                                                   AbstractionNode(
-                                                                     abstraction = Abstraction(
-                                                                       isEnclosed = false
-                                                                       isVarArgs = false
-                                                                       parts = [
-                                                                                 AbstractionPart(
-                                                                                   name = Phase1Token(
-                                                                                     text = "y"
-                                                                                     type = ChalkTalkTokenType.Name
-                                                                                     row = 8
-                                                                                     column = 9
-                                                                                   )
-                                                                                   subParams = null
-                                                                                   params = null
-                                                                                   tail = null
-                                                                                 )
-                                                                               ]
-                                                                       subParams = null
-                                                                     )
-                                                                   )
-                                                                 ]
-                                                     )
+                                                 AbstractionNode(
+                                                   abstraction = Abstraction(
+                                                     isEnclosed = false
+                                                     isVarArgs = false
+                                                     parts = [
+                                                               AbstractionPart(
+                                                                 name = Phase1Token(
+                                                                   text = "x"
+                                                                   type = ChalkTalkTokenType.Name
+                                                                   row = 7
+                                                                   column = 7
+                                                                 )
+                                                                 subParams = null
+                                                                 params = null
+                                                                 tail = null
+                                                               )
+                                                             ]
+                                                     subParams = null
                                                    )
                                                  )
                                                ]
                                    )
                                  )
-                               ]
+                                 thenSection = ThenSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
+                                                 AbstractionNode(
+                                                   abstraction = Abstraction(
+                                                     isEnclosed = false
+                                                     isVarArgs = false
+                                                     parts = [
+                                                               AbstractionPart(
+                                                                 name = Phase1Token(
+                                                                   text = "y"
+                                                                   type = ChalkTalkTokenType.Name
+                                                                   row = 8
+                                                                   column = 9
+                                                                 )
+                                                                 subParams = null
+                                                                 params = null
+                                                                 tail = null
+                                                               )
+                                                             ]
+                                                     subParams = null
+                                                   )
+                                                 )
+                                               ]
+                                   )
+                                 )
+                               )
+                             ]
+                 )
+               )
+               computesSection = null
                aliasSection = null
                metaDataSection = null
              )

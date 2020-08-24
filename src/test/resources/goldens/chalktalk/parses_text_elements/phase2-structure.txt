@@ -42,17 +42,16 @@ Document(
                            ]
                )
                assumingSection = null
-               meansSections = [
-                                 MeansSection(
-                                   clauses = ClauseListNode(
-                                     clauses = [
-                                                 Text(
-                                                   text = ""C""
-                                                 )
-                                               ]
-                                   )
-                                 )
-                               ]
+               meansSection = MeansSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               Text(
+                                 text = ""C""
+                               )
+                             ]
+                 )
+               )
+               computesSection = null
                aliasSection = null
                metaDataSection = null
              )

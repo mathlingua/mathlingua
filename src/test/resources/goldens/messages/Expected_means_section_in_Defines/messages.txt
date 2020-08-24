@@ -1,15 +1,5 @@
-Row: 1
-Column: 1
+Row: 0
+Column: 0
 Message:
-For pattern:
-
-Defines:
-assuming?:
-means:
-Alias?:
-Metadata?:
-
-Expected a means
+A Defines must have either a 'means' or 'computes' section
 EndMessage:
-
-

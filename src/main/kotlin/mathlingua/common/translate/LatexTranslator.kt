@@ -56,7 +56,6 @@ import mathlingua.common.chalktalk.phase2.ast.section.NotSection
 import mathlingua.common.chalktalk.phase2.ast.section.NoteSection
 import mathlingua.common.chalktalk.phase2.ast.section.OrSection
 import mathlingua.common.chalktalk.phase2.ast.section.ProblemSection
-import mathlingua.common.chalktalk.phase2.ast.section.RefinesSection
 import mathlingua.common.chalktalk.phase2.ast.section.RepresentsSection
 import mathlingua.common.chalktalk.phase2.ast.section.ResourceSection
 import mathlingua.common.chalktalk.phase2.ast.section.SuchThatSection
@@ -435,12 +434,6 @@ class LatexTranslator(
     fun translate(problemSection: ProblemSection?) {
         if (problemSection != null) {
             translate(problemSection.clauses)
-        }
-    }
-
-    fun translate(refinesSection: RefinesSection?) {
-        if (refinesSection != null) {
-            translate(refinesSection.targets)
         }
     }
 

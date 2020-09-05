@@ -117,14 +117,6 @@ object MathLingua {
                 is ConjectureGroup -> group.copy(
                         metaDataSection = null
                 )
-                is ProtoGroup -> ProtoGroup(
-                        textSection = group.textSection.copy(
-                                text =
-                                    justify(group.textSection.text.replace("\\s+".toRegex(), " "), 80)
-                                            .joinToString("\n").replace("\n", "\n   ")
-                        ),
-                        metaDataSection = null
-                )
                 else -> throw RuntimeException("Unknown group: ${group.toCode(false, 0).getCode()}")
             }.toCode(false, 0).getCode().replace("^\\[]\\n".toRegex(), "")
 

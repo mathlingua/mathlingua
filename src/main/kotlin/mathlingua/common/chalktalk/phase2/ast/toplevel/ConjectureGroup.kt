@@ -22,21 +22,26 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.common.chalktalk.phase2.ast.section.AliasSection
+import mathlingua.common.chalktalk.phase2.ast.section.UsingSection
 import mathlingua.common.chalktalk.phase2.ast.section.ConjectureSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.section.WhereSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateConjectureSection
 
 data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
-    val aliasSection: AliasSection?,
+    val usingSection: UsingSection?,
+    val whereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(conjectureSection)
-        if (aliasSection != null) {
-            fn(aliasSection)
+        if (usingSection != null) {
+            fn(usingSection)
+        }
+        if (whereSection != null) {
+            fn(whereSection)
         }
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -44,13 +49,14 @@ data class ConjectureGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            topLevelToCode(writer, isArg, indent, null, conjectureSection, metaDataSection)
+            topLevelToCode(writer, isArg, indent, null, conjectureSection, usingSection, whereSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ConjectureGroup(
                     conjectureSection = conjectureSection.transform(chalkTransformer) as ConjectureSection,
-                    aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection,
-                    metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection
+                    usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+                    whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+                    metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
             ))
 }
 

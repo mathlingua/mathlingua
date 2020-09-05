@@ -46,7 +46,8 @@ data class RepresentsGroup(
     val representsSection: RepresentsSection,
     val whenSection: WhenSection?,
     val thatSections: List<ThatSection>,
-    val aliasSection: AliasSection?,
+    val usingSection: UsingSection?,
+    val whereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
@@ -57,8 +58,11 @@ data class RepresentsGroup(
             fn(whenSection)
         }
         thatSections.forEach(fn)
-        if (aliasSection != null) {
-            fn(aliasSection)
+        if (usingSection != null) {
+            fn(usingSection)
+        }
+        if (whereSection != null) {
+            fn(whereSection)
         }
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -68,6 +72,8 @@ data class RepresentsGroup(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(representsSection, whenSection)
         sections.addAll(thatSections)
+        sections.add(usingSection)
+        sections.add(whereSection)
         sections.add(metaDataSection)
         return topLevelToCode(
                 writer,
@@ -84,7 +90,8 @@ data class RepresentsGroup(
             representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
             whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
             thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+            usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
@@ -128,7 +135,7 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     try {
         sectionMap = identifySections(
             sections,
-            "Represents", "when?", "that", "Alias?", "Metadata?"
+            "Represents", "when?", "that", "using?", "where?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -138,7 +145,8 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     val definesLike = sectionMap["Represents"]!!
     val whenNode = sectionMap["when"] ?: emptyList()
     val ends = sectionMap["that"]!!
-    val alias = sectionMap["Alias"] ?: emptyList()
+    val using = sectionMap["using"] ?: emptyList()
+    val where = sectionMap["where"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var representsSection: RepresentsSection? = null
@@ -163,11 +171,19 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
         }
     }
 
-    var aliasSection: AliasSection? = null
-    if (alias.isNotEmpty()) {
-        when (val aliasValidation = validateAliasSection(alias[0], tracker)) {
-            is ValidationSuccess -> aliasSection = aliasValidation.value
+    var usingSection: UsingSection? = null
+    if (using.isNotEmpty()) {
+        when (val aliasValidation = validateUsingSection(using[0], tracker)) {
+            is ValidationSuccess -> usingSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
+        }
+    }
+
+    var whereSection: WhereSection? = null
+    if (where.isNotEmpty()) {
+        when (val whereValidation = validateWhereSection(where[0], tracker)) {
+            is ValidationSuccess -> whereSection = whereValidation.value
+            is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
     }
 
@@ -191,7 +207,7 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
             // the end sections are in reverse order so they
             // must be reversed here to be in the correct order
             endSections.reversed(),
-            aliasSection, metaDataSection
+            usingSection, whereSection, metaDataSection
         )
     )
 }

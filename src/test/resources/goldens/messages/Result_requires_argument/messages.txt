@@ -1,7 +1,7 @@
-Row: 0
-Column: 0
+Row: 1
+Column: 1
 Message:
-Section 'Theorem' requires at least one argument.
+Section 'then' requires at least one argument.
 EndMessage:
 
 

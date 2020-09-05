@@ -1,1 +1,2 @@
-Theorem: (a, "b")
+Theorem:
+then: (a, "b")

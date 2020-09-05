@@ -25,13 +25,18 @@ import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.section.UsingSection
 import mathlingua.common.chalktalk.phase2.ast.section.ConjectureSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
+import mathlingua.common.chalktalk.phase2.ast.section.GivenSection
+import mathlingua.common.chalktalk.phase2.ast.section.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.section.WhereSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateConjectureSection
 
 data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
+    val givenSection: GivenSection?,
+    val givenWhereSection: WhereSection?,
+    val thenSection: ThenSection,
     val usingSection: UsingSection?,
-    val whereSection: WhereSection?,
+    val usingWhereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
@@ -40,8 +45,15 @@ data class ConjectureGroup(
         if (usingSection != null) {
             fn(usingSection)
         }
-        if (whereSection != null) {
-            fn(whereSection)
+        if (givenSection != null) {
+            fn(givenSection)
+        }
+        if (givenWhereSection != null) {
+            fn(givenWhereSection)
+        }
+        fn(thenSection)
+        if (usingWhereSection != null) {
+            fn(usingWhereSection)
         }
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -49,13 +61,18 @@ data class ConjectureGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            topLevelToCode(writer, isArg, indent, null, conjectureSection, usingSection, whereSection, metaDataSection)
+            topLevelToCode(writer, isArg, indent, null, conjectureSection,
+                givenSection, givenWhereSection, thenSection,
+                usingSection, usingWhereSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(ConjectureGroup(
                     conjectureSection = conjectureSection.transform(chalkTransformer) as ConjectureSection,
+                    givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
+                    givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
+                    thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                     usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-                    whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+                    usingWhereSection = usingWhereSection?.transform(chalkTransformer) as WhereSection?,
                     metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
             ))
 }

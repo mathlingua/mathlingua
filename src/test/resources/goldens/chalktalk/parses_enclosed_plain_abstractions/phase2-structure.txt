@@ -2,6 +2,12 @@ Document(
   groups = [
              TheoremGroup(
                theoremSection = TheoremSection(
+                 names = [
+                         ]
+               )
+               givenSection = null
+               givenWhereSection = null
+               thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
                                ForGroup(
@@ -16,7 +22,7 @@ Document(
                                                                name = Phase1Token(
                                                                  text = "f"
                                                                  type = ChalkTalkTokenType.Name
-                                                                 row = 1
+                                                                 row = 2
                                                                  column = 9
                                                                )
                                                                subParams = null
@@ -42,7 +48,7 @@ Document(
                                                                  name = Phase1Token(
                                                                    text = "x"
                                                                    type = ChalkTalkTokenType.Name
-                                                                   row = 2
+                                                                   row = 3
                                                                    column = 9
                                                                  )
                                                                  subParams = null
@@ -61,7 +67,7 @@ Document(
                  )
                )
                usingSection = null
-               whereSection = null
+               usingWhereSection = null
                metaDataSection = null
              )
            ]

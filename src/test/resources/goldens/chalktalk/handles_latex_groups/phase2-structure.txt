@@ -2,6 +2,12 @@ Document(
   groups = [
              TheoremGroup(
                theoremSection = TheoremSection(
+                 names = [
+                         ]
+               )
+               givenSection = null
+               givenWhereSection = null
+               thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
                                LatexGroup(
@@ -13,7 +19,7 @@ Document(
                  )
                )
                usingSection = null
-               whereSection = null
+               usingWhereSection = null
                metaDataSection = null
              )
            ]

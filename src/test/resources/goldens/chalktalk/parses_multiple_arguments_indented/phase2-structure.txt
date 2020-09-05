@@ -2,6 +2,12 @@ Document(
   groups = [
              TheoremGroup(
                theoremSection = TheoremSection(
+                 names = [
+                         ]
+               )
+               givenSection = null
+               givenWhereSection = null
+               thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
                                AbstractionNode(
@@ -12,26 +18,6 @@ Document(
                                              AbstractionPart(
                                                name = Phase1Token(
                                                  text = "a"
-                                                 type = ChalkTalkTokenType.Name
-                                                 row = 1
-                                                 column = 3
-                                               )
-                                               subParams = null
-                                               params = null
-                                               tail = null
-                                             )
-                                           ]
-                                   subParams = null
-                                 )
-                               ),
-                               AbstractionNode(
-                                 abstraction = Abstraction(
-                                   isEnclosed = false
-                                   isVarArgs = false
-                                   parts = [
-                                             AbstractionPart(
-                                               name = Phase1Token(
-                                                 text = "b"
                                                  type = ChalkTalkTokenType.Name
                                                  row = 2
                                                  column = 3
@@ -51,9 +37,29 @@ Document(
                                    parts = [
                                              AbstractionPart(
                                                name = Phase1Token(
-                                                 text = "c"
+                                                 text = "b"
                                                  type = ChalkTalkTokenType.Name
                                                  row = 3
+                                                 column = 3
+                                               )
+                                               subParams = null
+                                               params = null
+                                               tail = null
+                                             )
+                                           ]
+                                   subParams = null
+                                 )
+                               ),
+                               AbstractionNode(
+                                 abstraction = Abstraction(
+                                   isEnclosed = false
+                                   isVarArgs = false
+                                   parts = [
+                                             AbstractionPart(
+                                               name = Phase1Token(
+                                                 text = "c"
+                                                 type = ChalkTalkTokenType.Name
+                                                 row = 4
                                                  column = 3
                                                )
                                                subParams = null
@@ -68,7 +74,7 @@ Document(
                  )
                )
                usingSection = null
-               whereSection = null
+               usingWhereSection = null
                metaDataSection = null
              )
            ]

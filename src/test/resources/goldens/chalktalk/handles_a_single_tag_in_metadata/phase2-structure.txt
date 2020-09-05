@@ -2,6 +2,12 @@ Document(
   groups = [
              TheoremGroup(
                theoremSection = TheoremSection(
+                 names = [
+                         ]
+               )
+               givenSection = null
+               givenWhereSection = null
+               thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Text(
@@ -11,7 +17,7 @@ Document(
                  )
                )
                usingSection = null
-               whereSection = null
+               usingWhereSection = null
                metaDataSection = MetaDataSection(
                  items = [
                            StringSectionGroup(

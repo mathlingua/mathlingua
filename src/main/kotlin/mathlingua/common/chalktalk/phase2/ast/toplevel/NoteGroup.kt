@@ -27,38 +27,28 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 
 data class NoteGroup(
     val noteSection: NoteSection,
-    val usingSection: UsingSection?,
-    val whereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(noteSection)
-        if (usingSection != null) {
-            fn(usingSection)
-        }
-        if (whereSection != null) {
-            fn(whereSection)
-        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        topLevelToCode(writer, isArg, indent, null, noteSection, usingSection, whereSection, metaDataSection)
+        topLevelToCode(writer, isArg, indent, null, noteSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(NoteGroup(
         noteSection = noteSection.transform(chalkTransformer) as NoteSection,
-        usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-        whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
         metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
 
 fun isNoteGroup(node: Phase1Node) = firstSectionMatchesName(node, "Note")
 
-fun validateNoteGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
+fun validateNoteGroup(groupNode: Group, tracker: MutableLocationTracker) = validateProtoResultLikeGroup(
     tracker,
     groupNode,
     "Note",

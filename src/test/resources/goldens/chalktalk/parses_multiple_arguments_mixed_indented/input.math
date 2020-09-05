@@ -1,4 +1,5 @@
-Theorem: a, b
+Theorem:
+then: a, b
 . c
 . d, e
 . f

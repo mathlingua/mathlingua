@@ -17,37 +17,31 @@
 package mathlingua.common.chalktalk.phase2.ast.section
 
 import mathlingua.common.MutableLocationTracker
-import mathlingua.common.Validation
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.toplevel.validateTextListSection
+import mathlingua.common.chalktalk.phase2.ast.clause.Target
+import mathlingua.common.chalktalk.phase2.ast.clause.validateTargetList
 
-data class ImportSection(val imports: List<String>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+data class GivenSection(val targets: List<Target>) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("import")
-        writer.writeNewline()
-        for (imp in imports) {
-            writer.writeIndent(true, indent + 2)
-            writer.writeDirect(imp)
-        }
+        writer.writeHeader("given")
+        appendTargetArgs(writer, targets, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(this)
+        chalkTransformer(GivenSection(
+            targets = targets.map { it.transform(chalkTransformer) as Target }
+        ))
 }
 
-fun validateImportSection(
-    rawNode: Phase1Node,
-    tracker: MutableLocationTracker
-): Validation<ImportSection> = validateTextListSection(
-    rawNode,
+fun validateGivenSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTargetList(
     tracker,
-    "import",
-    ::ImportSection
+    node,
+    "given",
+    ::GivenSection
 )

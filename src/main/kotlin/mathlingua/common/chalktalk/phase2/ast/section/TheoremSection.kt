@@ -18,34 +18,34 @@ package mathlingua.common.chalktalk.phase2.ast.section
 
 import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.clause.validateClauseList
+import mathlingua.common.chalktalk.phase2.ast.toplevel.validateTextListSection
 
-data class TheoremSection(val clauses: ClauseListNode) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
+data class TheoremSection(val names: List<String>) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+    }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("Theorem")
-        if (clauses.clauses.isNotEmpty()) {
+        if (names.isNotEmpty()) {
             writer.writeNewline()
         }
-        writer.append(clauses, true, indent + 2)
+        for (name in names) {
+            writer.writeIndent(true, indent + 2)
+            writer.writeDirect(name)
+        }
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(TheoremSection(
-                    clauses = clauses.transform(chalkTransformer) as ClauseListNode
-            ))
+            chalkTransformer(this)
 }
 
-fun validateTheoremSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-        tracker,
-        node,
-        "Theorem",
-        false,
-        ::TheoremSection
+fun validateTheoremSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTextListSection(
+    node,
+    tracker,
+    "Theorem",
+    ::TheoremSection
 )

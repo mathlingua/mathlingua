@@ -2,6 +2,12 @@ Document(
   groups = [
              TheoremGroup(
                theoremSection = TheoremSection(
+                 names = [
+                         ]
+               )
+               givenSection = null
+               givenWhereSection = null
+               thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
                                ForGroup(
@@ -16,14 +22,14 @@ Document(
                                                                name = Phase1Token(
                                                                  text = "a"
                                                                  type = ChalkTalkTokenType.Name
-                                                                 row = 1
+                                                                 row = 2
                                                                  column = 9
                                                                )
                                                                subParams = [
                                                                              Phase1Token(
                                                                                text = "k"
                                                                                type = ChalkTalkTokenType.Name
-                                                                               row = 1
+                                                                               row = 2
                                                                                column = 11
                                                                              )
                                                                            ]
@@ -35,7 +41,7 @@ Document(
                                                                  Phase1Token(
                                                                    text = "k"
                                                                    type = ChalkTalkTokenType.Name
-                                                                   row = 1
+                                                                   row = 2
                                                                    column = 14
                                                                  )
                                                                ]
@@ -58,7 +64,7 @@ Document(
                  )
                )
                usingSection = null
-               whereSection = null
+               usingWhereSection = null
                metaDataSection = null
              )
            ]

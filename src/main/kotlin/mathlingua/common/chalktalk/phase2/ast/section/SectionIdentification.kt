@@ -42,6 +42,7 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         expectedQueue.offer(e)
     }
 
+    val usedSectionNames = mutableMapOf<String, Int>()
     val result = mutableMapOf<String, MutableList<Section>>()
 
     while (!sectionQueue.isEmpty() && !expectedQueue.isEmpty()) {
@@ -51,16 +52,22 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         val isOptional = maybeName.endsWith("?")
         val trueName =
             if (isOptional) maybeName.substring(0, maybeName.length - 1) else maybeName
+        val key = if (usedSectionNames.containsKey(trueName)) {
+            "$trueName${usedSectionNames[trueName]}"
+        } else {
+            trueName
+        }
+        usedSectionNames[trueName] = usedSectionNames.getOrDefault(trueName, 0) + 1
         if (nextSection.name.text == trueName) {
-            if (!result.containsKey(trueName)) {
-                result[trueName] = mutableListOf()
+            if (!result.containsKey(key)) {
+                result[key] = mutableListOf()
             }
-            result[trueName]!!.add(nextSection)
+            result[key]!!.add(nextSection)
             // the expected name and Section have both been used so move past them
             sectionQueue.poll()
             expectedQueue.poll()
             while (!sectionQueue.isEmpty() && sectionQueue.peek().name.text == trueName) {
-                result[trueName]!!.add(sectionQueue.poll())
+                result[key]!!.add(sectionQueue.poll())
             }
         } else if (isOptional) {
             // The Section found doesn't match the expected name

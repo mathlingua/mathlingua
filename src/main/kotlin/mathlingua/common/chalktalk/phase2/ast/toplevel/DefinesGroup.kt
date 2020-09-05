@@ -49,7 +49,8 @@ data class DefinesGroup(
     val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val computesSection: ComputesSection?,
-    val aliasSection: AliasSection?,
+    val usingSection: UsingSection?,
+    val whereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
@@ -65,8 +66,11 @@ data class DefinesGroup(
         if (computesSection != null) {
             fn(computesSection)
         }
-        if (aliasSection != null) {
-            fn(aliasSection)
+        if (usingSection != null) {
+            fn(usingSection)
+        }
+        if (whereSection != null) {
+            fn(whereSection)
         }
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -77,6 +81,8 @@ data class DefinesGroup(
         val sections = mutableListOf(definesSection, whenSection)
         sections.add(meansSection)
         sections.add(computesSection)
+        sections.add(usingSection)
+        sections.add(whereSection)
         sections.add(metaDataSection)
         return topLevelToCode(
                 writer,
@@ -94,7 +100,8 @@ data class DefinesGroup(
             whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
             meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
             computesSection = computesSection?.transform(chalkTransformer) as ComputesSection?,
-            aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
+            usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
@@ -240,7 +247,7 @@ private fun validateDefinesGroup(
         sectionMap = identifySections(
             sections,
             "Defines", "when?", "means?", "computes?",
-            "Alias?", "Metadata?"
+            "using?", "where?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -251,7 +258,8 @@ private fun validateDefinesGroup(
     val whenNode = sectionMap["when"] ?: emptyList()
     val means = sectionMap["means"]
     val computes = sectionMap["computes"]
-    val alias = sectionMap["Alias"] ?: emptyList()
+    val using = sectionMap["using"] ?: emptyList()
+    val where = sectionMap["where"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var definesLikeSection: DefinesSection? = null
@@ -284,11 +292,19 @@ private fun validateDefinesGroup(
         }
     }
 
-    var aliasSection: AliasSection? = null
-    if (alias.isNotEmpty()) {
-        when (val aliasValidation = validateAliasSection(alias[0], tracker)) {
-            is ValidationSuccess -> aliasSection = aliasValidation.value
+    var usingSection: UsingSection? = null
+    if (using.isNotEmpty()) {
+        when (val aliasValidation = validateUsingSection(using[0], tracker)) {
+            is ValidationSuccess -> usingSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
+        }
+    }
+
+    var whereSection: WhereSection? = null
+    if (where.isNotEmpty()) {
+        when (val whereValidation = validateWhereSection(where[0], tracker)) {
+            is ValidationSuccess -> whereSection = whereValidation.value
+            is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
     }
 
@@ -320,7 +336,7 @@ private fun validateDefinesGroup(
             whenSection,
             meansSection,
             computesSection,
-            aliasSection, metaDataSection
+            usingSection, whereSection, metaDataSection
         )
     )
 }

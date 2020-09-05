@@ -216,8 +216,9 @@ Defines: X
 when: 'f is \function'
 means:
 . 'X = \set[x]{f(x)}{f \in \domain{f}}'
-Alias:
-. domain = "function.domain:of"
+using: domain
+where:
+. '\domain{f} := function.domain:of{f}'
 Metadata:
 . reference:
   . source: "@AATA"
@@ -352,8 +353,9 @@ means:
     . '(y, z) \in R'
     then:
     . '(x, z) \in R'
-Alias:
-. cross = "set.cartesian.product"
+using: cross
+where:
+. 'a \cross b := a \set.cartesian.product b'
 Metadata:
 . reference:
   . source: "@AATA"
@@ -388,8 +390,9 @@ Defines: *
 when: 'G is \set'
 means:
 . '* is \function:on{G \set.cartesian.product G}to{G}'
-Alias:
-. cross = "set.cartesian.product"
+using: cross
+where:
+. 'a \cross b := a \set.cartesian.product b'
 Metadata:
 . reference:
   . source: "@AATA"

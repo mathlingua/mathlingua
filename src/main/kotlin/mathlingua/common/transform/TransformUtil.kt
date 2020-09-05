@@ -482,7 +482,8 @@ internal fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
                         clauses = listOf(buildIfThens(def))
                 )
         ),
-        aliasSection = def.aliasSection,
+        usingSection = def.usingSection,
+        whereSection = def.whereSection,
         metaDataSection = def.metaDataSection,
         computesSection = def.computesSection
 )

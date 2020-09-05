@@ -27,14 +27,18 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 
 data class ProblemGroup(
     val problemSection: ProblemSection,
-    val aliasSection: AliasSection?,
+    val usingSection: UsingSection?,
+    val whereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(problemSection)
-        if (aliasSection != null) {
-            fn(aliasSection)
+        if (usingSection != null) {
+            fn(usingSection)
+        }
+        if (whereSection != null) {
+            fn(whereSection)
         }
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -42,12 +46,13 @@ data class ProblemGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        topLevelToCode(writer, isArg, indent, null, problemSection, metaDataSection)
+        topLevelToCode(writer, isArg, indent, null, problemSection, usingSection, whereSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ProblemGroup(
         problemSection = problemSection.transform(chalkTransformer) as ProblemSection,
-        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
-        aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?
+        usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+        whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
 

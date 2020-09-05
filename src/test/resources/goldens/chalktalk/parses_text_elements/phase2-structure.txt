@@ -52,7 +52,8 @@ Document(
                  )
                )
                computesSection = null
-               aliasSection = null
+               usingSection = null
+               whereSection = null
                metaDataSection = null
              )
            ]

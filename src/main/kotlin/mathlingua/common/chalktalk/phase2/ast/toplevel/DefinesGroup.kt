@@ -46,7 +46,7 @@ data class DefinesGroup(
     val signature: String?,
     val id: IdStatement,
     val definesSection: DefinesSection,
-    val assumingSection: AssumingSection?,
+    val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val computesSection: ComputesSection?,
     val aliasSection: AliasSection?,
@@ -56,8 +56,8 @@ data class DefinesGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
-        if (assumingSection != null) {
-            fn(assumingSection)
+        if (whenSection != null) {
+            fn(whenSection)
         }
         if (meansSection != null) {
             fn(meansSection)
@@ -74,7 +74,7 @@ data class DefinesGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        val sections = mutableListOf(definesSection, assumingSection)
+        val sections = mutableListOf(definesSection, whenSection)
         sections.add(meansSection)
         sections.add(computesSection)
         sections.add(metaDataSection)
@@ -91,7 +91,7 @@ data class DefinesGroup(
             signature = signature,
             id = id.transform(chalkTransformer) as IdStatement,
             definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
-            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
+            whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
             meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
             computesSection = computesSection?.transform(chalkTransformer) as ComputesSection?,
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
@@ -239,7 +239,7 @@ private fun validateDefinesGroup(
     try {
         sectionMap = identifySections(
             sections,
-            "Defines", "assuming?", "means?", "computes?",
+            "Defines", "when?", "means?", "computes?",
             "Alias?", "Metadata?"
         )
     } catch (e: ParseError) {
@@ -248,7 +248,7 @@ private fun validateDefinesGroup(
     }
 
     val definesLike = sectionMap["Defines"]!!
-    val assuming = sectionMap["assuming"] ?: emptyList()
+    val whenNode = sectionMap["when"] ?: emptyList()
     val means = sectionMap["means"]
     val computes = sectionMap["computes"]
     val alias = sectionMap["Alias"] ?: emptyList()
@@ -260,10 +260,10 @@ private fun validateDefinesGroup(
         is ValidationFailure -> errors.addAll(definesLikeValidation.errors)
     }
 
-    var assumingSection: AssumingSection? = null
-    if (assuming.isNotEmpty()) {
-        when (val assumingValidation = validateAssumingSection(assuming[0], tracker)) {
-            is ValidationSuccess -> assumingSection = assumingValidation.value
+    var whenSection: WhenSection? = null
+    if (whenNode.isNotEmpty()) {
+        when (val assumingValidation = validateWhenSection(whenNode[0], tracker)) {
+            is ValidationSuccess -> whenSection = assumingValidation.value
             is ValidationFailure -> errors.addAll(assumingValidation.errors)
         }
     }
@@ -317,7 +317,7 @@ private fun validateDefinesGroup(
         DefinesGroup(
             id?.signature(),
             id!!, definesLikeSection!!,
-            assumingSection,
+            whenSection,
             meansSection,
             computesSection,
             aliasSection, metaDataSection

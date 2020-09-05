@@ -28,7 +28,6 @@ import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.*
-import mathlingua.common.translate.LatexTranslator
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -280,9 +279,11 @@ fun main() {
                         transformed = fullExpandComplete(doc)
                     }
 
-                    val translator = LatexTranslator(transformed.defines(), transformed.represents())
-                    translator.translate(transformed)
-                    outputArea.text = translator.toText()
+                    // val translator = LatexTranslator(transformed.defines(), transformed.represents())
+                    // translator.translate(transformed)
+                    // outputArea.text = translator.toText()
+
+                    outputArea.text = transformed.toCode(false, 0).getCode()
 
                     outputTree.model = DefaultTreeModel(
                         toTreeNode(

@@ -40,7 +40,7 @@ import mathlingua.common.chalktalk.phase2.ast.clause.Text
 import mathlingua.common.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.section.AsSection
-import mathlingua.common.chalktalk.phase2.ast.section.AssumingSection
+import mathlingua.common.chalktalk.phase2.ast.section.WhenSection
 import mathlingua.common.chalktalk.phase2.ast.section.AxiomSection
 import mathlingua.common.chalktalk.phase2.ast.section.ConjectureSection
 import mathlingua.common.chalktalk.phase2.ast.section.DefinesSection
@@ -210,7 +210,7 @@ class LatexTranslator(
                 append("'")
             }
             translate(definesGroup.definesSection)
-            translate(definesGroup.assumingSection)
+            translate(definesGroup.whenSection)
             translate(definesGroup.meansSection)
         }
     }
@@ -323,10 +323,10 @@ class LatexTranslator(
         }
     }
 
-    fun translate(assumingSection: AssumingSection?) {
-        if (assumingSection != null) {
+    fun translate(whenSection: WhenSection?) {
+        if (whenSection != null) {
             append("assuming")
-            translate(assumingSection.clauses)
+            translate(whenSection.clauses)
         }
     }
 

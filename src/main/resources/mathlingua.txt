@@ -39,7 +39,7 @@ Metadata:
 
 [a \in X]
 Represents:
-assuming: 'X is \set'
+when: 'X is \set'
 that:
 . "$a&$ is an element of $X&$"
 Metadata:
@@ -52,7 +52,7 @@ Metadata:
 
 [A \subset B]
 Represents:
-assuming: 'A, B is \set'
+when: 'A, B is \set'
 that:
 . for: a
   where: 'a \in A'
@@ -74,7 +74,7 @@ Metadata:
 
 [A \proper.subset B]
 Represents:
-assuming: 'A, B is \set'
+when: 'A, B is \set'
 that:
 . 'A \subset B'
 . 'A \neq B'
@@ -103,7 +103,7 @@ Metadata:
 
 [A \union B]
 Defines: C := {c}
-assuming: 'A, B is \set'
+when: 'A, B is \set'
 means:
 . 'C is \set'
 . or:
@@ -119,7 +119,7 @@ Metadata:
 
 [A \intersect B]
 Defines: C := {c}
-assuming: 'A, B is \set'
+when: 'A, B is \set'
 means:
 . 'C is \set'
 . 'c \in A'
@@ -134,7 +134,7 @@ Metadata:
 
 [\disjoint.set]
 Defines: (A, B)
-assuming: 'A, B is \set'
+when: 'A, B is \set'
 means: '(A \intersect B) = \empty.set'
 Metadata:
 . reference:
@@ -145,7 +145,7 @@ Metadata:
 
 [x \notin X]
 Represents:
-assuming: 'X is \set'
+when: 'X is \set'
 that:
 . not:
   . 'x \in X'
@@ -156,7 +156,7 @@ Metadata:
 
 [\complement:of{A}in{U}]
 Defines: X := {x}
-assuming: 'A, U is \set'
+when: 'A, U is \set'
 means:
 . 'x \in U'
 . 'x \notin A'
@@ -170,7 +170,7 @@ Metadata:
 
 [A \set.difference B]
 Defines: C := {c}
-assuming: 'A, B is \set'
+when: 'A, B is \set'
 means:
 . 'c \in A'
 . 'c \notin B'
@@ -184,7 +184,7 @@ Metadata:
 
 [A \set.cartesian.product B]
 Defines: C := {x,y}
-assuming: 'A, B is \set'
+when: 'A, B is \set'
 means:
 . 'x \in A'
 . 'y \in B'
@@ -198,7 +198,7 @@ Metadata:
 
 [\function.domain:of{f}]
 Defines: X
-assuming:
+when:
 . for: A, B
   where: 'A, B is \set'
   then: 'f is \function:on{A}to{B}'
@@ -213,7 +213,7 @@ Metadata:
 
 [\function.range:of{f}]
 Defines: X
-assuming: 'f is \function'
+when: 'f is \function'
 means:
 . 'X = \set[x]{f(x)}{f \in \domain{f}}'
 Alias:
@@ -271,7 +271,7 @@ Metadata:
 
 [g \of f]
 Defines: h(x)
-assuming:
+when:
 . for: A, B, C
   where: 'A, B, C is \set'
   then:
@@ -290,7 +290,7 @@ Metadata:
 
 [\permutation:of{S}]
 Defines: f
-assuming: 'S is \set'
+when: 'S is \set'
 means: 'f is \bijective \function:on{S}to{S}'
 Metadata:
 . reference:
@@ -301,7 +301,7 @@ Metadata:
 
 [\identity.function:on{A}]
 Defines: f(x)
-assuming: 'A \in \set'
+when: 'A \in \set'
 means:
 . 'f is \function:on{A}to{A}'
 . for: x
@@ -316,7 +316,7 @@ Metadata:
 
 [\inverse.function:of{f}]
 Defines: g(x)
-assuming:
+when:
 . for: A, B
   where: 'A, B is \set'
   then: 'f is \function:on{A}to{B}'
@@ -333,7 +333,7 @@ Metadata:
 
 [\equivalence.relation:on{X}]
 Defines: R := {a, b}
-assuming: 'X is \set'
+when: 'X is \set'
 means:
 . 'R \subset (X \set.cartesian.product X)'
 . for: x
@@ -385,7 +385,7 @@ means: 'x \neq 0'
 
 [x \binary.operation:on{G} y]
 Defines: *
-assuming: 'G is \set'
+when: 'G is \set'
 means:
 . '* is \function:on{G \set.cartesian.product G}to{G}'
 Alias:
@@ -399,7 +399,7 @@ Metadata:
 
 [\group]
 Defines: G := (X, *, e)
-assuming:
+when:
 . 'X is \set'
 . '* is \binary.operator:on{X}'
 means:
@@ -441,7 +441,7 @@ Metadata:
 
 [\matrix{m, n}:over{F}]
 Defines: M
-assuming:
+when:
 . 'F is \set'
 . 'm, n is \positive \integer'
 means:
@@ -450,7 +450,7 @@ means:
 
 [\identity.matrix{n}]
 Defines: M(i, j)
-assuming: 'i, j is \positive \integer'
+when: 'i, j is \positive \integer'
 means:
 . 'M is \matrix'
 . if: 'i \neq j'
@@ -485,7 +485,7 @@ Metadata:
 
 [\general.linear.group{n}:over{F}]
 Defines: X
-assuming:
+when:
 . or:
   . 'F = \reals'
   . 'F = \complexes'
@@ -526,7 +526,7 @@ Metadata:
 
 [\set.cardinality:of{X}]
 Defines: n
-assuming: 'X is \set'
+when: 'X is \set'
 means: "$n&$ is the number of elements in $X&$"
 
 
@@ -556,7 +556,7 @@ Metadata:
 
 [\group.order:of{G := (X, *)}]
 Defines: n
-assuming: 'G is \group'
+when: 'G is \group'
 means: 'n = \set.cardinality:of{X}'
 Metadata:
 . reference:
@@ -576,7 +576,7 @@ means:
 
 [\ring]
 Defines: R := (X, +, *, 0)
-assuming:
+when:
 . 'X is \nonempty \set'
 . '+, * is \binary.operation:on{X}'
 means:
@@ -646,7 +646,7 @@ Metadata:
 
 [\ring.unit:in{R := (X, +, *, 0, 1)}]
 Defines: u
-assuming: 'R is \with.identity.ring'
+when: 'R is \with.identity.ring'
 means:
 . 'u \neq 0'
 . exists: b
@@ -691,7 +691,7 @@ Metadata:
 
 [\transitive.relation:on{X}]
 Defines: <
-assuming: 'X is \set'
+when: 'X is \set'
 means:
 . '< is \binary.operation:on{X}'
 . for: a, b, c
@@ -711,7 +711,7 @@ Metadata:
 
 [\order.relation:on{F := (X, +, *, 0, 1)}]
 Defines: <
-assuming: 'F is \field'
+when: 'F is \field'
 means:
 . '< is \binary.operation:on{X}'
 . '< is \transitive.relation:on{X}'
@@ -860,7 +860,7 @@ Metadata:
 
 [\real.open.interval:on{a, b}]
 Defines: I
-assuming:
+when:
 . 'a, b is \real'
 means:
 . 'I := \set[x]{x}{x > a}{x < b}'
@@ -896,7 +896,7 @@ Metadata:
 
 [\uniformly.continuous.function:on{S}]
 Defines: f(x)
-assuming:
+when:
 . 'S \subset \function.domain:of{f}'
 means:
 . for: epsilon
@@ -923,7 +923,7 @@ Metadata:
 
 [\real.bounded.below.sequence:by{a}]
 Defines: S(n)
-assuming: 'a is \real'
+when: 'a is \real'
 means:
 . 'S is \sequence'
 . for: n
@@ -961,7 +961,7 @@ Metadata:
 
 [\real.bounded.above.sequence:by{b}]
 Defines: S(n)
-assuming: 'b is \real'
+when: 'b is \real'
 means:
 . 'S is \sequence'
 . for: n
@@ -1017,7 +1017,7 @@ Metadata:
 
 [\function:on{A}to{B}]
 Defines: f(x)
-assuming:
+when:
 . 'A, B is \set'
 means:
 . for: a

@@ -44,7 +44,7 @@ data class RepresentsGroup(
     val signature: String?,
     val id: IdStatement,
     val representsSection: RepresentsSection,
-    val assumingSection: AssumingSection?,
+    val whenSection: WhenSection?,
     val thatSections: List<ThatSection>,
     val aliasSection: AliasSection?,
     override val metaDataSection: MetaDataSection?
@@ -53,8 +53,8 @@ data class RepresentsGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(representsSection)
-        if (assumingSection != null) {
-            fn(assumingSection)
+        if (whenSection != null) {
+            fn(whenSection)
         }
         thatSections.forEach(fn)
         if (aliasSection != null) {
@@ -66,7 +66,7 @@ data class RepresentsGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        val sections = mutableListOf(representsSection, assumingSection)
+        val sections = mutableListOf(representsSection, whenSection)
         sections.addAll(thatSections)
         sections.add(metaDataSection)
         return topLevelToCode(
@@ -82,7 +82,7 @@ data class RepresentsGroup(
             signature = signature,
             id = id.transform(chalkTransformer) as IdStatement,
             representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
-            assumingSection = assumingSection?.transform(chalkTransformer) as AssumingSection?,
+            whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
             thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
             aliasSection = aliasSection?.transform(chalkTransformer) as AliasSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
@@ -128,7 +128,7 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     try {
         sectionMap = identifySections(
             sections,
-            "Represents", "assuming?", "that", "Alias?", "Metadata?"
+            "Represents", "when?", "that", "Alias?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -136,7 +136,7 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     }
 
     val definesLike = sectionMap["Represents"]!!
-    val assuming = sectionMap["assuming"] ?: emptyList()
+    val whenNode = sectionMap["when"] ?: emptyList()
     val ends = sectionMap["that"]!!
     val alias = sectionMap["Alias"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
@@ -147,10 +147,10 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
         is ValidationFailure -> errors.addAll(representsValidation.errors)
     }
 
-    var assumingSection: AssumingSection? = null
-    if (assuming.isNotEmpty()) {
-        when (val assumingValidation = validateAssumingSection(assuming[0], tracker)) {
-            is ValidationSuccess -> assumingSection = assumingValidation.value
+    var whenSection: WhenSection? = null
+    if (whenNode.isNotEmpty()) {
+        when (val assumingValidation = validateWhenSection(whenNode[0], tracker)) {
+            is ValidationSuccess -> whenSection = assumingValidation.value
             is ValidationFailure -> errors.addAll(assumingValidation.errors)
         }
     }
@@ -187,7 +187,7 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
         RepresentsGroup(
             id?.signature(),
             id!!, representsSection!!,
-            assumingSection,
+            whenSection,
             // the end sections are in reverse order so they
             // must be reversed here to be in the correct order
             endSections.reversed(),

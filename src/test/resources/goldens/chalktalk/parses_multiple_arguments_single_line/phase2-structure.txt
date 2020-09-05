@@ -2,6 +2,12 @@ Document(
   groups = [
              TheoremGroup(
                theoremSection = TheoremSection(
+                 names = [
+                         ]
+               )
+               givenSection = null
+               givenWhereSection = null
+               thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
                                AbstractionNode(
@@ -13,8 +19,8 @@ Document(
                                                name = Phase1Token(
                                                  text = "a"
                                                  type = ChalkTalkTokenType.Name
-                                                 row = 0
-                                                 column = 9
+                                                 row = 1
+                                                 column = 7
                                                )
                                                subParams = null
                                                params = null
@@ -33,8 +39,8 @@ Document(
                                                name = Phase1Token(
                                                  text = "b"
                                                  type = ChalkTalkTokenType.Name
-                                                 row = 0
-                                                 column = 12
+                                                 row = 1
+                                                 column = 10
                                                )
                                                subParams = null
                                                params = null
@@ -53,8 +59,8 @@ Document(
                                                name = Phase1Token(
                                                  text = "c"
                                                  type = ChalkTalkTokenType.Name
-                                                 row = 0
-                                                 column = 15
+                                                 row = 1
+                                                 column = 13
                                                )
                                                subParams = null
                                                params = null
@@ -68,7 +74,7 @@ Document(
                  )
                )
                usingSection = null
-               whereSection = null
+               usingWhereSection = null
                metaDataSection = null
              )
            ]

@@ -36,6 +36,7 @@ internal class MathLinguaTest {
               then: '\something.else'
         """.trimIndent(), """
             Theorem:
+            then:
             . '\finite.set'
         """.trimIndent())
 
@@ -67,6 +68,7 @@ internal class MathLinguaTest {
               then: '\something.else'
         """.trimIndent(), """
             Theorem:
+            then:
             . '\finite.set'
         """.trimIndent())
 
@@ -101,6 +103,7 @@ internal class MathLinguaTest {
               then: '\something.else'
         """.trimIndent(), """
             Theorem:
+            then:
             . '\finite.set'
         """.trimIndent())
 
@@ -138,6 +141,7 @@ internal class MathLinguaTest {
             means: '\something'
         """.trimIndent(), """
             Theorem:
+            then:
             . '\finite.set'
         """.trimIndent())
 
@@ -168,6 +172,7 @@ internal class MathLinguaTest {
               then: '\something.else'
         """.trimIndent(), """
             Theorem:
+            then:
             . '\finite.set'
 
             [\finite.set]
@@ -205,9 +210,11 @@ internal class MathLinguaTest {
               then: '\something.else'
 
             Theorem:
+            then:
             . '\finite.set'
         """.trimIndent(), """
             Theorem:
+            then:
             . '\finite.set'
         """.trimIndent())
 
@@ -235,6 +242,7 @@ internal class MathLinguaTest {
               then: '\something.else'
         """.trimIndent(), """
             Theorem:
+            then:
             . '\finite.set'
 
             [\set]

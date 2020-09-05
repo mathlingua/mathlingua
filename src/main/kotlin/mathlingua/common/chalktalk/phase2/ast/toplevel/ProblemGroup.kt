@@ -27,38 +27,28 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 
 data class ProblemGroup(
     val problemSection: ProblemSection,
-    val usingSection: UsingSection?,
-    val whereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(problemSection)
-        if (usingSection != null) {
-            fn(usingSection)
-        }
-        if (whereSection != null) {
-            fn(whereSection)
-        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        topLevelToCode(writer, isArg, indent, null, problemSection, usingSection, whereSection, metaDataSection)
+        topLevelToCode(writer, isArg, indent, null, problemSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ProblemGroup(
         problemSection = problemSection.transform(chalkTransformer) as ProblemSection,
-        usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-        whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
         metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
 
 fun isProblemGroup(node: Phase1Node) = firstSectionMatchesName(node, "Problem")
 
-fun validateProblemGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
+fun validateProblemGroup(groupNode: Group, tracker: MutableLocationTracker) = validateProtoResultLikeGroup(
     tracker,
     groupNode,
     "Problem",

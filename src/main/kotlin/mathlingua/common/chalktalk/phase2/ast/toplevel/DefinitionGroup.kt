@@ -27,38 +27,28 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 
 data class DefinitionGroup(
     val definitionSection: DefinitionSection,
-    val usingSection: UsingSection?,
-    val whereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(definitionSection)
-        if (usingSection != null) {
-            fn(usingSection)
-        }
-        if (whereSection != null) {
-            fn(whereSection)
-        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        topLevelToCode(writer, isArg, indent, null, definitionSection, usingSection, whereSection, metaDataSection)
+        topLevelToCode(writer, isArg, indent, null, definitionSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(DefinitionGroup(
         definitionSection = definitionSection.transform(chalkTransformer) as DefinitionSection,
-        usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-        whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
         metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
 
 fun isDefinitionGroup(node: Phase1Node) = firstSectionMatchesName(node, "Definition")
 
-fun validateDefinitionGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
+fun validateDefinitionGroup(groupNode: Group, tracker: MutableLocationTracker) = validateProtoResultLikeGroup(
     tracker,
     groupNode,
     "Definition",

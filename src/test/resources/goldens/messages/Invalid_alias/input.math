@@ -1,3 +1,4 @@
-Theorem: "x"
+Theorem:
+then: "x"
 Alias:
 . x = y

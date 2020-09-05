@@ -310,10 +310,11 @@ class LatexTranslator(
         append(text.text.replace("?", "").removeSurrounding("\"", "\""))
     }
 
+    // TODO: Have this correctly generate LaTeX
     fun translate(theoremSection: TheoremSection?) {
-        if (theoremSection != null) {
-            translate(theoremSection.clauses)
-        }
+        // if (theoremSection != null) {
+        //     translate(theoremSection.clauses)
+        // }
     }
 
     fun translate(asSection: AsSection?) {
@@ -330,16 +331,18 @@ class LatexTranslator(
         }
     }
 
+    // TODO: Have this correctly generate LaTeX
     fun translate(axiomSection: AxiomSection?) {
-        if (axiomSection != null) {
-            translate(axiomSection.clauses)
-        }
+        // if (axiomSection != null) {
+        //     translate(axiomSection.clauses)
+        // }
     }
 
+    // TODO: Have this correctly generate LaTeX
     fun translate(conjectureSection: ConjectureSection?) {
-        if (conjectureSection != null) {
-            translate(conjectureSection.clauses)
-        }
+        // if (conjectureSection != null) {
+        //     translate(conjectureSection.clauses)
+        // }
     }
 
     fun translate(definesSection: DefinesSection?) {

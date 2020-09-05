@@ -2,6 +2,12 @@ Document(
   groups = [
              TheoremGroup(
                theoremSection = TheoremSection(
+                 names = [
+                         ]
+               )
+               givenSection = null
+               givenWhereSection = null
+               thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
                                AbstractionNode(
@@ -13,28 +19,28 @@ Document(
                                                name = Phase1Token(
                                                  text = "f"
                                                  type = ChalkTalkTokenType.Name
-                                                 row = 0
-                                                 column = 9
+                                                 row = 1
+                                                 column = 7
                                                )
                                                subParams = null
                                                params = [
                                                           Phase1Token(
                                                             text = "x"
                                                             type = ChalkTalkTokenType.Name
-                                                            row = 0
-                                                            column = 11
+                                                            row = 1
+                                                            column = 9
                                                           ),
                                                           Phase1Token(
                                                             text = "y"
                                                             type = ChalkTalkTokenType.Name
-                                                            row = 0
-                                                            column = 14
+                                                            row = 1
+                                                            column = 12
                                                           ),
                                                           Phase1Token(
                                                             text = "z"
                                                             type = ChalkTalkTokenType.Name
-                                                            row = 0
-                                                            column = 17
+                                                            row = 1
+                                                            column = 15
                                                           )
                                                         ]
                                                tail = null
@@ -47,7 +53,7 @@ Document(
                  )
                )
                usingSection = null
-               whereSection = null
+               usingWhereSection = null
                metaDataSection = null
              )
            ]

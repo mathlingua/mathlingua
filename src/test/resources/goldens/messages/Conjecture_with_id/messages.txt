@@ -5,10 +5,10 @@ A result, axiom, or conjecture cannot have an Id
 EndMessage:
 
 
-Row: 1
+Row: 2
 Column: 1
 Message:
-Section 'Conjecture' requires at least one argument.
+Section 'then' requires at least one argument.
 EndMessage:
 
 

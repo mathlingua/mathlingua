@@ -18,6 +18,8 @@ package mathlingua.common.chalktalk.phase2.ast.toplevel
 
 import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Group
+import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -61,8 +63,11 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     validateResultLikeSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>,
     buildGroup: (
         sect: S,
+        givenSection: GivenSection?,
+        givenWhereSection: WhereSection?,
+        thenSection: ThenSection,
         using: UsingSection?,
-        where: WhereSection?,
+        usingWhere: WhereSection?,
         metadata: MetaDataSection?
     ) -> G
 ): Validation<G> {
@@ -82,7 +87,8 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     val sectionMap: Map<String, List<Section>>
     try {
         sectionMap = identifySections(
-                sections, resultLikeName, "using?", "where?", "Metadata?"
+                sections, resultLikeName, "given?", "where?", "then",
+                "using?", "where?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -90,14 +96,39 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     }
 
     val resultLike = sectionMap[resultLikeName]!!
+    val given = sectionMap["given"] ?: emptyList()
+    val givenWhere = sectionMap["where"] ?: emptyList()
+    val then = sectionMap["then"] ?: emptyList()
     val using = sectionMap["using"] ?: emptyList()
-    val where = sectionMap["where"] ?: emptyList()
+    val usingWhere = sectionMap["where1"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var resultLikeSection: S? = null
     when (val resultLikeValidation = validateResultLikeSection(resultLike[0], tracker)) {
         is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
         is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
+    }
+
+    var givenSection: GivenSection? = null
+    if (given.isNotEmpty()) {
+        when (val givenValidation = validateGivenSection(given[0], tracker)) {
+            is ValidationSuccess -> givenSection = givenValidation.value
+            is ValidationFailure -> errors.addAll(givenValidation.errors)
+        }
+    }
+
+    var givenWhereSection: WhereSection? = null
+    if (givenWhere.isNotEmpty()) {
+        when (val givenWhereValidation = validateWhereSection(givenWhere[0], tracker)) {
+            is ValidationSuccess -> givenWhereSection = givenWhereValidation.value
+            is ValidationFailure -> errors.addAll(givenWhereValidation.errors)
+        }
+    }
+
+    var thenSection: ThenSection? = null
+    when (val thenValidation = validateThenSection(then[0], tracker)) {
+        is ValidationSuccess -> thenSection = thenValidation.value
+        is ValidationFailure -> errors.addAll(thenValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
@@ -116,11 +147,11 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
         }
     }
 
-    var whereSection: WhereSection? = null
-    if (where.isNotEmpty()) {
-        when (val whereValidation = validateWhereSection(where[0], tracker)) {
-            is ValidationSuccess -> whereSection = whereValidation.value
-            is ValidationFailure -> errors.addAll(whereValidation.errors)
+    var usingWhereSection: WhereSection? = null
+    if (usingWhere.isNotEmpty()) {
+        when (val usingWhereValidation = validateWhereSection(usingWhere[0], tracker)) {
+            is ValidationSuccess -> usingWhereSection = usingWhereValidation.value
+            is ValidationFailure -> errors.addAll(usingWhereValidation.errors)
         }
     }
 
@@ -131,8 +162,126 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
             groupNode,
             buildGroup(
                 resultLikeSection!!,
+                givenSection,
+                givenWhereSection,
+                thenSection!!,
                 usingSection,
-                whereSection,
+                usingWhereSection,
                 metaDataSection
             ))
+}
+
+fun <G : Phase2Node, S> validateProtoResultLikeGroup(
+    tracker: MutableLocationTracker,
+    groupNode: Group,
+    resultLikeName: String,
+    validateResultLikeSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>,
+    buildGroup: (
+        sect: S,
+        metadata: MetaDataSection?
+    ) -> G
+): Validation<G> {
+    val errors = ArrayList<ParseError>()
+    val group = groupNode.resolve()
+    if (group.id != null) {
+        errors.add(
+            ParseError(
+                "A result, axiom, or conjecture cannot have an Id",
+                getRow(group), getColumn(group)
+            )
+        )
+    }
+
+    val sections = group.sections
+
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+            sections, resultLikeName, "Metadata?"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return validationFailure(errors)
+    }
+
+    val resultLike = sectionMap[resultLikeName]!!
+    val metadata = sectionMap["Metadata"] ?: emptyList()
+
+    var resultLikeSection: S? = null
+    when (val resultLikeValidation = validateResultLikeSection(resultLike[0], tracker)) {
+        is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
+        is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
+    }
+
+    var metaDataSection: MetaDataSection? = null
+    if (metadata.isNotEmpty()) {
+        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
+            is ValidationSuccess -> metaDataSection = metaDataValidation.value
+            is ValidationFailure -> errors.addAll(metaDataValidation.errors)
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else validationSuccess(
+        tracker,
+        groupNode,
+        buildGroup(
+            resultLikeSection!!,
+            metaDataSection
+        ))
+}
+
+fun <S : Phase2Node> validateTextListSection(
+    rawNode: Phase1Node,
+    tracker: MutableLocationTracker,
+    sectionName: String,
+    buildSection: (texts: List<String>) -> S
+): Validation<S> {
+    val node = rawNode.resolve()
+    val row = getRow(node)
+    val column = getColumn(node)
+
+    val errors = ArrayList<ParseError>()
+    if (node !is Section) {
+        errors.add(
+            ParseError(
+                "Expected a Section",
+                getRow(node), getColumn(node)
+            )
+        )
+    }
+
+    val sect = node as Section
+    if (sect.name.text != sectionName) {
+        errors.add(
+            ParseError(
+                "Expected a Section with name '$sectionName' but found " + sect.name.text,
+                row, column
+            )
+        )
+    }
+
+    val texts = mutableListOf<String>()
+    for (arg in sect.args) {
+        if (arg.chalkTalkTarget !is Phase1Token) {
+            errors.add(
+                ParseError(
+                    "Expected a string but found ${arg.toCode()}",
+                    row, column
+                )
+            )
+        }
+        texts.add((arg.chalkTalkTarget as Phase1Token).text)
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else {
+        validationSuccess(
+            tracker,
+            rawNode,
+            buildSection(texts)
+        )
+    }
 }

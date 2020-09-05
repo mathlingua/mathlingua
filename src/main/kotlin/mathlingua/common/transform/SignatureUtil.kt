@@ -22,7 +22,6 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 import mathlingua.common.chalktalk.phase2.ast.section.TextSection
 import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.ProtoGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
 import mathlingua.common.textalk.*
@@ -118,7 +117,6 @@ internal fun getSignature(group: TopLevelGroup): String? {
     return when (group) {
         is DefinesGroup -> group.id.signature()
         is RepresentsGroup -> group.id.signature()
-        is ProtoGroup -> getSignature(group.textSection)
         else -> null
     }
 }

@@ -23,12 +23,12 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.validateClauseList
 
-data class AssumingSection(val clauses: ClauseListNode) : Phase2Node {
+data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("assuming")
+        writer.writeHeader("when")
         if (clauses.clauses.isNotEmpty()) {
             writer.writeNewline()
         }
@@ -37,15 +37,15 @@ data class AssumingSection(val clauses: ClauseListNode) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(AssumingSection(
+            chalkTransformer(WhenSection(
                     clauses = clauses.transform(chalkTransformer) as ClauseListNode
             ))
 }
 
-fun validateAssumingSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+fun validateWhenSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
         tracker,
         node,
-        "assuming",
+        "when",
         false,
-        ::AssumingSection
+        ::WhenSection
 )

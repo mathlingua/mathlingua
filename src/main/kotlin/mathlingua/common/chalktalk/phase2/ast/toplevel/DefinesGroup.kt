@@ -319,7 +319,8 @@ private fun validateDefinesGroup(
     if (meansSection == null && computesSection == null) {
         errors.add(
             ParseError(
-                "A Defines must have either a 'means' or 'computes' section",
+                "A Defines must have either a 'means' or 'computes' section.  " +
+                "Either they were both omitted or they contain errors.",
                 getRow(group), getColumn(group)
             )
         )

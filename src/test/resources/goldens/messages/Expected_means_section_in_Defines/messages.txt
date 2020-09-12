@@ -1,5 +1,5 @@
 Row: 0
 Column: 0
 Message:
-A Defines must have either a 'means' or 'computes' section
+A Defines must have either a 'means' or 'computes' section.  Either they were both omitted or they contain errors.
 EndMessage:

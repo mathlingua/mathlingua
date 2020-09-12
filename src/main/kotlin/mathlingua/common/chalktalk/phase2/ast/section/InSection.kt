@@ -22,27 +22,27 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 
-data class OverSection(val statement: Statement) : Phase2Node {
+data class InSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("over")
+        writer.writeHeader("in")
         writer.append(statement, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(OverSection(
+        chalkTransformer(InSection(
             statement = statement.transform(chalkTransformer) as Statement
         ))
 }
 
-fun validateOverSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementSection(
+fun validateInSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementSection(
     node,
     tracker,
-    "over",
-    ::OverSection
+    "in",
+    ::InSection
 )

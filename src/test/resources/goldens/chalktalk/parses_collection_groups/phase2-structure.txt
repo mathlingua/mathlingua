@@ -1,0 +1,217 @@
+Document(
+  groups = [
+             DefinesGroup(
+               signature = "\evens"
+               id = IdStatement(
+                 text = "\evens"
+                 texTalkRoot = ValidationSuccessImpl(
+                   v = ExpressionTexTalkNode(
+                     children = [
+                                  Command(
+                                    parts = [
+                                              CommandPart(
+                                                name = TextTexTalkNode(
+                                                  type = TexTalkNodeType.Identifier
+                                                  tokenType = TexTalkTokenType.Identifier
+                                                  text = "evens"
+                                                  isVarArg = false
+                                                )
+                                                square = null
+                                                subSup = null
+                                                groups = [
+                                                         ]
+                                                paren = null
+                                                namedGroups = [
+                                                              ]
+                                              )
+                                            ]
+                                  )
+                                ]
+                   )
+                 )
+               )
+               definesSection = DefinesSection(
+                 targets = [
+                             AbstractionNode(
+                               abstraction = Abstraction(
+                                 isEnclosed = false
+                                 isVarArgs = false
+                                 parts = [
+                                           AbstractionPart(
+                                             name = Phase1Token(
+                                               text = "X"
+                                               type = ChalkTalkTokenType.Name
+                                               row = 1
+                                               column = 10
+                                             )
+                                             subParams = null
+                                             params = null
+                                             tail = null
+                                           )
+                                         ]
+                                 subParams = null
+                               )
+                             )
+                           ]
+               )
+               whenSection = null
+               meansSection = null
+               computesSection = ComputesSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               CollectionGroup(
+                                 collectionSection = CollectionSection(
+                                 )
+                                 ofSection = OfSection(
+                                   statement = Statement(
+                                     text = "2*k"
+                                     texTalkRoot = ValidationSuccessImpl(
+                                       v = ExpressionTexTalkNode(
+                                         children = [
+                                                      OperatorTexTalkNode(
+                                                        lhs = TextTexTalkNode(
+                                                          type = TexTalkNodeType.Identifier
+                                                          tokenType = TexTalkTokenType.Identifier
+                                                          text = "2"
+                                                          isVarArg = false
+                                                        )
+                                                        command = TextTexTalkNode(
+                                                          type = TexTalkNodeType.Operator
+                                                          tokenType = TexTalkTokenType.Operator
+                                                          text = "*"
+                                                          isVarArg = false
+                                                        )
+                                                        rhs = TextTexTalkNode(
+                                                          type = TexTalkNodeType.Identifier
+                                                          tokenType = TexTalkTokenType.Identifier
+                                                          text = "k"
+                                                          isVarArg = false
+                                                        )
+                                                      )
+                                                    ]
+                                       )
+                                     )
+                                   )
+                                 )
+                                 overSection = OverSection(
+                                   statement = Statement(
+                                     text = "\integer"
+                                     texTalkRoot = ValidationSuccessImpl(
+                                       v = ExpressionTexTalkNode(
+                                         children = [
+                                                      Command(
+                                                        parts = [
+                                                                  CommandPart(
+                                                                    name = TextTexTalkNode(
+                                                                      type = TexTalkNodeType.Identifier
+                                                                      tokenType = TexTalkTokenType.Identifier
+                                                                      text = "integer"
+                                                                      isVarArg = false
+                                                                    )
+                                                                    square = null
+                                                                    subSup = null
+                                                                    groups = [
+                                                                             ]
+                                                                    paren = null
+                                                                    namedGroups = [
+                                                                                  ]
+                                                                  )
+                                                                ]
+                                                      )
+                                                    ]
+                                       )
+                                     )
+                                   )
+                                 )
+                                 forSection = ForSection(
+                                   targets = [
+                                               AbstractionNode(
+                                                 abstraction = Abstraction(
+                                                   isEnclosed = false
+                                                   isVarArgs = false
+                                                   parts = [
+                                                             AbstractionPart(
+                                                               name = Phase1Token(
+                                                                 text = "k"
+                                                                 type = ChalkTalkTokenType.Name
+                                                                 row = 6
+                                                                 column = 8
+                                                               )
+                                                               subParams = null
+                                                               params = null
+                                                               tail = null
+                                                             )
+                                                           ]
+                                                   subParams = null
+                                                 )
+                                               )
+                                             ]
+                                 )
+                                 whereSection = WhereSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
+                                                 Statement(
+                                                   text = "k is \integer"
+                                                   texTalkRoot = ValidationSuccessImpl(
+                                                     v = ExpressionTexTalkNode(
+                                                       children = [
+                                                                    IsTexTalkNode(
+                                                                      lhs = ParametersTexTalkNode(
+                                                                        items = [
+                                                                                  ExpressionTexTalkNode(
+                                                                                    children = [
+                                                                                                 TextTexTalkNode(
+                                                                                                   type = TexTalkNodeType.Identifier
+                                                                                                   tokenType = TexTalkTokenType.Identifier
+                                                                                                   text = "k"
+                                                                                                   isVarArg = false
+                                                                                                 )
+                                                                                               ]
+                                                                                  )
+                                                                                ]
+                                                                      )
+                                                                      rhs = ParametersTexTalkNode(
+                                                                        items = [
+                                                                                  ExpressionTexTalkNode(
+                                                                                    children = [
+                                                                                                 Command(
+                                                                                                   parts = [
+                                                                                                             CommandPart(
+                                                                                                               name = TextTexTalkNode(
+                                                                                                                 type = TexTalkNodeType.Identifier
+                                                                                                                 tokenType = TexTalkTokenType.Identifier
+                                                                                                                 text = "integer"
+                                                                                                                 isVarArg = false
+                                                                                                               )
+                                                                                                               square = null
+                                                                                                               subSup = null
+                                                                                                               groups = [
+                                                                                                                        ]
+                                                                                                               paren = null
+                                                                                                               namedGroups = [
+                                                                                                                             ]
+                                                                                                             )
+                                                                                                           ]
+                                                                                                 )
+                                                                                               ]
+                                                                                  )
+                                                                                ]
+                                                                      )
+                                                                    )
+                                                                  ]
+                                                     )
+                                                   )
+                                                 )
+                                               ]
+                                   )
+                                 )
+                               )
+                             ]
+                 )
+               )
+               usingSection = null
+               whereSection = null
+               metaDataSection = null
+             )
+           ]
+)

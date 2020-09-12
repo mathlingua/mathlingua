@@ -94,6 +94,10 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
                 ::isLeanGroup,
                 ::validateLeanGroup
+        ),
+        ValidationPair(
+            ::isMappingGroup,
+            ::validateMappingGroup
         )
 )
 

@@ -1,0 +1,207 @@
+Document(
+  groups = [
+             DefinesGroup(
+               signature = "\f"
+               id = IdStatement(
+                 text = "\f(x)"
+                 texTalkRoot = ValidationSuccessImpl(
+                   v = ExpressionTexTalkNode(
+                     children = [
+                                  Command(
+                                    parts = [
+                                              CommandPart(
+                                                name = TextTexTalkNode(
+                                                  type = TexTalkNodeType.Identifier
+                                                  tokenType = TexTalkTokenType.Identifier
+                                                  text = "f"
+                                                  isVarArg = false
+                                                )
+                                                square = null
+                                                subSup = null
+                                                groups = [
+                                                         ]
+                                                paren = GroupTexTalkNode(
+                                                  type = TexTalkNodeType.ParenGroup
+                                                  parameters = ParametersTexTalkNode(
+                                                    items = [
+                                                              ExpressionTexTalkNode(
+                                                                children = [
+                                                                             TextTexTalkNode(
+                                                                               type = TexTalkNodeType.Identifier
+                                                                               tokenType = TexTalkTokenType.Identifier
+                                                                               text = "x"
+                                                                               isVarArg = false
+                                                                             )
+                                                                           ]
+                                                              )
+                                                            ]
+                                                  )
+                                                  isVarArg = false
+                                                )
+                                                namedGroups = [
+                                                              ]
+                                              )
+                                            ]
+                                  )
+                                ]
+                   )
+                 )
+               )
+               definesSection = DefinesSection(
+                 targets = [
+                             AbstractionNode(
+                               abstraction = Abstraction(
+                                 isEnclosed = false
+                                 isVarArgs = false
+                                 parts = [
+                                           AbstractionPart(
+                                             name = Phase1Token(
+                                               text = "f"
+                                               type = ChalkTalkTokenType.Name
+                                               row = 1
+                                               column = 10
+                                             )
+                                             subParams = null
+                                             params = [
+                                                        Phase1Token(
+                                                          text = "x"
+                                                          type = ChalkTalkTokenType.Name
+                                                          row = 1
+                                                          column = 12
+                                                        )
+                                                      ]
+                                             tail = null
+                                           )
+                                         ]
+                                 subParams = null
+                               )
+                             )
+                           ]
+               )
+               whenSection = null
+               meansSection = null
+               computesSection = ComputesSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               MappingGroup(
+                                 mappingSection = MappingSection(
+                                 )
+                                 fromSection = FromSection(
+                                   statement = Statement(
+                                     text = "A"
+                                     texTalkRoot = ValidationSuccessImpl(
+                                       v = ExpressionTexTalkNode(
+                                         children = [
+                                                      TextTexTalkNode(
+                                                        type = TexTalkNodeType.Identifier
+                                                        tokenType = TexTalkTokenType.Identifier
+                                                        text = "A"
+                                                        isVarArg = false
+                                                      )
+                                                    ]
+                                       )
+                                     )
+                                   )
+                                 )
+                                 toSection = ToSection(
+                                   statement = Statement(
+                                     text = "A"
+                                     texTalkRoot = ValidationSuccessImpl(
+                                       v = ExpressionTexTalkNode(
+                                         children = [
+                                                      TextTexTalkNode(
+                                                        type = TexTalkNodeType.Identifier
+                                                        tokenType = TexTalkTokenType.Identifier
+                                                        text = "A"
+                                                        isVarArg = false
+                                                      )
+                                                    ]
+                                       )
+                                     )
+                                   )
+                                 )
+                                 asSection = AsSection(
+                                   clauses = ClauseListNode(
+                                     clauses = [
+                                                 Statement(
+                                                   text = "f(x) := x"
+                                                   texTalkRoot = ValidationSuccessImpl(
+                                                     v = ExpressionTexTalkNode(
+                                                       children = [
+                                                                    ColonEqualsTexTalkNode(
+                                                                      lhs = ParametersTexTalkNode(
+                                                                        items = [
+                                                                                  ExpressionTexTalkNode(
+                                                                                    children = [
+                                                                                                 GroupTexTalkNode(
+                                                                                                   type = TexTalkNodeType.SyntheticGroup
+                                                                                                   parameters = ParametersTexTalkNode(
+                                                                                                     items = [
+                                                                                                               ExpressionTexTalkNode(
+                                                                                                                 children = [
+                                                                                                                              TextTexTalkNode(
+                                                                                                                                type = TexTalkNodeType.Identifier
+                                                                                                                                tokenType = TexTalkTokenType.Identifier
+                                                                                                                                text = "f"
+                                                                                                                                isVarArg = false
+                                                                                                                              ),
+                                                                                                                              GroupTexTalkNode(
+                                                                                                                                type = TexTalkNodeType.ParenGroup
+                                                                                                                                parameters = ParametersTexTalkNode(
+                                                                                                                                  items = [
+                                                                                                                                            ExpressionTexTalkNode(
+                                                                                                                                              children = [
+                                                                                                                                                           TextTexTalkNode(
+                                                                                                                                                             type = TexTalkNodeType.Identifier
+                                                                                                                                                             tokenType = TexTalkTokenType.Identifier
+                                                                                                                                                             text = "x"
+                                                                                                                                                             isVarArg = false
+                                                                                                                                                           )
+                                                                                                                                                         ]
+                                                                                                                                            )
+                                                                                                                                          ]
+                                                                                                                                )
+                                                                                                                                isVarArg = false
+                                                                                                                              )
+                                                                                                                            ]
+                                                                                                               )
+                                                                                                             ]
+                                                                                                   )
+                                                                                                   isVarArg = false
+                                                                                                 )
+                                                                                               ]
+                                                                                  )
+                                                                                ]
+                                                                      )
+                                                                      rhs = ParametersTexTalkNode(
+                                                                        items = [
+                                                                                  ExpressionTexTalkNode(
+                                                                                    children = [
+                                                                                                 TextTexTalkNode(
+                                                                                                   type = TexTalkNodeType.Identifier
+                                                                                                   tokenType = TexTalkTokenType.Identifier
+                                                                                                   text = "x"
+                                                                                                   isVarArg = false
+                                                                                                 )
+                                                                                               ]
+                                                                                  )
+                                                                                ]
+                                                                      )
+                                                                    )
+                                                                  ]
+                                                     )
+                                                   )
+                                                 )
+                                               ]
+                                   )
+                                 )
+                               )
+                             ]
+                 )
+               )
+               usingSection = null
+               whereSection = null
+               metaDataSection = null
+             )
+           ]
+)

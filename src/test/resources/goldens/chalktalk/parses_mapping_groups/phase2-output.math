@@ -1,0 +1,8 @@
+[\f(x)]
+Defines: f(x)
+computes:
+. mapping:
+  from: 'A'
+  to: 'A'
+  as:
+  . 'f(x) := x'

@@ -93,7 +93,7 @@ Document(
                                      )
                                    )
                                  )
-                                 overSection = OverSection(
+                                 inSection = InSection(
                                    statement = Statement(
                                      text = "\integer"
                                      texTalkRoot = ValidationSuccessImpl(

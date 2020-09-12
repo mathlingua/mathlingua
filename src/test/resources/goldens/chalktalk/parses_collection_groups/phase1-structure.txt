@@ -73,7 +73,7 @@ Root(
                                                         ),
                                                         Section(
                                                           name = Phase1Token(
-                                                            text = "over"
+                                                            text = "in"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 5
                                                             column = 3
@@ -84,7 +84,7 @@ Root(
                                                                        text = "'\integer'"
                                                                        type = ChalkTalkTokenType.Statement
                                                                        row = 5
-                                                                       column = 9
+                                                                       column = 7
                                                                      )
                                                                    )
                                                                  ]

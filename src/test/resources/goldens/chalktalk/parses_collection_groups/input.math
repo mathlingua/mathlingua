@@ -3,6 +3,6 @@ Defines: X
 computes:
 . collection:
   of: '2*k'
-  over: '\integer'
+  in: '\integer'
   for: k
   where: 'k is \integer'

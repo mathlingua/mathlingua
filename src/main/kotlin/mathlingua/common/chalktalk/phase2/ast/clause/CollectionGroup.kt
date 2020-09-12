@@ -26,27 +26,27 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 data class CollectionGroup(
     val collectionSection: CollectionSection,
     val ofSection: OfSection,
-    val overSection: OverSection?,
+    val inSection: InSection?,
     val forSection: ForSection,
     val whereSection: WhereSection
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(collectionSection)
         fn(ofSection)
-        if (overSection != null) {
-            fn(overSection)
+        if (inSection != null) {
+            fn(inSection)
         }
         fn(forSection)
         fn(whereSection)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        toCode(writer, isArg, indent, collectionSection, ofSection, overSection, forSection, whereSection)
+        toCode(writer, isArg, indent, collectionSection, ofSection, inSection, forSection, whereSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(CollectionGroup(
         collectionSection = collectionSection.transform(chalkTransformer) as CollectionSection,
         ofSection = ofSection.transform(chalkTransformer) as OfSection,
-        overSection = overSection?.transform(chalkTransformer) as OverSection?,
+        inSection = inSection?.transform(chalkTransformer) as InSection?,
         forSection = forSection.transform(chalkTransformer) as ForSection,
         whereSection = whereSection.transform(chalkTransformer) as WhereSection
     ))
@@ -74,7 +74,7 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
     try {
         sectionMap = identifySections(
             sections,
-            "collection", "of", "over?", "for", "where"
+            "collection", "of", "in?", "for", "where"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -83,7 +83,7 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
 
     val collectionNode = sectionMap["collection"]!!
     val ofNode = sectionMap["of"]!!
-    val overNode = sectionMap["over"]
+    val inNode = sectionMap["in"]
     val forNode = sectionMap["for"]!!
     val whereNode = sectionMap["where"]!!
 
@@ -99,10 +99,10 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
-    var overSection: OverSection? = null
-    if (overNode != null) {
-        when (val validation = validateOverSection(overNode[0], tracker)) {
-            is ValidationSuccess -> overSection = validation.value
+    var inSection: InSection? = null
+    if (inNode != null) {
+        when (val validation = validateInSection(inNode[0], tracker)) {
+            is ValidationSuccess -> inSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }
     }
@@ -127,7 +127,7 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
         CollectionGroup(
             collectionSection!!,
             ofSection!!,
-            overSection,
+            inSection,
             forSection!!,
             whereSection!!
         )

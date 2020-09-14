@@ -51,6 +51,7 @@ data class DefinesGroup(
     val computesSection: ComputesSection?,
     val usingSection: UsingSection?,
     val whereSection: WhereSection?,
+    val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
@@ -72,6 +73,9 @@ data class DefinesGroup(
         if (whereSection != null) {
             fn(whereSection)
         }
+        if (writtenSection != null) {
+            fn(writtenSection)
+        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -83,6 +87,7 @@ data class DefinesGroup(
         sections.add(computesSection)
         sections.add(usingSection)
         sections.add(whereSection)
+        sections.add(writtenSection)
         sections.add(metaDataSection)
         return topLevelToCode(
                 writer,
@@ -102,6 +107,7 @@ data class DefinesGroup(
             computesSection = computesSection?.transform(chalkTransformer) as ComputesSection?,
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
             whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+            writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
@@ -109,7 +115,7 @@ data class DefinesGroup(
 fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
 
 fun validateDefinesGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<DefinesGroup> {
-    val validation = validateDefinesGroup(tracker, groupNode)
+    val validation = validateDefinesGroupImpl(groupNode, tracker)
     if (validation is ValidationFailure) {
         return validation
     }
@@ -206,9 +212,9 @@ fun validateDefinesGroup(groupNode: Group, tracker: MutableLocationTracker): Val
     }
 }
 
-private fun validateDefinesGroup(
-    tracker: MutableLocationTracker,
-    groupNode: Group
+private fun validateDefinesGroupImpl(
+    groupNode: Group,
+    tracker: MutableLocationTracker
 ): Validation<DefinesGroup> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
@@ -247,7 +253,7 @@ private fun validateDefinesGroup(
         sectionMap = identifySections(
             sections,
             "Defines", "when?", "means?", "computes?",
-            "using?", "where?", "Metadata?"
+            "using?", "where?", "written?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -260,6 +266,7 @@ private fun validateDefinesGroup(
     val computes = sectionMap["computes"]
     val using = sectionMap["using"] ?: emptyList()
     val where = sectionMap["where"] ?: emptyList()
+    val written = sectionMap["written"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var definesLikeSection: DefinesSection? = null
@@ -308,6 +315,14 @@ private fun validateDefinesGroup(
         }
     }
 
+    var writtenSection: WrittenSection? = null
+    if (written.isNotEmpty()) {
+        when (val writtenValidation = validateWrittenSection(written[0], tracker)) {
+            is ValidationSuccess -> writtenSection = writtenValidation.value
+            is ValidationFailure -> errors.addAll(writtenValidation.errors)
+        }
+    }
+
     var metaDataSection: MetaDataSection? = null
     if (metadata.isNotEmpty()) {
         when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
@@ -337,7 +352,10 @@ private fun validateDefinesGroup(
             whenSection,
             meansSection,
             computesSection,
-            usingSection, whereSection, metaDataSection
+            usingSection,
+            whereSection,
+            writtenSection,
+            metaDataSection
         )
     )
 }

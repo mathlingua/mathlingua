@@ -211,6 +211,7 @@ Document(
                )
                usingSection = null
                whereSection = null
+               writtenSection = null
                metaDataSection = null
              )
            ]

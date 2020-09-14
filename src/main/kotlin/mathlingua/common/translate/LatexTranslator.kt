@@ -38,7 +38,6 @@ import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 import mathlingua.common.chalktalk.phase2.ast.clause.Target
 import mathlingua.common.chalktalk.phase2.ast.clause.Text
 import mathlingua.common.chalktalk.phase2.ast.clause.TupleNode
-import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.section.AsSection
 import mathlingua.common.chalktalk.phase2.ast.section.WhenSection
 import mathlingua.common.chalktalk.phase2.ast.section.AxiomSection
@@ -198,11 +197,9 @@ class LatexTranslator(
     fun translate(definesGroup: DefinesGroup?) {
         if (definesGroup != null) {
             append("\\textbf{Definition} A")
-            val written = definesGroup.metaDataSection?.items?.find {
-                it is StringSectionGroup && it.section.name == "written"
-            } as StringSectionGroup?
-            if (written != null && written.section.values.isNotEmpty()) {
-                append("\\(${written.section.values[0].removeSurrounding("\"", "\"")}\\)")
+            val written = definesGroup.writtenSection?.forms?.getOrNull(0)
+            if (written != null) {
+                append("\\(${written.removeSurrounding("\"", "\"")}\\)")
             } else {
                 append("\\verb   '")
                 append(definesGroup.id.text)

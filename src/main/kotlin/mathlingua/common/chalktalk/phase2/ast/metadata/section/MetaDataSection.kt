@@ -33,7 +33,6 @@ private val META_DATA_ITEM_CONSTRAINTS = mapOf(
         "tag" to -1,
         "author" to -1,
         "contributor" to -1,
-        "written" to -1,
         "note" to -1,
         "id" to 1,
         "concept" to 1,

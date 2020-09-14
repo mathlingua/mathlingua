@@ -33,8 +33,7 @@ Defines: A := {a...}
 means:
 . 'a... := form...'
 . 'condition'
-Metadata:
-. written: "\left \{ form{<?,?>}& \: : \: condition{<?\:and\:?>}& \right \}"
+written: "\left \{ form{<?,?>}& \: : \: condition{<?\:and\:?>}& \right \}"
 
 
 [a \in X]
@@ -42,8 +41,8 @@ Represents:
 when: 'X is \set'
 that:
 . "$a&$ is an element of $X&$"
+written: "a& \in X&"
 Metadata:
-. written: "a& \in X&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -57,8 +56,8 @@ that:
 . for: a
   where: 'a \in A'
   then: 'a \in B'
+written: "A& \subset B&"
 Metadata:
-. written: "A& \subset B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -68,8 +67,7 @@ Metadata:
 [x \neq y]
 Represents:
 that: 'x != y'
-Metadata:
-. written: "x& \neq y&"
+written: "x& \neq y&"
 
 
 [A \proper.subset B]
@@ -78,8 +76,8 @@ when: 'A, B is \set'
 that:
 . 'A \subset B'
 . 'A \neq B'
+written: "A& \subsetneq B&"
 Metadata:
-. written: "A& \subsetneq B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -93,8 +91,8 @@ means:
 . not:
   . exists: x
     suchThat: 'x \in E'
+written: "\emptyset"
 Metadata:
-. written: "\emptyset"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -109,8 +107,8 @@ means:
 . or:
   . 'c \in A'
   . 'c \in B'
+written: "A& \cup B&"
 Metadata:
-. written: "A& \cup B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -124,8 +122,8 @@ means:
 . 'C is \set'
 . 'c \in A'
 . 'c \in B'
+written: "A& \cap B&"
 Metadata:
-. written: "A& \cap B&"
 . reference:
   . source: "@AATA"
     page: "4"
@@ -149,8 +147,7 @@ when: 'X is \set'
 that:
 . not:
   . 'x \in X'
-Metadata:
-. written: "x& \notin X&"
+written: "x& \notin X&"
 
 
 
@@ -160,8 +157,8 @@ when: 'A, U is \set'
 means:
 . 'x \in U'
 . 'x \notin A'
+written: "A&^{C}"
 Metadata:
-. written: "A&^{C}"
 . reference:
   . source: "@AATA"
     page: "5"
@@ -174,8 +171,8 @@ when: 'A, B is \set'
 means:
 . 'c \in A'
 . 'c \notin B'
+written: "A& \setminus B&"
 Metadata:
-. written: "A& \setminus B&"
 . reference:
   . source: "@AATA"
     page: "5"
@@ -188,8 +185,8 @@ when: 'A, B is \set'
 means:
 . 'x \in A'
 . 'y \in B'
+written: "A& \times B&"
 Metadata:
-. written: "A& \times B&"
 . reference:
   . source: "@AATA"
     page: "6"
@@ -281,8 +278,8 @@ when:
 means:
 . 'h is \function:on{A}to{C}'
 . 'h(x) = g(f(x))'
+written: "g& \circ f&"
 Metadata:
-. written: "g& \circ f&"
 . reference:
   . source: "@AATA"
     page: "8"
@@ -307,8 +304,8 @@ means:
 . 'f is \function:on{A}to{A}'
 . for: x
   then: 'f(x) = x'
+written: "\textrm{Id}"
 Metadata:
-. written: "\textrm{Id}"
 . reference:
   . source: "@AATA"
     page: "10"
@@ -324,8 +321,8 @@ when:
 means:
 . 'g is \function:on{B}to{A}'
 . '(g \of f) = \identity.function:on{A}'
+written: "f&^{-1}"
 Metadata:
-. written: "f&^{-1}"
 . reference:
   . source: "@AATA"
     page: "10"
@@ -366,8 +363,7 @@ Metadata:
 [\integer]
 Defines: n
 means: "$n&$ is a whole number"
-Metadata:
-. written: "\mathbb{Z}"
+written: "\mathbb{Z}"
 
 
 [\positive.integer]
@@ -375,8 +371,7 @@ Defines: n
 means:
 . 'n is \integer'
 . 'n > 0'
-Metadata:
-. written: "\mathbb{Z}^+"
+written: "\mathbb{Z}^+"
 
 
 [\nonzero]
@@ -775,8 +770,8 @@ means:
 . for: Rb := (X, +, *, 0, 1, <)
   where: 'Rb is \real.field'
   then: 'R := X'
+written: "\mathbb{R}"
 Metadata:
-. written: "\mathbb{R}"
 . reference:
   . source: "@TrenchRealAnalysis"
     page: "2"
@@ -1030,5 +1025,4 @@ means:
     suchThat:
     . 'b is \unique'
     . 'f(a) = b'
-Metadata:
-. written: "f& : A& \rightarrow B&"
+written: "f& : A& \rightarrow B&"

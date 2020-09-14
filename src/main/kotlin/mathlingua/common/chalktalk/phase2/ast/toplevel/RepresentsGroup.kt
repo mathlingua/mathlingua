@@ -48,6 +48,7 @@ data class RepresentsGroup(
     val thatSections: List<ThatSection>,
     val usingSection: UsingSection?,
     val whereSection: WhereSection?,
+    val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
@@ -64,6 +65,9 @@ data class RepresentsGroup(
         if (whereSection != null) {
             fn(whereSection)
         }
+        if (writtenSection != null) {
+            fn(writtenSection)
+        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -74,6 +78,7 @@ data class RepresentsGroup(
         sections.addAll(thatSections)
         sections.add(usingSection)
         sections.add(whereSection)
+        sections.add(writtenSection)
         sections.add(metaDataSection)
         return topLevelToCode(
                 writer,
@@ -92,6 +97,7 @@ data class RepresentsGroup(
             thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
             whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+            writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     ))
 }
@@ -135,7 +141,7 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     try {
         sectionMap = identifySections(
             sections,
-            "Represents", "when?", "that", "using?", "where?", "Metadata?"
+            "Represents", "when?", "that", "using?", "where?", "written?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -147,6 +153,7 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     val ends = sectionMap["that"]!!
     val using = sectionMap["using"] ?: emptyList()
     val where = sectionMap["where"] ?: emptyList()
+    val written = sectionMap["written"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var representsSection: RepresentsSection? = null
@@ -187,6 +194,14 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
         }
     }
 
+    var writtenSection: WrittenSection? = null
+    if (written.isNotEmpty()) {
+        when (val writtenValidation = validateWrittenSection(written[0], tracker)) {
+            is ValidationSuccess -> writtenSection = writtenValidation.value
+            is ValidationFailure -> errors.addAll(writtenValidation.errors)
+        }
+    }
+
     var metaDataSection: MetaDataSection? = null
     if (metadata.isNotEmpty()) {
         when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
@@ -207,7 +222,10 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
             // the end sections are in reverse order so they
             // must be reversed here to be in the correct order
             endSections.reversed(),
-            usingSection, whereSection, metaDataSection
+            usingSection,
+            whereSection,
+            writtenSection,
+            metaDataSection
         )
     )
 }

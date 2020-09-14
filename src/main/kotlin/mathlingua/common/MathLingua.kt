@@ -23,7 +23,6 @@ import mathlingua.common.chalktalk.phase2.ast.Document
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
-import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.*
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.textalk.Command
@@ -358,22 +357,7 @@ object MathLingua {
     ): Map<OperatorTexTalkNode, String> {
         val result = mutableMapOf<OperatorTexTalkNode, String>()
         for (rep in represents) {
-            val allItems = rep.metaDataSection?.items
-            var writtenAs: String? = null
-            if (allItems != null) {
-                for (item in allItems) {
-                    if (item is StringSectionGroup &&
-                        item.section.name == "written" &&
-                        item.section.values.isNotEmpty()) {
-                        writtenAs = item.section.values[0].removeSurrounding("\"", "\"")
-                        break
-                    }
-                }
-            }
-
-            if (writtenAs == null) {
-                continue
-            }
+            val writtenAs = rep.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
             val validation = rep.id.texTalkRoot
             if (validation is ValidationSuccess) {
@@ -391,22 +375,7 @@ object MathLingua {
         }
 
         for (def in defines) {
-            val allItems = def.metaDataSection?.items
-            var writtenAs: String? = null
-            if (allItems != null) {
-                for (item in allItems) {
-                    if (item is StringSectionGroup &&
-                            item.section.name == "written" &&
-                            item.section.values.isNotEmpty()) {
-                        writtenAs = item.section.values[0].removeSurrounding("\"", "\"")
-                        break
-                    }
-                }
-            }
-
-            if (writtenAs == null) {
-                continue
-            }
+            val writtenAs = def.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
             val validation = def.id.texTalkRoot
             if (validation is ValidationSuccess) {

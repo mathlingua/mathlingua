@@ -260,8 +260,7 @@ internal class MathLinguaTest {
             [\or{a}{b}]
             Represents:
             that: "something"
-            Metadata:
-            . written: "a? \text{ or } b?"
+            written: "a? \text{ or } b?"
         """.trimIndent())
         assertThat(validation is ValidationSuccess)
         val doc = (validation as ValidationSuccess).value

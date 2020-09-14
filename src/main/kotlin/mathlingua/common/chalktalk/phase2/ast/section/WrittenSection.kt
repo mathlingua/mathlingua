@@ -23,7 +23,7 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.toplevel.validateTextListSection
 
-data class WrittenSection(val imports: List<String>) : Phase2Node {
+data class WrittenSection(val forms: List<String>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
     }
 
@@ -31,7 +31,7 @@ data class WrittenSection(val imports: List<String>) : Phase2Node {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("written")
         writer.writeNewline()
-        for (imp in imports) {
+        for (imp in forms) {
             writer.writeIndent(true, indent + 2)
             writer.writeDirect(imp)
         }

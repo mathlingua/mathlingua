@@ -280,18 +280,6 @@ class LatexTranslator(
     fun translate(leanGroup: LeanGroup?) {
         if (leanGroup != null) {
             append("\\begin{verbatim}\n")
-            if (leanGroup.importSection != null) {
-                for (imp in leanGroup.importSection.imports) {
-                    append("import $imp\n")
-                }
-                append("\n")
-            }
-            if (leanGroup.variableSection != null) {
-                for (v in leanGroup.variableSection.variables) {
-                    append("variables $v\n")
-                }
-                append("\n")
-            }
             append(leanGroup.leanSection.text)
             append("\n")
             append("\\end{verbatim}\n")

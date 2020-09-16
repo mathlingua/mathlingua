@@ -20,49 +20,29 @@ import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.section.ImportSection
 import mathlingua.common.chalktalk.phase2.ast.section.LeanSection
-import mathlingua.common.chalktalk.phase2.ast.section.VariableSection
-import mathlingua.common.chalktalk.phase2.ast.section.validateImportSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateLeanSection
-import mathlingua.common.chalktalk.phase2.ast.section.validateVariableSection
 
-data class LeanGroup(
-    val leanSection: LeanSection,
-    val importSection: ImportSection?,
-    val variableSection: VariableSection?
-) : Clause {
+data class LeanGroup(val leanSection: LeanSection) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(leanSection)
-        if (importSection != null) {
-            fn(importSection)
-        }
-        if (variableSection != null) {
-            fn(variableSection)
-        }
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        toCode(writer, isArg, indent, leanSection, importSection, variableSection)
+        toCode(writer, isArg, indent, leanSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(LeanGroup(
-            leanSection = leanSection.transform(chalkTransformer) as LeanSection,
-            importSection = importSection?.transform(chalkTransformer) as ImportSection?,
-            variableSection = variableSection?.transform(chalkTransformer) as VariableSection?
+            leanSection = leanSection.transform(chalkTransformer) as LeanSection
         ))
 }
 
 fun isLeanGroup(node: Phase1Node) = firstSectionMatchesName(node, "lean")
 
-fun validateLeanGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateTripleSectionGroup(
+fun validateLeanGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateSingleSectionGroup(
     tracker,
     node,
     "lean",
-    ::validateLeanSection,
-    "import?",
-    ::validateImportSection,
-    "variable?",
-    ::validateVariableSection,
-    ::LeanGroup
+    ::LeanGroup,
+    ::validateLeanSection
 )

@@ -102,6 +102,12 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                     is ValidationFailure -> errors.addAll(representsValidation.errors)
                 }
             }
+            isFoundationGroup(group) -> {
+                when (val foundationValidation = validateFoundationGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(foundationValidation.value)
+                    is ValidationFailure -> errors.addAll(foundationValidation.errors)
+                }
+            }
             isResourceGroup(group) -> {
                 when (val resourceValidation = validateResourceGroup(group, tracker)) {
                     is ValidationSuccess -> allGroups.add(resourceValidation.value)

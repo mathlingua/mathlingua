@@ -345,9 +345,11 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
 
     var metadataSection: MetaDataSection? = null
     val metadata = sectionMap["metadata"]
-    when (val metadataValidation = validateMetaDataSection(metadata!![0], tracker)) {
-        is ValidationSuccess -> metadataSection = metadataValidation.value
-        is ValidationFailure -> errors.addAll(metadataValidation.errors)
+    if (metadata != null) {
+        when (val metadataValidation = validateMetaDataSection(metadata!![0], tracker)) {
+            is ValidationSuccess -> metadataSection = metadataValidation.value
+            is ValidationFailure -> errors.addAll(metadataValidation.errors)
+        }
     }
 
     return if (errors.isNotEmpty()) {

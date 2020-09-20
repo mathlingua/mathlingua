@@ -1,3 +1,4 @@
-Problem:
-. "This is a problem"
-. 'a + b'
+Entry:
+
+type: "problem"
+content: "This is a problem"

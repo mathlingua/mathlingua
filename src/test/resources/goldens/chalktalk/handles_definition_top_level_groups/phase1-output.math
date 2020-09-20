@@ -1,3 +1,5 @@
-Definition:
+Entry:
+type:
+. "definition"
+content:
 . "This is a definition"
-. 'a + b'

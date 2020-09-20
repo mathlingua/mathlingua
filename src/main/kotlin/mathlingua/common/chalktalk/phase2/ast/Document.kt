@@ -120,24 +120,6 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                     is ValidationFailure -> errors.addAll(resourceValidation.errors)
                 }
             }
-            isDefinitionGroup(group) -> {
-                when (val validation = validateDefinitionGroup(group, tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-            isNoteGroup(group) -> {
-                when (val validation = validateNoteGroup(group, tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-            isProblemGroup(group) -> {
-                when (val validation = validateProblemGroup(group, tracker)) {
-                    is ValidationSuccess -> allGroups.add(validation.value)
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
             else -> {
                 errors.add(
                     ParseError(

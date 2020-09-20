@@ -1,4 +1,5 @@
 
-Problem:
+Entry:
+type: "problem"
+content:
 . "This is a problem"
-. 'a + b'

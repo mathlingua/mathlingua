@@ -43,7 +43,6 @@ import mathlingua.common.chalktalk.phase2.ast.section.WhenSection
 import mathlingua.common.chalktalk.phase2.ast.section.AxiomSection
 import mathlingua.common.chalktalk.phase2.ast.section.ConjectureSection
 import mathlingua.common.chalktalk.phase2.ast.section.DefinesSection
-import mathlingua.common.chalktalk.phase2.ast.section.DefinitionSection
 import mathlingua.common.chalktalk.phase2.ast.section.ExistsSection
 import mathlingua.common.chalktalk.phase2.ast.section.ExpandsSection
 import mathlingua.common.chalktalk.phase2.ast.section.ForSection
@@ -52,9 +51,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.IffSection
 import mathlingua.common.chalktalk.phase2.ast.section.LatexSection
 import mathlingua.common.chalktalk.phase2.ast.section.MeansSection
 import mathlingua.common.chalktalk.phase2.ast.section.NotSection
-import mathlingua.common.chalktalk.phase2.ast.section.NoteSection
 import mathlingua.common.chalktalk.phase2.ast.section.OrSection
-import mathlingua.common.chalktalk.phase2.ast.section.ProblemSection
 import mathlingua.common.chalktalk.phase2.ast.section.RepresentsSection
 import mathlingua.common.chalktalk.phase2.ast.section.ResourceSection
 import mathlingua.common.chalktalk.phase2.ast.section.SuchThatSection
@@ -66,9 +63,6 @@ import mathlingua.common.chalktalk.phase2.ast.section.WhereSection
 import mathlingua.common.chalktalk.phase2.ast.toplevel.AxiomGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.ConjectureGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinitionGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.NoteGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.ProblemGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.ResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TheoremGroup
@@ -187,13 +181,6 @@ class LatexTranslator(
         }
     }
 
-    fun translate(definitionGroup: DefinitionGroup?) {
-        if (definitionGroup != null) {
-            append("\\textbf{Definition}")
-            translate(definitionGroup.definitionSection)
-        }
-    }
-
     fun translate(definesGroup: DefinesGroup?) {
         if (definesGroup != null) {
             append("\\textbf{Definition} A")
@@ -221,20 +208,6 @@ class LatexTranslator(
         }
     }
 
-    fun translate(noteGroup: NoteGroup?) {
-        if (noteGroup != null) {
-            append("\\textbf{Note}")
-            translate(noteGroup.noteSection)
-        }
-    }
-
-    fun translate(problemGroup: ProblemGroup?) {
-        if (problemGroup != null) {
-            append("\\textbf{Problem}")
-            translate(problemGroup.problemSection)
-        }
-    }
-
     fun translate(resourceGroup: ResourceGroup?) {
         if (resourceGroup != null) {
             append("\\textbf{${resourceGroup.id}}\\\\")
@@ -244,14 +217,11 @@ class LatexTranslator(
 
     fun translate(topLevelGroup: TopLevelGroup?) {
         when (topLevelGroup) {
-            is DefinitionGroup -> translate(topLevelGroup)
             is DefinesGroup -> translate(topLevelGroup)
             is RepresentsGroup -> translate(topLevelGroup)
             is TheoremGroup -> translate(topLevelGroup)
             is AxiomGroup -> translate(topLevelGroup)
             is ConjectureGroup -> translate(topLevelGroup)
-            is ProblemGroup -> translate(topLevelGroup)
-            is NoteGroup -> translate(topLevelGroup)
         }
     }
 
@@ -336,12 +306,6 @@ class LatexTranslator(
         }
     }
 
-    fun translate(definitionSection: DefinitionSection?) {
-        if (definitionSection != null) {
-            translate(definitionSection.clauses)
-        }
-    }
-
     fun translate(existsSection: ExistsSection?) {
         if (existsSection != null) {
             append("there exists")
@@ -396,12 +360,6 @@ class LatexTranslator(
         }
     }
 
-    fun translate(noteSection: NoteSection?) {
-        if (noteSection != null) {
-            translate(noteSection.clauses)
-        }
-    }
-
     fun translate(notSection: NotSection?) {
         if (notSection != null) {
             append("not")
@@ -413,12 +371,6 @@ class LatexTranslator(
         if (orSection != null) {
             append("or")
             translate(orSection.clauses)
-        }
-    }
-
-    fun translate(problemSection: ProblemSection?) {
-        if (problemSection != null) {
-            translate(problemSection.clauses)
         }
     }
 

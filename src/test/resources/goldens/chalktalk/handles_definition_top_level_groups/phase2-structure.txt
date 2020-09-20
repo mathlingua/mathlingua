@@ -1,43 +1,15 @@
 Document(
   groups = [
-             DefinitionGroup(
-               definitionSection = DefinitionSection(
-                 clauses = ClauseListNode(
-                   clauses = [
-                               Text(
-                                 text = ""This is a definition""
-                               ),
-                               Statement(
-                                 text = "a + b"
-                                 texTalkRoot = ValidationSuccessImpl(
-                                   v = ExpressionTexTalkNode(
-                                     children = [
-                                                  OperatorTexTalkNode(
-                                                    lhs = TextTexTalkNode(
-                                                      type = TexTalkNodeType.Identifier
-                                                      tokenType = TexTalkTokenType.Identifier
-                                                      text = "a"
-                                                      isVarArg = false
-                                                    )
-                                                    command = TextTexTalkNode(
-                                                      type = TexTalkNodeType.Operator
-                                                      tokenType = TexTalkTokenType.Operator
-                                                      text = "+"
-                                                      isVarArg = false
-                                                    )
-                                                    rhs = TextTexTalkNode(
-                                                      type = TexTalkNodeType.Identifier
-                                                      tokenType = TexTalkTokenType.Identifier
-                                                      text = "b"
-                                                      isVarArg = false
-                                                    )
-                                                  )
-                                                ]
-                                   )
-                                 )
-                               )
-                             ]
-                 )
+             EntryGroup(
+               entrySection = EntrySection(
+                 names = [
+                         ]
+               )
+               typeSection = TypeSection(
+                 text = ""definition""
+               )
+               contentSection = ContentSection(
+                 text = ""This is a definition""
                )
                metaDataSection = null
              )

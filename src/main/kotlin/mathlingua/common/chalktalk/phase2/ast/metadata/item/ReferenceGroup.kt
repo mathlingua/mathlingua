@@ -20,23 +20,15 @@ import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.OnePartNode
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.ReferenceSection
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 
-data class ReferenceGroup(val referenceSection: ReferenceSection) : MetaDataItem() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(referenceSection)
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            referenceSection.toCode(isArg, indent, writer)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(ReferenceGroup(
-                    referenceSection = chalkTransformer(referenceSection) as ReferenceSection
-            ))
-}
+data class ReferenceGroup(val referenceSection: ReferenceSection) : OnePartNode<ReferenceSection>(
+    referenceSection,
+    ::ReferenceGroup
+), MetaDataItem
 
 fun isReferenceGroup(node: Phase1Node) = firstSectionMatchesName(node, "reference")
 

@@ -18,28 +18,18 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.TwoPartNode
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.chalktalk.phase2.ast.section.*
 
 data class ExpandsGroup(
     val expandsSection: ExpandsSection,
     val asSection: AsSection
-) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(expandsSection)
-        fn(asSection)
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, expandsSection, asSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ExpandsGroup(
-            expandsSection = expandsSection.transform(chalkTransformer) as ExpandsSection,
-            asSection = asSection.transform(chalkTransformer) as AsSection
-    ))
-}
+) : TwoPartNode<ExpandsSection, AsSection>(
+    expandsSection,
+    asSection,
+    ::ExpandsGroup
+), Clause
 
 fun isExpandsGroup(node: Phase1Node) = firstSectionMatchesName(node, "expands")
 

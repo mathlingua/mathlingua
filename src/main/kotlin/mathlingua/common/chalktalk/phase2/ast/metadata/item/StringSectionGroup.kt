@@ -16,19 +16,10 @@
 
 package mathlingua.common.chalktalk.phase2.ast.metadata.item
 
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.OnePartNode
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.StringSection
 
-class StringSectionGroup(val section: StringSection) : MetaDataItem() {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = fn(section)
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = section.toCode(isArg, indent, writer)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(
-                    StringSectionGroup(
-                            section = chalkTransformer(section) as StringSection
-                    )
-            )
-}
+class StringSectionGroup(val section: StringSection) : OnePartNode<StringSection>(
+    section,
+    ::StringSectionGroup
+), MetaDataItem

@@ -18,24 +18,15 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.OnePartNode
 import mathlingua.common.chalktalk.phase2.ast.section.LatexSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateLatexSection
 
-data class LatexGroup(val latexSection: LatexSection) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(latexSection)
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        toCode(writer, isArg, indent, latexSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(LatexGroup(
-            latexSection = latexSection.transform(chalkTransformer) as LatexSection
-        ))
-}
+data class LatexGroup(val latexSection: LatexSection) :
+    OnePartNode<LatexSection>(
+        latexSection,
+        ::LatexGroup
+    ), Clause
 
 fun isLatexGroup(node: Phase1Node) = firstSectionMatchesName(node, "latex")
 

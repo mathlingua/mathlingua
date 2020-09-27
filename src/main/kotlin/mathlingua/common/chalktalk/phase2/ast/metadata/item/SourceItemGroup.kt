@@ -35,7 +35,7 @@ data class SourceItemGroup(
     val pageSection: PageItemSection?,
     val offsetSection: OffsetItemSection?,
     val contentSection: ContentItemSection?
-) : MetaDataItem() {
+) : MetaDataItem {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
 

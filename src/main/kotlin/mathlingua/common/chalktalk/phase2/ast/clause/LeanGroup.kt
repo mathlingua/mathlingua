@@ -18,24 +18,15 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.OnePartNode
 import mathlingua.common.chalktalk.phase2.ast.section.LeanSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateLeanSection
 
-data class LeanGroup(val leanSection: LeanSection) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(leanSection)
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        toCode(writer, isArg, indent, leanSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(LeanGroup(
-            leanSection = leanSection.transform(chalkTransformer) as LeanSection
-        ))
-}
+data class LeanGroup(val leanSection: LeanSection) :
+    OnePartNode<LeanSection>(
+        leanSection,
+        ::LeanGroup
+    ), Clause
 
 fun isLeanGroup(node: Phase1Node) = firstSectionMatchesName(node, "lean")
 

@@ -18,8 +18,7 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.ThreePartNode
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.chalktalk.phase2.ast.section.*
 
@@ -27,24 +26,12 @@ data class ForGroup(
     val forSection: ForSection,
     val whereSection: WhereSection?,
     val thenSection: ThenSection
-) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(forSection)
-        if (whereSection != null) {
-            fn(whereSection)
-        }
-        fn(thenSection)
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, forSection, whereSection, thenSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ForGroup(
-            forSection = forSection.transform(chalkTransformer) as ForSection,
-            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection
-    ))
-}
+) : ThreePartNode<ForSection, WhereSection?, ThenSection>(
+    forSection,
+    whereSection,
+    thenSection,
+    ::ForGroup
+), Clause
 
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
 

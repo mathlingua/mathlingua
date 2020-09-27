@@ -18,8 +18,7 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.TwoPartNode
 import mathlingua.common.chalktalk.phase2.ast.section.ExistsSection
 import mathlingua.common.chalktalk.phase2.ast.section.SuchThatSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateExistsSection
@@ -28,20 +27,11 @@ import mathlingua.common.chalktalk.phase2.ast.section.validateSuchThatSection
 data class ExistsGroup(
     val existsSection: ExistsSection,
     val suchThatSection: SuchThatSection
-) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(existsSection)
-        fn(suchThatSection)
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, existsSection, suchThatSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(ExistsGroup(
-            existsSection = existsSection.transform(chalkTransformer) as ExistsSection,
-            suchThatSection = suchThatSection.transform(chalkTransformer) as SuchThatSection
-    ))
-}
+) : TwoPartNode<ExistsSection, SuchThatSection>(
+    existsSection,
+    suchThatSection,
+    ::ExistsGroup
+), Clause
 
 fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
 

@@ -18,4 +18,4 @@ package mathlingua.common.chalktalk.phase2.ast.metadata.item
 
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
-abstract class MetaDataItem : Phase2Node
+interface MetaDataItem : Phase2Node

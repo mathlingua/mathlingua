@@ -19,16 +19,9 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Assignment
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.ZeroPartNode
 
-data class AssignmentNode(val assignment: Assignment) : Target {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = toCode(writer, isArg, indent, assignment)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
-}
+data class AssignmentNode(val assignment: Assignment) : ZeroPartNode(assignment), Target
 
 fun isAssignment(node: Phase1Node) = node is Assignment
 

@@ -18,8 +18,7 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 
 import mathlingua.common.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.TwoPartNode
 import mathlingua.common.chalktalk.phase2.ast.section.IffSection
 import mathlingua.common.chalktalk.phase2.ast.section.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateIffSection
@@ -28,20 +27,11 @@ import mathlingua.common.chalktalk.phase2.ast.section.validateThenSection
 data class IffGroup(
     val iffSection: IffSection,
     val thenSection: ThenSection
-) : Clause {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(iffSection)
-        fn(thenSection)
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            toCode(writer, isArg, indent, iffSection, thenSection)
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(IffGroup(
-            iffSection = iffSection.transform(chalkTransformer) as IffSection,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection
-    ))
-}
+) : TwoPartNode<IffSection, ThenSection>(
+    iffSection,
+    thenSection,
+    ::IffGroup
+), Clause
 
 fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
 

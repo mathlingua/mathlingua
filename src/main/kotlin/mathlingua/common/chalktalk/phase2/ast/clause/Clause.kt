@@ -102,6 +102,10 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
             ::isCollectionGroup,
             ::validateCollectionGroup
+        ),
+        ValidationPair(
+            ::isMatchingGroup,
+            ::validateMatchingGroup
         )
 )
 

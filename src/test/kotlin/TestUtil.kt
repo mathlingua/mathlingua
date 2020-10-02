@@ -26,7 +26,7 @@ import java.nio.file.Paths
 // This is useful if a change was made that impacts a lot of golden files, and
 // you want to regenerate them and use `git diff` to see how your change
 // impacted the tests.
-internal const val OVERWRITE_GOLDEN_FILES = true
+internal const val OVERWRITE_GOLDEN_FILES = false
 
 data class TestCase(
     val name: String,

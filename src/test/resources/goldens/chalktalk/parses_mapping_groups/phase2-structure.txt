@@ -87,38 +87,42 @@ Document(
                                  mappingSection = MappingSection(
                                  )
                                  fromSection = FromSection(
-                                   statement = Statement(
-                                     text = "A"
-                                     texTalkRoot = ValidationSuccessImpl(
-                                       v = ExpressionTexTalkNode(
-                                         children = [
-                                                      TextTexTalkNode(
-                                                        type = TexTalkNodeType.Identifier
-                                                        tokenType = TexTalkTokenType.Identifier
-                                                        text = "A"
-                                                        isVarArg = false
+                                   statements = [
+                                                  Statement(
+                                                    text = "A"
+                                                    texTalkRoot = ValidationSuccessImpl(
+                                                      v = ExpressionTexTalkNode(
+                                                        children = [
+                                                                     TextTexTalkNode(
+                                                                       type = TexTalkNodeType.Identifier
+                                                                       tokenType = TexTalkTokenType.Identifier
+                                                                       text = "A"
+                                                                       isVarArg = false
+                                                                     )
+                                                                   ]
                                                       )
-                                                    ]
-                                       )
-                                     )
-                                   )
+                                                    )
+                                                  )
+                                                ]
                                  )
                                  toSection = ToSection(
-                                   statement = Statement(
-                                     text = "A"
-                                     texTalkRoot = ValidationSuccessImpl(
-                                       v = ExpressionTexTalkNode(
-                                         children = [
-                                                      TextTexTalkNode(
-                                                        type = TexTalkNodeType.Identifier
-                                                        tokenType = TexTalkTokenType.Identifier
-                                                        text = "A"
-                                                        isVarArg = false
+                                   statements = [
+                                                  Statement(
+                                                    text = "A"
+                                                    texTalkRoot = ValidationSuccessImpl(
+                                                      v = ExpressionTexTalkNode(
+                                                        children = [
+                                                                     TextTexTalkNode(
+                                                                       type = TexTalkNodeType.Identifier
+                                                                       tokenType = TexTalkTokenType.Identifier
+                                                                       text = "A"
+                                                                       isVarArg = false
+                                                                     )
+                                                                   ]
                                                       )
-                                                    ]
-                                       )
-                                     )
-                                   )
+                                                    )
+                                                  )
+                                                ]
                                  )
                                  asSection = AsSection(
                                    clauses = ClauseListNode(

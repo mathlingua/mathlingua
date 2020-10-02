@@ -156,6 +156,25 @@ private class TexTalkParserImpl : TexTalkParser {
                 }
                 if (has(TexTalkTokenType.Period)) {
                     expect(TexTalkTokenType.Period) // move past the .
+                    if (has(TexTalkTokenType.Operator)) {
+                        val operator = expect(TexTalkTokenType.Operator)
+                        parts.add(
+                            CommandPart(
+                                name = TextTexTalkNode(
+                                    type = TexTalkNodeType.Identifier,
+                                    tokenType = TexTalkTokenType.Operator,
+                                    text = operator.text,
+                                    isVarArg = false
+                                ),
+                                square = null,
+                                subSup = null,
+                                groups = emptyList(),
+                                paren = null,
+                                namedGroups = emptyList()
+                            )
+                        )
+                        break
+                    }
                 } else {
                     break
                 }

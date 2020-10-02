@@ -22,25 +22,32 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 
-data class FromSection(val statement: Statement) : Phase2Node {
+data class FromSection(val statements: List<Statement>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(statement)
+        statements.forEach(fn)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("from")
-        writer.append(statement, false, 1)
+        if (statements.size > 1) {
+            for (stmt in statements) {
+                writer.writeNewline()
+                writer.append(stmt, true, indent + 2)
+            }
+        } else {
+            writer.append(statements[0], false, 1)
+        }
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(FromSection(
-            statement = statement.transform(chalkTransformer) as Statement
+            statements = statements.map { chalkTransformer(it) as Statement }
         ))
 }
 
-fun validateFromSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementSection(
+fun validateFromSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementListSection(
     node,
     tracker,
     "from",

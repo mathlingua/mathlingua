@@ -17,9 +17,9 @@
 package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.MathLingua
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement

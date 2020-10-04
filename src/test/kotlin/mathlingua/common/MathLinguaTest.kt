@@ -3,6 +3,8 @@ package mathlingua.common
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import mathlingua.common.support.Location
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.CommandPart
 import mathlingua.common.textalk.ExpressionTexTalkNode
@@ -73,10 +75,12 @@ internal class MathLinguaTest {
         """.trimIndent())
 
         val dups = MathLingua.findDuplicateContent(input, supplemental)
-        assertThat(dups).isEqualTo(listOf(Location(
+        assertThat(dups).isEqualTo(listOf(
+            Location(
                 row = 4,
                 column = 1
-        )))
+        )
+        ))
     }
 
     @Test
@@ -146,10 +150,12 @@ internal class MathLinguaTest {
         """.trimIndent())
 
         val dups = MathLingua.findDuplicateContent(input, supplemental)
-        assertThat(dups).isEqualTo(listOf(Location(
+        assertThat(dups).isEqualTo(listOf(
+            Location(
                 row = 0,
                 column = 0
-        )))
+        )
+        ))
     }
 
     @Test

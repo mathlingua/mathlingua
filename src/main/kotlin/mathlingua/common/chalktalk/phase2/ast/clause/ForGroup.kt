@@ -16,11 +16,17 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.ast.ThreePartNode
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.chalktalk.phase2.ast.section.*
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class ForGroup(
     val forSection: ForSection,

@@ -17,8 +17,8 @@
 package mathlingua.mathlingua.playground
 
 import mathlingua.common.MathLingua
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane

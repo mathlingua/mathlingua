@@ -16,16 +16,22 @@
 
 package mathlingua.common.chalktalk.phase2.ast.metadata.section
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.metadata.*
 import mathlingua.common.chalktalk.phase2.ast.metadata.isSingleSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.MetaDataItem
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.isReferenceGroup
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.validateReferenceGroup
+import mathlingua.common.support.Location
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 private val META_DATA_ITEM_CONSTRAINTS = mapOf(
         "name" to -1,

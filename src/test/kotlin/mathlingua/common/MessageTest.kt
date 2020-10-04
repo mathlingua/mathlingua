@@ -20,7 +20,7 @@ import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
 import mathlingua.common.MathLingua
-import mathlingua.common.ValidationFailure
+import mathlingua.common.support.ValidationFailure
 import mathlingua.loadMessageTestCases
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory

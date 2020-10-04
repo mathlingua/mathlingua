@@ -16,7 +16,7 @@
 
 package mathlingua.common.chalktalk.phase1
 
-import mathlingua.common.ParseError
+import mathlingua.common.support.ParseError
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import java.util.Stack

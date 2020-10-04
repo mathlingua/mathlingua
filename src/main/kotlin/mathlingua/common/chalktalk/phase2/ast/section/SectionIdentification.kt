@@ -16,7 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.ParseError
+import mathlingua.common.support.ParseError
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow

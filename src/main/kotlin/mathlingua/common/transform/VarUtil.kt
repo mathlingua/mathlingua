@@ -16,8 +16,8 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
@@ -26,7 +26,7 @@ import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TextTexTalkNode
-import mathlingua.common.validationSuccess
+import mathlingua.common.support.validationSuccess
 
 internal fun getVars(node: Phase1Node): List<String> {
     val vars = mutableListOf<String>()

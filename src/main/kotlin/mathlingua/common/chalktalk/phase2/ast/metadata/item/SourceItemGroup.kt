@@ -16,7 +16,6 @@
 
 package mathlingua.common.chalktalk.phase2.ast.metadata.item
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -29,6 +28,13 @@ import mathlingua.common.chalktalk.phase2.ast.metadata.section.PageItemSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.SourceItemSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.validateStringSection
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class SourceItemGroup(
     val sourceSection: SourceItemSection,

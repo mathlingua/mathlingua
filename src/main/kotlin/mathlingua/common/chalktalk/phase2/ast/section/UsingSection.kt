@@ -16,12 +16,12 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Target
 import mathlingua.common.chalktalk.phase2.ast.clause.validateTargetList
+import mathlingua.common.support.MutableLocationTracker
 
 data class UsingSection(val targets: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)

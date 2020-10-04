@@ -18,7 +18,7 @@ package mathlingua.common.chalktalk.phase1
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import mathlingua.common.ParseError
+import mathlingua.common.support.ParseError
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import org.junit.jupiter.api.Test

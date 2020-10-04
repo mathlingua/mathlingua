@@ -16,8 +16,8 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
@@ -32,7 +32,7 @@ import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TexTalkTokenType
 import mathlingua.common.textalk.TextTexTalkNode
-import mathlingua.common.validationSuccess
+import mathlingua.common.support.validationSuccess
 
 data class RootTarget<R, T>(val root: R, val target: T)
 

@@ -24,6 +24,10 @@ import mathlingua.common.chalktalk.phase2.ast.section.TextSection
 import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
 import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
+import mathlingua.common.support.Location
+import mathlingua.common.support.LocationTracker
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.textalk.*
 
 internal fun locateAllSignatures(node: Phase2Node, locationTracker: LocationTracker): Set<Signature> {

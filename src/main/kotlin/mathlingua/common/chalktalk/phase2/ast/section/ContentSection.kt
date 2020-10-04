@@ -16,15 +16,15 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.MutableLocationTracker
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
-import mathlingua.common.validationFailure
-import mathlingua.common.validationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class ContentSection(val text: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {

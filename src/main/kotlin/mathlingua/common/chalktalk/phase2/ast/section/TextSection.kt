@@ -16,10 +16,14 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class TextSection(
     val name: String,
@@ -83,10 +87,12 @@ fun validateTextSection(
 
     val arg = sect.args[0].chalkTalkTarget
     if (arg !is Phase1Token) {
-        errors.add(ParseError(
+        errors.add(
+            ParseError(
                 "Expected a string but found ${arg.toCode()}",
                 row, column
-        ))
+        )
+        )
     }
 
     return if (errors.isNotEmpty()) {

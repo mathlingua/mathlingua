@@ -16,8 +16,8 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Document
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
@@ -34,7 +34,7 @@ import mathlingua.common.textalk.TexTalkNodeType
 import mathlingua.common.textalk.TexTalkTokenType
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.getTexTalkAncestry
-import mathlingua.common.validationSuccess
+import mathlingua.common.support.validationSuccess
 
 internal fun getKey(node: Phase2Node): String {
     val str = node.toString()

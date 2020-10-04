@@ -16,13 +16,18 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.StringSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.isSingleSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.metadata.item.StringSectionGroup
+import mathlingua.common.support.Location
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 class ResourceSection(override val items: List<StringSectionGroup>) : SourceSection(items) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)

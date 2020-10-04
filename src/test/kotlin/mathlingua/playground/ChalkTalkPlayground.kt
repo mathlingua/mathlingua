@@ -26,6 +26,11 @@ import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Document
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
+import mathlingua.common.support.Location
+import mathlingua.common.support.LocationTracker
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.newLocationTracker
 import mathlingua.common.textalk.TexTalkNode
 import mathlingua.common.transform.*
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea

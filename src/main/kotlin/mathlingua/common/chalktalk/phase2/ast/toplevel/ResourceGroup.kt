@@ -16,7 +16,6 @@
 
 package mathlingua.common.chalktalk.phase2.ast.toplevel
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -29,6 +28,13 @@ import mathlingua.common.chalktalk.phase2.ast.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.metadata.section.validateMetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.ResourceSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateResourceSection
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class ResourceGroup(
     val id: String,

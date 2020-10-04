@@ -16,7 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2
 
-import mathlingua.common.LocationTracker
+import mathlingua.common.support.LocationTracker
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 
 internal fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {

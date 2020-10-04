@@ -16,7 +16,7 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.MutableLocationTracker
+import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Assignment
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.ZeroPartNode

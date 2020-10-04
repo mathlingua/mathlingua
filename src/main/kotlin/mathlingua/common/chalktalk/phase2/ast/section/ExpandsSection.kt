@@ -16,13 +16,19 @@
 
 package mathlingua.common.chalktalk.phase2.ast.section
 
-import mathlingua.common.*
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.common.chalktalk.phase2.ast.clause.Target
 import mathlingua.common.chalktalk.phase2.ast.clause.validateTargetList
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class ExpandsSection(val targets: List<AbstractionNode>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
@@ -83,11 +89,13 @@ fun validateExpandsSection(node: Phase1Node, tracker: MutableLocationTracker): V
                     null
                 }
                 if (id == null) {
-                    newErrors.add(ParseError(
+                    newErrors.add(
+                        ParseError(
                             message = "an 'expands' section can only contain <name>... or {<name>}...",
                             row = tracker.getLocationOf(target)?.row ?: -1,
                             column = tracker.getLocationOf(target)?.column ?: -1
-                    ))
+                    )
+                    )
                 } else {
                     targets.add(id)
                 }

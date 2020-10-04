@@ -17,7 +17,7 @@
 package mathlingua.common.translate
 
 import mathlingua.common.MathLingua
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.ast.Document
 import mathlingua.common.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.common.chalktalk.phase2.ast.clause.AssignmentNode

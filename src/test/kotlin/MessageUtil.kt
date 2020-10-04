@@ -16,7 +16,7 @@
 
 package mathlingua
 
-import mathlingua.common.ParseError
+import mathlingua.common.support.ParseError
 import java.io.File
 import java.io.IOException
 import java.lang.RuntimeException

@@ -16,8 +16,8 @@
 
 package mathlingua.common.transform
 
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.textalk.*
 import kotlin.math.max

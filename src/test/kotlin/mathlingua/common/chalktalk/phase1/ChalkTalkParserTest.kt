@@ -21,7 +21,7 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isNotNull
 import mathlingua.GoldenType
 import mathlingua.OVERWRITE_GOLDEN_FILES
-import mathlingua.common.ParseError
+import mathlingua.common.support.ParseError
 import mathlingua.loadTestCases
 import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest

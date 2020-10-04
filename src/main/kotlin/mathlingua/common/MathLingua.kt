@@ -25,6 +25,15 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 import mathlingua.common.chalktalk.phase2.ast.toplevel.*
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
+import mathlingua.common.support.Location
+import mathlingua.common.support.LocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.newLocationTracker
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.OperatorTexTalkNode
@@ -71,7 +80,7 @@ object MathLingua {
         }
     }
 
-    fun justify(text: String, width: Int) = mathlingua.common.justify(text, width)
+    fun justify(text: String, width: Int) = mathlingua.common.support.justify(text, width)
 
     fun prettyPrintIdentifier(text: String) = mathlingua.common.chalktalk.phase2.prettyPrintIdentifier(text)
 

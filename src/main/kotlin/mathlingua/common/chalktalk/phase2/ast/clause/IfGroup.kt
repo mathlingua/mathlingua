@@ -16,11 +16,11 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
-import mathlingua.common.MutableLocationTracker
-import mathlingua.common.ParseError
-import mathlingua.common.Validation
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
+import mathlingua.common.support.MutableLocationTracker
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.getColumn
@@ -35,8 +35,8 @@ import mathlingua.common.chalktalk.phase2.ast.section.validateElseIfSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateElseSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateIfSection
 import mathlingua.common.chalktalk.phase2.ast.section.validateThenSection
-import mathlingua.common.validationFailure
-import mathlingua.common.validationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class ElseIfThenPair(
     val elseIfSection: ElseIfSection,

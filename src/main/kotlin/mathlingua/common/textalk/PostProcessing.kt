@@ -16,7 +16,7 @@
 
 package mathlingua.common.textalk
 
-import mathlingua.common.ParseError
+import mathlingua.common.support.ParseError
 import java.util.Stack
 
 /*

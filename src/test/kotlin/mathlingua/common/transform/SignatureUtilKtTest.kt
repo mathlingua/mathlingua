@@ -18,13 +18,13 @@ package mathlingua.common.transform
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import mathlingua.common.Location
+import mathlingua.common.support.Location
 import mathlingua.common.MathLingua
-import mathlingua.common.ParseError
+import mathlingua.common.support.ParseError
 import mathlingua.common.Signature
-import mathlingua.common.ValidationFailure
-import mathlingua.common.ValidationSuccess
-import mathlingua.common.newLocationTracker
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.newLocationTracker
 import org.junit.jupiter.api.Test
 
 internal class SignatureUtilKtTest {
@@ -56,13 +56,15 @@ internal class SignatureUtilKtTest {
         val texTalkValidation = def.id.texTalkRoot
         assertThat(texTalkValidation is ValidationFailure)
         val failure = texTalkValidation as ValidationFailure
-        assertThat(failure.errors).isEqualTo(listOf(ParseError(
+        assertThat(failure.errors).isEqualTo(listOf(
+            ParseError(
             message = "Multiple infix operators cannot be side by side ('\\abc \\xyz{x}').  They " +
                 "can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', " +
                 "or 'x \\op y'",
             row = -1,
             column = -1
-        )))
+        )
+        ))
     }
 
     @Test

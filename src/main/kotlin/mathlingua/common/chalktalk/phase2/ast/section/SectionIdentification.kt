@@ -20,7 +20,8 @@ import mathlingua.common.ParseError
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
-import mathlingua.common.collections.newQueue
+import java.util.LinkedList
+import java.util.Queue
 
 fun identifySections(sections: List<Section>, vararg expected: String): Map<String, List<Section>> {
     val patternBuilder = StringBuilder()
@@ -32,12 +33,12 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
     // the pattern is used for error messages
     val pattern = patternBuilder.toString()
 
-    val sectionQueue = newQueue<Section>()
+    val sectionQueue: Queue<Section> = LinkedList()
     for (s in sections) {
         sectionQueue.offer(s)
     }
 
-    val expectedQueue = newQueue<String>()
+    val expectedQueue: Queue<String> = LinkedList()
     for (e in expected) {
         expectedQueue.offer(e)
     }

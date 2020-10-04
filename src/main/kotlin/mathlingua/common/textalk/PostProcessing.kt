@@ -17,7 +17,7 @@
 package mathlingua.common.textalk
 
 import mathlingua.common.ParseError
-import mathlingua.common.collections.newStack
+import java.util.Stack
 
 /*
  * The following is the algorithm for parsing operators and identifying their arguments.
@@ -526,8 +526,8 @@ private fun runShuntingYard(
     }
 
 private fun toPostfixForm(nodes: List<TexTalkNode>): List<TexTalkNode> {
-    val argStack = newStack<TexTalkNode>()
-    val opStack = newStack<TexTalkNode>()
+    val argStack = Stack<TexTalkNode>()
+    val opStack = Stack<TexTalkNode>()
 
     for (a in nodes) {
         if (!isSpecialOperator(a)) {
@@ -584,7 +584,7 @@ private fun toPostfixForm(nodes: List<TexTalkNode>): List<TexTalkNode> {
 }
 
 private fun postfixToTree(nodes: List<TexTalkNode>): List<TexTalkNode> {
-    val stack = newStack<TexTalkNode>()
+    val stack = Stack<TexTalkNode>()
     for (n in nodes) {
         if (isSpecialOperator(n)) {
             if (stack.isEmpty()) {

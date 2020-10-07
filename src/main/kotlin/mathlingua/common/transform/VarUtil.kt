@@ -20,7 +20,7 @@ import mathlingua.common.support.ValidationFailure
 import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Phase1Token
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.*
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.ParametersTexTalkNode

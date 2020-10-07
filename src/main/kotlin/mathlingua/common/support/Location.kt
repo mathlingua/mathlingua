@@ -14,7 +14,7 @@
 
 package mathlingua.common.support
 
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 
 data class Location(val row: Int, val column: Int)
 

@@ -19,7 +19,7 @@ package mathlingua.common.chalktalk.phase2.ast.clause
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Abstraction
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.ast.ZeroPartNode
+import mathlingua.common.chalktalk.phase2.ast.common.ZeroPartNode
 
 data class AbstractionNode(val abstraction: Abstraction) : ZeroPartNode(abstraction), Target
 

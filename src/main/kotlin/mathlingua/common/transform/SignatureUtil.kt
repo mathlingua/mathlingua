@@ -17,13 +17,13 @@
 package mathlingua.common.transform
 
 import mathlingua.common.*
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 import mathlingua.common.chalktalk.phase2.ast.section.TextSection
-import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.TopLevelGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.support.Location
 import mathlingua.common.support.LocationTracker
 import mathlingua.common.support.ValidationFailure

@@ -16,30 +16,91 @@
 
 package mathlingua.common.chalktalk.phase2.ast.group.clause.exists
 
+import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.ast.common.TwoPartNode
+import mathlingua.common.chalktalk.phase1.ast.Section
+import mathlingua.common.chalktalk.phase1.ast.getColumn
+import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.common.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
+import mathlingua.common.chalktalk.phase2.ast.common.ThreePartNode
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
+import mathlingua.common.chalktalk.phase2.ast.section.identifySections
+import mathlingua.common.support.ParseError
+import mathlingua.common.support.Validation
+import mathlingua.common.support.ValidationFailure
+import mathlingua.common.support.ValidationSuccess
+import mathlingua.common.support.validationFailure
+import mathlingua.common.support.validationSuccess
 
 data class ExistsGroup(
     val existsSection: ExistsSection,
+    val whereSection: WhereSection?,
     val suchThatSection: SuchThatSection
-) : TwoPartNode<ExistsSection, SuchThatSection>(
+) : ThreePartNode<ExistsSection, WhereSection?, SuchThatSection>(
     existsSection,
+    whereSection,
     suchThatSection,
     ::ExistsGroup
 ), Clause
 
 fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
 
-fun validateExistsGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateDoubleSectionGroup(
-        tracker,
-        node,
-        "exists",
-        ::validateExistsSection,
-        "suchThat",
-        ::validateSuchThatSection,
-        ::ExistsGroup
-)
+fun validateExistsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<ExistsGroup> {
+    val node = rawNode.resolve()
+
+    val errors = ArrayList<ParseError>()
+    if (node !is Group) {
+        errors.add(
+            ParseError(
+                "Expected a Group",
+                getRow(node), getColumn(node)
+            )
+        )
+        return validationFailure(errors)
+    }
+
+    val (sections) = node
+
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+            sections,
+            "exists", "where?", "suchThat"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return validationFailure(errors)
+    }
+
+    var existsSection: ExistsSection? = null
+    val existsNode = sectionMap["exists"]
+
+    when (val existsEvaluation = validateExistsSection(existsNode!![0], tracker)) {
+        is ValidationSuccess -> existsSection = existsEvaluation.value
+        is ValidationFailure -> errors.addAll(existsEvaluation.errors)
+    }
+
+    var whereSection: WhereSection? = null
+    if (sectionMap.containsKey("where") && sectionMap["where"]!!.isNotEmpty()) {
+        val where = sectionMap["where"]!!
+        when (val whereValidation = validateWhereSection(where[0], tracker)) {
+            is ValidationSuccess -> whereSection = whereValidation.value
+            is ValidationFailure -> errors.addAll(whereValidation.errors)
+        }
+    }
+
+    var suchThatSection: SuchThatSection? = null
+    val suchThat = sectionMap["suchThat"]
+    when (val suchThatValidation = validateSuchThatSection(suchThat!![0], tracker)) {
+        is ValidationSuccess -> suchThatSection = suchThatValidation.value
+        is ValidationFailure -> errors.addAll(suchThatValidation.errors)
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else validationSuccess(tracker, rawNode, ExistsGroup(
+        existsSection!!, whereSection, suchThatSection!!))
+}

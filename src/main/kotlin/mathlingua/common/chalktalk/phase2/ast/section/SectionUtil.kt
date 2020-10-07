@@ -26,7 +26,7 @@ import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.*
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.*
 import mathlingua.common.chalktalk.phase2.ast.clause.Target
 import mathlingua.common.support.validationFailure

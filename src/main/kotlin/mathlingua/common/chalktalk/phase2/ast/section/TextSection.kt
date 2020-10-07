@@ -18,7 +18,7 @@ package mathlingua.common.chalktalk.phase2.ast.section
 
 import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.ParseError
 import mathlingua.common.support.Validation

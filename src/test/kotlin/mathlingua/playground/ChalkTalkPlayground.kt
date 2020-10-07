@@ -24,7 +24,7 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.Document
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.support.Location
 import mathlingua.common.support.LocationTracker

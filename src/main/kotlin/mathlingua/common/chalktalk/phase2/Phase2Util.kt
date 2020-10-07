@@ -17,7 +17,7 @@
 package mathlingua.common.chalktalk.phase2
 
 import mathlingua.common.support.LocationTracker
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 
 internal fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {
     val path = mutableListOf<Phase2Node>()

@@ -19,7 +19,7 @@ package mathlingua.common.transform
 import mathlingua.common.support.ValidationFailure
 import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.*
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement

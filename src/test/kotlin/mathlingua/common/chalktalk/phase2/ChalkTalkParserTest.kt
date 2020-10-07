@@ -28,7 +28,7 @@ import mathlingua.common.support.ParseError
 import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
-import mathlingua.common.chalktalk.phase2.ast.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
 import mathlingua.common.support.newLocationTracker
 import mathlingua.loadTestCases

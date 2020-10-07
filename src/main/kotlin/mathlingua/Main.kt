@@ -32,8 +32,8 @@ import mathlingua.common.MathLingua
 import mathlingua.common.support.ParseError
 import mathlingua.common.support.ValidationFailure
 import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.ast.toplevel.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.toplevel.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsGroup
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess

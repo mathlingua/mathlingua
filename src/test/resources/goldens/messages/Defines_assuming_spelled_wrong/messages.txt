@@ -8,7 +8,6 @@ when?:
 means?:
 computes?:
 using?:
-where?:
 written?:
 Metadata?:
 

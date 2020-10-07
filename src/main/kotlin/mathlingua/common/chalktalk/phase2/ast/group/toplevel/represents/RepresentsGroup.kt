@@ -43,8 +43,6 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.Written
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.common.transform.signature
 import mathlingua.common.support.validationFailure
@@ -57,7 +55,6 @@ data class RepresentsGroup(
     val whenSection: WhenSection?,
     val thatSections: List<ThatSection>,
     val usingSection: UsingSection?,
-    val whereSection: WhereSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
@@ -72,9 +69,6 @@ data class RepresentsGroup(
         if (usingSection != null) {
             fn(usingSection)
         }
-        if (whereSection != null) {
-            fn(whereSection)
-        }
         if (writtenSection != null) {
             fn(writtenSection)
         }
@@ -87,7 +81,6 @@ data class RepresentsGroup(
         val sections = mutableListOf(representsSection, whenSection)
         sections.addAll(thatSections)
         sections.add(usingSection)
-        sections.add(whereSection)
         sections.add(writtenSection)
         sections.add(metaDataSection)
         return topLevelToCode(
@@ -107,7 +100,6 @@ data class RepresentsGroup(
             whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
             thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
             writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     )
@@ -164,7 +156,6 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     val whenNode = sectionMap["when"] ?: emptyList()
     val ends = sectionMap["that"]!!
     val using = sectionMap["using"] ?: emptyList()
-    val where = sectionMap["where"] ?: emptyList()
     val written = sectionMap["written"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
@@ -198,14 +189,6 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
         }
     }
 
-    var whereSection: WhereSection? = null
-    if (where.isNotEmpty()) {
-        when (val whereValidation = validateWhereSection(where[0], tracker)) {
-            is ValidationSuccess -> whereSection = whereValidation.value
-            is ValidationFailure -> errors.addAll(whereValidation.errors)
-        }
-    }
-
     var writtenSection: WrittenSection? = null
     if (written.isNotEmpty()) {
         when (val writtenValidation = validateWrittenSection(written[0], tracker)) {
@@ -235,7 +218,6 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
             // must be reversed here to be in the correct order
             endSections.reversed(),
             usingSection,
-            whereSection,
             writtenSection,
             metaDataSection
         )

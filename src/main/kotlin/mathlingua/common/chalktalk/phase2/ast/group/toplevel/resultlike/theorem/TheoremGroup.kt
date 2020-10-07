@@ -36,7 +36,6 @@ data class TheoremGroup(
     val givenWhereSection: WhereSection?,
     val thenSection: ThenSection,
     val usingSection: UsingSection?,
-    val usingWhereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
@@ -52,9 +51,6 @@ data class TheoremGroup(
             fn(givenWhereSection)
         }
         fn(thenSection)
-        if (usingWhereSection != null) {
-            fn(usingWhereSection)
-        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -63,7 +59,7 @@ data class TheoremGroup(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
             topLevelToCode(writer, isArg, indent, null,
                 theoremSection, givenSection, givenWhereSection, thenSection,
-                usingSection, usingWhereSection, metaDataSection)
+                usingSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
         TheoremGroup(
@@ -72,7 +68,6 @@ data class TheoremGroup(
             givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
             thenSection = thenSection.transform(chalkTransformer) as ThenSection,
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-            usingWhereSection = usingWhereSection?.transform(chalkTransformer) as WhereSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     )
     )

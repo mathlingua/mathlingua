@@ -34,10 +34,9 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.validateResultLikeG
 data class AxiomGroup(
     val axiomSection: AxiomSection,
     val givenSection: GivenSection?,
-    val givenWhereSection: WhereSection?,
+    val whereSection: WhereSection?,
     val thenSection: ThenSection,
     val usingSection: UsingSection?,
-    val usingWhereSection: WhereSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
@@ -49,13 +48,10 @@ data class AxiomGroup(
         if (givenSection != null) {
             fn(givenSection)
         }
-        if (givenWhereSection != null) {
-            fn(givenWhereSection)
+        if (whereSection != null) {
+            fn(whereSection)
         }
         fn(thenSection)
-        if (usingWhereSection != null) {
-            fn(usingWhereSection)
-        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -63,18 +59,17 @@ data class AxiomGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
             topLevelToCode(writer, isArg, indent, null, axiomSection,
-                givenSection, givenWhereSection, thenSection,
-                usingSection, usingWhereSection, metaDataSection)
+                givenSection, whereSection, thenSection,
+                usingSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
             chalkTransformer(
                 AxiomGroup(
                     axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
                     givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
-                    givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
+                    whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                     thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                     usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-                    usingWhereSection = usingWhereSection?.transform(chalkTransformer) as WhereSection?,
                     metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
             )
             )

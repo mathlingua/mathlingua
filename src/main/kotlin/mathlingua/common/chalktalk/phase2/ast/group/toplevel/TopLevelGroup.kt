@@ -78,10 +78,9 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     buildGroup: (
         sect: S,
         givenSection: GivenSection?,
-        givenWhereSection: WhereSection?,
+        whereSection: WhereSection?,
         thenSection: ThenSection,
         using: UsingSection?,
-        usingWhere: WhereSection?,
         metadata: MetaDataSection?
     ) -> G
 ): Validation<G> {
@@ -102,7 +101,7 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     try {
         sectionMap = identifySections(
                 sections, resultLikeName, "given?", "where?", "then",
-                "using?", "where?", "Metadata?"
+                "using?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -111,10 +110,9 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
 
     val resultLike = sectionMap[resultLikeName]!!
     val given = sectionMap["given"] ?: emptyList()
-    val givenWhere = sectionMap["where"] ?: emptyList()
+    val where = sectionMap["where"] ?: emptyList()
     val then = sectionMap["then"] ?: emptyList()
     val using = sectionMap["using"] ?: emptyList()
-    val usingWhere = sectionMap["where1"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
     var resultLikeSection: S? = null
@@ -131,11 +129,11 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
         }
     }
 
-    var givenWhereSection: WhereSection? = null
-    if (givenWhere.isNotEmpty()) {
-        when (val givenWhereValidation = validateWhereSection(givenWhere[0], tracker)) {
-            is ValidationSuccess -> givenWhereSection = givenWhereValidation.value
-            is ValidationFailure -> errors.addAll(givenWhereValidation.errors)
+    var whereSection: WhereSection? = null
+    if (where.isNotEmpty()) {
+        when (val whereValidation = validateWhereSection(where[0], tracker)) {
+            is ValidationSuccess -> whereSection = whereValidation.value
+            is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
     }
 
@@ -161,14 +159,6 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
         }
     }
 
-    var usingWhereSection: WhereSection? = null
-    if (usingWhere.isNotEmpty()) {
-        when (val usingWhereValidation = validateWhereSection(usingWhere[0], tracker)) {
-            is ValidationSuccess -> usingWhereSection = usingWhereValidation.value
-            is ValidationFailure -> errors.addAll(usingWhereValidation.errors)
-        }
-    }
-
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else validationSuccess(
@@ -177,10 +167,9 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
             buildGroup(
                 resultLikeSection!!,
                 givenSection,
-                givenWhereSection,
+                whereSection,
                 thenSection!!,
                 usingSection,
-                usingWhereSection,
                 metaDataSection
             ))
 }

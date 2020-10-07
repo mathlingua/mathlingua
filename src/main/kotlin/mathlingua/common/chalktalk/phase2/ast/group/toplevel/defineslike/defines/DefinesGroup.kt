@@ -40,8 +40,6 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.sec
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
@@ -60,7 +58,6 @@ data class DefinesGroup(
     val meansSection: MeansSection?,
     val computesSection: ComputesSection?,
     val usingSection: UsingSection?,
-    val whereSection: WhereSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
@@ -80,9 +77,6 @@ data class DefinesGroup(
         if (usingSection != null) {
             fn(usingSection)
         }
-        if (whereSection != null) {
-            fn(whereSection)
-        }
         if (writtenSection != null) {
             fn(writtenSection)
         }
@@ -96,7 +90,6 @@ data class DefinesGroup(
         sections.add(meansSection)
         sections.add(computesSection)
         sections.add(usingSection)
-        sections.add(whereSection)
         sections.add(writtenSection)
         sections.add(metaDataSection)
         return topLevelToCode(
@@ -117,7 +110,6 @@ data class DefinesGroup(
             meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
             computesSection = computesSection?.transform(chalkTransformer) as ComputesSection?,
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-            whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
             writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
     )
@@ -266,7 +258,7 @@ private fun validateDefinesGroupImpl(
         sectionMap = identifySections(
             sections,
             "Defines", "when?", "means?", "computes?",
-            "using?", "where?", "written?", "Metadata?"
+            "using?", "written?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -278,7 +270,6 @@ private fun validateDefinesGroupImpl(
     val means = sectionMap["means"]
     val computes = sectionMap["computes"]
     val using = sectionMap["using"] ?: emptyList()
-    val where = sectionMap["where"] ?: emptyList()
     val written = sectionMap["written"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
@@ -320,14 +311,6 @@ private fun validateDefinesGroupImpl(
         }
     }
 
-    var whereSection: WhereSection? = null
-    if (where.isNotEmpty()) {
-        when (val whereValidation = validateWhereSection(where[0], tracker)) {
-            is ValidationSuccess -> whereSection = whereValidation.value
-            is ValidationFailure -> errors.addAll(whereValidation.errors)
-        }
-    }
-
     var writtenSection: WrittenSection? = null
     if (written.isNotEmpty()) {
         when (val writtenValidation = validateWrittenSection(written[0], tracker)) {
@@ -366,7 +349,6 @@ private fun validateDefinesGroupImpl(
             meansSection,
             computesSection,
             usingSection,
-            whereSection,
             writtenSection,
             metaDataSection
         )

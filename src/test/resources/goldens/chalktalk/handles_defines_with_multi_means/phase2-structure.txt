@@ -120,7 +120,6 @@ Document(
                )
                computesSection = null
                usingSection = null
-               whereSection = null
                writtenSection = null
                metaDataSection = null
              )

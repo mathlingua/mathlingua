@@ -17,7 +17,6 @@ Document(
                  )
                )
                usingSection = null
-               usingWhereSection = null
                metaDataSection = MetaDataSection(
                  items = [
                            StringSectionGroup(

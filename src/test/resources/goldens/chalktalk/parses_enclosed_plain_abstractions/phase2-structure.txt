@@ -67,7 +67,6 @@ Document(
                  )
                )
                usingSection = null
-               usingWhereSection = null
                metaDataSection = null
              )
            ]

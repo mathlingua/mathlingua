@@ -537,7 +537,7 @@ private class DuplicateContent : CliktCommand(name = "dup-content", help = "Iden
                 } else {
                     output.append(bold(content))
                     output.append("\n")
-                    output.append("-".repeat(content.split("\n").map { it.length }.max() ?: 1))
+                    output.append("-".repeat(content.split("\n").map { it.length }.maxOrNull() ?: 1))
                     output.append("\n")
                     val cwdPath = cwd.absolutePath
                     for (loc in locationSet) {
@@ -629,7 +629,7 @@ private class DuplicateSignatures : CliktCommand(
                 } else {
                     output.append(bold(signature))
                     output.append("\n")
-                    output.append("-".repeat(signature.split("\n").map { it.length }.max() ?: 1))
+                    output.append("-".repeat(signature.split("\n").map { it.length }.maxOrNull() ?: 1))
                     output.append("\n")
                     val cwdPath = cwd.absolutePath
                     for (loc in locationSet) {
@@ -720,7 +720,7 @@ private class UndefinedSignatures : CliktCommand(
             } else {
                 output.append(bold(signature))
                 output.append("\n")
-                output.append("-".repeat(signature.split("\n").map { it.length }.max() ?: 1))
+                output.append("-".repeat(signature.split("\n").map { it.length }.maxOrNull() ?: 1))
                 output.append("\n")
                 val cwdPath = cwd.absolutePath
                 for (loc in locationSet) {

@@ -29,7 +29,18 @@ import mathlingua.common.support.Validation
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
-class ResourceSection(override val items: List<StringSectionGroup>) : SourceSection(items) {
+val SOURCE_ITEM_CONSTRAINTS = mapOf(
+        "type" to 1,
+        "name" to 1,
+        "author" to -1,
+        "date" to 1,
+        "homepage" to 1,
+        "url" to 1,
+        "offset" to 1,
+        "related" to -1
+)
+
+class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {

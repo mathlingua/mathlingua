@@ -10,10 +10,8 @@ Document(
                thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
-                               LatexGroup(
-                                 latexSection = LatexSection(
-                                   text = ""Let $x$ be something.""
-                                 )
+                               Text(
+                                 text = ""Let $x$ be something.""
                                )
                              ]
                  )

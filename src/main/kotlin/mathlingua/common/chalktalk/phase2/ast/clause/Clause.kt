@@ -35,10 +35,6 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.expands.isExpandsGrou
 import mathlingua.common.chalktalk.phase2.ast.group.clause.expands.validateExpandsGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.iff.isIffGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.iff.validateIffGroup
-import mathlingua.common.chalktalk.phase2.ast.group.clause.latex.isLatexGroup
-import mathlingua.common.chalktalk.phase2.ast.group.clause.latex.validateLatexGroup
-import mathlingua.common.chalktalk.phase2.ast.group.clause.lean.isLeanGroup
-import mathlingua.common.chalktalk.phase2.ast.group.clause.lean.validateLeanGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.isMappingGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.validateMappingGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.matching.isMatchingGroup
@@ -116,14 +112,6 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
                 ::isExpandsGroup,
                 ::validateExpandsGroup
-        ),
-        ValidationPair(
-                ::isLatexGroup,
-                ::validateLatexGroup
-        ),
-        ValidationPair(
-                ::isLeanGroup,
-                ::validateLeanGroup
         ),
         ValidationPair(
             ::isMappingGroup,

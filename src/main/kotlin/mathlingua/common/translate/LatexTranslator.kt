@@ -30,8 +30,6 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.IfGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.iff.IffGroup
-import mathlingua.common.chalktalk.phase2.ast.group.clause.latex.LatexGroup
-import mathlingua.common.chalktalk.phase2.ast.group.clause.lean.LeanGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.not.NotGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.OrGroup
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
@@ -48,7 +46,6 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.expands.ExpandsSectio
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`for`.ForSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.IfSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.iff.IffSection
-import mathlingua.common.chalktalk.phase2.ast.group.clause.latex.LatexSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.not.NotSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.OrSection
@@ -148,12 +145,6 @@ class LatexTranslator(
         }
     }
 
-    fun translate(latexGroup: LatexGroup?) {
-        if (latexGroup != null) {
-            translate(latexGroup.latexSection)
-        }
-    }
-
     fun translate(tupleNode: TupleNode?) {
         if (tupleNode != null) {
             append(tupleNode.toCode(false, 0).getCode())
@@ -241,18 +232,7 @@ class LatexTranslator(
             is IdStatement -> translate(clause)
             is Text -> translate(clause)
             is TupleNode -> translate(clause)
-            is LatexGroup -> translate(clause)
-            is LeanGroup -> translate(clause)
             else -> throw RuntimeException("Unknown clause ${clause?.toCode(false, 0)?.getCode()}")
-        }
-    }
-
-    fun translate(leanGroup: LeanGroup?) {
-        if (leanGroup != null) {
-            append("\\begin{verbatim}\n")
-            append(leanGroup.leanSection.text)
-            append("\n")
-            append("\\end{verbatim}\n")
         }
     }
 
@@ -338,12 +318,6 @@ class LatexTranslator(
         if (ifSection != null) {
             append("if")
             translate(ifSection.clauses)
-        }
-    }
-
-    fun translate(latexSection: LatexSection?) {
-        if (latexSection != null) {
-            append(latexSection.text.removeSurrounding("\"", "\"").replace("?", ""))
         }
     }
 

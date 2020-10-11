@@ -1,0 +1,37 @@
+Root(
+  groups = [
+             Group(
+               sections = [
+                            Section(
+                              name = Phase1Token(
+                                text = "Theorem"
+                                type = ChalkTalkTokenType.Name
+                                row = 1
+                                column = 1
+                              )
+                              args = [
+                                     ]
+                            ),
+                            Section(
+                              name = Phase1Token(
+                                text = "then"
+                                type = ChalkTalkTokenType.Name
+                                row = 2
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Phase1Token(
+                                           text = ""Let $x$ be something.""
+                                           type = ChalkTalkTokenType.String
+                                           row = 3
+                                           column = 3
+                                         )
+                                       )
+                                     ]
+                            )
+                          ]
+               id = null
+             )
+           ]
+)

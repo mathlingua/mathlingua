@@ -1,7 +1,19 @@
-Row: 3
+Row: 2
 Column: 3
 Message:
-Section 'then' requires at least one argument.
+Expected at least 1 arguments but found 0
 EndMessage:
 
 
+Row: 3
+Column: 3
+Message:
+Expected at least 1 arguments but found 0
+EndMessage:
+
+
+Row: 1
+Column: 1
+Message:
+Expected at least 1 arguments but found 0
+EndMessage:

@@ -20,29 +20,39 @@ import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.clause.Target
-import mathlingua.common.chalktalk.phase2.ast.validator.validateTargetList
-import mathlingua.common.chalktalk.phase2.ast.section.appendTargetArgs
+import mathlingua.common.chalktalk.phase2.ast.validator.Exactly
+import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
+import java.lang.ClassCastException
+import java.lang.Exception
 
-data class FoundationSection(val targets: List<Target>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
+data class FoundationSection(val content: DefinesRepresentsOrViews) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(content)
+    }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("Foundation")
-        appendTargetArgs(writer, targets, indent + 2)
+        writer.writeNewline()
+        writer.append(content, true, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(FoundationSection(
-            targets = targets.map { it.transform(chalkTransformer) as Target }
+            content = chalkTransformer(content) as DefinesRepresentsOrViews
         ))
 }
 
-fun validateFoundationSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTargetList(
+fun validateFoundationSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+    Exactly(1),
     tracker,
     node,
-    "Foundation",
-    ::FoundationSection
-)
+    "Foundation"
+) {
+    try {
+        FoundationSection(content = it.clauses[0] as DefinesRepresentsOrViews)
+    } catch (e: ClassCastException) {
+        throw Exception("Expected a Defines, Represents, or a Views group")
+    }
+}

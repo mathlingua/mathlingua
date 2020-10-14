@@ -43,6 +43,12 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.not.isNotGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.not.validateNotGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.isOrGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.validateOrGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.isRepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.validateRepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.isViewsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.validateViewsGroup
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.ParseError
@@ -124,7 +130,44 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
             ::isMatchingGroup,
             ::validateMatchingGroup
-        )
+        ),
+        ValidationPair(
+            ::isDefinesGroup
+        ) { node, tracker ->
+            if (node is Group) {
+                validateDefinesGroup(node, tracker)
+            } else {
+                validationFailure(listOf(
+                    ParseError("Expected a group", getRow(node), getColumn(node))
+                ))
+            }
+        },
+        ValidationPair(
+            ::isRepresentsGroup
+        ) { node, tracker ->
+            if (node is Group) {
+                validateRepresentsGroup(node, tracker)
+            } else {
+                validationFailure(
+                    listOf(
+                        ParseError("Expected a group", getRow(node), getColumn(node))
+                    )
+                )
+            }
+        },
+        ValidationPair(
+            ::isViewsGroup
+        ) { node, tracker ->
+            if (node is Group) {
+                validateViewsGroup(node, tracker)
+            } else {
+                validationFailure(
+                    listOf(
+                        ParseError("Expected a group", getRow(node), getColumn(node))
+                    )
+                )
+            }
+        }
 )
 
 fun validateClause(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Clause> {

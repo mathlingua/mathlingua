@@ -8,7 +8,5 @@ EndMessage:
 Row: 2
 Column: 1
 Message:
-Section 'then' requires at least one argument.
+Expected at least 1 arguments but found 0
 EndMessage:
-
-

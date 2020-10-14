@@ -32,23 +32,57 @@ import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
+sealed class NumAllowed {
+    abstract fun validate(count: Int): String?
+}
+
+class ZeroOrMore : NumAllowed() {
+    override fun validate(count: Int) = if (count < 0) {
+        "Expected zero or more arguments but found $count"
+    } else {
+        null
+    }
+}
+
+data class Exactly(private val expected: Int) : NumAllowed() {
+    override fun validate(count: Int) = if (count != expected) {
+        "Expected exactly $expected arguments but found $count"
+    } else {
+        null
+    }
+}
+
+data class AtLeast(private val expected: Int) : NumAllowed() {
+    override fun validate(count: Int) = if (count < expected) {
+        "Expected at least $expected arguments but found $count"
+    } else {
+        null
+    }
+}
+
 data class ClauseListSection(val name: String, val clauses: List<Clause>)
 
 fun <T : Phase2Node> validateClauseList(
+    numAllowed: NumAllowed,
     tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     expectedName: String,
-    canBeEmpty: Boolean,
     builder: (clauses: ClauseListNode) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-    return when (val validation = validate(node, expectedName, canBeEmpty, tracker)) {
-        is ValidationSuccess -> validationSuccess(tracker, rawNode, builder(ClauseListNode(validation.value.clauses)))
+    return when (val validation = validate(numAllowed, node, expectedName, tracker)) {
+        is ValidationSuccess -> try {
+            validationSuccess(tracker, rawNode, builder(ClauseListNode(validation.value.clauses)))
+        } catch (e: Exception) {
+            validationFailure(listOf(
+                ParseError(e.message ?: "An unknown error occurred", getRow(node), getColumn(node))
+            ))
+        }
         is ValidationFailure -> validationFailure(validation.errors)
     }
 }
 
-private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean, tracker: MutableLocationTracker): Validation<ClauseListSection> {
+private fun validate(numAllowed: NumAllowed, node: Phase1Node, expectedName: String, tracker: MutableLocationTracker): Validation<ClauseListSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
         errors.add(
@@ -70,21 +104,17 @@ private fun validate(node: Phase1Node, expectedName: String, canBeEmpty: Boolean
         )
     }
 
-    if (args.isEmpty() && !canBeEmpty) {
-        errors.add(
-            ParseError(
-                "Section '" + name.text + "' requires at least one argument.",
-                getRow(node), getColumn(node)
-            )
-        )
-    }
-
     val clauses = ArrayList<Clause>()
     for (arg in args) {
         when (val validation = validateClause(arg, tracker)) {
             is ValidationSuccess -> clauses.add(validation.value)
             is ValidationFailure -> errors.addAll(validation.errors)
         }
+    }
+
+    val countMessage = numAllowed.validate(clauses.size)
+    if (countMessage != null) {
+        errors.add(ParseError(countMessage, getRow(node), getColumn(node)))
     }
 
     return if (errors.isNotEmpty()) {

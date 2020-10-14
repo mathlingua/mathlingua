@@ -21,6 +21,7 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.validator.Exactly
 import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
 
 data class SingleToSection(val clauses: ClauseListNode) : Phase2Node {
@@ -42,9 +43,9 @@ data class SingleToSection(val clauses: ClauseListNode) : Phase2Node {
 }
 
 fun validateSingleToSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+    Exactly(1),
     tracker,
     node,
     "to",
-    false,
     ::SingleToSection
 )

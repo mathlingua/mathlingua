@@ -21,6 +21,7 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
 
 data class OrSection(val clauses: ClauseListNode) : Phase2Node {
@@ -45,9 +46,9 @@ data class OrSection(val clauses: ClauseListNode) : Phase2Node {
 }
 
 fun validateOrSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+        AtLeast(1),
         tracker,
         node,
         "or",
-        false,
         ::OrSection
 )

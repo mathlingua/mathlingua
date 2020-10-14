@@ -289,6 +289,66 @@ fun <S : Phase2Node> validateTextListSection(
     }
 }
 
+fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
+    tracker: MutableLocationTracker,
+    rawNode: Phase1Node,
+    sectionName: String,
+    validateSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>,
+    buildGroup: (sect: S, metadata: MetaDataSection?) -> G
+): Validation<G> {
+    val node = rawNode.resolve()
+
+    val errors = ArrayList<ParseError>()
+    if (node !is Group) {
+        errors.add(
+            ParseError(
+                "Expected a Group",
+                getRow(node), getColumn(node)
+            )
+        )
+        return validationFailure(errors)
+    }
+
+    val (sections) = node
+
+    val sectionMap: Map<String, List<Section>>
+    try {
+        sectionMap = identifySections(
+            sections, sectionName, "metadata?"
+        )
+    } catch (e: ParseError) {
+        errors.add(ParseError(e.message, e.row, e.column))
+        return validationFailure(errors)
+    }
+
+    var section: S? = null
+    val sect = sectionMap[sectionName]
+    when (val sectionValidation = validateSection(sect!![0], tracker)) {
+        is ValidationSuccess -> section = sectionValidation.value
+        is ValidationFailure -> errors.addAll(sectionValidation.errors)
+    }
+
+    var metadataSection: MetaDataSection? = null
+    val metadata = sectionMap["metadata"]
+    if (metadata != null) {
+        when (val metadataValidation = validateMetaDataSection(metadata!![0], tracker)) {
+            is ValidationSuccess -> metadataSection = metadataValidation.value
+            is ValidationFailure -> errors.addAll(metadataValidation.errors)
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else validationSuccess(
+        tracker,
+        rawNode,
+        buildGroup(
+            section!!,
+            metadataSection
+        )
+    )
+}
+
 fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
     tracker: MutableLocationTracker,
     rawNode: Phase1Node,

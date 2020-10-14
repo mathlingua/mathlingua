@@ -20,6 +20,7 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.validator.ZeroOrMore
 import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.common.support.MutableLocationTracker
 
@@ -43,9 +44,9 @@ data class UsingSection(val clauses: ClauseListNode) : Phase2Node {
 }
 
 fun validateUsingSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+    ZeroOrMore(),
     tracker,
     node,
     "using",
-    false,
     ::UsingSection
 )

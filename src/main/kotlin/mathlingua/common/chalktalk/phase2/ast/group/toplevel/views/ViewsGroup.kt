@@ -37,7 +37,7 @@ import mathlingua.common.chalktalk.phase2.ast.section.*
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesRepresentsOrViews
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.topLevelToCode
@@ -54,7 +54,7 @@ data class ViewsGroup(
     val asSection: SingleAsSection,
     val usingSection: UsingSection?,
     override val metaDataSection: MetaDataSection?
-) : TopLevelGroup(metaDataSection), DefinesRepresentsOrViews {
+) : TopLevelGroup(metaDataSection), DefinesStatesOrViews {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)

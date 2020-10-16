@@ -27,7 +27,7 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
@@ -100,7 +100,7 @@ object MathLingua {
 
     private fun getContent(group: TopLevelGroup) =
             when (group) {
-                is RepresentsGroup -> group.copy(
+                is StatesGroup -> group.copy(
                         id = IdStatement(
                                 text = "",
                                 texTalkRoot = validationSuccess(
@@ -200,7 +200,7 @@ object MathLingua {
                         is DefinesGroup -> {
                             group.signature
                         }
-                        is RepresentsGroup -> {
+                        is StatesGroup -> {
                             group.signature
                         }
                         else -> {
@@ -328,7 +328,7 @@ object MathLingua {
                         )
                     }
                 })
-                result.addAll(document.represents().mapNotNull {
+                result.addAll(document.states().mapNotNull {
                     if (it.signature == null) {
                         null
                     } else {
@@ -352,7 +352,7 @@ object MathLingua {
         row: Int,
         column: Int,
         defines: List<DefinesGroup>,
-        represents: List<RepresentsGroup>
+        represents: List<StatesGroup>
     ): Validation<Document> = when (val validation = parseWithLocations(text)) {
         is ValidationFailure -> validationFailure(validation.errors)
         is ValidationSuccess -> {
@@ -368,7 +368,7 @@ object MathLingua {
 
     fun getPatternsToWrittenAs(
         defines: List<DefinesGroup>,
-        represents: List<RepresentsGroup>
+        represents: List<StatesGroup>
     ): Map<OperatorTexTalkNode, String> {
         val result = mutableMapOf<OperatorTexTalkNode, String>()
         for (rep in represents) {
@@ -411,7 +411,7 @@ object MathLingua {
         return result
     }
 
-    fun expandWrittenAs(node: TexTalkNode, defines: List<DefinesGroup>, represents: List<RepresentsGroup>) =
+    fun expandWrittenAs(node: TexTalkNode, defines: List<DefinesGroup>, represents: List<StatesGroup>) =
         expandAsWritten(node, getPatternsToWrittenAs(defines, represents))
 
     fun expandWrittenAs(
@@ -445,7 +445,7 @@ object MathLingua {
         }
         val represents = when (totalTextValidation) {
             is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.represents()
+            is ValidationSuccess -> totalTextValidation.value.states()
         }
 
         val result = StringBuilder()
@@ -471,13 +471,13 @@ object MathLingua {
     fun prettyPrint(
         node: Phase2Node,
         defines: List<DefinesGroup>,
-        represents: List<RepresentsGroup>,
+        states: List<StatesGroup>,
         html: Boolean
     ): String {
         val writer = if (html) {
-            HtmlCodeWriter(defines = defines, represents = represents)
+            HtmlCodeWriter(defines = defines, states = states)
         } else {
-            MathLinguaCodeWriter(defines = defines, represents = represents)
+            MathLinguaCodeWriter(defines = defines, states = states)
         }
         val code = node.toCode(false, 0, writer = writer).getCode()
         return if (html) {

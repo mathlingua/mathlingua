@@ -49,25 +49,25 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.iff.IffSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.not.NotSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.OrSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsSection
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.ResourceSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
 import mathlingua.common.chalktalk.phase2.ast.section.TextSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.ThatSection
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.ThatSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 
 class LatexTranslator(
     val defines: List<DefinesGroup>,
-    val represents: List<RepresentsGroup>
+    val represents: List<StatesGroup>
 ) {
     val buffer = mutableListOf<String>()
 
@@ -189,7 +189,7 @@ class LatexTranslator(
         }
     }
 
-    fun translate(representsGroup: RepresentsGroup?) {
+    fun translate(representsGroup: StatesGroup?) {
         if (representsGroup != null) {
             append(representsGroup.id.text)
             append("represents")
@@ -209,7 +209,7 @@ class LatexTranslator(
     fun translate(topLevelGroup: TopLevelGroup?) {
         when (topLevelGroup) {
             is DefinesGroup -> translate(topLevelGroup)
-            is RepresentsGroup -> translate(topLevelGroup)
+            is StatesGroup -> translate(topLevelGroup)
             is TheoremGroup -> translate(topLevelGroup)
             is AxiomGroup -> translate(topLevelGroup)
             is ConjectureGroup -> translate(topLevelGroup)
@@ -348,8 +348,8 @@ class LatexTranslator(
         }
     }
 
-    fun translate(representsSection: RepresentsSection?) {
-        if (representsSection != null) {
+    fun translate(statesSection: StatesSection?) {
+        if (statesSection != null) {
             append("represents")
         }
     }

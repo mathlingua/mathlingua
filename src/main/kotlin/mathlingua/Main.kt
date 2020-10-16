@@ -33,7 +33,7 @@ import mathlingua.common.support.ParseError
 import mathlingua.common.support.ValidationFailure
 import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -173,8 +173,8 @@ private suspend fun runMlg(
                         emptyList()
                     }
 
-                    val represents = if (expand) {
-                        doc.represents()
+                    val states = if (expand) {
+                        doc.states()
                     } else {
                         emptyList()
                     }
@@ -182,7 +182,7 @@ private suspend fun runMlg(
                     outputBuilder.append(MathLingua.prettyPrint(
                             node = doc,
                             defines = defines,
-                            represents = represents,
+                            states = states,
                             html = output.toLowerCase() == "html"))
                 }
             }
@@ -327,9 +327,9 @@ private fun processFile(file: File, allSignatures: MutableSet<String>, defSignat
                 }
             }
 
-            for (rep in document.represents()) {
-                if (rep.signature != null) {
-                    defSignatures.add(rep.signature)
+            for (st in document.states()) {
+                if (st.signature != null) {
+                    defSignatures.add(st.signature)
                 }
             }
             emptyList()
@@ -433,7 +433,7 @@ private class Render : CliktCommand("Generates either HTML or MathLingua code wi
             }
             is ValidationSuccess -> {
                 val defines = mutableListOf<DefinesGroup>()
-                val represents = mutableListOf<RepresentsGroup>()
+                val states = mutableListOf<StatesGroup>()
 
                 val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
                 val filterItems = (filter ?: "").split(",")
@@ -462,7 +462,7 @@ private class Render : CliktCommand("Generates either HTML or MathLingua code wi
                             val result = MathLingua.parse(it.readText())
                             if (result is ValidationSuccess) {
                                 defines.addAll(result.value.defines())
-                                represents.addAll(result.value.represents())
+                                states.addAll(result.value.states())
                             }
                         }
                     }.toTypedArray())
@@ -471,7 +471,7 @@ private class Render : CliktCommand("Generates either HTML or MathLingua code wi
                 val content = MathLingua.prettyPrint(
                     node = validation.value,
                     defines = defines,
-                    represents = represents,
+                    states = states,
                     html = format == "html"
                 )
 

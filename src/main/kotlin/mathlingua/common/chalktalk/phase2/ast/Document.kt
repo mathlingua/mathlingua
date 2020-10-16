@@ -33,9 +33,9 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.isRepresentsGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.validateRepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.isStatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.validateStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
@@ -57,7 +57,7 @@ data class Document(
 ) : Phase2Node {
 
     fun defines() = groups.filterIsInstance<DefinesGroup>()
-    fun represents() = groups.filterIsInstance<RepresentsGroup>()
+    fun states() = groups.filterIsInstance<StatesGroup>()
     fun theorems() = groups.filterIsInstance<TheoremGroup>()
     fun axioms() = groups.filterIsInstance<AxiomGroup>()
     fun conjectures() = groups.filterIsInstance<ConjectureGroup>()
@@ -127,10 +127,10 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                     is ValidationFailure -> errors.addAll(definesValidation.errors)
                 }
             }
-            isRepresentsGroup(group) -> {
-                when (val representsValidation = validateRepresentsGroup(group, tracker)) {
-                    is ValidationSuccess -> allGroups.add(representsValidation.value)
-                    is ValidationFailure -> errors.addAll(representsValidation.errors)
+            isStatesGroup(group) -> {
+                when (val statesValidation = validateStatesGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(statesValidation.value)
+                    is ValidationFailure -> errors.addAll(statesValidation.errors)
                 }
             }
             isFoundationGroup(group) -> {

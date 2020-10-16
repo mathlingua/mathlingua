@@ -264,13 +264,13 @@ internal class MathLinguaTest {
     fun expandWrittenAs() {
         val validation = MathLingua.parse("""
             [\or{a}{b}]
-            Represents:
+            States:
             that: "something"
             written: "a? \text{ or } b?"
         """.trimIndent())
         assertThat(validation is ValidationSuccess)
         val doc = (validation as ValidationSuccess).value
-        val map = MathLingua.getPatternsToWrittenAs(emptyList(), doc.represents())
+        val map = MathLingua.getPatternsToWrittenAs(emptyList(), doc.states())
         val expectedCommand = Command(
             parts = listOf(
                 CommandPart(

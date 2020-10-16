@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents
+package mathlingua.common.chalktalk.phase2.ast.group.toplevel.states
 
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Section
@@ -28,24 +28,24 @@ import mathlingua.common.support.Validation
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
-class RepresentsSection : Phase2Node {
+class StatesSection : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("Represents")
+        writer.writeHeader("States")
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
 }
 
-fun validateRepresentsSection(node: Phase1Node, tracker: MutableLocationTracker): Validation<RepresentsSection> {
+fun validateStatesSection(node: Phase1Node, tracker: MutableLocationTracker): Validation<StatesSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
         errors.add(
                 ParseError(
-                        "Expected a RepresentsSection",
+                        "Expected a StatesSection",
                         getRow(node), getColumn(node)
                 )
         )
@@ -55,16 +55,16 @@ fun validateRepresentsSection(node: Phase1Node, tracker: MutableLocationTracker)
     if (sect.args.isNotEmpty()) {
         errors.add(
                 ParseError(
-                        "A Represents cannot have any arguments",
+                        "A States cannot have any arguments",
                         getRow(node), getColumn(node)
                 )
         )
     }
 
-    if (sect.name.text != "Represents") {
+    if (sect.name.text != "States") {
         errors.add(
                 ParseError(
-                        "Expected a section named Represents",
+                        "Expected a section named States",
                         getRow(node), getColumn(node)
                 )
         )
@@ -73,6 +73,6 @@ fun validateRepresentsSection(node: Phase1Node, tracker: MutableLocationTracker)
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else {
-        validationSuccess(tracker, node, RepresentsSection())
+        validationSuccess(tracker, node, StatesSection())
     }
 }

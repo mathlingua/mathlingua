@@ -26,7 +26,7 @@ interface Phase2Node {
         indent: Int,
         writer: CodeWriter = MathLinguaCodeWriter(
                 defines = emptyList(),
-                represents = emptyList())
+                states = emptyList())
     ): CodeWriter
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
 }

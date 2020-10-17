@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents
+package mathlingua.common.chalktalk.phase2.ast.group.toplevel.states
 
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node

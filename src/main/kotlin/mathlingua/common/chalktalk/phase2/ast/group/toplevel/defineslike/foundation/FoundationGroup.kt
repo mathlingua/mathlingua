@@ -28,7 +28,7 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaDataGroup
 
-interface DefinesRepresentsOrViews : Clause
+interface DefinesStatesOrViews : Clause
 
 data class FoundationGroup(
     val foundationSection: FoundationSection,

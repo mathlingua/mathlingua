@@ -25,7 +25,7 @@ import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
 import java.lang.ClassCastException
 import java.lang.Exception
 
-data class FoundationSection(val content: DefinesRepresentsOrViews) : Phase2Node {
+data class FoundationSection(val content: DefinesStatesOrViews) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(content)
     }
@@ -40,7 +40,7 @@ data class FoundationSection(val content: DefinesRepresentsOrViews) : Phase2Node
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(FoundationSection(
-            content = chalkTransformer(content) as DefinesRepresentsOrViews
+            content = chalkTransformer(content) as DefinesStatesOrViews
         ))
 }
 
@@ -51,7 +51,7 @@ fun validateFoundationSection(node: Phase1Node, tracker: MutableLocationTracker)
     "Foundation"
 ) {
     try {
-        FoundationSection(content = it.clauses[0] as DefinesRepresentsOrViews)
+        FoundationSection(content = it.clauses[0] as DefinesStatesOrViews)
     } catch (e: ClassCastException) {
         throw Exception("Expected a Defines, Represents, or a Views group")
     }

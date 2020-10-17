@@ -45,8 +45,8 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.or.isOrGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.validateOrGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.isRepresentsGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.validateRepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.isStatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.validateStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.isViewsGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.validateViewsGroup
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
@@ -143,10 +143,10 @@ private val CLAUSE_VALIDATORS = listOf(
             }
         },
         ValidationPair(
-            ::isRepresentsGroup
+            ::isStatesGroup
         ) { node, tracker ->
             if (node is Group) {
-                validateRepresentsGroup(node, tracker)
+                validateStatesGroup(node, tracker)
             } else {
                 validationFailure(
                     listOf(

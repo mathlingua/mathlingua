@@ -30,7 +30,7 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents.RepresentsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode
@@ -205,10 +205,10 @@ internal fun moveStatementInlineCommandsToIsNode(
 
 internal fun replaceRepresents(
     root: Phase2Node,
-    represents: List<RepresentsGroup>,
+    represents: List<StatesGroup>,
     target: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
-    val repMap = mutableMapOf<String, RepresentsGroup>()
+    val repMap = mutableMapOf<String, StatesGroup>()
     for (rep in represents) {
         val sig = rep.signature
         if (sig != null) {
@@ -510,7 +510,7 @@ internal fun buildIfThens(def: DefinesGroup) =
             elseSection = null
     )
 
-internal fun buildIfThens(rep: RepresentsGroup) = rep.thatSections.map {
+internal fun buildIfThens(rep: StatesGroup) = rep.thatSections.map {
     IfGroup(
             ifSection = IfSection(
                     clauses = rep.whenSection?.clauses
@@ -542,7 +542,7 @@ internal fun getDefinesIdVars(def: DefinesGroup): List<String> {
     return vars
 }
 
-internal fun getRepresentsIdVars(rep: RepresentsGroup): List<String> {
+internal fun getRepresentsIdVars(rep: StatesGroup): List<String> {
     val vars = mutableListOf<String>()
     if (rep.id.texTalkRoot is ValidationSuccess) {
         vars.addAll(getVars(rep.id.texTalkRoot.value))
@@ -554,7 +554,7 @@ internal fun expandAtNode(
     root: Phase2Node,
     target: Phase2Node,
     defines: List<DefinesGroup>,
-    represents: List<RepresentsGroup>
+    represents: List<StatesGroup>
 ): Phase2Node {
     var transformed = root
     var realTarget = target
@@ -585,7 +585,7 @@ internal fun expandAtNode(
     return transformed
 }
 
-internal fun fullExpandOnce(doc: Document) = expandAtNode(doc, doc, doc.defines(), doc.represents()) as Document
+internal fun fullExpandOnce(doc: Document) = expandAtNode(doc, doc, doc.defines(), doc.states()) as Document
 
 internal fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     val snapshots = mutableSetOf<String>()

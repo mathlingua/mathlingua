@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2.ast.group.toplevel.represents
+package mathlingua.common.chalktalk.phase2.ast.group.toplevel.states
 
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.ParseError
@@ -40,7 +40,7 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesRepresentsOrViews
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
@@ -49,20 +49,20 @@ import mathlingua.common.transform.signature
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
-data class RepresentsGroup(
+data class StatesGroup(
     val signature: String?,
     val id: IdStatement,
-    val representsSection: RepresentsSection,
+    val statesSection: StatesSection,
     val whenSection: WhenSection?,
     val thatSections: List<ThatSection>,
     val usingSection: UsingSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
-) : TopLevelGroup(metaDataSection), DefinesRepresentsOrViews {
+) : TopLevelGroup(metaDataSection), DefinesStatesOrViews {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
-        fn(representsSection)
+        fn(statesSection)
         if (whenSection != null) {
             fn(whenSection)
         }
@@ -79,7 +79,7 @@ data class RepresentsGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        val sections = mutableListOf(representsSection, whenSection)
+        val sections = mutableListOf(statesSection, whenSection)
         sections.addAll(thatSections)
         sections.add(usingSection)
         sections.add(writtenSection)
@@ -94,10 +94,10 @@ data class RepresentsGroup(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        RepresentsGroup(
+        StatesGroup(
             signature = signature,
             id = id.transform(chalkTransformer) as IdStatement,
-            representsSection = representsSection.transform(chalkTransformer) as RepresentsSection,
+            statesSection = statesSection.transform(chalkTransformer) as StatesSection,
             whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
             thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -107,9 +107,9 @@ data class RepresentsGroup(
     )
 }
 
-fun isRepresentsGroup(node: Phase1Node) = firstSectionMatchesName(node, "Represents")
+fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
 
-fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<RepresentsGroup> {
+fun validateStatesGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<StatesGroup> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
     var id: IdStatement? = null
@@ -146,23 +146,23 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     try {
         sectionMap = identifySections(
             sections,
-            "Represents", "when?", "that", "using?", "where?", "written?", "Metadata?"
+            "States", "when?", "that", "using?", "where?", "written?", "Metadata?"
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
         return validationFailure(errors)
     }
 
-    val definesLike = sectionMap["Represents"]!!
+    val definesLike = sectionMap["States"]!!
     val whenNode = sectionMap["when"] ?: emptyList()
     val ends = sectionMap["that"]!!
     val using = sectionMap["using"] ?: emptyList()
     val written = sectionMap["written"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
 
-    var representsSection: RepresentsSection? = null
-    when (val representsValidation = validateRepresentsSection(definesLike[0], tracker)) {
-        is ValidationSuccess -> representsSection = representsValidation.value
+    var statesSection: StatesSection? = null
+    when (val representsValidation = validateStatesSection(definesLike[0], tracker)) {
+        is ValidationSuccess -> statesSection = representsValidation.value
         is ValidationFailure -> errors.addAll(representsValidation.errors)
     }
 
@@ -211,9 +211,9 @@ fun validateRepresentsGroup(groupNode: Group, tracker: MutableLocationTracker): 
     } else validationSuccess(
         tracker,
         groupNode,
-        RepresentsGroup(
+        StatesGroup(
             id?.signature(),
-            id!!, representsSection!!,
+            id!!, statesSection!!,
             whenSection,
             // the end sections are in reverse order so they
             // must be reversed here to be in the correct order

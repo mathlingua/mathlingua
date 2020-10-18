@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test
 internal class TexTalkLexerTest {
     @Test
     fun `correctly identifies tokens`() {
-        val text = "G := (X, *, 0) + B, X is \\some[x]_a^b{x, y}.thing:on{A} $1 #2 abc...xyz +... ...+"
+        val text = "G := (X, *, 0) + B, X is \\some[x]_a^b{x, y}.thing:on{A} $1 #2 abc...xyz +... ...+::="
         val lexer = newTexTalkLexer(text)
         val actual = mutableListOf<TexTalkToken>()
         while (lexer.hasNext()) {
@@ -75,7 +75,8 @@ internal class TexTalkLexerTest {
             TexTalkToken(text = "...", tokenType = TexTalkTokenType.DotDotDot, row = 0, column = 65),
             TexTalkToken(text = "xyz", tokenType = TexTalkTokenType.Identifier, row = 0, column = 68),
             TexTalkToken(text = "+...", tokenType = TexTalkTokenType.Operator, row = 0, column = 72),
-            TexTalkToken(text = "...+", tokenType = TexTalkTokenType.Operator, row = 0, column = 77)
+            TexTalkToken(text = "...+", tokenType = TexTalkTokenType.Operator, row = 0, column = 77),
+            TexTalkToken(text = "::=", tokenType = TexTalkTokenType.ColonColonEquals, row = 0, column = 81)
         )
 
         assertThat(actual).isEqualTo(expected)

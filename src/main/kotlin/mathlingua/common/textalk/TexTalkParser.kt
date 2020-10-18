@@ -66,7 +66,7 @@ private class TexTalkParserImpl : TexTalkParser {
 
         fun parse(): ExpressionTexTalkNode {
             val exp = expression(null) ?: ExpressionTexTalkNode(emptyList())
-            return resolveColonEqualsNode(resolveIsNode(exp)) as ExpressionTexTalkNode
+            return resolveColonOrColonColonEqualsNode(resolveIsNode(exp)) as ExpressionTexTalkNode
         }
 
         private fun resolveIsNode(texTalkNode: TexTalkNode): TexTalkNode {
@@ -95,12 +95,13 @@ private class TexTalkParserImpl : TexTalkParser {
             return ExpressionTexTalkNode(listOf(IsTexTalkNode(lhs, rhs)))
         }
 
-        private fun resolveColonEqualsNode(texTalkNode: TexTalkNode): TexTalkNode {
+        private fun resolveColonOrColonColonEqualsNode(texTalkNode: TexTalkNode): TexTalkNode {
             if (texTalkNode !is ExpressionTexTalkNode) {
                 return texTalkNode
             }
 
             var colonEqualsIndex = -1
+            var colonColonEqualsIndex = -1
             for (i in texTalkNode.children.indices) {
                 val child = texTalkNode.children[i]
                 if (child is TextTexTalkNode && child.type == TexTalkNodeType.ColonEquals) {
@@ -109,16 +110,34 @@ private class TexTalkParserImpl : TexTalkParser {
                     } else {
                         addError("A statement can only contain one ':='")
                     }
+                } else if (child is TextTexTalkNode && child.type == TexTalkNodeType.ColonColonEquals) {
+                    if (colonColonEqualsIndex < 0) {
+                        colonColonEqualsIndex = i
+                    } else {
+                        addError("A statement can only contain one '::='")
+                    }
                 }
             }
 
-            if (colonEqualsIndex < 0) {
-                return texTalkNode
+            if (colonEqualsIndex >= 0 && colonColonEqualsIndex >= 0) {
+                addError("A statement can only contain ':=' or '::=', but not both.")
             }
 
-            val lhs = parameters(texTalkNode.children, 0, colonEqualsIndex)
-            val rhs = parameters(texTalkNode.children, colonEqualsIndex + 1, texTalkNode.children.size)
-            return ExpressionTexTalkNode(listOf(ColonEqualsTexTalkNode(lhs, rhs)))
+            return when {
+                colonEqualsIndex >= 0 -> {
+                    val lhs = parameters(texTalkNode.children, 0, colonEqualsIndex)
+                    val rhs = parameters(texTalkNode.children, colonEqualsIndex + 1, texTalkNode.children.size)
+                    ExpressionTexTalkNode(listOf(ColonEqualsTexTalkNode(lhs, rhs)))
+                }
+                colonColonEqualsIndex >= 0 -> {
+                    val lhs = parameters(texTalkNode.children, 0, colonColonEqualsIndex)
+                    val rhs = parameters(texTalkNode.children, colonColonEqualsIndex + 1, texTalkNode.children.size)
+                    ExpressionTexTalkNode(listOf(ColonColonEqualsTexTalkNode(lhs, rhs)))
+                }
+                else -> {
+                    texTalkNode
+                }
+            }
         }
 
         private fun parameters(texTalkNodes: List<TexTalkNode>, startInc: Int, endEx: Int): ParametersTexTalkNode {
@@ -473,6 +492,7 @@ private class TexTalkParserImpl : TexTalkParser {
                     ?: text(TexTalkTokenType.Caret, TexTalkNodeType.Operator, false)
                     ?: text(TexTalkTokenType.Underscore, TexTalkNodeType.Operator, false)
                     ?: text(TexTalkTokenType.ColonEquals, TexTalkNodeType.ColonEquals, false)
+                    ?: text(TexTalkTokenType.ColonColonEquals, TexTalkNodeType.ColonColonEquals, false)
                     ?: text(TexTalkTokenType.DotDotDot, TexTalkNodeType.Operator, false)
 
                 if (child == null) {

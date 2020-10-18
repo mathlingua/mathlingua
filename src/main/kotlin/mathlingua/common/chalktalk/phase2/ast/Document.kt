@@ -33,6 +33,9 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.isMutuallyGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallyGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallySection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.isStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.validateStatesGroup
@@ -143,6 +146,12 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 when (val viewsValidation = validateViewsGroup(group, tracker)) {
                     is ValidationSuccess -> allGroups.add(viewsValidation.value)
                     is ValidationFailure -> errors.addAll(viewsValidation.errors)
+                }
+            }
+            isMutuallyGroup(group) -> {
+                when (val mutuallyValidation = validateMutuallyGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(mutuallyValidation.value)
+                    is ValidationFailure -> errors.addAll(mutuallyValidation.errors)
                 }
             }
             isEntryGroup(group) -> {

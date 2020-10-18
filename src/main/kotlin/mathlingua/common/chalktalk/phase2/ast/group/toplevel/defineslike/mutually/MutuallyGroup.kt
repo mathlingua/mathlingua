@@ -20,8 +20,6 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaDataGroup

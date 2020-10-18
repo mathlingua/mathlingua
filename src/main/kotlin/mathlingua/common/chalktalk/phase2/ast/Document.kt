@@ -35,7 +35,6 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundat
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.isMutuallyGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallyGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallySection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.isStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.validateStatesGroup

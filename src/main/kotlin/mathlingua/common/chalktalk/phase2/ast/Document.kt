@@ -29,23 +29,25 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.conjectu
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.isMutuallyGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallyGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.isStatesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.validateStatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.isViewsGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.validateViewsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.ParseError
 import mathlingua.common.support.Validation
@@ -163,6 +165,12 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 when (val resourceValidation = validateResourceGroup(group, tracker)) {
                     is ValidationSuccess -> allGroups.add(resourceValidation.value)
                     is ValidationFailure -> errors.addAll(resourceValidation.errors)
+                }
+            }
+            isEvaluatesGroup(group) -> {
+                when (val evaluatesValidation = validateEvaluatesGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(evaluatesValidation.value)
+                    is ValidationFailure -> errors.addAll(evaluatesValidation.errors)
                 }
             }
             else -> {

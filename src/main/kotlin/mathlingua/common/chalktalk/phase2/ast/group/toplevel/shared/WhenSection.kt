@@ -18,6 +18,7 @@ package mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared
 
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
@@ -41,9 +42,11 @@ data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
             chalkTransformer(
                 WhenSection(
                     clauses = clauses.transform(chalkTransformer) as ClauseListNode
-            )
+                )
             )
 }
+
+fun isWhenSection(sec: Section) = sec.name.text == "when"
 
 fun validateWhenSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
         AtLeast(1),

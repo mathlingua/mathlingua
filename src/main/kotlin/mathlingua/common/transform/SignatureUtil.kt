@@ -22,7 +22,7 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
 import mathlingua.common.chalktalk.phase2.ast.section.TextSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.support.Location
 import mathlingua.common.support.LocationTracker

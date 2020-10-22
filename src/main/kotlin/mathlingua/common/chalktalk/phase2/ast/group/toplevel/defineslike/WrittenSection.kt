@@ -19,6 +19,7 @@ package mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.Validation
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.validateTextListSection
@@ -41,6 +42,8 @@ data class WrittenSection(val forms: List<String>) : Phase2Node {
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(this)
 }
+
+fun isWrittenSection(sec: Section) = sec.name.text == "written"
 
 fun validateWrittenSection(
     rawNode: Phase1Node,

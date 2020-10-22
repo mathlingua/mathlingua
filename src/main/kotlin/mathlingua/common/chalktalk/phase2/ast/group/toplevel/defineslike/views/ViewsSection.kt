@@ -14,41 +14,35 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2.ast.group.toplevel.states
+package mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views
 
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.*
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.validator.AtLeast
-import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
+import mathlingua.common.chalktalk.phase2.ast.clause.Target
+import mathlingua.common.chalktalk.phase2.ast.validator.validateTargetList
+import mathlingua.common.chalktalk.phase2.ast.section.appendTargetArgs
 
-data class ThatSection(val clauses: ClauseListNode) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
+data class ViewsSection(val targets: List<Target>) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("that")
-        if (clauses.clauses.isNotEmpty()) {
-            writer.writeNewline()
-        }
-        writer.append(clauses, true, indent + 2)
+        writer.writeHeader("Views")
+        appendTargetArgs(writer, targets, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(
-                ThatSection(
-                    clauses = clauses.transform(chalkTransformer) as ClauseListNode
-            )
-            )
+        chalkTransformer(ViewsSection(
+            targets = targets.map { it.transform(chalkTransformer) as Target }
+        ))
 }
 
-fun validateThatSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-        AtLeast(1),
-        tracker,
-        node,
-        "that",
-        ::ThatSection
+fun validateViewsSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTargetList(
+    tracker,
+    node,
+    "Views",
+    ::ViewsSection
 )

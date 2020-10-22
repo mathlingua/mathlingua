@@ -18,6 +18,7 @@ package mathlingua.common.chalktalk.phase2.ast.group.clause.mapping
 
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Statement
@@ -47,6 +48,8 @@ data class ToSection(val statements: List<Statement>) : Phase2Node {
             statements = statements.map { chalkTransformer(it) as Statement }
         ))
 }
+
+fun isToSection(sec: Section) = sec.name.text == "to"
 
 fun validateToSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementListSection(
     node,

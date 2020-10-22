@@ -24,7 +24,7 @@ import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.common.textalk.ExpressionTexTalkNode
 import mathlingua.common.textalk.TextTexTalkNode
 import mathlingua.common.textalk.newTexTalkLexer

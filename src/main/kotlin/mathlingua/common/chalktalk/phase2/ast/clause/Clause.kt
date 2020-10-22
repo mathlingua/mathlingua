@@ -45,10 +45,10 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.or.isOrGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.validateOrGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.isStatesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.validateStatesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.isViewsGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.views.validateViewsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.ParseError

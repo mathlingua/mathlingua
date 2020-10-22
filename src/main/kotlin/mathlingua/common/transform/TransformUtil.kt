@@ -30,7 +30,7 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.common.textalk.Command
 import mathlingua.common.textalk.ExpressionTexTalkNode

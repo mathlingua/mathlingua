@@ -63,6 +63,8 @@ data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
             ))
 }
 
+fun isMetadataSection(sec: Section) = sec.name.text == "Metadata"
+
 fun validateMetaDataSection(section: Section, tracker: MutableLocationTracker): Validation<MetaDataSection> {
     if (section.name.text != "Metadata") {
         return validationFailure(

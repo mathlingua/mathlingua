@@ -14,38 +14,38 @@
  * limitations under the License.
  */
 
-package mathlingua.common.chalktalk.phase2.ast.group.toplevel.views
+package mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views
 
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.clause.Statement
-import mathlingua.common.chalktalk.phase2.ast.section.validateStatementSection
+import mathlingua.common.chalktalk.phase2.ast.validator.Exactly
+import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
 
-data class SingleFromSection(val statement: Statement) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(statement)
-    }
+data class SingleToSection(val clauses: ClauseListNode) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("from")
-        writer.append(statement, false, 1)
+        writer.writeHeader("to")
+        writer.append(clauses, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            SingleFromSection(
-            statement = statement.transform(chalkTransformer) as Statement
+            SingleToSection(
+            clauses = clauses.transform(chalkTransformer) as ClauseListNode
         )
         )
 }
 
-fun validateSingleFromSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementSection(
-    node,
+fun validateSingleToSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+    Exactly(1),
     tracker,
-    "from",
-    ::SingleFromSection
+    node,
+    "to",
+    ::SingleToSection
 )

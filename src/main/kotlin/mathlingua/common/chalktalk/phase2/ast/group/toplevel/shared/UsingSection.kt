@@ -17,6 +17,7 @@
 package mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared
 
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
@@ -42,6 +43,8 @@ data class UsingSection(val clauses: ClauseListNode) : Phase2Node {
             clauses = clauses.transform(chalkTransformer) as ClauseListNode
         ))
 }
+
+fun isUsingSection(sec: Section) = sec.name.text == "using"
 
 fun validateUsingSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
     ZeroOrMore(),

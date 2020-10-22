@@ -27,7 +27,7 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.states.StatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.common.chalktalk.phase2.ast.validateDocument

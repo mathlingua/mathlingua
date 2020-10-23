@@ -35,6 +35,12 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.expands.isExpandsGrou
 import mathlingua.common.chalktalk.phase2.ast.group.clause.expands.validateExpandsGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.iff.isIffGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.iff.validateIffGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.inductively.isConstantGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.inductively.isConstructorGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.inductively.isInductivelyGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.inductively.validateConstantGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.inductively.validateConstructorGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.inductively.validateInductivelyGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.isMappingGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.validateMappingGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.matching.isMatchingGroup
@@ -130,6 +136,18 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
             ::isMatchingGroup,
             ::validateMatchingGroup
+        ),
+        ValidationPair(
+            ::isConstantGroup,
+            ::validateConstantGroup
+        ),
+        ValidationPair(
+            ::isConstructorGroup,
+            ::validateConstructorGroup
+        ),
+        ValidationPair(
+            ::isInductivelyGroup,
+            ::validateInductivelyGroup
         ),
         ValidationPair(
             ::isDefinesGroup

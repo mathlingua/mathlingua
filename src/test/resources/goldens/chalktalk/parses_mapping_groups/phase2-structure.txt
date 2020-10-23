@@ -80,7 +80,7 @@ Document(
                )
                whenSection = null
                meansSection = null
-               computesSection = ComputesSection(
+               evaluatedSection = EvaluatedSection(
                  clauses = ClauseListNode(
                    clauses = [
                                MappingGroup(

@@ -24,12 +24,12 @@ import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validator.Exactly
 import mathlingua.common.chalktalk.phase2.ast.validator.validateClauseList
 
-data class ComputesSection(val clauses: ClauseListNode) : Phase2Node {
+data class EvaluatedSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("computes")
+        writer.writeHeader("evaluated")
         if (clauses.clauses.isNotEmpty()) {
             writer.writeNewline()
         }
@@ -39,7 +39,7 @@ data class ComputesSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ComputesSection(
+            EvaluatedSection(
             clauses = clauses.transform(chalkTransformer) as ClauseListNode
         )
         )
@@ -49,6 +49,6 @@ fun validateComputesSection(node: Phase1Node, tracker: MutableLocationTracker) =
     Exactly(1),
     tracker,
     node,
-    "computes",
-    ::ComputesSection
+    "evaluated",
+    ::EvaluatedSection
 )

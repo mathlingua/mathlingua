@@ -25,6 +25,7 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.group.clause.WhenToPair
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ElseSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.isElseSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.validateElseSection
@@ -54,11 +55,6 @@ import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 import mathlingua.common.transform.signature
-
-data class WhenToPair(
-    val whenSection: WhenSection,
-    val toSection: ToSection
-)
 
 data class EvaluatesGroup(
     val signature: String?,

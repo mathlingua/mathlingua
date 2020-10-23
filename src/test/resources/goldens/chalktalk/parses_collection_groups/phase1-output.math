@@ -1,7 +1,7 @@
 [\evens]
 Defines:
 . X
-computes:
+evaluated:
 . collection:
   of:
   . '2*k'

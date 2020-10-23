@@ -57,7 +57,7 @@ data class DefinesGroup(
     val definesSection: DefinesSection,
     val whenSection: WhenSection?,
     val meansSection: MeansSection?,
-    val computesSection: ComputesSection?,
+    val evaluatedSection: EvaluatedSection?,
     val usingSection: UsingSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
@@ -72,8 +72,8 @@ data class DefinesGroup(
         if (meansSection != null) {
             fn(meansSection)
         }
-        if (computesSection != null) {
-            fn(computesSection)
+        if (evaluatedSection != null) {
+            fn(evaluatedSection)
         }
         if (usingSection != null) {
             fn(usingSection)
@@ -89,7 +89,7 @@ data class DefinesGroup(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(definesSection, whenSection)
         sections.add(meansSection)
-        sections.add(computesSection)
+        sections.add(evaluatedSection)
         sections.add(usingSection)
         sections.add(writtenSection)
         sections.add(metaDataSection)
@@ -109,7 +109,7 @@ data class DefinesGroup(
             definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
             whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
             meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
-            computesSection = computesSection?.transform(chalkTransformer) as ComputesSection?,
+            evaluatedSection = evaluatedSection?.transform(chalkTransformer) as EvaluatedSection?,
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
             writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
@@ -258,7 +258,7 @@ private fun validateDefinesGroupImpl(
     try {
         sectionMap = identifySections(
             sections,
-            "Defines", "when?", "means?", "computes?",
+            "Defines", "when?", "means?", "evaluated?",
             "using?", "written?", "Metadata?"
         )
     } catch (e: ParseError) {
@@ -269,7 +269,7 @@ private fun validateDefinesGroupImpl(
     val definesLike = sectionMap["Defines"]!!
     val whenNode = sectionMap["when"] ?: emptyList()
     val means = sectionMap["means"]
-    val computes = sectionMap["computes"]
+    val evaluated = sectionMap["evaluated"]
     val using = sectionMap["using"] ?: emptyList()
     val written = sectionMap["written"] ?: emptyList()
     val metadata = sectionMap["Metadata"] ?: emptyList()
@@ -296,10 +296,10 @@ private fun validateDefinesGroupImpl(
         }
     }
 
-    var computesSection: ComputesSection? = null
-    if (computes != null) {
-        when (val computesValidation = validateComputesSection(computes[0], tracker)) {
-            is ValidationSuccess -> computesSection = computesValidation.value
+    var evaluatedSection: EvaluatedSection? = null
+    if (evaluated != null) {
+        when (val computesValidation = validateComputesSection(evaluated[0], tracker)) {
+            is ValidationSuccess -> evaluatedSection = computesValidation.value
             is ValidationFailure -> errors.addAll(computesValidation.errors)
         }
     }
@@ -328,7 +328,7 @@ private fun validateDefinesGroupImpl(
         }
     }
 
-    if (meansSection == null && computesSection == null) {
+    if (meansSection == null && evaluatedSection == null) {
         errors.add(
             ParseError(
                 "A Defines must have either a 'means' or 'computes' section.  " +
@@ -348,7 +348,7 @@ private fun validateDefinesGroupImpl(
             id!!, definesLikeSection!!,
             whenSection,
             meansSection,
-            computesSection,
+            evaluatedSection,
             usingSection,
             writtenSection,
             metaDataSection

@@ -6,7 +6,7 @@ For pattern:
 Defines:
 when?:
 means?:
-computes?:
+evaluated?:
 using?:
 written?:
 Metadata?:

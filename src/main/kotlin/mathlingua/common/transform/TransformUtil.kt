@@ -491,7 +491,7 @@ internal fun toCanonicalForm(def: DefinesGroup) = DefinesGroup(
         ),
         usingSection = def.usingSection,
         metaDataSection = def.metaDataSection,
-        computesSection = def.computesSection,
+        evaluatedSection = def.evaluatedSection,
         writtenSection = def.writtenSection
 )
 

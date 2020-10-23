@@ -505,9 +505,7 @@ internal fun buildIfThens(def: DefinesGroup) =
                     clauses = def.meansSection?.clauses ?: ClauseListNode(
                         clauses = emptyList()
                     )
-            ),
-            elseIfSections = emptyList(),
-            elseSection = null
+            )
     )
 
 internal fun buildIfThens(rep: StatesGroup) = rep.thatSections.map {
@@ -520,9 +518,7 @@ internal fun buildIfThens(rep: StatesGroup) = rep.thatSections.map {
             ),
             thenSection = ThenSection(
                     clauses = it.clauses
-            ),
-            elseIfSections = emptyList(),
-            elseSection = null
+            )
     )
 }
 

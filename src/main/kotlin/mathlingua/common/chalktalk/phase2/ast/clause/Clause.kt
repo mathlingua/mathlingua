@@ -49,8 +49,12 @@ import mathlingua.common.chalktalk.phase2.ast.group.clause.not.isNotGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.not.validateNotGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.isOrGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.or.validateOrGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.piecewise.isPiecewiseGroup
+import mathlingua.common.chalktalk.phase2.ast.group.clause.piecewise.validatePiecewiseGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
@@ -148,6 +152,14 @@ private val CLAUSE_VALIDATORS = listOf(
         ValidationPair(
             ::isInductivelyGroup,
             ::validateInductivelyGroup
+        ),
+        ValidationPair(
+            ::isPiecewiseGroup,
+            ::validatePiecewiseGroup
+        ),
+        ValidationPair(
+            ::isEvaluatesGroup,
+            ::validateEvaluatesGroup
         ),
         ValidationPair(
             ::isDefinesGroup

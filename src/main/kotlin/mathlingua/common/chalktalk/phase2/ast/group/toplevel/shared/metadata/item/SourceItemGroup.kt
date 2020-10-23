@@ -95,7 +95,7 @@ fun validateSourceItemGroup(groupNode: Group, tracker: MutableLocationTracker): 
 
     val sections = group.sections
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
                 sections, "source", "page?", "offset?", "content?"
@@ -105,7 +105,7 @@ fun validateSourceItemGroup(groupNode: Group, tracker: MutableLocationTracker): 
         return validationFailure(errors)
     }
 
-    val rawSource = sectionMap["source"]!![0]
+    val rawSource = sectionMap["source"]!!
     var sourceSection: SourceItemSection? = null
     when (val validation = validateStringSection(tracker, rawSource, "source", ::SourceItemSection)) {
         is ValidationSuccess -> sourceSection = validation.value
@@ -114,8 +114,8 @@ fun validateSourceItemGroup(groupNode: Group, tracker: MutableLocationTracker): 
 
     val rawPage = sectionMap["page"]
     var pageSection: PageItemSection? = null
-    if (rawPage != null && rawPage.isNotEmpty()) {
-        when (val validation = validateStringSection(tracker, rawPage[0], "page", ::PageItemSection)) {
+    if (rawPage != null) {
+        when (val validation = validateStringSection(tracker, rawPage, "page", ::PageItemSection)) {
             is ValidationSuccess -> pageSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }
@@ -123,8 +123,8 @@ fun validateSourceItemGroup(groupNode: Group, tracker: MutableLocationTracker): 
 
     val rawOffset = sectionMap["offset"]
     var offsetSection: OffsetItemSection? = null
-    if (rawOffset != null && rawOffset.isNotEmpty()) {
-        when (val validation = validateStringSection(tracker, rawOffset[0], "offset", ::OffsetItemSection)) {
+    if (rawOffset != null) {
+        when (val validation = validateStringSection(tracker, rawOffset, "offset", ::OffsetItemSection)) {
             is ValidationSuccess -> offsetSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }
@@ -132,8 +132,8 @@ fun validateSourceItemGroup(groupNode: Group, tracker: MutableLocationTracker): 
 
     val rawContent = sectionMap["content"]
     var contentSection: ContentItemSection? = null
-    if (rawContent != null && rawContent.isNotEmpty()) {
-        when (val validation = validateStringSection(tracker, rawContent[0], "content", ::ContentItemSection)) {
+    if (rawContent != null) {
+        when (val validation = validateStringSection(tracker, rawContent, "content", ::ContentItemSection)) {
             is ValidationSuccess -> contentSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }

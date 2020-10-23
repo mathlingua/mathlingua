@@ -64,7 +64,7 @@ fun validateExistsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): V
 
     val (sections) = node
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections,
@@ -78,15 +78,15 @@ fun validateExistsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): V
     var existsSection: ExistsSection? = null
     val existsNode = sectionMap["exists"]
 
-    when (val existsEvaluation = validateExistsSection(existsNode!![0], tracker)) {
+    when (val existsEvaluation = validateExistsSection(existsNode!!, tracker)) {
         is ValidationSuccess -> existsSection = existsEvaluation.value
         is ValidationFailure -> errors.addAll(existsEvaluation.errors)
     }
 
     var whereSection: WhereSection? = null
-    if (sectionMap.containsKey("where") && sectionMap["where"]!!.isNotEmpty()) {
+    if (sectionMap.containsKey("where")) {
         val where = sectionMap["where"]!!
-        when (val whereValidation = validateWhereSection(where[0], tracker)) {
+        when (val whereValidation = validateWhereSection(where, tracker)) {
             is ValidationSuccess -> whereSection = whereValidation.value
             is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
@@ -94,7 +94,7 @@ fun validateExistsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): V
 
     var suchThatSection: SuchThatSection? = null
     val suchThat = sectionMap["suchThat"]
-    when (val suchThatValidation = validateSuchThatSection(suchThat!![0], tracker)) {
+    when (val suchThatValidation = validateSuchThatSection(suchThat!!, tracker)) {
         is ValidationSuccess -> suchThatSection = suchThatValidation.value
         is ValidationFailure -> errors.addAll(suchThatValidation.errors)
     }

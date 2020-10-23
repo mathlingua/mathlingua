@@ -193,9 +193,7 @@ class LatexTranslator(
         if (representsGroup != null) {
             append(representsGroup.id.text)
             append("represents")
-            for (ts in representsGroup.thatSections) {
-                translate(ts)
-            }
+            translate(representsGroup.thatSection)
         }
     }
 

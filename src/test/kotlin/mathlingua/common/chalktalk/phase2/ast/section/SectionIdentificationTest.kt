@@ -57,8 +57,8 @@ internal class SectionIdentificationTest {
         )
         val ids = identifySections(sections, "Theorem", "given?", "where?", "then", "using?", "where?")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "given", "where", "then", "using", "where1"))
-        assertThat(ids["where"]!![0].name.row).isEqualTo(1)
-        assertThat(ids["where1"]!![0].name.row).isEqualTo(2)
+        assertThat(ids["where"]!!.name.row).isEqualTo(1)
+        assertThat(ids["where1"]!!.name.row).isEqualTo(2)
     }
 
     @Test
@@ -71,7 +71,7 @@ internal class SectionIdentificationTest {
         )
         val ids = identifySections(sections, "Theorem", "given?", "where?", "then", "using?", "where?")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "then", "using", "where1"))
-        assertThat(ids["where1"]!![0].name.row).isEqualTo(2)
+        assertThat(ids["where1"]!!.name.row).isEqualTo(2)
     }
 
     @Test
@@ -84,6 +84,6 @@ internal class SectionIdentificationTest {
         )
         val ids = identifySections(sections, "Theorem", "given?", "where?", "then", "using?", "where?")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "where", "then", "using"))
-        assertThat(ids["where"]!![0].name.row).isEqualTo(1)
+        assertThat(ids["where"]!!.name.row).isEqualTo(1)
     }
 }

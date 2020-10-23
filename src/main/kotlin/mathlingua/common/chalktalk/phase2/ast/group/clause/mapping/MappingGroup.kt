@@ -84,7 +84,7 @@ fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): 
 
     val (sections) = node
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections,
@@ -101,25 +101,25 @@ fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): 
     val asNode = sectionMap["as"]!!
 
     var mappingSection: MappingSection? = null
-    when (val evaluation = validateMappingSection(mappingNode[0], tracker)) {
+    when (val evaluation = validateMappingSection(mappingNode, tracker)) {
         is ValidationSuccess -> mappingSection = evaluation.value
         is ValidationFailure -> errors.addAll(evaluation.errors)
     }
 
     var fromSection: FromSection? = null
-    when (val evaluation = validateFromSection(fromNode[0], tracker)) {
+    when (val evaluation = validateFromSection(fromNode, tracker)) {
         is ValidationSuccess -> fromSection = evaluation.value
         is ValidationFailure -> errors.addAll(evaluation.errors)
     }
 
     var toSection: ToSection? = null
-    when (val evaluation = validateToSection(toNode[0], tracker)) {
+    when (val evaluation = validateToSection(toNode, tracker)) {
         is ValidationSuccess -> toSection = evaluation.value
         is ValidationFailure -> errors.addAll(evaluation.errors)
     }
 
     var asSection: AsSection? = null
-    when (val evaluation = validateAsSection(asNode[0], tracker)) {
+    when (val evaluation = validateAsSection(asNode, tracker)) {
         is ValidationSuccess -> asSection = evaluation.value
         is ValidationFailure -> errors.addAll(evaluation.errors)
     }

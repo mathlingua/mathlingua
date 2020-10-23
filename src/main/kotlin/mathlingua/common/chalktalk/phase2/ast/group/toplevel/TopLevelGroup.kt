@@ -97,7 +97,7 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
 
     val sections = group.sections
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
                 sections, resultLikeName, "given?", "where?", "then",
@@ -109,51 +109,51 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     }
 
     val resultLike = sectionMap[resultLikeName]!!
-    val given = sectionMap["given"] ?: emptyList()
-    val where = sectionMap["where"] ?: emptyList()
-    val then = sectionMap["then"] ?: emptyList()
-    val using = sectionMap["using"] ?: emptyList()
-    val metadata = sectionMap["Metadata"] ?: emptyList()
+    val given = sectionMap["given"]
+    val where = sectionMap["where"]
+    val then = sectionMap["then"]
+    val using = sectionMap["using"]
+    val metadata = sectionMap["Metadata"]
 
     var resultLikeSection: S? = null
-    when (val resultLikeValidation = validateResultLikeSection(resultLike[0], tracker)) {
+    when (val resultLikeValidation = validateResultLikeSection(resultLike, tracker)) {
         is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
         is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
     }
 
     var givenSection: GivenSection? = null
-    if (given.isNotEmpty()) {
-        when (val givenValidation = validateGivenSection(given[0], tracker)) {
+    if (given != null) {
+        when (val givenValidation = validateGivenSection(given, tracker)) {
             is ValidationSuccess -> givenSection = givenValidation.value
             is ValidationFailure -> errors.addAll(givenValidation.errors)
         }
     }
 
     var whereSection: WhereSection? = null
-    if (where.isNotEmpty()) {
-        when (val whereValidation = validateWhereSection(where[0], tracker)) {
+    if (where != null) {
+        when (val whereValidation = validateWhereSection(where, tracker)) {
             is ValidationSuccess -> whereSection = whereValidation.value
             is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
     }
 
     var thenSection: ThenSection? = null
-    when (val thenValidation = validateThenSection(then[0], tracker)) {
+    when (val thenValidation = validateThenSection(then!!, tracker)) {
         is ValidationSuccess -> thenSection = thenValidation.value
         is ValidationFailure -> errors.addAll(thenValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
-    if (metadata.isNotEmpty()) {
-        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
+    if (metadata != null) {
+        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
     }
 
     var usingSection: UsingSection? = null
-    if (using.isNotEmpty()) {
-        when (val aliasValidation = validateUsingSection(using[0], tracker)) {
+    if (using != null) {
+        when (val aliasValidation = validateUsingSection(using, tracker)) {
             is ValidationSuccess -> usingSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
@@ -197,7 +197,7 @@ fun <G : Phase2Node, S> validateProtoResultLikeGroup(
 
     val sections = group.sections
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections, resultLikeName, "Metadata?"
@@ -208,17 +208,17 @@ fun <G : Phase2Node, S> validateProtoResultLikeGroup(
     }
 
     val resultLike = sectionMap[resultLikeName]!!
-    val metadata = sectionMap["Metadata"] ?: emptyList()
+    val metadata = sectionMap["Metadata"]
 
     var resultLikeSection: S? = null
-    when (val resultLikeValidation = validateResultLikeSection(resultLike[0], tracker)) {
+    when (val resultLikeValidation = validateResultLikeSection(resultLike, tracker)) {
         is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
         is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
-    if (metadata.isNotEmpty()) {
-        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
+    if (metadata != null) {
+        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
@@ -311,7 +311,7 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
 
     val (sections) = node
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections, sectionName, "metadata?"
@@ -323,7 +323,7 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
 
     var section: S? = null
     val sect = sectionMap[sectionName]
-    when (val sectionValidation = validateSection(sect!![0], tracker)) {
+    when (val sectionValidation = validateSection(sect!!, tracker)) {
         is ValidationSuccess -> section = sectionValidation.value
         is ValidationFailure -> errors.addAll(sectionValidation.errors)
     }
@@ -331,7 +331,7 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
     var metadataSection: MetaDataSection? = null
     val metadata = sectionMap["metadata"]
     if (metadata != null) {
-        when (val metadataValidation = validateMetaDataSection(metadata!![0], tracker)) {
+        when (val metadataValidation = validateMetaDataSection(metadata, tracker)) {
             is ValidationSuccess -> metadataSection = metadataValidation.value
             is ValidationFailure -> errors.addAll(metadataValidation.errors)
         }
@@ -375,7 +375,7 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
 
     val (sections) = node
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections, section1Name, section2Name, section3Name, "metadata?"
@@ -387,21 +387,21 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
 
     var section1: S1? = null
     val sect1 = sectionMap[section1Name]
-    when (val section1Validation = validateSection1(sect1!![0], tracker)) {
+    when (val section1Validation = validateSection1(sect1!!, tracker)) {
         is ValidationSuccess -> section1 = section1Validation.value
         is ValidationFailure -> errors.addAll(section1Validation.errors)
     }
 
     var section2: S2? = null
     val sect2 = sectionMap[section2Name]
-    when (val section2Validation = validateSection2(sect2!![0], tracker)) {
+    when (val section2Validation = validateSection2(sect2!!, tracker)) {
         is ValidationSuccess -> section2 = section2Validation.value
         is ValidationFailure -> errors.addAll(section2Validation.errors)
     }
 
     var section3: S3? = null
     val sect3 = sectionMap[section3Name]
-    when (val section3Validation = validateSection3(sect3!![0], tracker)) {
+    when (val section3Validation = validateSection3(sect3!!, tracker)) {
         is ValidationSuccess -> section3 = section3Validation.value
         is ValidationFailure -> errors.addAll(section3Validation.errors)
     }
@@ -409,7 +409,7 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
     var metadataSection: MetaDataSection? = null
     val metadata = sectionMap["metadata"]
     if (metadata != null) {
-        when (val metadataValidation = validateMetaDataSection(metadata!![0], tracker)) {
+        when (val metadataValidation = validateMetaDataSection(metadata, tracker)) {
             is ValidationSuccess -> metadataSection = metadataValidation.value
             is ValidationFailure -> errors.addAll(metadataValidation.errors)
         }

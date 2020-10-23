@@ -23,7 +23,7 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 import java.util.LinkedList
 import java.util.Queue
 
-fun identifySections(sections: List<Section>, vararg expected: String): Map<String, List<Section>> {
+fun identifySections(sections: List<Section>, vararg expected: String): Map<String, Section> {
     val patternBuilder = StringBuilder()
     for (name in expected) {
         patternBuilder.append(name)
@@ -44,7 +44,7 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
     }
 
     val usedSectionNames = mutableMapOf<String, Int>()
-    val result = mutableMapOf<String, MutableList<Section>>()
+    val result = mutableMapOf<String, Section>()
 
     while (!sectionQueue.isEmpty() && !expectedQueue.isEmpty()) {
         val nextSection = sectionQueue.peek()
@@ -60,16 +60,10 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         }
         usedSectionNames[trueName] = usedSectionNames.getOrDefault(trueName, 0) + 1
         if (nextSection.name.text == trueName) {
-            if (!result.containsKey(key)) {
-                result[key] = mutableListOf()
-            }
-            result[key]!!.add(nextSection)
+            result[key] = nextSection
             // the expected name and Section have both been used so move past them
             sectionQueue.poll()
             expectedQueue.poll()
-            while (!sectionQueue.isEmpty() && sectionQueue.peek().name.text == trueName) {
-                result[key]!!.add(sectionQueue.poll())
-            }
         } else if (isOptional) {
             // The Section found doesn't match the expected name
             // but the expected name is optional.  So move past
@@ -119,12 +113,5 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         )
     }
 
-    // All of the sections in the map are in reverse order
-    // and thus need to be reversed.
-    val reversedResult = mutableMapOf<String, List<Section>>()
-    for (key in result.keys) {
-        reversedResult[key] = result[key]!!.reversed()
-    }
-
-    return reversedResult
+    return result
 }

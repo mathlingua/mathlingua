@@ -1,7 +1,0 @@
-[\f]
-Defines: X
-means:
-. if:
-  . x
-  then:
-  . y

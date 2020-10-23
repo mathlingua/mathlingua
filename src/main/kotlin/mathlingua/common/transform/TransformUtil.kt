@@ -251,7 +251,7 @@ internal fun replaceRepresents(
                     map[defIndirectVars[i]] = cmdVars[i]
                 }
 
-                val ifThen = buildIfThens(rep)[0]
+                val ifThen = buildIfThens(rep)
                 if (ifThen.ifSection.clauses.clauses.isEmpty()) {
                     for (c in ifThen.thenSection.clauses.clauses) {
                         newClauses.add(renameVars(c, map) as Clause)
@@ -301,7 +301,7 @@ internal fun replaceRepresents(
                     map[defIndirectVars[i]] = cmdVars[i]
                 }
 
-                val ifThen = buildIfThens(rep)[0]
+                val ifThen = buildIfThens(rep)
                 if (ifThen.ifSection.clauses.clauses.isEmpty()) {
                     for (c in ifThen.thenSection.clauses.clauses) {
                         newClauses.add(renameVars(c, map) as Clause)
@@ -508,19 +508,18 @@ internal fun buildIfThens(def: DefinesGroup) =
             )
     )
 
-internal fun buildIfThens(rep: StatesGroup) = rep.thatSections.map {
+internal fun buildIfThens(def: StatesGroup) =
     IfGroup(
-            ifSection = IfSection(
-                    clauses = rep.whenSection?.clauses
-                            ?: ClauseListNode(
-                                    clauses = emptyList()
-                            )
-            ),
-            thenSection = ThenSection(
-                    clauses = it.clauses
+        ifSection = IfSection(
+            clauses = def.whenSection?.clauses
+                ?: ClauseListNode(clauses = emptyList())
+        ),
+        thenSection = ThenSection(
+            clauses = def.thatSection.clauses ?: ClauseListNode(
+                clauses = emptyList()
             )
+        )
     )
-}
 
 internal fun getDefinesDirectVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()

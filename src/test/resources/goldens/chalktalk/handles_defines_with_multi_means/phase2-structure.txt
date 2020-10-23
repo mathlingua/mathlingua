@@ -111,9 +111,6 @@ Document(
                                                ]
                                    )
                                  )
-                                 elseIfSections = [
-                                                  ]
-                                 elseSection = null
                                )
                              ]
                  )

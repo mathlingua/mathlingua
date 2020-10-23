@@ -32,53 +32,25 @@ import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
-data class ElseIfThenPair(
-    val elseIfSection: ElseIfSection,
-    val thenSection: ThenSection
-)
-
 data class IfGroup(
     val ifSection: IfSection,
-    val thenSection: ThenSection,
-    val elseIfSections: List<ElseIfThenPair>,
-    val elseSection: ElseSection?
+    val thenSection: ThenSection
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(ifSection)
         fn(thenSection)
-        for (elseIf in elseIfSections) {
-            fn(elseIf.elseIfSection)
-            fn(elseIf.thenSection)
-        }
-        if (elseSection != null) {
-            fn(elseSection)
-        }
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(ifSection, thenSection)
-        for (pair in elseIfSections) {
-            sections.add(pair.elseIfSection)
-            sections.add(pair.thenSection)
-        }
-        if (elseSection != null) {
-            sections.add(elseSection)
-        }
         return mathlingua.common.chalktalk.phase2.ast.clause.toCode(writer, isArg, indent, *sections.toTypedArray())
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
         IfGroup(
             ifSection = ifSection.transform(chalkTransformer) as IfSection,
-            elseIfSections = elseIfSections.map {
-                ElseIfThenPair(
-                    it.elseIfSection.transform(chalkTransformer) as ElseIfSection,
-                    it.thenSection.transform(chalkTransformer) as ThenSection
-                )
-            },
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-            elseSection = elseSection?.transform(chalkTransformer) as ElseSection?
-    )
+            thenSection = thenSection.transform(chalkTransformer) as ThenSection
+        )
     )
 }
 
@@ -100,8 +72,6 @@ fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Valid
 
     var ifSection: IfSection? = null
     var thenSection: ThenSection? = null
-    val elseIfSections = mutableListOf<ElseIfThenPair>()
-    var elseSection: ElseSection? = null
 
     if (node.sections.size < 2) {
         errors.add(
@@ -121,64 +91,15 @@ fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Valid
             is ValidationFailure -> errors.addAll(validation.errors)
         }
 
-        var endIndex = node.sections.size - 1
-        if (node.sections.size >= 3) {
-            when (val validation = validateElseSection(node.sections.last(), tracker)) {
-                is ValidationSuccess -> {
-                    elseSection = validation.value
-                    endIndex = node.sections.size - 2
-                }
-            }
-        }
-
-        var i = 2
-        while (i <= endIndex) {
-            var elseIfSection: ElseIfSection? = null
-            var elseIfThenSection: ThenSection? = null
-            when (val validation = validateElseIfSection(node.sections[i], tracker)) {
-                is ValidationSuccess -> {
-                    elseIfSection = validation.value
-                    i++
-                }
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-
-            if (i < node.sections.size) {
-                when (val validation = validateThenSection(node.sections[i], tracker)) {
-                    is ValidationSuccess -> {
-                        elseIfThenSection = validation.value
-                        i++
-                    }
-                    is ValidationFailure -> errors.addAll(validation.errors)
-                }
-            }
-
-            if (elseIfSection == null) {
-                errors.add(
-                    ParseError(
-                        "Expected an elseif: section",
-                        getRow(node), getColumn(node)
-                    )
+        for (i in 2 until node.sections.size) {
+            val sec = node.sections[i]
+            errors.add(
+                ParseError(
+                    message = "Unexpected section ${sec.name.text}",
+                    row = getRow(sec),
+                    column = getColumn(sec)
                 )
-            }
-
-            if (elseIfThenSection == null) {
-                errors.add(
-                    ParseError(
-                        "Expected a then: section",
-                        getRow(node), getColumn(node)
-                    )
-                )
-            }
-
-            if (elseIfSection != null && elseIfThenSection != null) {
-                elseIfSections.add(
-                    ElseIfThenPair(
-                        elseIfSection,
-                        elseIfThenSection
-                    )
-                )
-            }
+            )
         }
     }
 
@@ -186,9 +107,7 @@ fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Valid
         validationFailure(errors)
     } else validationSuccess(tracker, rawNode, IfGroup(
         ifSection!!,
-        thenSection!!,
-        elseIfSections,
-        elseSection
+        thenSection!!
     )
     )
 }

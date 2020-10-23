@@ -52,13 +52,14 @@ fun validateStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Val
     if (node !is Phase1Token) {
         errors.add(
                 ParseError(
-                        "Cannot convert a to a ChalkTalkToken",
+                        "Expected a statement",
                         getRow(node), getColumn(node)
                 )
         )
+        return validationFailure(errors)
     }
 
-    val (rawText, type, row, column) = node as Phase1Token
+    val (rawText, type, row, column) = node
     if (type !== ChalkTalkTokenType.Statement) {
         errors.add(
                 ParseError(

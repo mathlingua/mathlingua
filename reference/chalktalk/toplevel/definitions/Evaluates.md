@@ -6,7 +6,7 @@ The `Evaluates:` form is used to disambiguate operators.  For example, it can be
 [<id>]
 Evaluates:
 when:
-as:
+to:
 ...
 using:
 Metadata?: <metadata-form>

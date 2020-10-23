@@ -22,9 +22,12 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ElseSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ThenSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.isElseSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.isThenSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.validateElseSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.validateThenSection
-import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.isToSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
@@ -44,7 +47,8 @@ data class WhenThenPair(
 
 data class PiecewiseGroup(
     val piecewiseSection: PiecewiseSection,
-    val whenThen: List<WhenThenPair>
+    val whenThen: List<WhenThenPair>,
+    val elseSection: ElseSection?
 ) : Clause {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -52,6 +56,9 @@ data class PiecewiseGroup(
         for (wt in whenThen) {
             fn(wt.whenSection)
             fn(wt.thenSection)
+        }
+        if (elseSection != null) {
+            fn(elseSection)
         }
     }
 
@@ -61,6 +68,7 @@ data class PiecewiseGroup(
             sections.add(wt.whenSection)
             sections.add(wt.thenSection)
         }
+        sections.add(elseSection)
         return topLevelToCode(
             writer,
             isArg,
@@ -78,7 +86,8 @@ data class PiecewiseGroup(
                     whenSection = chalkTransformer(it.whenSection) as WhenSection,
                     thenSection = chalkTransformer(it.thenSection) as ThenSection
                 )
-            }
+            },
+            elseSection = elseSection?.transform(chalkTransformer) as ElseSection?
         )
     )
 }
@@ -103,6 +112,7 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
     val column = getColumn(node)
 
     val whenThenList = mutableListOf<WhenThenPair>()
+    var elseSection: ElseSection? = null
     if (node.sections.isEmpty()) {
         errors.add(
             ParseError(
@@ -126,10 +136,10 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
 
-            if (i >= node.sections.size || !isToSection(node.sections[i])) {
+            if (i >= node.sections.size || !isThenSection(node.sections[i])) {
                 errors.add(
                     ParseError(
-                        message = "A when: section must have an to: section",
+                        message = "A when: section must have an then: section",
                         row = getRow(sec),
                         column = getColumn(sec)
                     )
@@ -156,6 +166,16 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
             }
         }
 
+        if (i < node.sections.size && isElseSection(node.sections[i])) {
+            when (val validation = validateElseSection(node.sections[i], tracker)) {
+                is ValidationSuccess -> {
+                    i++
+                    elseSection = validation.value
+                }
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        }
+
         while (i < node.sections.size) {
             val sec = node.sections[i++]
             errors.add(
@@ -174,7 +194,8 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
         validationSuccess(
             PiecewiseGroup(
                 piecewiseSection = PiecewiseSection(),
-                whenThen = whenThenList
+                whenThen = whenThenList,
+                elseSection
             ))
     }
 }

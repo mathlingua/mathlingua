@@ -19,9 +19,9 @@ means: 'f is \function:on{\real}to{\real}'
 evaluated:
 . piecewise:
   when: 'x > 0'
-  then: 'f(x) := 1'
+  to: '1'
   when: 'x < 0'
-  then: 'f(x) := -1'
-  else: 'f(x) := 0'
+  to: '-1'
+  else: '0'
 ```
 

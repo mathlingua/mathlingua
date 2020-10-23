@@ -22,12 +22,13 @@ import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.group.clause.WhenToPair
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ElseSection
-import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.isElseSection
-import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.isThenSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.validateElseSection
-import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.validateThenSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.ToSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.isToSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.validateToSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
@@ -40,22 +41,17 @@ import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
-data class WhenThenPair(
-    val whenSection: WhenSection,
-    val thenSection: ThenSection
-)
-
 data class PiecewiseGroup(
     val piecewiseSection: PiecewiseSection,
-    val whenThen: List<WhenThenPair>,
+    val whenTo: List<WhenToPair>,
     val elseSection: ElseSection?
 ) : Clause {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(piecewiseSection)
-        for (wt in whenThen) {
+        for (wt in whenTo) {
             fn(wt.whenSection)
-            fn(wt.thenSection)
+            fn(wt.toSection)
         }
         if (elseSection != null) {
             fn(elseSection)
@@ -64,9 +60,9 @@ data class PiecewiseGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf<Phase2Node?>(piecewiseSection)
-        for (wt in whenThen) {
+        for (wt in whenTo) {
             sections.add(wt.whenSection)
-            sections.add(wt.thenSection)
+            sections.add(wt.toSection)
         }
         sections.add(elseSection)
         return topLevelToCode(
@@ -81,10 +77,10 @@ data class PiecewiseGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
         PiecewiseGroup(
             piecewiseSection = piecewiseSection.transform(chalkTransformer) as PiecewiseSection,
-            whenThen = whenThen.map {
-                WhenThenPair(
+            whenTo = whenTo.map {
+                WhenToPair(
                     whenSection = chalkTransformer(it.whenSection) as WhenSection,
-                    thenSection = chalkTransformer(it.thenSection) as ThenSection
+                    toSection = chalkTransformer(it.toSection) as ToSection
                 )
             },
             elseSection = elseSection?.transform(chalkTransformer) as ElseSection?
@@ -111,7 +107,7 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
     val row = getRow(node)
     val column = getColumn(node)
 
-    val whenThenList = mutableListOf<WhenThenPair>()
+    val whenToList = mutableListOf<WhenToPair>()
     var elseSection: ElseSection? = null
     if (node.sections.isEmpty()) {
         errors.add(
@@ -136,10 +132,10 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
 
-            if (i >= node.sections.size || !isThenSection(node.sections[i])) {
+            if (i >= node.sections.size || !isToSection(node.sections[i])) {
                 errors.add(
                     ParseError(
-                        message = "A when: section must have an then: section",
+                        message = "A when: section must have an to: section",
                         row = getRow(sec),
                         column = getColumn(sec)
                     )
@@ -147,20 +143,20 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
                 break
             }
 
-            var thenSection: ThenSection? = null
-            when (val validation = validateThenSection(node.sections[i], tracker)) {
+            var toSection: ToSection? = null
+            when (val validation = validateToSection(node.sections[i], tracker)) {
                 is ValidationSuccess -> {
                     i++
-                    thenSection = validation.value
+                    toSection = validation.value
                 }
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
 
-            if (whenSection != null && thenSection != null) {
-                whenThenList.add(
-                    WhenThenPair(
+            if (whenSection != null && toSection != null) {
+                whenToList.add(
+                    WhenToPair(
                         whenSection,
-                        thenSection
+                        toSection
                     )
                 )
             }
@@ -194,7 +190,7 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
         validationSuccess(
             PiecewiseGroup(
                 piecewiseSection = PiecewiseSection(),
-                whenThen = whenThenList,
+                whenTo = whenToList,
                 elseSection
             ))
     }

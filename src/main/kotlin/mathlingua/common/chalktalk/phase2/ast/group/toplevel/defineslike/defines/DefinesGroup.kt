@@ -254,7 +254,7 @@ private fun validateDefinesGroupImpl(
 
     val sections = group.sections
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections,
@@ -267,22 +267,22 @@ private fun validateDefinesGroupImpl(
     }
 
     val definesLike = sectionMap["Defines"]!!
-    val whenNode = sectionMap["when"] ?: emptyList()
+    val whenNode = sectionMap["when"]
     val means = sectionMap["means"]
     val evaluated = sectionMap["evaluated"]
-    val using = sectionMap["using"] ?: emptyList()
-    val written = sectionMap["written"] ?: emptyList()
-    val metadata = sectionMap["Metadata"] ?: emptyList()
+    val using = sectionMap["using"]
+    val written = sectionMap["written"]
+    val metadata = sectionMap["Metadata"]
 
     var definesLikeSection: DefinesSection? = null
-    when (val definesLikeValidation = validateDefinesSection(definesLike[0], tracker)) {
+    when (val definesLikeValidation = validateDefinesSection(definesLike, tracker)) {
         is ValidationSuccess -> definesLikeSection = definesLikeValidation.value
         is ValidationFailure -> errors.addAll(definesLikeValidation.errors)
     }
 
     var whenSection: WhenSection? = null
-    if (whenNode.isNotEmpty()) {
-        when (val assumingValidation = validateWhenSection(whenNode[0], tracker)) {
+    if (whenNode != null) {
+        when (val assumingValidation = validateWhenSection(whenNode, tracker)) {
             is ValidationSuccess -> whenSection = assumingValidation.value
             is ValidationFailure -> errors.addAll(assumingValidation.errors)
         }
@@ -290,7 +290,7 @@ private fun validateDefinesGroupImpl(
 
     var meansSection: MeansSection? = null
     if (means != null) {
-        when (val endValidation = validateMeansSection(means[0], tracker)) {
+        when (val endValidation = validateMeansSection(means, tracker)) {
             is ValidationSuccess -> meansSection = endValidation.value
             is ValidationFailure -> errors.addAll(endValidation.errors)
         }
@@ -298,31 +298,31 @@ private fun validateDefinesGroupImpl(
 
     var evaluatedSection: EvaluatedSection? = null
     if (evaluated != null) {
-        when (val computesValidation = validateComputesSection(evaluated[0], tracker)) {
+        when (val computesValidation = validateComputesSection(evaluated, tracker)) {
             is ValidationSuccess -> evaluatedSection = computesValidation.value
             is ValidationFailure -> errors.addAll(computesValidation.errors)
         }
     }
 
     var usingSection: UsingSection? = null
-    if (using.isNotEmpty()) {
-        when (val aliasValidation = validateUsingSection(using[0], tracker)) {
+    if (using != null) {
+        when (val aliasValidation = validateUsingSection(using, tracker)) {
             is ValidationSuccess -> usingSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
     }
 
     var writtenSection: WrittenSection? = null
-    if (written.isNotEmpty()) {
-        when (val writtenValidation = validateWrittenSection(written[0], tracker)) {
+    if (written != null) {
+        when (val writtenValidation = validateWrittenSection(written, tracker)) {
             is ValidationSuccess -> writtenSection = writtenValidation.value
             is ValidationFailure -> errors.addAll(writtenValidation.errors)
         }
     }
 
     var metaDataSection: MetaDataSection? = null
-    if (metadata.isNotEmpty()) {
-        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
+    if (metadata != null) {
+        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }

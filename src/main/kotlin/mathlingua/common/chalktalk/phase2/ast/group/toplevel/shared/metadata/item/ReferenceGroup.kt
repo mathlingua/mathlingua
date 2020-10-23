@@ -52,7 +52,7 @@ fun validateReferenceGroup(groupNode: Group, tracker: MutableLocationTracker): V
 
     val sections = group.sections
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
                 sections, "reference"
@@ -62,7 +62,7 @@ fun validateReferenceGroup(groupNode: Group, tracker: MutableLocationTracker): V
         return validationFailure(errors)
     }
 
-    val rawReference = sectionMap["reference"]!![0]
+    val rawReference = sectionMap["reference"]!!
     var referenceSection: ReferenceSection? = null
     when (val validation = validateReferenceSection(rawReference, tracker)) {
         is ValidationSuccess -> referenceSection = validation.value

@@ -134,7 +134,7 @@ fun validateViewsGroup(groupNode: Group, tracker: MutableLocationTracker): Valid
 
     val sections = group.sections
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections,
@@ -153,32 +153,32 @@ fun validateViewsGroup(groupNode: Group, tracker: MutableLocationTracker): Valid
     val metadataNode = sectionMap["Metadata"]
 
     var viewsSection: ViewsSection? = null
-    when (val validation = validateViewsSection(viewsNode[0], tracker)) {
+    when (val validation = validateViewsSection(viewsNode, tracker)) {
         is ValidationSuccess -> viewsSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var singleFromSection: SingleFromSection? = null
-    when (val validation = validateSingleFromSection(fromNode[0], tracker)) {
+    when (val validation = validateSingleFromSection(fromNode, tracker)) {
         is ValidationSuccess -> singleFromSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var singleToSection: SingleToSection? = null
-    when (val validation = validateSingleToSection(toNode[0], tracker)) {
+    when (val validation = validateSingleToSection(toNode, tracker)) {
         is ValidationSuccess -> singleToSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var singleAsSection: SingleAsSection? = null
-    when (val validation = validateSingleAsSection(asNode[0], tracker)) {
+    when (val validation = validateSingleAsSection(asNode, tracker)) {
         is ValidationSuccess -> singleAsSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var usingSection: UsingSection? = null
     if (usingNode != null) {
-        when (val validation = validateUsingSection(usingNode[0], tracker)) {
+        when (val validation = validateUsingSection(usingNode, tracker)) {
             is ValidationSuccess -> usingSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }
@@ -186,7 +186,7 @@ fun validateViewsGroup(groupNode: Group, tracker: MutableLocationTracker): Valid
 
     var metaDataSection: MetaDataSection? = null
     if (metadataNode != null) {
-        when (val validation = validateMetaDataSection(metadataNode[0], tracker)) {
+        when (val validation = validateMetaDataSection(metadataNode, tracker)) {
             is ValidationSuccess -> metaDataSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }

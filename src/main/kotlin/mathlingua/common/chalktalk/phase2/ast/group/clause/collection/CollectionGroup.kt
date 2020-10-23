@@ -92,7 +92,7 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
 
     val (sections) = node
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections,
@@ -110,33 +110,33 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
     val whereNode = sectionMap["where"]!!
 
     var collectionSection: CollectionSection? = null
-    when (val validation = validateCollectionSection(collectionNode[0], tracker)) {
+    when (val validation = validateCollectionSection(collectionNode, tracker)) {
         is ValidationSuccess -> collectionSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var ofSection: OfSection? = null
-    when (val validation = validateOfSection(ofNode[0], tracker)) {
+    when (val validation = validateOfSection(ofNode, tracker)) {
         is ValidationSuccess -> ofSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var inSection: InSection? = null
     if (inNode != null) {
-        when (val validation = validateInSection(inNode[0], tracker)) {
+        when (val validation = validateInSection(inNode, tracker)) {
             is ValidationSuccess -> inSection = validation.value
             is ValidationFailure -> errors.addAll(validation.errors)
         }
     }
 
     var forSection: ForSection? = null
-    when (val validation = validateForSection(forNode[0], tracker)) {
+    when (val validation = validateForSection(forNode, tracker)) {
         is ValidationSuccess -> forSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
 
     var whereSection: WhereSection? = null
-    when (val validation = validateWhereSection(whereNode[0], tracker)) {
+    when (val validation = validateWhereSection(whereNode, tracker)) {
         is ValidationSuccess -> whereSection = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }

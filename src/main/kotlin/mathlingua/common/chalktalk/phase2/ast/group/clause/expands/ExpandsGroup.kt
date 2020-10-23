@@ -56,7 +56,7 @@ fun validateExpandsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): 
 
     val (sections) = node
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
                 sections,
@@ -70,14 +70,14 @@ fun validateExpandsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): 
     var expandsSection: ExpandsSection? = null
     val expandsNode = sectionMap["expands"]
 
-    when (val expandsEvaluation = validateExpandsSection(expandsNode!![0], tracker)) {
+    when (val expandsEvaluation = validateExpandsSection(expandsNode!!, tracker)) {
         is ValidationSuccess -> expandsSection = expandsEvaluation.value
         is ValidationFailure -> errors.addAll(expandsEvaluation.errors)
     }
 
     var asSection: AsSection? = null
     val asNode = sectionMap["as"]
-    when (val asValidation = validateAsSection(asNode!![0], tracker)) {
+    when (val asValidation = validateAsSection(asNode!!, tracker)) {
         is ValidationSuccess -> asSection = asValidation.value
         is ValidationFailure -> errors.addAll(asValidation.errors)
     }

@@ -254,7 +254,7 @@ fun <G : Phase2Node, S> validateSingleSectionGroup(
     }
 
     val (sections) = node
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
                 sections,
@@ -267,7 +267,7 @@ fun <G : Phase2Node, S> validateSingleSectionGroup(
 
     var section: S? = null
     val sect = sectionMap[sectionName]
-    when (val validation = validateSection(sect!![0], tracker)) {
+    when (val validation = validateSection(sect!!, tracker)) {
         is ValidationSuccess -> section = validation.value
         is ValidationFailure -> errors.addAll(validation.errors)
     }
@@ -301,7 +301,7 @@ fun <G : Phase2Node, S1, S2> validateDoubleSectionGroup(
 
     val (sections) = node
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
                 sections, section1Name, section2Name
@@ -313,14 +313,14 @@ fun <G : Phase2Node, S1, S2> validateDoubleSectionGroup(
 
     var section1: S1? = null
     val sect1 = sectionMap[section1Name]
-    when (val section1Validation = validateSection1(sect1!![0], tracker)) {
+    when (val section1Validation = validateSection1(sect1!!, tracker)) {
         is ValidationSuccess -> section1 = section1Validation.value
         is ValidationFailure -> errors.addAll(section1Validation.errors)
     }
 
     var section2: S2? = null
     val sect2 = sectionMap[section2Name]
-    when (val section2Validation = validateSection2(sect2!![0], tracker)) {
+    when (val section2Validation = validateSection2(sect2!!, tracker)) {
         is ValidationSuccess -> section2 = section2Validation.value
         is ValidationFailure -> errors.addAll(section2Validation.errors)
     }

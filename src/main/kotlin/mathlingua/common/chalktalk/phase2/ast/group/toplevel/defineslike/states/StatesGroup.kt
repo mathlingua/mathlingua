@@ -54,7 +54,7 @@ data class StatesGroup(
     val id: IdStatement,
     val statesSection: StatesSection,
     val whenSection: WhenSection?,
-    val thatSections: List<ThatSection>,
+    val thatSection: ThatSection,
     val usingSection: UsingSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
@@ -66,7 +66,7 @@ data class StatesGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
-        thatSections.forEach(fn)
+        fn(thatSection)
         if (usingSection != null) {
             fn(usingSection)
         }
@@ -80,7 +80,7 @@ data class StatesGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(statesSection, whenSection)
-        sections.addAll(thatSections)
+        sections.add(thatSection)
         sections.add(usingSection)
         sections.add(writtenSection)
         sections.add(metaDataSection)
@@ -99,7 +99,7 @@ data class StatesGroup(
             id = id.transform(chalkTransformer) as IdStatement,
             statesSection = statesSection.transform(chalkTransformer) as StatesSection,
             whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
-            thatSections = thatSections.map { chalkTransformer(it) as ThatSection },
+            thatSection = chalkTransformer(thatSection) as ThatSection,
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
             writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
@@ -142,7 +142,7 @@ fun validateStatesGroup(groupNode: Group, tracker: MutableLocationTracker): Vali
 
     val sections = group.sections
 
-    val sectionMap: Map<String, List<Section>>
+    val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
             sections,
@@ -154,53 +154,51 @@ fun validateStatesGroup(groupNode: Group, tracker: MutableLocationTracker): Vali
     }
 
     val definesLike = sectionMap["States"]!!
-    val whenNode = sectionMap["when"] ?: emptyList()
-    val ends = sectionMap["that"]!!
-    val using = sectionMap["using"] ?: emptyList()
-    val written = sectionMap["written"] ?: emptyList()
-    val metadata = sectionMap["Metadata"] ?: emptyList()
+    val whenNode = sectionMap["when"]
+    val that = sectionMap["that"]!!
+    val using = sectionMap["using"]
+    val written = sectionMap["written"]
+    val metadata = sectionMap["Metadata"]
 
     var statesSection: StatesSection? = null
-    when (val representsValidation = validateStatesSection(definesLike[0], tracker)) {
+    when (val representsValidation = validateStatesSection(definesLike, tracker)) {
         is ValidationSuccess -> statesSection = representsValidation.value
         is ValidationFailure -> errors.addAll(representsValidation.errors)
     }
 
     var whenSection: WhenSection? = null
-    if (whenNode.isNotEmpty()) {
-        when (val assumingValidation = validateWhenSection(whenNode[0], tracker)) {
+    if (whenNode != null) {
+        when (val assumingValidation = validateWhenSection(whenNode, tracker)) {
             is ValidationSuccess -> whenSection = assumingValidation.value
             is ValidationFailure -> errors.addAll(assumingValidation.errors)
         }
     }
 
-    val endSections = mutableListOf<ThatSection>()
-    for (end in ends) {
-        when (val endValidation = validateThatSection(end, tracker)) {
-            is ValidationSuccess -> endSections.add(endValidation.value)
-            is ValidationFailure -> errors.addAll(endValidation.errors)
-        }
+    var thatSection: ThatSection? = null
+    when (val endValidation = validateThatSection(that!!, tracker)) {
+        is ValidationSuccess -> thatSection = endValidation.value
+        is ValidationFailure -> errors.addAll(endValidation.errors)
     }
 
     var usingSection: UsingSection? = null
-    if (using.isNotEmpty()) {
-        when (val aliasValidation = validateUsingSection(using[0], tracker)) {
+    if (using != null) {
+        when (val aliasValidation = validateUsingSection(using, tracker)) {
             is ValidationSuccess -> usingSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
     }
 
     var writtenSection: WrittenSection? = null
-    if (written.isNotEmpty()) {
-        when (val writtenValidation = validateWrittenSection(written[0], tracker)) {
+    if (written != null) {
+        when (val writtenValidation = validateWrittenSection(written, tracker)) {
             is ValidationSuccess -> writtenSection = writtenValidation.value
             is ValidationFailure -> errors.addAll(writtenValidation.errors)
         }
     }
 
     var metaDataSection: MetaDataSection? = null
-    if (metadata.isNotEmpty()) {
-        when (val metaDataValidation = validateMetaDataSection(metadata[0], tracker)) {
+    if (metadata != null) {
+        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
@@ -215,9 +213,7 @@ fun validateStatesGroup(groupNode: Group, tracker: MutableLocationTracker): Vali
             id?.signature(),
             id!!, statesSection!!,
             whenSection,
-            // the end sections are in reverse order so they
-            // must be reversed here to be in the correct order
-            endSections.reversed(),
+            thatSection!!,
             usingSection,
             writtenSection,
             metaDataSection

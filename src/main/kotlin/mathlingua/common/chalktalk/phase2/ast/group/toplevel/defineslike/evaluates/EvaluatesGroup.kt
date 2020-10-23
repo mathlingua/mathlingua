@@ -25,6 +25,9 @@ import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.common.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ElseSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.isElseSection
+import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.validateElseSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.ToSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.isToSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.mapping.validateToSection
@@ -62,6 +65,7 @@ data class EvaluatesGroup(
     val id: IdStatement,
     val evaluatesSection: EvaluatesSection,
     val whenTo: List<WhenToPair>,
+    val elseSection: ElseSection,
     val usingSection: UsingSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
@@ -74,6 +78,7 @@ data class EvaluatesGroup(
             fn(wt.whenSection)
             fn(wt.toSection)
         }
+        fn(elseSection)
         if (usingSection != null) {
             fn(usingSection)
         }
@@ -91,6 +96,7 @@ data class EvaluatesGroup(
             sections.add(wt.whenSection)
             sections.add(wt.toSection)
         }
+        sections.add(elseSection)
         sections.add(usingSection)
         sections.add(writtenSection)
         sections.add(metaDataSection)
@@ -114,6 +120,7 @@ data class EvaluatesGroup(
                     toSection = chalkTransformer(it.toSection) as ToSection
                 )
             },
+            elseSection = elseSection.transform(chalkTransformer) as ElseSection,
             usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
             writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
             metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
@@ -164,6 +171,7 @@ fun validateEvaluatesGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
     val column = getColumn(node)
 
     val whenToList = mutableListOf<WhenToPair>()
+    var elseSection: ElseSection? = null
     var usingSection: UsingSection? = null
     var metaDataSection: MetaDataSection? = null
     var writtenSection: WrittenSection? = null
@@ -218,6 +226,16 @@ fun validateEvaluatesGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
             }
         }
 
+        if (i < node.sections.size && isElseSection(node.sections[i])) {
+            when (val validation = validateElseSection(node.sections[i], tracker)) {
+                is ValidationSuccess -> {
+                    elseSection = validation.value
+                    i++
+                }
+                is ValidationFailure -> errors.addAll(validation.errors)
+            }
+        }
+
         if (i < node.sections.size && isUsingSection(node.sections[i])) {
             when (val validation = validateUsingSection(node.sections[i], tracker)) {
                 is ValidationSuccess -> {
@@ -257,6 +275,16 @@ fun validateEvaluatesGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
         }
     }
 
+    if (elseSection == null) {
+        errors.add(
+            ParseError(
+                message = "Expected an else: section",
+                row = row,
+                column = column
+            )
+        )
+    }
+
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else {
@@ -268,7 +296,8 @@ fun validateEvaluatesGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
                 whenTo = whenToList,
                 usingSection = usingSection,
                 writtenSection = writtenSection,
-                metaDataSection = metaDataSection
+                metaDataSection = metaDataSection,
+                elseSection = elseSection!!
         ))
     }
 }

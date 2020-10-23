@@ -18,6 +18,7 @@ package mathlingua.common.chalktalk.phase2.ast.group.clause.`if`
 
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
+import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
@@ -43,6 +44,8 @@ data class ThenSection(val clauses: ClauseListNode) : Phase2Node {
     )
     )
 }
+
+fun isThenSection(sec: Section) = sec.name.text == "then"
 
 fun validateThenSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
         AtLeast(1),

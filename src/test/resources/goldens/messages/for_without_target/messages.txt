@@ -1,8 +1,16 @@
 Row: 2
 Column: 3
 Message:
-Expected section for
+Section 'for' requires at least one argument.
 EndMessage:
+
+
+Row: 2
+Column: 3
+Message:
+Missing required section for
+EndMessage:
+
 
 Row: 1
 Column: 1

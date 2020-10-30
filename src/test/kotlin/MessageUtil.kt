@@ -16,7 +16,9 @@
 
 package mathlingua
 
+import mathlingua.common.MathLingua
 import mathlingua.common.support.ParseError
+import mathlingua.common.support.ValidationFailure
 import java.io.File
 import java.io.IOException
 import java.lang.RuntimeException
@@ -94,10 +96,40 @@ fun loadMessageTestCases(): List<MessageTestCase> {
                 continue
             }
 
+            val messageFile = File(caseDir, "messages.txt")
+            val input = File(caseDir, "input.math").readText()
+            val expectedErrors = if (OVERWRITE_GOLDEN_FILES) {
+                val validation = MathLingua.parse(input)
+                val errors = if (validation is ValidationFailure) {
+                    validation.errors
+                } else {
+                    emptyList()
+                }
+
+                val builder = StringBuilder()
+                for ((index, err) in errors.withIndex()) {
+                    builder.append("Row: ")
+                    builder.append(err.row)
+                    builder.append("\nColumn: ")
+                    builder.append(err.column)
+                    builder.append("\nMessage:\n")
+                    builder.append(err.message)
+                    builder.append("\nEndMessage:")
+                    if (index != errors.size - 1) {
+                        builder.append("\n\n\n")
+                    }
+                }
+                messageFile.writeText(builder.toString())
+
+                errors
+            } else {
+                loadExpectedErrors(messageFile.readText())
+            }
+
             result.add(MessageTestCase(
                 name = caseDir.name,
-                input = File(caseDir, "input.math").readText(),
-                expectedErrors = loadExpectedErrors(File(caseDir, "messages.txt").readText())
+                input = input,
+                expectedErrors = expectedErrors
             ))
         }
     }

@@ -255,16 +255,13 @@ fun <G : Phase2Node, S : Phase2Node> validateOptionalSingleSectionGroup(
     validateSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>
 ): Validation<G> = validateGroup(tracker, rawNode,
     listOf(Validator(
-        name = sectionName,
+        name = sectionName.removeSuffix("?"),
+        optional = sectionName.endsWith("?"),
         validate = validateSection
     ))
 ) {
-    val node = it[sectionName]
-    if (node == null && !sectionName.endsWith("?")) {
-        validationFailure(listOf(ParseError("Expected section $sectionName", getRow(rawNode), getColumn(rawNode))))
-    } else {
-        validationSuccess(tracker, rawNode, buildGroup(node as S))
-    }
+    val node = it[sectionName.removeSuffix("?")]
+    validationSuccess(tracker, rawNode, buildGroup(node as S))
 }
 
 fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node> validateDoubleSectionGroup(
@@ -296,39 +293,20 @@ fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node> validateOptionalDoubleSec
 ): Validation<G> = validateGroup(tracker, rawNode,
     listOf(
         Validator(
-            name = section1Name,
+            name = section1Name.removeSuffix("?"),
+            optional = section1Name.endsWith("?"),
             validate = validateSection1
         ),
         Validator(
-            name = section2Name,
+            name = section2Name.removeSuffix("?"),
+            optional = section2Name.endsWith("?"),
             validate = validateSection2
         )
     )
 ) {
-    val node1 = it[section1Name]
-    val node2 = it[section2Name]
-    if ((node1 == null && !section1Name.endsWith("?")) || (node2 == null && !section2Name.endsWith("?"))) {
-        val row = getRow(rawNode)
-        val col = getColumn(rawNode)
-        val errors = mutableListOf<ParseError>()
-        if (node1 == null && !section1Name.endsWith("?")) {
-            errors.add(ParseError(
-                message = "Expected section $section1Name",
-                row = row,
-                column = col
-            ))
-        }
-        if (node2 == null && !section2Name.endsWith("?")) {
-            errors.add(ParseError(
-                message = "Expected section $section2Name",
-                row = row,
-                column = col
-            ))
-        }
-        validationFailure(errors)
-    } else {
-        validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2))
-    }
+    val node1 = it[section1Name.removeSuffix("?")]
+    val node2 = it[section2Name.removeSuffix("?")]
+    validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2))
 }
 
 fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node, S3 : Phase2Node> validateMidOptionalTripleSectionGroup(
@@ -366,53 +344,26 @@ fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node, S3 : Phase2Node> validate
 ): Validation<G> = validateGroup(tracker, rawNode,
     listOf(
         Validator(
-            name = section1Name,
+            name = section1Name.removeSuffix("?"),
+            optional = section1Name.endsWith("?"),
             validate = validateSection1
         ),
         Validator(
-            name = section2Name,
+            name = section2Name.removeSuffix("?"),
+            optional = section2Name.endsWith("?"),
             validate = validateSection2
         ),
         Validator(
-            name = section3Name,
+            name = section3Name.removeSuffix("?"),
+            optional = section3Name.endsWith("?"),
             validate = validateSection3
         )
     )
 ) {
-    val node1 = it[section1Name]
-    val node2 = it[section2Name]
-    val node3 = it[section3Name]
-    if ((node1 == null && !section1Name.endsWith("?")) ||
-        (node2 == null && !section2Name.endsWith("?")) ||
-        (node3 == null && !section3Name.endsWith("?"))) {
-        val row = getRow(rawNode)
-        val col = getColumn(rawNode)
-        val errors = mutableListOf<ParseError>()
-        if (node1 == null && !section1Name.endsWith("?")) {
-            errors.add(ParseError(
-                message = "Expected section $section1Name",
-                row = row,
-                column = col
-            ))
-        }
-        if (node2 == null && !section2Name.endsWith("?")) {
-            errors.add(ParseError(
-                message = "Expected section $section2Name",
-                row = row,
-                column = col
-            ))
-        }
-        if (node3 == null && !section3Name.endsWith("?")) {
-            errors.add(ParseError(
-                message = "Expected section $section3Name",
-                row = row,
-                column = col
-            ))
-        }
-        validationFailure(errors)
-    } else {
-        validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3))
-    }
+    val node1 = it[section1Name.removeSuffix("?")]
+    val node2 = it[section2Name.removeSuffix("?")]
+    val node3 = it[section3Name.removeSuffix("?")]
+    validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3))
 }
 
 fun <Wrapped : Phase2Node, Base> validateWrappedNode(
@@ -458,6 +409,7 @@ fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Pha
 
 data class Validator(
     val name: String,
+    val optional: Boolean,
     val validate: (section: Section, tracker: MutableLocationTracker) -> Validation<Phase2Node>
 )
 
@@ -485,7 +437,13 @@ fun <G : Phase2Node> validateGroup(
     val sectionMap: Map<String, Section>
     try {
         sectionMap = identifySections(
-            sections, *validations.map { it.name }.toTypedArray()
+            sections, *validations.map {
+                if (it.optional) {
+                    "${it.name}?"
+                } else {
+                    it.name
+                }
+            }.toTypedArray()
         )
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
@@ -497,16 +455,29 @@ fun <G : Phase2Node> validateGroup(
     } else {
         val partMap = mutableMapOf<String, Phase2Node?>()
         for (v in validations) {
-            var node: Phase2Node? = null
-            val sect = sectionMap[v.name.removeSuffix("?")]
+            var n: Phase2Node? = null
+            val sect = sectionMap[v.name]
             if (sect != null) {
                 when (val sectionValidation = v.validate(sect, tracker)) {
-                    is ValidationSuccess -> node = sectionValidation.value
+                    is ValidationSuccess -> n = sectionValidation.value
                     is ValidationFailure -> errors.addAll(sectionValidation.errors)
                 }
             }
-            partMap[v.name.removeSuffix("?")] = node
+            if (n == null && !v.optional) {
+                errors.add(
+                    ParseError(
+                        message = "Missing required section ${v.name}",
+                        row = getRow(node),
+                        column = getColumn(node)
+                    )
+                )
+            }
+            partMap[v.name] = n
         }
-        build(partMap)
+        if (errors.isNotEmpty()) {
+            validationFailure(errors)
+        } else {
+            build(partMap)
+        }
     }
 }

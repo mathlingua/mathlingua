@@ -1,8 +1,16 @@
 Row: 2
+Column: 8
+Message:
+Expected an Target
+EndMessage:
+
+
+Row: 2
 Column: 3
 Message:
-Expected section for
+Missing required section for
 EndMessage:
+
 
 Row: 1
 Column: 1

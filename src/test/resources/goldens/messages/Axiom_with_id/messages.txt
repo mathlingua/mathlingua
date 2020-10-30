@@ -10,5 +10,3 @@ Column: 1
 Message:
 Expected at least 1 arguments but found 0
 EndMessage:
-
-

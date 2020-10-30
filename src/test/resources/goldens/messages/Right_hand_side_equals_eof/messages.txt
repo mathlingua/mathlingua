@@ -10,5 +10,3 @@ Column: 0
 Message:
 Expected a token of type Begin but found End
 EndMessage:
-
-

@@ -1,13 +1,13 @@
 Row: 2
 Column: 3
 Message:
-Expected at least 1 arguments but found 0
+Expected section if
 EndMessage:
 
-Row: 3
+Row: 2
 Column: 3
 Message:
-Expected at least 1 arguments but found 0
+Expected section then
 EndMessage:
 
 Row: 1

@@ -20,16 +20,12 @@ import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
+import mathlingua.common.chalktalk.phase2.ast.clause.Validator
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.common.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.expands.AsSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.expands.validateAsSection
-import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.support.MutableLocationTracker
-import mathlingua.common.support.ParseError
-import mathlingua.common.support.Validation
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
 data class MappingGroup(
@@ -68,72 +64,32 @@ data class MappingGroup(
 
 fun isMappingGroup(node: Phase1Node) = firstSectionMatchesName(node, "mapping")
 
-fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<MappingGroup> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Group) {
-        errors.add(
-            ParseError(
-                "Expected a Group",
-                getRow(node), getColumn(node)
-            )
-        )
-        return validationFailure(errors)
-    }
-
-    val (sections) = node
-
-    val sectionMap: Map<String, Section>
-    try {
-        sectionMap = identifySections(
-            sections,
-            "mapping", "from", "to", "as"
-        )
-    } catch (e: ParseError) {
-        errors.add(ParseError(e.message, e.row, e.column))
-        return validationFailure(errors)
-    }
-
-    val mappingNode = sectionMap["mapping"]!!
-    val fromNode = sectionMap["from"]!!
-    val toNode = sectionMap["to"]!!
-    val asNode = sectionMap["as"]!!
-
-    var mappingSection: MappingSection? = null
-    when (val evaluation = validateMappingSection(mappingNode, tracker)) {
-        is ValidationSuccess -> mappingSection = evaluation.value
-        is ValidationFailure -> errors.addAll(evaluation.errors)
-    }
-
-    var fromSection: FromSection? = null
-    when (val evaluation = validateFromSection(fromNode, tracker)) {
-        is ValidationSuccess -> fromSection = evaluation.value
-        is ValidationFailure -> errors.addAll(evaluation.errors)
-    }
-
-    var toSection: ToSection? = null
-    when (val evaluation = validateToSection(toNode, tracker)) {
-        is ValidationSuccess -> toSection = evaluation.value
-        is ValidationFailure -> errors.addAll(evaluation.errors)
-    }
-
-    var asSection: AsSection? = null
-    when (val evaluation = validateAsSection(asNode, tracker)) {
-        is ValidationSuccess -> asSection = evaluation.value
-        is ValidationFailure -> errors.addAll(evaluation.errors)
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else validationSuccess(
-        tracker,
-        rawNode,
-        MappingGroup(
-            mappingSection!!,
-            fromSection!!,
-            toSection!!,
-            asSection!!
+fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateGroup(
+    tracker,
+    rawNode,
+    listOf(
+        Validator(
+            name = "mapping",
+            validate = ::validateMappingSection
+        ),
+        Validator(
+            name = "from",
+            validate = ::validateFromSection
+        ),
+        Validator(
+            name = "to",
+            validate = ::validateToSection
+        ),
+        Validator(
+            name = "as",
+            validate = ::validateAsSection
         )
     )
+) {
+    validationSuccess(tracker, rawNode, MappingGroup(
+        mappingSection = it["mapping"] as MappingSection,
+        fromSection = it["from"] as FromSection,
+        toSection = it["to"] as ToSection,
+        asSection = it["as"] as AsSection
+    ))
 }

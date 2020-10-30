@@ -20,18 +20,14 @@ import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
+import mathlingua.common.chalktalk.phase2.ast.clause.Validator
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.common.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`for`.ForSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`for`.validateForSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
-import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.support.MutableLocationTracker
-import mathlingua.common.support.ParseError
-import mathlingua.common.support.Validation
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
 data class CollectionGroup(
@@ -76,82 +72,36 @@ data class CollectionGroup(
 
 fun isCollectionGroup(node: Phase1Node) = firstSectionMatchesName(node, "collection")
 
-fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<CollectionGroup> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Group) {
-        errors.add(
-            ParseError(
-                "Expected a Group",
-                getRow(node), getColumn(node)
-            )
-        )
-        return validationFailure(errors)
-    }
-
-    val (sections) = node
-
-    val sectionMap: Map<String, Section>
-    try {
-        sectionMap = identifySections(
-            sections,
-            "collection", "of", "in?", "for", "where"
-        )
-    } catch (e: ParseError) {
-        errors.add(ParseError(e.message, e.row, e.column))
-        return validationFailure(errors)
-    }
-
-    val collectionNode = sectionMap["collection"]!!
-    val ofNode = sectionMap["of"]!!
-    val inNode = sectionMap["in"]
-    val forNode = sectionMap["for"]!!
-    val whereNode = sectionMap["where"]!!
-
-    var collectionSection: CollectionSection? = null
-    when (val validation = validateCollectionSection(collectionNode, tracker)) {
-        is ValidationSuccess -> collectionSection = validation.value
-        is ValidationFailure -> errors.addAll(validation.errors)
-    }
-
-    var ofSection: OfSection? = null
-    when (val validation = validateOfSection(ofNode, tracker)) {
-        is ValidationSuccess -> ofSection = validation.value
-        is ValidationFailure -> errors.addAll(validation.errors)
-    }
-
-    var inSection: InSection? = null
-    if (inNode != null) {
-        when (val validation = validateInSection(inNode, tracker)) {
-            is ValidationSuccess -> inSection = validation.value
-            is ValidationFailure -> errors.addAll(validation.errors)
-        }
-    }
-
-    var forSection: ForSection? = null
-    when (val validation = validateForSection(forNode, tracker)) {
-        is ValidationSuccess -> forSection = validation.value
-        is ValidationFailure -> errors.addAll(validation.errors)
-    }
-
-    var whereSection: WhereSection? = null
-    when (val validation = validateWhereSection(whereNode, tracker)) {
-        is ValidationSuccess -> whereSection = validation.value
-        is ValidationFailure -> errors.addAll(validation.errors)
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else validationSuccess(
-        tracker,
-        rawNode,
-        CollectionGroup(
-            collectionSection!!,
-            ofSection!!,
-            inSection,
-            forSection!!,
-            whereSection!!
+fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateGroup(
+    tracker,
+    rawNode,
+    listOf(
+        Validator(
+            name = "collection",
+            validate = ::validateCollectionSection
+        ),
+        Validator(
+            name = "of",
+            validate = ::validateOfSection
+        ),
+        Validator(
+            name = "in?",
+            validate = ::validateInSection
+        ),
+        Validator(
+            name = "for",
+            validate = ::validateForSection
+        ),
+        Validator(
+            name = "where",
+            validate = ::validateWhereSection
         )
     )
-}
+) {
+    validationSuccess(tracker, rawNode, CollectionGroup(
+    collectionSection = it["collection"] as CollectionSection,
+    ofSection = it["of"] as OfSection,
+    inSection = it["in"] as InSection?,
+    forSection = it["for"] as ForSection,
+    whereSection = it["where"] as WhereSection
+)) }

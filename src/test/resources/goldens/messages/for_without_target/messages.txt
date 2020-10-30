@@ -1,9 +1,8 @@
 Row: 2
 Column: 3
 Message:
-Section 'for' requires at least one argument.
+Expected section for
 EndMessage:
-
 
 Row: 1
 Column: 1

@@ -78,22 +78,27 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
     listOf(
         Validator(
             name = "collection",
+            optional = false,
             validate = ::validateCollectionSection
         ),
         Validator(
             name = "of",
+            optional = false,
             validate = ::validateOfSection
         ),
         Validator(
-            name = "in?",
+            name = "in",
+            optional = true,
             validate = ::validateInSection
         ),
         Validator(
             name = "for",
+            optional = false,
             validate = ::validateForSection
         ),
         Validator(
             name = "where",
+            optional = false,
             validate = ::validateWhereSection
         )
     )

@@ -1,14 +1,30 @@
 Row: 2
 Column: 3
 Message:
-Expected section iff
+Expected at least 1 arguments but found 0
 EndMessage:
+
 
 Row: 2
 Column: 3
 Message:
-Expected section then
+Missing required section iff
 EndMessage:
+
+
+Row: 3
+Column: 3
+Message:
+Expected at least 1 arguments but found 0
+EndMessage:
+
+
+Row: 2
+Column: 3
+Message:
+Missing required section then
+EndMessage:
+
 
 Row: 1
 Column: 1

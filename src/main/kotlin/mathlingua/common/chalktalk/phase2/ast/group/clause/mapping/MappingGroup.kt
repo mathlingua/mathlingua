@@ -70,18 +70,22 @@ fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
     listOf(
         Validator(
             name = "mapping",
+            optional = false,
             validate = ::validateMappingSection
         ),
         Validator(
             name = "from",
+            optional = false,
             validate = ::validateFromSection
         ),
         Validator(
             name = "to",
+            optional = false,
             validate = ::validateToSection
         ),
         Validator(
             name = "as",
+            optional = false,
             validate = ::validateAsSection
         )
     )

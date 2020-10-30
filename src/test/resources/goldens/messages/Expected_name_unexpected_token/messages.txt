@@ -3,5 +3,3 @@ Column: 7
 Message:
 Expected a name, but found )
 EndMessage:
-
-

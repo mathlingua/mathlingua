@@ -1,7 +1,7 @@
 Row: 2
-Column: 8
+Column: 3
 Message:
-Expected an Target
+Expected section for
 EndMessage:
 
 Row: 1

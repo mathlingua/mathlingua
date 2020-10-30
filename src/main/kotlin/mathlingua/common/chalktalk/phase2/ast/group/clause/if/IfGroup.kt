@@ -17,20 +17,12 @@
 package mathlingua.common.chalktalk.phase2.ast.group.clause.`if`
 
 import mathlingua.common.support.MutableLocationTracker
-import mathlingua.common.support.ParseError
-import mathlingua.common.support.Validation
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase1.ast.getColumn
-import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.common.support.validationFailure
-import mathlingua.common.support.validationSuccess
+import mathlingua.common.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 
 data class IfGroup(
     val ifSection: IfSection,
@@ -56,58 +48,12 @@ data class IfGroup(
 
 fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
 
-fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<IfGroup> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Group) {
-        errors.add(
-            ParseError(
-                "Expected a Group",
-                getRow(node), getColumn(node)
-            )
-        )
-        return validationFailure(errors)
-    }
-
-    var ifSection: IfSection? = null
-    var thenSection: ThenSection? = null
-
-    if (node.sections.size < 2) {
-        errors.add(
-            ParseError(
-                "Expected at least an if: and then: section",
-                getRow(node), getColumn(node)
-            )
-        )
-    } else {
-        when (val validation = validateIfSection(node.sections[0], tracker)) {
-            is ValidationSuccess -> ifSection = validation.value
-            is ValidationFailure -> errors.addAll(validation.errors)
-        }
-
-        when (val validation = validateThenSection(node.sections[1], tracker)) {
-            is ValidationSuccess -> thenSection = validation.value
-            is ValidationFailure -> errors.addAll(validation.errors)
-        }
-
-        for (i in 2 until node.sections.size) {
-            val sec = node.sections[i]
-            errors.add(
-                ParseError(
-                    message = "Unexpected section ${sec.name.text}",
-                    row = getRow(sec),
-                    column = getColumn(sec)
-                )
-            )
-        }
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else validationSuccess(tracker, rawNode, IfGroup(
-        ifSection!!,
-        thenSection!!
-    )
-    )
-}
+fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateDoubleSectionGroup(
+    tracker,
+    rawNode,
+    "if",
+    ::validateIfSection,
+    "then",
+    ::validateThenSection,
+    ::IfGroup
+)

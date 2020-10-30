@@ -20,18 +20,12 @@ import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.common.chalktalk.phase2.ast.common.ThreePartNode
 import mathlingua.common.chalktalk.phase2.ast.clause.Clause
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.common.chalktalk.phase2.ast.clause.validateMidOptionalTripleSectionGroup
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.ThenSection
 import mathlingua.common.chalktalk.phase2.ast.group.clause.`if`.validateThenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
-import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.support.MutableLocationTracker
-import mathlingua.common.support.ParseError
-import mathlingua.common.support.Validation
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.support.validationFailure
-import mathlingua.common.support.validationSuccess
 
 data class ForGroup(
     val forSection: ForSection,
@@ -46,58 +40,14 @@ data class ForGroup(
 
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
 
-fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<ForGroup> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Group) {
-        errors.add(
-                ParseError(
-                        "Expected a Group",
-                        getRow(node), getColumn(node)
-                )
-        )
-        return validationFailure(errors)
-    }
-
-    val (sections) = node
-
-    val sectionMap: Map<String, Section>
-    try {
-        sectionMap = identifySections(
-                sections,
-                "for", "where?", "then"
-        )
-    } catch (e: ParseError) {
-        errors.add(ParseError(e.message, e.row, e.column))
-        return validationFailure(errors)
-    }
-
-    var forSection: ForSection? = null
-    val forNode = sectionMap["for"]
-
-    when (val forEvaluation = validateForSection(forNode!!, tracker)) {
-        is ValidationSuccess -> forSection = forEvaluation.value
-        is ValidationFailure -> errors.addAll(forEvaluation.errors)
-    }
-
-    var whereSection: WhereSection? = null
-    if (sectionMap.containsKey("where")) {
-        val where = sectionMap["where"]!!
-        when (val whereValidation = validateWhereSection(where, tracker)) {
-            is ValidationSuccess -> whereSection = whereValidation.value
-            is ValidationFailure -> errors.addAll(whereValidation.errors)
-        }
-    }
-
-    var thenSection: ThenSection? = null
-    val then = sectionMap["then"]
-    when (val thenValidation = validateThenSection(then!!, tracker)) {
-        is ValidationSuccess -> thenSection = thenValidation.value
-        is ValidationFailure -> errors.addAll(thenValidation.errors)
-    }
-
-    return if (!errors.isEmpty()) {
-        validationFailure(errors)
-    } else validationSuccess(tracker, rawNode, ForGroup(forSection!!, whereSection, thenSection!!))
-}
+fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateMidOptionalTripleSectionGroup(
+    tracker,
+    rawNode,
+    "for",
+    ::validateForSection,
+    "where?",
+    ::validateWhereSection,
+    "then",
+    ::validateThenSection,
+    ::ForGroup
+)

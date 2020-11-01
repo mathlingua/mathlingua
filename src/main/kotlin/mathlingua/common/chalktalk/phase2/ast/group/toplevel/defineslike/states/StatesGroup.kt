@@ -17,25 +17,16 @@
 package mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states
 
 import mathlingua.common.support.MutableLocationTracker
-import mathlingua.common.support.ParseError
 import mathlingua.common.support.Validation
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Group
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase1.ast.Phase1Token
-import mathlingua.common.chalktalk.phase1.ast.Section
-import mathlingua.common.chalktalk.phase1.ast.getColumn
-import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.common.chalktalk.phase2.ast.clause.Validator
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.common.chalktalk.phase2.ast.clause.validateIdStatement
-import mathlingua.common.chalktalk.phase2.ast.section.*
+import mathlingua.common.chalktalk.phase2.ast.clause.validateIdMetadataGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
@@ -46,7 +37,6 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.validateWhen
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.common.transform.signature
-import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
 data class StatesGroup(
@@ -109,113 +99,47 @@ data class StatesGroup(
 
 fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
 
-fun validateStatesGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<StatesGroup> {
-    val errors = ArrayList<ParseError>()
-    val group = groupNode.resolve()
-    var id: IdStatement? = null
-    if (group.id != null) {
-        val (rawText, _, row, column) = group.id
-        // The id token is of type Id and the text is of the form "[...]"
-        // Convert it to look like a statement.
-        val statementText = "'" + rawText.substring(1, rawText.length - 1) + "'"
-        val stmtToken = Phase1Token(
-            statementText, ChalkTalkTokenType.Statement,
-            row, column
+fun validateStatesGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<StatesGroup> = validateIdMetadataGroup(
+    tracker, groupNode,
+    listOf(
+        Validator(
+            name = "States",
+            optional = false,
+            ::validateStatesSection
+        ),
+        Validator(
+            name = "when",
+            optional = true,
+            ::validateWhenSection
+        ),
+        Validator(
+            name = "that",
+            optional = false,
+            ::validateThatSection
+        ),
+        Validator(
+            name = "using",
+            optional = true,
+            ::validateUsingSection
+        ),
+        Validator(
+            name = "written",
+            optional = true,
+            ::validateWrittenSection
         )
-        when (val idValidation = validateIdStatement(stmtToken, tracker)) {
-            is ValidationSuccess -> id = idValidation.value
-            is ValidationFailure -> errors.addAll(idValidation.errors)
-        }
-    } else {
-        val type = if (group.sections.isNotEmpty()) {
-            group.sections.first().name.text
-        } else {
-            "Defines or Represents"
-        }
-        errors.add(
-            ParseError(
-                "A $type must have an Id",
-                getRow(group), getColumn(group)
-            )
-        )
-    }
-
-    val sections = group.sections
-
-    val sectionMap: Map<String, Section>
-    try {
-        sectionMap = identifySections(
-            sections,
-            "States", "when?", "that", "using?", "where?", "written?", "Metadata?"
-        )
-    } catch (e: ParseError) {
-        errors.add(ParseError(e.message, e.row, e.column))
-        return validationFailure(errors)
-    }
-
-    val definesLike = sectionMap["States"]!!
-    val whenNode = sectionMap["when"]
-    val that = sectionMap["that"]!!
-    val using = sectionMap["using"]
-    val written = sectionMap["written"]
-    val metadata = sectionMap["Metadata"]
-
-    var statesSection: StatesSection? = null
-    when (val representsValidation = validateStatesSection(definesLike, tracker)) {
-        is ValidationSuccess -> statesSection = representsValidation.value
-        is ValidationFailure -> errors.addAll(representsValidation.errors)
-    }
-
-    var whenSection: WhenSection? = null
-    if (whenNode != null) {
-        when (val assumingValidation = validateWhenSection(whenNode, tracker)) {
-            is ValidationSuccess -> whenSection = assumingValidation.value
-            is ValidationFailure -> errors.addAll(assumingValidation.errors)
-        }
-    }
-
-    var thatSection: ThatSection? = null
-    when (val endValidation = validateThatSection(that!!, tracker)) {
-        is ValidationSuccess -> thatSection = endValidation.value
-        is ValidationFailure -> errors.addAll(endValidation.errors)
-    }
-
-    var usingSection: UsingSection? = null
-    if (using != null) {
-        when (val aliasValidation = validateUsingSection(using, tracker)) {
-            is ValidationSuccess -> usingSection = aliasValidation.value
-            is ValidationFailure -> errors.addAll(aliasValidation.errors)
-        }
-    }
-
-    var writtenSection: WrittenSection? = null
-    if (written != null) {
-        when (val writtenValidation = validateWrittenSection(written, tracker)) {
-            is ValidationSuccess -> writtenSection = writtenValidation.value
-            is ValidationFailure -> errors.addAll(writtenValidation.errors)
-        }
-    }
-
-    var metaDataSection: MetaDataSection? = null
-    if (metadata != null) {
-        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)) {
-            is ValidationSuccess -> metaDataSection = metaDataValidation.value
-            is ValidationFailure -> errors.addAll(metaDataValidation.errors)
-        }
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else validationSuccess(
+    )
+) { id, sections, metaDataSection ->
+    validationSuccess(
         tracker,
         groupNode,
         StatesGroup(
-            id?.signature(),
-            id!!, statesSection!!,
-            whenSection,
-            thatSection!!,
-            usingSection,
-            writtenSection,
+            id.signature(),
+            id,
+            sections["States"] as StatesSection,
+            sections["when"] as WhenSection?,
+            sections["that"] as ThatSection,
+            sections["using"] as UsingSection?,
+            sections["written"] as WrittenSection?,
             metaDataSection
         )
     )

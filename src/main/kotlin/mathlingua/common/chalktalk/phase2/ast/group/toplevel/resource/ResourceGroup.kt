@@ -23,16 +23,15 @@ import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.CodeWriter
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.common.chalktalk.phase2.ast.clause.Validator
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.common.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.ParseError
-import mathlingua.common.support.Validation
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
 import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
@@ -66,74 +65,51 @@ data class ResourceGroup(
 
 fun isResourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Resource")
 
-fun validateResourceGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<ResourceGroup> {
+fun validateResourceGroup(groupNode: Group, tracker: MutableLocationTracker) = validateGroup(
+    tracker,
+    groupNode,
+    listOf(
+        Validator(
+            name = "Resource",
+            optional = false,
+            ::validateResourceSection
+        ),
+        Validator(
+            name = "Metadata",
+            optional = true,
+            ::validateMetaDataSection
+        )
+    )
+) {
     val id = groupNode.id
+    val errors = mutableListOf<ParseError>()
     if (id == null) {
-        return validationFailure(listOf(
-                ParseError("A Resource group must have an id",
-                        getRow(groupNode), getColumn(groupNode))
-        ))
+        errors.add(ParseError("A Resource group must have an id",
+            getRow(groupNode), getColumn(groupNode)))
     }
 
     // id.text is of the form [...]
     // The [ and ] need to be removed.
-    val idText = id.text.substring(1, id.text.length - 1)
-
-    val errors = mutableListOf<ParseError>()
-    if (!Regex("[a-zA-Z0-9]+").matches(idText)) {
+    val idText = id?.text?.substring(1, id.text.length - 1)
+    if (idText != null && !Regex("[a-zA-Z0-9]+").matches(idText)) {
         errors.add(
-                ParseError("A resource id can only contain numbers and letters",
-                        getRow(groupNode), getColumn(groupNode)
-                )
-        )
-    }
-
-    val sections = groupNode.sections
-    if (sections.isEmpty()) {
-        errors.add(
-                ParseError("Expected a resource section",
-                        getRow(groupNode), getColumn(groupNode))
-        )
-    }
-
-    val resourceSection = sections[0]
-    val resourceValidation = validateResourceSection(resourceSection, tracker)
-    if (resourceValidation is ValidationFailure) {
-        errors.addAll(resourceValidation.errors)
-    }
-
-    var metaDataSection: MetaDataSection? = null
-    if (sections.size >= 2) {
-        val metadataValidation = validateMetaDataSection(sections[1], tracker)
-        metaDataSection = when (metadataValidation) {
-            is ValidationFailure -> {
-                errors.addAll(metadataValidation.errors)
-                null
-            }
-            is ValidationSuccess -> {
-                metadataValidation.value
-            }
-        }
-    }
-
-    if (sections.size > 2) {
-        errors.add(
-                ParseError("A Source group can only have a Source section and optionally a Metadata section",
-                        getRow(groupNode), getColumn(groupNode))
+            ParseError("A resource id can only contain numbers and letters",
+                getRow(groupNode), getColumn(groupNode)
+            )
         )
     }
 
     if (errors.isNotEmpty()) {
-        return validationFailure(errors)
-    }
-
-    return validationSuccess(
+        validationFailure(errors)
+    } else {
+        validationSuccess(
             tracker,
             groupNode,
             ResourceGroup(
-                    id = idText,
-                    sourceSection = (resourceValidation as ValidationSuccess).value,
-                    metaDataSection = metaDataSection
+                id = idText!!,
+                sourceSection = it["Resource"] as ResourceSection,
+                metaDataSection = it["Metadata"] as MetaDataSection?
             )
-    )
+        )
+    }
 }

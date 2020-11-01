@@ -17,24 +17,18 @@
 package mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.item
 
 import mathlingua.common.chalktalk.phase1.ast.*
-import mathlingua.common.chalktalk.phase1.ast.getColumn
-import mathlingua.common.chalktalk.phase1.ast.getRow
 import mathlingua.common.chalktalk.phase2.CodeWriter
+import mathlingua.common.chalktalk.phase2.ast.clause.Validator
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.common.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ContentItemSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.OffsetItemSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.PageItemSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SourceItemSection
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.validateStringSection
-import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.support.MutableLocationTracker
-import mathlingua.common.support.ParseError
-import mathlingua.common.support.Validation
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.support.validationFailure
 import mathlingua.common.support.validationSuccess
 
 data class SourceItemGroup(
@@ -81,75 +75,47 @@ data class SourceItemGroup(
 
 fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
 
-fun validateSourceItemGroup(groupNode: Group, tracker: MutableLocationTracker): Validation<SourceItemGroup> {
-    val errors = ArrayList<ParseError>()
-    val group = groupNode.resolve()
-    if (group.id != null) {
-        errors.add(
-                ParseError(
-                        "A reference source cannot have an Id",
-                        getRow(group), getColumn(group)
-                )
+fun validateSourceItemGroup(groupNode: Group, tracker: MutableLocationTracker) = validateGroup(
+    tracker,
+    groupNode,
+    listOf(
+        Validator(
+            name = "source",
+            optional = false,
+            validate = { rawPage, track ->
+                validateStringSection(track, rawPage, "source", ::SourceItemSection)
+            }
+        ),
+        Validator(
+            name = "page",
+            optional = true,
+            validate = { rawPage, track ->
+                validateStringSection(track, rawPage, "page", ::PageItemSection)
+            }
+        ),
+        Validator(
+            name = "offset",
+            optional = true,
+            validate = { rawPage, track ->
+                validateStringSection(track, rawPage, "offset", ::OffsetItemSection)
+            }
+        ),
+        Validator(
+            name = "content",
+            optional = true,
+            validate = { rawPage, track ->
+                validateStringSection(track, rawPage, "content", ::ContentItemSection)
+            }
         )
-    }
-
-    val sections = group.sections
-
-    val sectionMap: Map<String, Section>
-    try {
-        sectionMap = identifySections(
-                sections, "source", "page?", "offset?", "content?"
         )
-    } catch (e: ParseError) {
-        errors.add(ParseError(e.message, e.row, e.column))
-        return validationFailure(errors)
-    }
-
-    val rawSource = sectionMap["source"]!!
-    var sourceSection: SourceItemSection? = null
-    when (val validation = validateStringSection(tracker, rawSource, "source", ::SourceItemSection)) {
-        is ValidationSuccess -> sourceSection = validation.value
-        is ValidationFailure -> errors.addAll(validation.errors)
-    }
-
-    val rawPage = sectionMap["page"]
-    var pageSection: PageItemSection? = null
-    if (rawPage != null) {
-        when (val validation = validateStringSection(tracker, rawPage, "page", ::PageItemSection)) {
-            is ValidationSuccess -> pageSection = validation.value
-            is ValidationFailure -> errors.addAll(validation.errors)
-        }
-    }
-
-    val rawOffset = sectionMap["offset"]
-    var offsetSection: OffsetItemSection? = null
-    if (rawOffset != null) {
-        when (val validation = validateStringSection(tracker, rawOffset, "offset", ::OffsetItemSection)) {
-            is ValidationSuccess -> offsetSection = validation.value
-            is ValidationFailure -> errors.addAll(validation.errors)
-        }
-    }
-
-    val rawContent = sectionMap["content"]
-    var contentSection: ContentItemSection? = null
-    if (rawContent != null) {
-        when (val validation = validateStringSection(tracker, rawContent, "content", ::ContentItemSection)) {
-            is ValidationSuccess -> contentSection = validation.value
-            is ValidationFailure -> errors.addAll(validation.errors)
-        }
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else {
-        validationSuccess(
-                tracker,
-                groupNode,
-                SourceItemGroup(
-                        sourceSection = sourceSection!!,
-                        pageSection = pageSection,
-                        offsetSection = offsetSection,
-                        contentSection = contentSection)
-        )
-    }
+) {
+    validationSuccess(
+        tracker,
+        groupNode,
+        SourceItemGroup(
+            sourceSection = it["source"] as SourceItemSection,
+            pageSection = it["page"] as PageItemSection?,
+            offsetSection = it["offset"] as OffsetItemSection?,
+            contentSection = it["content"] as ContentItemSection?)
+    )
 }

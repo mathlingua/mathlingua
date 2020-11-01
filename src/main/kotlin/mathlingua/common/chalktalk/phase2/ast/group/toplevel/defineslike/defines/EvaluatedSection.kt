@@ -45,7 +45,7 @@ data class EvaluatedSection(val clauses: ClauseListNode) : Phase2Node {
         )
 }
 
-fun validateComputesSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
+fun validateEvaluatedSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
     Exactly(1),
     tracker,
     node,

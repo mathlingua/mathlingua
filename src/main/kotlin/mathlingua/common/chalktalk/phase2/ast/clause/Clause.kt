@@ -16,8 +16,10 @@
 
 package mathlingua.common.chalktalk.phase2.ast.clause
 
+import mathlingua.common.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.common.chalktalk.phase1.ast.Phase1Node
 import mathlingua.common.chalktalk.phase1.ast.Group
+import mathlingua.common.chalktalk.phase1.ast.Phase1Token
 import mathlingua.common.chalktalk.phase1.ast.Section
 import mathlingua.common.chalktalk.phase1.ast.getColumn
 import mathlingua.common.chalktalk.phase1.ast.getRow
@@ -59,6 +61,7 @@ import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
 import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
+import mathlingua.common.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.common.chalktalk.phase2.ast.section.identifySections
 import mathlingua.common.support.MutableLocationTracker
 import mathlingua.common.support.ParseError
@@ -480,4 +483,59 @@ fun <G : Phase2Node> validateGroup(
             build(partMap)
         }
     }
+}
+
+fun <G : Phase2Node> validateIdGroup(
+    tracker: MutableLocationTracker,
+    rawNode: Phase1Node,
+    validations: List<Validator>,
+    build: (id: IdStatement, sections: Map<String, Phase2Node?>) -> Validation<G>
+): Validation<G> {
+    val group = rawNode.resolve()
+    val errors = ArrayList<ParseError>()
+    var id: IdStatement? = null
+    if (group is Group && group.id != null) {
+        val (rawText, _, row, column) = group.id
+        // The id token is of type Id and the text is of the form "[...]"
+        // Convert it to look like a statement.
+        val statementText = "'" + rawText.substring(1, rawText.length - 1) + "'"
+        val stmtToken = Phase1Token(
+            statementText, ChalkTalkTokenType.Statement,
+            row, column
+        )
+        when (val idValidation = validateIdStatement(stmtToken, tracker)) {
+            is ValidationSuccess -> id = idValidation.value
+            is ValidationFailure -> errors.addAll(idValidation.errors)
+        }
+    } else {
+        errors.add(
+            ParseError(
+                "Expected an Id",
+                getRow(group), getColumn(group)
+            )
+        )
+    }
+
+    if (errors.isNotEmpty()) {
+        return validationFailure(errors)
+    }
+
+    return validateGroup(tracker, rawNode, validations) {
+        build(id!!, it)
+    }
+}
+
+fun <G : Phase2Node> validateIdMetadataGroup(
+    tracker: MutableLocationTracker,
+    rawNode: Phase1Node,
+    validations: List<Validator>,
+    build: (id: IdStatement, sections: Map<String, Phase2Node?>, metadata: MetaDataSection?) -> Validation<G>
+): Validation<G> {
+    val metaValidations = mutableListOf<Validator>()
+    metaValidations.addAll(validations)
+    return validateIdGroup(
+        tracker,
+        rawNode,
+        metaValidations
+    ) { id, sections -> build(id, sections, sections["Metadata"] as MetaDataSection?) }
 }

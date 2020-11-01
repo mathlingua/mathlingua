@@ -30,6 +30,7 @@ import mathlingua.common.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.common.chalktalk.phase1.newChalkTalkParser
 import mathlingua.common.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.common.chalktalk.phase2.ast.validateDocument
+import mathlingua.common.support.ValidationFailure
 import mathlingua.common.support.newLocationTracker
 import mathlingua.loadTestCases
 import mathlingua.serialize
@@ -53,6 +54,11 @@ internal class ChalkTalkParserTest {
 
                 val tracker = newLocationTracker()
                 val validation = validateDocument(result.root!!, tracker)
+                if (validation is ValidationFailure) {
+                    for (err in validation.errors) {
+                        println(err)
+                    }
+                }
                 assertThat(validation).isInstanceOf(ValidationSuccess::class.java)
 
                 val doc = (validation as ValidationSuccess).value

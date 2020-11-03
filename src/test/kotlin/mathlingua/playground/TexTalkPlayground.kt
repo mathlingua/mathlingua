@@ -1,10 +1,10 @@
 package mathlingua.mathlingua.playground
 
-import mathlingua.common.textalk.Command
-import mathlingua.common.textalk.TexTalkNode
-import mathlingua.common.textalk.newTexTalkLexer
-import mathlingua.common.textalk.newTexTalkParser
-import mathlingua.common.transform.signature
+import mathlingua.textalk.Command
+import mathlingua.textalk.TexTalkNode
+import mathlingua.textalk.newTexTalkLexer
+import mathlingua.textalk.newTexTalkParser
+import mathlingua.transform.signature
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane

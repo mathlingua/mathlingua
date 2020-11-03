@@ -1,0 +1,198 @@
+/*
+ * Copyright 2019 Google LLC
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package mathlingua.chalktalk.phase2.ast
+
+import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.Root
+import mathlingua.chalktalk.phase1.ast.getColumn
+import mathlingua.chalktalk.phase1.ast.getRow
+import mathlingua.common.chalktalk.phase1.ast.*
+import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.isAxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.validateAxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.isConjectureGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.validateConjectureGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.isMutuallyGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallyGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
+import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
+import mathlingua.support.Validation
+import mathlingua.support.ValidationFailure
+import mathlingua.support.ValidationSuccess
+import mathlingua.support.validationFailure
+import mathlingua.support.validationSuccess
+
+data class Document(
+    val groups: List<TopLevelGroup>
+) : Phase2Node {
+
+    fun defines() = groups.filterIsInstance<DefinesGroup>()
+    fun states() = groups.filterIsInstance<StatesGroup>()
+    fun theorems() = groups.filterIsInstance<TheoremGroup>()
+    fun axioms() = groups.filterIsInstance<AxiomGroup>()
+    fun conjectures() = groups.filterIsInstance<ConjectureGroup>()
+    fun resources() = groups.filterIsInstance<ResourceGroup>()
+
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        groups.forEach(fn)
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        for (grp in groups) {
+            writer.append(grp, false, 0)
+            writer.writeNewline(3)
+        }
+        return writer
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
+        return chalkTransformer(
+                Document(
+                        groups = groups.map { it.transform(chalkTransformer) as TopLevelGroup }
+                )
+        )
+    }
+}
+
+fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Document> {
+    val node = rawNode.resolve()
+
+    val errors = ArrayList<ParseError>()
+    if (node !is Root) {
+        errors.add(
+            ParseError(
+                "Expected a Root",
+                getRow(node),
+                getColumn(node)
+            )
+        )
+        return validationFailure(errors)
+    }
+
+    val allGroups = mutableListOf<TopLevelGroup>()
+
+    for (group in node.groups) {
+        when {
+            isTheoremGroup(group) -> {
+                when (val resultValidation = validateTheoremGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(resultValidation.value)
+                    is ValidationFailure -> errors.addAll(resultValidation.errors)
+                }
+            }
+            isAxiomGroup(group) -> {
+                when (val axiomValidation = validateAxiomGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(axiomValidation.value)
+                    is ValidationFailure -> errors.addAll(axiomValidation.errors)
+                }
+            }
+            isConjectureGroup(group) -> {
+                when (val conjectureValidation = validateConjectureGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(conjectureValidation.value)
+                    is ValidationFailure -> errors.addAll(conjectureValidation.errors)
+                }
+            }
+            isDefinesGroup(group) -> {
+                when (val definesValidation = validateDefinesGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(definesValidation.value)
+                    is ValidationFailure -> errors.addAll(definesValidation.errors)
+                }
+            }
+            isStatesGroup(group) -> {
+                when (val statesValidation = validateStatesGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(statesValidation.value)
+                    is ValidationFailure -> errors.addAll(statesValidation.errors)
+                }
+            }
+            isFoundationGroup(group) -> {
+                when (val foundationValidation = validateFoundationGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(foundationValidation.value)
+                    is ValidationFailure -> errors.addAll(foundationValidation.errors)
+                }
+            }
+            isViewsGroup(group) -> {
+                when (val viewsValidation = validateViewsGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(viewsValidation.value)
+                    is ValidationFailure -> errors.addAll(viewsValidation.errors)
+                }
+            }
+            isMutuallyGroup(group) -> {
+                when (val mutuallyValidation = validateMutuallyGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(mutuallyValidation.value)
+                    is ValidationFailure -> errors.addAll(mutuallyValidation.errors)
+                }
+            }
+            isEntryGroup(group) -> {
+                when (val entryValidation = validateEntryGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(entryValidation.value)
+                    is ValidationFailure -> errors.addAll(entryValidation.errors)
+                }
+            }
+            isResourceGroup(group) -> {
+                when (val resourceValidation = validateResourceGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(resourceValidation.value)
+                    is ValidationFailure -> errors.addAll(resourceValidation.errors)
+                }
+            }
+            isEvaluatesGroup(group) -> {
+                when (val evaluatesValidation = validateEvaluatesGroup(group, tracker)) {
+                    is ValidationSuccess -> allGroups.add(evaluatesValidation.value)
+                    is ValidationFailure -> errors.addAll(evaluatesValidation.errors)
+                }
+            }
+            else -> {
+                errors.add(
+                    ParseError(
+                        "Expected a top level group but found " + group.toCode(),
+                        getRow(group), getColumn(group)
+                    )
+                )
+            }
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else validationSuccess(
+            tracker,
+            rawNode,
+            Document(groups = allGroups)
+    )
+}

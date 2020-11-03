@@ -16,9 +16,8 @@
 
 package mathlingua
 
-import mathlingua.common.MathLingua
-import mathlingua.common.support.ParseError
-import mathlingua.common.support.ValidationFailure
+import mathlingua.support.ParseError
+import mathlingua.support.ValidationFailure
 import java.io.File
 import java.io.IOException
 import java.lang.RuntimeException

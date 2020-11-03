@@ -28,12 +28,11 @@ import com.github.ajalt.clikt.parameters.types.choice
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
-import mathlingua.common.MathLingua
-import mathlingua.common.support.ParseError
-import mathlingua.common.support.ValidationFailure
-import mathlingua.common.support.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.common.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.support.ParseError
+import mathlingua.support.ValidationFailure
+import mathlingua.support.ValidationSuccess
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -179,7 +178,8 @@ private suspend fun runMlg(
                         emptyList()
                     }
 
-                    outputBuilder.append(MathLingua.prettyPrint(
+                    outputBuilder.append(
+                        MathLingua.prettyPrint(
                             node = doc,
                             defines = defines,
                             states = states,

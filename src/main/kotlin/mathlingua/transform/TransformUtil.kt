@@ -19,7 +19,6 @@ package mathlingua.transform
 import mathlingua.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.*
 import mathlingua.chalktalk.phase2.ast.Document
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.AssignmentNode
@@ -27,7 +26,6 @@ import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.clause.*
 import mathlingua.chalktalk.phase2.ast.group.clause.`for`.ForGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.`for`.ForSection
 import mathlingua.chalktalk.phase2.ast.group.clause.`if`.IfGroup

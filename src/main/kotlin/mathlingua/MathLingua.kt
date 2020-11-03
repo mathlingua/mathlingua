@@ -20,7 +20,6 @@ import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.chalktalk.phase2.HtmlCodeWriter
 import mathlingua.chalktalk.phase2.MathLinguaCodeWriter
-import mathlingua.common.chalktalk.phase2.*
 import mathlingua.chalktalk.phase2.ast.Document
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
@@ -47,7 +46,6 @@ import mathlingua.textalk.Command
 import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.OperatorTexTalkNode
 import mathlingua.textalk.TexTalkNode
-import mathlingua.common.transform.*
 import mathlingua.transform.expandAsWritten
 import mathlingua.transform.expandAtNode
 import mathlingua.transform.fullExpandComplete

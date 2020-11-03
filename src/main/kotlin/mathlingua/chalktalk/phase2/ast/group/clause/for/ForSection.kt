@@ -19,7 +19,6 @@ package mathlingua.chalktalk.phase2.ast.group.clause.`for`
 import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.common.chalktalk.phase2.*
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.validator.validateTargetList

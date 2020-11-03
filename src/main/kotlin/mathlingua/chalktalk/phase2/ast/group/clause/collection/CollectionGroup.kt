@@ -17,7 +17,6 @@
 package mathlingua.chalktalk.phase2.ast.group.clause.collection
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause

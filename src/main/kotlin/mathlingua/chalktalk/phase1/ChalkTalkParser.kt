@@ -30,7 +30,6 @@ import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.Tuple
 import mathlingua.chalktalk.phase1.ast.TupleItem
 import mathlingua.support.ParseError
-import mathlingua.common.chalktalk.phase1.ast.*
 
 interface ChalkTalkParser {
     fun parse(chalkTalkLexer: ChalkTalkLexer): ChalkTalkParseResult

@@ -18,7 +18,6 @@ package mathlingua.transform
 
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
-import mathlingua.common.chalktalk.phase2.*
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode

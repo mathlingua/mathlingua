@@ -32,9 +32,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.chalktalk.phase2.ast.clause.TupleNode
-import mathlingua.common.chalktalk.phase2.*
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.clause.*
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess

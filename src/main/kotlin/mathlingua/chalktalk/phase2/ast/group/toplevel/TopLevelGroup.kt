@@ -34,7 +34,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.chalktalk.phase2.ast.section.identifySections
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
-import mathlingua.common.chalktalk.phase2.ast.section.*
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.support.MutableLocationTracker

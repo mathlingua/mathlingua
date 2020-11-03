@@ -28,7 +28,6 @@ import mathlingua.support.Location
 import mathlingua.support.LocationTracker
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
-import mathlingua.common.textalk.*
 import mathlingua.textalk.Command
 import mathlingua.textalk.CommandPart
 import mathlingua.textalk.ExpressionTexTalkNode

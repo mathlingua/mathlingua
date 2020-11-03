@@ -18,7 +18,6 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item
 
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.common.chalktalk.phase1.ast.*
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node

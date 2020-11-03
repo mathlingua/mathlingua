@@ -27,7 +27,6 @@ import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.common.chalktalk.phase2.ast.clause.*
 import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.ParametersTexTalkNode
 import mathlingua.textalk.TexTalkNode

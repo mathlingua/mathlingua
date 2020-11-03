@@ -19,7 +19,6 @@ package mathlingua.transform
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.common.textalk.*
 import mathlingua.textalk.Command
 import mathlingua.textalk.CommandPart
 import mathlingua.textalk.ExpressionTexTalkNode

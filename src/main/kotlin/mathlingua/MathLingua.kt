@@ -647,35 +647,13 @@ private fun getHtml(body: String) = """
                     return;
                 }
 
-                /*
-                 * The layout for nodes corresponding to text in a "written:" section
-                 * looks like the following.  Determine if any child nodes of 'node'
-                 * that are text nodes are in a "written:" section so that the text
-                 * can be trated as if it is in math mode.
-                 *
-                 * <span class='mathlingua'>
-                 *   ...
-                 *   <span class='mathlingua-header'>
-                 *     written:
-                 *   </span>
-                 *   ...
-                 *   <span class='mathlingua-text'>
-                 *     "some text"
-                 *   </span>
-                 * </span>
-                 */
                 let isInWritten = false;
                 const parent = node.parentNode;
-                if (parent && node.className === 'mathlingua-text') {
-                    for (let j=0; j<parent.childNodes.length; j++) {
-                        const sibling = parent.childNodes[j];
-                        if (sibling.childNodes.length > 0 &&
-                            sibling.childNodes[0].nodeType === 3 &&
-                            sibling.childNodes[0].textContent === 'written:') {
-                            isInWritten = true;
-                            break;
-                        }
-                    }
+                if (node.className === 'mathlingua' &&
+                    node.childNodes.length > 0 &&
+                    node.childNodes[0].className === 'mathlingua-header' &&
+                    node.childNodes[0].textContent === 'written:') {
+                    isInWritten = true;
                 }
 
                 for (let i = 0; i < node.childNodes.length; i++) {

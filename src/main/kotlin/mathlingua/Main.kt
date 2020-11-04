@@ -37,6 +37,8 @@ import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 
 private const val TOOL_VERSION = "0.7"
 private const val MATHLINGUA_VERSION = "0.7"
@@ -178,11 +180,25 @@ private suspend fun runMlg(
                         emptyList()
                     }
 
+                    val foundations = if (expand) {
+                        doc.foundations()
+                    } else {
+                        emptyList()
+                    }
+
+                    val mutuallyGroups = if (expand) {
+                        doc.mutually()
+                    } else {
+                        emptyList()
+                    }
+
                     outputBuilder.append(
                         MathLingua.prettyPrint(
                             node = doc,
                             defines = defines,
                             states = states,
+                            foundations = foundations,
+                            mutuallyGroups = mutuallyGroups,
                             html = output.toLowerCase() == "html"))
                 }
             }
@@ -434,6 +450,8 @@ private class Render : CliktCommand("Generates either HTML or MathLingua code wi
             is ValidationSuccess -> {
                 val defines = mutableListOf<DefinesGroup>()
                 val states = mutableListOf<StatesGroup>()
+                val foundations = mutableListOf<FoundationGroup>()
+                val mutuallyGroups = mutableListOf<MutuallyGroup>()
 
                 val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
                 val filterItems = (filter ?: "").split(",")
@@ -463,6 +481,8 @@ private class Render : CliktCommand("Generates either HTML or MathLingua code wi
                             if (result is ValidationSuccess) {
                                 defines.addAll(result.value.defines())
                                 states.addAll(result.value.states())
+                                foundations.addAll(result.value.foundations())
+                                mutuallyGroups.addAll(result.value.mutually())
                             }
                         }
                     }.toTypedArray())
@@ -472,6 +492,8 @@ private class Render : CliktCommand("Generates either HTML or MathLingua code wi
                     node = validation.value,
                     defines = defines,
                     states = states,
+                    foundations = foundations,
+                    mutuallyGroups = mutuallyGroups,
                     html = format == "html"
                 )
 

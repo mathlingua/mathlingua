@@ -158,7 +158,7 @@ fun main() {
 
             val newDoc = expandAtNode(doc, nearestNode, doc.defines(), doc.states())
 
-            outputArea.text = newDoc.toCode(false, 0, HtmlCodeWriter(emptyList(), emptyList())).getCode()
+            outputArea.text = newDoc.toCode(false, 0, HtmlCodeWriter(emptyList(), emptyList(), emptyList(), emptyList())).getCode()
             outputTree.model = DefaultTreeModel(
                 toTreeNode(
                     tracker,

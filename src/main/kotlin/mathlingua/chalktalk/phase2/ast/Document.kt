@@ -34,10 +34,12 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefi
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.isMutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -65,6 +67,8 @@ data class Document(
 
     fun defines() = groups.filterIsInstance<DefinesGroup>()
     fun states() = groups.filterIsInstance<StatesGroup>()
+    fun foundations() = groups.filterIsInstance<FoundationGroup>()
+    fun mutually() = groups.filterIsInstance<MutuallyGroup>()
     fun theorems() = groups.filterIsInstance<TheoremGroup>()
     fun axioms() = groups.filterIsInstance<AxiomGroup>()
     fun conjectures() = groups.filterIsInstance<ConjectureGroup>()

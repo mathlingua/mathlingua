@@ -64,10 +64,14 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesG
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 
 class LatexTranslator(
     val defines: List<DefinesGroup>,
-    val represents: List<StatesGroup>
+    val represents: List<StatesGroup>,
+    val foundations: List<FoundationGroup>,
+    val mutuallyGroups: List<MutuallyGroup>
 ) {
     val buffer = mutableListOf<String>()
 
@@ -112,7 +116,7 @@ class LatexTranslator(
     fun translate(statement: Statement?) {
         if (statement != null) {
             val text = if (statement.texTalkRoot is ValidationSuccess) {
-                MathLingua.expandWrittenAs(statement.texTalkRoot.value, defines, represents).text
+                MathLingua.expandWrittenAs(statement.texTalkRoot.value, defines, represents, foundations, mutuallyGroups).text
             } else {
                 statement.text
             }

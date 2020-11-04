@@ -28,6 +28,8 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
@@ -382,10 +384,37 @@ object MathLingua {
 
     fun getPatternsToWrittenAs(
         defines: List<DefinesGroup>,
-        represents: List<StatesGroup>
+        states: List<StatesGroup>,
+        foundations: List<FoundationGroup>,
+        mutuallyGroups: List<MutuallyGroup>
     ): Map<OperatorTexTalkNode, String> {
+        val allDefines = mutableListOf<DefinesGroup>()
+        allDefines.addAll(defines)
+
+        val allStates = mutableListOf<StatesGroup>()
+        allStates.addAll(states)
+
+        for (f in foundations) {
+            val content = f.foundationSection.content
+            if (content is DefinesGroup) {
+                allDefines.add(content)
+            } else if (content is StatesGroup) {
+                allStates.add(content)
+            }
+        }
+
+        for (m in mutuallyGroups) {
+            for (item in m.mutuallySection.items) {
+                if (item is DefinesGroup) {
+                    allDefines.add(item)
+                } else if (item is StatesGroup) {
+                    allStates.add(item)
+                }
+            }
+        }
+
         val result = mutableMapOf<OperatorTexTalkNode, String>()
-        for (rep in represents) {
+        for (rep in allStates) {
             val writtenAs = rep.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
             val validation = rep.id.texTalkRoot
@@ -403,7 +432,7 @@ object MathLingua {
             }
         }
 
-        for (def in defines) {
+        for (def in allDefines) {
             val writtenAs = def.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
             val validation = def.id.texTalkRoot
@@ -425,8 +454,14 @@ object MathLingua {
         return result
     }
 
-    fun expandWrittenAs(node: TexTalkNode, defines: List<DefinesGroup>, represents: List<StatesGroup>) =
-        expandAsWritten(node, getPatternsToWrittenAs(defines, represents))
+    fun expandWrittenAs(
+        node: TexTalkNode,
+        defines: List<DefinesGroup>,
+        represents: List<StatesGroup>,
+        foundations: List<FoundationGroup>,
+        mutuallyGroups: List<MutuallyGroup>
+    ) =
+        expandAsWritten(node, getPatternsToWrittenAs(defines, represents, foundations, mutuallyGroups))
 
     fun expandWrittenAs(
         phase2Node: Phase2Node,
@@ -457,9 +492,17 @@ object MathLingua {
             is ValidationFailure -> emptyList()
             is ValidationSuccess -> totalTextValidation.value.defines()
         }
-        val represents = when (totalTextValidation) {
+        val states = when (totalTextValidation) {
             is ValidationFailure -> emptyList()
             is ValidationSuccess -> totalTextValidation.value.states()
+        }
+        val foundations = when (totalTextValidation) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> totalTextValidation.value.foundations()
+        }
+        val mutuallyGroups = when (totalTextValidation) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> totalTextValidation.value.mutually()
         }
 
         val result = StringBuilder()
@@ -470,7 +513,7 @@ object MathLingua {
                     errors.addAll(validation.errors)
                 }
                 is ValidationSuccess -> {
-                    result.append(prettyPrint(validation.value, defines, represents, html))
+                    result.append(prettyPrint(validation.value, defines, states, foundations, mutuallyGroups, html))
                 }
             }
         }
@@ -486,12 +529,14 @@ object MathLingua {
         node: Phase2Node,
         defines: List<DefinesGroup>,
         states: List<StatesGroup>,
+        foundations: List<FoundationGroup>,
+        mutuallyGroups: List<MutuallyGroup>,
         html: Boolean
     ): String {
         val writer = if (html) {
-            HtmlCodeWriter(defines = defines, states = states)
+            HtmlCodeWriter(defines = defines, states = states, foundations = foundations, mutuallyGroups = mutuallyGroups)
         } else {
-            MathLinguaCodeWriter(defines = defines, states = states)
+            MathLinguaCodeWriter(defines = defines, states = states, foundations = foundations, mutuallyGroups = mutuallyGroups)
         }
         val code = node.toCode(false, 0, writer = writer).getCode()
         return if (html) {
@@ -649,11 +694,15 @@ private fun getHtml(body: String) = """
 
                 let isInWritten = false;
                 const parent = node.parentNode;
-                if (node.className === 'mathlingua' &&
-                    node.childNodes.length > 0 &&
-                    node.childNodes[0].className === 'mathlingua-header' &&
-                    node.childNodes[0].textContent === 'written:') {
-                    isInWritten = true;
+                if (node.className === 'mathlingua') {
+                    for (let i=0; i<node.childNodes.length; i++) {
+                        const n = node.childNodes[i];
+                        if (n && n.className === 'mathlingua-header' &&
+                            n.textContent === 'written:') {
+                            isInWritten = true;
+                            break;
+                        }
+                    }
                 }
 
                 for (let i = 0; i < node.childNodes.length; i++) {

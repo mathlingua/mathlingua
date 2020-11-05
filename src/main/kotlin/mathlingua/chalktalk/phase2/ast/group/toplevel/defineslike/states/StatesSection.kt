@@ -37,37 +37,25 @@ class StatesSection : Phase2Node {
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
-fun validateStatesSection(node: Phase1Node, tracker: MutableLocationTracker): Validation<StatesSection> {
+fun validateStatesSection(
+    node: Phase1Node, tracker: MutableLocationTracker
+): Validation<StatesSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-                ParseError(
-                        "Expected a StatesSection",
-                        getRow(node), getColumn(node)
-                )
-        )
+        errors.add(ParseError("Expected a StatesSection", getRow(node), getColumn(node)))
     }
 
     val sect = node as Section
     if (sect.args.isNotEmpty()) {
-        errors.add(
-                ParseError(
-                        "A States cannot have any arguments",
-                        getRow(node), getColumn(node)
-                )
-        )
+        errors.add(ParseError("A States cannot have any arguments", getRow(node), getColumn(node)))
     }
 
     if (sect.name.text != "States") {
-        errors.add(
-                ParseError(
-                        "Expected a section named States",
-                        getRow(node), getColumn(node)
-                )
-        )
+        errors.add(ParseError("Expected a section named States", getRow(node), getColumn(node)))
     }
 
     return if (errors.isNotEmpty()) {

@@ -35,37 +35,27 @@ class InductivelySection : Phase2Node {
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
-fun validateInductivelySection(node: Phase1Node, tracker: MutableLocationTracker): Validation<InductivelySection> {
+fun validateInductivelySection(
+    node: Phase1Node, tracker: MutableLocationTracker
+): Validation<InductivelySection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-            ParseError(
-                "Expected an inductively:",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected an inductively:", getRow(node), getColumn(node)))
     }
 
     val sect = node as Section
     if (sect.args.isNotEmpty()) {
         errors.add(
-            ParseError(
-                "An inductively: cannot have any arguments",
-                getRow(node), getColumn(node)
-            )
-        )
+            ParseError("An inductively: cannot have any arguments", getRow(node), getColumn(node)))
     }
 
     if (sect.name.text != "inductively") {
         errors.add(
-            ParseError(
-                "Expected a section named inductively:",
-                getRow(node), getColumn(node)
-            )
-        )
+            ParseError("Expected a section named inductively:", getRow(node), getColumn(node)))
     }
 
     return if (errors.isNotEmpty()) {

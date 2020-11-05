@@ -17,18 +17,18 @@
 package mathlingua.chalktalk.phase2.ast.clause
 
 import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
-import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Group
+import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.`for`.isForGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.`for`.validateForGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.isIfGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.validateIfGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.For.isForGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.For.validateForGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.If.isIfGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateIfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.isCollectionGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.validateCollectionGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.isExistsGroup
@@ -73,156 +73,74 @@ import mathlingua.support.validationSuccess
 
 private data class ValidationPair<T>(
     val matches: (node: Phase1Node) -> Boolean,
-    val validate: (node: Phase1Node, tracker: MutableLocationTracker) -> Validation<T>
-)
+    val validate: (node: Phase1Node, tracker: MutableLocationTracker) -> Validation<T>)
 
 interface Clause : Phase2Node
+
 interface Target : Clause
 
-private val CLAUSE_VALIDATORS = listOf(
-        ValidationPair<Clause>(
-                ::isAbstraction,
-                ::validateAbstractionNode
-        ),
-        ValidationPair(
-                ::isTuple,
-                ::validateTupleNode
-        ),
-        ValidationPair(
-                ::isAssignment,
-                ::validateAssignmentNode
-        ),
-        ValidationPair(
-                ::isIdentifier,
-                ::validateIdentifier
-        ),
-        ValidationPair(
-                ::isStatement,
-                ::validateStatement
-        ),
-        ValidationPair(
-                ::isText,
-                ::validateText
-        ),
-        ValidationPair(
-                ::isForGroup,
-                ::validateForGroup
-        ),
-        ValidationPair(
-                ::isExistsGroup,
-                ::validateExistsGroup
-        ),
-        ValidationPair(
-                ::isNotGroup,
-                ::validateNotGroup
-        ),
-        ValidationPair(
-                ::isOrGroup,
-                ::validateOrGroup
-        ),
-        ValidationPair(
-                ::isIfGroup,
-                ::validateIfGroup
-        ),
-        ValidationPair(
-                ::isIffGroup,
-                ::validateIffGroup
-        ),
-        ValidationPair(
-                ::isExpandsGroup,
-                ::validateExpandsGroup
-        ),
-        ValidationPair(
-            ::isMappingGroup,
-            ::validateMappingGroup
-        ),
-        ValidationPair(
-            ::isCollectionGroup,
-            ::validateCollectionGroup
-        ),
-        ValidationPair(
-            ::isMatchingGroup,
-            ::validateMatchingGroup
-        ),
-        ValidationPair(
-            ::isConstantGroup,
-            ::validateConstantGroup
-        ),
-        ValidationPair(
-            ::isConstructorGroup,
-            ::validateConstructorGroup
-        ),
-        ValidationPair(
-            ::isInductivelyGroup,
-            ::validateInductivelyGroup
-        ),
-        ValidationPair(
-            ::isPiecewiseGroup,
-            ::validatePiecewiseGroup
-        ),
-        ValidationPair(
-            ::isEvaluatesGroup,
-            ::validateEvaluatesGroup
-        ),
-        ValidationPair(
-            ::isDefinesGroup
-        ) { node, tracker ->
+private val CLAUSE_VALIDATORS =
+    listOf(
+        ValidationPair<Clause>(::isAbstraction, ::validateAbstractionNode),
+        ValidationPair(::isTuple, ::validateTupleNode),
+        ValidationPair(::isAssignment, ::validateAssignmentNode),
+        ValidationPair(::isIdentifier, ::validateIdentifier),
+        ValidationPair(::isStatement, ::validateStatement),
+        ValidationPair(::isText, ::validateText),
+        ValidationPair(::isForGroup, ::validateForGroup),
+        ValidationPair(::isExistsGroup, ::validateExistsGroup),
+        ValidationPair(::isNotGroup, ::validateNotGroup),
+        ValidationPair(::isOrGroup, ::validateOrGroup),
+        ValidationPair(::isIfGroup, ::validateIfGroup),
+        ValidationPair(::isIffGroup, ::validateIffGroup),
+        ValidationPair(::isExpandsGroup, ::validateExpandsGroup),
+        ValidationPair(::isMappingGroup, ::validateMappingGroup),
+        ValidationPair(::isCollectionGroup, ::validateCollectionGroup),
+        ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
+        ValidationPair(::isConstantGroup, ::validateConstantGroup),
+        ValidationPair(::isConstructorGroup, ::validateConstructorGroup),
+        ValidationPair(::isInductivelyGroup, ::validateInductivelyGroup),
+        ValidationPair(::isPiecewiseGroup, ::validatePiecewiseGroup),
+        ValidationPair(::isEvaluatesGroup, ::validateEvaluatesGroup),
+        ValidationPair(::isDefinesGroup) { node, tracker ->
             if (node is Group) {
                 validateDefinesGroup(node, tracker)
             } else {
-                validationFailure(listOf(
-                    ParseError("Expected a group", getRow(node), getColumn(node))
-                ))
+                validationFailure(
+                    listOf(ParseError("Expected a group", getRow(node), getColumn(node))))
             }
         },
-        ValidationPair(
-            ::isStatesGroup
-        ) { node, tracker ->
+        ValidationPair(::isStatesGroup) { node, tracker ->
             if (node is Group) {
                 validateStatesGroup(node, tracker)
             } else {
                 validationFailure(
-                    listOf(
-                        ParseError("Expected a group", getRow(node), getColumn(node))
-                    )
-                )
+                    listOf(ParseError("Expected a group", getRow(node), getColumn(node))))
             }
         },
-        ValidationPair(
-            ::isViewsGroup
-        ) { node, tracker ->
+        ValidationPair(::isViewsGroup) { node, tracker ->
             if (node is Group) {
                 validateViewsGroup(node, tracker)
             } else {
                 validationFailure(
-                    listOf(
-                        ParseError("Expected a group", getRow(node), getColumn(node))
-                    )
-                )
+                    listOf(ParseError("Expected a group", getRow(node), getColumn(node))))
             }
-        }
-)
+        })
 
 fun validateClause(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Clause> {
     val node = rawNode.resolve()
 
     for (pair in CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
-            return when (val validation = pair.validate(node, tracker)) {
+            return when (val validation = pair.validate(node, tracker)
+            ) {
                 is ValidationSuccess -> validationSuccess(tracker, rawNode, validation.value)
                 is ValidationFailure -> validationFailure(validation.errors)
             }
         }
     }
 
-    return validationFailure(
-        listOf(
-            ParseError(
-                "Expected a Target",
-                getRow(node), getColumn(node)
-            )
-        )
-    )
+    return validationFailure(listOf(ParseError("Expected a Target", getRow(node), getColumn(node))))
 }
 
 fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
@@ -242,13 +160,9 @@ fun <G : Phase2Node, S : Phase2Node> validateSingleSectionGroup(
     sectionName: String,
     buildGroup: (sect: S) -> G,
     validateSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>
-) = validateOptionalSingleSectionGroup(
-    tracker,
-    rawNode,
-    sectionName,
-    { buildGroup(it!!) },
-    validateSection
-)
+) =
+    validateOptionalSingleSectionGroup(
+        tracker, rawNode, sectionName, { buildGroup(it!!) }, validateSection)
 
 fun <G : Phase2Node, S : Phase2Node> validateOptionalSingleSectionGroup(
     tracker: MutableLocationTracker,
@@ -256,18 +170,18 @@ fun <G : Phase2Node, S : Phase2Node> validateOptionalSingleSectionGroup(
     sectionName: String,
     buildGroup: (sect: S?) -> G,
     validateSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>
-): Validation<G> = validateGroup(tracker, rawNode,
-    listOf(
-        Validator(
-        name = sectionName.removeSuffix("?"),
-        optional = sectionName.endsWith("?"),
-        validate = validateSection
-    )
-    )
-) {
-    val node = it[sectionName.removeSuffix("?")]
-    validationSuccess(tracker, rawNode, buildGroup(node as S))
-}
+): Validation<G> =
+    validateGroup(
+        tracker,
+        rawNode,
+        listOf(
+            Validator(
+                name = sectionName.removeSuffix("?"),
+                optional = sectionName.endsWith("?"),
+                validate = validateSection))) {
+        val node = it[sectionName.removeSuffix("?")]
+        validationSuccess(tracker, rawNode, buildGroup(node as S))
+    }
 
 fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node> validateDoubleSectionGroup(
     tracker: MutableLocationTracker,
@@ -277,15 +191,15 @@ fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node> validateDoubleSectionGrou
     section2Name: String,
     validateSection2: (section: Section, tracker: MutableLocationTracker) -> Validation<S2>,
     buildGroup: (sect1: S1, sect2: S2) -> G
-) = validateOptionalDoubleSectionGroup(
-    tracker,
-    rawNode,
-    section1Name,
-    validateSection1,
-    section2Name,
-    validateSection2,
-    { sect1, sect2 -> buildGroup(sect1!!, sect2!!) }
-)
+) =
+    validateOptionalDoubleSectionGroup(
+        tracker,
+        rawNode,
+        section1Name,
+        validateSection1,
+        section2Name,
+        validateSection2,
+        { sect1, sect2 -> buildGroup(sect1!!, sect2!!) })
 
 fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node> validateOptionalDoubleSectionGroup(
     tracker: MutableLocationTracker,
@@ -295,26 +209,29 @@ fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node> validateOptionalDoubleSec
     section2Name: String,
     validateSection2: (section: Section, tracker: MutableLocationTracker) -> Validation<S2>,
     buildGroup: (sect1: S1?, sect2: S2?) -> G
-): Validation<G> = validateGroup(tracker, rawNode,
-    listOf(
-        Validator(
-            name = section1Name.removeSuffix("?"),
-            optional = section1Name.endsWith("?"),
-            validate = validateSection1
-        ),
-        Validator(
-            name = section2Name.removeSuffix("?"),
-            optional = section2Name.endsWith("?"),
-            validate = validateSection2
-        )
-    )
-) {
-    val node1 = it[section1Name.removeSuffix("?")]
-    val node2 = it[section2Name.removeSuffix("?")]
-    validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2))
-}
+): Validation<G> =
+    validateGroup(
+        tracker,
+        rawNode,
+        listOf(
+            Validator(
+                name = section1Name.removeSuffix("?"),
+                optional = section1Name.endsWith("?"),
+                validate = validateSection1),
+            Validator(
+                name = section2Name.removeSuffix("?"),
+                optional = section2Name.endsWith("?"),
+                validate = validateSection2))) {
+        val node1 = it[section1Name.removeSuffix("?")]
+        val node2 = it[section2Name.removeSuffix("?")]
+        validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2))
+    }
 
-fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node, S3 : Phase2Node> validateMidOptionalTripleSectionGroup(
+fun <
+    G : Phase2Node,
+    S1 : Phase2Node,
+    S2 : Phase2Node,
+    S3 : Phase2Node> validateMidOptionalTripleSectionGroup(
     tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     section1Name: String,
@@ -324,19 +241,23 @@ fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node, S3 : Phase2Node> validate
     section3Name: String,
     validateSection3: (section: Section, tracker: MutableLocationTracker) -> Validation<S3>,
     buildGroup: (sect1: S1, sect2: S2?, sect3: S3) -> G
-) = validateOptionalTripleSectionGroup(
-    tracker,
-    rawNode,
-    section1Name,
-    validateSection1,
-    section2Name,
-    validateSection2,
-    section3Name,
-    validateSection3,
-    { sect1, sect2, sect3 -> buildGroup(sect1!!, sect2, sect3!!) }
-)
+) =
+    validateOptionalTripleSectionGroup(
+        tracker,
+        rawNode,
+        section1Name,
+        validateSection1,
+        section2Name,
+        validateSection2,
+        section3Name,
+        validateSection3,
+        { sect1, sect2, sect3 -> buildGroup(sect1!!, sect2, sect3!!) })
 
-fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node, S3 : Phase2Node> validateOptionalTripleSectionGroup(
+fun <
+    G : Phase2Node,
+    S1 : Phase2Node,
+    S2 : Phase2Node,
+    S3 : Phase2Node> validateOptionalTripleSectionGroup(
     tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     section1Name: String,
@@ -346,30 +267,28 @@ fun <G : Phase2Node, S1 : Phase2Node, S2 : Phase2Node, S3 : Phase2Node> validate
     section3Name: String,
     validateSection3: (section: Section, tracker: MutableLocationTracker) -> Validation<S3>,
     buildGroup: (sect1: S1?, sect2: S2?, sect3: S3?) -> G
-): Validation<G> = validateGroup(tracker, rawNode,
-    listOf(
-        Validator(
-            name = section1Name.removeSuffix("?"),
-            optional = section1Name.endsWith("?"),
-            validate = validateSection1
-        ),
-        Validator(
-            name = section2Name.removeSuffix("?"),
-            optional = section2Name.endsWith("?"),
-            validate = validateSection2
-        ),
-        Validator(
-            name = section3Name.removeSuffix("?"),
-            optional = section3Name.endsWith("?"),
-            validate = validateSection3
-        )
-    )
-) {
-    val node1 = it[section1Name.removeSuffix("?")]
-    val node2 = it[section2Name.removeSuffix("?")]
-    val node3 = it[section3Name.removeSuffix("?")]
-    validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3))
-}
+): Validation<G> =
+    validateGroup(
+        tracker,
+        rawNode,
+        listOf(
+            Validator(
+                name = section1Name.removeSuffix("?"),
+                optional = section1Name.endsWith("?"),
+                validate = validateSection1),
+            Validator(
+                name = section2Name.removeSuffix("?"),
+                optional = section2Name.endsWith("?"),
+                validate = validateSection2),
+            Validator(
+                name = section3Name.removeSuffix("?"),
+                optional = section3Name.endsWith("?"),
+                validate = validateSection3))) {
+        val node1 = it[section1Name.removeSuffix("?")]
+        val node2 = it[section2Name.removeSuffix("?")]
+        val node3 = it[section3Name.removeSuffix("?")]
+        validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3))
+    }
 
 fun <Wrapped : Phase2Node, Base> validateWrappedNode(
     tracker: MutableLocationTracker,
@@ -380,15 +299,14 @@ fun <Wrapped : Phase2Node, Base> validateWrappedNode(
 ): Validation<Wrapped> {
     val node = rawNode.resolve()
 
-    val base = checkType(node)
-        ?: return validationFailure(
-            listOf(
-                ParseError(
-                    "Cannot convert ${node.toCode()} to a $expectedType",
-                    getRow(node), getColumn(node)
-                )
-            )
-        )
+    val base =
+        checkType(node)
+            ?: return validationFailure(
+                listOf(
+                    ParseError(
+                        "Cannot convert ${node.toCode()} to a $expectedType",
+                        getRow(node),
+                        getColumn(node))))
 
     return validationSuccess(tracker, rawNode, build(base))
 }
@@ -399,7 +317,9 @@ fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1No
     return writer
 }
 
-fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Phase2Node?): CodeWriter {
+fun toCode(
+    writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Phase2Node?
+): CodeWriter {
     for (i in sections.indices) {
         val sect = sections[i]
         if (sect != null) {
@@ -415,8 +335,7 @@ fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Pha
 data class Validator(
     val name: String,
     val optional: Boolean,
-    val validate: (section: Section, tracker: MutableLocationTracker) -> Validation<Phase2Node>
-)
+    val validate: (section: Section, tracker: MutableLocationTracker) -> Validation<Phase2Node>)
 
 fun <G : Phase2Node> validateGroup(
     tracker: MutableLocationTracker,
@@ -428,12 +347,7 @@ fun <G : Phase2Node> validateGroup(
 
     val errors = ArrayList<ParseError>()
     if (node !is Group) {
-        errors.add(
-            ParseError(
-                "Expected a Group",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Group", getRow(node), getColumn(node)))
         return validationFailure(errors)
     }
 
@@ -441,15 +355,18 @@ fun <G : Phase2Node> validateGroup(
 
     val sectionMap: Map<String, Section>
     try {
-        sectionMap = identifySections(
-            sections, *validations.map {
-                if (it.optional) {
-                    "${it.name}?"
-                } else {
-                    it.name
-                }
-            }.toTypedArray()
-        )
+        sectionMap =
+            identifySections(
+                sections,
+                *validations
+                    .map {
+                        if (it.optional) {
+                            "${it.name}?"
+                        } else {
+                            it.name
+                        }
+                    }
+                    .toTypedArray())
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
         return validationFailure(errors)
@@ -463,7 +380,8 @@ fun <G : Phase2Node> validateGroup(
             var n: Phase2Node? = null
             val sect = sectionMap[v.name]
             if (sect != null) {
-                when (val sectionValidation = v.validate(sect, tracker)) {
+                when (val sectionValidation = v.validate(sect, tracker)
+                ) {
                     is ValidationSuccess -> n = sectionValidation.value
                     is ValidationFailure -> errors.addAll(sectionValidation.errors)
                 }
@@ -473,9 +391,7 @@ fun <G : Phase2Node> validateGroup(
                     ParseError(
                         message = "Missing required section ${v.name}",
                         row = getRow(node),
-                        column = getColumn(node)
-                    )
-                )
+                        column = getColumn(node)))
             }
             partMap[v.name] = n
         }
@@ -501,43 +417,36 @@ fun <G : Phase2Node> validateIdGroup(
         // The id token is of type Id and the text is of the form "[...]"
         // Convert it to look like a statement.
         val statementText = "'" + rawText.substring(1, rawText.length - 1) + "'"
-        val stmtToken = Phase1Token(
-            statementText, ChalkTalkTokenType.Statement,
-            row, column
-        )
-        when (val idValidation = validateIdStatement(stmtToken, tracker)) {
+        val stmtToken = Phase1Token(statementText, ChalkTalkTokenType.Statement, row, column)
+        when (val idValidation = validateIdStatement(stmtToken, tracker)
+        ) {
             is ValidationSuccess -> id = idValidation.value
             is ValidationFailure -> errors.addAll(idValidation.errors)
         }
     } else {
-        errors.add(
-            ParseError(
-                "Expected an Id",
-                getRow(group), getColumn(group)
-            )
-        )
+        errors.add(ParseError("Expected an Id", getRow(group), getColumn(group)))
     }
 
     if (errors.isNotEmpty()) {
         return validationFailure(errors)
     }
 
-    return validateGroup(tracker, rawNode, validations) {
-        build(id!!, it)
-    }
+    return validateGroup(tracker, rawNode, validations) { build(id!!, it) }
 }
 
 fun <G : Phase2Node> validateIdMetadataGroup(
     tracker: MutableLocationTracker,
     rawNode: Phase1Node,
     validations: List<Validator>,
-    build: (id: IdStatement, sections: Map<String, Phase2Node?>, metadata: MetaDataSection?) -> Validation<G>
+    build:
+        (
+            id: IdStatement,
+            sections: Map<String, Phase2Node?>,
+            metadata: MetaDataSection?) -> Validation<G>
 ): Validation<G> {
     val metaValidations = mutableListOf<Validator>()
     metaValidations.addAll(validations)
-    return validateIdGroup(
-        tracker,
-        rawNode,
-        metaValidations
-    ) { id, sections -> build(id, sections, sections["Metadata"] as MetaDataSection?) }
+    return validateIdGroup(tracker, rawNode, metaValidations) { id, sections ->
+        build(id, sections, sections["Metadata"] as MetaDataSection?)
+    }
 }

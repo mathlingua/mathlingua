@@ -16,23 +16,23 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateIdMetadataGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.transform.signature
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.validationSuccess
+import mathlingua.transform.signature
 
 data class ViewsGroup(
     val signature: String?,
@@ -70,69 +70,48 @@ data class ViewsGroup(
             singleToSection,
             asSection,
             usingSection,
-            metaDataSection
-        )
+            metaDataSection)
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        ViewsGroup(
-        signature = signature,
-        id = id.transform(chalkTransformer) as IdStatement,
-        viewsSection = viewsSection.transform(chalkTransformer) as ViewsSection,
-        singleFromSection = singleFromSection.transform(chalkTransformer) as SingleFromSection,
-        singleToSection = singleToSection.transform(chalkTransformer) as SingleToSection,
-        asSection = asSection.transform(chalkTransformer) as SingleAsSection,
-        usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
-    )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            ViewsGroup(
+                signature = signature,
+                id = id.transform(chalkTransformer) as IdStatement,
+                viewsSection = viewsSection.transform(chalkTransformer) as ViewsSection,
+                singleFromSection =
+                    singleFromSection.transform(chalkTransformer) as SingleFromSection,
+                singleToSection = singleToSection.transform(chalkTransformer) as SingleToSection,
+                asSection = asSection.transform(chalkTransformer) as SingleAsSection,
+                usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
 fun isViewsGroup(node: Phase1Node) = firstSectionMatchesName(node, "Views")
 
-fun validateViewsGroup(groupNode: Group, tracker: MutableLocationTracker) = validateIdMetadataGroup(
-    tracker,
-    groupNode,
-    listOf(
-        Validator(
-            name = "Views",
-            optional = false,
-            ::validateViewsSection
-        ),
-        Validator(
-            name = "from",
-            optional = false,
-            ::validateSingleFromSection
-        ),
-        Validator(
-            name = "to",
-            optional = false,
-            ::validateSingleToSection
-        ),
-        Validator(
-            name = "as",
-            optional = false,
-            ::validateSingleAsSection
-        ),
-        Validator(
-            name = "using",
-            optional = true,
-            ::validateUsingSection
-        )
-    )
-) { id, sections, metaDataSection ->
-    validationSuccess(
+fun validateViewsGroup(groupNode: Group, tracker: MutableLocationTracker) =
+    validateIdMetadataGroup(
         tracker,
         groupNode,
-        ViewsGroup(
-            id.signature(),
-            id,
-            sections["Views"] as ViewsSection,
-            sections["from"] as SingleFromSection,
-            sections["to"] as SingleToSection,
-            sections["as"] as SingleAsSection,
-            sections["using"] as UsingSection?,
-            metaDataSection
-        )
-    )
-}
+        listOf(
+            Validator(name = "Views", optional = false, ::validateViewsSection),
+            Validator(name = "from", optional = false, ::validateSingleFromSection),
+            Validator(name = "to", optional = false, ::validateSingleToSection),
+            Validator(name = "as", optional = false, ::validateSingleAsSection),
+            Validator(name = "using", optional = true, ::validateUsingSection))) {
+    id,
+    sections,
+    metaDataSection ->
+        validationSuccess(
+            tracker,
+            groupNode,
+            ViewsGroup(
+                id.signature(),
+                id,
+                sections["Views"] as ViewsSection,
+                sections["from"] as SingleFromSection,
+                sections["to"] as SingleToSection,
+                sections["as"] as SingleAsSection,
+                sections["using"] as UsingSection?,
+                metaDataSection))
+    }

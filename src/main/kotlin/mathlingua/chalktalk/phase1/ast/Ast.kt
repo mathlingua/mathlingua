@@ -41,9 +41,8 @@ data class Root(val groups: List<Group>) : Phase1Node {
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Root(
-        groups = groups.map { it.transform(transformer) as Group }
-    ))
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(Root(groups = groups.map { it.transform(transformer) as Group }))
 }
 
 data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
@@ -92,11 +91,9 @@ data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
 
     override fun resolve() = chalkTalkTarget.resolve()
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(
-        Argument(
-        chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target
-    )
-    )
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(
+            Argument(chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target))
 }
 
 data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node {
@@ -123,8 +120,9 @@ data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Section(
-        name = name.transform(transformer) as Phase1Token,
-        args = args.map { it.transform(transformer) as Argument }
-    ))
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(
+            Section(
+                name = name.transform(transformer) as Phase1Token,
+                args = args.map { it.transform(transformer) as Argument }))
 }

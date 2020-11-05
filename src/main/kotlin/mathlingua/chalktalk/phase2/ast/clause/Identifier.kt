@@ -29,10 +29,7 @@ import mathlingua.support.Validation
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 
-data class Identifier(
-    val name: String,
-    val isVarArgs: Boolean
-) : Target {
+data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,33 +38,26 @@ data class Identifier(
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
 fun isIdentifier(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Name
 
-fun validateIdentifier(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Identifier> {
+fun validateIdentifier(
+    rawNode: Phase1Node, tracker: MutableLocationTracker
+): Validation<Identifier> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
     if (node !is Phase1Token) {
-        errors.add(
-                ParseError(
-                        "Cannot convert to a ChalkTalkToken",
-                        getRow(node), getColumn(node)
-                )
-        )
+        errors.add(ParseError("Cannot convert to a ChalkTalkToken", getRow(node), getColumn(node)))
         return validationFailure(errors)
     }
 
     val (text, type, row, column) = node
     if (type !== ChalkTalkTokenType.Name) {
-        errors.add(
-                ParseError(
-                        "A token of type $type is not an identifier",
-                        row, column
-                )
-        )
+        errors.add(ParseError("A token of type $type is not an identifier", row, column))
         return validationFailure(errors)
     }
 
@@ -78,12 +68,5 @@ fun validateIdentifier(rawNode: Phase1Node, tracker: MutableLocationTracker): Va
         isVarArgs = true
     }
 
-    return validationSuccess(
-            tracker,
-            rawNode,
-            Identifier(
-                    name = realText,
-                    isVarArgs = isVarArgs
-            )
-    )
+    return validationSuccess(tracker, rawNode, Identifier(name = realText, isVarArgs = isVarArgs))
 }

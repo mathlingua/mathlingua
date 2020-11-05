@@ -37,16 +37,8 @@ data class ConstantSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ConstantSection(
-                clauses = clauses.transform(chalkTransformer) as ClauseListNode
-            )
-        )
+            ConstantSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateConstantSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-    AtLeast(1),
-    tracker,
-    node,
-    "constant",
-    ::ConstantSection
-)
+fun validateConstantSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(AtLeast(1), tracker, node, "constant", ::ConstantSection)

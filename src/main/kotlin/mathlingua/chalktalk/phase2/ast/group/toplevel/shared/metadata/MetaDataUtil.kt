@@ -31,7 +31,9 @@ import mathlingua.support.Validation
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 
-internal fun indentedStringSection(writer: CodeWriter, isArg: Boolean, indent: Int, sectionName: String, value: String): CodeWriter {
+internal fun indentedStringSection(
+    writer: CodeWriter, isArg: Boolean, indent: Int, sectionName: String, value: String
+): CodeWriter {
     writer.writeIndent(isArg, indent)
     writer.writeHeader(sectionName)
     writer.writeSpace()
@@ -48,34 +50,26 @@ internal fun <T : Phase2Node> validateStringSection(
     val node = rawNode.resolve()
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-                ParseError(
-                        "Expected a Section",
-                        getRow(node), getColumn(node)
-                )
-        )
+        errors.add(ParseError("Expected a Section", getRow(node), getColumn(node)))
     }
 
     val (name, args) = node as Section
     if (name.text != expectedName) {
         errors.add(
-                ParseError(
-                        "Expected a Section with name " +
-                                expectedName + " but found " + name.text,
-                        getRow(node), getColumn(node)
-                )
-        )
+            ParseError(
+                "Expected a Section with name " + expectedName + " but found " + name.text,
+                getRow(node),
+                getColumn(node)))
     }
 
     if (args.size != 1 ||
-            args[0].chalkTalkTarget !is Phase1Token ||
-            (args[0].chalkTalkTarget as Phase1Token).type != ChalkTalkTokenType.String) {
+        args[0].chalkTalkTarget !is Phase1Token ||
+        (args[0].chalkTalkTarget as Phase1Token).type != ChalkTalkTokenType.String) {
         errors.add(
-                ParseError(
-                        "Section '" + name.text + "' requires a single string argument.",
-                        getRow(node), getColumn(node)
-                )
-        )
+            ParseError(
+                "Section '" + name.text + "' requires a single string argument.",
+                getRow(node),
+                getColumn(node)))
     }
 
     val token = args[0].chalkTalkTarget as Phase1Token

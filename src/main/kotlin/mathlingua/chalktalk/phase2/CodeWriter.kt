@@ -17,16 +17,16 @@
 package mathlingua.chalktalk.phase2
 
 import mathlingua.MathLingua
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.support.Validation
+import mathlingua.support.ValidationFailure
+import mathlingua.support.ValidationSuccess
 import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.TextTexTalkNode
 import mathlingua.textalk.newTexTalkLexer
@@ -70,7 +70,9 @@ open class HtmlCodeWriter(
     protected val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, newCodeWriter(defines, states, foundations, mutuallyGroups)).getCode())
+        builder.append(
+            node.toCode(hasDot, indent, newCodeWriter(defines, states, foundations, mutuallyGroups))
+                .getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -129,8 +131,7 @@ open class HtmlCodeWriter(
                     // replace _\{...\} with _{...}
                     // because that is required to support things
                     // like M_{i, j}
-                    .replace(Regex("_\\\\\\{(.*?)\\\\\\}"), "_{$1}")}\\]"
-            )
+                    .replace(Regex("_\\\\\\{(.*?)\\\\\\}"), "_{$1}")}\\]")
             builder.append("</span>")
         } else {
             builder.append("<span class='mathlingua-argument-no-render'>")
@@ -142,7 +143,13 @@ open class HtmlCodeWriter(
     override fun writeId(id: IdStatement) {
         builder.append("<span class='mathlingua-id'>")
         builder.append('[')
-        val stmt = id.toStatement().toCode(false, 0, MathLinguaCodeWriter(emptyList(), emptyList(), emptyList(), emptyList())).getCode()
+        val stmt =
+            id.toStatement()
+                .toCode(
+                    false,
+                    0,
+                    MathLinguaCodeWriter(emptyList(), emptyList(), emptyList(), emptyList()))
+                .getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
         builder.append("</span>")
@@ -150,12 +157,16 @@ open class HtmlCodeWriter(
 
     override fun writeText(text: String) {
         if (shouldExpand()) {
-            val expansion = expandTextAsWritten(text, false, defines, states, foundations, mutuallyGroups)
-            val title = text + if (expansion.errors.isNotEmpty()) {
-                "\n\nWarning:\n" + expansion.errors.joinToString("\n\n")
-            } else {
-                ""
-            }.removeSurrounding("\"", "\"")
+            val expansion =
+                expandTextAsWritten(text, false, defines, states, foundations, mutuallyGroups)
+            val title =
+                text +
+                    if (expansion.errors.isNotEmpty()) {
+                            "\n\nWarning:\n" + expansion.errors.joinToString("\n\n")
+                        } else {
+                            ""
+                        }
+                        .removeSurrounding("\"", "\"")
             builder.append("<span class='mathlingua-text' title=\"$title\">")
             builder.append((expansion.text ?: text).replace("?", ""))
             builder.append("</span>")
@@ -172,25 +183,39 @@ open class HtmlCodeWriter(
             if (root is ValidationFailure) {
                 expansionErrors.addAll(root.errors.map { it.message })
             }
-            val fullExpansion = if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty() || mutuallyGroups.isNotEmpty())) {
-                val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
-                val result = expandAsWritten(root.value.transform {
-                    when (it) {
-                        is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
-                        else -> it
-                    }
-                }, patternsToWrittenAs)
-                expansionErrors.addAll(result.errors)
-                result.text
-            } else {
-                ""
-            }
+            val fullExpansion =
+                if (root is ValidationSuccess &&
+                    (defines.isNotEmpty() ||
+                        states.isNotEmpty() ||
+                        foundations.isNotEmpty() ||
+                        mutuallyGroups.isNotEmpty())) {
+                    val patternsToWrittenAs =
+                        MathLingua.getPatternsToWrittenAs(
+                            defines, states, foundations, mutuallyGroups)
+                    val result =
+                        expandAsWritten(
+                            root.value.transform {
+                                when (it) {
+                                    is TextTexTalkNode ->
+                                        it.copy(text = prettyPrintIdentifier(it.text))
+                                    else -> it
+                                }
+                            },
+                            patternsToWrittenAs)
+                    expansionErrors.addAll(result.errors)
+                    result.text
+                } else {
+                    ""
+                }
 
-            val title = stmtText.removeSurrounding("'", "'") + if (expansionErrors.isNotEmpty()) {
-                "\n\nWarning:\n" + expansionErrors.joinToString("\n\n")
-            } else {
-                ""
-            }.replace("'", "")
+            val title =
+                stmtText.removeSurrounding("'", "'") +
+                    if (expansionErrors.isNotEmpty()) {
+                            "\n\nWarning:\n" + expansionErrors.joinToString("\n\n")
+                        } else {
+                            ""
+                        }
+                        .replace("'", "")
 
             builder.append("<span class='mathlingua-statement' title='$title'>")
             if (stmtText.contains(IS)) {
@@ -202,8 +227,11 @@ open class HtmlCodeWriter(
                 val lhs = stmtText.substring(index + IS.length).trim()
                 val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
                 if (lhsParsed.errors.isEmpty()) {
-                    val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
-                    builder.append("\\[${
+                    val patternsToWrittenAs =
+                        MathLingua.getPatternsToWrittenAs(
+                            defines, states, foundations, mutuallyGroups)
+                    builder.append(
+                        "\\[${
                         expandAsWritten(lhsParsed.root.transform {
                         when (it) {
                             is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
@@ -214,7 +242,11 @@ open class HtmlCodeWriter(
                     writeDirect(lhs)
                 }
             } else {
-                if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty() || mutuallyGroups.isNotEmpty())) {
+                if (root is ValidationSuccess &&
+                    (defines.isNotEmpty() ||
+                        states.isNotEmpty() ||
+                        foundations.isNotEmpty() ||
+                        mutuallyGroups.isNotEmpty())) {
                     builder.append("\\[$fullExpansion\\]")
                 } else {
                     builder.append("\\[$stmtText\\]")
@@ -258,13 +290,19 @@ open class HtmlCodeWriter(
     ) = HtmlCodeWriter(defines, states, foundations, mutuallyGroups)
 
     override fun getCode(): String {
-        val text = builder.toString()
+        val text =
+            builder
+                .toString()
                 .replace(Regex("(\\s*<\\s*br\\s*/\\s*>\\s*)+$"), "")
                 .replace(Regex("^(\\s*<\\s*br\\s*/\\s*>\\s*)+$"), "")
         return "<span class='mathlingua'>$text</span>"
     }
 
-    private fun shouldExpand() = defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty() || mutuallyGroups.isNotEmpty()
+    private fun shouldExpand() =
+        defines.isNotEmpty() ||
+            states.isNotEmpty() ||
+            foundations.isNotEmpty() ||
+            mutuallyGroups.isNotEmpty()
 }
 
 class MathLinguaCodeWriter(
@@ -276,7 +314,9 @@ class MathLinguaCodeWriter(
     private val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, newCodeWriter(defines, states, foundations, mutuallyGroups)).getCode())
+        builder.append(
+            node.toCode(hasDot, indent, newCodeWriter(defines, states, foundations, mutuallyGroups))
+                .getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -324,26 +364,37 @@ class MathLinguaCodeWriter(
 
     override fun writeId(id: IdStatement) {
         builder.append('[')
-        val stmt = id.toStatement().toCode(false, 0, newCodeWriter(emptyList(), emptyList(), emptyList(), emptyList())).getCode()
+        val stmt =
+            id.toStatement()
+                .toCode(false, 0, newCodeWriter(emptyList(), emptyList(), emptyList(), emptyList()))
+                .getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
     }
 
     override fun writeText(text: String) {
         builder.append('"')
-        builder.append(expandTextAsWritten(text, true, defines, states, foundations, mutuallyGroups).text ?: text)
+        builder.append(
+            expandTextAsWritten(text, true, defines, states, foundations, mutuallyGroups).text
+                ?: text)
         builder.append('"')
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty() || mutuallyGroups.isNotEmpty())) {
-            val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+        if (root is ValidationSuccess &&
+            (defines.isNotEmpty() ||
+                states.isNotEmpty() ||
+                foundations.isNotEmpty() ||
+                mutuallyGroups.isNotEmpty())) {
+            val patternsToWrittenAs =
+                MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
             val expansion = expandAsWritten(root.value, patternsToWrittenAs)
-            builder.append(if (expansion.text != null) {
-                "'${expansion.text}'"
-            } else {
-                "'$stmtText'"
-            })
+            builder.append(
+                if (expansion.text != null) {
+                    "'${expansion.text}'"
+                } else {
+                    "'$stmtText'"
+                })
         } else {
             builder.append("'$stmtText'")
         }
@@ -379,11 +430,12 @@ internal fun prettyPrintIdentifier(text: String): String {
     val match = regex.find(text)
     return if (match != null) {
         val groups = match.groupValues
-        val name = if (isGreekLetter(groups[1])) {
-            "\\${groups[1]}"
-        } else {
-            groups[1]
-        }
+        val name =
+            if (isGreekLetter(groups[1])) {
+                "\\${groups[1]}"
+            } else {
+                groups[1]
+            }
         val number = groups[2]
         "${name}_$number"
     } else {
@@ -398,62 +450,60 @@ internal fun prettyPrintIdentifier(text: String): String {
 // ------------------------------------------------------------------------------------------------------------------ //
 
 private fun isGreekLetter(letter: String) =
-        mutableSetOf(
-                "alpha",
-                "beta",
-                "gamma",
-                "delta",
-                "epsilon",
-                "zeta",
-                "eta",
-                "theta",
-                "iota",
-                "kappa",
-                "lambda",
-                "mu",
-                "nu",
-                "xi",
-                "omicron",
-                "pi",
-                "rho",
-                "sigma",
-                "tau",
-                "upsilon",
-                "phi",
-                "chi",
-                "psi",
-                "omega",
-                "Alpha",
-                "Beta",
-                "Gamma",
-                "Delta",
-                "Epsilon",
-                "Zeta",
-                "Eta",
-                "Theta",
-                "Iota",
-                "Kappa",
-                "Lambda",
-                "Mu",
-                "Nu",
-                "Xi",
-                "Omicron",
-                "Pi",
-                "Rho",
-                "Sigma",
-                "Tau",
-                "Upsilon",
-                "Phi",
-                "Chi",
-                "Psi",
-                "Omega").contains(letter)
+    mutableSetOf(
+            "alpha",
+            "beta",
+            "gamma",
+            "delta",
+            "epsilon",
+            "zeta",
+            "eta",
+            "theta",
+            "iota",
+            "kappa",
+            "lambda",
+            "mu",
+            "nu",
+            "xi",
+            "omicron",
+            "pi",
+            "rho",
+            "sigma",
+            "tau",
+            "upsilon",
+            "phi",
+            "chi",
+            "psi",
+            "omega",
+            "Alpha",
+            "Beta",
+            "Gamma",
+            "Delta",
+            "Epsilon",
+            "Zeta",
+            "Eta",
+            "Theta",
+            "Iota",
+            "Kappa",
+            "Lambda",
+            "Mu",
+            "Nu",
+            "Xi",
+            "Omicron",
+            "Pi",
+            "Rho",
+            "Sigma",
+            "Tau",
+            "Upsilon",
+            "Phi",
+            "Chi",
+            "Psi",
+            "Omega")
+        .contains(letter)
 
 const val ESCAPED_SINGLE_QUOTE = "MATHLINGUA_ESCAPED_SINGLE_QUOTE"
 
-private data class TextRange(
-    val text: String,
-    val isMathlingua: Boolean
-)
+private data class TextRange(val text: String, val isMathlingua: Boolean)
 
 private fun splitByMathlingua(text: String): List<TextRange> {
     var remaining = text.replace("\\'", ESCAPED_SINGLE_QUOTE)
@@ -463,19 +513,14 @@ private fun splitByMathlingua(text: String): List<TextRange> {
         if (startIndex < 0) {
             result.add(
                 TextRange(
-                    text = remaining.replace(ESCAPED_SINGLE_QUOTE, "\\'"),
-                    isMathlingua = false
-                )
-            )
+                    text = remaining.replace(ESCAPED_SINGLE_QUOTE, "\\'"), isMathlingua = false))
             break
         }
 
         result.add(
             TextRange(
                 text = remaining.substring(0, startIndex).replace(ESCAPED_SINGLE_QUOTE, "\\'"),
-                isMathlingua = false
-            )
-        )
+                isMathlingua = false))
 
         // the index right after the starting '
         val newStart = (startIndex + 1).coerceAtMost(remaining.length - 1)
@@ -486,34 +531,35 @@ private fun splitByMathlingua(text: String): List<TextRange> {
             result.add(
                 TextRange(
                     text = "'$remaining".replace(ESCAPED_SINGLE_QUOTE, "\\'"),
-                    isMathlingua = false
-                )
-            )
+                    isMathlingua = false))
             break
         }
 
         result.add(
             TextRange(
                 text = remaining.substring(0, endIndex).replace(ESCAPED_SINGLE_QUOTE, "\\'"),
-                isMathlingua = true
-            )
-        )
+                isMathlingua = true))
 
         remaining = remaining.substring((endIndex + 1).coerceAtMost(remaining.length - 1))
     }
     return result
 }
 
-private fun expandTextAsWritten(text: String, addQuotes: Boolean, defines: List<DefinesGroup>, states: List<StatesGroup>, foundations: List<FoundationGroup>, mutuallyGroups: List<MutuallyGroup>): Expansion {
+private fun expandTextAsWritten(
+    text: String,
+    addQuotes: Boolean,
+    defines: List<DefinesGroup>,
+    states: List<StatesGroup>,
+    foundations: List<FoundationGroup>,
+    mutuallyGroups: List<MutuallyGroup>
+): Expansion {
     if (defines.isEmpty() && states.isEmpty()) {
-        return Expansion(
-            text = text,
-            errors = emptyList()
-        )
+        return Expansion(text = text, errors = emptyList())
     }
 
     val errors = mutableListOf<String>()
-    val patternsToWrittenAs = MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+    val patternsToWrittenAs =
+        MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
     val parts = splitByMathlingua(text)
     val builder = StringBuilder()
     for (part in parts) {
@@ -538,8 +584,5 @@ private fun expandTextAsWritten(text: String, addQuotes: Boolean, defines: List<
             builder.append(part.text)
         }
     }
-    return Expansion(
-        text = builder.toString(),
-        errors = errors
-    )
+    return Expansion(text = builder.toString(), errors = errors)
 }

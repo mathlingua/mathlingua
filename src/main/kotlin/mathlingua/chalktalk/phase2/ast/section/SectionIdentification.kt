@@ -16,12 +16,12 @@
 
 package mathlingua.chalktalk.phase2.ast.section
 
-import mathlingua.support.ParseError
+import java.util.LinkedList
+import java.util.Queue
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
-import java.util.LinkedList
-import java.util.Queue
+import mathlingua.support.ParseError
 
 fun identifySections(sections: List<Section>, vararg expected: String): Map<String, Section> {
     val patternBuilder = StringBuilder()
@@ -51,13 +51,13 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
         val maybeName = expectedQueue.peek()
 
         val isOptional = maybeName.endsWith("?")
-        val trueName =
-            if (isOptional) maybeName.substring(0, maybeName.length - 1) else maybeName
-        val key = if (usedSectionNames.containsKey(trueName)) {
-            "$trueName${usedSectionNames[trueName]}"
-        } else {
-            trueName
-        }
+        val trueName = if (isOptional) maybeName.substring(0, maybeName.length - 1) else maybeName
+        val key =
+            if (usedSectionNames.containsKey(trueName)) {
+                "$trueName${usedSectionNames[trueName]}"
+            } else {
+                trueName
+            }
         usedSectionNames[trueName] = usedSectionNames.getOrDefault(trueName, 0) + 1
         if (nextSection.name.text == trueName) {
             result[key] = nextSection
@@ -73,20 +73,24 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
             expectedQueue.poll()
         } else {
             throw ParseError(
-                "For pattern:\n\n" + pattern +
-                    "\nExpected '" + trueName + "' but found '" + nextSection.name.text + "'",
-                getRow(nextSection), getColumn(nextSection)
-            )
+                "For pattern:\n\n" +
+                    pattern +
+                    "\nExpected '" +
+                    trueName +
+                    "' but found '" +
+                    nextSection.name.text +
+                    "'",
+                getRow(nextSection),
+                getColumn(nextSection))
         }
     }
 
     if (!sectionQueue.isEmpty()) {
         val peek = sectionQueue.peek()
         throw ParseError(
-            "For pattern:\n\n" + pattern +
-                "\nUnexpected Section '" + peek.name.text + "'",
-            getRow(peek), getColumn(peek)
-        )
+            "For pattern:\n\n" + pattern + "\nUnexpected Section '" + peek.name.text + "'",
+            getRow(peek),
+            getColumn(peek))
     }
 
     var nextExpected: String? = null
@@ -108,9 +112,7 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
 
     if (nextExpected != null) {
         throw ParseError(
-            "For pattern:\n\n" + pattern +
-                "\nExpected a " + nextExpected, startRow, startColumn
-        )
+            "For pattern:\n\n" + pattern + "\nExpected a " + nextExpected, startRow, startColumn)
     }
 
     return result

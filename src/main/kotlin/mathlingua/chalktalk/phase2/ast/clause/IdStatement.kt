@@ -27,10 +27,8 @@ import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 import mathlingua.textalk.ExpressionTexTalkNode
 
-data class IdStatement(
-    val text: String,
-    val texTalkRoot: Validation<ExpressionTexTalkNode>
-) : Clause {
+data class IdStatement(val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>) :
+    Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -39,19 +37,22 @@ data class IdStatement(
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 
-    fun toStatement() = Statement(
-            text = text,
-            texTalkRoot = texTalkRoot
-    )
+    fun toStatement() = Statement(text = text, texTalkRoot = texTalkRoot)
 }
 
-fun validateIdStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<IdStatement> =
-        when (val validation = validateStatement(rawNode, tracker)) {
-            is ValidationSuccess -> validationSuccess(tracker, rawNode, IdStatement(
-                    text = validation.value.text,
-                    texTalkRoot = validation.value.texTalkRoot
-            ))
-            is ValidationFailure -> validationFailure(validation.errors)
-        }
+fun validateIdStatement(
+    rawNode: Phase1Node, tracker: MutableLocationTracker
+): Validation<IdStatement> =
+    when (val validation = validateStatement(rawNode, tracker)
+    ) {
+        is ValidationSuccess ->
+            validationSuccess(
+                tracker,
+                rawNode,
+                IdStatement(
+                    text = validation.value.text, texTalkRoot = validation.value.texTalkRoot))
+        is ValidationFailure -> validationFailure(validation.errors)
+    }

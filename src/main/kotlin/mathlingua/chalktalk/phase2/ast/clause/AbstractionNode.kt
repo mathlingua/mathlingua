@@ -16,19 +16,14 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Abstraction
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
+import mathlingua.support.MutableLocationTracker
 
 data class AbstractionNode(val abstraction: Abstraction) : ZeroPartNode(abstraction), Target
 
 fun isAbstraction(node: Phase1Node) = node is Abstraction
 
-fun validateAbstractionNode(node: Phase1Node, tracker: MutableLocationTracker) = validateWrappedNode(
-        tracker,
-        node,
-        "AbstractionNode",
-        { it as? Abstraction },
-        ::AbstractionNode
-)
+fun validateAbstractionNode(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateWrappedNode(tracker, node, "AbstractionNode", { it as? Abstraction }, ::AbstractionNode)

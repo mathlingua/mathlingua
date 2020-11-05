@@ -22,10 +22,10 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.WhenToPair
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.ElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.isElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.validateElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.isToSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateToSection
@@ -65,42 +65,32 @@ data class PiecewiseGroup(
             sections.add(wt.toSection)
         }
         sections.add(elseSection)
-        return topLevelToCode(
-            writer,
-            isArg,
-            indent,
-            null,
-            *sections.toTypedArray()
-        )
+        return topLevelToCode(writer, isArg, indent, null, *sections.toTypedArray())
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        PiecewiseGroup(
-            piecewiseSection = piecewiseSection.transform(chalkTransformer) as PiecewiseSection,
-            whenTo = whenTo.map {
-                WhenToPair(
-                    whenSection = chalkTransformer(it.whenSection) as WhenSection,
-                    toSection = chalkTransformer(it.toSection) as ToSection
-                )
-            },
-            elseSection = elseSection?.transform(chalkTransformer) as ElseSection?
-        )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            PiecewiseGroup(
+                piecewiseSection = piecewiseSection.transform(chalkTransformer) as PiecewiseSection,
+                whenTo =
+                    whenTo.map {
+                        WhenToPair(
+                            whenSection = chalkTransformer(it.whenSection) as WhenSection,
+                            toSection = chalkTransformer(it.toSection) as ToSection)
+                    },
+                elseSection = elseSection?.transform(chalkTransformer) as ElseSection?))
 }
 
 fun isPiecewiseGroup(node: Phase1Node) = firstSectionMatchesName(node, "piecewise")
 
-fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<PiecewiseGroup> {
+fun validatePiecewiseGroup(
+    rawNode: Phase1Node, tracker: MutableLocationTracker
+): Validation<PiecewiseGroup> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
     if (node !is Group) {
-        errors.add(
-            ParseError(
-                "Expected a Group",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Group", getRow(node), getColumn(node)))
         return validationFailure(errors)
     }
 
@@ -111,12 +101,7 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
     var elseSection: ElseSection? = null
     if (node.sections.isEmpty()) {
         errors.add(
-            ParseError(
-            message = "Expected an piecewise: section",
-            row = row,
-            column = column
-        )
-        )
+            ParseError(message = "Expected an piecewise: section", row = row, column = column))
     } else {
         var i = 1
         while (i < node.sections.size) {
@@ -127,7 +112,8 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
             i++
 
             var whenSection: WhenSection? = null
-            when (val validation = validateWhenSection(sec, tracker)) {
+            when (val validation = validateWhenSection(sec, tracker)
+            ) {
                 is ValidationSuccess -> whenSection = validation.value
                 is ValidationFailure -> errors.addAll(validation.errors)
             }
@@ -137,14 +123,13 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
                     ParseError(
                         message = "A when: section must have an to: section",
                         row = getRow(sec),
-                        column = getColumn(sec)
-                    )
-                )
+                        column = getColumn(sec)))
                 break
             }
 
             var toSection: ToSection? = null
-            when (val validation = validateToSection(node.sections[i], tracker)) {
+            when (val validation = validateToSection(node.sections[i], tracker)
+            ) {
                 is ValidationSuccess -> {
                     i++
                     toSection = validation.value
@@ -153,17 +138,13 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
             }
 
             if (whenSection != null && toSection != null) {
-                whenToList.add(
-                    WhenToPair(
-                        whenSection,
-                        toSection
-                    )
-                )
+                whenToList.add(WhenToPair(whenSection, toSection))
             }
         }
 
         if (i < node.sections.size && isElseSection(node.sections[i])) {
-            when (val validation = validateElseSection(node.sections[i], tracker)) {
+            when (val validation = validateElseSection(node.sections[i], tracker)
+            ) {
                 is ValidationSuccess -> {
                     i++
                     elseSection = validation.value
@@ -178,9 +159,7 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
                 ParseError(
                     message = "Unexpected section ${sec.name.text}",
                     row = getRow(sec),
-                    column = getColumn(sec)
-                )
-            )
+                    column = getColumn(sec)))
         }
     }
 
@@ -188,10 +167,6 @@ fun validatePiecewiseGroup(rawNode: Phase1Node, tracker: MutableLocationTracker)
         validationFailure(errors)
     } else {
         validationSuccess(
-            PiecewiseGroup(
-                piecewiseSection = PiecewiseSection(),
-                whenTo = whenToList,
-                elseSection
-            ))
+            PiecewiseGroup(piecewiseSection = PiecewiseSection(), whenTo = whenToList, elseSection))
     }
 }

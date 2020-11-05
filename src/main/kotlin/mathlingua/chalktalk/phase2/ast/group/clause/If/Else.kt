@@ -14,22 +14,23 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast.group.clause.`if`
+package mathlingua.chalktalk.phase2.ast.group.clause.If
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
+import mathlingua.support.MutableLocationTracker
 
-data class IfSection(val clauses: ClauseListNode) : Phase2Node {
+data class ElseSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("if")
+        writer.writeHeader("else")
         if (clauses.clauses.isNotEmpty()) {
             writer.writeNewline()
         }
@@ -38,17 +39,11 @@ data class IfSection(val clauses: ClauseListNode) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(
-                IfSection(
-                    clauses = clauses.transform(chalkTransformer) as ClauseListNode
-            )
-            )
+        chalkTransformer(
+            ElseSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateIfSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-        AtLeast(1),
-        tracker,
-        node,
-        "if",
-        ::IfSection
-)
+fun isElseSection(sec: Section) = sec.name.text == "else"
+
+fun validateElseSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(AtLeast(1), tracker, node, "else", ::ElseSection)

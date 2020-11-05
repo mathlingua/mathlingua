@@ -16,15 +16,14 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.mapping
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.section.validateEmptySection
+import mathlingua.support.MutableLocationTracker
 
 class MappingSection : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
@@ -36,9 +35,5 @@ class MappingSection : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validateMappingSection(node: Phase1Node, tracker: MutableLocationTracker) = validateEmptySection(
-    node,
-    tracker,
-    "mapping",
-    ::MappingSection
-)
+fun validateMappingSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateEmptySection(node, tracker, "mapping", ::MappingSection)

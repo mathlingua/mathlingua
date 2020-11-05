@@ -16,12 +16,12 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.mapping
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.section.validateStatementListSection
+import mathlingua.support.MutableLocationTracker
 
 data class FromSection(val statements: List<Statement>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -43,14 +43,9 @@ data class FromSection(val statements: List<Statement>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(FromSection(
-            statements = statements.map { chalkTransformer(it) as Statement }
-        ))
+        chalkTransformer(
+            FromSection(statements = statements.map { chalkTransformer(it) as Statement }))
 }
 
-fun validateFromSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementListSection(
-    node,
-    tracker,
-    "from",
-    ::FromSection
-)
+fun validateFromSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateStatementListSection(node, tracker, "from", ::FromSection)

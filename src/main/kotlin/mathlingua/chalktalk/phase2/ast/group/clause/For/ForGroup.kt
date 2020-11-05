@@ -14,40 +14,36 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast.group.clause.`for`
+package mathlingua.chalktalk.phase2.ast.group.clause.For
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.common.ThreePartNode
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateMidOptionalTripleSectionGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.validateThenSection
+import mathlingua.chalktalk.phase2.ast.common.ThreePartNode
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.support.MutableLocationTracker
 
 data class ForGroup(
-    val forSection: ForSection,
-    val whereSection: WhereSection?,
-    val thenSection: ThenSection
-) : ThreePartNode<ForSection, WhereSection?, ThenSection>(
-    forSection,
-    whereSection,
-    thenSection,
-    ::ForGroup
-), Clause
+    val forSection: ForSection, val whereSection: WhereSection?, val thenSection: ThenSection
+) :
+    ThreePartNode<ForSection, WhereSection?, ThenSection>(
+        forSection, whereSection, thenSection, ::ForGroup),
+    Clause
 
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
 
-fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateMidOptionalTripleSectionGroup(
-    tracker,
-    rawNode,
-    "for",
-    ::validateForSection,
-    "where?",
-    ::validateWhereSection,
-    "then",
-    ::validateThenSection,
-    ::ForGroup
-)
+fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
+    validateMidOptionalTripleSectionGroup(
+        tracker,
+        rawNode,
+        "for",
+        ::validateForSection,
+        "where?",
+        ::validateWhereSection,
+        "then",
+        ::validateThenSection,
+        ::ForGroup)

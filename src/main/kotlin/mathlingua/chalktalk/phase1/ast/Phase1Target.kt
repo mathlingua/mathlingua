@@ -51,12 +51,11 @@ data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() 
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(
-        Mapping(
-            lhs = lhs.transform(transformer) as Phase1Token,
-            rhs = rhs.transform(transformer) as Phase1Token
-    )
-    )
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(
+            Mapping(
+                lhs = lhs.transform(transformer) as Phase1Token,
+                rhs = rhs.transform(transformer) as Phase1Token))
 }
 
 data class Group(val sections: List<Section>, val id: Phase1Token?) : Phase1Target() {
@@ -92,12 +91,11 @@ data class Group(val sections: List<Section>, val id: Phase1Token?) : Phase1Targ
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(
-        Group(
-            sections = sections.map { it.transform(transformer) as Section },
-            id = id?.transform(transformer) as Phase1Token
-    )
-    )
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(
+            Group(
+                sections = sections.map { it.transform(transformer) as Section },
+                id = id?.transform(transformer) as Phase1Token))
 }
 
 // ------------------------------------------------------------------------------------------------------------------ //
@@ -115,23 +113,22 @@ data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem(
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(
-        Assignment(
-            lhs = lhs.transform(transformer) as Phase1Token,
-            rhs = rhs.transform(transformer) as Phase1Token
-    )
-    )
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(
+            Assignment(
+                lhs = lhs.transform(transformer) as Phase1Token,
+                rhs = rhs.transform(transformer) as Phase1Token))
 }
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
 sealed class AssignmentRhs : TupleItem()
 
-data class Phase1Token(val text: String, val type: ChalkTalkTokenType, val row: Int, val column: Int) :
-    AssignmentRhs() {
+data class Phase1Token(
+    val text: String, val type: ChalkTalkTokenType, val row: Int, val column: Int
+) : AssignmentRhs() {
 
-    override fun forEach(fn: (node: Phase1Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {}
 
     override fun toCode() = text
 
@@ -159,9 +156,8 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Tuple(
-        items = items.map { it.transform(transformer) as TupleItem }
-    ))
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(Tuple(items = items.map { it.transform(transformer) as TupleItem }))
 }
 
 data class Abstraction(
@@ -212,16 +208,21 @@ data class Abstraction(
 
     override fun resolve() = this
 
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(Abstraction(
-        isEnclosed = isEnclosed,
-        isVarArgs = isVarArgs,
-        parts = parts.map { it.transform(transformer) as AbstractionPart },
-        subParams = subParams?.map { it.transform(transformer) as Phase1Token }
-    ))
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
+        transformer(
+            Abstraction(
+                isEnclosed = isEnclosed,
+                isVarArgs = isVarArgs,
+                parts = parts.map { it.transform(transformer) as AbstractionPart },
+                subParams = subParams?.map { it.transform(transformer) as Phase1Token }))
 }
 
-data class AbstractionPart(val name: Phase1Token, val subParams: List<Phase1Token>?, val params: List<Phase1Token>?, val tail: AbstractionPart?) :
-    AssignmentRhs() {
+data class AbstractionPart(
+    val name: Phase1Token,
+    val subParams: List<Phase1Token>?,
+    val params: List<Phase1Token>?,
+    val tail: AbstractionPart?
+) : AssignmentRhs() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)
@@ -275,11 +276,9 @@ data class AbstractionPart(val name: Phase1Token, val subParams: List<Phase1Toke
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node {
         return transformer(
             AbstractionPart(
-            name = name.transform(transformer) as Phase1Token,
-            subParams = subParams?.map { it.transform(transformer) as Phase1Token },
-            params = params?.map { it.transform(transformer) as Phase1Token },
-            tail = tail?.transform(transformer) as AbstractionPart?
-        )
-        )
+                name = name.transform(transformer) as Phase1Token,
+                subParams = subParams?.map { it.transform(transformer) as Phase1Token },
+                params = params?.map { it.transform(transformer) as Phase1Token },
+                tail = tail?.transform(transformer) as AbstractionPart?))
     }
 }

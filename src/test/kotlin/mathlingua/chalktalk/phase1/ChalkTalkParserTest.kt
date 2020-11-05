@@ -23,9 +23,9 @@ import mathlingua.GoldenType
 import mathlingua.OVERWRITE_GOLDEN_FILES
 import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
-import mathlingua.support.ParseError
 import mathlingua.loadTestCases
 import mathlingua.serialize
+import mathlingua.support.ParseError
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 

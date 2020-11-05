@@ -16,14 +16,14 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation
 
-import mathlingua.support.MutableLocationTracker
+import java.lang.ClassCastException
+import java.lang.Exception
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.validator.Exactly
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
-import java.lang.ClassCastException
-import java.lang.Exception
+import mathlingua.support.MutableLocationTracker
 
 data class FoundationSection(val content: DefinesStatesOrViews) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -40,21 +40,14 @@ data class FoundationSection(val content: DefinesStatesOrViews) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            FoundationSection(
-            content = chalkTransformer(content) as DefinesStatesOrViews
-        )
-        )
+            FoundationSection(content = chalkTransformer(content) as DefinesStatesOrViews))
 }
 
-fun validateFoundationSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-    Exactly(1),
-    tracker,
-    node,
-    "Foundation"
-) {
-    try {
-        FoundationSection(content = it.clauses[0] as DefinesStatesOrViews)
-    } catch (e: ClassCastException) {
-        throw Exception("Expected a Defines, Represents, or a Views group")
+fun validateFoundationSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(Exactly(1), tracker, node, "Foundation") {
+        try {
+            FoundationSection(content = it.clauses[0] as DefinesStatesOrViews)
+        } catch (e: ClassCastException) {
+            throw Exception("Expected a Defines, Represents, or a Views group")
+        }
     }
-}

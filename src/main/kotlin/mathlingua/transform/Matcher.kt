@@ -16,9 +16,10 @@
 
 package mathlingua.transform
 
+import kotlin.math.max
+import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
-import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.textalk.Command
 import mathlingua.textalk.CommandPart
 import mathlingua.textalk.ExpressionTexTalkNode
@@ -27,19 +28,16 @@ import mathlingua.textalk.OperatorTexTalkNode
 import mathlingua.textalk.TexTalkNode
 import mathlingua.textalk.TexTalkTokenType
 import mathlingua.textalk.TextTexTalkNode
-import kotlin.math.max
 
-data class Expansion(
-    val text: String?,
-    val errors: List<String>
-)
+data class Expansion(val text: String?, val errors: List<String>)
 
 internal fun OperatorTexTalkNode.signature() =
     when (this.command) {
         is Command -> this.command.signature()
         is TextTexTalkNode -> this.command.text
-        else -> throw RuntimeException("Cannot get a signature of an " +
-            "operator with command ${this.command.toCode()}")
+        else ->
+            throw RuntimeException(
+                "Cannot get a signature of an " + "operator with command ${this.command.toCode()}")
     }
 
 internal fun Command.signature(): String {
@@ -72,15 +70,14 @@ fun IdStatement.signature() =
 data class Substitutions(
     val doesMatch: Boolean,
     val substitutions: Map<String, List<TexTalkNode>>,
-    val errors: List<String>
-)
+    val errors: List<String>)
 
-internal fun getSubstitutions(pattern: OperatorTexTalkNode, value: OperatorTexTalkNode): Substitutions {
-    val subs = MutableSubstitutions(
-        doesMatch = true,
-        substitutions = mutableMapOf(),
-        errors = mutableListOf()
-    )
+internal fun getSubstitutions(
+    pattern: OperatorTexTalkNode, value: OperatorTexTalkNode
+): Substitutions {
+    val subs =
+        MutableSubstitutions(
+            doesMatch = true, substitutions = mutableMapOf(), errors = mutableListOf())
 
     if ((pattern.lhs == null) != (value.lhs == null)) {
         subs.doesMatch = false
@@ -90,8 +87,9 @@ internal fun getSubstitutions(pattern: OperatorTexTalkNode, value: OperatorTexTa
     if (pattern.lhs != null) {
         if (pattern.lhs !is TextTexTalkNode) {
             subs.doesMatch = false
-            subs.errors.add("The left-hand-side of an infix operator " +
-                "pattern must be an identifier but found ${pattern.lhs.toCode()}")
+            subs.errors.add(
+                "The left-hand-side of an infix operator " +
+                    "pattern must be an identifier but found ${pattern.lhs.toCode()}")
             return subs.toImmutable()
         }
 
@@ -106,8 +104,9 @@ internal fun getSubstitutions(pattern: OperatorTexTalkNode, value: OperatorTexTa
     if (pattern.rhs != null) {
         if (pattern.rhs !is TextTexTalkNode) {
             subs.doesMatch = false
-            subs.errors.add("The right-hand-side of an infix operator " +
-                "pattern must be an identifier but found ${pattern.rhs.toCode()}")
+            subs.errors.add(
+                "The right-hand-side of an infix operator " +
+                    "pattern must be an identifier but found ${pattern.rhs.toCode()}")
             return subs.toImmutable()
         }
 
@@ -131,25 +130,20 @@ internal fun getSubstitutions(pattern: OperatorTexTalkNode, value: OperatorTexTa
         return subs.toImmutable()
     }
 
-    throw RuntimeException("Encountered a pattern or value operator with a " +
-        "command that is an expression.  Pattern: ${pattern.toCode()}, Value: ${value.toCode()}")
+    throw RuntimeException(
+        "Encountered a pattern or value operator with a " +
+            "command that is an expression.  Pattern: ${pattern.toCode()}, Value: ${value.toCode()}")
 }
 
 private fun getSubstitutions(pattern: Command, value: Command): Substitutions {
     val errors = validatePattern(pattern)
     if (errors.isNotEmpty()) {
-        return Substitutions(
-                doesMatch = false,
-                substitutions = emptyMap(),
-                errors = errors
-        )
+        return Substitutions(doesMatch = false, substitutions = emptyMap(), errors = errors)
     }
 
-    val subs = MutableSubstitutions(
-            doesMatch = true,
-            substitutions = mutableMapOf(),
-            errors = mutableListOf()
-    )
+    val subs =
+        MutableSubstitutions(
+            doesMatch = true, substitutions = mutableMapOf(), errors = mutableListOf())
 
     if (pattern.parts.size == value.parts.size) {
         for (i in pattern.parts.indices) {
@@ -166,15 +160,12 @@ private fun getSubstitutions(pattern: Command, value: Command): Substitutions {
 // That is Command patterns, are OperatorTexTalkNode pattern with a
 // left-hand-side or right-hand-side argument.
 internal fun expandAsWritten(
-    node: TexTalkNode,
-    operatorPatternToExpansion: Map<OperatorTexTalkNode, String>
+    node: TexTalkNode, operatorPatternToExpansion: Map<OperatorTexTalkNode, String>
 ): Expansion {
     val sigToPatternExpansion = mutableMapOf<String, PatternExpansion>()
     for ((opPattern, expansion) in operatorPatternToExpansion) {
-        sigToPatternExpansion[opPattern.signature()] = PatternExpansion(
-            pattern = opPattern,
-            expansion = expansion
-        )
+        sigToPatternExpansion[opPattern.signature()] =
+            PatternExpansion(pattern = opPattern, expansion = expansion)
     }
     return expandAsWrittenImpl(node, sigToPatternExpansion, false)
 }
@@ -184,11 +175,8 @@ private data class MutableSubstitutions(
     val substitutions: MutableMap<String, MutableList<TexTalkNode>>,
     val errors: MutableList<String>
 ) {
-    fun toImmutable() = Substitutions(
-        doesMatch = doesMatch,
-        substitutions = substitutions,
-        errors = errors
-    )
+    fun toImmutable() =
+        Substitutions(doesMatch = doesMatch, substitutions = substitutions, errors = errors)
 }
 
 private fun CommandPart.signature(): String {
@@ -201,7 +189,9 @@ private fun CommandPart.signature(): String {
     return builder.toString()
 }
 
-private fun findSubstitutions(pattern: GroupTexTalkNode?, value: GroupTexTalkNode?, subs: MutableSubstitutions) {
+private fun findSubstitutions(
+    pattern: GroupTexTalkNode?, value: GroupTexTalkNode?, subs: MutableSubstitutions
+) {
     if ((pattern == null) != (value == null)) {
         subs.doesMatch = false
         if (pattern == null) {
@@ -216,16 +206,21 @@ private fun findSubstitutions(pattern: GroupTexTalkNode?, value: GroupTexTalkNod
         return
     }
 
-    // this assumes all of the parameters are TextTexTalkNode with only the last one possible variadic
-    val paramNames = pattern.parameters.items.map { it.children[0] as TextTexTalkNode }.map { it.text }
-    val isVariadic = pattern.parameters.items.isNotEmpty() && (pattern.parameters.items.last().children[0] as TextTexTalkNode).isVarArg
+    // this assumes all of the parameters are TextTexTalkNode with only the last one possible
+    // variadic
+    val paramNames =
+        pattern.parameters.items.map { it.children[0] as TextTexTalkNode }.map { it.text }
+    val isVariadic =
+        pattern.parameters.items.isNotEmpty() &&
+            (pattern.parameters.items.last().children[0] as TextTexTalkNode).isVarArg
 
     val values = value.parameters.items
     if (isVariadic) {
         val numRequired = max(0, paramNames.size - 1)
         if (values.size < numRequired) {
             subs.doesMatch = false
-            subs.errors.add("Expected at least $numRequired arguments but found ${values.size} for '${value.toCode()}'")
+            subs.errors.add(
+                "Expected at least $numRequired arguments but found ${values.size} for '${value.toCode()}'")
             return
         }
 
@@ -243,7 +238,8 @@ private fun findSubstitutions(pattern: GroupTexTalkNode?, value: GroupTexTalkNod
         val numRequired = paramNames.size
         if (values.size != numRequired) {
             subs.doesMatch = false
-            subs.errors.add("Expected exactly $numRequired arguments but found ${values.size} for '${value.toCode()}'")
+            subs.errors.add(
+                "Expected exactly $numRequired arguments but found ${values.size} for '${value.toCode()}'")
             return
         }
 
@@ -273,14 +269,17 @@ private fun handleVariadicGroupSubstitutions(
                 findSubstitutions(patternGroups[i], valueGroups[i], subs)
             }
 
-            val variadicName = (patternGroups.last().parameters.items[0].children[0] as TextTexTalkNode).text
-            // this function assumes if there is a variadic group it is only the last group and that group
+            val variadicName =
+                (patternGroups.last().parameters.items[0].children[0] as TextTexTalkNode).text
+            // this function assumes if there is a variadic group it is only the last group and that
+            // group
             // has a single parameter that is a TextTexTalk node that is not variadic itself
             for (i in patternGroups.size until valueGroups.size) {
                 val items = valueGroups[i].parameters.items
                 if (items.size != 1) {
                     subs.doesMatch = false
-                    subs.errors.add("A variadic group can only contain a single item but found ${items.size} for '${valueGroups[i]}")
+                    subs.errors.add(
+                        "A variadic group can only contain a single item but found ${items.size} for '${valueGroups[i]}")
                     continue
                 }
 
@@ -289,7 +288,8 @@ private fun handleVariadicGroupSubstitutions(
                 }
 
                 if (items.size != 1) {
-                    subs.errors.add("A variadic group can only contain a single item but found ${items.size} for '${valueGroups[i].toCode()}'")
+                    subs.errors.add(
+                        "A variadic group can only contain a single item but found ${items.size} for '${valueGroups[i].toCode()}'")
                     subs.doesMatch = false
                 } else {
                     subs.substitutions[variadicName]!!.add(valueGroups[i].parameters.items[0])
@@ -297,7 +297,8 @@ private fun handleVariadicGroupSubstitutions(
             }
         } else {
             subs.doesMatch = false
-            subs.errors.add("Expected at least ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
+            subs.errors.add(
+                "Expected at least ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
         }
     } else {
         if (valueGroups.size == patternGroups.size) {
@@ -306,12 +307,15 @@ private fun handleVariadicGroupSubstitutions(
             }
         } else {
             subs.doesMatch = false
-            subs.errors.add("Expected exactly ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
+            subs.errors.add(
+                "Expected exactly ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
         }
     }
 }
 
-private fun findSubstitutions(pattern: CommandPart, value: CommandPart, subs: MutableSubstitutions) {
+private fun findSubstitutions(
+    pattern: CommandPart, value: CommandPart, subs: MutableSubstitutions
+) {
     if (pattern.name != value.name) {
         subs.doesMatch = false
         subs.errors.add("Name mismatch.  Expected ${pattern.name} but found ${value.name}")
@@ -347,22 +351,21 @@ private fun findSubstitutions(pattern: CommandPart, value: CommandPart, subs: Mu
             val valGrp = value.namedGroups[i]
             if (patternGrp.name != valGrp.name) {
                 subs.doesMatch = false
-                subs.errors.add("Mismatched named group: Expected ${patternGrp.name} groups but found ${valGrp.name} for '${value.toCode()}'")
+                subs.errors.add(
+                    "Mismatched named group: Expected ${patternGrp.name} groups but found ${valGrp.name} for '${value.toCode()}'")
             } else {
                 handleVariadicGroupSubstitutions(patternGrp.groups, valGrp.groups, subs)
             }
         }
     } else {
         subs.doesMatch = false
-        subs.errors.add("Expected exactly ${pattern.namedGroups.size} named groups but found ${value.namedGroups.size} for '${value.toCode()}'")
+        subs.errors.add(
+            "Expected exactly ${pattern.namedGroups.size} named groups but found ${value.namedGroups.size} for '${value.toCode()}'")
     }
 }
 
 private fun validatePatternGroupImpl(
-    group: GroupTexTalkNode?,
-    canBeVarArg: Boolean,
-    description: String,
-    errors: MutableList<String>
+    group: GroupTexTalkNode?, canBeVarArg: Boolean, description: String, errors: MutableList<String>
 ) {
     group ?: return
 
@@ -371,11 +374,12 @@ private fun validatePatternGroupImpl(
     }
 
     if (group.isVarArg &&
-            (group.parameters.items.size != 1 ||
-                    (group.parameters.items[0].children.size != 1) ||
-                    (group.parameters.items[0].children[0] !is TextTexTalkNode) ||
-                    (group.parameters.items[0].children[0] as TextTexTalkNode).isVarArg)) {
-        errors.add("A variadic group can only have a single identifier parameter that is not variadic")
+        (group.parameters.items.size != 1 ||
+            (group.parameters.items[0].children.size != 1) ||
+            (group.parameters.items[0].children[0] !is TextTexTalkNode) ||
+            (group.parameters.items[0].children[0] as TextTexTalkNode).isVarArg)) {
+        errors.add(
+            "A variadic group can only have a single identifier parameter that is not variadic")
         return
     }
 
@@ -406,22 +410,24 @@ private fun validatePatternImpl(part: CommandPart, errors: MutableList<String>) 
 
     for (i in part.groups.indices) {
         val canBeVarArg = i == part.groups.size - 1
-        val description = if (i == part.groups.size - 1) {
-            "The last group"
-        } else {
-            "A group"
-        }
+        val description =
+            if (i == part.groups.size - 1) {
+                "The last group"
+            } else {
+                "A group"
+            }
         validatePatternGroupImpl(part.groups[i], canBeVarArg, description, errors)
     }
     for (i in part.namedGroups.indices) {
         val namedGroup = part.namedGroups[i]
         for (j in namedGroup.groups.indices) {
             val canBeVarArg = j == namedGroup.groups.size - 1
-            val description = if (canBeVarArg) {
-                "The last group of a named group"
-            } else {
-                "A named group"
-            }
+            val description =
+                if (canBeVarArg) {
+                    "The last group of a named group"
+                } else {
+                    "A named group"
+                }
             validatePatternGroupImpl(namedGroup.groups[j], canBeVarArg, description, errors)
         }
     }
@@ -437,14 +443,11 @@ private fun validatePattern(command: Command): List<String> {
 
 private data class PatternExpansion(val pattern: OperatorTexTalkNode, val expansion: String)
 
-private fun expandAsWrittenImplImpl(cmd: Command, sigToPatternExpansion: Map<String, PatternExpansion>) =
+private fun expandAsWrittenImplImpl(
+    cmd: Command, sigToPatternExpansion: Map<String, PatternExpansion>
+) =
     mathlingua.transform.expandAsWrittenImplImpl(
-        OperatorTexTalkNode(
-            lhs = null,
-            command = cmd,
-            rhs = null
-        ), sigToPatternExpansion
-    )
+        OperatorTexTalkNode(lhs = null, command = cmd, rhs = null), sigToPatternExpansion)
 
 private fun asDotDotDotOperator(nodes: List<TexTalkNode>): OperatorTexTalkNode? {
     if (nodes.size != 1 || nodes[0] !is ExpressionTexTalkNode) {
@@ -468,7 +471,9 @@ private fun asDotDotDotOperator(nodes: List<TexTalkNode>): OperatorTexTalkNode? 
     }
 }
 
-private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>): Expansion {
+private fun expandAsWrittenImplImpl(
+    op: OperatorTexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>
+): Expansion {
     val patternExpansion = sigToPatternExpansion[op.signature()]
 
     if (patternExpansion == null &&
@@ -477,23 +482,15 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
         // There isn't a matching pattern.  However, the operator is a non-backslash
         // command such as +, -, ++, etc. and so it is not an error to not find the
         // matching pattern.  Instead, the operator itself can be rendered.
-        return Expansion(
-            text = null,
-            errors = emptyList()
-        )
+        return Expansion(text = null, errors = emptyList())
     } else if (patternExpansion == null) {
         return Expansion(
-            text = null,
-            errors = listOf("No matching definition found for ${op.toCode()}")
-        )
+            text = null, errors = listOf("No matching definition found for ${op.toCode()}"))
     }
 
     val subs = getSubstitutions(patternExpansion.pattern, op)
     if (!subs.doesMatch) {
-        return Expansion(
-            text = null,
-            errors = subs.errors
-        )
+        return Expansion(text = null, errors = subs.errors)
     }
 
     var expansion = patternExpansion.expansion
@@ -501,10 +498,16 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
         // replace any 'name?' with the expansions of the list of expressions 'exp'
         // separated by a space
         if (exp.isNotEmpty()) {
-            val expToStringParen = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, true).text ?: it.toCode() }
+            val expToStringParen =
+                exp.joinToString(" ") {
+                    expandAsWrittenImpl(it, sigToPatternExpansion, true).text ?: it.toCode()
+                }
             expansion = expansion.replace("$name??", expToStringParen)
 
-            val expToString = exp.joinToString(" ") { expandAsWrittenImpl(it, sigToPatternExpansion, false).text ?: it.toCode() }
+            val expToString =
+                exp.joinToString(" ") {
+                    expandAsWrittenImpl(it, sigToPatternExpansion, false).text ?: it.toCode()
+                }
             expansion = expansion.replace("$name?", expToString)
         }
 
@@ -538,7 +541,10 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                     leftCurlyCount--
                 }
                 i++
-                if (c == '}' && leftCurlyCount == 0 && i < expansion.length && expansion[i] == '?') {
+                if (c == '}' &&
+                    leftCurlyCount == 0 &&
+                    i < expansion.length &&
+                    expansion[i] == '?') {
                     isValid = true
                     i++ // move past the ?
                     if (i < expansion.length && expansion[i] == '?') {
@@ -555,8 +561,14 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                 val expansionPrefix = expansion.substring(0, index)
                 // add 2 at the end for the trailing }?
                 // or  3 at the end for the trailing }??
-                val delta = if (hasDoubleQuestion) { 3 } else { 2 }
-                val expansionSuffix = expansion.substring(index + target.length + innerText.length + delta)
+                val delta =
+                    if (hasDoubleQuestion) {
+                        3
+                    } else {
+                        2
+                    }
+                val expansionSuffix =
+                    expansion.substring(index + target.length + innerText.length + delta)
 
                 val prefixRegex = Regex("(.*)\\.\\.\\.")
                 val infixRegex = Regex("(.*)\\.\\.\\.(.*)\\.\\.\\.(.*)")
@@ -566,18 +578,23 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                 // a match if it is of a complex form (i.e. 'a + b' but not 'a')
                 val addParens = hasDoubleQuestion
                 if (infixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text ?: it.toCode() }
+                    val args =
+                        exp.map {
+                            expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text
+                                ?: it.toCode()
+                        }
                     val result = infixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 4) {
                         val prefix = result.groupValues[1]
                         val separator = result.groupValues[2]
                         val suffix = result.groupValues[3]
                         val opNode = asDotDotDotOperator(exp)
-                        val joinedArgs = if (opNode != null) {
-                            "${opNode.lhs?.toCode() ?: ""}$separator${opNode.command.toCode()}$separator${opNode.rhs?.toCode() ?: ""}"
-                        } else {
-                            args.joinToString(separator)
-                        }
+                        val joinedArgs =
+                            if (opNode != null) {
+                                "${opNode.lhs?.toCode() ?: ""}$separator${opNode.command.toCode()}$separator${opNode.rhs?.toCode() ?: ""}"
+                            } else {
+                                args.joinToString(separator)
+                            }
                         val pattern = result.groupValues[0]
                         // pattern is of the form name{prefix...separator...suffix}?
                         // Note: if 'name{...a...b}? is given, for example, then
@@ -588,7 +605,11 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                         innerText = "$prefix$innerText$suffix"
                     }
                 } else if (prefixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text ?: it.toCode() }
+                    val args =
+                        exp.map {
+                            expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text
+                                ?: it.toCode()
+                        }
                     val result = prefixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 2) {
                         val separator = result.groupValues[1]
@@ -603,7 +624,11 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
                         innerText = innerText.replace(pattern, joinedArgs)
                     }
                 } else if (suffixRegex.matches(innerText)) {
-                    val args = exp.map { expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text ?: it.toCode() }
+                    val args =
+                        exp.map {
+                            expandAsWrittenImpl(it, sigToPatternExpansion, addParens).text
+                                ?: it.toCode()
+                        }
                     val result = suffixRegex.find(innerText)
                     if (result != null && result.groupValues.size >= 2) {
                         val separator = result.groupValues[1]
@@ -625,10 +650,7 @@ private fun expandAsWrittenImplImpl(op: OperatorTexTalkNode, sigToPatternExpansi
         }
     }
 
-    return Expansion(
-        text = expansion,
-        errors = emptyList()
-    )
+    return Expansion(text = expansion, errors = emptyList())
 }
 
 private fun shouldHaveParen(node: TexTalkNode): Boolean {
@@ -650,30 +672,33 @@ private fun shouldHaveParen(node: TexTalkNode): Boolean {
     return true
 }
 
-private fun expandAsWrittenImpl(node: TexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>, addParens: Boolean): Expansion {
+private fun expandAsWrittenImpl(
+    node: TexTalkNode, sigToPatternExpansion: Map<String, PatternExpansion>, addParens: Boolean
+): Expansion {
     val errors = mutableListOf<String>()
-    val code = node.toCode {
-        when (it) {
-            is Command -> {
-                val result = expandAsWrittenImplImpl(it, sigToPatternExpansion)
-                errors.addAll(result.errors)
-                result.text
+    val code =
+        node.toCode {
+            when (it) {
+                is Command -> {
+                    val result = expandAsWrittenImplImpl(it, sigToPatternExpansion)
+                    errors.addAll(result.errors)
+                    result.text
+                }
+                is OperatorTexTalkNode -> {
+                    val result = expandAsWrittenImplImpl(it, sigToPatternExpansion)
+                    errors.addAll(result.errors)
+                    result.text
+                }
+                else -> null
             }
-            is OperatorTexTalkNode -> {
-                val result = expandAsWrittenImplImpl(it, sigToPatternExpansion)
-                errors.addAll(result.errors)
-                result.text
-            }
-            else -> null
         }
-    }
 
     return Expansion(
-        text = if (addParens && shouldHaveParen(node)) {
-            "\\left ( $code \\right )"
-        } else {
-            code
-        },
-        errors = errors
-    )
+        text =
+            if (addParens && shouldHaveParen(node)) {
+                "\\left ( $code \\right )"
+            } else {
+                code
+            },
+        errors = errors)
 }

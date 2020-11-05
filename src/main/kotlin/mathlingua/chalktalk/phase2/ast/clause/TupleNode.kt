@@ -16,19 +16,14 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Tuple
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
+import mathlingua.support.MutableLocationTracker
 
 data class TupleNode(val tuple: Tuple) : ZeroPartNode(tuple), Target
 
 fun isTuple(node: Phase1Node) = node is Tuple
 
-fun validateTupleNode(node: Phase1Node, tracker: MutableLocationTracker) = validateWrappedNode(
-        tracker,
-        node,
-        "TupleNode",
-        { it as? Tuple },
-        ::TupleNode
-)
+fun validateTupleNode(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateWrappedNode(tracker, node, "TupleNode", { it as? Tuple }, ::TupleNode)

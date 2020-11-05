@@ -22,22 +22,20 @@ import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.support.MutableLocationTracker
 
 data class InductivelyGroup(
-    val inductivelySection: InductivelySection,
-    val fromSection: InductivelyFromSection
-) : TwoPartNode<InductivelySection, InductivelyFromSection>(
-    inductivelySection,
-    fromSection,
-    ::InductivelyGroup
-), Clause
+    val inductivelySection: InductivelySection, val fromSection: InductivelyFromSection
+) :
+    TwoPartNode<InductivelySection, InductivelyFromSection>(
+        inductivelySection, fromSection, ::InductivelyGroup),
+    Clause
 
 fun isInductivelyGroup(node: Phase1Node) = firstSectionMatchesName(node, "inductively")
 
-fun validateInductivelyGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateDoubleSectionGroup(
-    tracker,
-    node,
-    "inductively",
-    ::validateInductivelySection,
-    "from",
-    ::validateInductivelyFromSection,
-    ::InductivelyGroup
-)
+fun validateInductivelyGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateDoubleSectionGroup(
+        tracker,
+        node,
+        "inductively",
+        ::validateInductivelySection,
+        "from",
+        ::validateInductivelyFromSection,
+        ::InductivelyGroup)

@@ -35,37 +35,26 @@ class EvaluatesSection : Phase2Node {
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
-fun validateEvaluatesSection(node: Phase1Node, tracker: MutableLocationTracker): Validation<EvaluatesSection> {
+fun validateEvaluatesSection(
+    node: Phase1Node, tracker: MutableLocationTracker
+): Validation<EvaluatesSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-            ParseError(
-                "Expected a EvaluatesSection",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a EvaluatesSection", getRow(node), getColumn(node)))
     }
 
     val sect = node as Section
     if (sect.args.isNotEmpty()) {
         errors.add(
-            ParseError(
-                "An Evaluates cannot have any arguments",
-                getRow(node), getColumn(node)
-            )
-        )
+            ParseError("An Evaluates cannot have any arguments", getRow(node), getColumn(node)))
     }
 
     if (sect.name.text != "Evaluates") {
-        errors.add(
-            ParseError(
-                "Expected a section named Evaluates",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a section named Evaluates", getRow(node), getColumn(node)))
     }
 
     return if (errors.isNotEmpty()) {

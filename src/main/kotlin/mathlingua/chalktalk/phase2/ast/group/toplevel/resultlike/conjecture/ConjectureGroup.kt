@@ -16,20 +16,20 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateResultLikeGroup
+import mathlingua.support.MutableLocationTracker
 
 data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
@@ -58,29 +58,32 @@ data class ConjectureGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            topLevelToCode(writer, isArg, indent, null, conjectureSection,
-                givenSection, givenWhereSection, thenSection,
-                usingSection, metaDataSection)
+        topLevelToCode(
+            writer,
+            isArg,
+            indent,
+            null,
+            conjectureSection,
+            givenSection,
+            givenWhereSection,
+            thenSection,
+            usingSection,
+            metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(
-                ConjectureGroup(
-                    conjectureSection = conjectureSection.transform(chalkTransformer) as ConjectureSection,
-                    givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
-                    givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
-                    thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-                    usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-                    metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
-            )
-            )
+        chalkTransformer(
+            ConjectureGroup(
+                conjectureSection =
+                    conjectureSection.transform(chalkTransformer) as ConjectureSection,
+                givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
+                givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
+                thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+                usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
 fun isConjectureGroup(node: Phase1Node) = firstSectionMatchesName(node, "Conjecture")
 
-fun validateConjectureGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
-        tracker,
-        groupNode,
-        "Conjecture",
-        ::validateConjectureSection,
-        ::ConjectureGroup
-)
+fun validateConjectureGroup(groupNode: Group, tracker: MutableLocationTracker) =
+    validateResultLikeGroup(
+        tracker, groupNode, "Conjecture", ::validateConjectureSection, ::ConjectureGroup)

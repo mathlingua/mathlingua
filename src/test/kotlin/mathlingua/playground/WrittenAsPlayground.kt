@@ -16,12 +16,6 @@
 
 package mathlingua.mathlingua.playground
 
-import mathlingua.MathLingua
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
-import org.fife.ui.rsyntaxtextarea.SyntaxConstants
-import org.fife.ui.rtextarea.RTextScrollPane
 import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
@@ -32,6 +26,12 @@ import javax.swing.JTextArea
 import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.WindowConstants
+import mathlingua.MathLingua
+import mathlingua.support.ValidationFailure
+import mathlingua.support.ValidationSuccess
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants
+import org.fife.ui.rtextarea.RTextScrollPane
 
 fun main() {
     // enable sub-pixel antialiasing
@@ -55,48 +55,49 @@ fun main() {
     outputArea.isCodeFoldingEnabled = true
     outputArea.highlightCurrentLine = false
     outputArea.font = font
-    outputArea.syntaxScheme
-        .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+    outputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
     val inputArea = RSyntaxTextArea(20, 60)
     inputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
     inputArea.isCodeFoldingEnabled = true
     inputArea.highlightCurrentLine = false
     inputArea.font = font
-    inputArea.syntaxScheme
-        .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+    inputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
-    inputArea.addKeyListener(object : KeyListener {
-        override fun keyTyped(keyEvent: KeyEvent) {}
+    inputArea.addKeyListener(
+        object : KeyListener {
+            override fun keyTyped(keyEvent: KeyEvent) {}
 
-        override fun keyReleased(keyEvent: KeyEvent) {
-            if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
-                return
-            }
+            override fun keyReleased(keyEvent: KeyEvent) {
+                if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
+                    return
+                }
 
-            SwingUtilities.invokeLater {
-                val errorBuilder = StringBuilder()
-                try {
-                    val input = inputArea.text
-                    outputArea.text = ""
-                    when (val validation = MathLingua.printExpanded(input, input, false)) {
-                        is ValidationSuccess -> outputArea.text = validation.value
-                        is ValidationFailure -> {
-                            for (err in validation.errors) {
-                                errorBuilder.append("${err.message} (${err.row}, ${err.column})")
+                SwingUtilities.invokeLater {
+                    val errorBuilder = StringBuilder()
+                    try {
+                        val input = inputArea.text
+                        outputArea.text = ""
+                        when (val validation = MathLingua.printExpanded(input, input, false)
+                        ) {
+                            is ValidationSuccess -> outputArea.text = validation.value
+                            is ValidationFailure -> {
+                                for (err in validation.errors) {
+                                    errorBuilder.append(
+                                        "${err.message} (${err.row}, ${err.column})")
+                                }
                             }
                         }
+                    } catch (e: Exception) {
+                        System.err.println(e.message)
+                        e.printStackTrace()
                     }
-                } catch (e: Exception) {
-                    System.err.println(e.message)
-                    e.printStackTrace()
+                    errorArea.text = errorBuilder.toString()
                 }
-                errorArea.text = errorBuilder.toString()
             }
-        }
 
-        override fun keyPressed(keyEvent: KeyEvent) {}
-    })
+            override fun keyPressed(keyEvent: KeyEvent) {}
+        })
 
     val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
     inputSplitPane.leftComponent = RTextScrollPane(inputArea)

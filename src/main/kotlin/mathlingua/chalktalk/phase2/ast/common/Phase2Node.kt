@@ -24,7 +24,8 @@ interface Phase2Node {
     fun toCode(
         isArg: Boolean,
         indent: Int,
-        writer: CodeWriter = MathLinguaCodeWriter(
+        writer: CodeWriter =
+            MathLinguaCodeWriter(
                 defines = emptyList(),
                 states = emptyList(),
                 foundations = emptyList(),

@@ -34,7 +34,7 @@ data class ReferenceSection(val sourceItems: List<SourceItemGroup>) : Phase2Node
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(ReferenceSection(
-                    sourceItems = sourceItems.map { chalkTransformer(it) as SourceItemGroup }
-            ))
+        chalkTransformer(
+            ReferenceSection(
+                sourceItems = sourceItems.map { chalkTransformer(it) as SourceItemGroup }))
 }

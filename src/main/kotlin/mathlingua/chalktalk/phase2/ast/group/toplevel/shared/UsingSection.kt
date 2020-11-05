@@ -40,18 +40,10 @@ data class UsingSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            UsingSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
-        )
-        )
+            UsingSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
 fun isUsingSection(sec: Section) = sec.name.text == "using"
 
-fun validateUsingSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-    ZeroOrMore(),
-    tracker,
-    node,
-    "using",
-    ::UsingSection
-)
+fun validateUsingSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(ZeroOrMore(), tracker, node, "using", ::UsingSection)

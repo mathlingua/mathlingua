@@ -16,8 +16,8 @@
 
 package mathlingua.textalk
 
-import mathlingua.support.ParseError
 import java.util.Stack
+import mathlingua.support.ParseError
 
 /*
  * The following is the algorithm for parsing operators and identifying their arguments.
@@ -187,15 +187,10 @@ internal fun parseOperators(root: ExpressionTexTalkNode): TexTalkParseResult {
         val final = runShuntingYard(idInfixOpRoot, isRhsExpressions)
 
         val resultRoot = final as ExpressionTexTalkNode
-        return TexTalkParseResult(
-            root = resultRoot,
-            errors = emptyList()
-        )
+        return TexTalkParseResult(root = resultRoot, errors = emptyList())
     } catch (e: ParseException) {
         return TexTalkParseResult(
-            root = ExpressionTexTalkNode(children = emptyList()),
-            errors = listOf(e.parseError)
-        )
+            root = ExpressionTexTalkNode(children = emptyList()), errors = listOf(e.parseError))
     }
 }
 
@@ -207,10 +202,7 @@ private fun findIsRhsExpressions(root: ExpressionTexTalkNode): Set<ExpressionTex
     return result
 }
 
-private fun findIsRhsExpressionsImpl(
-    node: TexTalkNode,
-    result: MutableSet<ExpressionTexTalkNode>
-) {
+private fun findIsRhsExpressionsImpl(node: TexTalkNode, result: MutableSet<ExpressionTexTalkNode>) {
     if (node is IsTexTalkNode) {
         result.addAll(node.rhs.items)
     }
@@ -229,31 +221,27 @@ private fun identifyIdentifierFunctionCalls(root: ExpressionTexTalkNode) =
                 // is if `f   (x)`
                 //        ^   ^
                 //        cur next
-                if (cur is TextTexTalkNode && cur.tokenType == TexTalkTokenType.Identifier &&
-                    next != null && next is GroupTexTalkNode && next.type == TexTalkNodeType.ParenGroup
-                ) {
+                if (cur is TextTexTalkNode &&
+                    cur.tokenType == TexTalkTokenType.Identifier &&
+                    next != null &&
+                    next is GroupTexTalkNode &&
+                    next.type == TexTalkNodeType.ParenGroup) {
                     newChildren.add(
                         GroupTexTalkNode(
-                        type = TexTalkNodeType.SyntheticGroup,
-                        isVarArg = false,
-                        parameters = ParametersTexTalkNode(
-                            items = listOf(
-                                ExpressionTexTalkNode(
-                                    children = listOf(cur, next)
-                                )
-                            )
-                        )
-                    )
-                    )
+                            type = TexTalkNodeType.SyntheticGroup,
+                            isVarArg = false,
+                            parameters =
+                                ParametersTexTalkNode(
+                                    items =
+                                        listOf(
+                                            ExpressionTexTalkNode(children = listOf(cur, next))))))
                     i += 2
                 } else {
                     newChildren.add(cur)
                     i++
                 }
             }
-            ExpressionTexTalkNode(
-                children = newChildren
-            )
+            ExpressionTexTalkNode(children = newChildren)
         } else {
             it
         }
@@ -263,13 +251,12 @@ private fun isSpecialOperator(node: TexTalkNode?) =
     node != null &&
         node is TextTexTalkNode &&
         (node.tokenType == TexTalkTokenType.Operator ||
-        node.tokenType == TexTalkTokenType.Caret ||
-        node.tokenType == TexTalkTokenType.Underscore ||
-        node.tokenType == TexTalkTokenType.DotDotDot)
+            node.tokenType == TexTalkTokenType.Caret ||
+            node.tokenType == TexTalkTokenType.Underscore ||
+            node.tokenType == TexTalkTokenType.DotDotDot)
 
 private fun identifySpecialPrefixOperators(
-    root: ExpressionTexTalkNode,
-    isNodeRhsExpressions: Set<ExpressionTexTalkNode>
+    root: ExpressionTexTalkNode, isNodeRhsExpressions: Set<ExpressionTexTalkNode>
 ) =
     root.transform {
         if (it is ExpressionTexTalkNode && !isNodeRhsExpressions.contains(it)) {
@@ -283,56 +270,47 @@ private fun identifySpecialPrefixOperators(
                 if (prev == null && isSpecialOperator(cur) && next == null) {
                     throw ParseException(
                         ParseError(
-                            message = "An operator needs to have at least a left or " +
-                                "right side argument ('${cur.toCode()}')",
+                            message =
+                                "An operator needs to have at least a left or " +
+                                    "right side argument ('${cur.toCode()}')",
                             row = -1,
-                            column = -1
-                        )
-                    )
+                            column = -1))
                 } else if ((isSpecialOperator(prev) || prev == null) &&
                     isSpecialOperator(cur) &&
-                    !isSpecialOperator(next)
-                ) {
+                    !isSpecialOperator(next)) {
                     // for example  * +x
                     //   prev -> *
                     //   cur  -> +
                     //   next -> x
                     newChildren.add(
                         GroupTexTalkNode(
-                        type = TexTalkNodeType.SyntheticGroup,
-                        parameters = ParametersTexTalkNode(
-                            items = listOf(
-                                ExpressionTexTalkNode(
-                                    children = listOf(
-                                        OperatorTexTalkNode(
-                                            lhs = null,
-                                            command = cur,
-                                            rhs = next
-                                        )
-                                    )
-                                )
-                            )
-                        ),
-                        isVarArg = false
-                    )
-                    )
+                            type = TexTalkNodeType.SyntheticGroup,
+                            parameters =
+                                ParametersTexTalkNode(
+                                    items =
+                                        listOf(
+                                            ExpressionTexTalkNode(
+                                                children =
+                                                    listOf(
+                                                        OperatorTexTalkNode(
+                                                            lhs = null,
+                                                            command = cur,
+                                                            rhs = next))))),
+                            isVarArg = false))
                     // move past the next element since it was already used
                     i++
                 } else {
                     newChildren.add(cur)
                 }
             }
-            ExpressionTexTalkNode(
-                children = newChildren
-            )
+            ExpressionTexTalkNode(children = newChildren)
         } else {
             it
         }
     } as ExpressionTexTalkNode
 
 private fun identifySpecialPostfixOperators(
-    root: ExpressionTexTalkNode,
-    isNodeRhsExpressions: Set<ExpressionTexTalkNode>
+    root: ExpressionTexTalkNode, isNodeRhsExpressions: Set<ExpressionTexTalkNode>
 ) =
     root.transform {
         if (it is ExpressionTexTalkNode && !isNodeRhsExpressions.contains(it)) {
@@ -352,40 +330,33 @@ private fun identifySpecialPostfixOperators(
                     //   nextNext -> +
                     newChildren.add(
                         GroupTexTalkNode(
-                        type = TexTalkNodeType.SyntheticGroup,
-                        parameters = ParametersTexTalkNode(
-                            items = listOf(
-                                ExpressionTexTalkNode(
-                                    children = listOf(
-                                        OperatorTexTalkNode(
-                                            lhs = cur,
-                                            command = next!!,
-                                            rhs = null
-                                        )
-                                    )
-                                )
-                            )
-                        ),
-                        isVarArg = false
-                    )
-                    )
+                            type = TexTalkNodeType.SyntheticGroup,
+                            parameters =
+                                ParametersTexTalkNode(
+                                    items =
+                                        listOf(
+                                            ExpressionTexTalkNode(
+                                                children =
+                                                    listOf(
+                                                        OperatorTexTalkNode(
+                                                            lhs = cur,
+                                                            command = next!!,
+                                                            rhs = null))))),
+                            isVarArg = false))
                     // move past the next element since it was already used
                     i++
                 } else {
                     newChildren.add(cur)
                 }
             }
-            ExpressionTexTalkNode(
-                children = newChildren
-            )
+            ExpressionTexTalkNode(children = newChildren)
         } else {
             it
         }
     } as ExpressionTexTalkNode
 
 private fun identifyInfixCommandOperators(
-    root: TexTalkNode,
-    isNodeRhsExpressions: Set<ExpressionTexTalkNode>
+    root: TexTalkNode, isNodeRhsExpressions: Set<ExpressionTexTalkNode>
 ) =
     root.transform {
         if (it is ExpressionTexTalkNode && !isNodeRhsExpressions.contains(it)) {
@@ -395,11 +366,10 @@ private fun identifyInfixCommandOperators(
                 if (section.isEmpty()) {
                     throw ParseException(
                         ParseError(
-                            message = "Two infix operators cannot be side by side ('${it.toCode()}')",
+                            message =
+                                "Two infix operators cannot be side by side ('${it.toCode()}')",
                             row = -1,
-                            column = -1
-                        )
-                    )
+                            column = -1))
                 } else if (section.size == 1) {
                     newChildren.add(section[0])
                 } else if (section.size == 3) {
@@ -411,22 +381,13 @@ private fun identifyInfixCommandOperators(
                             ParseError(
                                 message = "Expected an argument but found ${cmd.toCode()}",
                                 row = -1,
-                                column = -1
-                            )
-                        )
+                                column = -1))
                     } else {
-                        newChildren.add(
-                            OperatorTexTalkNode(
-                            lhs = lhs,
-                            command = cmd,
-                            rhs = rhs
-                        )
-                        )
+                        newChildren.add(OperatorTexTalkNode(lhs = lhs, command = cmd, rhs = rhs))
                     }
                 } else if (section.size == 2 &&
                     section[1] is GroupTexTalkNode &&
-                    section[1].type == TexTalkNodeType.ParenGroup
-                ) {
+                    section[1].type == TexTalkNodeType.ParenGroup) {
                     // then the section is // f(x) or \f(x) so just keep the existing nodes as is
                     // TODO: Determine why these need to be added in reverse order to be
                     //       handled correctly.  I think this is because a stack is used
@@ -439,17 +400,14 @@ private fun identifyInfixCommandOperators(
                 } else {
                     throw ParseException(
                         ParseError(
-                            message = "Multiple infix operators cannot be side by side ('${it.toCode()}').  " +
-                                "They can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', or 'x \\op y'",
+                            message =
+                                "Multiple infix operators cannot be side by side ('${it.toCode()}').  " +
+                                    "They can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', or 'x \\op y'",
                             row = -1,
-                            column = -1
-                        )
-                    )
+                            column = -1))
                 }
             }
-            ExpressionTexTalkNode(
-                children = newChildren
-            )
+            ExpressionTexTalkNode(children = newChildren)
         } else {
             it
         }
@@ -498,13 +456,12 @@ private fun getPrecedence(op: String): Int {
 private fun getPrecedence(node: TexTalkNode) =
     when {
         isSpecialOperator(node) -> getPrecedence((node as TextTexTalkNode).text)
-        else -> throw ParseException(
-            ParseError(
-                message = "Cannot get precedence of node '${node.toCode()}'",
-                row = -1,
-                column = -1
-            )
-        )
+        else ->
+            throw ParseException(
+                ParseError(
+                    message = "Cannot get precedence of node '${node.toCode()}'",
+                    row = -1,
+                    column = -1))
     }
 
 private fun getAssociativity(node: TexTalkNode) =
@@ -512,8 +469,8 @@ private fun getAssociativity(node: TexTalkNode) =
         isSpecialOperator(node) -> {
             val op = (node as TextTexTalkNode).text
             when {
-                (op == "+" || op == "-" ||
-                    op == "*" || op == "/" || op == "_") -> Associativity.Left
+                (op == "+" || op == "-" || op == "*" || op == "/" || op == "_") ->
+                    Associativity.Left
                 op == "^" -> Associativity.Right
                 else -> Associativity.Unknown
             }
@@ -521,16 +478,11 @@ private fun getAssociativity(node: TexTalkNode) =
         else -> Associativity.Unknown
     }
 
-private fun runShuntingYard(
-    root: TexTalkNode,
-    isNodeRhsExpressions: Set<ExpressionTexTalkNode>
-) =
+private fun runShuntingYard(root: TexTalkNode, isNodeRhsExpressions: Set<ExpressionTexTalkNode>) =
     root.transform {
         if (it is ExpressionTexTalkNode && !isNodeRhsExpressions.contains(it)) {
             val postfix = toPostfixForm(it.children)
-            ExpressionTexTalkNode(
-                children = postfixToTree(postfix)
-            )
+            ExpressionTexTalkNode(children = postfixToTree(postfix))
         } else {
             it
         }
@@ -601,11 +553,10 @@ private fun postfixToTree(nodes: List<TexTalkNode>): List<TexTalkNode> {
             if (stack.isEmpty()) {
                 throw ParseException(
                     ParseError(
-                        message = "Expected two arguments for operator ${n.toCode()} but found none",
+                        message =
+                            "Expected two arguments for operator ${n.toCode()} but found none",
                         row = -1,
-                        column = -1
-                    )
-                )
+                        column = -1))
             }
             val rhs = stack.pop()
             if (stack.isEmpty()) {
@@ -613,18 +564,10 @@ private fun postfixToTree(nodes: List<TexTalkNode>): List<TexTalkNode> {
                     ParseError(
                         message = "Expected two arguments for operator ${n.toCode()} but found one",
                         row = -1,
-                        column = -1
-                    )
-                )
+                        column = -1))
             }
             val lhs = stack.pop()
-            stack.push(
-                OperatorTexTalkNode(
-                lhs = lhs,
-                command = n,
-                rhs = rhs
-            )
-            )
+            stack.push(OperatorTexTalkNode(lhs = lhs, command = n, rhs = rhs))
         } else {
             stack.push(n)
         }

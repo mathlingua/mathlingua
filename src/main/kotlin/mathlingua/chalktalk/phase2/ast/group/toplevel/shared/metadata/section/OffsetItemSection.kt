@@ -24,7 +24,7 @@ data class OffsetItemSection(val offset: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            indentedStringSection(writer, isArg, indent, "offset", offset)
+        indentedStringSection(writer, isArg, indent, "offset", offset)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)

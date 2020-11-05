@@ -20,9 +20,9 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.clause.validateClause
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -40,7 +40,8 @@ fun <T : Phase2Node> validateTargetList(
     builder: (targets: List<Target>) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-    return when (val validation = validateTargetListSection(tracker, node, expectedName)) {
+    return when (val validation = validateTargetListSection(tracker, node, expectedName)
+    ) {
         is ValidationSuccess -> {
             val targets = validation.value.targets
             return validationSuccess(tracker, rawNode, builder(targets))
@@ -50,18 +51,11 @@ fun <T : Phase2Node> validateTargetList(
 }
 
 private fun validateTargetListSection(
-    tracker: MutableLocationTracker,
-    node: Phase1Node,
-    expectedName: String
+    tracker: MutableLocationTracker, node: Phase1Node, expectedName: String
 ): Validation<TargetListSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-            ParseError(
-                "Expected a Section",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Section", getRow(node), getColumn(node)))
     }
 
     val (name1, args) = node as Section
@@ -69,12 +63,9 @@ private fun validateTargetListSection(
     if (name != expectedName) {
         errors.add(
             ParseError(
-                "Expected a Section with name " +
-                    expectedName + " but found " + name,
+                "Expected a Section with name " + expectedName + " but found " + name,
                 getRow(node),
-                getColumn(node)
-            )
-        )
+                getColumn(node)))
     }
 
     val targets = ArrayList<Target>()
@@ -82,17 +73,15 @@ private fun validateTargetListSection(
     if (args.isEmpty()) {
         errors.add(
             ParseError(
-                "Section '" + name1.text +
-                    "' requires at least one argument.",
+                "Section '" + name1.text + "' requires at least one argument.",
                 getRow(node),
-                getColumn(node)
-            )
-        )
+                getColumn(node)))
     }
 
     for (arg in args) {
         var shouldContinue = false
-        when (val clauseValidation = validateClause(arg, tracker)) {
+        when (val clauseValidation = validateClause(arg, tracker)
+        ) {
             is ValidationSuccess -> {
                 val clause = clauseValidation.value
                 if (clause is Target) {
@@ -107,12 +96,7 @@ private fun validateTargetListSection(
             continue
         }
 
-        errors.add(
-            ParseError(
-                "Expected an Target",
-                getRow(arg), getColumn(arg)
-            )
-        )
+        errors.add(ParseError("Expected an Target", getRow(arg), getColumn(arg)))
     }
 
     return if (errors.isNotEmpty()) {

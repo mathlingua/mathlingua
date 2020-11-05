@@ -24,10 +24,7 @@ interface TexTalkParser {
     fun parse(texTalkLexer: TexTalkLexer): TexTalkParseResult
 }
 
-data class TexTalkParseResult(
-    val root: ExpressionTexTalkNode,
-    val errors: List<ParseError>
-)
+data class TexTalkParseResult(val root: ExpressionTexTalkNode, val errors: List<ParseError>)
 
 fun newTexTalkParser(): TexTalkParser {
     return TexTalkParserImpl()
@@ -50,9 +47,7 @@ private class TexTalkParserImpl : TexTalkParser {
         val operatorResult = parseOperators(result.root)
         if (operatorResult.errors.isNotEmpty()) {
             return TexTalkParseResult(
-                root = result.root,
-                errors = result.errors.plus(operatorResult.errors)
-            )
+                root = result.root, errors = result.errors.plus(operatorResult.errors))
         }
         return operatorResult
     }
@@ -110,7 +105,8 @@ private class TexTalkParserImpl : TexTalkParser {
                     } else {
                         addError("A statement can only contain one ':='")
                     }
-                } else if (child is TextTexTalkNode && child.type == TexTalkNodeType.ColonColonEquals) {
+                } else if (child is TextTexTalkNode &&
+                    child.type == TexTalkNodeType.ColonColonEquals) {
                     if (colonColonEqualsIndex < 0) {
                         colonColonEqualsIndex = i
                     } else {
@@ -126,12 +122,18 @@ private class TexTalkParserImpl : TexTalkParser {
             return when {
                 colonEqualsIndex >= 0 -> {
                     val lhs = parameters(texTalkNode.children, 0, colonEqualsIndex)
-                    val rhs = parameters(texTalkNode.children, colonEqualsIndex + 1, texTalkNode.children.size)
+                    val rhs =
+                        parameters(
+                            texTalkNode.children, colonEqualsIndex + 1, texTalkNode.children.size)
                     ExpressionTexTalkNode(listOf(ColonEqualsTexTalkNode(lhs, rhs)))
                 }
                 colonColonEqualsIndex >= 0 -> {
                     val lhs = parameters(texTalkNode.children, 0, colonColonEqualsIndex)
-                    val rhs = parameters(texTalkNode.children, colonColonEqualsIndex + 1, texTalkNode.children.size)
+                    val rhs =
+                        parameters(
+                            texTalkNode.children,
+                            colonColonEqualsIndex + 1,
+                            texTalkNode.children.size)
                     ExpressionTexTalkNode(listOf(ColonColonEqualsTexTalkNode(lhs, rhs)))
                 }
                 else -> {
@@ -140,7 +142,9 @@ private class TexTalkParserImpl : TexTalkParser {
             }
         }
 
-        private fun parameters(texTalkNodes: List<TexTalkNode>, startInc: Int, endEx: Int): ParametersTexTalkNode {
+        private fun parameters(
+            texTalkNodes: List<TexTalkNode>, startInc: Int, endEx: Int
+        ): ParametersTexTalkNode {
             val parts = mutableListOf<ExpressionTexTalkNode>()
             var i = startInc
             while (i < endEx) {
@@ -179,19 +183,17 @@ private class TexTalkParserImpl : TexTalkParser {
                         val operator = expect(TexTalkTokenType.Operator)
                         parts.add(
                             CommandPart(
-                                name = TextTexTalkNode(
-                                    type = TexTalkNodeType.Identifier,
-                                    tokenType = TexTalkTokenType.Operator,
-                                    text = operator.text,
-                                    isVarArg = false
-                                ),
+                                name =
+                                    TextTexTalkNode(
+                                        type = TexTalkNodeType.Identifier,
+                                        tokenType = TexTalkTokenType.Operator,
+                                        text = operator.text,
+                                        isVarArg = false),
                                 square = null,
                                 subSup = null,
                                 groups = emptyList(),
                                 paren = null,
-                                namedGroups = emptyList()
-                            )
-                        )
+                                namedGroups = emptyList()))
                         break
                     }
                 } else {
@@ -233,14 +235,7 @@ private class TexTalkParserImpl : TexTalkParser {
                 }
             }
 
-            return CommandPart(
-                name!!,
-                square,
-                subSup,
-                groups,
-                paren,
-                namedGroups
-            )
+            return CommandPart(name!!, square, subSup, groups, paren, namedGroups)
         }
 
         private fun subSup(): SubSupTexTalkNode? {
@@ -261,24 +256,22 @@ private class TexTalkParserImpl : TexTalkParser {
             var grp: GroupTexTalkNode? = null
             if (has(TexTalkTokenType.Identifier)) {
                 val id = next()
-                grp = GroupTexTalkNode(
+                grp =
+                    GroupTexTalkNode(
                         type = TexTalkNodeType.CurlyGroup,
-                        parameters = ParametersTexTalkNode(
-                                items = listOf(
+                        parameters =
+                            ParametersTexTalkNode(
+                                items =
+                                    listOf(
                                         ExpressionTexTalkNode(
-                                                children = listOf(
-                                                        TextTexTalkNode(
-                                                                type = TexTalkNodeType.Identifier,
-                                                                tokenType = id.tokenType,
-                                                                text = id.text,
-                                                                isVarArg = false
-                                                        )
-                                                )
-                                        )
-                                )
-                        ),
-                        isVarArg = false
-                )
+                                            children =
+                                                listOf(
+                                                    TextTexTalkNode(
+                                                        type = TexTalkNodeType.Identifier,
+                                                        tokenType = id.tokenType,
+                                                        text = id.text,
+                                                        isVarArg = false))))),
+                        isVarArg = false)
             }
 
             if (grp == null) {
@@ -297,7 +290,9 @@ private class TexTalkParserImpl : TexTalkParser {
 
             if (grp == null) {
                 addError("Expected a value with an underscore", row, column)
-                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
+                grp =
+                    GroupTexTalkNode(
+                        TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
             }
 
             return grp
@@ -313,24 +308,22 @@ private class TexTalkParserImpl : TexTalkParser {
             var grp: GroupTexTalkNode? = null
             if (has(TexTalkTokenType.Identifier)) {
                 val id = next()
-                grp = GroupTexTalkNode(
+                grp =
+                    GroupTexTalkNode(
                         type = TexTalkNodeType.CurlyGroup,
-                        parameters = ParametersTexTalkNode(
-                                items = listOf(
+                        parameters =
+                            ParametersTexTalkNode(
+                                items =
+                                    listOf(
                                         ExpressionTexTalkNode(
-                                                children = listOf(
-                                                        TextTexTalkNode(
-                                                                type = TexTalkNodeType.Identifier,
-                                                                tokenType = id.tokenType,
-                                                                text = id.text,
-                                                                isVarArg = false
-                                                        )
-                                                )
-                                        )
-                                )
-                        ),
-                        isVarArg = false
-                )
+                                            children =
+                                                listOf(
+                                                    TextTexTalkNode(
+                                                        type = TexTalkNodeType.Identifier,
+                                                        tokenType = id.tokenType,
+                                                        text = id.text,
+                                                        isVarArg = false))))),
+                        isVarArg = false)
             }
 
             if (grp == null) {
@@ -349,7 +342,9 @@ private class TexTalkParserImpl : TexTalkParser {
 
             if (grp == null) {
                 addError("Expected a value with a caret", row, column)
-                grp = GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
+                grp =
+                    GroupTexTalkNode(
+                        TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
             }
 
             return grp
@@ -405,10 +400,9 @@ private class TexTalkParserImpl : TexTalkParser {
             }
 
             return GroupTexTalkNode(
-                    type = nodeType,
-                    parameters = ParametersTexTalkNode(expressions),
-                    isVarArg = isVarArg
-            )
+                type = nodeType,
+                parameters = ParametersTexTalkNode(expressions),
+                isVarArg = isVarArg)
         }
 
         private fun namedGroup(): NamedGroupTexTalkNode? {
@@ -417,20 +411,24 @@ private class TexTalkParserImpl : TexTalkParser {
             }
 
             val rawText = text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, false)
-            val text = if (rawText != null) {
-                rawText
-            } else {
-                addError("Expected an identifier in a named group")
-                TextTexTalkNode(TexTalkNodeType.Identifier, TexTalkTokenType.Invalid, "INVALID", false)
-            }
+            val text =
+                if (rawText != null) {
+                    rawText
+                } else {
+                    addError("Expected an identifier in a named group")
+                    TextTexTalkNode(
+                        TexTalkNodeType.Identifier, TexTalkTokenType.Invalid, "INVALID", false)
+                }
 
             val rawGroup = group(TexTalkNodeType.CurlyGroup)
-            val first = if (rawGroup != null) {
-                rawGroup
-            } else {
-                addError("Expected a group in a named group")
-                GroupTexTalkNode(TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
-            }
+            val first =
+                if (rawGroup != null) {
+                    rawGroup
+                } else {
+                    addError("Expected a group in a named group")
+                    GroupTexTalkNode(
+                        TexTalkNodeType.CurlyGroup, ParametersTexTalkNode(emptyList()), false)
+                }
             val groups = mutableListOf<GroupTexTalkNode>()
             groups.add(first)
             while (true) {
@@ -442,17 +440,16 @@ private class TexTalkParserImpl : TexTalkParser {
         }
 
         private fun text(
-            tokenType: TexTalkTokenType,
-            nodeType: TexTalkNodeType,
-            canBeVarArg: Boolean
+            tokenType: TexTalkTokenType, nodeType: TexTalkNodeType, canBeVarArg: Boolean
         ): TextTexTalkNode? {
             if (!has(tokenType)) {
                 return null
             }
 
             val textToken = next()
-            val nextIsDotDotDot = has(TexTalkTokenType.DotDotDot) &&
-                !hasHas(TexTalkTokenType.DotDotDot, TexTalkTokenType.Identifier)
+            val nextIsDotDotDot =
+                has(TexTalkTokenType.DotDotDot) &&
+                    !hasHas(TexTalkTokenType.DotDotDot, TexTalkTokenType.Identifier)
 
             var isVarArg = false
             if (canBeVarArg) {
@@ -470,30 +467,29 @@ private class TexTalkParserImpl : TexTalkParser {
             }
 
             return TextTexTalkNode(
-                    type = nodeType,
-                    tokenType = tokenType,
-                    text = textToken.text,
-                    isVarArg = isVarArg
-            )
+                type = nodeType, tokenType = tokenType, text = textToken.text, isVarArg = isVarArg)
         }
 
         private fun expression(terminators: Set<TexTalkTokenType>?): ExpressionTexTalkNode? {
             val nodes = mutableListOf<TexTalkNode>()
-            while (hasNext() && (terminators == null ||
-                    !terminators.contains(texTalkLexer.peek().tokenType))
-            ) {
-                val child = command()
-                    ?: group(TexTalkNodeType.ParenGroup)
-                    ?: group(TexTalkNodeType.CurlyGroup)
-                    ?: text(TexTalkTokenType.Is, TexTalkNodeType.Is, false)
-                    ?: text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, true)
-                    ?: text(TexTalkTokenType.Operator, TexTalkNodeType.Operator, false)
-                    ?: text(TexTalkTokenType.Comma, TexTalkNodeType.Comma, false)
-                    ?: text(TexTalkTokenType.Caret, TexTalkNodeType.Operator, false)
-                    ?: text(TexTalkTokenType.Underscore, TexTalkNodeType.Operator, false)
-                    ?: text(TexTalkTokenType.ColonEquals, TexTalkNodeType.ColonEquals, false)
-                    ?: text(TexTalkTokenType.ColonColonEquals, TexTalkNodeType.ColonColonEquals, false)
-                    ?: text(TexTalkTokenType.DotDotDot, TexTalkNodeType.Operator, false)
+            while (hasNext() &&
+                (terminators == null || !terminators.contains(texTalkLexer.peek().tokenType))) {
+                val child =
+                    command()
+                        ?: group(TexTalkNodeType.ParenGroup) ?: group(TexTalkNodeType.CurlyGroup)
+                            ?: text(TexTalkTokenType.Is, TexTalkNodeType.Is, false)
+                            ?: text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, true)
+                            ?: text(TexTalkTokenType.Operator, TexTalkNodeType.Operator, false)
+                            ?: text(TexTalkTokenType.Comma, TexTalkNodeType.Comma, false)
+                            ?: text(TexTalkTokenType.Caret, TexTalkNodeType.Operator, false)
+                            ?: text(TexTalkTokenType.Underscore, TexTalkNodeType.Operator, false)
+                            ?: text(
+                            TexTalkTokenType.ColonEquals, TexTalkNodeType.ColonEquals, false)
+                            ?: text(
+                            TexTalkTokenType.ColonColonEquals,
+                            TexTalkNodeType.ColonColonEquals,
+                            false)
+                            ?: text(TexTalkTokenType.DotDotDot, TexTalkNodeType.Operator, false)
 
                 if (child == null) {
                     val peek = texTalkLexer.peek()
@@ -513,13 +509,14 @@ private class TexTalkParserImpl : TexTalkParser {
             if (has(tokenType)) {
                 return next() // absorb the token
             } else {
-                val message = if (hasNext()) {
-                    "Expected a token of type '$tokenType' but found type " +
-                        "'${texTalkLexer.peek().type}' for text '${texTalkLexer.peek().text}' " +
-                        "(Line: ${texTalkLexer.peek().row + 1}, Column: ${texTalkLexer.peek().column + 1})"
-                } else {
-                    "Expected a token of type $tokenType but found the end of input"
-                }
+                val message =
+                    if (hasNext()) {
+                        "Expected a token of type '$tokenType' but found type " +
+                            "'${texTalkLexer.peek().type}' for text '${texTalkLexer.peek().text}' " +
+                            "(Line: ${texTalkLexer.peek().row + 1}, Column: ${texTalkLexer.peek().column + 1})"
+                    } else {
+                        "Expected a token of type $tokenType but found the end of input"
+                    }
                 addError(message)
                 return INVALID
             }
@@ -530,15 +527,19 @@ private class TexTalkParserImpl : TexTalkParser {
         private fun next() = texTalkLexer.next()
 
         private fun has(tokenType: TexTalkTokenType) =
-                hasNext() && texTalkLexer.peek().tokenType === tokenType
+            hasNext() && texTalkLexer.peek().tokenType === tokenType
 
         private fun hasHas(tokenType1: TexTalkTokenType, tokenType2: TexTalkTokenType) =
-            has(tokenType1) && texTalkLexer.hasNextNext() && texTalkLexer.peekPeek().tokenType == tokenType2
+            has(tokenType1) &&
+                texTalkLexer.hasNextNext() &&
+                texTalkLexer.peekPeek().tokenType == tokenType2
 
-        private fun addError(message: String, token: TexTalkToken) = addError(message, token.row, token.column)
+        private fun addError(message: String, token: TexTalkToken) =
+            addError(message, token.row, token.column)
 
         private fun addError(message: String) = addError(message, -1, -1)
 
-        private fun addError(message: String, row: Int, column: Int) = errors.add(ParseError(message, row, column))
+        private fun addError(message: String, row: Int, column: Int) =
+            errors.add(ParseError(message, row, column))
     }
 }

@@ -37,16 +37,8 @@ data class InductivelyFromSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            InductivelyFromSection(
-                clauses = clauses.transform(chalkTransformer) as ClauseListNode
-            )
-        )
+            InductivelyFromSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateInductivelyFromSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-    AtLeast(1),
-    tracker,
-    node,
-    "from",
-    ::InductivelyFromSection
-)
+fun validateInductivelyFromSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(AtLeast(1), tracker, node, "from", ::InductivelyFromSection)

@@ -34,8 +34,7 @@ data class TestCase(
     val phase1Output: File,
     val phase1Structure: File,
     val phase2Output: File,
-    val phase2Structure: File
-)
+    val phase2Structure: File)
 
 enum class GoldenType {
     Chalktalk,
@@ -53,14 +52,14 @@ fun loadTestCases(type: GoldenType): List<TestCase> {
     val caseDirs = root.listFiles()
     if (caseDirs != null) {
         for (caseDir in caseDirs) {
-            result.add(TestCase(
+            result.add(
+                TestCase(
                     name = caseDir.name,
                     input = File(caseDir, "input.math"),
                     phase1Output = File(caseDir, "phase1-output.math"),
                     phase1Structure = File(caseDir, "phase1-structure.txt"),
                     phase2Output = File(caseDir, "phase2-output.math"),
-                    phase2Structure = File(caseDir, "phase2-structure.txt")
-            ))
+                    phase2Structure = File(caseDir, "phase2-structure.txt")))
         }
     }
 

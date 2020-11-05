@@ -16,15 +16,15 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.entry
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTripleSectionMetaDataGroup
+import mathlingua.support.MutableLocationTracker
 
 data class EntryGroup(
     val entrySection: EntrySection,
@@ -42,30 +42,28 @@ data class EntryGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        topLevelToCode(writer, isArg, indent, null,
-            entrySection, typeSection, contentSection, metaDataSection)
+        topLevelToCode(
+            writer, isArg, indent, null, entrySection, typeSection, contentSection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             EntryGroup(
-            entrySection = entrySection.transform(chalkTransformer) as EntrySection,
-            typeSection = typeSection.transform(chalkTransformer) as TypeSection,
-            contentSection = contentSection.transform(chalkTransformer) as ContentSection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
-        )
-        )
+                entrySection = entrySection.transform(chalkTransformer) as EntrySection,
+                typeSection = typeSection.transform(chalkTransformer) as TypeSection,
+                contentSection = contentSection.transform(chalkTransformer) as ContentSection,
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
 fun isEntryGroup(node: Phase1Node) = firstSectionMatchesName(node, "Entry")
 
-fun validateEntryGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateTripleSectionMetaDataGroup(
-    tracker,
-    node,
-    "Entry",
-    ::validateEntrySection,
-    "type",
-    ::validateTypeSection,
-    "content",
-    ::validateContentSection,
-    ::EntryGroup
-)
+fun validateEntryGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateTripleSectionMetaDataGroup(
+        tracker,
+        node,
+        "Entry",
+        ::validateEntrySection,
+        "type",
+        ::validateTypeSection,
+        "content",
+        ::validateContentSection,
+        ::EntryGroup)

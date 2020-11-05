@@ -14,20 +14,17 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast.group.clause.`if`
+package mathlingua.chalktalk.phase2.ast.group.clause.If
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.support.MutableLocationTracker
 
-data class IfGroup(
-    val ifSection: IfSection,
-    val thenSection: ThenSection
-) : Clause {
+data class IfGroup(val ifSection: IfSection, val thenSection: ThenSection) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(ifSection)
         fn(thenSection)
@@ -35,25 +32,19 @@ data class IfGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf(ifSection, thenSection)
-        return mathlingua.chalktalk.phase2.ast.clause.toCode(writer, isArg, indent, *sections.toTypedArray())
+        return mathlingua.chalktalk.phase2.ast.clause.toCode(
+            writer, isArg, indent, *sections.toTypedArray())
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        IfGroup(
-            ifSection = ifSection.transform(chalkTransformer) as IfSection,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection
-        )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            IfGroup(
+                ifSection = ifSection.transform(chalkTransformer) as IfSection,
+                thenSection = thenSection.transform(chalkTransformer) as ThenSection))
 }
 
 fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
 
-fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateDoubleSectionGroup(
-    tracker,
-    rawNode,
-    "if",
-    ::validateIfSection,
-    "then",
-    ::validateThenSection,
-    ::IfGroup
-)
+fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
+    validateDoubleSectionGroup(
+        tracker, rawNode, "if", ::validateIfSection, "then", ::validateThenSection, ::IfGroup)

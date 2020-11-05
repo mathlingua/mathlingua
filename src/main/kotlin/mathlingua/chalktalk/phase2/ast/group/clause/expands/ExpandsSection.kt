@@ -18,11 +18,11 @@ package mathlingua.chalktalk.phase2.ast.group.clause.expands
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.Target
-import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
+import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -42,9 +42,9 @@ data class ExpandsSection(val targets: List<AbstractionNode>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(ExpandsSection(
-                    targets = targets.map { it.transform(chalkTransformer) as AbstractionNode }
-            ))
+        chalkTransformer(
+            ExpandsSection(
+                targets = targets.map { it.transform(chalkTransformer) as AbstractionNode }))
 }
 
 private data class PseudoExpandsSection(val targets: List<Target>) : Phase2Node {
@@ -64,49 +64,44 @@ private data class PseudoExpandsSection(val targets: List<Target>) : Phase2Node 
 // only x... or {x}... is valid
 private fun isValidAbstraction(node: AbstractionNode) =
     node.abstraction.subParams == null &&
-    node.abstraction.parts.size == 1 &&
-    node.abstraction.parts[0].subParams == null &&
-    node.abstraction.parts[0].params == null &&
-    ((!node.abstraction.isEnclosed &&
-        node.abstraction.parts[0].name.text.endsWith("...")) ||
-        (node.abstraction.isEnclosed &&
-        node.abstraction.isVarArgs &&
-        !node.abstraction.parts[0].name.text.endsWith("..."))
-    )
+        node.abstraction.parts.size == 1 &&
+        node.abstraction.parts[0].subParams == null &&
+        node.abstraction.parts[0].params == null &&
+        ((!node.abstraction.isEnclosed && node.abstraction.parts[0].name.text.endsWith("...")) ||
+            (node.abstraction.isEnclosed &&
+                node.abstraction.isVarArgs &&
+                !node.abstraction.parts[0].name.text.endsWith("...")))
 
-fun validateExpandsSection(node: Phase1Node, tracker: MutableLocationTracker): Validation<ExpandsSection> =
-    when (val validation = validateTargetList(tracker,
-        node,
-        "expands",
-        ::PseudoExpandsSection)) {
+fun validateExpandsSection(
+    node: Phase1Node, tracker: MutableLocationTracker
+): Validation<ExpandsSection> =
+    when (val validation = validateTargetList(tracker, node, "expands", ::PseudoExpandsSection)
+    ) {
         is ValidationFailure -> validationFailure(validation.errors)
         is ValidationSuccess -> {
             val newErrors = mutableListOf<ParseError>()
             val targets = mutableListOf<AbstractionNode>()
             for (target in validation.value.targets) {
-                val id = if (target is AbstractionNode && isValidAbstraction(target)) {
-                    target
-                } else {
-                    null
-                }
+                val id =
+                    if (target is AbstractionNode && isValidAbstraction(target)) {
+                        target
+                    } else {
+                        null
+                    }
                 if (id == null) {
                     newErrors.add(
                         ParseError(
-                            message = "an 'expands' section can only contain <name>... or {<name>}...",
+                            message =
+                                "an 'expands' section can only contain <name>... or {<name>}...",
                             row = tracker.getLocationOf(target)?.row ?: -1,
-                            column = tracker.getLocationOf(target)?.column ?: -1
-                    )
-                    )
+                            column = tracker.getLocationOf(target)?.column ?: -1))
                 } else {
                     targets.add(id)
                 }
             }
 
             if (newErrors.isEmpty()) {
-                validationSuccess(tracker, node, ExpandsSection(
-                        targets = targets
-                )
-                )
+                validationSuccess(tracker, node, ExpandsSection(targets = targets))
             } else {
                 validationFailure(newErrors)
             }

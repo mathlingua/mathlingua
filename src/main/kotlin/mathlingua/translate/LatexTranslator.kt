@@ -17,55 +17,55 @@
 package mathlingua.translate
 
 import mathlingua.MathLingua
-import mathlingua.support.ValidationSuccess
 import mathlingua.chalktalk.phase2.ast.Document
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.`for`.ForGroup
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.Identifier
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.IfGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.not.NotGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.or.OrGroup
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.clause.Text
 import mathlingua.chalktalk.phase2.ast.clause.TupleNode
-import mathlingua.chalktalk.phase2.ast.group.clause.expands.AsSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
+import mathlingua.chalktalk.phase2.ast.group.clause.For.ForGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.For.ForSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.IfGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.If.IfSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.ExistsSection
-import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`for`.ForSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.IfSection
-import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
-import mathlingua.chalktalk.phase2.ast.group.clause.not.NotSection
-import mathlingua.chalktalk.phase2.ast.group.clause.or.OrSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceSection
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
-import mathlingua.chalktalk.phase2.ast.section.TextSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.ThatSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.expands.AsSection
+import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsSection
+import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffSection
+import mathlingua.chalktalk.phase2.ast.group.clause.not.NotGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.not.NotSection
+import mathlingua.chalktalk.phase2.ast.group.clause.or.OrGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.or.OrSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.ThatSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
+import mathlingua.chalktalk.phase2.ast.section.TextSection
+import mathlingua.support.ValidationSuccess
 
 class LatexTranslator(
     val defines: List<DefinesGroup>,
@@ -115,11 +115,18 @@ class LatexTranslator(
 
     fun translate(statement: Statement?) {
         if (statement != null) {
-            val text = if (statement.texTalkRoot is ValidationSuccess) {
-                MathLingua.expandWrittenAs(statement.texTalkRoot.value, defines, represents, foundations, mutuallyGroups).text
-            } else {
-                statement.text
-            }
+            val text =
+                if (statement.texTalkRoot is ValidationSuccess) {
+                    MathLingua.expandWrittenAs(
+                            statement.texTalkRoot.value,
+                            defines,
+                            represents,
+                            foundations,
+                            mutuallyGroups)
+                        .text
+                } else {
+                    statement.text
+                }
             append("\\($text\\)")
         }
     }
@@ -360,7 +367,8 @@ class LatexTranslator(
         if (resourceSection != null) {
             append("\\begin{enumerate}")
             for (item in resourceSection.items) {
-                append("\\item \\textbf{${item.section.name}}: ${item.section.values.joinToString(",")}")
+                append(
+                    "\\item \\textbf{${item.section.name}}: ${item.section.values.joinToString(",")}")
             }
             append("\\end{enumerate}")
         }

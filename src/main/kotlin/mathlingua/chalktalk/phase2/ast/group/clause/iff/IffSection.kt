@@ -16,13 +16,13 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.iff
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
+import mathlingua.support.MutableLocationTracker
 
 data class IffSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
@@ -37,17 +37,10 @@ data class IffSection(val clauses: ClauseListNode) : Phase2Node {
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        IffSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
-    )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            IffSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateIffSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-        AtLeast(1),
-        tracker,
-        node,
-        "iff",
-        ::IffSection
-)
+fun validateIffSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(AtLeast(1), tracker, node, "iff", ::IffSection)

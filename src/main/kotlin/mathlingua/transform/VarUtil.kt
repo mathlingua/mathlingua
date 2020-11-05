@@ -16,22 +16,22 @@
 
 package mathlingua.transform
 
-import mathlingua.chalktalk.phase2.ast.clause.Identifier
-import mathlingua.chalktalk.phase2.ast.clause.Statement
-import mathlingua.chalktalk.phase2.ast.clause.Text
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.AssignmentNode
+import mathlingua.chalktalk.phase2.ast.clause.Identifier
+import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.clause.Text
 import mathlingua.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.support.ValidationFailure
+import mathlingua.support.ValidationSuccess
+import mathlingua.support.validationSuccess
 import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.ParametersTexTalkNode
 import mathlingua.textalk.TexTalkNode
 import mathlingua.textalk.TextTexTalkNode
-import mathlingua.support.validationSuccess
 
 internal fun getVars(node: Phase1Node): List<String> {
     val vars = mutableListOf<String>()
@@ -51,34 +51,27 @@ internal fun getVars(texTalkNode: TexTalkNode): List<String> {
     return vars
 }
 
-internal fun renameVars(
-    texTalkNode: TexTalkNode,
-    map: Map<String, String>
-) = texTalkNode.transform {
-    if (it is TextTexTalkNode) {
-        it.copy(text = map[it.text] ?: it.text)
-    } else {
-        it
+internal fun renameVars(texTalkNode: TexTalkNode, map: Map<String, String>) =
+    texTalkNode.transform {
+        if (it is TextTexTalkNode) {
+            it.copy(text = map[it.text] ?: it.text)
+        } else {
+            it
+        }
     }
-}
 
 internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node {
     fun chalkTransformer(node: Phase2Node): Phase2Node {
         if (node is Identifier) {
-            return Identifier(
-                    name = map[node.name] ?: node.name,
-                    isVarArgs = node.isVarArgs
-            )
+            return Identifier(name = map[node.name] ?: node.name, isVarArgs = node.isVarArgs)
         }
 
         if (node is Statement) {
-            return when (val validation = node.texTalkRoot) {
+            return when (val validation = node.texTalkRoot
+            ) {
                 is ValidationSuccess -> {
                     val exp = renameVars(validation.value, map) as ExpressionTexTalkNode
-                    return Statement(
-                            text = exp.toCode(),
-                            texTalkRoot = validationSuccess(exp)
-                    )
+                    return Statement(text = exp.toCode(), texTalkRoot = validationSuccess(exp))
                 }
                 is ValidationFailure -> node
             }
@@ -97,10 +90,7 @@ internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node 
     return root.transform(::chalkTransformer)
 }
 
-private fun getVarsImpl(
-    node: Phase1Node,
-    vars: MutableList<String>
-) {
+private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
     if (node is Phase1Token) {
         vars.add(node.text)
     } else {
@@ -108,10 +98,7 @@ private fun getVarsImpl(
     }
 }
 
-private fun getVarsImpl(
-    node: Phase2Node,
-    vars: MutableList<String>
-) {
+private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>) {
     if (node is Identifier) {
         vars.add(node.name)
     } else if (node is TupleNode) {
@@ -128,7 +115,13 @@ private fun getVarsImpl(
 
 private fun getVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>, inParams: Boolean) {
     if (inParams && texTalkNode is TextTexTalkNode) {
-        vars.add(texTalkNode.text + if (texTalkNode.isVarArg) { "..." } else { "" })
+        vars.add(
+            texTalkNode.text +
+                if (texTalkNode.isVarArg) {
+                    "..."
+                } else {
+                    ""
+                })
     } else if (texTalkNode is ParametersTexTalkNode) {
         texTalkNode.forEach { getVarsImpl(it, vars, true) }
     } else {

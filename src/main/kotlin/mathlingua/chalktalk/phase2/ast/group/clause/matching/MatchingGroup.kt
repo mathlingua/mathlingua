@@ -16,25 +16,18 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.matching
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateSingleSectionGroup
+import mathlingua.chalktalk.phase2.ast.common.OnePartNode
+import mathlingua.support.MutableLocationTracker
 
 data class MatchingGroup(val matchingSection: MatchingSection) :
-    OnePartNode<MatchingSection>(
-        matchingSection,
-        ::MatchingGroup
-    ), Clause
+    OnePartNode<MatchingSection>(matchingSection, ::MatchingGroup), Clause
 
 fun isMatchingGroup(node: Phase1Node) = firstSectionMatchesName(node, "matching")
 
-fun validateMatchingGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateSingleSectionGroup(
-    tracker,
-    node,
-    "matching",
-    ::MatchingGroup,
-    ::validateMatchingSection
-)
+fun validateMatchingGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateSingleSectionGroup(
+        tracker, node, "matching", ::MatchingGroup, ::validateMatchingSection)

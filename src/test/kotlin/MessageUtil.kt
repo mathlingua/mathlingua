@@ -16,19 +16,16 @@
 
 package mathlingua
 
-import mathlingua.support.ParseError
-import mathlingua.support.ValidationFailure
 import java.io.File
 import java.io.IOException
 import java.lang.RuntimeException
 import java.lang.StringBuilder
 import java.nio.file.Paths
+import mathlingua.support.ParseError
+import mathlingua.support.ValidationFailure
 
 data class MessageTestCase(
-    val name: String,
-    val input: String,
-    val expectedErrors: List<ParseError>
-)
+    val name: String, val input: String, val expectedErrors: List<ParseError>)
 
 private fun getNamePrefix(name: String) = "$name:"
 
@@ -69,13 +66,7 @@ private fun loadExpectedErrors(input: String): List<ParseError> {
             builder.append(lines[index++])
         }
         lines[index++].expectedName("EndMessage")
-        expectedErrors.add(
-            ParseError(
-                message = builder.toString(),
-                row = row,
-                column = column
-            )
-        )
+        expectedErrors.add(ParseError(message = builder.toString(), row = row, column = column))
     }
     return expectedErrors
 }
@@ -97,39 +88,39 @@ fun loadMessageTestCases(): List<MessageTestCase> {
 
             val messageFile = File(caseDir, "messages.txt")
             val input = File(caseDir, "input.math").readText()
-            val expectedErrors = if (OVERWRITE_GOLDEN_FILES) {
-                val validation = MathLingua.parse(input)
-                val errors = if (validation is ValidationFailure) {
-                    validation.errors
-                } else {
-                    emptyList()
-                }
+            val expectedErrors =
+                if (OVERWRITE_GOLDEN_FILES) {
+                    val validation = MathLingua.parse(input)
+                    val errors =
+                        if (validation is ValidationFailure) {
+                            validation.errors
+                        } else {
+                            emptyList()
+                        }
 
-                val builder = StringBuilder()
-                for ((index, err) in errors.withIndex()) {
-                    builder.append("Row: ")
-                    builder.append(err.row)
-                    builder.append("\nColumn: ")
-                    builder.append(err.column)
-                    builder.append("\nMessage:\n")
-                    builder.append(err.message)
-                    builder.append("\nEndMessage:")
-                    if (index != errors.size - 1) {
-                        builder.append("\n\n\n")
+                    val builder = StringBuilder()
+                    for ((index, err) in errors.withIndex()) {
+                        builder.append("Row: ")
+                        builder.append(err.row)
+                        builder.append("\nColumn: ")
+                        builder.append(err.column)
+                        builder.append("\nMessage:\n")
+                        builder.append(err.message)
+                        builder.append("\nEndMessage:")
+                        if (index != errors.size - 1) {
+                            builder.append("\n\n\n")
+                        }
                     }
+                    messageFile.writeText(builder.toString())
+
+                    errors
+                } else {
+                    loadExpectedErrors(messageFile.readText())
                 }
-                messageFile.writeText(builder.toString())
 
-                errors
-            } else {
-                loadExpectedErrors(messageFile.readText())
-            }
-
-            result.add(MessageTestCase(
-                name = caseDir.name,
-                input = input,
-                expectedErrors = expectedErrors
-            ))
+            result.add(
+                MessageTestCase(
+                    name = caseDir.name, input = input, expectedErrors = expectedErrors))
         }
     }
 

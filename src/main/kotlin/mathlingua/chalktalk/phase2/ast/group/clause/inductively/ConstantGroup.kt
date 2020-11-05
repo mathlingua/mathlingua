@@ -21,19 +21,11 @@ import mathlingua.chalktalk.phase2.ast.clause.validateSingleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.support.MutableLocationTracker
 
-data class ConstantGroup(
-    val constantSection: ConstantSection
-) : OnePartNode<ConstantSection>(
-    constantSection,
-    ::ConstantGroup
-), Clause
+data class ConstantGroup(val constantSection: ConstantSection) :
+    OnePartNode<ConstantSection>(constantSection, ::ConstantGroup), Clause
 
 fun isConstantGroup(node: Phase1Node) = firstSectionMatchesName(node, "constant")
 
-fun validateConstantGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateSingleSectionGroup(
-    tracker,
-    node,
-    "constant",
-    ::ConstantGroup,
-    ::validateConstantSection
-)
+fun validateConstantGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateSingleSectionGroup(
+        tracker, node, "constant", ::ConstantGroup, ::validateConstantSection)

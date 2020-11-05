@@ -16,16 +16,15 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.entry
 
-import mathlingua.support.MutableLocationTracker
-import mathlingua.support.Validation
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTextListSection
+import mathlingua.support.MutableLocationTracker
+import mathlingua.support.Validation
 
 data class EntrySection(val names: List<String>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
@@ -48,11 +47,5 @@ data class EntrySection(val names: List<String>) : Phase2Node {
 }
 
 fun validateEntrySection(
-    rawNode: Phase1Node,
-    tracker: MutableLocationTracker
-): Validation<EntrySection> = validateTextListSection(
-    rawNode,
-    tracker,
-    "Entry",
-    ::EntrySection
-)
+    rawNode: Phase1Node, tracker: MutableLocationTracker
+): Validation<EntrySection> = validateTextListSection(rawNode, tracker, "Entry", ::EntrySection)

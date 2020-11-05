@@ -21,17 +21,17 @@ import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.chalktalk.phase2.HtmlCodeWriter
 import mathlingua.chalktalk.phase2.MathLinguaCodeWriter
 import mathlingua.chalktalk.phase2.ast.Document
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.chalktalk.phase2.ast.validateDocument
 import mathlingua.chalktalk.phase2.findNode
@@ -64,7 +64,8 @@ data class ContentLocation(val path: String, val location: Location)
 
 object MathLingua {
     fun parse(input: String): Validation<Document> =
-        when (val validation = parseWithLocations(input)) {
+        when (val validation = parseWithLocations(input)
+        ) {
             is ValidationSuccess -> validationSuccess(validation.value.document)
             is ValidationFailure -> validationFailure(validation.errors)
         }
@@ -84,11 +85,10 @@ object MathLingua {
         }
 
         val tracker = newLocationTracker()
-        return when (val documentValidation = validateDocument(root, tracker)) {
-            is ValidationSuccess -> validationSuccess(Parse(
-                    document = documentValidation.value,
-                    tracker = tracker
-            ))
+        return when (val documentValidation = validateDocument(root, tracker)
+        ) {
+            is ValidationSuccess ->
+                validationSuccess(Parse(document = documentValidation.value, tracker = tracker))
             is ValidationFailure -> {
                 allErrors.addAll(documentValidation.errors)
                 validationFailure(allErrors)
@@ -98,53 +98,51 @@ object MathLingua {
 
     fun justify(text: String, width: Int) = mathlingua.support.justify(text, width)
 
-    fun prettyPrintIdentifier(text: String) = mathlingua.chalktalk.phase2.prettyPrintIdentifier(text)
+    fun prettyPrintIdentifier(text: String) =
+        mathlingua.chalktalk.phase2.prettyPrintIdentifier(text)
 
     fun signatureOf(group: TopLevelGroup) = getSignature(group)
 
     fun signatureOf(command: Command) = command.signature()
 
-    fun findAllSignatures(node: Phase2Node, locationTracker: LocationTracker) = locateAllSignatures(node, locationTracker)
+    fun findAllSignatures(node: Phase2Node, locationTracker: LocationTracker) =
+        locateAllSignatures(node, locationTracker)
 
     fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
 
     private fun getContent(group: TopLevelGroup) =
-            when (group) {
-                is StatesGroup -> group.copy(
-                        id = IdStatement(
+        when (group) {
+                is StatesGroup ->
+                    group.copy(
+                        id =
+                            IdStatement(
                                 text = "",
-                                texTalkRoot = validationSuccess(
-                                        ExpressionTexTalkNode(children = emptyList())
-                                )
-                        ),
-                        metaDataSection = null
-                )
-                is DefinesGroup -> group.copy(
-                        id = IdStatement(
+                                texTalkRoot =
+                                    validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList()))),
+                        metaDataSection = null)
+                is DefinesGroup ->
+                    group.copy(
+                        id =
+                            IdStatement(
                                 text = "",
-                                texTalkRoot = validationSuccess(
-                                        ExpressionTexTalkNode(children = emptyList())
-                                )
-                        ),
-                        metaDataSection = null
-                )
-                is ResourceGroup -> group.copy(
-                        id = "",
-                        metaDataSection = null
-                )
-                is TheoremGroup -> group.copy(
-                        metaDataSection = null
-                )
-                is AxiomGroup -> group.copy(
-                        metaDataSection = null
-                )
-                is ConjectureGroup -> group.copy(
-                        metaDataSection = null
-                )
+                                texTalkRoot =
+                                    validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList()))),
+                        metaDataSection = null)
+                is ResourceGroup -> group.copy(id = "", metaDataSection = null)
+                is TheoremGroup -> group.copy(metaDataSection = null)
+                is AxiomGroup -> group.copy(metaDataSection = null)
+                is ConjectureGroup -> group.copy(metaDataSection = null)
                 else -> throw RuntimeException("Unknown group: ${group.toCode(false, 0).getCode()}")
-            }.toCode(false, 0).getCode().replace("^\\[]\\n".toRegex(), "")
+            }
+            .toCode(false, 0)
+            .getCode()
+            .replace("^\\[]\\n".toRegex(), "")
 
-    fun findUndefinedSignatureLocations(files: Map<String, String>): Map<String, Set<ContentLocation>> {
+    fun findUndefinedSignatureLocations(
+        files: Map<String, String>
+    ): Map<String, Set<ContentLocation>> {
         val definedSignatures = mutableSetOf<String>()
         for (content in files.values) {
             definedSignatures.addAll(getAllDefinedSignatures(content).map { it.form })
@@ -163,11 +161,7 @@ object MathLingua {
                             result[key] = mutableSetOf()
                         }
                         result[key]!!.add(
-                            ContentLocation(
-                                path = path,
-                                location = signature.location
-                        )
-                        )
+                            ContentLocation(path = path, location = signature.location))
                     }
                 }
             }
@@ -190,12 +184,8 @@ object MathLingua {
                     result[groupContent]!!.add(
                         ContentLocation(
                             path = path,
-                            location = tracker.getLocationOf(group) ?: Location(
-                                    row = -1,
-                                    column = -1
-                            )
-                    )
-                    )
+                            location = tracker.getLocationOf(group)
+                                    ?: Location(row = -1, column = -1)))
                 }
             }
         }
@@ -210,17 +200,18 @@ object MathLingua {
                 val doc = validation.value.document
                 val tracker = validation.value.tracker
                 for (group in doc.groups) {
-                    val signature = when (group) {
-                        is DefinesGroup -> {
-                            group.signature
+                    val signature =
+                        when (group) {
+                            is DefinesGroup -> {
+                                group.signature
+                            }
+                            is StatesGroup -> {
+                                group.signature
+                            }
+                            else -> {
+                                null
+                            }
                         }
-                        is StatesGroup -> {
-                            group.signature
-                        }
-                        else -> {
-                            null
-                        }
-                    }
 
                     if (signature != null) {
                         if (!result.containsKey(signature)) {
@@ -229,12 +220,8 @@ object MathLingua {
                         result[signature]!!.add(
                             ContentLocation(
                                 path = path,
-                                location = tracker.getLocationOf(group) ?: Location(
-                                        row = -1,
-                                        column = -1
-                                )
-                        )
-                        )
+                                location = tracker.getLocationOf(group)
+                                        ?: Location(row = -1, column = -1)))
                     }
                 }
             }
@@ -243,16 +230,17 @@ object MathLingua {
     }
 
     fun findDuplicateContent(input: String, supplemental: List<String>): List<Location> {
-        val suppContent = when (val validation = parse(supplemental.joinToString("\n\n\n"))) {
-            is ValidationFailure -> emptySet()
-            is ValidationSuccess -> {
-                validation.value.groups.map {
-                    getContent(it)
-                }.toSet()
+        val suppContent =
+            when (val validation = parse(supplemental.joinToString("\n\n\n"))
+            ) {
+                is ValidationFailure -> emptySet()
+                is ValidationSuccess -> {
+                    validation.value.groups.map { getContent(it) }.toSet()
+                }
             }
-        }
 
-        return when (val validation = parseWithLocations(input)) {
+        return when (val validation = parseWithLocations(input)
+        ) {
             is ValidationFailure -> emptyList()
             is ValidationSuccess -> {
                 val doc = validation.value.document
@@ -265,8 +253,7 @@ object MathLingua {
                     val content = getContent(group)
                     val location = tracker.getLocationOf(group)
                     if (location != null &&
-                            (suppContent.contains(content) ||
-                                    inputContentSet.contains(content))) {
+                        (suppContent.contains(content) || inputContentSet.contains(content))) {
                         result.add(location)
                     }
                     inputContentSet.add(content)
@@ -310,10 +297,12 @@ object MathLingua {
             definedSignatures.addAll(getAllDefinedSignatures(sup).map { it.form })
         }
 
-        return when (val validation = parseWithLocations(input)) {
+        return when (val validation = parseWithLocations(input)
+        ) {
             is ValidationSuccess -> {
                 val result = mutableListOf<Signature>()
-                val signatures = findAllSignatures(validation.value.document, validation.value.tracker)
+                val signatures =
+                    findAllSignatures(validation.value.document, validation.value.tracker)
                 for (sig in signatures) {
                     if (!definedSignatures.contains(sig.form)) {
                         result.add(sig)
@@ -326,37 +315,34 @@ object MathLingua {
     }
 
     private fun getAllDefinedSignatures(input: String): List<Signature> {
-        return when (val validation = parseWithLocations(input)) {
+        return when (val validation = parseWithLocations(input)
+        ) {
             is ValidationSuccess -> {
                 val result = mutableListOf<Signature>()
                 val document = validation.value.document
                 val tracker = validation.value.tracker
-                result.addAll(document.defines().mapNotNull {
-                    if (it.signature == null) {
-                        null
-                    } else {
-                        Signature(
+                result.addAll(
+                    document.defines().mapNotNull {
+                        if (it.signature == null) {
+                            null
+                        } else {
+                            Signature(
                                 form = it.signature,
-                                location = tracker.getLocationOf(it) ?: Location(
-                                        row = -1,
-                                        column = -1
-                                )
-                        )
-                    }
-                })
-                result.addAll(document.states().mapNotNull {
-                    if (it.signature == null) {
-                        null
-                    } else {
-                        Signature(
+                                location = tracker.getLocationOf(it)
+                                        ?: Location(row = -1, column = -1))
+                        }
+                    })
+                result.addAll(
+                    document.states().mapNotNull {
+                        if (it.signature == null) {
+                            null
+                        } else {
+                            Signature(
                                 form = it.signature,
-                                location = tracker.getLocationOf(it) ?: Location(
-                                        row = -1,
-                                        column = -1
-                                )
-                        )
-                    }
-                })
+                                location = tracker.getLocationOf(it)
+                                        ?: Location(row = -1, column = -1))
+                        }
+                    })
                 result
             }
             is ValidationFailure -> emptyList()
@@ -369,16 +355,18 @@ object MathLingua {
         column: Int,
         defines: List<DefinesGroup>,
         represents: List<StatesGroup>
-    ): Validation<Document> = when (val validation = parseWithLocations(text)) {
-        is ValidationFailure -> validationFailure(validation.errors)
-        is ValidationSuccess -> {
-            val doc = validation.value.document
-            val tracker = validation.value.tracker
-            val target = findNode(tracker, doc, row, column)
-            val newDoc = expandAtNode(doc, target, defines, represents) as Document
-            validationSuccess(newDoc)
+    ): Validation<Document> =
+        when (val validation = parseWithLocations(text)
+        ) {
+            is ValidationFailure -> validationFailure(validation.errors)
+            is ValidationSuccess -> {
+                val doc = validation.value.document
+                val tracker = validation.value.tracker
+                val target = findNode(tracker, doc, row, column)
+                val newDoc = expandAtNode(doc, target, defines, represents) as Document
+                validationSuccess(newDoc)
+            }
         }
-    }
 
     fun expand(doc: Document) = fullExpandComplete(doc)
 
@@ -415,7 +403,8 @@ object MathLingua {
 
         val result = mutableMapOf<OperatorTexTalkNode, String>()
         for (rep in allStates) {
-            val writtenAs = rep.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
+            val writtenAs =
+                rep.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
             val validation = rep.id.texTalkRoot
             if (validation is ValidationSuccess) {
@@ -423,17 +412,17 @@ object MathLingua {
                 if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
                     result[exp.children[0] as OperatorTexTalkNode] = writtenAs
                 } else if (exp.children.size == 1 && exp.children[0] is Command) {
-                    result[OperatorTexTalkNode(
-                        lhs = null,
-                        command = exp.children[0] as Command,
-                        rhs = null
-                    )] = writtenAs
+                    result[
+                        OperatorTexTalkNode(
+                            lhs = null, command = exp.children[0] as Command, rhs = null)] =
+                        writtenAs
                 }
             }
         }
 
         for (def in allDefines) {
-            val writtenAs = def.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
+            val writtenAs =
+                def.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
             val validation = def.id.texTalkRoot
             if (validation is ValidationSuccess) {
@@ -442,11 +431,7 @@ object MathLingua {
                     result[exp.children[0] as OperatorTexTalkNode] = writtenAs
                 } else if (exp.children.size == 1 && exp.children[0] is Command) {
                     val cmd = exp.children[0] as Command
-                    result[OperatorTexTalkNode(
-                        lhs = null,
-                        command = cmd,
-                        rhs = null
-                    )] = writtenAs
+                    result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] = writtenAs
                 }
             }
         }
@@ -461,25 +446,26 @@ object MathLingua {
         foundations: List<FoundationGroup>,
         mutuallyGroups: List<MutuallyGroup>
     ) =
-        expandAsWritten(node, getPatternsToWrittenAs(defines, represents, foundations, mutuallyGroups))
+        expandAsWritten(
+            node, getPatternsToWrittenAs(defines, represents, foundations, mutuallyGroups))
 
     fun expandWrittenAs(
-        phase2Node: Phase2Node,
-        patternToExpansion: Map<OperatorTexTalkNode, String>
+        phase2Node: Phase2Node, patternToExpansion: Map<OperatorTexTalkNode, String>
     ): Phase2Node {
         return phase2Node.transform {
             when (it) {
-                is Statement -> when (val validation = it.texTalkRoot) {
-                    is ValidationFailure -> it
-                    is ValidationSuccess -> {
-                        val texTalkNode = validation.value
-                        val expansion = expandAsWritten(texTalkNode, patternToExpansion)
-                        Statement(
+                is Statement ->
+                    when (val validation = it.texTalkRoot
+                    ) {
+                        is ValidationFailure -> it
+                        is ValidationSuccess -> {
+                            val texTalkNode = validation.value
+                            val expansion = expandAsWritten(texTalkNode, patternToExpansion)
+                            Statement(
                                 text = expansion.text ?: it.toCode(false, 0).getCode(),
-                                texTalkRoot = validation
-                        )
+                                texTalkRoot = validation)
+                        }
                     }
-                }
                 else -> it
             }
         }
@@ -488,32 +474,39 @@ object MathLingua {
     fun printExpanded(input: String, supplemental: String, html: Boolean): Validation<String> {
         val totalText = "$input\n\n\n$supplemental"
         val totalTextValidation = parse(totalText)
-        val defines = when (totalTextValidation) {
-            is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.defines()
-        }
-        val states = when (totalTextValidation) {
-            is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.states()
-        }
-        val foundations = when (totalTextValidation) {
-            is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.foundations()
-        }
-        val mutuallyGroups = when (totalTextValidation) {
-            is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.mutually()
-        }
+        val defines =
+            when (totalTextValidation) {
+                is ValidationFailure -> emptyList()
+                is ValidationSuccess -> totalTextValidation.value.defines()
+            }
+        val states =
+            when (totalTextValidation) {
+                is ValidationFailure -> emptyList()
+                is ValidationSuccess -> totalTextValidation.value.states()
+            }
+        val foundations =
+            when (totalTextValidation) {
+                is ValidationFailure -> emptyList()
+                is ValidationSuccess -> totalTextValidation.value.foundations()
+            }
+        val mutuallyGroups =
+            when (totalTextValidation) {
+                is ValidationFailure -> emptyList()
+                is ValidationSuccess -> totalTextValidation.value.mutually()
+            }
 
         val result = StringBuilder()
         val errors = mutableListOf<ParseError>()
         for (part in input.split("\n\n").filter { it.isNotBlank() }) {
-            when (val validation = parse(part)) {
+            when (val validation = parse(part)
+            ) {
                 is ValidationFailure -> {
                     errors.addAll(validation.errors)
                 }
                 is ValidationSuccess -> {
-                    result.append(prettyPrint(validation.value, defines, states, foundations, mutuallyGroups, html))
+                    result.append(
+                        prettyPrint(
+                            validation.value, defines, states, foundations, mutuallyGroups, html))
                 }
             }
         }
@@ -533,11 +526,20 @@ object MathLingua {
         mutuallyGroups: List<MutuallyGroup>,
         html: Boolean
     ): String {
-        val writer = if (html) {
-            HtmlCodeWriter(defines = defines, states = states, foundations = foundations, mutuallyGroups = mutuallyGroups)
-        } else {
-            MathLinguaCodeWriter(defines = defines, states = states, foundations = foundations, mutuallyGroups = mutuallyGroups)
-        }
+        val writer =
+            if (html) {
+                HtmlCodeWriter(
+                    defines = defines,
+                    states = states,
+                    foundations = foundations,
+                    mutuallyGroups = mutuallyGroups)
+            } else {
+                MathLinguaCodeWriter(
+                    defines = defines,
+                    states = states,
+                    foundations = foundations,
+                    mutuallyGroups = mutuallyGroups)
+            }
         val code = node.toCode(false, 0, writer = writer).getCode()
         return if (html) {
             getHtml(code)
@@ -547,7 +549,8 @@ object MathLingua {
     }
 }
 
-private fun getHtml(body: String) = """
+private fun getHtml(body: String) =
+    """
 <!DOCTYPE html>
 <html>
     <head>

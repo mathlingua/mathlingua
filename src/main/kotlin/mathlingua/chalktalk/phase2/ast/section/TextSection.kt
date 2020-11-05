@@ -29,12 +29,8 @@ import mathlingua.support.Validation
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 
-data class TextSection(
-    val name: String,
-    val text: String
-) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+data class TextSection(val name: String, val text: String) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
@@ -46,13 +42,11 @@ data class TextSection(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(this)
+        chalkTransformer(this)
 }
 
 fun validateTextSection(
-    rawNode: Phase1Node,
-    name: String,
-    tracker: MutableLocationTracker
+    rawNode: Phase1Node, name: String, tracker: MutableLocationTracker
 ): Validation<TextSection> {
     val node = rawNode.resolve()
     val row = getRow(node)
@@ -60,54 +54,36 @@ fun validateTextSection(
 
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-                ParseError(
-                        "Expected a Section",
-                        getRow(node), getColumn(node)
-                )
-        )
+        errors.add(ParseError("Expected a Section", getRow(node), getColumn(node)))
     }
 
     val sect = node as Section
     if (sect.name.text != name) {
         errors.add(
-                ParseError(
-                        "Expected a Section with name " +
-                                name + " but found " + sect.name.text,
-                        row, column
-                )
-        )
+            ParseError(
+                "Expected a Section with name " + name + " but found " + sect.name.text,
+                row,
+                column))
     }
 
     if (sect.args.size != 1) {
         errors.add(
-                ParseError(
-                        "Section '" + sect.name.text + "' requires exactly one text argument.",
-                        row, column
-                )
-        )
+            ParseError(
+                "Section '" + sect.name.text + "' requires exactly one text argument.",
+                row,
+                column))
         return validationFailure(errors)
     }
 
     val arg = sect.args[0].chalkTalkTarget
     if (arg !is Phase1Token) {
-        errors.add(
-            ParseError(
-                "Expected a string but found ${arg.toCode()}",
-                row, column
-        )
-        )
+        errors.add(ParseError("Expected a string but found ${arg.toCode()}", row, column))
     }
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else {
         validationSuccess(
-                tracker,
-                rawNode,
-                TextSection(
-                    name = name,
-                    text = (arg as Phase1Token).text
-                ))
+            tracker, rawNode, TextSection(name = name, text = (arg as Phase1Token).text))
     }
 }

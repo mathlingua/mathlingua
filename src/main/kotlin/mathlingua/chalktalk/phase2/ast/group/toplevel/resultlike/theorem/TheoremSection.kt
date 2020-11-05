@@ -16,15 +16,14 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTextListSection
+import mathlingua.support.MutableLocationTracker
 
 data class TheoremSection(val names: List<String>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-    }
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
@@ -40,12 +39,8 @@ data class TheoremSection(val names: List<String>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(this)
+        chalkTransformer(this)
 }
 
-fun validateTheoremSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTextListSection(
-    node,
-    tracker,
-    "Theorem",
-    ::TheoremSection
-)
+fun validateTheoremSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateTextListSection(node, tracker, "Theorem", ::TheoremSection)

@@ -24,7 +24,7 @@ data class PageItemSection(val page: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            indentedStringSection(writer, isArg, indent, "page", page)
+        indentedStringSection(writer, isArg, indent, "page", page)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(this)

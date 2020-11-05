@@ -16,23 +16,22 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.clause.Clause
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaDataGroup
+import mathlingua.support.MutableLocationTracker
 
 interface DefinesStatesOrViews : Clause
 
 data class FoundationGroup(
-    val foundationSection: FoundationSection,
-    override val metaDataSection: MetaDataSection?
+    val foundationSection: FoundationSection, override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -42,29 +41,19 @@ data class FoundationGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = topLevelToCode(
-        writer,
-        isArg,
-        indent,
-        null,
-        foundationSection,
-        metaDataSection
-    )
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+        topLevelToCode(writer, isArg, indent, null, foundationSection, metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        FoundationGroup(
-        foundationSection = foundationSection.transform(chalkTransformer) as FoundationSection,
-        metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
-    )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            FoundationGroup(
+                foundationSection =
+                    foundationSection.transform(chalkTransformer) as FoundationSection,
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
 fun isFoundationGroup(node: Phase1Node) = firstSectionMatchesName(node, "Foundation")
 
-fun validateFoundationGroup(groupNode: Group, tracker: MutableLocationTracker) = validateSingleSectionMetaDataGroup(
-    tracker,
-    groupNode,
-    "Foundation",
-    ::validateFoundationSection,
-    ::FoundationGroup
-)
+fun validateFoundationGroup(groupNode: Group, tracker: MutableLocationTracker) =
+    validateSingleSectionMetaDataGroup(
+        tracker, groupNode, "Foundation", ::validateFoundationSection, ::FoundationGroup)

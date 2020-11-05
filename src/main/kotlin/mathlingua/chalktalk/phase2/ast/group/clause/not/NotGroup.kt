@@ -16,23 +16,17 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.not
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateSingleSectionGroup
+import mathlingua.chalktalk.phase2.ast.common.OnePartNode
+import mathlingua.support.MutableLocationTracker
 
 data class NotGroup(val notSection: NotSection) :
-    OnePartNode<NotSection>(
-        notSection,
-        ::NotGroup
-    ), Clause
+    OnePartNode<NotSection>(notSection, ::NotGroup), Clause
 
 fun isNotGroup(node: Phase1Node) = firstSectionMatchesName(node, "not")
 
-fun validateNotGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateSingleSectionGroup(
-        tracker,
-        node, "not", ::NotGroup,
-        ::validateNotSection
-)
+fun validateNotGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateSingleSectionGroup(tracker, node, "not", ::NotGroup, ::validateNotSection)

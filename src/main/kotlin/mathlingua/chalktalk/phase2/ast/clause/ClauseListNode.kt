@@ -35,8 +35,7 @@ data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        return chalkTransformer(ClauseListNode(
-                clauses = clauses.map { it.transform(chalkTransformer) as Clause }
-        ))
+        return chalkTransformer(
+            ClauseListNode(clauses = clauses.map { it.transform(chalkTransformer) as Clause }))
     }
 }

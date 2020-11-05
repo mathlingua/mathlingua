@@ -16,6 +16,15 @@
 
 package mathlingua.mathlingua.playground
 
+import java.awt.BorderLayout
+import java.awt.FlowLayout
+import java.awt.Font
+import java.awt.event.KeyEvent
+import java.awt.event.KeyListener
+import javax.swing.*
+import javax.swing.tree.DefaultMutableTreeNode
+import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreePath
 import mathlingua.MathLingua
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.getColumn
@@ -44,15 +53,6 @@ import mathlingua.transform.separateIsStatements
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
-import java.awt.BorderLayout
-import java.awt.FlowLayout
-import java.awt.Font
-import java.awt.event.KeyEvent
-import java.awt.event.KeyListener
-import javax.swing.*
-import javax.swing.tree.DefaultMutableTreeNode
-import javax.swing.tree.DefaultTreeModel
-import javax.swing.tree.TreePath
 
 fun main() {
     // enable sub-pixel antialiasing
@@ -115,16 +115,14 @@ fun main() {
     outputArea.highlightCurrentLine = false
     outputArea.font = font
     outputArea.lineWrap = true
-    outputArea.syntaxScheme
-        .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+    outputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
     val inputArea = RSyntaxTextArea(20, 60)
     inputArea.syntaxEditingStyle = SyntaxConstants.SYNTAX_STYLE_YAML
     inputArea.isCodeFoldingEnabled = true
     inputArea.highlightCurrentLine = false
     inputArea.font = font
-    inputArea.syntaxScheme
-        .getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+    inputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
     val expandButton = JButton("Expand At")
     expandButton.addActionListener {
@@ -158,163 +156,162 @@ fun main() {
 
             val newDoc = expandAtNode(doc, nearestNode, doc.defines(), doc.states())
 
-            outputArea.text = newDoc.toCode(false, 0, HtmlCodeWriter(emptyList(), emptyList(), emptyList(), emptyList())).getCode()
-            outputTree.model = DefaultTreeModel(
-                toTreeNode(
-                    tracker,
-                    newDoc
-                )
-            )
+            outputArea.text =
+                newDoc
+                    .toCode(
+                        false,
+                        0,
+                        HtmlCodeWriter(emptyList(), emptyList(), emptyList(), emptyList()))
+                    .getCode()
+            outputTree.model = DefaultTreeModel(toTreeNode(tracker, newDoc))
         }
     }
     statusPanel.add(expandButton)
 
-    inputArea.addKeyListener(object : KeyListener {
-        override fun keyTyped(keyEvent: KeyEvent) {}
+    inputArea.addKeyListener(
+        object : KeyListener {
+            override fun keyTyped(keyEvent: KeyEvent) {}
 
-        override fun keyReleased(keyEvent: KeyEvent) {
-            if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
-                return
-            }
+            override fun keyReleased(keyEvent: KeyEvent) {
+                if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
+                    return
+                }
 
-            SwingUtilities.invokeLater {
-                var doc: Document? = null
-                val errorBuilder = StringBuilder()
-                val tracker = newLocationTracker()
-                try {
-                    val input = inputArea.text
+                SwingUtilities.invokeLater {
+                    var doc: Document? = null
+                    val errorBuilder = StringBuilder()
+                    val tracker = newLocationTracker()
+                    try {
+                        val input = inputArea.text
 
-                    val tmpLexer = newChalkTalkLexer(input)
-                    val tokenBuilder = StringBuilder()
-                    while (tmpLexer.hasNext()) {
-                        val next = tmpLexer.next()
-                        val row = next.row
-                        val column = next.column
-                        tokenBuilder.append(
-                            "${next.text} <${next.type}>  ($row, $column)\n")
-                    }
-                    for (err in tmpLexer.errors()) {
-                        tokenBuilder.append("ERROR: $err\n")
-                    }
-                    tokenList.text = tokenBuilder.toString()
+                        val tmpLexer = newChalkTalkLexer(input)
+                        val tokenBuilder = StringBuilder()
+                        while (tmpLexer.hasNext()) {
+                            val next = tmpLexer.next()
+                            val row = next.row
+                            val column = next.column
+                            tokenBuilder.append("${next.text} <${next.type}>  ($row, $column)\n")
+                        }
+                        for (err in tmpLexer.errors()) {
+                            tokenBuilder.append("ERROR: $err\n")
+                        }
+                        tokenList.text = tokenBuilder.toString()
 
-                    val lexer = newChalkTalkLexer(input)
+                        val lexer = newChalkTalkLexer(input)
 
-                    for (err in lexer.errors()) {
-                        errorBuilder.append(err)
-                        errorBuilder.append('\n')
-                    }
-
-                    val parser = newChalkTalkParser()
-                    val (root, errors) = parser.parse(lexer)
-
-                    for (err in errors) {
-                        errorBuilder.append(err)
-                        errorBuilder.append('\n')
-                    }
-
-                    if (root != null) {
-                        phase1Tree.model = DefaultTreeModel(
-                            toTreeNode(
-                                root
-                            )
-                        )
-                        val numPhase1Rows = phase1Tree.rowCount
-                        if (numPhase1Rows > 0) {
-                            phase1Tree.expandRow(numPhase1Rows - 1)
+                        for (err in lexer.errors()) {
+                            errorBuilder.append(err)
+                            errorBuilder.append('\n')
                         }
 
-                        when (val documentValidation = validateDocument(root, tracker)) {
-                            is ValidationSuccess -> doc = documentValidation.value
-                            is ValidationFailure -> {
-                                for ((message, row, column) in documentValidation.errors) {
-                                    errorBuilder.append(message)
-                                    errorBuilder.append(" (Line: ")
-                                    errorBuilder.append(row + 1)
-                                    errorBuilder.append(", Column: ")
-                                    errorBuilder.append(column + 1)
-                                    errorBuilder.append(")\n")
+                        val parser = newChalkTalkParser()
+                        val (root, errors) = parser.parse(lexer)
+
+                        for (err in errors) {
+                            errorBuilder.append(err)
+                            errorBuilder.append('\n')
+                        }
+
+                        if (root != null) {
+                            phase1Tree.model = DefaultTreeModel(toTreeNode(root))
+                            val numPhase1Rows = phase1Tree.rowCount
+                            if (numPhase1Rows > 0) {
+                                phase1Tree.expandRow(numPhase1Rows - 1)
+                            }
+
+                            when (val documentValidation = validateDocument(root, tracker)
+                            ) {
+                                is ValidationSuccess -> doc = documentValidation.value
+                                is ValidationFailure -> {
+                                    for ((message, row, column) in documentValidation.errors) {
+                                        errorBuilder.append(message)
+                                        errorBuilder.append(" (Line: ")
+                                        errorBuilder.append(row + 1)
+                                        errorBuilder.append(", Column: ")
+                                        errorBuilder.append(column + 1)
+                                        errorBuilder.append(")\n")
+                                    }
                                 }
                             }
                         }
+                    } catch (e: Exception) {
+                        System.err.println(e.message)
+                        e.printStackTrace()
+                        doc = null
                     }
-                } catch (e: Exception) {
-                    System.err.println(e.message)
-                    e.printStackTrace()
-                    doc = null
+
+                    if (doc == null) {
+                        outputArea.text = ""
+                        signaturesList.text = ""
+                        phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
+                    } else {
+                        val sigBuilder = StringBuilder()
+                        for (sig in MathLingua.findAllSignatures(doc, newLocationTracker())) {
+                            sigBuilder.append(sig.form)
+                            sigBuilder.append('\n')
+                        }
+                        signaturesList.text = sigBuilder.toString()
+
+                        phase2Tree.model = DefaultTreeModel(toTreeNode(tracker, doc))
+                        var transformed = doc
+
+                        if (separateIsBox.isSelected) {
+                            transformed =
+                                separateIsStatements(transformed, transformed).root as Document
+                        }
+
+                        if (separateInfixOps.isSelected) {
+                            transformed =
+                                separateInfixOperatorStatements(transformed, transformed)
+                                    .root as Document
+                        }
+
+                        if (glueCommands.isSelected) {
+                            transformed = glueCommands(transformed, transformed).root as Document
+                        }
+
+                        if (moveInLineIs.isSelected) {
+                            transformed =
+                                moveInlineCommandsToIsNode(
+                                        transformed.defines(), transformed, transformed)
+                                    .root as Document
+                        }
+
+                        if (replaceReps.isSelected) {
+                            transformed =
+                                replaceRepresents(transformed, transformed.states(), transformed)
+                                    .root as Document
+                        }
+
+                        if (replaceIsNodes.isSelected) {
+                            transformed =
+                                replaceIsNodes(transformed, transformed.defines(), transformed)
+                                    .root as Document
+                        }
+
+                        if (completeExpand.isSelected) {
+                            transformed = fullExpandComplete(doc)
+                        }
+
+                        // val translator = LatexTranslator(transformed.defines(),
+                        // transformed.represents())
+                        // translator.translate(transformed)
+                        // outputArea.text = translator.toText()
+
+                        outputArea.text = transformed.toCode(false, 0).getCode()
+
+                        outputTree.model = DefaultTreeModel(toTreeNode(tracker, transformed))
+                        val numRows = phase2Tree.rowCount
+                        if (numRows > 0) {
+                            phase2Tree.expandRow(numRows - 1)
+                        }
+                    }
+                    errorArea.text = errorBuilder.toString()
                 }
-
-                if (doc == null) {
-                    outputArea.text = ""
-                    signaturesList.text = ""
-                    phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
-                } else {
-                    val sigBuilder = StringBuilder()
-                    for (sig in MathLingua.findAllSignatures(doc, newLocationTracker())) {
-                        sigBuilder.append(sig.form)
-                        sigBuilder.append('\n')
-                    }
-                    signaturesList.text = sigBuilder.toString()
-
-                    phase2Tree.model = DefaultTreeModel(
-                        toTreeNode(
-                            tracker,
-                            doc
-                        )
-                    )
-                    var transformed = doc
-
-                    if (separateIsBox.isSelected) {
-                        transformed = separateIsStatements(transformed, transformed).root as Document
-                    }
-
-                    if (separateInfixOps.isSelected) {
-                        transformed = separateInfixOperatorStatements(transformed, transformed).root as Document
-                    }
-
-                    if (glueCommands.isSelected) {
-                        transformed = glueCommands(transformed, transformed).root as Document
-                    }
-
-                    if (moveInLineIs.isSelected) {
-                        transformed = moveInlineCommandsToIsNode(transformed.defines(), transformed, transformed).root as Document
-                    }
-
-                    if (replaceReps.isSelected) {
-                        transformed = replaceRepresents(transformed, transformed.states(), transformed).root as Document
-                    }
-
-                    if (replaceIsNodes.isSelected) {
-                        transformed = replaceIsNodes(transformed, transformed.defines(), transformed).root as Document
-                    }
-
-                    if (completeExpand.isSelected) {
-                        transformed = fullExpandComplete(doc)
-                    }
-
-                    // val translator = LatexTranslator(transformed.defines(), transformed.represents())
-                    // translator.translate(transformed)
-                    // outputArea.text = translator.toText()
-
-                    outputArea.text = transformed.toCode(false, 0).getCode()
-
-                    outputTree.model = DefaultTreeModel(
-                        toTreeNode(
-                            tracker,
-                            transformed
-                        )
-                    )
-                    val numRows = phase2Tree.rowCount
-                    if (numRows > 0) {
-                        phase2Tree.expandRow(numRows - 1)
-                    }
-                }
-                errorArea.text = errorBuilder.toString()
             }
-        }
 
-        override fun keyPressed(keyEvent: KeyEvent) {}
-    })
+            override fun keyPressed(keyEvent: KeyEvent) {}
+        })
 
     val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
     inputSplitPane.leftComponent = RTextScrollPane(inputArea)
@@ -352,28 +349,20 @@ fun main() {
 private fun toTreeNode(phase1Node: Phase1Node): DefaultMutableTreeNode {
     val row = getRow(phase1Node)
     val column = getColumn(phase1Node)
-    val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName +
-        " ($row, $column)")
+    val result = DefaultMutableTreeNode(phase1Node.javaClass.simpleName + " ($row, $column)")
     var visited = false
     phase1Node.forEach {
         visited = true
         result.add(toTreeNode(it))
     }
     if (!visited) {
-        result.add(DefaultMutableTreeNode(phase1Node.toCode() +
-                " ($row, $column)"))
+        result.add(DefaultMutableTreeNode(phase1Node.toCode() + " ($row, $column)"))
     }
     return result
 }
 
 private fun toTreeNode(tracker: LocationTracker, phase2Node: Phase2Node): DefaultMutableTreeNode {
-    val result = DefaultMutableTreeNode(
-        Phase2Value(
-            tracker,
-            phase2Node,
-            false
-        )
-    )
+    val result = DefaultMutableTreeNode(Phase2Value(tracker, phase2Node, false))
     var visited = false
     phase2Node.forEach {
         visited = true
@@ -398,13 +387,7 @@ private fun toTreeNode(tracker: LocationTracker, phase2Node: Phase2Node): Defaul
         result.add(toTreeNode(tracker, it))
     }
     if (!visited) {
-        result.add(DefaultMutableTreeNode(
-            Phase2Value(
-                tracker,
-                phase2Node,
-                true
-            )
-        ))
+        result.add(DefaultMutableTreeNode(Phase2Value(tracker, phase2Node, true)))
     }
     return result
 }
@@ -422,14 +405,15 @@ private fun toTreeNode(texTalkNode: TexTalkNode): DefaultMutableTreeNode {
     return result
 }
 
-private data class Phase2Value(val tracker: LocationTracker, val value: Phase2Node, val showCode: Boolean) {
+private data class Phase2Value(
+    val tracker: LocationTracker, val value: Phase2Node, val showCode: Boolean
+) {
     override fun toString(): String {
         val location = tracker.getLocationOf(value) ?: Location(row = -1, column = -1)
         return if (showCode) {
             value.toCode(false, 0).getCode() + " (${location.row}, ${location.column})"
         } else {
-            value.javaClass.simpleName +
-                    " (${location.row}, ${location.column})"
+            value.javaClass.simpleName + " (${location.row}, ${location.column})"
         }
     }
 }
@@ -450,8 +434,8 @@ private fun getPathImpl(
     found: MutableList<MutableList<DefaultMutableTreeNode>>
 ) {
     if (path.isNotEmpty() &&
-            path.last().userObject is Phase2Value &&
-                (path.last().userObject as Phase2Value).value == target) {
+        path.last().userObject is Phase2Value &&
+        (path.last().userObject as Phase2Value).value == target) {
         val copy = mutableListOf<DefaultMutableTreeNode>()
         copy.addAll(path)
         found.add(copy)
@@ -460,12 +444,7 @@ private fun getPathImpl(
     path.add(root)
     for (i in 0 until root.childCount) {
         val child = root.getChildAt(i)
-        getPathImpl(
-            child as DefaultMutableTreeNode,
-            target,
-            path,
-            found
-        )
+        getPathImpl(child as DefaultMutableTreeNode, target, path, found)
     }
     path.removeAt(path.size - 1)
 }

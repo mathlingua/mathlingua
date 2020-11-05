@@ -18,10 +18,10 @@ package mathlingua.mathlingua.transform
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import mathlingua.support.Location
 import mathlingua.MathLingua
-import mathlingua.support.ParseError
 import mathlingua.Signature
+import mathlingua.support.Location
+import mathlingua.support.ParseError
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.support.newLocationTracker
@@ -38,15 +38,8 @@ internal class SignatureUtilKtTest {
         val def = defines[0]
         val stmt = def.id.toStatement()
         val signatures = findAllStatementSignatures(stmt, newLocationTracker())
-        assertThat(signatures).isEqualTo(setOf(
-            Signature(
-            form = "\\xyz",
-            location = Location(
-                row = -1,
-                column = -1
-            )
-        )
-        ))
+        assertThat(signatures)
+            .isEqualTo(setOf(Signature(form = "\\xyz", location = Location(row = -1, column = -1))))
     }
 
     @Test
@@ -59,15 +52,16 @@ internal class SignatureUtilKtTest {
         val texTalkValidation = def.id.texTalkRoot
         assertThat(texTalkValidation is ValidationFailure)
         val failure = texTalkValidation as ValidationFailure
-        assertThat(failure.errors).isEqualTo(listOf(
-            ParseError(
-            message = "Multiple infix operators cannot be side by side ('\\abc \\xyz{x}').  They " +
-                "can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', " +
-                "or 'x \\op y'",
-            row = -1,
-            column = -1
-        )
-        ))
+        assertThat(failure.errors)
+            .isEqualTo(
+                listOf(
+                    ParseError(
+                        message =
+                            "Multiple infix operators cannot be side by side ('\\abc \\xyz{x}').  They " +
+                                "can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', " +
+                                "or 'x \\op y'",
+                        row = -1,
+                        column = -1)))
     }
 
     @Test
@@ -79,14 +73,7 @@ internal class SignatureUtilKtTest {
         val def = defines[0]
         val stmt = def.id.toStatement()
         val signatures = findAllStatementSignatures(stmt, newLocationTracker())
-        assertThat(signatures).isEqualTo(setOf(
-            Signature(
-            form = "\\abc",
-            location = Location(
-                row = -1,
-                column = -1
-            )
-        )
-        ))
+        assertThat(signatures)
+            .isEqualTo(setOf(Signature(form = "\\abc", location = Location(row = -1, column = -1))))
     }
 }

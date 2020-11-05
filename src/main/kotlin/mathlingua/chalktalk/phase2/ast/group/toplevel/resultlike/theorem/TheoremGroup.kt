@@ -16,19 +16,19 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateResultLikeGroup
+import mathlingua.support.MutableLocationTracker
 
 data class TheoremGroup(
     val theoremSection: TheoremSection,
@@ -57,28 +57,30 @@ data class TheoremGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-            topLevelToCode(writer, isArg, indent, null,
-                theoremSection, givenSection, givenWhereSection, thenSection,
-                usingSection, metaDataSection)
+        topLevelToCode(
+            writer,
+            isArg,
+            indent,
+            null,
+            theoremSection,
+            givenSection,
+            givenWhereSection,
+            thenSection,
+            usingSection,
+            metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        TheoremGroup(
-            theoremSection = theoremSection.transform(chalkTransformer) as TheoremSection,
-            givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
-            givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
-            thenSection = thenSection.transform(chalkTransformer) as ThenSection,
-            usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
-    )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            TheoremGroup(
+                theoremSection = theoremSection.transform(chalkTransformer) as TheoremSection,
+                givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
+                givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
+                thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+                usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
 fun isTheoremGroup(node: Phase1Node) = firstSectionMatchesName(node, "Theorem")
 
-fun validateTheoremGroup(groupNode: Group, tracker: MutableLocationTracker) = validateResultLikeGroup(
-        tracker,
-        groupNode,
-        "Theorem",
-        ::validateTheoremSection,
-        ::TheoremGroup
-)
+fun validateTheoremGroup(groupNode: Group, tracker: MutableLocationTracker) =
+    validateResultLikeGroup(tracker, groupNode, "Theorem", ::validateTheoremSection, ::TheoremGroup)

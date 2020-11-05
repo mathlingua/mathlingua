@@ -18,11 +18,11 @@ package mathlingua.chalktalk.phase2.ast.group.clause.mapping
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateGroup
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.AsSection
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.validateAsSection
 import mathlingua.support.MutableLocationTracker
@@ -43,57 +43,34 @@ data class MappingGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
         mathlingua.chalktalk.phase2.ast.clause.toCode(
-            writer,
-            isArg,
-            indent,
-            mappingSection,
-            fromSection,
-            toSection,
-            asSection
-        )
+            writer, isArg, indent, mappingSection, fromSection, toSection, asSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        MappingGroup(
-        mappingSection = mappingSection.transform(chalkTransformer) as MappingSection,
-        fromSection = fromSection.transform(chalkTransformer) as FromSection,
-        toSection = toSection.transform(chalkTransformer) as ToSection,
-        asSection = asSection.transform(chalkTransformer) as AsSection
-    )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            MappingGroup(
+                mappingSection = mappingSection.transform(chalkTransformer) as MappingSection,
+                fromSection = fromSection.transform(chalkTransformer) as FromSection,
+                toSection = toSection.transform(chalkTransformer) as ToSection,
+                asSection = asSection.transform(chalkTransformer) as AsSection))
 }
 
 fun isMappingGroup(node: Phase1Node) = firstSectionMatchesName(node, "mapping")
 
-fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateGroup(
-    tracker,
-    rawNode,
-    listOf(
-        Validator(
-            name = "mapping",
-            optional = false,
-            validate = ::validateMappingSection
-        ),
-        Validator(
-            name = "from",
-            optional = false,
-            validate = ::validateFromSection
-        ),
-        Validator(
-            name = "to",
-            optional = false,
-            validate = ::validateToSection
-        ),
-        Validator(
-            name = "as",
-            optional = false,
-            validate = ::validateAsSection
-        )
-    )
-) {
-    validationSuccess(tracker, rawNode, MappingGroup(
-        mappingSection = it["mapping"] as MappingSection,
-        fromSection = it["from"] as FromSection,
-        toSection = it["to"] as ToSection,
-        asSection = it["as"] as AsSection
-    ))
-}
+fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
+    validateGroup(
+        tracker,
+        rawNode,
+        listOf(
+            Validator(name = "mapping", optional = false, validate = ::validateMappingSection),
+            Validator(name = "from", optional = false, validate = ::validateFromSection),
+            Validator(name = "to", optional = false, validate = ::validateToSection),
+            Validator(name = "as", optional = false, validate = ::validateAsSection))) {
+        validationSuccess(
+            tracker,
+            rawNode,
+            MappingGroup(
+                mappingSection = it["mapping"] as MappingSection,
+                fromSection = it["from"] as FromSection,
+                toSection = it["to"] as ToSection,
+                asSection = it["as"] as AsSection))
+    }

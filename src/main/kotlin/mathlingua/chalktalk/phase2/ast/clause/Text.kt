@@ -38,7 +38,8 @@ data class Text(val text: String) : Clause {
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
 fun isText(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.String
@@ -49,21 +50,12 @@ fun validateText(rawNode: Phase1Node, tracker: MutableLocationTracker): Validati
     val errors = ArrayList<ParseError>()
     if (node !is Phase1Token) {
         errors.add(
-                ParseError(
-                        "Cannot convert a to a ChalkTalkToken",
-                        getRow(node), getColumn(node)
-                )
-        )
+            ParseError("Cannot convert a to a ChalkTalkToken", getRow(node), getColumn(node)))
     }
 
     val (text, type, row, column) = node as Phase1Token
     if (type !== ChalkTalkTokenType.String) {
-        errors.add(
-                ParseError(
-                        "Cannot convert a " + node.toCode() + " to Text",
-                        row, column
-                )
-        )
+        errors.add(ParseError("Cannot convert a " + node.toCode() + " to Text", row, column))
         return validationFailure(errors)
     }
 

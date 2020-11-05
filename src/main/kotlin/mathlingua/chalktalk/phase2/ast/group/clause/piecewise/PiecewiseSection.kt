@@ -35,37 +35,26 @@ class PiecewiseSection : Phase2Node {
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
-fun validatePiecewiseSection(node: Phase1Node, tracker: MutableLocationTracker): Validation<PiecewiseSection> {
+fun validatePiecewiseSection(
+    node: Phase1Node, tracker: MutableLocationTracker
+): Validation<PiecewiseSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-            ParseError(
-                "Expected a piecewise:",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a piecewise:", getRow(node), getColumn(node)))
     }
 
     val sect = node as Section
     if (sect.args.isNotEmpty()) {
         errors.add(
-            ParseError(
-                "A piecewise: cannot have any arguments",
-                getRow(node), getColumn(node)
-            )
-        )
+            ParseError("A piecewise: cannot have any arguments", getRow(node), getColumn(node)))
     }
 
     if (sect.name.text != "piecewise") {
-        errors.add(
-            ParseError(
-                "Expected a section named piecewise:",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a section named piecewise:", getRow(node), getColumn(node)))
     }
 
     return if (errors.isNotEmpty()) {

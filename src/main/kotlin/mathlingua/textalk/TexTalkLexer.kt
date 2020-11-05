@@ -59,9 +59,13 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 // skip the 's'
                 i++
                 column++
-            } else if (c == ':' && i < text.length && text[i] == ':' &&
-                i + 1 < text.length && text[i + 1] == '=') {
-                this.tokens.add(TexTalkToken("::=", TexTalkTokenType.ColonColonEquals, line, column))
+            } else if (c == ':' &&
+                i < text.length &&
+                text[i] == ':' &&
+                i + 1 < text.length &&
+                text[i + 1] == '=') {
+                this.tokens.add(
+                    TexTalkToken("::=", TexTalkTokenType.ColonColonEquals, line, column))
                 // skip the : and =
                 i += 2
                 column += 2
@@ -70,8 +74,11 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 // skip the =
                 i++
                 column++
-            } else if (c == '.' && i < text.length && text[i] == '.' &&
-                i + 1 < text.length && text[i + 1] == '.') {
+            } else if (c == '.' &&
+                i < text.length &&
+                text[i] == '.' &&
+                i + 1 < text.length &&
+                text[i + 1] == '.') {
                 val startLine = line
                 val startColumn = column
                 // skip past the next two '.' characters
@@ -87,13 +94,15 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 }
 
                 this.tokens.add(
-                    TexTalkToken(builder.toString(),
-                    if (isOp) {
-                        TexTalkTokenType.Operator
-                    } else {
-                        TexTalkTokenType.DotDotDot
-                    }, startLine, startColumn)
-                )
+                    TexTalkToken(
+                        builder.toString(),
+                        if (isOp) {
+                            TexTalkTokenType.Operator
+                        } else {
+                            TexTalkTokenType.DotDotDot
+                        },
+                        startLine,
+                        startColumn))
             } else if (c == ':') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Colon, line, column))
             } else if (c == '.') {
@@ -131,7 +140,9 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                     id.append(text[i++])
                     column++
                 }
-                this.tokens.add(TexTalkToken(id.toString(), TexTalkTokenType.Identifier, startLine, startColumn))
+                this.tokens.add(
+                    TexTalkToken(
+                        id.toString(), TexTalkTokenType.Identifier, startLine, startColumn))
             } else if (isOpChar(c)) {
                 val startLine = line
                 val startColumn = column
@@ -141,21 +152,21 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                     op.append(text[i++])
                     column++
                 }
-                if (i < text.length && text[i] == '.' &&
-                    i + 1 < text.length && text[i + 1] == '.' &&
-                    i + 2 < text.length && text[i + 2] == '.') {
+                if (i < text.length &&
+                    text[i] == '.' &&
+                    i + 1 < text.length &&
+                    text[i + 1] == '.' &&
+                    i + 2 < text.length &&
+                    text[i + 2] == '.') {
                     i += 3
                     column += 3
                     op.append("...")
                 }
 
-                this.tokens.add(TexTalkToken(op.toString(), TexTalkTokenType.Operator, startLine, startColumn))
+                this.tokens.add(
+                    TexTalkToken(op.toString(), TexTalkTokenType.Operator, startLine, startColumn))
             } else if (c != ' ') {
-                this.errors.add(
-                    ParseError(
-                        "Unrecognized character $c", line, column
-                    )
-                )
+                this.errors.add(ParseError("Unrecognized character $c", line, column))
             }
         }
     }
@@ -174,9 +185,19 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
         return result
     }
 
-    private fun isOpChar(c: Char) = (c == '!' || c == '@' || c == '%' ||
-            c == '&' || c == '*' || c == '-' || c == '+' ||
-            c == '=' || c == '|' || c == '/' || c == '<' || c == '>')
+    private fun isOpChar(c: Char) =
+        (c == '!' ||
+            c == '@' ||
+            c == '%' ||
+            c == '&' ||
+            c == '*' ||
+            c == '-' ||
+            c == '+' ||
+            c == '=' ||
+            c == '|' ||
+            c == '/' ||
+            c == '<' ||
+            c == '>')
 
     private fun isIdentifierChar(c: Char) = Regex("[$#a-zA-Z0-9]+").matches("$c")
 }

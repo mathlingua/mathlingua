@@ -16,12 +16,12 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.section.validateStatementSection
+import mathlingua.support.MutableLocationTracker
 
 data class SingleAsSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -37,15 +37,8 @@ data class SingleAsSection(val statement: Statement) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            SingleAsSection(
-            statement = statement.transform(chalkTransformer) as Statement
-        )
-        )
+            SingleAsSection(statement = statement.transform(chalkTransformer) as Statement))
 }
 
-fun validateSingleAsSection(node: Phase1Node, tracker: MutableLocationTracker) = validateStatementSection(
-    node,
-    tracker,
-    "as",
-    ::SingleAsSection
-)
+fun validateSingleAsSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateStatementSection(node, tracker, "as", ::SingleAsSection)

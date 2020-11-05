@@ -16,8 +16,8 @@
 
 package mathlingua.chalktalk.phase2
 
-import mathlingua.support.LocationTracker
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.support.LocationTracker
 
 internal fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phase2Node> {
     val path = mutableListOf<Phase2Node>()
@@ -29,7 +29,9 @@ internal fun getChalkTalkAncestry(root: Phase2Node, node: Phase2Node): List<Phas
     return path.reversed()
 }
 
-private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: MutableList<Phase2Node>) {
+private fun getChalkTalkAncestryImpl(
+    root: Phase2Node, node: Phase2Node, path: MutableList<Phase2Node>
+) {
     if (root == node) {
         path.add(node)
         return
@@ -48,8 +50,8 @@ private fun getChalkTalkAncestryImpl(root: Phase2Node, node: Phase2Node, path: M
 
 internal fun findNode(tracker: LocationTracker, node: Phase2Node, row: Int, col: Int): Phase2Node {
     if (row < 0 || col < 0) {
-        throw IllegalArgumentException("Row and column must be non-negative " +
-                "but found row=$row, column=$col")
+        throw IllegalArgumentException(
+            "Row and column must be non-negative " + "but found row=$row, column=$col")
     }
 
     val nodesAtRow = mutableSetOf<Phase2Node>()
@@ -62,9 +64,7 @@ internal fun findNode(tracker: LocationTracker, node: Phase2Node, row: Int, col:
         }
     }
 
-    val sortedByCol = nodesAtRow.toList().sortedBy {
-        tracker.getLocationOf(it)?.column ?: -1
-    }
+    val sortedByCol = nodesAtRow.toList().sortedBy { tracker.getLocationOf(it)?.column ?: -1 }
     var prev: Phase2Node = sortedByCol.first()
     for (n in sortedByCol) {
         if ((tracker.getLocationOf(n)?.column ?: -1) > col) {
@@ -75,7 +75,9 @@ internal fun findNode(tracker: LocationTracker, node: Phase2Node, row: Int, col:
     return prev
 }
 
-internal fun findNodesAtRow(tracker: LocationTracker, node: Phase2Node, row: Int, result: MutableSet<Phase2Node>) {
+internal fun findNodesAtRow(
+    tracker: LocationTracker, node: Phase2Node, row: Int, result: MutableSet<Phase2Node>
+) {
     val location = tracker.getLocationOf(node)
     if (location != null && location.row == row) {
         result.add(node)

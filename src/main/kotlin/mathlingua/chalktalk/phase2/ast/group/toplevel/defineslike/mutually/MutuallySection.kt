@@ -36,25 +36,20 @@ data class MutuallySection(val items: List<DefinesStatesOrViews>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(MutuallySection(
-            items = items.map { chalkTransformer(it) as DefinesStatesOrViews }
-        ))
+        chalkTransformer(
+            MutuallySection(items = items.map { chalkTransformer(it) as DefinesStatesOrViews }))
 }
 
-fun validateMutuallySection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-    AtLeast(1),
-    tracker,
-    node,
-    "Mutually"
-) {
-    val items = mutableListOf<DefinesStatesOrViews>()
-    for (clause in it.clauses) {
-        if (clause is DefinesStatesOrViews) {
-            items.add(clause)
-        } else {
-            throw Exception("Expected a Defines:, States:, or Views:")
+fun validateMutuallySection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(AtLeast(1), tracker, node, "Mutually") {
+        val items = mutableListOf<DefinesStatesOrViews>()
+        for (clause in it.clauses) {
+            if (clause is DefinesStatesOrViews) {
+                items.add(clause)
+            } else {
+                throw Exception("Expected a Defines:, States:, or Views:")
+            }
         }
-    }
 
-    MutuallySection(items = items)
-}
+        MutuallySection(items = items)
+    }

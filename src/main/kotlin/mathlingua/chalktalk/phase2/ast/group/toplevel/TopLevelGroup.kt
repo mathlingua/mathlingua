@@ -23,19 +23,19 @@ import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.validateThenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
-import mathlingua.chalktalk.phase2.ast.section.identifySections
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
+import mathlingua.chalktalk.phase2.ast.section.identifySections
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -46,7 +46,9 @@ import mathlingua.support.validationSuccess
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
-fun topLevelToCode(writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?): CodeWriter {
+fun topLevelToCode(
+    writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?
+): CodeWriter {
     writer.beginTopLevel()
     var useAsArg = isArg
     if (id != null) {
@@ -75,14 +77,14 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     groupNode: Group,
     resultLikeName: String,
     validateResultLikeSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>,
-    buildGroup: (
-        sect: S,
-        givenSection: GivenSection?,
-        whereSection: WhereSection?,
-        thenSection: ThenSection,
-        using: UsingSection?,
-        metadata: MetaDataSection?
-    ) -> G
+    buildGroup:
+        (
+            sect: S,
+            givenSection: GivenSection?,
+            whereSection: WhereSection?,
+            thenSection: ThenSection,
+            using: UsingSection?,
+            metadata: MetaDataSection?) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
@@ -90,19 +92,17 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
         errors.add(
             ParseError(
                 "A result, axiom, or conjecture cannot have an Id",
-                getRow(group), getColumn(group)
-            )
-        )
+                getRow(group),
+                getColumn(group)))
     }
 
     val sections = group.sections
 
     val sectionMap: Map<String, Section>
     try {
-        sectionMap = identifySections(
-                sections, resultLikeName, "given?", "where?", "then",
-                "using?", "Metadata?"
-        )
+        sectionMap =
+            identifySections(
+                sections, resultLikeName, "given?", "where?", "then", "using?", "Metadata?")
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
         return validationFailure(errors)
@@ -116,14 +116,16 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
     val metadata = sectionMap["Metadata"]
 
     var resultLikeSection: S? = null
-    when (val resultLikeValidation = validateResultLikeSection(resultLike, tracker)) {
+    when (val resultLikeValidation = validateResultLikeSection(resultLike, tracker)
+    ) {
         is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
         is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
     }
 
     var givenSection: GivenSection? = null
     if (given != null) {
-        when (val givenValidation = validateGivenSection(given, tracker)) {
+        when (val givenValidation = validateGivenSection(given, tracker)
+        ) {
             is ValidationSuccess -> givenSection = givenValidation.value
             is ValidationFailure -> errors.addAll(givenValidation.errors)
         }
@@ -131,21 +133,24 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
 
     var whereSection: WhereSection? = null
     if (where != null) {
-        when (val whereValidation = validateWhereSection(where, tracker)) {
+        when (val whereValidation = validateWhereSection(where, tracker)
+        ) {
             is ValidationSuccess -> whereSection = whereValidation.value
             is ValidationFailure -> errors.addAll(whereValidation.errors)
         }
     }
 
     var thenSection: ThenSection? = null
-    when (val thenValidation = validateThenSection(then!!, tracker)) {
+    when (val thenValidation = validateThenSection(then!!, tracker)
+    ) {
         is ValidationSuccess -> thenSection = thenValidation.value
         is ValidationFailure -> errors.addAll(thenValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
     if (metadata != null) {
-        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)) {
+        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)
+        ) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
@@ -153,7 +158,8 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
 
     var usingSection: UsingSection? = null
     if (using != null) {
-        when (val aliasValidation = validateUsingSection(using, tracker)) {
+        when (val aliasValidation = validateUsingSection(using, tracker)
+        ) {
             is ValidationSuccess -> usingSection = aliasValidation.value
             is ValidationFailure -> errors.addAll(aliasValidation.errors)
         }
@@ -161,7 +167,8 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
-    } else validationSuccess(
+    } else
+        validationSuccess(
             tracker,
             groupNode,
             buildGroup(
@@ -170,8 +177,7 @@ fun <G : Phase2Node, S> validateResultLikeGroup(
                 whereSection,
                 thenSection!!,
                 usingSection,
-                metaDataSection
-            ))
+                metaDataSection))
 }
 
 fun <G : Phase2Node, S> validateProtoResultLikeGroup(
@@ -179,10 +185,7 @@ fun <G : Phase2Node, S> validateProtoResultLikeGroup(
     groupNode: Group,
     resultLikeName: String,
     validateResultLikeSection: (section: Section, tracker: MutableLocationTracker) -> Validation<S>,
-    buildGroup: (
-        sect: S,
-        metadata: MetaDataSection?
-    ) -> G
+    buildGroup: (sect: S, metadata: MetaDataSection?) -> G
 ): Validation<G> {
     val errors = ArrayList<ParseError>()
     val group = groupNode.resolve()
@@ -190,18 +193,15 @@ fun <G : Phase2Node, S> validateProtoResultLikeGroup(
         errors.add(
             ParseError(
                 "A result, axiom, or conjecture cannot have an Id",
-                getRow(group), getColumn(group)
-            )
-        )
+                getRow(group),
+                getColumn(group)))
     }
 
     val sections = group.sections
 
     val sectionMap: Map<String, Section>
     try {
-        sectionMap = identifySections(
-            sections, resultLikeName, "Metadata?"
-        )
+        sectionMap = identifySections(sections, resultLikeName, "Metadata?")
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
         return validationFailure(errors)
@@ -211,14 +211,16 @@ fun <G : Phase2Node, S> validateProtoResultLikeGroup(
     val metadata = sectionMap["Metadata"]
 
     var resultLikeSection: S? = null
-    when (val resultLikeValidation = validateResultLikeSection(resultLike, tracker)) {
+    when (val resultLikeValidation = validateResultLikeSection(resultLike, tracker)
+    ) {
         is ValidationSuccess -> resultLikeSection = resultLikeValidation.value
         is ValidationFailure -> errors.addAll(resultLikeValidation.errors)
     }
 
     var metaDataSection: MetaDataSection? = null
     if (metadata != null) {
-        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)) {
+        when (val metaDataValidation = validateMetaDataSection(metadata, tracker)
+        ) {
             is ValidationSuccess -> metaDataSection = metaDataValidation.value
             is ValidationFailure -> errors.addAll(metaDataValidation.errors)
         }
@@ -226,13 +228,7 @@ fun <G : Phase2Node, S> validateProtoResultLikeGroup(
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
-    } else validationSuccess(
-        tracker,
-        groupNode,
-        buildGroup(
-            resultLikeSection!!,
-            metaDataSection
-        ))
+    } else validationSuccess(tracker, groupNode, buildGroup(resultLikeSection!!, metaDataSection))
 }
 
 fun <S : Phase2Node> validateTextListSection(
@@ -247,12 +243,7 @@ fun <S : Phase2Node> validateTextListSection(
 
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-            ParseError(
-                "Expected a Section",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Section", getRow(node), getColumn(node)))
     }
 
     val sect = node as Section
@@ -260,20 +251,14 @@ fun <S : Phase2Node> validateTextListSection(
         errors.add(
             ParseError(
                 "Expected a Section with name '$sectionName' but found " + sect.name.text,
-                row, column
-            )
-        )
+                row,
+                column))
     }
 
     val texts = mutableListOf<String>()
     for (arg in sect.args) {
         if (arg.chalkTalkTarget !is Phase1Token) {
-            errors.add(
-                ParseError(
-                    "Expected a string but found ${arg.toCode()}",
-                    row, column
-                )
-            )
+            errors.add(ParseError("Expected a string but found ${arg.toCode()}", row, column))
         }
         texts.add((arg.chalkTalkTarget as Phase1Token).text)
     }
@@ -281,11 +266,7 @@ fun <S : Phase2Node> validateTextListSection(
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
     } else {
-        validationSuccess(
-            tracker,
-            rawNode,
-            buildSection(texts)
-        )
+        validationSuccess(tracker, rawNode, buildSection(texts))
     }
 }
 
@@ -300,12 +281,7 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
 
     val errors = ArrayList<ParseError>()
     if (node !is Group) {
-        errors.add(
-            ParseError(
-                "Expected a Group",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Group", getRow(node), getColumn(node)))
         return validationFailure(errors)
     }
 
@@ -313,9 +289,7 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
 
     val sectionMap: Map<String, Section>
     try {
-        sectionMap = identifySections(
-            sections, sectionName, "metadata?"
-        )
+        sectionMap = identifySections(sections, sectionName, "metadata?")
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
         return validationFailure(errors)
@@ -323,7 +297,8 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
 
     var section: S? = null
     val sect = sectionMap[sectionName]
-    when (val sectionValidation = validateSection(sect!!, tracker)) {
+    when (val sectionValidation = validateSection(sect!!, tracker)
+    ) {
         is ValidationSuccess -> section = sectionValidation.value
         is ValidationFailure -> errors.addAll(sectionValidation.errors)
     }
@@ -331,7 +306,8 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
     var metadataSection: MetaDataSection? = null
     val metadata = sectionMap["metadata"]
     if (metadata != null) {
-        when (val metadataValidation = validateMetaDataSection(metadata, tracker)) {
+        when (val metadataValidation = validateMetaDataSection(metadata, tracker)
+        ) {
             is ValidationSuccess -> metadataSection = metadataValidation.value
             is ValidationFailure -> errors.addAll(metadataValidation.errors)
         }
@@ -339,14 +315,7 @@ fun <G : Phase2Node, S> validateSingleSectionMetaDataGroup(
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
-    } else validationSuccess(
-        tracker,
-        rawNode,
-        buildGroup(
-            section!!,
-            metadataSection
-        )
-    )
+    } else validationSuccess(tracker, rawNode, buildGroup(section!!, metadataSection))
 }
 
 fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
@@ -364,12 +333,7 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
 
     val errors = ArrayList<ParseError>()
     if (node !is Group) {
-        errors.add(
-            ParseError(
-                "Expected a Group",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Group", getRow(node), getColumn(node)))
         return validationFailure(errors)
     }
 
@@ -377,9 +341,8 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
 
     val sectionMap: Map<String, Section>
     try {
-        sectionMap = identifySections(
-            sections, section1Name, section2Name, section3Name, "metadata?"
-        )
+        sectionMap =
+            identifySections(sections, section1Name, section2Name, section3Name, "metadata?")
     } catch (e: ParseError) {
         errors.add(ParseError(e.message, e.row, e.column))
         return validationFailure(errors)
@@ -387,21 +350,24 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
 
     var section1: S1? = null
     val sect1 = sectionMap[section1Name]
-    when (val section1Validation = validateSection1(sect1!!, tracker)) {
+    when (val section1Validation = validateSection1(sect1!!, tracker)
+    ) {
         is ValidationSuccess -> section1 = section1Validation.value
         is ValidationFailure -> errors.addAll(section1Validation.errors)
     }
 
     var section2: S2? = null
     val sect2 = sectionMap[section2Name]
-    when (val section2Validation = validateSection2(sect2!!, tracker)) {
+    when (val section2Validation = validateSection2(sect2!!, tracker)
+    ) {
         is ValidationSuccess -> section2 = section2Validation.value
         is ValidationFailure -> errors.addAll(section2Validation.errors)
     }
 
     var section3: S3? = null
     val sect3 = sectionMap[section3Name]
-    when (val section3Validation = validateSection3(sect3!!, tracker)) {
+    when (val section3Validation = validateSection3(sect3!!, tracker)
+    ) {
         is ValidationSuccess -> section3 = section3Validation.value
         is ValidationFailure -> errors.addAll(section3Validation.errors)
     }
@@ -409,7 +375,8 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
     var metadataSection: MetaDataSection? = null
     val metadata = sectionMap["metadata"]
     if (metadata != null) {
-        when (val metadataValidation = validateMetaDataSection(metadata, tracker)) {
+        when (val metadataValidation = validateMetaDataSection(metadata, tracker)
+        ) {
             is ValidationSuccess -> metadataSection = metadataValidation.value
             is ValidationFailure -> errors.addAll(metadataValidation.errors)
         }
@@ -417,14 +384,7 @@ fun <G : Phase2Node, S1, S2, S3> validateTripleSectionMetaDataGroup(
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
-    } else validationSuccess(
-        tracker,
-        rawNode,
-        buildGroup(
-            section1!!,
-            section2!!,
-            section3!!,
-            metadataSection
-        )
-    )
+    } else
+        validationSuccess(
+            tracker, rawNode, buildGroup(section1!!, section2!!, section3!!, metadataSection))
 }

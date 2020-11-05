@@ -26,8 +26,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaD
 import mathlingua.support.MutableLocationTracker
 
 data class MutuallyGroup(
-    val mutuallySection: MutuallySection,
-    override val metaDataSection: MetaDataSection?
+    val mutuallySection: MutuallySection, override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -37,29 +36,18 @@ data class MutuallyGroup(
         }
     }
 
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) = topLevelToCode(
-        writer,
-        isArg,
-        indent,
-        null,
-        mutuallySection,
-        metaDataSection
-    )
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
+        topLevelToCode(writer, isArg, indent, null, mutuallySection, metaDataSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        MutuallyGroup(
-            mutuallySection = mutuallySection.transform(chalkTransformer) as MutuallySection,
-            metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?
-        )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            MutuallyGroup(
+                mutuallySection = mutuallySection.transform(chalkTransformer) as MutuallySection,
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
 fun isMutuallyGroup(node: Phase1Node) = firstSectionMatchesName(node, "Mutually")
 
-fun validateMutuallyGroup(groupNode: Group, tracker: MutableLocationTracker) = validateSingleSectionMetaDataGroup(
-    tracker,
-    groupNode,
-    "Mutually",
-    ::validateMutuallySection,
-    ::MutuallyGroup
-)
+fun validateMutuallyGroup(groupNode: Group, tracker: MutableLocationTracker) =
+    validateSingleSectionMetaDataGroup(
+        tracker, groupNode, "Mutually", ::validateMutuallySection, ::MutuallyGroup)

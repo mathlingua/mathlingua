@@ -18,13 +18,13 @@ package mathlingua.chalktalk.phase2.ast.group.clause.collection
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.`for`.ForSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`for`.validateForSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.clause.For.ForSection
+import mathlingua.chalktalk.phase2.ast.group.clause.For.validateForSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.support.MutableLocationTracker
@@ -56,57 +56,39 @@ data class CollectionGroup(
             ofSection,
             inSection,
             forSection,
-            whereSection
-        )
+            whereSection)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(
-        CollectionGroup(
-        collectionSection = collectionSection.transform(chalkTransformer) as CollectionSection,
-        ofSection = ofSection.transform(chalkTransformer) as OfSection,
-        inSection = inSection?.transform(chalkTransformer) as InSection?,
-        forSection = forSection.transform(chalkTransformer) as ForSection,
-        whereSection = whereSection.transform(chalkTransformer) as WhereSection
-    )
-    )
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            CollectionGroup(
+                collectionSection =
+                    collectionSection.transform(chalkTransformer) as CollectionSection,
+                ofSection = ofSection.transform(chalkTransformer) as OfSection,
+                inSection = inSection?.transform(chalkTransformer) as InSection?,
+                forSection = forSection.transform(chalkTransformer) as ForSection,
+                whereSection = whereSection.transform(chalkTransformer) as WhereSection))
 }
 
 fun isCollectionGroup(node: Phase1Node) = firstSectionMatchesName(node, "collection")
 
-fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateGroup(
-    tracker,
-    rawNode,
-    listOf(
-        Validator(
-            name = "collection",
-            optional = false,
-            validate = ::validateCollectionSection
-        ),
-        Validator(
-            name = "of",
-            optional = false,
-            validate = ::validateOfSection
-        ),
-        Validator(
-            name = "in",
-            optional = true,
-            validate = ::validateInSection
-        ),
-        Validator(
-            name = "for",
-            optional = false,
-            validate = ::validateForSection
-        ),
-        Validator(
-            name = "where",
-            optional = false,
-            validate = ::validateWhereSection
-        )
-    )
-) {
-    validationSuccess(tracker, rawNode, CollectionGroup(
-    collectionSection = it["collection"] as CollectionSection,
-    ofSection = it["of"] as OfSection,
-    inSection = it["in"] as InSection?,
-    forSection = it["for"] as ForSection,
-    whereSection = it["where"] as WhereSection
-)) }
+fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
+    validateGroup(
+        tracker,
+        rawNode,
+        listOf(
+            Validator(
+                name = "collection", optional = false, validate = ::validateCollectionSection),
+            Validator(name = "of", optional = false, validate = ::validateOfSection),
+            Validator(name = "in", optional = true, validate = ::validateInSection),
+            Validator(name = "for", optional = false, validate = ::validateForSection),
+            Validator(name = "where", optional = false, validate = ::validateWhereSection))) {
+        validationSuccess(
+            tracker,
+            rawNode,
+            CollectionGroup(
+                collectionSection = it["collection"] as CollectionSection,
+                ofSection = it["of"] as OfSection,
+                inSection = it["in"] as InSection?,
+                forSection = it["for"] as ForSection,
+                whereSection = it["where"] as WhereSection))
+    }

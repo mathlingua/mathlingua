@@ -24,22 +24,20 @@ import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateFromSection
 import mathlingua.support.MutableLocationTracker
 
 data class ConstructorGroup(
-    val constructorSection: ConstructorSection,
-    val fromSection: FromSection
-) : TwoPartNode<ConstructorSection, FromSection>(
-    constructorSection,
-    fromSection,
-    ::ConstructorGroup
-), Clause
+    val constructorSection: ConstructorSection, val fromSection: FromSection
+) :
+    TwoPartNode<ConstructorSection, FromSection>(
+        constructorSection, fromSection, ::ConstructorGroup),
+    Clause
 
 fun isConstructorGroup(node: Phase1Node) = firstSectionMatchesName(node, "constructor")
 
-fun validateConstructorGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateDoubleSectionGroup(
-    tracker,
-    node,
-    "constructor",
-    ::validateConstructorSection,
-    "from",
-    ::validateFromSection,
-    ::ConstructorGroup
-)
+fun validateConstructorGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateDoubleSectionGroup(
+        tracker,
+        node,
+        "constructor",
+        ::validateConstructorSection,
+        "from",
+        ::validateFromSection,
+        ::ConstructorGroup)

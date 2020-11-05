@@ -16,7 +16,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.exists
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
@@ -24,28 +23,27 @@ import mathlingua.chalktalk.phase2.ast.clause.validateMidOptionalTripleSectionGr
 import mathlingua.chalktalk.phase2.ast.common.ThreePartNode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
+import mathlingua.support.MutableLocationTracker
 
 data class ExistsGroup(
     val existsSection: ExistsSection,
     val whereSection: WhereSection?,
     val suchThatSection: SuchThatSection
-) : ThreePartNode<ExistsSection, WhereSection?, SuchThatSection>(
-    existsSection,
-    whereSection,
-    suchThatSection,
-    ::ExistsGroup
-), Clause
+) :
+    ThreePartNode<ExistsSection, WhereSection?, SuchThatSection>(
+        existsSection, whereSection, suchThatSection, ::ExistsGroup),
+    Clause
 
 fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
 
-fun validateExistsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) = validateMidOptionalTripleSectionGroup(
-    tracker,
-    rawNode,
-    "exists",
-    ::validateExistsSection,
-    "where?",
-    ::validateWhereSection,
-    "suchThat",
-    ::validateSuchThatSection,
-    ::ExistsGroup
-)
+fun validateExistsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
+    validateMidOptionalTripleSectionGroup(
+        tracker,
+        rawNode,
+        "exists",
+        ::validateExistsSection,
+        "where?",
+        ::validateWhereSection,
+        "suchThat",
+        ::validateSuchThatSection,
+        ::ExistsGroup)

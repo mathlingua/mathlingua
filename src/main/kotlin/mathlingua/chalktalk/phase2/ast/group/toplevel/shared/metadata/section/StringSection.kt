@@ -19,10 +19,7 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 
-class StringSection(
-    val name: String,
-    val values: List<String>
-) : Phase2Node {
+class StringSection(val name: String, val values: List<String>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -42,5 +39,5 @@ class StringSection(
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(this)
+        chalkTransformer(this)
 }

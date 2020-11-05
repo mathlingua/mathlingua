@@ -23,17 +23,17 @@ import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
 import mathlingua.GoldenType
 import mathlingua.OVERWRITE_GOLDEN_FILES
-import mathlingua.support.LocationTracker
-import mathlingua.support.ParseError
-import mathlingua.support.ValidationSuccess
 import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.validateDocument
-import mathlingua.support.ValidationFailure
-import mathlingua.support.newLocationTracker
 import mathlingua.loadTestCases
 import mathlingua.serialize
+import mathlingua.support.LocationTracker
+import mathlingua.support.ParseError
+import mathlingua.support.ValidationFailure
+import mathlingua.support.ValidationSuccess
+import mathlingua.support.newLocationTracker
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 

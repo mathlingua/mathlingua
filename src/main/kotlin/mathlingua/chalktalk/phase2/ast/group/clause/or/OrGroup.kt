@@ -16,23 +16,16 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.or
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateSingleSectionGroup
+import mathlingua.chalktalk.phase2.ast.common.OnePartNode
+import mathlingua.support.MutableLocationTracker
 
-data class OrGroup(val orSection: OrSection) :
-    OnePartNode<OrSection>(
-        orSection,
-        ::OrGroup
-    ), Clause
+data class OrGroup(val orSection: OrSection) : OnePartNode<OrSection>(orSection, ::OrGroup), Clause
 
 fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
 
-fun validateOrGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateSingleSectionGroup(
-        tracker,
-        node, "or", ::OrGroup,
-        ::validateOrSection
-)
+fun validateOrGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateSingleSectionGroup(tracker, node, "or", ::OrGroup, ::validateOrSection)

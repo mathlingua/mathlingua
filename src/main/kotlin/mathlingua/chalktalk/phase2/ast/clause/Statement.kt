@@ -32,10 +32,8 @@ import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.newTexTalkLexer
 import mathlingua.textalk.newTexTalkParser
 
-data class Statement(
-    val text: String,
-    val texTalkRoot: Validation<ExpressionTexTalkNode>
-) : Clause {
+data class Statement(val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>) :
+    Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -44,33 +42,25 @@ data class Statement(
         return writer
     }
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
-fun isStatement(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Statement
+fun isStatement(node: Phase1Node) =
+    node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 
 fun validateStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Statement> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
     if (node !is Phase1Token) {
-        errors.add(
-                ParseError(
-                        "Expected a statement",
-                        getRow(node), getColumn(node)
-                )
-        )
+        errors.add(ParseError("Expected a statement", getRow(node), getColumn(node)))
         return validationFailure(errors)
     }
 
     val (rawText, type, row, column) = node
     if (type !== ChalkTalkTokenType.Statement) {
-        errors.add(
-                ParseError(
-                        "Cannot convert a " + node.toCode() + " to a Statement",
-                        row, column
-                )
-        )
+        errors.add(ParseError("Cannot convert a " + node.toCode() + " to a Statement", row, column))
         return validationFailure(errors)
     }
 
@@ -87,11 +77,12 @@ fun validateStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Val
     val result = parser.parse(lexer)
     texTalkErrors.addAll(result.errors)
 
-    val validation: Validation<ExpressionTexTalkNode> = if (texTalkErrors.isEmpty()) {
-        validationSuccess(result.root)
-    } else {
-        validationFailure(texTalkErrors)
-    }
+    val validation: Validation<ExpressionTexTalkNode> =
+        if (texTalkErrors.isEmpty()) {
+            validationSuccess(result.root)
+        } else {
+            validationFailure(texTalkErrors)
+        }
 
     return validationSuccess(tracker, rawNode, Statement(text, validation))
 }

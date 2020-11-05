@@ -20,10 +20,10 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.validateClause
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -37,27 +37,30 @@ sealed class NumAllowed {
 }
 
 class ZeroOrMore : NumAllowed() {
-    override fun validate(count: Int) = if (count < 0) {
-        "Expected zero or more arguments but found $count"
-    } else {
-        null
-    }
+    override fun validate(count: Int) =
+        if (count < 0) {
+            "Expected zero or more arguments but found $count"
+        } else {
+            null
+        }
 }
 
 data class Exactly(private val expected: Int) : NumAllowed() {
-    override fun validate(count: Int) = if (count != expected) {
-        "Expected exactly $expected arguments but found $count"
-    } else {
-        null
-    }
+    override fun validate(count: Int) =
+        if (count != expected) {
+            "Expected exactly $expected arguments but found $count"
+        } else {
+            null
+        }
 }
 
 data class AtLeast(private val expected: Int) : NumAllowed() {
-    override fun validate(count: Int) = if (count < expected) {
-        "Expected at least $expected arguments but found $count"
-    } else {
-        null
-    }
+    override fun validate(count: Int) =
+        if (count < expected) {
+            "Expected at least $expected arguments but found $count"
+        } else {
+            null
+        }
 }
 
 data class ClauseListSection(val name: String, val clauses: List<Clause>)
@@ -70,43 +73,45 @@ fun <T : Phase2Node> validateClauseList(
     builder: (clauses: ClauseListNode) -> T
 ): Validation<T> {
     val node = rawNode.resolve()
-    return when (val validation = validate(numAllowed, node, expectedName, tracker)) {
-        is ValidationSuccess -> try {
-            validationSuccess(tracker, rawNode, builder(ClauseListNode(validation.value.clauses)))
-        } catch (e: Exception) {
-            validationFailure(listOf(
-                ParseError(e.message ?: "An unknown error occurred", getRow(node), getColumn(node))
-            ))
-        }
+    return when (val validation = validate(numAllowed, node, expectedName, tracker)
+    ) {
+        is ValidationSuccess ->
+            try {
+                validationSuccess(
+                    tracker, rawNode, builder(ClauseListNode(validation.value.clauses)))
+            } catch (e: Exception) {
+                validationFailure(
+                    listOf(
+                        ParseError(
+                            e.message ?: "An unknown error occurred",
+                            getRow(node),
+                            getColumn(node))))
+            }
         is ValidationFailure -> validationFailure(validation.errors)
     }
 }
 
-private fun validate(numAllowed: NumAllowed, node: Phase1Node, expectedName: String, tracker: MutableLocationTracker): Validation<ClauseListSection> {
+private fun validate(
+    numAllowed: NumAllowed, node: Phase1Node, expectedName: String, tracker: MutableLocationTracker
+): Validation<ClauseListSection> {
     val errors = ArrayList<ParseError>()
     if (node !is Section) {
-        errors.add(
-            ParseError(
-                "Expected a Section",
-                getRow(node), getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Section", getRow(node), getColumn(node)))
     }
 
     val (name, args) = node as Section
     if (name.text != expectedName) {
         errors.add(
             ParseError(
-                "Expected a Section with name " +
-                    expectedName + " but found " + name.text,
-                getRow(node), getColumn(node)
-            )
-        )
+                "Expected a Section with name " + expectedName + " but found " + name.text,
+                getRow(node),
+                getColumn(node)))
     }
 
     val clauses = ArrayList<Clause>()
     for (arg in args) {
-        when (val validation = validateClause(arg, tracker)) {
+        when (val validation = validateClause(arg, tracker)
+        ) {
             is ValidationSuccess -> clauses.add(validation.value)
             is ValidationFailure -> errors.addAll(validation.errors)
         }
@@ -119,10 +124,5 @@ private fun validate(numAllowed: NumAllowed, node: Phase1Node, expectedName: Str
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
-    } else validationSuccess(
-            ClauseListSection(
-                    name.text,
-                    clauses
-            )
-    )
+    } else validationSuccess(ClauseListSection(name.text, clauses))
 }

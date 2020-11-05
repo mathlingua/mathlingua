@@ -16,13 +16,13 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.exists
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Target
-import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
+import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
+import mathlingua.support.MutableLocationTracker
 
 data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = identifiers.forEach(fn)
@@ -35,14 +35,10 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-            chalkTransformer(ExistsSection(
-                    identifiers = identifiers.map { it.transform(chalkTransformer) as Target }
-            ))
+        chalkTransformer(
+            ExistsSection(
+                identifiers = identifiers.map { it.transform(chalkTransformer) as Target }))
 }
 
-fun validateExistsSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTargetList(
-        tracker,
-        node,
-        "exists",
-        ::ExistsSection
-)
+fun validateExistsSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateTargetList(tracker, node, "exists", ::ExistsSection)

@@ -16,32 +16,20 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.iff
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.`if`.validateThenSection
+import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
+import mathlingua.support.MutableLocationTracker
 
-data class IffGroup(
-    val iffSection: IffSection,
-    val thenSection: ThenSection
-) : TwoPartNode<IffSection, ThenSection>(
-    iffSection,
-    thenSection,
-    ::IffGroup
-), Clause
+data class IffGroup(val iffSection: IffSection, val thenSection: ThenSection) :
+    TwoPartNode<IffSection, ThenSection>(iffSection, thenSection, ::IffGroup), Clause
 
 fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
 
-fun validateIffGroup(node: Phase1Node, tracker: MutableLocationTracker) = validateDoubleSectionGroup(
-        tracker,
-        node,
-        "iff",
-        ::validateIffSection,
-        "then",
-        ::validateThenSection,
-        ::IffGroup
-)
+fun validateIffGroup(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateDoubleSectionGroup(
+        tracker, node, "iff", ::validateIffSection, "then", ::validateThenSection, ::IffGroup)

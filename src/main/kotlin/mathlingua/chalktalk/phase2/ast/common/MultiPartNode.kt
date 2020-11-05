@@ -32,7 +32,8 @@ abstract class MultiPartNode(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
-        mathlingua.chalktalk.phase2.ast.clause.toCode(writer, isArg, indent, *sections.toTypedArray())
+        mathlingua.chalktalk.phase2.ast.clause.toCode(
+            writer, isArg, indent, *sections.toTypedArray())
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(builder(sections))
@@ -45,26 +46,17 @@ abstract class ZeroPartNode(val node: Phase1Node) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
         mathlingua.chalktalk.phase2.ast.clause.toCode(writer, isArg, indent, node)
 
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) = chalkTransformer(this)
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
 }
 
 abstract class OnePartNode<S : Phase2Node?>(s: S, builder: (s: S) -> Phase2Node) :
     MultiPartNode(listOf(s), { builder(it[0] as S) })
 
-abstract class TwoPartNode<S1 : Phase2Node?,
-    S2 : Phase2Node?>(
-        s1: S1,
-        s2: S2,
-        builder: (s1: S1, s2: S2) -> Phase2Node
-    ) :
-    MultiPartNode(listOf(s1, s2), { builder(it[0] as S1, it[1] as S2) })
+abstract class TwoPartNode<S1 : Phase2Node?, S2 : Phase2Node?>(
+    s1: S1, s2: S2, builder: (s1: S1, s2: S2) -> Phase2Node
+) : MultiPartNode(listOf(s1, s2), { builder(it[0] as S1, it[1] as S2) })
 
-abstract class ThreePartNode<S1 : Phase2Node?,
-    S2 : Phase2Node?,
-    S3 : Phase2Node?>(
-        s1: S1,
-        s2: S2,
-        s3: S3,
-        builder: (s1: S1, s2: S2, s3: S3) -> Phase2Node
-    ) :
-    MultiPartNode(listOf(s1, s2, s3), { builder(it[0] as S1, it[1] as S2, it[2] as S3) })
+abstract class ThreePartNode<S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node?>(
+    s1: S1, s2: S2, s3: S3, builder: (s1: S1, s2: S2, s3: S3) -> Phase2Node
+) : MultiPartNode(listOf(s1, s2, s3), { builder(it[0] as S1, it[1] as S2, it[2] as S3) })

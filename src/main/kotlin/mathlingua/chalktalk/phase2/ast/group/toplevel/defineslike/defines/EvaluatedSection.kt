@@ -16,13 +16,13 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines
 
-import mathlingua.support.MutableLocationTracker
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.validator.Exactly
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
+import mathlingua.support.MutableLocationTracker
 
 data class EvaluatedSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
@@ -39,16 +39,8 @@ data class EvaluatedSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            EvaluatedSection(
-            clauses = clauses.transform(chalkTransformer) as ClauseListNode
-        )
-        )
+            EvaluatedSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateEvaluatedSection(node: Phase1Node, tracker: MutableLocationTracker) = validateClauseList(
-    Exactly(1),
-    tracker,
-    node,
-    "evaluated",
-    ::EvaluatedSection
-)
+fun validateEvaluatedSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateClauseList(Exactly(1), tracker, node, "evaluated", ::EvaluatedSection)

@@ -16,13 +16,14 @@
 
 package mathlingua.transform
 
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.hasChild
+import mathlingua.support.ValidationFailure
+import mathlingua.support.ValidationSuccess
+import mathlingua.support.validationSuccess
 import mathlingua.textalk.Command
 import mathlingua.textalk.CommandPart
 import mathlingua.textalk.ExpressionTexTalkNode
@@ -32,7 +33,6 @@ import mathlingua.textalk.TexTalkNode
 import mathlingua.textalk.TexTalkNodeType
 import mathlingua.textalk.TexTalkTokenType
 import mathlingua.textalk.TextTexTalkNode
-import mathlingua.support.validationSuccess
 
 data class RootTarget<R, T>(val root: R, val target: T)
 
@@ -65,68 +65,65 @@ internal fun findCommands(texTalkNode: TexTalkNode): List<Command> {
     return commands.distinct()
 }
 
-internal fun replaceSignatures(
-    texTalkNode: TexTalkNode,
-    signature: String,
-    replacement: String
-) = texTalkNode.transform {
-    if (it is Command && it.signature() == signature) {
-        TextTexTalkNode(
-            type = TexTalkNodeType.Identifier,
-            tokenType = TexTalkTokenType.Identifier,
-            text = replacement,
-            isVarArg = false
-        )
-    } else {
-        texTalkNode
+internal fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: String) =
+    texTalkNode.transform {
+        if (it is Command && it.signature() == signature) {
+            TextTexTalkNode(
+                type = TexTalkNodeType.Identifier,
+                tokenType = TexTalkTokenType.Identifier,
+                text = replacement,
+                isVarArg = false)
+        } else {
+            texTalkNode
+        }
     }
-}
 
 internal fun replaceCommands(
     node: Phase2Node,
     cmdToReplacement: Map<Command, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
-) = node.transform {
-    if (!shouldProcessChalk(it) || it !is Statement) {
-        it
-    } else {
-        when (val validation = it.texTalkRoot) {
-            is ValidationFailure -> it
-            is ValidationSuccess -> {
-                val root = validation.value
-                val newRoot = replaceCommands(root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
-                Statement(
-                        text = newRoot.toCode(),
-                        texTalkRoot = validationSuccess(newRoot)
-                )
+) =
+    node.transform {
+        if (!shouldProcessChalk(it) || it !is Statement) {
+            it
+        } else {
+            when (val validation = it.texTalkRoot
+            ) {
+                is ValidationFailure -> it
+                is ValidationSuccess -> {
+                    val root = validation.value
+                    val newRoot =
+                        replaceCommands(
+                            root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
+                    Statement(text = newRoot.toCode(), texTalkRoot = validationSuccess(newRoot))
+                }
             }
         }
     }
-}
 
 internal fun replaceCommands(
     texTalkNode: TexTalkNode,
     root: TexTalkNode,
     cmdToReplacement: Map<Command, String>,
     shouldProcess: (root: TexTalkNode, node: TexTalkNode) -> Boolean
-) = texTalkNode.transform {
-    if (!shouldProcess(root, it) || it !is Command) {
-        it
-    } else {
-        if (!cmdToReplacement.containsKey(it)) {
+) =
+    texTalkNode.transform {
+        if (!shouldProcess(root, it) || it !is Command) {
             it
         } else {
-            val name = cmdToReplacement[it]
-            TextTexTalkNode(
-                type = TexTalkNodeType.Identifier,
-                tokenType = TexTalkTokenType.Identifier,
-                text = name!!,
-                isVarArg = false
-            )
+            if (!cmdToReplacement.containsKey(it)) {
+                it
+            } else {
+                val name = cmdToReplacement[it]
+                TextTexTalkNode(
+                    type = TexTalkNodeType.Identifier,
+                    tokenType = TexTalkTokenType.Identifier,
+                    text = name!!,
+                    isVarArg = false)
+            }
         }
     }
-}
 
 private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Command>) {
     if (texTalkNode is Command) {
@@ -136,59 +133,60 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
-internal fun separateIsStatements(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
+internal fun separateIsStatements(
+    root: Phase2Node, follow: Phase2Node
+): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
-    val newRoot = root.transform {
-        val result = if (it is ClauseListNode) {
-            val newClauses = mutableListOf<Clause>()
-            for (clause in it.clauses) {
-                if (clause is Statement) {
-                    val separated = findSeparatedIsNodes(clause)
-                    if (separated == null) {
-                        newClauses.add(clause)
-                    } else {
-                        newClauses.addAll(separated.map {
-                            val expRoot = ExpressionTexTalkNode(
-                                children = listOf(it)
-                            )
-                            Statement(
-                                    text = expRoot.toCode(),
-                                    texTalkRoot = validationSuccess(expRoot)
-                            )
-                        })
+    val newRoot =
+        root.transform {
+            val result =
+                if (it is ClauseListNode) {
+                    val newClauses = mutableListOf<Clause>()
+                    for (clause in it.clauses) {
+                        if (clause is Statement) {
+                            val separated = findSeparatedIsNodes(clause)
+                            if (separated == null) {
+                                newClauses.add(clause)
+                            } else {
+                                newClauses.addAll(
+                                    separated.map {
+                                        val expRoot = ExpressionTexTalkNode(children = listOf(it))
+                                        Statement(
+                                            text = expRoot.toCode(),
+                                            texTalkRoot = validationSuccess(expRoot))
+                                    })
+                            }
+                        } else {
+                            newClauses.add(clause)
+                        }
                     }
+                    val result = ClauseListNode(clauses = newClauses)
+                    if (newFollow == null && hasChild(it, follow)) {
+                        newFollow = result
+                    }
+                    result
                 } else {
-                    newClauses.add(clause)
+                    it
                 }
-            }
-            val result = ClauseListNode(clauses = newClauses)
-            if (newFollow == null && hasChild(it, follow)) {
-                newFollow = result
-            }
             result
-        } else {
-            it
         }
-        result
-    }
-    return RootTarget(
-            root = newRoot,
-            target = newFollow ?: follow
-    )
+    return RootTarget(root = newRoot, target = newFollow ?: follow)
 }
 
-private fun findSeparatedIsNodes(node: Statement) = when (val validation = node.texTalkRoot) {
-    is ValidationFailure -> null
-    is ValidationSuccess -> {
-        val root = validation.value
-        if (root.children.size == 1 && root.children[0] is IsTexTalkNode) {
-            val isNode = root.children[0] as IsTexTalkNode
-            separateIsStatementsUnder(isNode)
-        } else {
-            null
+private fun findSeparatedIsNodes(node: Statement) =
+    when (val validation = node.texTalkRoot
+    ) {
+        is ValidationFailure -> null
+        is ValidationSuccess -> {
+            val root = validation.value
+            if (root.children.size == 1 && root.children[0] is IsTexTalkNode) {
+                val isNode = root.children[0] as IsTexTalkNode
+                separateIsStatementsUnder(isNode)
+            } else {
+                null
+            }
         }
     }
-}
 
 private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode> {
     val result = mutableListOf<IsTexTalkNode>()
@@ -196,14 +194,8 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
         for (right in isNode.rhs.items) {
             result.add(
                 IsTexTalkNode(
-                    lhs = ParametersTexTalkNode(
-                        items = listOf(left)
-                    ),
-                    rhs = ParametersTexTalkNode(
-                        items = listOf(right)
-                    )
-                )
-            )
+                    lhs = ParametersTexTalkNode(items = listOf(left)),
+                    rhs = ParametersTexTalkNode(items = listOf(right))))
         }
     }
     return result
@@ -212,57 +204,53 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // this function requires that `is` nodes are separated
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
-internal fun glueCommands(root: Phase2Node, follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
+internal fun glueCommands(
+    root: Phase2Node, follow: Phase2Node
+): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
-    val newRoot = root.transform {
-        val result = if (it is Statement &&
-            it.texTalkRoot is ValidationSuccess &&
-            it.texTalkRoot.value.children.size == 1 &&
-            it.texTalkRoot.value.children[0] is IsTexTalkNode &&
-            (it.texTalkRoot.value.children[0] as IsTexTalkNode)
-                .rhs.items.getOrNull(0)?.children?.all { it is Command } == true) {
-            val isNode = it.texTalkRoot.value.children[0] as IsTexTalkNode
-            if (isNode.rhs.items.size != 1) {
-                throw Error("Expected 'is' node $isNode to only contain a single rhs item")
-            }
-            val cmds = getCommandsToGlue(isNode.rhs.items[0])
-            val gluedCmds = glueCommands(cmds)
-            if (gluedCmds.size != 1) {
-                throw Error("Expected 'is' node $isNode to have only one glued rhs command")
-            }
-            val newExp = ExpressionTexTalkNode(
-                children = listOf(
-                    IsTexTalkNode(
-                        lhs = isNode.lhs,
-                        rhs = ParametersTexTalkNode(
-                            items = listOf(
-                                ExpressionTexTalkNode(
-                                    children = listOf(
-                                        gluedCmds[0]
-                                    )
-                                )
-                            )
-                        )
-                    )
-                )
-            )
-            val result = Statement(
-                    text = newExp.toCode(),
-                    texTalkRoot = validationSuccess(newExp)
-            )
-            if (newFollow == null && hasChild(it, follow)) {
-                newFollow = result
-            }
+    val newRoot =
+        root.transform {
+            val result =
+                if (it is Statement &&
+                    it.texTalkRoot is ValidationSuccess &&
+                    it.texTalkRoot.value.children.size == 1 &&
+                    it.texTalkRoot.value.children[0] is IsTexTalkNode &&
+                    (it.texTalkRoot.value.children[0] as IsTexTalkNode).rhs.items.getOrNull(0)
+                        ?.children
+                        ?.all { it is Command } == true) {
+                    val isNode = it.texTalkRoot.value.children[0] as IsTexTalkNode
+                    if (isNode.rhs.items.size != 1) {
+                        throw Error("Expected 'is' node $isNode to only contain a single rhs item")
+                    }
+                    val cmds = getCommandsToGlue(isNode.rhs.items[0])
+                    val gluedCmds = glueCommands(cmds)
+                    if (gluedCmds.size != 1) {
+                        throw Error("Expected 'is' node $isNode to have only one glued rhs command")
+                    }
+                    val newExp =
+                        ExpressionTexTalkNode(
+                            children =
+                                listOf(
+                                    IsTexTalkNode(
+                                        lhs = isNode.lhs,
+                                        rhs =
+                                            ParametersTexTalkNode(
+                                                items =
+                                                    listOf(
+                                                        ExpressionTexTalkNode(
+                                                            children = listOf(gluedCmds[0])))))))
+                    val result =
+                        Statement(text = newExp.toCode(), texTalkRoot = validationSuccess(newExp))
+                    if (newFollow == null && hasChild(it, follow)) {
+                        newFollow = result
+                    }
+                    result
+                } else {
+                    it
+                }
             result
-        } else {
-            it
         }
-        result
-    }
-    return RootTarget(
-            root = newRoot,
-            target = newFollow ?: follow
-    )
+    return RootTarget(root = newRoot, target = newFollow ?: follow)
 }
 
 private fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {

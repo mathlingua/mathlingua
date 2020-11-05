@@ -33,14 +33,9 @@ data class ConstructorSection(val targets: List<Target>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(ConstructorSection(
-            targets = targets.map { it.transform(chalkTransformer) as Target }
-        ))
+        chalkTransformer(
+            ConstructorSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
 }
 
-fun validateConstructorSection(node: Phase1Node, tracker: MutableLocationTracker) = validateTargetList(
-    tracker,
-    node,
-    "constructor",
-    ::ConstructorSection
-)
+fun validateConstructorSection(node: Phase1Node, tracker: MutableLocationTracker) =
+    validateTargetList(tracker, node, "constructor", ::ConstructorSection)

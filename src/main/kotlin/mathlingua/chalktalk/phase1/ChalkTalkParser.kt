@@ -166,8 +166,7 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
     }
 
     private fun argument(): Argument? {
-        val literal = token(ChalkTalkTokenType.Statement)
-            ?: token(ChalkTalkTokenType.String)
+        val literal = token(ChalkTalkTokenType.Statement) ?: token(ChalkTalkTokenType.String)
         if (literal != null) {
             return Argument(literal)
         }
@@ -192,18 +191,19 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         val name = next()
         val equals = next()
-        val rhs = if (!hasNext()) {
-            addError("A = must be followed by an argument", equals)
-            INVALID
-        } else {
-            val maybeRhs = next()
-            if (maybeRhs.type == ChalkTalkTokenType.String) {
-                maybeRhs
-            } else {
-                addError("The right hand side of a = must be a string", equals)
+        val rhs =
+            if (!hasNext()) {
+                addError("A = must be followed by an argument", equals)
                 INVALID
+            } else {
+                val maybeRhs = next()
+                if (maybeRhs.type == ChalkTalkTokenType.String) {
+                    maybeRhs
+                } else {
+                    addError("The right hand side of a = must be a string", equals)
+                    INVALID
+                }
             }
-        }
         return Mapping(name, rhs)
     }
 
@@ -311,9 +311,7 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
         if (id.text.endsWith(dotDotDot)) {
             tail = abstractionPart()
             if (tail != null) {
-                id = id.copy(
-                    text = id.text.substring(0, id.text.length - dotDotDot.length)
-                )
+                id = id.copy(text = id.text.substring(0, id.text.length - dotDotDot.length))
             }
         }
 
@@ -411,19 +409,17 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
     private fun has(type: ChalkTalkTokenType) = hasNext() && chalkTalkLexer.peek().type == type
 
-    private fun hasHas(
-        type: ChalkTalkTokenType,
-        thenType: ChalkTalkTokenType
-    ) = has(type) &&
-        chalkTalkLexer.hasNextNext() && chalkTalkLexer.peekPeek().type == thenType
+    private fun hasHas(type: ChalkTalkTokenType, thenType: ChalkTalkTokenType) =
+        has(type) && chalkTalkLexer.hasNextNext() && chalkTalkLexer.peekPeek().type == thenType
 
     private fun expect(type: ChalkTalkTokenType): Phase1Token {
         if (!hasNext() || chalkTalkLexer.peek().type !== type) {
-            val peek = if (hasNext()) {
-                chalkTalkLexer.peek()
-            } else {
-                INVALID
-            }
+            val peek =
+                if (hasNext()) {
+                    chalkTalkLexer.peek()
+                } else {
+                    INVALID
+                }
             addError("Expected a token of type $type but found ${peek.type}", peek)
             return INVALID
         }

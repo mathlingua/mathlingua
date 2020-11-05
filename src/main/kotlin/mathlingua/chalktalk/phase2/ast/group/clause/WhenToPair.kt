@@ -17,7 +17,4 @@ package mathlingua.chalktalk.phase2.ast.group.clause
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 
-data class WhenToPair(
-    val whenSection: WhenSection,
-    val toSection: ToSection
-)
+data class WhenToPair(val whenSection: WhenSection, val toSection: ToSection)

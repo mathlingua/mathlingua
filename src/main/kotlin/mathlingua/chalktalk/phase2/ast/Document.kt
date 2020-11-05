@@ -23,20 +23,12 @@ import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.isAxiomGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.validateAxiomGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.isConjectureGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.validateConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
@@ -45,14 +37,22 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.valid
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.isAxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.validateAxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.isConjectureGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.validateConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -61,9 +61,7 @@ import mathlingua.support.ValidationSuccess
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 
-data class Document(
-    val groups: List<TopLevelGroup>
-) : Phase2Node {
+data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
 
     fun defines() = groups.filterIsInstance<DefinesGroup>()
     fun states() = groups.filterIsInstance<StatesGroup>()
@@ -88,10 +86,7 @@ data class Document(
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(
-                Document(
-                        groups = groups.map { it.transform(chalkTransformer) as TopLevelGroup }
-                )
-        )
+            Document(groups = groups.map { it.transform(chalkTransformer) as TopLevelGroup }))
     }
 }
 
@@ -100,13 +95,7 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
 
     val errors = ArrayList<ParseError>()
     if (node !is Root) {
-        errors.add(
-            ParseError(
-                "Expected a Root",
-                getRow(node),
-                getColumn(node)
-            )
-        )
+        errors.add(ParseError("Expected a Root", getRow(node), getColumn(node)))
         return validationFailure(errors)
     }
 
@@ -115,67 +104,78 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
     for (group in node.groups) {
         when {
             isTheoremGroup(group) -> {
-                when (val resultValidation = validateTheoremGroup(group, tracker)) {
+                when (val resultValidation = validateTheoremGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(resultValidation.value)
                     is ValidationFailure -> errors.addAll(resultValidation.errors)
                 }
             }
             isAxiomGroup(group) -> {
-                when (val axiomValidation = validateAxiomGroup(group, tracker)) {
+                when (val axiomValidation = validateAxiomGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(axiomValidation.value)
                     is ValidationFailure -> errors.addAll(axiomValidation.errors)
                 }
             }
             isConjectureGroup(group) -> {
-                when (val conjectureValidation = validateConjectureGroup(group, tracker)) {
+                when (val conjectureValidation = validateConjectureGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(conjectureValidation.value)
                     is ValidationFailure -> errors.addAll(conjectureValidation.errors)
                 }
             }
             isDefinesGroup(group) -> {
-                when (val definesValidation = validateDefinesGroup(group, tracker)) {
+                when (val definesValidation = validateDefinesGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(definesValidation.value)
                     is ValidationFailure -> errors.addAll(definesValidation.errors)
                 }
             }
             isStatesGroup(group) -> {
-                when (val statesValidation = validateStatesGroup(group, tracker)) {
+                when (val statesValidation = validateStatesGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(statesValidation.value)
                     is ValidationFailure -> errors.addAll(statesValidation.errors)
                 }
             }
             isFoundationGroup(group) -> {
-                when (val foundationValidation = validateFoundationGroup(group, tracker)) {
+                when (val foundationValidation = validateFoundationGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(foundationValidation.value)
                     is ValidationFailure -> errors.addAll(foundationValidation.errors)
                 }
             }
             isViewsGroup(group) -> {
-                when (val viewsValidation = validateViewsGroup(group, tracker)) {
+                when (val viewsValidation = validateViewsGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(viewsValidation.value)
                     is ValidationFailure -> errors.addAll(viewsValidation.errors)
                 }
             }
             isMutuallyGroup(group) -> {
-                when (val mutuallyValidation = validateMutuallyGroup(group, tracker)) {
+                when (val mutuallyValidation = validateMutuallyGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(mutuallyValidation.value)
                     is ValidationFailure -> errors.addAll(mutuallyValidation.errors)
                 }
             }
             isEntryGroup(group) -> {
-                when (val entryValidation = validateEntryGroup(group, tracker)) {
+                when (val entryValidation = validateEntryGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(entryValidation.value)
                     is ValidationFailure -> errors.addAll(entryValidation.errors)
                 }
             }
             isResourceGroup(group) -> {
-                when (val resourceValidation = validateResourceGroup(group, tracker)) {
+                when (val resourceValidation = validateResourceGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(resourceValidation.value)
                     is ValidationFailure -> errors.addAll(resourceValidation.errors)
                 }
             }
             isEvaluatesGroup(group) -> {
-                when (val evaluatesValidation = validateEvaluatesGroup(group, tracker)) {
+                when (val evaluatesValidation = validateEvaluatesGroup(group, tracker)
+                ) {
                     is ValidationSuccess -> allGroups.add(evaluatesValidation.value)
                     is ValidationFailure -> errors.addAll(evaluatesValidation.errors)
                 }
@@ -184,18 +184,13 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                 errors.add(
                     ParseError(
                         "Expected a top level group but found " + group.toCode(),
-                        getRow(group), getColumn(group)
-                    )
-                )
+                        getRow(group),
+                        getColumn(group)))
             }
         }
     }
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
-    } else validationSuccess(
-            tracker,
-            rawNode,
-            Document(groups = allGroups)
-    )
+    } else validationSuccess(tracker, rawNode, Document(groups = allGroups))
 }

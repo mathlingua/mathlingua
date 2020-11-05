@@ -17,13 +17,13 @@
 package mathlingua.transform
 
 import mathlingua.Signature
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.Statement
-import mathlingua.chalktalk.phase2.ast.section.TextSection
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.section.TextSection
 import mathlingua.support.Location
 import mathlingua.support.LocationTracker
 import mathlingua.support.ValidationFailure
@@ -34,13 +34,17 @@ import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.IsTexTalkNode
 import mathlingua.textalk.TexTalkNode
 
-internal fun locateAllSignatures(node: Phase2Node, locationTracker: LocationTracker): Set<Signature> {
+internal fun locateAllSignatures(
+    node: Phase2Node, locationTracker: LocationTracker
+): Set<Signature> {
     val signatures = mutableSetOf<Signature>()
     findAllSignaturesImpl(node, signatures, locationTracker)
     return signatures
 }
 
-private fun findAllSignaturesImpl(node: Phase2Node, signatures: MutableSet<Signature>, locationTracker: LocationTracker) {
+private fun findAllSignaturesImpl(
+    node: Phase2Node, signatures: MutableSet<Signature>, locationTracker: LocationTracker
+) {
     if (node is Statement) {
         signatures.addAll(findAllStatementSignatures(node, locationTracker))
     } else if (node is IdStatement) {
@@ -49,11 +53,8 @@ private fun findAllSignaturesImpl(node: Phase2Node, signatures: MutableSet<Signa
         val sig = getSignature(node)
         if (sig != null) {
             signatures.add(
-                    Signature(
-                            form = sig,
-                            location = locationTracker.getLocationOf(node) ?: Location(-1, -1)
-                    )
-            )
+                Signature(
+                    form = sig, location = locationTracker.getLocationOf(node) ?: Location(-1, -1)))
         }
     }
 
@@ -68,41 +69,37 @@ private fun getSignature(section: TextSection): String? {
     return match.groupValues[1]
 }
 
-internal fun findAllStatementSignatures(stmt: Statement, locationTracker: LocationTracker): Set<Signature> {
+internal fun findAllStatementSignatures(
+    stmt: Statement, locationTracker: LocationTracker
+): Set<Signature> {
     val gluedStmt = glueCommands(stmt, stmt).root as Statement
-    return when (val rootValidation = gluedStmt.texTalkRoot) {
+    return when (val rootValidation = gluedStmt.texTalkRoot
+    ) {
         is ValidationSuccess -> {
             val expressionNode = rootValidation.value
             val signatures = mutableSetOf<Signature>()
-            findAllSignaturesImpl(expressionNode, signatures, locationTracker.getLocationOf(stmt) ?: Location(-1, -1))
+            findAllSignaturesImpl(
+                expressionNode, signatures, locationTracker.getLocationOf(stmt) ?: Location(-1, -1))
             signatures
         }
         is ValidationFailure -> emptySet()
     }
 }
 
-private fun findAllSignaturesImpl(texTalkNode: TexTalkNode, signatures: MutableSet<Signature>, location: Location) {
+private fun findAllSignaturesImpl(
+    texTalkNode: TexTalkNode, signatures: MutableSet<Signature>, location: Location
+) {
     if (texTalkNode is IsTexTalkNode) {
         for (expNode in texTalkNode.rhs.items) {
             val sig = getMergedCommandSignature(expNode)
             if (sig != null) {
-                signatures.add(
-                        Signature(
-                                form = sig,
-                                location = location
-                        )
-                )
+                signatures.add(Signature(form = sig, location = location))
             }
         }
         return
     } else if (texTalkNode is Command) {
         val sig = texTalkNode.signature()
-        signatures.add(
-                Signature(
-                        form = sig,
-                        location = location
-                )
-        )
+        signatures.add(Signature(form = sig, location = location))
     }
 
     texTalkNode.forEach { findAllSignaturesImpl(it, signatures, location) }

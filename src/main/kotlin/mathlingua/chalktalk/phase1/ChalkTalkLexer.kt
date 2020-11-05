@@ -16,10 +16,10 @@
 
 package mathlingua.chalktalk.phase1
 
-import mathlingua.support.ParseError
-import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import java.util.Stack
+import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.chalktalk.phase1.ast.Phase1Token
+import mathlingua.support.ParseError
 
 interface ChalkTalkLexer {
     fun hasNext(): Boolean
@@ -42,8 +42,7 @@ private fun isDigit(c: Char): Boolean {
     return c in '0'..'9'
 }
 
-private class ChalkTalkLexerImpl(private var text: String) :
-    ChalkTalkLexer {
+private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
 
     private val errors = mutableListOf<ParseError>()
     private var chalkTalkTokens: MutableList<Phase1Token>? = null
@@ -88,58 +87,50 @@ private class ChalkTalkLexerImpl(private var text: String) :
 
             val c = text[i++]
             column++
-            if (c == '.' && i < text.length &&
-                    text[i] == '.' && i + 1 < text.length && text[i + 1] == '.') {
+            if (c == '.' &&
+                i < text.length &&
+                text[i] == '.' &&
+                i + 1 < text.length &&
+                text[i + 1] == '.') {
                 val startColumn = column
                 // move past the ...
                 i += 2
                 column += 2
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("...", ChalkTalkTokenType.DotDotDot, line, startColumn)
-                )
+                    Phase1Token("...", ChalkTalkTokenType.DotDotDot, line, startColumn))
             } else if (c == '=') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("=", ChalkTalkTokenType.Equals, line, column)
-                )
+                    Phase1Token("=", ChalkTalkTokenType.Equals, line, column))
             } else if (c == '_') {
                 this.chalkTalkTokens!!.add(
-                        Phase1Token("_", ChalkTalkTokenType.Underscore, line, column)
-                )
+                    Phase1Token("_", ChalkTalkTokenType.Underscore, line, column))
             } else if (c == '(') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("(", ChalkTalkTokenType.LParen, line, column)
-                )
+                    Phase1Token("(", ChalkTalkTokenType.LParen, line, column))
             } else if (c == ')') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token(")", ChalkTalkTokenType.RParen, line, column)
-                )
+                    Phase1Token(")", ChalkTalkTokenType.RParen, line, column))
             } else if (c == '{') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("{", ChalkTalkTokenType.LCurly, line, column)
-                )
+                    Phase1Token("{", ChalkTalkTokenType.LCurly, line, column))
             } else if (c == '}') {
                 this.chalkTalkTokens!!.add(
-                    Phase1Token("}", ChalkTalkTokenType.RCurly, line, column)
-                )
+                    Phase1Token("}", ChalkTalkTokenType.RCurly, line, column))
             } else if (c == ':') {
                 if (i < text.length && text[i] == '=') {
                     this.chalkTalkTokens!!.add(
-                        Phase1Token(
-                            ":=",
-                            ChalkTalkTokenType.ColonEquals,
-                            line,
-                            column
-                        )
-                    )
+                        Phase1Token(":=", ChalkTalkTokenType.ColonEquals, line, column))
                     i++ // move past the =
                     column++
                 } else {
-                    this.chalkTalkTokens!!.add(Phase1Token(":", ChalkTalkTokenType.Colon, line, column))
+                    this.chalkTalkTokens!!.add(
+                        Phase1Token(":", ChalkTalkTokenType.Colon, line, column))
                 }
             } else if (c == ',') {
                 this.chalkTalkTokens!!.add(Phase1Token(",", ChalkTalkTokenType.Comma, line, column))
             } else if (c == '.' && i < text.length && text[i] == ' ') {
-                this.chalkTalkTokens!!.add(Phase1Token(". ", ChalkTalkTokenType.DotSpace, line, column))
+                this.chalkTalkTokens!!.add(
+                    Phase1Token(". ", ChalkTalkTokenType.DotSpace, line, column))
                 i++ // move past space
                 column++
             } else if (c == '\n') {
@@ -155,13 +146,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                         line++
                     }
                     this.chalkTalkTokens!!.add(
-                        Phase1Token(
-                            "-",
-                            ChalkTalkTokenType.Linebreak,
-                            line,
-                            column
-                        )
-                    )
+                        Phase1Token("-", ChalkTalkTokenType.Linebreak, line, column))
                     continue
                 }
 
@@ -169,8 +154,7 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 while (i < text.length &&
                     i + 1 < text.length &&
                     text[i] == ' ' &&
-                    text[i + 1] == ' '
-                ) {
+                    text[i + 1] == ' ') {
                     indentCount++
                     i += 2
                     column += 2
@@ -180,18 +164,19 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 if (i < text.length &&
                     text[i] == '.' &&
                     i + 1 < text.length &&
-                    text[i + 1] == ' '
-                ) {
+                    text[i + 1] == ' ') {
                     indentCount++
                 }
 
-                this.chalkTalkTokens!!.add(Phase1Token("<Indent>", ChalkTalkTokenType.Begin, line, column))
+                this.chalkTalkTokens!!.add(
+                    Phase1Token("<Indent>", ChalkTalkTokenType.Begin, line, column))
                 numOpen++
 
                 val level = levStack.peek()
                 if (indentCount <= level) {
                     while (numOpen > 0 && !levStack.isEmpty() && indentCount <= levStack.peek()) {
-                        this.chalkTalkTokens!!.add(Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, column))
+                        this.chalkTalkTokens!!.add(
+                            Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, column))
                         numOpen--
                         levStack.pop()
                     }
@@ -209,7 +194,8 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     name += text[i++]
                     column++
                 }
-                this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
+                this.chalkTalkTokens!!.add(
+                    Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
             } else if (isNameChar(c) || c == '?') {
                 // a name can be of the form
                 //   ?
@@ -238,9 +224,10 @@ private class ChalkTalkLexerImpl(private var text: String) :
 
                 if (!hasQuestionMark) {
                     // process the name#123 case and if matching mark the match as complete
-                    if (i < text.length && text[i] == '#' &&
-                        i + 1 < text.length && isDigit(text[i + 1])
-                    ) {
+                    if (i < text.length &&
+                        text[i] == '#' &&
+                        i + 1 < text.length &&
+                        isDigit(text[i + 1])) {
                         name += text[i++] // append #
                         column++
                         while (i < text.length && isDigit(text[i])) {
@@ -253,10 +240,12 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     // if it is not complete, that means it is not of the form name#123
                     // so check if it is of the form name...
                     if (!isComplete &&
-                        i < text.length && text[i] == '.' &&
-                        i + 1 < text.length && text[i + 1] == '.' &&
-                        i + 2 < text.length && text[i + 2] == '.'
-                    ) {
+                        i < text.length &&
+                        text[i] == '.' &&
+                        i + 1 < text.length &&
+                        text[i + 1] == '.' &&
+                        i + 2 < text.length &&
+                        text[i + 2] == '.') {
                         for (tmp in 0 until "...".length) {
                             name += text[i++]
                             column++
@@ -280,15 +269,17 @@ private class ChalkTalkLexerImpl(private var text: String) :
                                 ParseError(
                                     "If a name contains a # is must be of the form " +
                                         "<identifier>...#<identifier>... but found '$name' " +
-                                        " (missing the name after '#')", startLine, startColumn
-                                )
-                            )
+                                        " (missing the name after '#')",
+                                    startLine,
+                                    startColumn))
                         }
                         // get the ... portion
-                        if (i < text.length && text[i] == '.' &&
-                            i + 1 < text.length && text[i + 1] == '.' &&
-                            i + 2 < text.length && text[i + 2] == '.'
-                        ) {
+                        if (i < text.length &&
+                            text[i] == '.' &&
+                            i + 1 < text.length &&
+                            text[i + 1] == '.' &&
+                            i + 2 < text.length &&
+                            text[i + 2] == '.') {
                             for (tmp in 0 until "...".length) {
                                 name += text[i++]
                                 column++
@@ -301,14 +292,15 @@ private class ChalkTalkLexerImpl(private var text: String) :
                                 ParseError(
                                     "If a name contains a # is must be of the form " +
                                         "<identifier>...#<identifier>... but found '$name' " +
-                                        "(missing the trailing '...')", startLine, startColumn
-                                )
-                            )
+                                        "(missing the trailing '...')",
+                                    startLine,
+                                    startColumn))
                         }
                     }
                 }
 
-                this.chalkTalkTokens!!.add(Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
+                this.chalkTalkTokens!!.add(
+                    Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
             } else if (c == '"') {
                 val startLine = line
                 val startColumn = column
@@ -318,16 +310,15 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     column++
                 }
                 if (i == text.length) {
-                    errors.add(
-                        ParseError("Expected a terminating \"", line, column)
-                    )
+                    errors.add(ParseError("Expected a terminating \"", line, column))
                     str += "\""
                 } else {
                     // include the terminating "
                     str += text[i++]
                     column++
                 }
-                this.chalkTalkTokens!!.add(Phase1Token(str, ChalkTalkTokenType.String, startLine, startColumn))
+                this.chalkTalkTokens!!.add(
+                    Phase1Token(str, ChalkTalkTokenType.String, startLine, startColumn))
             } else if (c == '\'') {
                 val startLine = line
                 val startColumn = column
@@ -337,16 +328,15 @@ private class ChalkTalkLexerImpl(private var text: String) :
                     column++
                 }
                 if (i == text.length) {
-                    errors.add(
-                        ParseError("Expected a terminating '", line, column)
-                    )
+                    errors.add(ParseError("Expected a terminating '", line, column))
                     stmt += "'"
                 } else {
                     // include the terminating '
                     stmt += text[i++]
                     column++
                 }
-                this.chalkTalkTokens!!.add(Phase1Token(stmt, ChalkTalkTokenType.Statement, startLine, startColumn))
+                this.chalkTalkTokens!!.add(
+                    Phase1Token(stmt, ChalkTalkTokenType.Statement, startLine, startColumn))
             } else if (c == '[') {
                 val startLine = line
                 val startColumn = column
@@ -370,18 +360,13 @@ private class ChalkTalkLexerImpl(private var text: String) :
                 }
 
                 if (i == text.length) {
-                    errors.add(
-                        ParseError("Expected a terminating ]", line, column)
-                    )
+                    errors.add(ParseError("Expected a terminating ]", line, column))
                     id += "]"
                 }
-                this.chalkTalkTokens!!.add(Phase1Token(id, ChalkTalkTokenType.Id, startLine, startColumn))
+                this.chalkTalkTokens!!.add(
+                    Phase1Token(id, ChalkTalkTokenType.Id, startLine, startColumn))
             } else if (c != ' ') { // spaces are ignored
-                errors.add(
-                    ParseError(
-                        "Unrecognized character $c", line, column
-                    )
-                )
+                errors.add(ParseError("Unrecognized character $c", line, column))
             }
         }
 
@@ -390,7 +375,8 @@ private class ChalkTalkLexerImpl(private var text: String) :
         // the levStack is empty in the above code, it is re-initialized to
         // contain a level of 0
         while (numOpen > 0) {
-            this.chalkTalkTokens!!.add(Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, column))
+            this.chalkTalkTokens!!.add(
+                Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, column))
             numOpen--
         }
     }

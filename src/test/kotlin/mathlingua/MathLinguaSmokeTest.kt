@@ -16,13 +16,13 @@ package mathlingua.mathlingua
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import mathlingua.MathLingua
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import org.junit.jupiter.api.Test
-import java.io.File
-import java.nio.file.Files
-import java.nio.file.Paths
 
 val MATHLINGUA_SOURCE_FILE: File = Paths.get("src", "test", "resources", "mathlingua.math").toFile()
 
@@ -34,9 +34,7 @@ internal class MathLinguaDataTest {
         val builder = StringBuilder()
         if (result is ValidationFailure) {
             for (err in result.errors) {
-                builder.append(
-                    "ERROR: (${err.row + 1}, ${err.column + 1}) ${err.message}\n"
-                )
+                builder.append("ERROR: (${err.row + 1}, ${err.column + 1}) ${err.message}\n")
             }
         }
         // The test should fail if there any errors.

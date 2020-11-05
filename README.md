@@ -20,8 +20,9 @@ the scope of the project, but are part of the roadmap.
 Further, MathLingua does not replace existing languages that are used to
 formally describe mathematics such as [Lean](https://leanprover.github.io/),
 [Coq](https://coq.inria.fr/), [Metamath](http://us.metamath.org/), or others.
-Instead, it will be a layer on top of such languages with to make it easier to
-describe mathematics in those languages.  (This is still a work in progress.)
+Instead, it will be a layer on top of such languages with the goal to make it
+easier to describe mathematics in those languages.
+(Note that this is still a work in progress.)
 
 In particular, MathLingua is designed to address the steep learning curves of
 those languages as well as the need to be very comfortable with type theory

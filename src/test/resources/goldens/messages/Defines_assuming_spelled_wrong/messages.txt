@@ -4,7 +4,7 @@ Message:
 For pattern:
 
 Defines?:
-when?:
+provided?:
 means?:
 evaluated?:
 using?:

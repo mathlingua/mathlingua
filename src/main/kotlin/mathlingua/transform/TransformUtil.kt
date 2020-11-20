@@ -468,7 +468,7 @@ internal fun toCanonicalForm(def: DefinesGroup) =
         signature = def.signature,
         id = def.id,
         definesSection = def.definesSection,
-        whenSection = null,
+        providedSection = null,
         meansSection = MeansSection(clauses = ClauseListNode(clauses = listOf(buildIfThens(def)))),
         usingSection = def.usingSection,
         metaDataSection = def.metaDataSection,
@@ -478,7 +478,8 @@ internal fun toCanonicalForm(def: DefinesGroup) =
 internal fun buildIfThens(def: DefinesGroup) =
     IfGroup(
         ifSection =
-            IfSection(clauses = def.whenSection?.clauses ?: ClauseListNode(clauses = emptyList())),
+            IfSection(
+                clauses = def.providedSection?.clauses ?: ClauseListNode(clauses = emptyList())),
         thenSection =
             ThenSection(
                 clauses = def.meansSection?.clauses ?: ClauseListNode(clauses = emptyList())))

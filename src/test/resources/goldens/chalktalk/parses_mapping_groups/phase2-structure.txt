@@ -78,7 +78,7 @@ Document(
                              )
                            ]
                )
-               whenSection = null
+               providedSection = null
                meansSection = null
                evaluatedSection = EvaluatedSection(
                  clauses = ClauseListNode(

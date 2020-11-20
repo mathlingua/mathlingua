@@ -32,10 +32,8 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -49,7 +47,7 @@ data class DefinesGroup(
     val signature: String?,
     val id: IdStatement,
     val definesSection: DefinesSection,
-    val whenSection: WhenSection?,
+    val providedSection: ProvidedSection?,
     val meansSection: MeansSection?,
     val evaluatedSection: EvaluatedSection?,
     val usingSection: UsingSection?,
@@ -60,8 +58,8 @@ data class DefinesGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
-        if (whenSection != null) {
-            fn(whenSection)
+        if (providedSection != null) {
+            fn(providedSection)
         }
         if (meansSection != null) {
             fn(meansSection)
@@ -81,7 +79,7 @@ data class DefinesGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        val sections = mutableListOf(definesSection, whenSection)
+        val sections = mutableListOf(definesSection, providedSection)
         sections.add(meansSection)
         sections.add(evaluatedSection)
         sections.add(usingSection)
@@ -96,7 +94,7 @@ data class DefinesGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
-                whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                providedSection = providedSection?.transform(chalkTransformer) as ProvidedSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 evaluatedSection =
                     evaluatedSection?.transform(chalkTransformer) as EvaluatedSection?,
@@ -113,7 +111,7 @@ fun validateDefinesGroup(groupNode: Group, tracker: MutableLocationTracker) =
         groupNode,
         listOf(
             Validator(name = "Defines", optional = true, ::validateDefinesSection),
-            Validator(name = "when", optional = true, ::validateWhenSection),
+            Validator(name = "provided", optional = true, ::validateProvidedSection),
             Validator(name = "means", optional = true, ::validateMeansSection),
             Validator(name = "evaluated", optional = true, ::validateEvaluatedSection),
             Validator(name = "using", optional = true, ::validateUsingSection),
@@ -221,7 +219,7 @@ fun validateDefinesGroup(groupNode: Group, tracker: MutableLocationTracker) =
                     id.signature(),
                     id,
                     definesSection,
-                    sections["when"] as WhenSection?,
+                    sections["provided"] as ProvidedSection?,
                     meansSection,
                     evaluatedSection,
                     sections["using"] as UsingSection?,

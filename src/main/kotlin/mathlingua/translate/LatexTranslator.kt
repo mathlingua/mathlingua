@@ -49,6 +49,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -195,7 +196,7 @@ class LatexTranslator(
                 append("'")
             }
             translate(definesGroup.definesSection)
-            translate(definesGroup.whenSection)
+            translate(definesGroup.providedSection)
             translate(definesGroup.meansSection)
         }
     }
@@ -269,8 +270,15 @@ class LatexTranslator(
 
     fun translate(whenSection: WhenSection?) {
         if (whenSection != null) {
-            append("assuming")
+            append("when")
             translate(whenSection.clauses)
+        }
+    }
+
+    fun translate(providedSection: ProvidedSection?) {
+        if (providedSection != null) {
+            append("provided")
+            translate(providedSection.clauses)
         }
     }
 

@@ -1,7 +1,7 @@
 
 [\a.b{A}]
 Defines: X
-when: 'A is \something'
+provided: 'A is \something'
 means:
 . 'X is \something.else.alias'
 using:
@@ -11,13 +11,13 @@ written: "a.b of $A?$"
 
 [\x.y:of{Z}]
 Defines: Z := (X, Y)
-when: 'Z is \something'
+provided: 'Z is \something'
 means: 'Z is \something.else'
 
 
 [\p.q]
 Defines: (X, Y)
-when: 'Z is \something'
+provided: 'Z is \something'
 means: 'Z is \something.else'
 
 

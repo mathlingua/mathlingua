@@ -72,7 +72,7 @@ Document(
                              )
                            ]
                )
-               whenSection = null
+               providedSection = null
                meansSection = MeansSection(
                  clauses = ClauseListNode(
                    clauses = [

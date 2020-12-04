@@ -37,9 +37,9 @@ fun main() {
     // enable sub-pixel antialiasing
     System.setProperty("awt.useSystemAAFontSettings", "on")
     try {
-        UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel")
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
     } catch (e: Exception) {
-        println("Could not set the look and feel to Nimbus: $e")
+        println("Could not set the system look and feel: $e")
     }
 
     val fontSize = 18

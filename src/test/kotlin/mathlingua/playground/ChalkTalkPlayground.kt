@@ -31,25 +31,15 @@ import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
-import mathlingua.chalktalk.phase2.HtmlCodeWriter
 import mathlingua.chalktalk.phase2.ast.Document
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.validateDocument
-import mathlingua.chalktalk.phase2.findNode
 import mathlingua.support.Location
 import mathlingua.support.LocationTracker
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.support.newLocationTracker
 import mathlingua.textalk.TexTalkNode
-import mathlingua.transform.expandAtNode
-import mathlingua.transform.fullExpandComplete
-import mathlingua.transform.glueCommands
-import mathlingua.transform.moveInlineCommandsToIsNode
-import mathlingua.transform.replaceIsNodes
-import mathlingua.transform.replaceRepresents
-import mathlingua.transform.separateInfixOperatorStatements
-import mathlingua.transform.separateIsStatements
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -78,34 +68,6 @@ fun main() {
     val signaturesList = JTextArea(20, 20)
     signaturesList.font = font
 
-    val separateIsBox = JCheckBox("Separate is statements", true)
-    val separateInfixOps = JCheckBox("Separate infix operators", true)
-    val glueCommands = JCheckBox("Glue commands", true)
-    val moveInLineIs = JCheckBox("Move inline is statements", true)
-    val replaceReps = JCheckBox("Replace represents", true)
-    val replaceIsNodes = JCheckBox("Replace is nodes", true)
-
-    val completeExpand = JCheckBox("Complete expansion", false)
-    completeExpand.addActionListener {
-        if (completeExpand.isSelected) {
-            separateIsBox.isSelected = false
-            separateInfixOps.isSelected = false
-            glueCommands.isSelected = false
-            moveInLineIs.isSelected = false
-            replaceReps.isSelected = false
-            replaceIsNodes.isSelected = false
-        }
-    }
-
-    val statusPanel = JPanel(FlowLayout(FlowLayout.LEFT))
-    statusPanel.add(separateIsBox)
-    statusPanel.add(separateInfixOps)
-    statusPanel.add(glueCommands)
-    statusPanel.add(moveInLineIs)
-    statusPanel.add(replaceReps)
-    statusPanel.add(replaceIsNodes)
-    statusPanel.add(completeExpand)
-
     val errorArea = JTextArea()
     errorArea.font = font
 
@@ -124,49 +86,93 @@ fun main() {
     inputArea.font = font
     inputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
-    val expandButton = JButton("Expand At")
-    expandButton.addActionListener {
-        val text = inputArea.text
-        val validation = MathLingua.parseWithLocations(text)
-        if (validation is ValidationSuccess) {
-            val doc = validation.value.document
-            val tracker = validation.value.tracker
+    fun processInput() {
+        SwingUtilities.invokeLater {
+            var doc: Document? = null
+            val errorBuilder = StringBuilder()
+            val tracker = newLocationTracker()
+            try {
+                val input = inputArea.text
 
-            val lines = inputArea.text.split('\n')
-            val offset = inputArea.caretPosition
-            var sum = 0
-            var row = 0
-            while (row < lines.size && sum + lines[row].length + 1 <= offset) {
-                sum += lines[row].length + 1
-                row++
+                val tmpLexer = newChalkTalkLexer(input)
+                val tokenBuilder = StringBuilder()
+                while (tmpLexer.hasNext()) {
+                    val next = tmpLexer.next()
+                    val row = next.row
+                    val column = next.column
+                    tokenBuilder.append("${next.text} <${next.type}>  ($row, $column)\n")
+                }
+                for (err in tmpLexer.errors()) {
+                    tokenBuilder.append("ERROR: $err\n")
+                }
+                tokenList.text = tokenBuilder.toString()
+
+                val lexer = newChalkTalkLexer(input)
+
+                for (err in lexer.errors()) {
+                    errorBuilder.append(err)
+                    errorBuilder.append('\n')
+                }
+
+                val parser = newChalkTalkParser()
+                val (root, errors) = parser.parse(lexer)
+
+                for (err in errors) {
+                    errorBuilder.append(err)
+                    errorBuilder.append('\n')
+                }
+
+                if (root != null) {
+                    phase1Tree.model = DefaultTreeModel(toTreeNode(root))
+                    val numPhase1Rows = phase1Tree.rowCount
+                    if (numPhase1Rows > 0) {
+                        phase1Tree.expandRow(numPhase1Rows - 1)
+                    }
+
+                    when (val documentValidation = validateDocument(root, tracker)
+                    ) {
+                        is ValidationSuccess -> doc = documentValidation.value
+                        is ValidationFailure -> {
+                            for ((message, row, column) in documentValidation.errors) {
+                                errorBuilder.append(message)
+                                errorBuilder.append(" (Line: ")
+                                errorBuilder.append(row + 1)
+                                errorBuilder.append(", Column: ")
+                                errorBuilder.append(column + 1)
+                                errorBuilder.append(")\n")
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                System.err.println(e.message)
+                e.printStackTrace()
+                doc = null
             }
-            val col = offset - sum
 
-            println("row=$row, column=$col")
+            if (doc == null) {
+                outputArea.text = ""
+                signaturesList.text = ""
+                phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
+            } else {
+                val sigBuilder = StringBuilder()
+                for (sig in MathLingua.findAllSignatures(doc, newLocationTracker())) {
+                    sigBuilder.append(sig.form)
+                    sigBuilder.append('\n')
+                }
+                signaturesList.text = sigBuilder.toString()
 
-            val root = toTreeNode(tracker, doc)
-            phase2Tree.model = DefaultTreeModel(root)
-            val nearestNode = findNode(tracker, doc, row, col)
-
-            println("Found node: $nearestNode")
-
-            val path = getPath(root, nearestNode)
-            phase2Tree.expandPath(path)
-            phase2Tree.selectionPath = path
-
-            val newDoc = expandAtNode(doc, nearestNode, doc.defines(), doc.states())
-
-            outputArea.text =
-                newDoc
-                    .toCode(
-                        false,
-                        0,
-                        HtmlCodeWriter(emptyList(), emptyList(), emptyList(), emptyList()))
-                    .getCode()
-            outputTree.model = DefaultTreeModel(toTreeNode(tracker, newDoc))
+                phase2Tree.model = DefaultTreeModel(toTreeNode(tracker, doc))
+                outputArea.text = doc.toCode(false, 0).getCode()
+                outputTree.model = DefaultTreeModel(toTreeNode(tracker, doc))
+                val numRows = phase2Tree.rowCount
+                if (numRows > 0) {
+                    phase2Tree.expandRow(numRows - 1)
+                }
+            }
+            errorArea.text = errorBuilder.toString()
         }
     }
-    statusPanel.add(expandButton)
 
     inputArea.addKeyListener(
         object : KeyListener {
@@ -177,141 +183,17 @@ fun main() {
                     return
                 }
 
-                SwingUtilities.invokeLater {
-                    var doc: Document? = null
-                    val errorBuilder = StringBuilder()
-                    val tracker = newLocationTracker()
-                    try {
-                        val input = inputArea.text
-
-                        val tmpLexer = newChalkTalkLexer(input)
-                        val tokenBuilder = StringBuilder()
-                        while (tmpLexer.hasNext()) {
-                            val next = tmpLexer.next()
-                            val row = next.row
-                            val column = next.column
-                            tokenBuilder.append("${next.text} <${next.type}>  ($row, $column)\n")
-                        }
-                        for (err in tmpLexer.errors()) {
-                            tokenBuilder.append("ERROR: $err\n")
-                        }
-                        tokenList.text = tokenBuilder.toString()
-
-                        val lexer = newChalkTalkLexer(input)
-
-                        for (err in lexer.errors()) {
-                            errorBuilder.append(err)
-                            errorBuilder.append('\n')
-                        }
-
-                        val parser = newChalkTalkParser()
-                        val (root, errors) = parser.parse(lexer)
-
-                        for (err in errors) {
-                            errorBuilder.append(err)
-                            errorBuilder.append('\n')
-                        }
-
-                        if (root != null) {
-                            phase1Tree.model = DefaultTreeModel(toTreeNode(root))
-                            val numPhase1Rows = phase1Tree.rowCount
-                            if (numPhase1Rows > 0) {
-                                phase1Tree.expandRow(numPhase1Rows - 1)
-                            }
-
-                            when (val documentValidation = validateDocument(root, tracker)
-                            ) {
-                                is ValidationSuccess -> doc = documentValidation.value
-                                is ValidationFailure -> {
-                                    for ((message, row, column) in documentValidation.errors) {
-                                        errorBuilder.append(message)
-                                        errorBuilder.append(" (Line: ")
-                                        errorBuilder.append(row + 1)
-                                        errorBuilder.append(", Column: ")
-                                        errorBuilder.append(column + 1)
-                                        errorBuilder.append(")\n")
-                                    }
-                                }
-                            }
-                        }
-                    } catch (e: Exception) {
-                        System.err.println(e.message)
-                        e.printStackTrace()
-                        doc = null
-                    }
-
-                    if (doc == null) {
-                        outputArea.text = ""
-                        signaturesList.text = ""
-                        phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
-                    } else {
-                        val sigBuilder = StringBuilder()
-                        for (sig in MathLingua.findAllSignatures(doc, newLocationTracker())) {
-                            sigBuilder.append(sig.form)
-                            sigBuilder.append('\n')
-                        }
-                        signaturesList.text = sigBuilder.toString()
-
-                        phase2Tree.model = DefaultTreeModel(toTreeNode(tracker, doc))
-                        var transformed = doc
-
-                        if (separateIsBox.isSelected) {
-                            transformed =
-                                separateIsStatements(transformed, transformed).root as Document
-                        }
-
-                        if (separateInfixOps.isSelected) {
-                            transformed =
-                                separateInfixOperatorStatements(transformed, transformed)
-                                    .root as Document
-                        }
-
-                        if (glueCommands.isSelected) {
-                            transformed = glueCommands(transformed, transformed).root as Document
-                        }
-
-                        if (moveInLineIs.isSelected) {
-                            transformed =
-                                moveInlineCommandsToIsNode(
-                                        transformed.defines(), transformed, transformed)
-                                    .root as Document
-                        }
-
-                        if (replaceReps.isSelected) {
-                            transformed =
-                                replaceRepresents(transformed, transformed.states(), transformed)
-                                    .root as Document
-                        }
-
-                        if (replaceIsNodes.isSelected) {
-                            transformed =
-                                replaceIsNodes(transformed, transformed.defines(), transformed)
-                                    .root as Document
-                        }
-
-                        if (completeExpand.isSelected) {
-                            transformed = fullExpandComplete(doc)
-                        }
-
-                        // val translator = LatexTranslator(transformed.defines(),
-                        // transformed.represents())
-                        // translator.translate(transformed)
-                        // outputArea.text = translator.toText()
-
-                        outputArea.text = transformed.toCode(false, 0).getCode()
-
-                        outputTree.model = DefaultTreeModel(toTreeNode(tracker, transformed))
-                        val numRows = phase2Tree.rowCount
-                        if (numRows > 0) {
-                            phase2Tree.expandRow(numRows - 1)
-                        }
-                    }
-                    errorArea.text = errorBuilder.toString()
-                }
+                processInput()
             }
 
             override fun keyPressed(keyEvent: KeyEvent) {}
         })
+
+    val parseButton = JButton("Parse")
+    parseButton.addActionListener { processInput() }
+
+    val bottomPanel = JPanel(FlowLayout(FlowLayout.CENTER))
+    bottomPanel.add(parseButton)
 
     val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
     inputSplitPane.leftComponent = RTextScrollPane(inputArea)
@@ -337,7 +219,7 @@ fun main() {
 
     val mainPanel = JPanel(BorderLayout())
     mainPanel.add(treePane, BorderLayout.CENTER)
-    mainPanel.add(statusPanel, BorderLayout.SOUTH)
+    mainPanel.add(bottomPanel, BorderLayout.SOUTH)
 
     val frame = JFrame()
     frame.setSize(1300, 900)
@@ -366,24 +248,6 @@ private fun toTreeNode(tracker: LocationTracker, phase2Node: Phase2Node): Defaul
     var visited = false
     phase2Node.forEach {
         visited = true
-        /*
-        if (it is Statement) {
-            when (it.texTalkRoot) {
-                is ValidationSuccess -> {
-                    val root = it.texTalkRoot.value
-                    result.add(toTreeNode(root))
-                }
-                is ValidationFailure -> {
-                    for (err in it.texTalkRoot.errors) {
-                        println(err)
-                    }
-                    result.add(DefaultMutableTreeNode(it.text))
-                }
-            }
-        } else {
-            result.add(toTreeNode(it))
-        }
-         */
         result.add(toTreeNode(tracker, it))
     }
     if (!visited) {

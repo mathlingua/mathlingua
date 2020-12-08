@@ -197,6 +197,7 @@ internal fun moveStatementInlineCommandsToIsNode(
                                         validationSuccess(
                                             ExpressionTexTalkNode(children = listOf(isNode))))
                             })),
+        suchThatSection = null,
         thenSection = ThenSection(clauses = ClauseListNode(clauses = listOf(newNode))))
 }
 

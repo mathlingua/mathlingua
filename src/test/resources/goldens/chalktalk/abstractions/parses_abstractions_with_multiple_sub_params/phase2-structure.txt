@@ -55,6 +55,7 @@ Document(
                                              ]
                                  )
                                  whereSection = null
+                                 suchThatSection = null
                                  thenSection = ThenSection(
                                    clauses = ClauseListNode(
                                      clauses = [

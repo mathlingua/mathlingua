@@ -79,49 +79,46 @@ fun loadMessageTestCases(): List<MessageTestCase> {
         throw IOException("Golden root directory ${root.absolutePath} does not exist")
     }
 
-    val caseDirs = root.listFiles()
-    if (caseDirs != null) {
-        for (caseDir in caseDirs) {
-            if (caseDir.name == ".DS_Store") {
-                continue
+    val caseDirs = root.walkTopDown().filter { File(it, "input.math").exists() }
+    for (caseDir in caseDirs) {
+        if (caseDir.name == ".DS_Store") {
+            continue
+        }
+
+        val messageFile = File(caseDir, "messages.txt")
+        val input = File(caseDir, "input.math").readText()
+        val expectedErrors =
+            if (OVERWRITE_GOLDEN_FILES) {
+                val validation = MathLingua.parse(input)
+                val errors =
+                    if (validation is ValidationFailure) {
+                        validation.errors
+                    } else {
+                        emptyList()
+                    }
+
+                val builder = StringBuilder()
+                for ((index, err) in errors.withIndex()) {
+                    builder.append("Row: ")
+                    builder.append(err.row)
+                    builder.append("\nColumn: ")
+                    builder.append(err.column)
+                    builder.append("\nMessage:\n")
+                    builder.append(err.message)
+                    builder.append("\nEndMessage:")
+                    if (index != errors.size - 1) {
+                        builder.append("\n\n\n")
+                    }
+                }
+                messageFile.writeText(builder.toString())
+
+                errors
+            } else {
+                loadExpectedErrors(messageFile.readText())
             }
 
-            val messageFile = File(caseDir, "messages.txt")
-            val input = File(caseDir, "input.math").readText()
-            val expectedErrors =
-                if (OVERWRITE_GOLDEN_FILES) {
-                    val validation = MathLingua.parse(input)
-                    val errors =
-                        if (validation is ValidationFailure) {
-                            validation.errors
-                        } else {
-                            emptyList()
-                        }
-
-                    val builder = StringBuilder()
-                    for ((index, err) in errors.withIndex()) {
-                        builder.append("Row: ")
-                        builder.append(err.row)
-                        builder.append("\nColumn: ")
-                        builder.append(err.column)
-                        builder.append("\nMessage:\n")
-                        builder.append(err.message)
-                        builder.append("\nEndMessage:")
-                        if (index != errors.size - 1) {
-                            builder.append("\n\n\n")
-                        }
-                    }
-                    messageFile.writeText(builder.toString())
-
-                    errors
-                } else {
-                    loadExpectedErrors(messageFile.readText())
-                }
-
-            result.add(
-                MessageTestCase(
-                    name = caseDir.name, input = input, expectedErrors = expectedErrors))
-        }
+        result.add(
+            MessageTestCase(name = caseDir.name, input = input, expectedErrors = expectedErrors))
     }
 
     return result

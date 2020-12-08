@@ -335,7 +335,7 @@ fun <
     validateSection2: (section: Section, tracker: MutableLocationTracker) -> Validation<S2>,
     section3Name: String,
     validateSection3: (section: Section, tracker: MutableLocationTracker) -> Validation<S3>,
-    section4Name : String,
+    section4Name: String,
     validateSection4: (section: Section, tracker: MutableLocationTracker) -> Validation<S4>,
     buildGroup: (sect1: S1?, sect2: S2?, sect3: S3?, sect4: S4?) -> G
 ): Validation<G> =
@@ -359,12 +359,13 @@ fun <
                 name = section4Name.removeSuffix("?"),
                 optional = section4Name.endsWith("?"),
                 validate = validateSection4)),
-            ) {
+    ) {
         val node1 = it[section1Name.removeSuffix("?")]
         val node2 = it[section2Name.removeSuffix("?")]
         val node3 = it[section3Name.removeSuffix("?")]
         val node4 = it[section4Name.removeSuffix("?")]
-        validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3?, node4 as S4))
+        validationSuccess(
+            tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3?, node4 as S4))
     }
 
 fun <Wrapped : Phase2Node, Base> validateWrappedNode(

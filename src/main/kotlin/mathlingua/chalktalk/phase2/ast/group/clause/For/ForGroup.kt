@@ -20,7 +20,6 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateDoubleMidOptionalQuadrupleSectionGroup
-import mathlingua.chalktalk.phase2.ast.clause.validateMidOptionalTripleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.FourPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection

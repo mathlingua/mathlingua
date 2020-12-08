@@ -25,7 +25,7 @@ Root(
                                            sections = [
                                                         Section(
                                                           name = Phase1Token(
-                                                            text = "for"
+                                                            text = "forAll"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 2
                                                             column = 3
@@ -41,26 +41,26 @@ Root(
                                                                                      text = "a"
                                                                                      type = ChalkTalkTokenType.Name
                                                                                      row = 2
-                                                                                     column = 8
+                                                                                     column = 11
                                                                                    )
                                                                                    subParams = [
                                                                                                  Phase1Token(
                                                                                                    text = "x"
                                                                                                    type = ChalkTalkTokenType.Name
                                                                                                    row = 2
-                                                                                                   column = 11
+                                                                                                   column = 14
                                                                                                  ),
                                                                                                  Phase1Token(
                                                                                                    text = "y"
                                                                                                    type = ChalkTalkTokenType.Name
                                                                                                    row = 2
-                                                                                                   column = 14
+                                                                                                   column = 17
                                                                                                  ),
                                                                                                  Phase1Token(
                                                                                                    text = "z"
                                                                                                    type = ChalkTalkTokenType.Name
                                                                                                    row = 2
-                                                                                                   column = 17
+                                                                                                   column = 20
                                                                                                  )
                                                                                                ]
                                                                                    params = null

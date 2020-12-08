@@ -123,7 +123,7 @@ Document(
                                      )
                                    )
                                  )
-                                 forSection = ForSection(
+                                 forAllSection = ForAllSection(
                                    targets = [
                                                AbstractionNode(
                                                  abstraction = Abstraction(
@@ -135,7 +135,7 @@ Document(
                                                                  text = "k"
                                                                  type = ChalkTalkTokenType.Name
                                                                  row = 6
-                                                                 column = 8
+                                                                 column = 11
                                                                )
                                                                subParams = null
                                                                params = null

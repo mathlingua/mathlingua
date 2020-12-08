@@ -10,8 +10,8 @@ Document(
                thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
-                               ForGroup(
-                                 forSection = ForSection(
+                               ForAllGroup(
+                                 forAllSection = ForAllSection(
                                    targets = [
                                                AbstractionNode(
                                                  abstraction = Abstraction(
@@ -23,14 +23,14 @@ Document(
                                                                  text = "a"
                                                                  type = ChalkTalkTokenType.Name
                                                                  row = 2
-                                                                 column = 8
+                                                                 column = 11
                                                                )
                                                                subParams = [
                                                                              Phase1Token(
                                                                                text = "n"
                                                                                type = ChalkTalkTokenType.Name
                                                                                row = 2
-                                                                               column = 10
+                                                                               column = 13
                                                                              )
                                                                            ]
                                                                params = [
@@ -38,13 +38,13 @@ Document(
                                                                             text = "x"
                                                                             type = ChalkTalkTokenType.Name
                                                                             row = 2
-                                                                            column = 12
+                                                                            column = 15
                                                                           ),
                                                                           Phase1Token(
                                                                             text = "y"
                                                                             type = ChalkTalkTokenType.Name
                                                                             row = 2
-                                                                            column = 15
+                                                                            column = 18
                                                                           )
                                                                         ]
                                                                tail = null

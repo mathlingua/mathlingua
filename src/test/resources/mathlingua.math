@@ -67,7 +67,7 @@ evaluated:
 . collection:
   of: 'p'
   in: '\natural'
-  for: p
+  forAll: p
   where: 'p is \prime'
 
 
@@ -163,7 +163,7 @@ using:
 
 Theorem:
 then:
-. for: n
+. forAll: n
   where: 'n is \natural'
   suchThat: 'n > 10'
   then: 'n > 5'

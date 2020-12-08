@@ -7,7 +7,7 @@ evaluated:
   . '2*k'
   in:
   . '\integer'
-  for:
+  forAll:
   . k
   where:
   . 'k is \integer'

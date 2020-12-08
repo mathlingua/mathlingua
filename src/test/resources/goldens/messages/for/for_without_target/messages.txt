@@ -1,14 +1,14 @@
 Row: 2
 Column: 3
 Message:
-Section 'for' requires at least one argument.
+Section 'forAll' requires at least one argument.
 EndMessage:
 
 
 Row: 2
 Column: 3
 Message:
-Missing required section for
+Missing required section forAll
 EndMessage:
 
 

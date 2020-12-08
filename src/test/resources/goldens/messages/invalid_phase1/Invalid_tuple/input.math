@@ -1,4 +1,4 @@
 Theorem:
 then:
-. for: ("a")
+. forAll: ("a")
   then: b

@@ -1,4 +1,4 @@
 Theorem:
 then:
-. for: f(a, "b")
+. forAll: f(a, "b")
   then: x

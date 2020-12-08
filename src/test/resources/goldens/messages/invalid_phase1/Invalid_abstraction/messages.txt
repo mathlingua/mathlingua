@@ -1,47 +1,47 @@
 Row: 2
-Column: 10
+Column: 13
 Message:
 Expected a token of type Comma but found RParen
 EndMessage:
 
 
 Row: 2
-Column: 8
+Column: 11
 Message:
 Expected an abstraction after a {
 EndMessage:
 
 
 Row: 2
-Column: 10
+Column: 13
 Message:
 Expected a token of type RCurly but found RParen
 EndMessage:
 
 
 Row: 2
-Column: 10
+Column: 13
 Message:
 Expected a token of type Comma but found RParen
 EndMessage:
 
 
 Row: 2
-Column: 10
+Column: 13
 Message:
 Expected a name, but found )
 EndMessage:
 
 
 Row: 2
-Column: 11
+Column: 14
 Message:
 Expected a token of type Comma but found RCurly
 EndMessage:
 
 
 Row: 2
-Column: 11
+Column: 14
 Message:
 Expected a name, but found }
 EndMessage:

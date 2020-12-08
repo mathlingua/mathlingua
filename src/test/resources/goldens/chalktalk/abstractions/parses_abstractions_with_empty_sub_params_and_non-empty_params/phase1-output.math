@@ -1,6 +1,6 @@
 Theorem:
 then:
-. for:
+. forAll:
   . a_{}(x, y)
   then:
   . b

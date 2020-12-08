@@ -1,6 +1,6 @@
 Theorem:
 then:
-. for:
+. forAll:
   . {f}
   then:
   . x

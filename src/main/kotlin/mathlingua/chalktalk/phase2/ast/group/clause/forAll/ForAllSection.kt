@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast.group.clause.For
+package mathlingua.chalktalk.phase2.ast.group.clause.forAll
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
@@ -24,20 +24,20 @@ import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
 
-data class ForSection(val targets: List<Target>) : Phase2Node {
+data class ForAllSection(val targets: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("for")
+        writer.writeHeader("forAll")
         appendTargetArgs(writer, targets, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ForSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
+            ForAllSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
 }
 
 fun validateForSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateTargetList(tracker, node, "for", ::ForSection)
+    validateTargetList(tracker, node, "forAll", ::ForAllSection)

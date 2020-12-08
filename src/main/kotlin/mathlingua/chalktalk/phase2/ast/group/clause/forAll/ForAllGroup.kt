@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast.group.clause.For
+package mathlingua.chalktalk.phase2.ast.group.clause.forAll
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
@@ -29,23 +29,23 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.support.MutableLocationTracker
 
-data class ForGroup(
-    val forSection: ForSection,
+data class ForAllGroup(
+    val forAllSection: ForAllSection,
     val whereSection: WhereSection?,
     val suchThatSection: SuchThatSection?,
     val thenSection: ThenSection
 ) :
-    FourPartNode<ForSection, WhereSection?, SuchThatSection?, ThenSection>(
-        forSection, whereSection, suchThatSection, thenSection, ::ForGroup),
+    FourPartNode<ForAllSection, WhereSection?, SuchThatSection?, ThenSection>(
+        forAllSection, whereSection, suchThatSection, thenSection, ::ForAllGroup),
     Clause
 
-fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
+fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "forAll")
 
 fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
     validateDoubleMidOptionalQuadrupleSectionGroup(
         tracker,
         rawNode,
-        "for",
+        "forAll",
         ::validateForSection,
         "where?",
         ::validateWhereSection,
@@ -53,4 +53,4 @@ fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
         ::validateSuchThatSection,
         "then",
         ::validateThenSection,
-        ::ForGroup)
+        ::ForAllGroup)

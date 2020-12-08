@@ -91,7 +91,7 @@ Root(
                                                         ),
                                                         Section(
                                                           name = Phase1Token(
-                                                            text = "for"
+                                                            text = "forAll"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 6
                                                             column = 3
@@ -107,7 +107,7 @@ Root(
                                                                                      text = "k"
                                                                                      type = ChalkTalkTokenType.Name
                                                                                      row = 6
-                                                                                     column = 8
+                                                                                     column = 11
                                                                                    )
                                                                                    subParams = null
                                                                                    params = null

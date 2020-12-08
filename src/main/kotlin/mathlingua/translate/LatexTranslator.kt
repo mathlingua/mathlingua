@@ -28,8 +28,6 @@ import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.clause.Text
 import mathlingua.chalktalk.phase2.ast.clause.TupleNode
-import mathlingua.chalktalk.phase2.ast.group.clause.For.ForGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.For.ForSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
@@ -39,6 +37,8 @@ import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.AsSection
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsSection
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffSection
 import mathlingua.chalktalk.phase2.ast.group.clause.not.NotGroup
@@ -100,10 +100,10 @@ class LatexTranslator(
         translate(existsGroup?.suchThatSection)
     }
 
-    fun translate(forGroup: ForGroup?) {
-        translate(forGroup?.forSection)
-        translate(forGroup?.whereSection)
-        translate(forGroup?.thenSection)
+    fun translate(forAllGroup: ForAllGroup?) {
+        translate(forAllGroup?.forAllSection)
+        translate(forAllGroup?.whereSection)
+        translate(forAllGroup?.thenSection)
     }
 
     fun translate(notGroup: NotGroup?) {
@@ -232,7 +232,7 @@ class LatexTranslator(
             is AssignmentNode -> translate(clause)
             is ExistsGroup -> translate(clause)
             is ExpandsGroup -> translate(clause)
-            is ForGroup -> translate(clause)
+            is ForAllGroup -> translate(clause)
             is Identifier -> translate(clause)
             is IffGroup -> translate(clause)
             is IfGroup -> translate(clause)
@@ -317,10 +317,10 @@ class LatexTranslator(
         }
     }
 
-    fun translate(forSection: ForSection?) {
-        if (forSection != null) {
+    fun translate(forAllSection: ForAllSection?) {
+        if (forAllSection != null) {
             append("for all")
-            translate(forSection.targets)
+            translate(forAllSection.targets)
         }
     }
 

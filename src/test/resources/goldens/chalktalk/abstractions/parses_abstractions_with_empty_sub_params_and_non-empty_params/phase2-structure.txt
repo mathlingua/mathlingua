@@ -10,8 +10,8 @@ Document(
                thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
-                               ForGroup(
-                                 forSection = ForSection(
+                               ForAllGroup(
+                                 forAllSection = ForAllSection(
                                    targets = [
                                                AbstractionNode(
                                                  abstraction = Abstraction(
@@ -23,7 +23,7 @@ Document(
                                                                  text = "a"
                                                                  type = ChalkTalkTokenType.Name
                                                                  row = 2
-                                                                 column = 8
+                                                                 column = 11
                                                                )
                                                                subParams = [
                                                                            ]
@@ -32,13 +32,13 @@ Document(
                                                                             text = "x"
                                                                             type = ChalkTalkTokenType.Name
                                                                             row = 2
-                                                                            column = 13
+                                                                            column = 16
                                                                           ),
                                                                           Phase1Token(
                                                                             text = "y"
                                                                             type = ChalkTalkTokenType.Name
                                                                             row = 2
-                                                                            column = 16
+                                                                            column = 19
                                                                           )
                                                                         ]
                                                                tail = null

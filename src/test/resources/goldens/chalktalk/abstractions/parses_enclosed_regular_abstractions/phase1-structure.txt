@@ -25,7 +25,7 @@ Root(
                                            sections = [
                                                         Section(
                                                           name = Phase1Token(
-                                                            text = "for"
+                                                            text = "forAll"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 2
                                                             column = 3
@@ -41,7 +41,7 @@ Root(
                                                                                      text = "f"
                                                                                      type = ChalkTalkTokenType.Name
                                                                                      row = 2
-                                                                                     column = 9
+                                                                                     column = 12
                                                                                    )
                                                                                    subParams = null
                                                                                    params = [
@@ -49,7 +49,7 @@ Root(
                                                                                                 text = "x"
                                                                                                 type = ChalkTalkTokenType.Name
                                                                                                 row = 2
-                                                                                                column = 11
+                                                                                                column = 14
                                                                                               )
                                                                                             ]
                                                                                    tail = null

@@ -1,3 +1,3 @@
 Theorem:
 then:
-. for: a_n(x, y)
+. forAll: a_n(x, y)

@@ -1,6 +1,6 @@
 Theorem:
 then:
-. for:
+. forAll:
   . {a_k}_k
   then:
   . "something"

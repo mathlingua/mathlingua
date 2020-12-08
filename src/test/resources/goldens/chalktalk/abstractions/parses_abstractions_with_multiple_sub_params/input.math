@@ -1,4 +1,4 @@
 Theorem:
 then:
-. for: a_{x, y, z}
+. forAll: a_{x, y, z}
   then: b

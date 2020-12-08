@@ -1,4 +1,4 @@
 Theorem:
 then:
-. for: a_{n, m}()
+. forAll: a_{n, m}()
   then: b

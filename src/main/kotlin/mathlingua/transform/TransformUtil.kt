@@ -24,12 +24,12 @@ import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.For.ForGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.For.ForSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -152,9 +152,9 @@ internal fun moveStatementInlineCommandsToIsNode(
         return stmt
     }
 
-    return ForGroup(
-        forSection =
-            ForSection(
+    return ForAllGroup(
+        forAllSection =
+            ForAllSection(
                 targets =
                     cmdsToProcess.map {
                         Identifier(name = cmdToReplacement[it]!!, isVarArgs = false)
@@ -413,8 +413,8 @@ internal fun replaceIsNodes(
 
             for (parent in lhsAncestry) {
                 when (parent) {
-                    is ForGroup -> {
-                        for (v in parent.forSection.targets) {
+                    is ForAllGroup -> {
+                        for (v in parent.forAllSection.targets) {
                             addVarToMap(v)
                         }
                     }

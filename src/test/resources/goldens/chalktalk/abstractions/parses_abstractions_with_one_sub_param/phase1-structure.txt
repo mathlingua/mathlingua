@@ -25,7 +25,7 @@ Root(
                                            sections = [
                                                         Section(
                                                           name = Phase1Token(
-                                                            text = "for"
+                                                            text = "forAll"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 2
                                                             column = 3
@@ -41,14 +41,14 @@ Root(
                                                                                      text = "a"
                                                                                      type = ChalkTalkTokenType.Name
                                                                                      row = 2
-                                                                                     column = 8
+                                                                                     column = 11
                                                                                    )
                                                                                    subParams = [
                                                                                                  Phase1Token(
                                                                                                    text = "n"
                                                                                                    type = ChalkTalkTokenType.Name
                                                                                                    row = 2
-                                                                                                   column = 10
+                                                                                                   column = 13
                                                                                                  )
                                                                                                ]
                                                                                    params = null

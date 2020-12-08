@@ -1,4 +1,4 @@
 Theorem:
 then:
-. for: {f}
+. forAll: {f}
   then: x

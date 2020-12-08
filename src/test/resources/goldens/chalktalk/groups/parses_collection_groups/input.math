@@ -4,5 +4,5 @@ evaluated:
 . collection:
   of: '2*k'
   in: '\integer'
-  for: k
+  forAll: k
   where: 'k is \integer'

@@ -1,5 +1,5 @@
 Row: 2
-Column: 8
+Column: 11
 Message:
 Expected an Target
 EndMessage:
@@ -8,7 +8,7 @@ EndMessage:
 Row: 2
 Column: 3
 Message:
-Missing required section for
+Missing required section forAll
 EndMessage:
 
 

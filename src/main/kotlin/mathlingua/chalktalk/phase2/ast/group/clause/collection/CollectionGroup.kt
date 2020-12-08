@@ -23,8 +23,8 @@ import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.For.ForSection
-import mathlingua.chalktalk.phase2.ast.group.clause.For.validateForSection
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.validateForSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.support.MutableLocationTracker
@@ -34,7 +34,7 @@ data class CollectionGroup(
     val collectionSection: CollectionSection,
     val ofSection: OfSection,
     val inSection: InSection?,
-    val forSection: ForSection,
+    val forAllSection: ForAllSection,
     val whereSection: WhereSection
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -43,7 +43,7 @@ data class CollectionGroup(
         if (inSection != null) {
             fn(inSection)
         }
-        fn(forSection)
+        fn(forAllSection)
         fn(whereSection)
     }
 
@@ -55,7 +55,7 @@ data class CollectionGroup(
             collectionSection,
             ofSection,
             inSection,
-            forSection,
+            forAllSection,
             whereSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
@@ -65,7 +65,7 @@ data class CollectionGroup(
                     collectionSection.transform(chalkTransformer) as CollectionSection,
                 ofSection = ofSection.transform(chalkTransformer) as OfSection,
                 inSection = inSection?.transform(chalkTransformer) as InSection?,
-                forSection = forSection.transform(chalkTransformer) as ForSection,
+                forAllSection = forAllSection.transform(chalkTransformer) as ForAllSection,
                 whereSection = whereSection.transform(chalkTransformer) as WhereSection))
 }
 
@@ -80,7 +80,7 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
                 name = "collection", optional = false, validate = ::validateCollectionSection),
             Validator(name = "of", optional = false, validate = ::validateOfSection),
             Validator(name = "in", optional = true, validate = ::validateInSection),
-            Validator(name = "for", optional = false, validate = ::validateForSection),
+            Validator(name = "forAll", optional = false, validate = ::validateForSection),
             Validator(name = "where", optional = false, validate = ::validateWhereSection))) {
         validationSuccess(
             tracker,
@@ -89,6 +89,6 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
                 collectionSection = it["collection"] as CollectionSection,
                 ofSection = it["of"] as OfSection,
                 inSection = it["in"] as InSection?,
-                forSection = it["for"] as ForSection,
+                forAllSection = it["forAll"] as ForAllSection,
                 whereSection = it["where"] as WhereSection))
     }

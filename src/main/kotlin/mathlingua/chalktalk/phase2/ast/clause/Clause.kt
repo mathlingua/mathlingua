@@ -25,8 +25,6 @@ import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.For.isForGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.For.validateForGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isIfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.If.validateIfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.isCollectionGroup
@@ -35,6 +33,8 @@ import mathlingua.chalktalk.phase2.ast.group.clause.exists.isExistsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.validateExistsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.isExpandsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.validateExpandsGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.isForGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.validateForGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.isIffGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.validateIffGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.inductively.isConstantGroup

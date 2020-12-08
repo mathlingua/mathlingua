@@ -10,8 +10,8 @@ Document(
                thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
-                               ForGroup(
-                                 forSection = ForSection(
+                               ForAllGroup(
+                                 forAllSection = ForAllSection(
                                    targets = [
                                                AbstractionNode(
                                                  abstraction = Abstraction(
@@ -23,7 +23,7 @@ Document(
                                                                  text = "f"
                                                                  type = ChalkTalkTokenType.Name
                                                                  row = 2
-                                                                 column = 9
+                                                                 column = 12
                                                                )
                                                                subParams = null
                                                                params = [
@@ -31,7 +31,7 @@ Document(
                                                                             text = "x"
                                                                             type = ChalkTalkTokenType.Name
                                                                             row = 2
-                                                                            column = 11
+                                                                            column = 14
                                                                           )
                                                                         ]
                                                                tail = null

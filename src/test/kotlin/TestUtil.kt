@@ -49,18 +49,16 @@ fun loadTestCases(type: GoldenType): List<TestCase> {
         throw IOException("Golden root directory ${root.absolutePath} does not exist")
     }
 
-    val caseDirs = root.listFiles()
-    if (caseDirs != null) {
-        for (caseDir in caseDirs) {
-            result.add(
-                TestCase(
-                    name = caseDir.name,
-                    input = File(caseDir, "input.math"),
-                    phase1Output = File(caseDir, "phase1-output.math"),
-                    phase1Structure = File(caseDir, "phase1-structure.txt"),
-                    phase2Output = File(caseDir, "phase2-output.math"),
-                    phase2Structure = File(caseDir, "phase2-structure.txt")))
-        }
+    val caseDirs = root.walkTopDown().filter { File(it, "input.math").exists() }
+    for (caseDir in caseDirs) {
+        result.add(
+            TestCase(
+                name = caseDir.name,
+                input = File(caseDir, "input.math"),
+                phase1Output = File(caseDir, "phase1-output.math"),
+                phase1Structure = File(caseDir, "phase1-structure.txt"),
+                phase2Output = File(caseDir, "phase2-output.math"),
+                phase2Structure = File(caseDir, "phase2-structure.txt")))
     }
 
     return result
@@ -70,4 +68,8 @@ fun serialize(obj: Any): String {
     val builder = StringBuilder()
     pp(obj, writeTo = builder, indent = 2, wrappedLineWidth = Integer.MAX_VALUE)
     return builder.toString()
+}
+
+fun main() {
+    loadTestCases(GoldenType.Chalktalk)
 }

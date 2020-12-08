@@ -19,31 +19,39 @@ package mathlingua.chalktalk.phase2.ast.group.clause.For
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.chalktalk.phase2.ast.clause.validateDoubleMidOptionalQuadrupleSectionGroup
 import mathlingua.chalktalk.phase2.ast.clause.validateMidOptionalTripleSectionGroup
-import mathlingua.chalktalk.phase2.ast.common.ThreePartNode
+import mathlingua.chalktalk.phase2.ast.common.FourPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
+import mathlingua.chalktalk.phase2.ast.group.clause.exists.validateSuchThatSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.support.MutableLocationTracker
 
 data class ForGroup(
-    val forSection: ForSection, val whereSection: WhereSection?, val thenSection: ThenSection
+    val forSection: ForSection,
+    val whereSection: WhereSection?,
+    val suchThatSection: SuchThatSection?,
+    val thenSection: ThenSection
 ) :
-    ThreePartNode<ForSection, WhereSection?, ThenSection>(
-        forSection, whereSection, thenSection, ::ForGroup),
+    FourPartNode<ForSection, WhereSection?, SuchThatSection?, ThenSection>(
+        forSection, whereSection, suchThatSection, thenSection, ::ForGroup),
     Clause
 
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "for")
 
 fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
-    validateMidOptionalTripleSectionGroup(
+    validateDoubleMidOptionalQuadrupleSectionGroup(
         tracker,
         rawNode,
         "for",
         ::validateForSection,
         "where?",
         ::validateWhereSection,
+        "suchThat?",
+        ::validateSuchThatSection,
         "then",
         ::validateThenSection,
         ::ForGroup)

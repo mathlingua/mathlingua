@@ -257,6 +257,37 @@ fun <
     G : Phase2Node,
     S1 : Phase2Node,
     S2 : Phase2Node,
+    S3 : Phase2Node,
+    S4 : Phase2Node> validateDoubleMidOptionalQuadrupleSectionGroup(
+    tracker: MutableLocationTracker,
+    rawNode: Phase1Node,
+    section1Name: String,
+    validateSection1: (section: Section, tracker: MutableLocationTracker) -> Validation<S1>,
+    section2Name: String,
+    validateSection2: (section: Section, tracker: MutableLocationTracker) -> Validation<S2>,
+    section3Name: String,
+    validateSection3: (section: Section, tracker: MutableLocationTracker) -> Validation<S3>,
+    section4Name: String,
+    validateSection4: (section: Section, tracker: MutableLocationTracker) -> Validation<S4>,
+    buildGroup: (sect1: S1, sect2: S2?, sect3: S3?, sect4: S4) -> G
+) =
+    validateOptionalQuadrupleSectionGroup(
+        tracker,
+        rawNode,
+        section1Name,
+        validateSection1,
+        section2Name,
+        validateSection2,
+        section3Name,
+        validateSection3,
+        section4Name,
+        validateSection4,
+        { sect1, sect2, sect3, sect4 -> buildGroup(sect1!!, sect2, sect3, sect4!!) })
+
+fun <
+    G : Phase2Node,
+    S1 : Phase2Node,
+    S2 : Phase2Node,
     S3 : Phase2Node> validateOptionalTripleSectionGroup(
     tracker: MutableLocationTracker,
     rawNode: Phase1Node,
@@ -288,6 +319,52 @@ fun <
         val node2 = it[section2Name.removeSuffix("?")]
         val node3 = it[section3Name.removeSuffix("?")]
         validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3))
+    }
+
+fun <
+    G : Phase2Node,
+    S1 : Phase2Node,
+    S2 : Phase2Node,
+    S3 : Phase2Node,
+    S4 : Phase2Node> validateOptionalQuadrupleSectionGroup(
+    tracker: MutableLocationTracker,
+    rawNode: Phase1Node,
+    section1Name: String,
+    validateSection1: (section: Section, tracker: MutableLocationTracker) -> Validation<S1>,
+    section2Name: String,
+    validateSection2: (section: Section, tracker: MutableLocationTracker) -> Validation<S2>,
+    section3Name: String,
+    validateSection3: (section: Section, tracker: MutableLocationTracker) -> Validation<S3>,
+    section4Name : String,
+    validateSection4: (section: Section, tracker: MutableLocationTracker) -> Validation<S4>,
+    buildGroup: (sect1: S1?, sect2: S2?, sect3: S3?, sect4: S4?) -> G
+): Validation<G> =
+    validateGroup(
+        tracker,
+        rawNode,
+        listOf(
+            Validator(
+                name = section1Name.removeSuffix("?"),
+                optional = section1Name.endsWith("?"),
+                validate = validateSection1),
+            Validator(
+                name = section2Name.removeSuffix("?"),
+                optional = section2Name.endsWith("?"),
+                validate = validateSection2),
+            Validator(
+                name = section3Name.removeSuffix("?"),
+                optional = section3Name.endsWith("?"),
+                validate = validateSection3),
+            Validator(
+                name = section4Name.removeSuffix("?"),
+                optional = section4Name.endsWith("?"),
+                validate = validateSection4)),
+            ) {
+        val node1 = it[section1Name.removeSuffix("?")]
+        val node2 = it[section2Name.removeSuffix("?")]
+        val node3 = it[section3Name.removeSuffix("?")]
+        val node4 = it[section4Name.removeSuffix("?")]
+        validationSuccess(tracker, rawNode, buildGroup(node1 as S1, node2 as S2?, node3 as S3?, node4 as S4))
     }
 
 fun <Wrapped : Phase2Node, Base> validateWrappedNode(

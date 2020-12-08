@@ -159,3 +159,11 @@ then:
     . 'x^n + y^n = z^n'
 using:
 . 'x^n := x \natural.^ n'
+
+
+Theorem:
+then:
+. for: n
+  where: 'n is \natural'
+  suchThat: 'n > 10'
+  then: 'n > 5'

@@ -22,7 +22,10 @@ import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
+import mathlingua.chalktalk.phase2.ast.DEFAULT_STATEMENT
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -86,3 +89,43 @@ fun validateStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Val
 
     return validationSuccess(tracker, rawNode, Statement(text, validation))
 }
+
+fun neoValidateStatement(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateByTransform(
+        node = node,
+        errors = errors,
+        default = DEFAULT_STATEMENT,
+        message = "Expected an statement",
+        transform = {
+            if (it is Phase1Token && it.type == ChalkTalkTokenType.Statement) {
+                it
+            } else {
+                null
+            }
+        }) {
+            // the text is of the form '...'
+            // so the open and closing ' need to be trimmed
+            val text = it.text.removeSurrounding("'", "'")
+
+            val texTalkErrors = ArrayList<ParseError>()
+
+            val lexer = newTexTalkLexer(text)
+            texTalkErrors.addAll(lexer.errors)
+
+            val parser = newTexTalkParser()
+            val result = parser.parse(lexer)
+            texTalkErrors.addAll(result.errors)
+
+            val validation: Validation<ExpressionTexTalkNode> =
+            if (texTalkErrors.isEmpty()) {
+                validationSuccess(result.root)
+            } else {
+                validationFailure(texTalkErrors)
+            }
+
+            errors.addAll(texTalkErrors)
+            Statement(
+                text = text,
+                texTalkRoot = validation
+            )
+        }

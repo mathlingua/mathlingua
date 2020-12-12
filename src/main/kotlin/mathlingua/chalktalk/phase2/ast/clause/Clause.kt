@@ -528,3 +528,61 @@ fun <G : Phase2Node> validateIdMetadataGroup(
         build(id, sections, sections["Metadata"] as MetaDataSection?)
     }
 }
+
+////////////////////////////////////////////////////////
+
+fun neoValidateClause(node: Phase1Node, errors: MutableList<ParseError>): Clause {
+    return null!!
+}
+
+private data class NeoValidationPair<T>(
+    val matches: (node: Phase1Node) -> Boolean,
+    val validate: (node: Phase1Node, errors: MutableList<ParseError>) -> T)
+
+private val NEO_CLAUSE_VALIDATORS =
+    listOf(
+        NeoValidationPair<Clause>(::isAbstraction, ::neoValidateAbstractionNode),
+        NeoValidationPair(::isTuple, ::neoValidateTupleNode),
+        NeoValidationPair(::isAssignment, ::neoValidateAssignmentNode),
+        NeoValidationPair(::isIdentifier, ::neoValidateIdentifier),
+        NeoValidationPair(::isStatement, ::neoValidateStatement),
+        NeoValidationPair(::isText, ::neoValidateText),
+        NeoValidationPair(::isForGroup, ::neoValidateForGroup),
+        NeoValidationPair(::isExistsGroup, ::neoValidateExistsGroup),
+        NeoValidationPair(::isNotGroup, ::neoValidateNotGroup),
+        NeoValidationPair(::isOrGroup, ::neoValidateOrGroup),
+        NeoValidationPair(::isIfGroup, ::neoValidateIfGroup),
+        NeoValidationPair(::isIffGroup, ::validateIffGroup),
+        NeoValidationPair(::isExpandsGroup, ::neoValidateExpandsGroup),
+        NeoValidationPair(::isMappingGroup, ::neoValidateMappingGroup),
+        NeoValidationPair(::isCollectionGroup, ::validateCollectionGroup),
+        NeoValidationPair(::isMatchingGroup, ::neoValidateMatchingGroup),
+        NeoValidationPair(::isConstantGroup, ::neoValidateConstantGroup),
+        NeoValidationPair(::isConstructorGroup, ::neoValidateConstructorGroup),
+        NeoValidationPair(::isInductivelyGroup, ::neoValidateInductivelyGroup),
+        NeoValidationPair(::isPiecewiseGroup, ::neoValidatePiecewiseGroup),
+        NeoValidationPair(::isEvaluatesGroup, ::neoValidateEvaluatesGroup),
+        NeoValidationPair(::isDefinesGroup) { node, tracker ->
+            if (node is Group) {
+                validateDefinesGroup(node, tracker)
+            } else {
+                validationFailure(
+                    listOf(ParseError("Expected a group", getRow(node), getColumn(node))))
+            }
+        },
+        NeoValidationPair(::isStatesGroup) { node, tracker ->
+            if (node is Group) {
+                validateStatesGroup(node, tracker)
+            } else {
+                validationFailure(
+                    listOf(ParseError("Expected a group", getRow(node), getColumn(node))))
+            }
+        },
+        NeoValidationPair(::isViewsGroup) { node, tracker ->
+            if (node is Group) {
+                validateViewsGroup(node, tracker)
+            } else {
+                validationFailure(
+                    listOf(ParseError("Expected a group", getRow(node), getColumn(node))))
+            }
+        })

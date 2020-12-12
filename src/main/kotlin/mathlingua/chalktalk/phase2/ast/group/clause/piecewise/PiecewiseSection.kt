@@ -19,7 +19,9 @@ import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_PIECEWISE_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -63,3 +65,8 @@ fun validatePiecewiseSection(
         validationSuccess(tracker, node, PiecewiseSection())
     }
 }
+
+fun neoValidatePiecewiseSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateSection(node, errors, "piecewise", DEFAULT_PIECEWISE_SECTION) {
+        PiecewiseSection()
+    }

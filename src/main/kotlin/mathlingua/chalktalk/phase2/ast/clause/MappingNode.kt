@@ -16,10 +16,15 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
+import mathlingua.chalktalk.phase1.ast.Abstraction
 import mathlingua.chalktalk.phase1.ast.Mapping
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase2.ast.DEFAULT_ABSTRACTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_TOKEN
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
+import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class MappingNode(val mapping: Mapping) : ZeroPartNode(mapping)
 
@@ -27,3 +32,12 @@ fun isMapping(node: Phase1Node) = node is Mapping
 
 fun validateMappingNode(node: Phase1Node, tracker: MutableLocationTracker) =
     validateWrappedNode(tracker, node, "MappingNode", { it as? Mapping }, ::MappingNode)
+
+fun neoMappingNode(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateByTransform(
+        node = node,
+        errors = errors,
+        default = DEFAULT_TOKEN,
+        message = "Expected an mapping",
+        transform = {it as? Mapping },
+        builder = ::MappingNode)

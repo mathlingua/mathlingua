@@ -18,10 +18,14 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_SINGLE_AS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.section.validateStatementSection
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class SingleAsSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -42,3 +46,10 @@ data class SingleAsSection(val statement: Statement) : Phase2Node {
 
 fun validateSingleAsSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateStatementSection(node, tracker, "as", ::SingleAsSection)
+
+fun neoValidateSingleAsSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateSection(node, errors, "as", DEFAULT_SINGLE_AS_SECTION) {
+        SingleAsSection(
+            statement = neoValidateStatement(it, errors)
+        )
+    }

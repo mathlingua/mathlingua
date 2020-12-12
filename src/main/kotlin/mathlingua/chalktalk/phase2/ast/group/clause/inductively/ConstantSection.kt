@@ -16,11 +16,17 @@ package mathlingua.chalktalk.phase2.ast.group.clause.inductively
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_CONSTANT_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateClause
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class ConstantSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
@@ -42,3 +48,10 @@ data class ConstantSection(val clauses: ClauseListNode) : Phase2Node {
 
 fun validateConstantSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(AtLeast(1), tracker, node, "constant", ::ConstantSection)
+
+fun neoValidateConstantSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateSection(node, errors, "constant", DEFAULT_CONSTANT_SECTION) {
+        ConstantSection(
+            clauses = neoValidateClauseListNode(it, errors)
+        )
+    }

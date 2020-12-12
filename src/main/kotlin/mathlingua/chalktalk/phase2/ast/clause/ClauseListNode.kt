@@ -16,8 +16,12 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
+import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_CLAUSE_LIST_NODE
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.support.ParseError
 
 data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -39,3 +43,25 @@ data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
             ClauseListNode(clauses = clauses.map { it.transform(chalkTransformer) as Clause }))
     }
 }
+
+fun neoValidateClauseListNode(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateSection(node, errors, DEFAULT_CLAUSE_LIST_NODE) {
+        ClauseListNode(
+            clauses = it.args.map { arg -> neoValidateClause(arg, errors) }
+        )
+    }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

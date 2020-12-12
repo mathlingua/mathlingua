@@ -22,6 +22,7 @@ import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.section.validateStatementSection
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class InSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {

@@ -16,10 +16,14 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
+import mathlingua.chalktalk.phase1.ast.Abstraction
 import mathlingua.chalktalk.phase1.ast.Assignment
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase2.ast.DEFAULT_ASSIGNMENT
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
+import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class AssignmentNode(val assignment: Assignment) : ZeroPartNode(assignment), Target
 
@@ -27,3 +31,12 @@ fun isAssignment(node: Phase1Node) = node is Assignment
 
 fun validateAssignmentNode(node: Phase1Node, tracker: MutableLocationTracker) =
     validateWrappedNode(tracker, node, "AssignmentNode", { it as? Assignment }, ::AssignmentNode)
+
+fun neoValidateAssignmentNode(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateByTransform(
+        node = node,
+        errors = errors,
+        default = DEFAULT_ASSIGNMENT,
+        message = "Expected an assignment",
+        transform = {it as? Assignment},
+        builder = ::AssignmentNode)

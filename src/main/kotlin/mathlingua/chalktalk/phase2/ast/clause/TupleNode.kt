@@ -16,10 +16,16 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
+import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.Tuple
+import mathlingua.chalktalk.phase2.ast.DEFAULT_TEXT
+import mathlingua.chalktalk.phase2.ast.DEFAULT_TUPLE
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
+import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class TupleNode(val tuple: Tuple) : ZeroPartNode(tuple), Target
 
@@ -27,3 +33,12 @@ fun isTuple(node: Phase1Node) = node is Tuple
 
 fun validateTupleNode(node: Phase1Node, tracker: MutableLocationTracker) =
     validateWrappedNode(tracker, node, "TupleNode", { it as? Tuple }, ::TupleNode)
+
+fun neoValidateTupleNode(node: Phase1Node, errors: MutableList<ParseError>) =
+    neoValidateByTransform(
+        node = node,
+        errors = errors,
+        default = DEFAULT_TUPLE,
+        message = "Expected a tuple",
+        transform = {it as? Tuple},
+        builder = ::TupleNode)

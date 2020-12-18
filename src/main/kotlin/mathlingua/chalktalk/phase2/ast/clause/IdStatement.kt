@@ -19,7 +19,9 @@ package mathlingua.chalktalk.phase2.ast.clause
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 import mathlingua.support.Validation
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
@@ -55,4 +57,12 @@ fun validateIdStatement(
                 IdStatement(
                     text = validation.value.text, texTalkRoot = validation.value.texTalkRoot))
         is ValidationFailure -> validationFailure(validation.errors)
+    }
+
+fun neoValidateIdStatement(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        val statement = neoValidateStatement(node.resolve(), errors, tracker)
+        IdStatement(text = statement.text, texTalkRoot = statement.texTalkRoot)
     }

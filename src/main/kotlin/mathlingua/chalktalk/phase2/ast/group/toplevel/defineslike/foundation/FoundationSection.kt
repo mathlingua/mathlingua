@@ -20,10 +20,15 @@ import java.lang.ClassCastException
 import java.lang.Exception
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_FOUNDATION_SECTION
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.Exactly
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class FoundationSection(val content: DefinesStatesOrViews) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -49,5 +54,19 @@ fun validateFoundationSection(node: Phase1Node, tracker: MutableLocationTracker)
             FoundationSection(content = it.clauses[0] as DefinesStatesOrViews)
         } catch (e: ClassCastException) {
             throw Exception("Expected a Defines, Represents, or a Views group")
+        }
+    }
+
+fun neoValidateFoundationSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "Foundation", DEFAULT_FOUNDATION_SECTION) {
+            val clauseList = neoValidateClauseListNode(node, errors, tracker)
+            if (clauseList.clauses.isEmpty() || clauseList.clauses[0] !is DefinesStatesOrViews) {
+                DEFAULT_FOUNDATION_SECTION
+            } else {
+                FoundationSection(content = clauseList.clauses[0] as DefinesStatesOrViews)
+            }
         }
     }

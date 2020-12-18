@@ -19,6 +19,7 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_PIECEWISE_GROUP
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
@@ -170,3 +171,15 @@ fun validatePiecewiseGroup(
             PiecewiseGroup(piecewiseSection = PiecewiseSection(), whenTo = whenToList, elseSection))
     }
 }
+
+fun neoValidatePiecewiseGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    when (val validation = validatePiecewiseGroup(node, tracker)
+    ) {
+        is ValidationSuccess -> validation.value
+        is ValidationFailure -> {
+            errors.addAll(validation.errors)
+            DEFAULT_PIECEWISE_GROUP
+        }
+    }

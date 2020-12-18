@@ -18,14 +18,25 @@ package mathlingua.chalktalk.phase2.ast.group.clause.mapping
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_AS_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_FROM_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_MAPPING_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_MAPPING_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_TO_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.AsSection
+import mathlingua.chalktalk.phase2.ast.group.clause.expands.neoValidateAsSection
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.validateAsSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 import mathlingua.support.validationSuccess
 
 data class MappingGroup(
@@ -73,4 +84,33 @@ fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
                 fromSection = it["from"] as FromSection,
                 toSection = it["to"] as ToSection,
                 asSection = it["as"] as AsSection))
+    }
+
+fun neoValidateMappingGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "mapping", DEFAULT_MAPPING_GROUP) { group ->
+            neoIdentifySections(
+                group, errors, DEFAULT_MAPPING_GROUP, listOf("mapping", "from", "to", "as")) {
+            sections ->
+                MappingGroup(
+                    mappingSection =
+                        neoEnsureNonNull(sections["mapping"], DEFAULT_MAPPING_SECTION) {
+                            neoValidateMappingSection(it, errors, tracker)
+                        },
+                    fromSection =
+                        neoEnsureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
+                            neoValidateFromSection(it, errors, tracker)
+                        },
+                    toSection =
+                        neoEnsureNonNull(sections["to"], DEFAULT_TO_SECTION) {
+                            neoValidateToSection(it, errors, tracker)
+                        },
+                    asSection =
+                        neoEnsureNonNull(sections["as"], DEFAULT_AS_SECTION) {
+                            neoValidateAsSection(it, errors, tracker)
+                        })
+            }
+        }
     }

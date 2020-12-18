@@ -29,6 +29,7 @@ import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
 internal class TexTalkParserTest {
+
     @TestFactory
     fun `Golden TexTalk Tests`(): Collection<DynamicTest> {
         val testCases = loadTestCases(GoldenType.Textalk)

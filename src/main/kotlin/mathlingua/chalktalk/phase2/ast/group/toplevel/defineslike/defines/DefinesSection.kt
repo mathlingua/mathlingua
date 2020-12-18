@@ -18,11 +18,15 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateTargetSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class DefinesSection(val targets: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
@@ -41,3 +45,11 @@ data class DefinesSection(val targets: List<Target>) : Phase2Node {
 
 fun validateDefinesSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateTargetList(tracker, node, "Defines", ::DefinesSection)
+
+fun neoValidateDefinesSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateTargetSection(
+            node.resolve(), errors, "Defines", DEFAULT_DEFINES_SECTION, tracker, ::DefinesSection)
+    }

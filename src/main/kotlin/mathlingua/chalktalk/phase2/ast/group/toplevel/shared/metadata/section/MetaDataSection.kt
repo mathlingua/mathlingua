@@ -19,17 +19,21 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section
 import mathlingua.chalktalk.phase1.ast.Argument
 import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Group
+import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_META_DATA_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.isSingleSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.MetaDataItem
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isReferenceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateReferenceGroup
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -166,3 +170,19 @@ private fun validateMetaDataItem(
 
     return validateReferenceGroup(arg.chalkTalkTarget, tracker)
 }
+
+fun neoValidateMetaDataSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node, errors, "Metadata", DEFAULT_META_DATA_SECTION) {
+            when (val validation = validateMetaDataSection(it, tracker)
+            ) {
+                is ValidationSuccess -> validation.value
+                is ValidationFailure -> {
+                    errors.addAll(validation.errors)
+                    DEFAULT_META_DATA_SECTION
+                }
+            }
+        }
+    }

@@ -16,11 +16,16 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_MUTUALLY_SECTION
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class MutuallySection(val items: List<DefinesStatesOrViews>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
@@ -52,4 +57,19 @@ fun validateMutuallySection(node: Phase1Node, tracker: MutableLocationTracker) =
         }
 
         MutuallySection(items = items)
+    }
+
+fun neoValidateMutuallySection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "Mutually", DEFAULT_MUTUALLY_SECTION) {
+            val clauseList = neoValidateClauseListNode(node, errors, tracker)
+            if (clauseList.clauses.isEmpty() ||
+                !clauseList.clauses.all { it is DefinesStatesOrViews }) {
+                DEFAULT_MUTUALLY_SECTION
+            } else {
+                MutuallySection(items = clauseList.clauses.map { it as DefinesStatesOrViews })
+            }
+        }
     }

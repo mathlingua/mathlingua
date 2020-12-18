@@ -185,6 +185,15 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
         return result
     }
 
+    override fun toString(): String {
+        val builder = StringBuilder()
+        var i = this.index
+        while (i < this.tokens.size) {
+            builder.append(this.tokens[i++].text)
+        }
+        return builder.toString()
+    }
+
     private fun isOpChar(c: Char) =
         (c == '!' ||
             c == '@' ||

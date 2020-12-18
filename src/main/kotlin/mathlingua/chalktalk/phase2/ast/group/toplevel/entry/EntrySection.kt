@@ -16,11 +16,19 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.entry
 
+import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.Phase1Token
+import mathlingua.chalktalk.phase1.ast.getColumn
+import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_ENTRY_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTextListSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 import mathlingua.support.Validation
 
 data class EntrySection(val names: List<String>) : Phase2Node {
@@ -49,3 +57,25 @@ data class EntrySection(val names: List<String>) : Phase2Node {
 fun validateEntrySection(
     rawNode: Phase1Node, tracker: MutableLocationTracker
 ): Validation<EntrySection> = validateTextListSection(rawNode, tracker, "Entry", ::EntrySection)
+
+fun neoValidateEntrySection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "Entry", DEFAULT_ENTRY_SECTION) { section ->
+            if (section.args.isNotEmpty() &&
+                !section.args.all {
+                    it.chalkTalkTarget is Phase1Token &&
+                        it.chalkTalkTarget.type == ChalkTalkTokenType.String
+                }) {
+                errors.add(
+                    ParseError(
+                        message = "Expected a list of strings",
+                        row = getRow(section),
+                        column = getColumn(section)))
+                DEFAULT_ENTRY_SECTION
+            } else {
+                EntrySection(names = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
+            }
+        }
+    }

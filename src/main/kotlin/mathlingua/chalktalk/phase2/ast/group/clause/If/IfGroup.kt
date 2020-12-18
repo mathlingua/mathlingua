@@ -18,11 +18,19 @@ package mathlingua.chalktalk.phase2.ast.group.clause.If
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_IF_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_IF_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class IfGroup(val ifSection: IfSection, val thenSection: ThenSection) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -48,3 +56,22 @@ fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
 fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
     validateDoubleSectionGroup(
         tracker, rawNode, "if", ::validateIfSection, "then", ::validateThenSection, ::IfGroup)
+
+fun neoValidateIfGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "if", DEFAULT_IF_GROUP) { group ->
+            neoIdentifySections(group, errors, DEFAULT_IF_GROUP, listOf("if", "then")) { sections ->
+                IfGroup(
+                    ifSection =
+                        neoEnsureNonNull(sections["if"], DEFAULT_IF_SECTION) {
+                            neoValidateIfSection(it, errors, tracker)
+                        },
+                    thenSection =
+                        neoEnsureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                            neoValidateThenSection(it, errors, tracker)
+                        })
+            }
+        }
+    }

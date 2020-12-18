@@ -18,9 +18,13 @@ package mathlingua.chalktalk.phase2.ast.group.clause.collection
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_COLLECTION_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.section.validateEmptySection
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 class CollectionSection : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -37,3 +41,12 @@ class CollectionSection : Phase2Node {
 
 fun validateCollectionSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateEmptySection(node, tracker, "collection", ::CollectionSection)
+
+fun neoValidateCollectionSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "collection", DEFAULT_COLLECTION_SECTION) {
+            CollectionSection()
+        }
+    }

@@ -18,8 +18,12 @@ package mathlingua.chalktalk.phase2.ast.clause
 
 import mathlingua.chalktalk.phase1.ast.Abstraction
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase2.ast.DEFAULT_ABSTRACTION
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class AbstractionNode(val abstraction: Abstraction) : ZeroPartNode(abstraction), Target
 
@@ -27,3 +31,16 @@ fun isAbstraction(node: Phase1Node) = node is Abstraction
 
 fun validateAbstractionNode(node: Phase1Node, tracker: MutableLocationTracker) =
     validateWrappedNode(tracker, node, "AbstractionNode", { it as? Abstraction }, ::AbstractionNode)
+
+fun neoValidateAbstractionNode(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateByTransform(
+            node = node.resolve(),
+            errors = errors,
+            default = DEFAULT_ABSTRACTION,
+            message = "Expected an abstraction",
+            transform = { it as? Abstraction },
+            builder = ::AbstractionNode)
+    }

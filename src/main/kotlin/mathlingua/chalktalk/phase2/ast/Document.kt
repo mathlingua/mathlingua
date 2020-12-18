@@ -25,39 +25,37 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.neoValidateDefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.neoValidateEvaluatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.neoValidateFoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.isMutuallyGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallyGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.neoValidateMutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.neoValidateStatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.neoValidateViewsGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.entry.neoValidateEntryGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.neoValidateResourceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.isAxiomGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.validateAxiomGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.neoValidateAxiomGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.isConjectureGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.validateConjectureGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.neoValidateConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.neoValidateTheoremGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 
@@ -104,81 +102,37 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
     for (group in node.groups) {
         when {
             isTheoremGroup(group) -> {
-                when (val resultValidation = validateTheoremGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(resultValidation.value)
-                    is ValidationFailure -> errors.addAll(resultValidation.errors)
-                }
+                allGroups.add(neoValidateTheoremGroup(group, errors, tracker))
             }
             isAxiomGroup(group) -> {
-                when (val axiomValidation = validateAxiomGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(axiomValidation.value)
-                    is ValidationFailure -> errors.addAll(axiomValidation.errors)
-                }
+                allGroups.add(neoValidateAxiomGroup(group, errors, tracker))
             }
             isConjectureGroup(group) -> {
-                when (val conjectureValidation = validateConjectureGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(conjectureValidation.value)
-                    is ValidationFailure -> errors.addAll(conjectureValidation.errors)
-                }
+                allGroups.add(neoValidateConjectureGroup(group, errors, tracker))
             }
             isDefinesGroup(group) -> {
-                when (val definesValidation = validateDefinesGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(definesValidation.value)
-                    is ValidationFailure -> errors.addAll(definesValidation.errors)
-                }
+                allGroups.add(neoValidateDefinesGroup(group, errors, tracker))
             }
             isStatesGroup(group) -> {
-                when (val statesValidation = validateStatesGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(statesValidation.value)
-                    is ValidationFailure -> errors.addAll(statesValidation.errors)
-                }
+                allGroups.add(neoValidateStatesGroup(group, errors, tracker))
             }
             isFoundationGroup(group) -> {
-                when (val foundationValidation = validateFoundationGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(foundationValidation.value)
-                    is ValidationFailure -> errors.addAll(foundationValidation.errors)
-                }
+                allGroups.add(neoValidateFoundationGroup(group, errors, tracker))
             }
             isViewsGroup(group) -> {
-                when (val viewsValidation = validateViewsGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(viewsValidation.value)
-                    is ValidationFailure -> errors.addAll(viewsValidation.errors)
-                }
+                allGroups.add(neoValidateViewsGroup(group, errors, tracker))
             }
             isMutuallyGroup(group) -> {
-                when (val mutuallyValidation = validateMutuallyGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(mutuallyValidation.value)
-                    is ValidationFailure -> errors.addAll(mutuallyValidation.errors)
-                }
+                allGroups.add(neoValidateMutuallyGroup(group, errors, tracker))
             }
             isEntryGroup(group) -> {
-                when (val entryValidation = validateEntryGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(entryValidation.value)
-                    is ValidationFailure -> errors.addAll(entryValidation.errors)
-                }
+                allGroups.add(neoValidateEntryGroup(group, errors, tracker))
             }
             isResourceGroup(group) -> {
-                when (val resourceValidation = validateResourceGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(resourceValidation.value)
-                    is ValidationFailure -> errors.addAll(resourceValidation.errors)
-                }
+                allGroups.add(neoValidateResourceGroup(group, errors, tracker))
             }
             isEvaluatesGroup(group) -> {
-                when (val evaluatesValidation = validateEvaluatesGroup(group, tracker)
-                ) {
-                    is ValidationSuccess -> allGroups.add(evaluatesValidation.value)
-                    is ValidationFailure -> errors.addAll(evaluatesValidation.errors)
-                }
+                allGroups.add(neoValidateEvaluatesGroup(group, errors, tracker))
             }
             else -> {
                 errors.add(

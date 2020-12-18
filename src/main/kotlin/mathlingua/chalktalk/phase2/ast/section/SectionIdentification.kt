@@ -18,10 +18,39 @@ package mathlingua.chalktalk.phase2.ast.section
 
 import java.util.LinkedList
 import java.util.Queue
+import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.support.ParseError
+
+fun <T, U> neoEnsureNonNull(value: T?, default: U, builder: (value: T) -> U) =
+    if (value == null) {
+        default
+    } else {
+        builder(value)
+    }
+
+fun <T, U> neoIfNonNull(value: T?, builder: (value: T) -> U) =
+    if (value == null) {
+        null
+    } else {
+        builder(value)
+    }
+
+fun <T> neoIdentifySections(
+    group: Group,
+    errors: MutableList<ParseError>,
+    default: T,
+    expected: List<String>,
+    builder: (sectionMap: Map<String, Section>) -> T
+) =
+    try {
+        builder(identifySections(group.sections, *expected.toTypedArray()))
+    } catch (e: ParseError) {
+        errors.add(e)
+        default
+    }
 
 fun identifySections(sections: List<Section>, vararg expected: String): Map<String, Section> {
     val patternBuilder = StringBuilder()

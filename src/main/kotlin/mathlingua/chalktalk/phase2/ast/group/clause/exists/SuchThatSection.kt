@@ -18,11 +18,16 @@ package mathlingua.chalktalk.phase2.ast.group.clause.exists
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
@@ -44,3 +49,12 @@ data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
 
 fun validateSuchThatSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(AtLeast(1), tracker, node, "suchThat", ::SuchThatSection)
+
+fun neoValidateSuchThatSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "suchThat", DEFAULT_SUCH_THAT_SECTION) {
+            SuchThatSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        }
+    }

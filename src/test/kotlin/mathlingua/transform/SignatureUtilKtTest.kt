@@ -45,14 +45,8 @@ internal class SignatureUtilKtTest {
     @Test
     fun statementSignaturesNotAllowedToBeGluedTest() {
         val validation = MathLingua.parse("[\\abc \\xyz{x}]\nDefines: y\nmeans: 'something'")
-        val doc = (validation as ValidationSuccess).value
-        val defines = doc.defines()
-        assertThat(defines.size).isEqualTo(1)
-        val def = defines[0]
-        val texTalkValidation = def.id.texTalkRoot
-        assertThat(texTalkValidation is ValidationFailure)
-        val failure = texTalkValidation as ValidationFailure
-        assertThat(failure.errors)
+        assertThat(validation is ValidationFailure)
+        assertThat((validation as ValidationFailure).errors)
             .isEqualTo(
                 listOf(
                     ParseError(

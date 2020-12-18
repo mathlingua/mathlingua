@@ -17,11 +17,18 @@
 package mathlingua.chalktalk.phase2.ast.group.clause.matching
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase2.ast.DEFAULT_MATCHING_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_MATCHING_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateSingleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class MatchingGroup(val matchingSection: MatchingSection) :
     OnePartNode<MatchingSection>(matchingSection, ::MatchingGroup), Clause
@@ -31,3 +38,19 @@ fun isMatchingGroup(node: Phase1Node) = firstSectionMatchesName(node, "matching"
 fun validateMatchingGroup(node: Phase1Node, tracker: MutableLocationTracker) =
     validateSingleSectionGroup(
         tracker, node, "matching", ::MatchingGroup, ::validateMatchingSection)
+
+fun neoValidateMatchingGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "matching", DEFAULT_MATCHING_GROUP) { group ->
+            neoIdentifySections(group, errors, DEFAULT_MATCHING_GROUP, listOf("matching")) {
+            sections ->
+                MatchingGroup(
+                    matchingSection =
+                        neoEnsureNonNull(sections["matching"], DEFAULT_MATCHING_SECTION) {
+                            neoValidateMatchingSection(it, errors, tracker)
+                        })
+            }
+        }
+    }

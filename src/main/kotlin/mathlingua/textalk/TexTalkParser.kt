@@ -35,7 +35,6 @@ fun newTexTalkParser(): TexTalkParser {
 private val INVALID = TexTalkToken("INVALID", TexTalkTokenType.Invalid, -1, -1)
 
 private class TexTalkParserImpl : TexTalkParser {
-
     override fun parse(texTalkLexer: TexTalkLexer): TexTalkParseResult {
         val worker = ParserWorker(texTalkLexer)
         val root = worker.parse()
@@ -188,6 +187,22 @@ private class TexTalkParserImpl : TexTalkParser {
                                         type = TexTalkNodeType.Identifier,
                                         tokenType = TexTalkTokenType.Operator,
                                         text = operator.text,
+                                        isVarArg = false),
+                                square = null,
+                                subSup = null,
+                                groups = emptyList(),
+                                paren = null,
+                                namedGroups = emptyList()))
+                        break
+                    } else if (has(TexTalkTokenType.Caret)) {
+                        val caret = expect(TexTalkTokenType.Caret)
+                        parts.add(
+                            CommandPart(
+                                name =
+                                    TextTexTalkNode(
+                                        type = TexTalkNodeType.Identifier,
+                                        tokenType = TexTalkTokenType.Caret,
+                                        text = caret.text,
                                         isVarArg = false),
                                 square = null,
                                 subSup = null,

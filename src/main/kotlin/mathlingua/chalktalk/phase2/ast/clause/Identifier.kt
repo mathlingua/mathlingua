@@ -22,7 +22,10 @@ import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_IDENTIFIER
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -70,3 +73,23 @@ fun validateIdentifier(
 
     return validationSuccess(tracker, rawNode, Identifier(name = realText, isVarArgs = isVarArgs))
 }
+
+fun neoValidateIdentifier(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateByTransform(
+            node = node.resolve(),
+            errors = errors,
+            default = DEFAULT_IDENTIFIER,
+            message = "Expected an identifier",
+            transform = {
+                if (it is Phase1Token && it.type == ChalkTalkTokenType.Name) {
+                    it
+                } else {
+                    null
+                }
+            }) {
+            Identifier(name = it.text.removeSuffix("..."), isVarArgs = it.text.endsWith("..."))
+        }
+    }

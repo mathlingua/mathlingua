@@ -21,6 +21,7 @@ import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_EVALUATES_GROUP
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateIdStatement
@@ -47,11 +48,13 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.va
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
+import mathlingua.support.newLocationTracker
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 import mathlingua.transform.signature
@@ -267,3 +270,17 @@ fun validateEvaluatesGroup(
                 elseSection = elseSection!!))
     }
 }
+
+fun neoValidateEvaluatesGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        when (val validation = validateEvaluatesGroup(node, newLocationTracker())
+        ) {
+            is ValidationSuccess -> validation.value
+            is ValidationFailure -> {
+                errors.addAll(validation.errors)
+                DEFAULT_EVALUATES_GROUP
+            }
+        }
+    }

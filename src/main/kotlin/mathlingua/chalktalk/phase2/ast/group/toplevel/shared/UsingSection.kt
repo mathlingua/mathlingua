@@ -19,11 +19,16 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.shared
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_USING_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.ZeroOrMore
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class UsingSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
@@ -47,3 +52,12 @@ fun isUsingSection(sec: Section) = sec.name.text == "using"
 
 fun validateUsingSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(ZeroOrMore(), tracker, node, "using", ::UsingSection)
+
+fun neoValidateUsingSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "using", DEFAULT_USING_SECTION) {
+            UsingSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        }
+    }

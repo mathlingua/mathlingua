@@ -19,14 +19,23 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_FOUNDATION_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_FOUNDATION_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaDataGroup
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 interface DefinesStatesOrViews : Clause
 
@@ -57,3 +66,24 @@ fun isFoundationGroup(node: Phase1Node) = firstSectionMatchesName(node, "Foundat
 fun validateFoundationGroup(groupNode: Group, tracker: MutableLocationTracker) =
     validateSingleSectionMetaDataGroup(
         tracker, groupNode, "Foundation", ::validateFoundationSection, ::FoundationGroup)
+
+fun neoValidateFoundationGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "Foundation", DEFAULT_FOUNDATION_GROUP) { group ->
+            neoIdentifySections(
+                group, errors, DEFAULT_FOUNDATION_GROUP, listOf("Foundation", "Metadata?")) {
+            sections ->
+                FoundationGroup(
+                    foundationSection =
+                        neoEnsureNonNull(sections["Foundation"], DEFAULT_FOUNDATION_SECTION) {
+                            neoValidateFoundationSection(it, errors, tracker)
+                        },
+                    metaDataSection =
+                        neoIfNonNull(sections["Metadata"]) {
+                            neoValidateMetaDataSection(it, errors, tracker)
+                        })
+            }
+        }
+    }

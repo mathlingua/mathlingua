@@ -16,8 +16,16 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
+import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.getColumn
+import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_CLAUSE_LIST_NODE
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -39,3 +47,22 @@ data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
             ClauseListNode(clauses = clauses.map { it.transform(chalkTransformer) as Clause }))
     }
 }
+
+fun neoValidateClauseListNode(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, DEFAULT_CLAUSE_LIST_NODE) {
+            if (it.args.isEmpty()) {
+                errors.add(
+                    ParseError(
+                        message = "Expected at least 1 arguments but found 0",
+                        row = getRow(node),
+                        column = getColumn(node)))
+                DEFAULT_CLAUSE_LIST_NODE
+            } else {
+                ClauseListNode(
+                    clauses = it.args.map { arg -> neoValidateClause(arg, errors, tracker) })
+            }
+        }
+    }

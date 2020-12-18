@@ -17,13 +17,22 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_MUTUALLY_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_MUTUALLY_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaDataGroup
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class MutuallyGroup(
     val mutuallySection: MutuallySection, override val metaDataSection: MetaDataSection?
@@ -51,3 +60,24 @@ fun isMutuallyGroup(node: Phase1Node) = firstSectionMatchesName(node, "Mutually"
 fun validateMutuallyGroup(groupNode: Group, tracker: MutableLocationTracker) =
     validateSingleSectionMetaDataGroup(
         tracker, groupNode, "Mutually", ::validateMutuallySection, ::MutuallyGroup)
+
+fun neoValidateMutuallyGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "Mutually", DEFAULT_MUTUALLY_GROUP) { group ->
+            neoIdentifySections(
+                group, errors, DEFAULT_MUTUALLY_GROUP, listOf("Mutually", "Metadata?")) {
+            sections ->
+                MutuallyGroup(
+                    mutuallySection =
+                        neoEnsureNonNull(sections["Mutually"], DEFAULT_MUTUALLY_SECTION) {
+                            neoValidateMutuallySection(it, errors, tracker)
+                        },
+                    metaDataSection =
+                        neoIfNonNull(sections["Metadata"]) {
+                            neoValidateMetaDataSection(it, errors, tracker)
+                        })
+            }
+        }
+    }

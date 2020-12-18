@@ -18,11 +18,15 @@ package mathlingua.chalktalk.phase2.ast.group.clause.exists
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_EXISTS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateTargetSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = identifiers.forEach(fn)
@@ -42,3 +46,11 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
 
 fun validateExistsSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateTargetList(tracker, node, "exists", ::ExistsSection)
+
+fun neoValidateExistsSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateTargetSection(
+            node.resolve(), errors, "exists", DEFAULT_EXISTS_SECTION, tracker, ::ExistsSection)
+    }

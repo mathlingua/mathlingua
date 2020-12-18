@@ -16,12 +16,20 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike
 
+import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.Section
+import mathlingua.chalktalk.phase1.ast.getColumn
+import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTextListSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 import mathlingua.support.Validation
 
 data class WrittenSection(val forms: List<String>) : Phase2Node {
@@ -48,3 +56,26 @@ fun validateWrittenSection(
     rawNode: Phase1Node, tracker: MutableLocationTracker
 ): Validation<WrittenSection> =
     validateTextListSection(rawNode, tracker, "written", ::WrittenSection)
+
+fun neoValidateWrittenSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "written", DEFAULT_WRITTEN_SECTION) { section ->
+            if (section.args.isEmpty() ||
+                !section.args.all {
+                    it.chalkTalkTarget is Phase1Token &&
+                        it.chalkTalkTarget.type == ChalkTalkTokenType.String
+                }) {
+                errors.add(
+                    ParseError(
+                        message = "Expected a list of strings",
+                        row = getRow(section),
+                        column = getColumn(section)))
+                DEFAULT_WRITTEN_SECTION
+            } else {
+                WrittenSection(
+                    forms = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
+            }
+        }
+    }

@@ -18,8 +18,13 @@ package mathlingua.chalktalk.phase2.ast.group.clause.collection
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_IN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
 import mathlingua.chalktalk.phase2.ast.section.validateStatementSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -42,3 +47,14 @@ data class InSection(val statement: Statement) : Phase2Node {
 
 fun validateInSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateStatementSection(node, tracker, "in", ::InSection)
+
+fun neoValidateInSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "in", DEFAULT_IN_SECTION) { section ->
+            neoValidateSingleArg(section, errors, DEFAULT_IN_SECTION, "statement") {
+                InSection(statement = neoValidateStatement(it, errors, tracker))
+            }
+        }
+    }

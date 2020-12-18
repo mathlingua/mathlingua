@@ -1,5 +1,0 @@
-Row: 0
-Column: 0
-Message:
-A result, axiom, or conjecture cannot have an Id
-EndMessage:

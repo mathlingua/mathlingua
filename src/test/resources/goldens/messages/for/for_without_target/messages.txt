@@ -3,17 +3,3 @@ Column: 3
 Message:
 Section 'forAll' requires at least one argument.
 EndMessage:
-
-
-Row: 2
-Column: 3
-Message:
-Missing required section forAll
-EndMessage:
-
-
-Row: 1
-Column: 1
-Message:
-Expected at least 1 arguments but found 0
-EndMessage:

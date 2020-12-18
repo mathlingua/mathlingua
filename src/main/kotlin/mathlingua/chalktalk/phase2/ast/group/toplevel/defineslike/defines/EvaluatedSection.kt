@@ -22,6 +22,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_EVALUATED_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.Exactly
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
@@ -49,9 +50,11 @@ data class EvaluatedSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateEvaluatedSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(Exactly(1), tracker, node, "evaluated", ::EvaluatedSection)
 
-fun neoValidateEvaluatedSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateSection(node, errors, "evaluated", DEFAULT_EVALUATED_SECTION) {
-        EvaluatedSection(
-            clauses = neoValidateClauseListNode(it, errors)
-        )
+fun neoValidateEvaluatedSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "evaluated", DEFAULT_EVALUATED_SECTION) {
+            EvaluatedSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        }
     }

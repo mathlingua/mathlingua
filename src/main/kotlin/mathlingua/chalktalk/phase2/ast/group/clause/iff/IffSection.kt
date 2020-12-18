@@ -19,11 +19,10 @@ package mathlingua.chalktalk.phase2.ast.group.clause.iff
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_IFF_SECTION
-import mathlingua.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
@@ -51,9 +50,11 @@ data class IffSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateIffSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(AtLeast(1), tracker, node, "iff", ::IffSection)
 
-fun neoValidateIffSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateSection(node, errors, "iff", DEFAULT_IFF_SECTION) {
-        IffSection(
-            clauses = neoValidateClauseListNode(it, errors)
-        )
+fun neoValidateIffSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "iff", DEFAULT_IFF_SECTION) {
+            IffSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        }
     }

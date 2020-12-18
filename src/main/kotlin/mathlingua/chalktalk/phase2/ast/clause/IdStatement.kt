@@ -16,13 +16,10 @@
 
 package mathlingua.chalktalk.phase2.ast.clause
 
-import mathlingua.chalktalk.phase1.ast.Assignment
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.DEFAULT_ASSIGNMENT
-import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -62,10 +59,10 @@ fun validateIdStatement(
         is ValidationFailure -> validationFailure(validation.errors)
     }
 
-fun neoValidateIdStatement(node: Phase1Node, errors: MutableList<ParseError>): IdStatement {
-    val statement = neoValidateStatement(node, errors)
-    return IdStatement(
-        text = statement.text,
-        texTalkRoot = statement.texTalkRoot
-    )
-}
+fun neoValidateIdStatement(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        val statement = neoValidateStatement(node.resolve(), errors, tracker)
+        IdStatement(text = statement.text, texTalkRoot = statement.texTalkRoot)
+    }

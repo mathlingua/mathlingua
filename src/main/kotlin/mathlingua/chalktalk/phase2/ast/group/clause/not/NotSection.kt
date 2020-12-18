@@ -22,6 +22,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_NOT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
@@ -49,9 +50,11 @@ data class NotSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateNotSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(AtLeast(1), tracker, node, "not", ::NotSection)
 
-fun neoValidateNotSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateSection(node, errors, "not", DEFAULT_NOT_SECTION) {
-        NotSection(
-            clauses = neoValidateClauseListNode(it, errors)
-        )
+fun neoValidateNotSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "not", DEFAULT_NOT_SECTION) {
+            NotSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        }
     }

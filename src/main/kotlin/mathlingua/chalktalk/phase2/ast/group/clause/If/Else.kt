@@ -20,11 +20,10 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_ELSE_SECTION
-import mathlingua.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
@@ -54,9 +53,11 @@ fun isElseSection(sec: Section) = sec.name.text == "else"
 fun validateElseSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(AtLeast(1), tracker, node, "else", ::ElseSection)
 
-fun neoValidateElseSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateSection(node, errors, "else", DEFAULT_ELSE_SECTION) {
-        ElseSection(
-            clauses = neoValidateClauseListNode(it, errors)
-        )
+fun neoValidateElseSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "else", DEFAULT_ELSE_SECTION) {
+            ElseSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        }
     }

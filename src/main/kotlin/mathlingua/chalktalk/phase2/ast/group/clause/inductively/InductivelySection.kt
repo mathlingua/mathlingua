@@ -21,6 +21,7 @@ import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_INDUCTIVELY_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -67,7 +68,11 @@ fun validateInductivelySection(
     }
 }
 
-fun neoValidateInductivelySection(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateSection(node, errors, "inductively", DEFAULT_INDUCTIVELY_SECTION) {
-        InductivelySection()
+fun neoValidateInductivelySection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "inductively", DEFAULT_INDUCTIVELY_SECTION) {
+            InductivelySection()
+        }
     }

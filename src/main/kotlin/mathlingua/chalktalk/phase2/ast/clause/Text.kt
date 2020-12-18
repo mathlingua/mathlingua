@@ -17,15 +17,14 @@
 package mathlingua.chalktalk.phase2.ast.clause
 
 import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
-import mathlingua.chalktalk.phase1.ast.Mapping
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_TEXT
-import mathlingua.chalktalk.phase2.ast.DEFAULT_TOKEN
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -66,18 +65,20 @@ fun validateText(rawNode: Phase1Node, tracker: MutableLocationTracker): Validati
     return validationSuccess(tracker, rawNode, Text(text))
 }
 
-fun neoValidateText(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateByTransform(
-        node = node,
-        errors = errors,
-        default = DEFAULT_TEXT,
-        message = "Expected text",
-        transform = {
-            if (it is Phase1Token && it.type == ChalkTalkTokenType.String) {
-                it
-            } else {
-                null
-            }
-        }) {
-            Text(text = it.text)
-        }
+fun neoValidateText(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateByTransform(
+            node = node.resolve(),
+            errors = errors,
+            default = DEFAULT_TEXT,
+            message = "Expected text",
+            transform = {
+                if (it is Phase1Token && it.type == ChalkTalkTokenType.String) {
+                    it
+                } else {
+                    null
+                }
+            }) { Text(text = it.text) }
+    }

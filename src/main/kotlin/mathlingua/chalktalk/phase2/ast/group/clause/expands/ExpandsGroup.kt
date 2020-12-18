@@ -17,11 +17,18 @@
 package mathlingua.chalktalk.phase2.ast.group.clause.expands
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase2.ast.DEFAULT_AS_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_EXPANDS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class ExpandsGroup(val expandsSection: ExpandsSection, val asSection: AsSection) :
     TwoPartNode<ExpandsSection, AsSection>(expandsSection, asSection, ::ExpandsGroup), Clause
@@ -37,3 +44,23 @@ fun validateExpandsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
         "as",
         ::validateAsSection,
         ::ExpandsGroup)
+
+fun neoValidateExpandsGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "expands", DEFAULT_AS_SECTION) { group ->
+            neoIdentifySections(group, errors, DEFAULT_AS_SECTION, listOf("expands", "as")) {
+            sections ->
+                ExpandsGroup(
+                    expandsSection =
+                        neoEnsureNonNull(sections["expands"], DEFAULT_EXPANDS_SECTION) {
+                            neoValidateExpandsSection(it, errors, tracker)
+                        },
+                    asSection =
+                        neoEnsureNonNull(sections["as"], DEFAULT_AS_SECTION) {
+                            neoValidateAsSection(it, errors, tracker)
+                        })
+            }
+        }
+    }

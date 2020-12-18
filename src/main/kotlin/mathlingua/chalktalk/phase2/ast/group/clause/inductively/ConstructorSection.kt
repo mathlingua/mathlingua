@@ -16,11 +16,15 @@ package mathlingua.chalktalk.phase2.ast.group.clause.inductively
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_CONSTRUCTOR_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateTargetSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class ConstructorSection(val targets: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
@@ -39,3 +43,16 @@ data class ConstructorSection(val targets: List<Target>) : Phase2Node {
 
 fun validateConstructorSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateTargetList(tracker, node, "constructor", ::ConstructorSection)
+
+fun neoValidateConstructorSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateTargetSection(
+            node.resolve(),
+            errors,
+            "constructor",
+            DEFAULT_CONSTRUCTOR_SECTION,
+            tracker,
+            ::ConstructorSection)
+    }

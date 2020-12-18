@@ -21,6 +21,8 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_RESOURCE_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_RESOURCE_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
@@ -28,8 +30,14 @@ import mathlingua.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.validationFailure
@@ -103,5 +111,31 @@ fun validateResourceGroup(groupNode: Group, tracker: MutableLocationTracker) =
                     id = idText!!,
                     sourceSection = it["Resource"] as ResourceSection,
                     metaDataSection = it["Metadata"] as MetaDataSection?))
+        }
+    }
+
+fun neoValidateResourceGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "Resource", DEFAULT_RESOURCE_GROUP) { group ->
+            neoIdentifySections(
+                group, errors, DEFAULT_RESOURCE_GROUP, listOf("Resource", "Metadata?")) {
+            sections ->
+                if (group.id == null) {
+                    DEFAULT_RESOURCE_GROUP
+                } else {
+                    ResourceGroup(
+                        id = group.id.text.removeSurrounding("[", "]"),
+                        sourceSection =
+                            neoEnsureNonNull(sections["Resource"], DEFAULT_RESOURCE_SECTION) {
+                                neoValidateResourceSection(it, errors, tracker)
+                            },
+                        metaDataSection =
+                            neoIfNonNull(sections["Metadata"]) {
+                                neoValidateMetaDataSection(it, errors, tracker)
+                            })
+                }
+            }
         }
     }

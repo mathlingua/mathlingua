@@ -20,6 +20,7 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_MAPPING_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.section.validateEmptySection
 import mathlingua.support.MutableLocationTracker
@@ -41,7 +42,11 @@ class MappingSection : Phase2Node {
 fun validateMappingSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateEmptySection(node, tracker, "mapping", ::MappingSection)
 
-fun neoValidateMappingSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateSection(node, errors, "mapping", DEFAULT_MAPPING_SECTION) {
-        MappingSection()
+fun neoValidateMappingSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "mapping", DEFAULT_MAPPING_SECTION) {
+            MappingSection()
+        }
     }

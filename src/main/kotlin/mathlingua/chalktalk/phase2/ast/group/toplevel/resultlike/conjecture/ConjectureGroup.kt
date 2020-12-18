@@ -19,17 +19,31 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_CONJECTURE_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_CONJECTURE_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.neoValidateGivenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.validateResultLikeGroup
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class ConjectureGroup(
     val conjectureSection: ConjectureSection,
@@ -87,3 +101,43 @@ fun isConjectureGroup(node: Phase1Node) = firstSectionMatchesName(node, "Conject
 fun validateConjectureGroup(groupNode: Group, tracker: MutableLocationTracker) =
     validateResultLikeGroup(
         tracker, groupNode, "Conjecture", ::validateConjectureSection, ::ConjectureGroup)
+
+fun neoValidateConjectureGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "Conjecture", DEFAULT_CONJECTURE_GROUP) { group ->
+            neoIdentifySections(
+                group,
+                errors,
+                DEFAULT_CONJECTURE_GROUP,
+                listOf("Conjecture", "given?", "where?", "then", "using?", "Metadata?")) {
+            sections ->
+                ConjectureGroup(
+                    conjectureSection =
+                        neoEnsureNonNull(sections["Conjecture"], DEFAULT_CONJECTURE_SECTION) {
+                            neoValidateConjectureSection(it, errors, tracker)
+                        },
+                    givenSection =
+                        neoIfNonNull(sections["given"]) {
+                            neoValidateGivenSection(it, errors, tracker)
+                        },
+                    givenWhereSection =
+                        neoIfNonNull(sections["where"]) {
+                            neoValidateWhereSection(it, errors, tracker)
+                        },
+                    thenSection =
+                        neoEnsureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                            neoValidateThenSection(it, errors, tracker)
+                        },
+                    usingSection =
+                        neoIfNonNull(sections["using"]) {
+                            neoValidateUsingSection(it, errors, tracker)
+                        },
+                    metaDataSection =
+                        neoIfNonNull(sections["Metadata"]) {
+                            neoValidateMetaDataSection(it, errors, tracker)
+                        })
+            }
+        }
+    }

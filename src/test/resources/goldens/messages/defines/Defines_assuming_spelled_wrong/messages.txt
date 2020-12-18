@@ -3,12 +3,13 @@ Column: 1
 Message:
 For pattern:
 
-Defines?:
+Defines:
 provided?:
 means?:
 evaluated?:
 using?:
 written?:
+Metadata?:
 
 Unexpected Section 'assumes'
 EndMessage:

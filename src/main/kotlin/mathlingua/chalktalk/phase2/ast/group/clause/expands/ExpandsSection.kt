@@ -18,9 +18,11 @@ package mathlingua.chalktalk.phase2.ast.group.clause.expands
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_EXPANDS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
@@ -28,6 +30,7 @@ import mathlingua.support.ParseError
 import mathlingua.support.Validation
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
+import mathlingua.support.newLocationTracker
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
 
@@ -104,6 +107,20 @@ fun validateExpandsSection(
                 validationSuccess(tracker, node, ExpandsSection(targets = targets))
             } else {
                 validationFailure(newErrors)
+            }
+        }
+    }
+
+fun neoValidateExpandsSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+): ExpandsSection =
+    neoTrack(node, tracker) {
+        when (val validation = validateExpandsSection(node, newLocationTracker())
+        ) {
+            is ValidationSuccess -> validation.value
+            is ValidationFailure -> {
+                errors.addAll(validation.errors)
+                DEFAULT_EXPANDS_SECTION
             }
         }
     }

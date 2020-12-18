@@ -18,16 +18,29 @@ package mathlingua.chalktalk.phase2.ast.group.clause.collection
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_COLLECTION_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_COLLECTION_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_FOR_ALL_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_OF_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_WHERE_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.neoValidateForSection
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.validateForSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 import mathlingua.support.validationSuccess
 
 data class CollectionGroup(
@@ -91,4 +104,37 @@ fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker
                 inSection = it["in"] as InSection?,
                 forAllSection = it["forAll"] as ForAllSection,
                 whereSection = it["where"] as WhereSection))
+    }
+
+fun neoValidateCollectionGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "collection", DEFAULT_COLLECTION_GROUP) { group ->
+            neoIdentifySections(
+                group,
+                errors,
+                DEFAULT_COLLECTION_GROUP,
+                listOf("collection", "of", "in?", "forAll", "where")) { sections ->
+                CollectionGroup(
+                    collectionSection =
+                        neoEnsureNonNull(sections["collection"], DEFAULT_COLLECTION_SECTION) {
+                            neoValidateCollectionSection(it, errors, tracker)
+                        },
+                    ofSection =
+                        neoEnsureNonNull(sections["of"], DEFAULT_OF_SECTION) {
+                            neoValidateOfSection(it, errors, tracker)
+                        },
+                    inSection =
+                        neoIfNonNull(sections["in"]) { neoValidateInSection(it, errors, tracker) },
+                    forAllSection =
+                        neoEnsureNonNull(sections["forAll"], DEFAULT_FOR_ALL_SECTION) {
+                            neoValidateForSection(it, errors, tracker)
+                        },
+                    whereSection =
+                        neoEnsureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
+                            neoValidateWhereSection(it, errors, tracker)
+                        })
+            }
+        }
     }

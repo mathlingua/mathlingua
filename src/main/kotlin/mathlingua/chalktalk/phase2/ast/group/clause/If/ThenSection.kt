@@ -19,12 +19,11 @@ package mathlingua.chalktalk.phase2.ast.group.clause.If
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.validator.AtLeast
 import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
@@ -54,9 +53,11 @@ fun isThenSection(sec: Section) = sec.name.text == "then"
 fun validateThenSection(node: Phase1Node, tracker: MutableLocationTracker) =
     validateClauseList(AtLeast(1), tracker, node, "then", ::ThenSection)
 
-fun neoValidateSuchThatSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    neoValidateSection(node, errors, "then", DEFAULT_THEN_SECTION) {
-        ThenSection(
-            clauses = neoValidateClauseListNode(it, errors)
-        )
+fun neoValidateThenSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node.resolve(), errors, "then", DEFAULT_THEN_SECTION) {
+            ThenSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        }
     }

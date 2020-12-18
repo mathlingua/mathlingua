@@ -155,7 +155,9 @@ then:
   . exists: x, y, z
     where: 'x, y, z is \integer'
     suchThat:
-    . 'x, y, z \neq 0'
+    . 'x \neq 0'
+    . 'y \neq 0'
+    . 'z \neq 0'
     . 'x^n + y^n = z^n'
 using:
 . 'x^n := x \natural.^ n'

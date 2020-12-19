@@ -14,7 +14,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_MUTUALLY_GROUP
@@ -25,7 +24,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaDataGroup
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -56,10 +54,6 @@ data class MutuallyGroup(
 }
 
 fun isMutuallyGroup(node: Phase1Node) = firstSectionMatchesName(node, "Mutually")
-
-fun validateMutuallyGroup(groupNode: Group, tracker: MutableLocationTracker) =
-    validateSingleSectionMetaDataGroup(
-        tracker, groupNode, "Mutually", ::validateMutuallySection, ::MutuallyGroup)
 
 fun neoValidateMutuallyGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

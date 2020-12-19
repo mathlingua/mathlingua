@@ -28,7 +28,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTripleSectionMetaDataGroup
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -66,18 +65,6 @@ data class EntryGroup(
 }
 
 fun isEntryGroup(node: Phase1Node) = firstSectionMatchesName(node, "Entry")
-
-fun validateEntryGroup(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateTripleSectionMetaDataGroup(
-        tracker,
-        node,
-        "Entry",
-        ::validateEntrySection,
-        "type",
-        ::validateTypeSection,
-        "content",
-        ::validateContentSection,
-        ::EntryGroup)
 
 fun neoValidateEntryGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

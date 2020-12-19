@@ -14,20 +14,17 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.piecewise
 
+import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Section
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_PIECEWISE_SECTION
+import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 class PiecewiseSection : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -42,30 +39,7 @@ class PiecewiseSection : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validatePiecewiseSection(
-    node: Phase1Node, tracker: MutableLocationTracker
-): Validation<PiecewiseSection> {
-    val errors = ArrayList<ParseError>()
-    if (node !is Section) {
-        errors.add(ParseError("Expected a piecewise:", getRow(node), getColumn(node)))
-    }
-
-    val sect = node as Section
-    if (sect.args.isNotEmpty()) {
-        errors.add(
-            ParseError("A piecewise: cannot have any arguments", getRow(node), getColumn(node)))
-    }
-
-    if (sect.name.text != "piecewise") {
-        errors.add(ParseError("Expected a section named piecewise:", getRow(node), getColumn(node)))
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else {
-        validationSuccess(tracker, node, PiecewiseSection())
-    }
-}
+fun isPiecewiseSection(section: Section) = section.name.text == "piecewise"
 
 fun neoValidatePiecewiseSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

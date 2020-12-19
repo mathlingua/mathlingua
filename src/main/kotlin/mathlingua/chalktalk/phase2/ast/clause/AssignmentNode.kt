@@ -29,9 +29,6 @@ data class AssignmentNode(val assignment: Assignment) : ZeroPartNode(assignment)
 
 fun isAssignment(node: Phase1Node) = node is Assignment
 
-fun validateAssignmentNode(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateWrappedNode(tracker, node, "AssignmentNode", { it as? Assignment }, ::AssignmentNode)
-
 fun neoValidateAssignmentNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =

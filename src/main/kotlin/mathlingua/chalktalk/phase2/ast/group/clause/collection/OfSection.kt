@@ -25,7 +25,6 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
-import mathlingua.chalktalk.phase2.ast.section.validateStatementSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -44,9 +43,6 @@ data class OfSection(val statement: Statement) : Phase2Node {
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(OfSection(statement = statement.transform(chalkTransformer) as Statement))
 }
-
-fun validateOfSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateStatementSection(node, tracker, "of", ::OfSection)
 
 fun neoValidateOfSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

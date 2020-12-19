@@ -25,7 +25,6 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
-import mathlingua.chalktalk.phase2.ast.section.validateStatementSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -45,9 +44,6 @@ data class SingleAsSection(val statement: Statement) : Phase2Node {
         chalkTransformer(
             SingleAsSection(statement = statement.transform(chalkTransformer) as Statement))
 }
-
-fun validateSingleAsSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateStatementSection(node, tracker, "as", ::SingleAsSection)
 
 fun neoValidateSingleAsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

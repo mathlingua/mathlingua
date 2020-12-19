@@ -23,10 +23,6 @@ import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 import mathlingua.textalk.ExpressionTexTalkNode
 
 data class IdStatement(val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>) :
@@ -44,20 +40,6 @@ data class IdStatement(val text: String, val texTalkRoot: Validation<ExpressionT
 
     fun toStatement() = Statement(text = text, texTalkRoot = texTalkRoot)
 }
-
-fun validateIdStatement(
-    rawNode: Phase1Node, tracker: MutableLocationTracker
-): Validation<IdStatement> =
-    when (val validation = validateStatement(rawNode, tracker)
-    ) {
-        is ValidationSuccess ->
-            validationSuccess(
-                tracker,
-                rawNode,
-                IdStatement(
-                    text = validation.value.text, texTalkRoot = validation.value.texTalkRoot))
-        is ValidationFailure -> validationFailure(validation.errors)
-    }
 
 fun neoValidateIdStatement(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

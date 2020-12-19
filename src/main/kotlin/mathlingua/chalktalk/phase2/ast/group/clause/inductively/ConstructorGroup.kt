@@ -20,11 +20,9 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_CONSTRUCTOR_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_FROM_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.FromSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.neoValidateFromSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateFromSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -40,16 +38,6 @@ data class ConstructorGroup(
     Clause
 
 fun isConstructorGroup(node: Phase1Node) = firstSectionMatchesName(node, "constructor")
-
-fun validateConstructorGroup(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateDoubleSectionGroup(
-        tracker,
-        node,
-        "constructor",
-        ::validateConstructorSection,
-        "from",
-        ::validateFromSection,
-        ::ConstructorGroup)
 
 fun neoValidateConstructorGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

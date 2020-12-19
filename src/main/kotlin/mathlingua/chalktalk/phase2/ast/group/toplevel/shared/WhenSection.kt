@@ -25,8 +25,6 @@ import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.validator.AtLeast
-import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -49,9 +47,6 @@ data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
 }
 
 fun isWhenSection(sec: Section) = sec.name.text == "when"
-
-fun validateWhenSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateClauseList(AtLeast(1), tracker, node, "when", ::WhenSection)
 
 fun neoValidateWhenSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

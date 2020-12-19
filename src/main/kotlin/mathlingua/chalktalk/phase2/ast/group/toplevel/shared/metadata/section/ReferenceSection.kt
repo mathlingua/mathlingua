@@ -16,9 +16,16 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section
 
+import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_REFERENCE_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SourceItemGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.neoValidateSourceItemGroup
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class ReferenceSection(val sourceItems: List<SourceItemGroup>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = sourceItems.forEach(fn)
@@ -38,3 +45,12 @@ data class ReferenceSection(val sourceItems: List<SourceItemGroup>) : Phase2Node
             ReferenceSection(
                 sourceItems = sourceItems.map { chalkTransformer(it) as SourceItemGroup }))
 }
+
+fun neoValidateReferenceSection(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node, errors, "reference", DEFAULT_REFERENCE_SECTION) { section ->
+            ReferenceSection(
+                sourceItems = section.args.map { neoValidateSourceItemGroup(it, errors, tracker) }
+            )
+        }
+    }

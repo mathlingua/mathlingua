@@ -21,7 +21,6 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_NOT_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_NOT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateSingleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
@@ -34,9 +33,6 @@ data class NotGroup(val notSection: NotSection) :
     OnePartNode<NotSection>(notSection, ::NotGroup), Clause
 
 fun isNotGroup(node: Phase1Node) = firstSectionMatchesName(node, "not")
-
-fun validateNotGroup(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateSingleSectionGroup(tracker, node, "not", ::NotGroup, ::validateNotSection)
 
 fun neoValidateNotGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

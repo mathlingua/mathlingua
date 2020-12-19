@@ -16,8 +16,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation
 
-import java.lang.ClassCastException
-import java.lang.Exception
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_FOUNDATION_SECTION
@@ -25,8 +23,6 @@ import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.validator.Exactly
-import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -47,15 +43,6 @@ data class FoundationSection(val content: DefinesStatesOrViews) : Phase2Node {
         chalkTransformer(
             FoundationSection(content = chalkTransformer(content) as DefinesStatesOrViews))
 }
-
-fun validateFoundationSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateClauseList(Exactly(1), tracker, node, "Foundation") {
-        try {
-            FoundationSection(content = it.clauses[0] as DefinesStatesOrViews)
-        } catch (e: ClassCastException) {
-            throw Exception("Expected a Defines, Represents, or a Views group")
-        }
-    }
 
 fun neoValidateFoundationSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

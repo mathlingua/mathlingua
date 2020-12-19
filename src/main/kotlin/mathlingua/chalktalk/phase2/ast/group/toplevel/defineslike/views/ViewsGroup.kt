@@ -16,7 +16,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
@@ -26,9 +25,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_SINGLE_TO_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_VIEWS_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_VIEWS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateIdMetadataGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
@@ -36,7 +33,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoGetId
 import mathlingua.chalktalk.phase2.ast.neoTrack
@@ -46,7 +42,6 @@ import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.validationSuccess
 import mathlingua.transform.signature
 
 data class ViewsGroup(
@@ -103,33 +98,6 @@ data class ViewsGroup(
 }
 
 fun isViewsGroup(node: Phase1Node) = firstSectionMatchesName(node, "Views")
-
-fun validateViewsGroup(groupNode: Group, tracker: MutableLocationTracker) =
-    validateIdMetadataGroup(
-        tracker,
-        groupNode,
-        listOf(
-            Validator(name = "Views", optional = false, ::validateViewsSection),
-            Validator(name = "from", optional = false, ::validateSingleFromSection),
-            Validator(name = "to", optional = false, ::validateSingleToSection),
-            Validator(name = "as", optional = false, ::validateSingleAsSection),
-            Validator(name = "using", optional = true, ::validateUsingSection))) {
-    id,
-    sections,
-    metaDataSection ->
-        validationSuccess(
-            tracker,
-            groupNode,
-            ViewsGroup(
-                id.signature(),
-                id,
-                sections["Views"] as ViewsSection,
-                sections["from"] as SingleFromSection,
-                sections["to"] as SingleToSection,
-                sections["as"] as SingleAsSection,
-                sections["using"] as UsingSection?,
-                metaDataSection))
-    }
 
 fun neoValidateViewsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

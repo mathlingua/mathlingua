@@ -25,8 +25,6 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
-import mathlingua.chalktalk.phase2.ast.validator.Exactly
-import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -44,9 +42,6 @@ data class SingleToSection(val clauses: ClauseListNode) : Phase2Node {
         chalkTransformer(
             SingleToSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
-
-fun validateSingleToSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateClauseList(Exactly(1), tracker, node, "to", ::SingleToSection)
 
 fun neoValidateSingleToSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

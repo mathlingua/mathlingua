@@ -24,7 +24,6 @@ import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_CONJECTURE_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTextListSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
@@ -49,9 +48,6 @@ data class ConjectureSection(val names: List<String>) : Phase2Node {
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(this)
 }
-
-fun validateConjectureSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateTextListSection(node, tracker, "Conjecture", ::ConjectureSection)
 
 fun neoValidateConjectureSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

@@ -14,49 +14,44 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates
 
-import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_EVALUATES_GROUP
+import mathlingua.chalktalk.phase2.ast.DEFAULT_EVALUATES_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.validateElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.WhenToPair
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.isToSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateToSection
+import mathlingua.chalktalk.phase2.ast.group.clause.mapping.neoValidateToSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.isWrittenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.neoValidateWrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.isUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.isMetadataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.chalktalk.phase2.ast.neoGetId
 import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.newLocationTracker
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 import mathlingua.transform.signature
 
 data class EvaluatesGroup(
@@ -122,165 +117,111 @@ data class EvaluatesGroup(
 
 fun isEvaluatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Evaluates")
 
-fun validateEvaluatesGroup(
-    rawNode: Phase1Node, tracker: MutableLocationTracker
-): Validation<EvaluatesGroup> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Group) {
-        errors.add(ParseError("Expected a Group", getRow(node), getColumn(node)))
-        return validationFailure(errors)
-    }
-
-    var id: IdStatement? = null
-    if (node.id != null) {
-        val (rawText, _, row, column) = node.id
-        // The id token is of type Id and the text is of the form "[...]"
-        // Convert it to look like a statement.
-        val statementText = "'" + rawText.substring(1, rawText.length - 1) + "'"
-        val stmtToken = Phase1Token(statementText, ChalkTalkTokenType.Statement, row, column)
-        when (val idValidation = validateIdStatement(stmtToken, tracker)
-        ) {
-            is ValidationSuccess -> id = idValidation.value
-            is ValidationFailure -> errors.addAll(idValidation.errors)
-        }
-    } else {
-        errors.add(ParseError("An Evaluates: must have an Id", getRow(node), getColumn(node)))
-    }
-
-    val row = getRow(node)
-    val column = getColumn(node)
-
-    val whenToList = mutableListOf<WhenToPair>()
-    var elseSection: ElseSection? = null
-    var usingSection: UsingSection? = null
-    var metaDataSection: MetaDataSection? = null
-    var writtenSection: WrittenSection? = null
-    if (node.sections.isEmpty()) {
-        errors.add(
-            ParseError(message = "Expected an Evaluates section", row = row, column = column))
-    } else {
-        var i = 1
-        while (i < node.sections.size) {
-            val sec = node.sections[i]
-            if (!isWhenSection(sec)) {
-                break
-            }
-            i++
-
-            var whenSection: WhenSection? = null
-            when (val validation = validateWhenSection(sec, tracker)
-            ) {
-                is ValidationSuccess -> whenSection = validation.value
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-
-            if (i >= node.sections.size || !isToSection(node.sections[i])) {
+fun neoValidateEvaluatesGroup(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+    neoTrack(node, tracker) {
+        neoValidateGroup(node, errors, "Evaluates", DEFAULT_EVALUATES_GROUP) { group ->
+            val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+            if (group.sections.isEmpty() || !isEvaluatesSection(group.sections.first())) {
                 errors.add(
                     ParseError(
-                        message = "A when: section must have an to: section",
-                        row = getRow(sec),
-                        column = getColumn(sec)))
-                break
-            }
-
-            var toSection: ToSection? = null
-            when (val validation = validateToSection(node.sections[i], tracker)
-            ) {
-                is ValidationSuccess -> {
-                    i++
-                    toSection = validation.value
-                }
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-
-            if (whenSection != null && toSection != null) {
-                whenToList.add(WhenToPair(whenSection, toSection))
-            }
-        }
-
-        if (i < node.sections.size && isElseSection(node.sections[i])) {
-            when (val validation = validateElseSection(node.sections[i], tracker)
-            ) {
-                is ValidationSuccess -> {
-                    elseSection = validation.value
-                    i++
-                }
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-        }
-
-        if (i < node.sections.size && isUsingSection(node.sections[i])) {
-            when (val validation = validateUsingSection(node.sections[i], tracker)
-            ) {
-                is ValidationSuccess -> {
-                    usingSection = validation.value
-                    i++
-                }
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-        }
-
-        if (i < node.sections.size && isWrittenSection(node.sections[i])) {
-            when (val validation = validateWrittenSection(node.sections[i], tracker)
-            ) {
-                is ValidationSuccess -> {
-                    writtenSection = validation.value
-                    i++
-                }
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-        }
-
-        if (i < node.sections.size && isMetadataSection(node.sections[i])) {
-            when (val metaDataValidation = validateMetaDataSection(node.sections[i++], tracker)
-            ) {
-                is ValidationSuccess -> metaDataSection = metaDataValidation.value
-                is ValidationFailure -> errors.addAll(metaDataValidation.errors)
-            }
-        }
-
-        while (i < node.sections.size) {
-            val sec = node.sections[i++]
-            errors.add(
-                ParseError(
-                    message = "Unexpected section ${sec.name.text}",
-                    row = getRow(sec),
-                    column = getColumn(sec)))
-        }
-    }
-
-    if (elseSection == null) {
-        errors.add(ParseError(message = "Expected an else: section", row = row, column = column))
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else {
-        validationSuccess(
-            EvaluatesGroup(
-                signature = id?.signature(),
-                id = id!!,
-                evaluatesSection = EvaluatesSection(),
-                whenTo = whenToList,
-                usingSection = usingSection,
-                writtenSection = writtenSection,
-                metaDataSection = metaDataSection,
-                elseSection = elseSection!!))
-    }
-}
-
-fun neoValidateEvaluatesGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    neoTrack(node, tracker) {
-        when (val validation = validateEvaluatesGroup(node, newLocationTracker())
-        ) {
-            is ValidationSuccess -> validation.value
-            is ValidationFailure -> {
-                errors.addAll(validation.errors)
+                        message = "Expected an Evaluates section",
+                        row = getRow(node),
+                        column = getColumn(node)
+                    )
+                )
                 DEFAULT_EVALUATES_GROUP
+            } else {
+                val startErrorCount = errors.size
+                val whenToList = mutableListOf<WhenToPair>()
+                var elseSection: ElseSection? = null
+                var usingSection: UsingSection? = null
+                var metaDataSection: MetaDataSection? = null
+                var writtenSection: WrittenSection? = null
+
+                var i = 1
+                while (i < group.sections.size) {
+                    val sec = group.sections[i]
+                    if (!isWhenSection(sec)) {
+                        break
+                    }
+                    i++
+
+                    val whenSection = neoValidateWhenSection(sec, errors, tracker)
+                    if (i >= group.sections.size || !isToSection(group.sections[i])) {
+                        errors.add(
+                            ParseError(
+                                message = "A when: section must have an to: section",
+                                row = getRow(sec),
+                                column = getColumn(sec)))
+                        break
+                    }
+
+                    val toSection = neoValidateToSection(group.sections[i++], errors, tracker)
+                    whenToList.add(WhenToPair(whenSection, toSection))
+                }
+
+                if (i < group.sections.size && isElseSection(group.sections[i])) {
+                    val errorCount = errors.size
+                    elseSection = neoValidateElseSection(group.sections[i], errors, tracker)
+                    if (errorCount == errors.size) {
+                        i++
+                    }
+                }
+
+                if (i < group.sections.size && isUsingSection(group.sections[i])) {
+                    val errorCount = errors.size
+                    usingSection = neoValidateUsingSection(group.sections[i], errors, tracker)
+                    if (errorCount == errors.size) {
+                        i++
+                    }
+                }
+
+                if (i < group.sections.size && isWrittenSection(group.sections[i])) {
+                    val errorCount = errors.size
+                    writtenSection = neoValidateWrittenSection(group.sections[i], errors, tracker)
+                    if (errorCount == errors.size) {
+                        i++
+                    }
+                }
+
+                if (i < group.sections.size && isMetadataSection(group.sections[i])) {
+                    metaDataSection = neoValidateMetaDataSection(group.sections[i++], errors, tracker)
+                }
+
+                while (i < group.sections.size) {
+                    val sec = group.sections[i++]
+                    errors.add(
+                        ParseError(
+                            message = "Unexpected section ${sec.name.text}",
+                            row = getRow(sec),
+                            column = getColumn(sec)))
+                }
+
+                if (elseSection == null) {
+                    errors.add(
+                        ParseError(
+                            message = "Expected an else: section",
+                            row = getRow(node),
+                            column = getColumn(node)
+                        ))
+                }
+
+                if (startErrorCount != errors.size) {
+                    DEFAULT_EVALUATES_GROUP
+                } else {
+                    EvaluatesGroup(
+                        signature = id.signature(),
+                        id = id,
+                        evaluatesSection = neoEnsureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {
+                            neoValidateEvaluatesSection(it, errors, tracker)
+                        },
+                        whenTo = whenToList,
+                        elseSection = elseSection!!,
+                        usingSection = usingSection,
+                        writtenSection = writtenSection,
+                        metaDataSection = metaDataSection
+                    )
+                }
             }
         }
     }

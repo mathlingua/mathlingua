@@ -16,22 +16,16 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.resource
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_RESOURCE_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_RESOURCE_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
@@ -41,7 +35,6 @@ import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class ResourceGroup(
     val id: String,
@@ -74,45 +67,6 @@ data class ResourceGroup(
 }
 
 fun isResourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Resource")
-
-fun validateResourceGroup(groupNode: Group, tracker: MutableLocationTracker) =
-    validateGroup(
-        tracker,
-        groupNode,
-        listOf(
-            Validator(name = "Resource", optional = false, ::validateResourceSection),
-            Validator(name = "Metadata", optional = true, ::validateMetaDataSection))) {
-        val id = groupNode.id
-        val errors = mutableListOf<ParseError>()
-        if (id == null) {
-            errors.add(
-                ParseError(
-                    "A Resource group must have an id", getRow(groupNode), getColumn(groupNode)))
-        }
-
-        // id.text is of the form [...]
-        // The [ and ] need to be removed.
-        val idText = id?.text?.substring(1, id.text.length - 1)
-        if (idText != null && !Regex("[a-zA-Z0-9]+").matches(idText)) {
-            errors.add(
-                ParseError(
-                    "A resource id can only contain numbers and letters",
-                    getRow(groupNode),
-                    getColumn(groupNode)))
-        }
-
-        if (errors.isNotEmpty()) {
-            validationFailure(errors)
-        } else {
-            validationSuccess(
-                tracker,
-                groupNode,
-                ResourceGroup(
-                    id = idText!!,
-                    sourceSection = it["Resource"] as ResourceSection,
-                    metaDataSection = it["Metadata"] as MetaDataSection?))
-        }
-    }
 
 fun neoValidateResourceGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

@@ -16,7 +16,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
@@ -24,23 +23,18 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_STATES_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_STATES_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateIdMetadataGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.neoValidateWrittenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoGetId
 import mathlingua.chalktalk.phase2.ast.neoTrack
@@ -50,8 +44,6 @@ import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.validationSuccess
 import mathlingua.transform.signature
 
 data class StatesGroup(
@@ -106,35 +98,6 @@ data class StatesGroup(
 }
 
 fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
-
-fun validateStatesGroup(
-    groupNode: Group, tracker: MutableLocationTracker
-): Validation<StatesGroup> =
-    validateIdMetadataGroup(
-        tracker,
-        groupNode,
-        listOf(
-            Validator(name = "States", optional = false, ::validateStatesSection),
-            Validator(name = "when", optional = true, ::validateWhenSection),
-            Validator(name = "that", optional = false, ::validateThatSection),
-            Validator(name = "using", optional = true, ::validateUsingSection),
-            Validator(name = "written", optional = true, ::validateWrittenSection))) {
-    id,
-    sections,
-    metaDataSection ->
-        validationSuccess(
-            tracker,
-            groupNode,
-            StatesGroup(
-                id.signature(),
-                id,
-                sections["States"] as StatesSection,
-                sections["when"] as WhenSection?,
-                sections["that"] as ThatSection,
-                sections["using"] as UsingSection?,
-                sections["written"] as WrittenSection?,
-                metaDataSection))
-    }
 
 fun neoValidateStatesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

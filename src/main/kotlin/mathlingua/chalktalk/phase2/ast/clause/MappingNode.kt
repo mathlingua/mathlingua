@@ -29,9 +29,6 @@ data class MappingNode(val mapping: Mapping) : ZeroPartNode(mapping)
 
 fun isMapping(node: Phase1Node) = node is Mapping
 
-fun validateMappingNode(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateWrappedNode(tracker, node, "MappingNode", { it as? Mapping }, ::MappingNode)
-
 fun neoMappingNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =

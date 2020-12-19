@@ -16,20 +16,9 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata
 
-import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.Section
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.support.MutableLocationTracker
-import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 internal fun indentedStringSection(
     writer: CodeWriter, isArg: Boolean, indent: Int, sectionName: String, value: String
@@ -39,43 +28,6 @@ internal fun indentedStringSection(
     writer.writeSpace()
     writer.writeText(value.removeSurrounding("\"", "\""))
     return writer
-}
-
-internal fun <T : Phase2Node> validateStringSection(
-    tracker: MutableLocationTracker,
-    rawNode: Phase1Node,
-    expectedName: String,
-    fn: (text: String) -> T
-): Validation<T> {
-    val node = rawNode.resolve()
-    val errors = ArrayList<ParseError>()
-    if (node !is Section) {
-        errors.add(ParseError("Expected a Section", getRow(node), getColumn(node)))
-    }
-
-    val (name, args) = node as Section
-    if (name.text != expectedName) {
-        errors.add(
-            ParseError(
-                "Expected a Section with name " + expectedName + " but found " + name.text,
-                getRow(node),
-                getColumn(node)))
-    }
-
-    if (args.size != 1 ||
-        args[0].chalkTalkTarget !is Phase1Token ||
-        (args[0].chalkTalkTarget as Phase1Token).type != ChalkTalkTokenType.String) {
-        errors.add(
-            ParseError(
-                "Section '" + name.text + "' requires a single string argument.",
-                getRow(node),
-                getColumn(node)))
-    }
-
-    val token = args[0].chalkTalkTarget as Phase1Token
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else validationSuccess(tracker, rawNode, fn(token.text))
 }
 
 internal fun isSingleSectionGroup(node: Phase1Node): Boolean {

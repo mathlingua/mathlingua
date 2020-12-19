@@ -24,7 +24,6 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateTargetSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
-import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -43,9 +42,6 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
             ExistsSection(
                 identifiers = identifiers.map { it.transform(chalkTransformer) as Target }))
 }
-
-fun validateExistsSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateTargetList(tracker, node, "exists", ::ExistsSection)
 
 fun neoValidateExistsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

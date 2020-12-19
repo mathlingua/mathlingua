@@ -24,16 +24,12 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_FOR_ALL_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_OF_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_WHERE_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
-import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.neoValidateForSection
-import mathlingua.chalktalk.phase2.ast.group.clause.forAll.validateForSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -41,7 +37,6 @@ import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.validationSuccess
 
 data class CollectionGroup(
     val collectionSection: CollectionSection,
@@ -83,28 +78,6 @@ data class CollectionGroup(
 }
 
 fun isCollectionGroup(node: Phase1Node) = firstSectionMatchesName(node, "collection")
-
-fun validateCollectionGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
-    validateGroup(
-        tracker,
-        rawNode,
-        listOf(
-            Validator(
-                name = "collection", optional = false, validate = ::validateCollectionSection),
-            Validator(name = "of", optional = false, validate = ::validateOfSection),
-            Validator(name = "in", optional = true, validate = ::validateInSection),
-            Validator(name = "forAll", optional = false, validate = ::validateForSection),
-            Validator(name = "where", optional = false, validate = ::validateWhereSection))) {
-        validationSuccess(
-            tracker,
-            rawNode,
-            CollectionGroup(
-                collectionSection = it["collection"] as CollectionSection,
-                ofSection = it["of"] as OfSection,
-                inSection = it["in"] as InSection?,
-                forAllSection = it["forAll"] as ForAllSection,
-                whereSection = it["where"] as WhereSection))
-    }
 
 fun neoValidateCollectionGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

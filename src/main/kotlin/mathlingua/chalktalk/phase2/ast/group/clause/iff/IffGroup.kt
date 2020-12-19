@@ -22,11 +22,9 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_IFF_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -38,10 +36,6 @@ data class IffGroup(val iffSection: IffSection, val thenSection: ThenSection) :
     TwoPartNode<IffSection, ThenSection>(iffSection, thenSection, ::IffGroup), Clause
 
 fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
-
-fun validateIffGroup(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateDoubleSectionGroup(
-        tracker, node, "iff", ::validateIffSection, "then", ::validateThenSection, ::IffGroup)
 
 fun neoValidateIffGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

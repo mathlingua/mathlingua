@@ -20,7 +20,6 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_INDUCTIVELY_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_INDUCTIVELY_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
@@ -37,16 +36,6 @@ data class InductivelyGroup(
     Clause
 
 fun isInductivelyGroup(node: Phase1Node) = firstSectionMatchesName(node, "inductively")
-
-fun validateInductivelyGroup(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateDoubleSectionGroup(
-        tracker,
-        node,
-        "inductively",
-        ::validateInductivelySection,
-        "from",
-        ::validateInductivelyFromSection,
-        ::InductivelyGroup)
 
 fun neoValidateInductivelyGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

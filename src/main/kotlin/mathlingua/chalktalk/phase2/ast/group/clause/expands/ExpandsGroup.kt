@@ -21,7 +21,6 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_AS_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_EXPANDS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
@@ -34,16 +33,6 @@ data class ExpandsGroup(val expandsSection: ExpandsSection, val asSection: AsSec
     TwoPartNode<ExpandsSection, AsSection>(expandsSection, asSection, ::ExpandsGroup), Clause
 
 fun isExpandsGroup(node: Phase1Node) = firstSectionMatchesName(node, "expands")
-
-fun validateExpandsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
-    validateDoubleSectionGroup(
-        tracker,
-        rawNode,
-        "expands",
-        ::validateExpandsSection,
-        "as",
-        ::validateAsSection,
-        ::ExpandsGroup)
 
 fun neoValidateExpandsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

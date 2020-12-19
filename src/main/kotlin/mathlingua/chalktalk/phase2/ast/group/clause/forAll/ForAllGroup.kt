@@ -22,17 +22,13 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_FOR_ALL_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateDoubleMidOptionalQuadrupleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.FourPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.neoValidateSuchThatSection
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.validateSuchThatSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -52,20 +48,6 @@ data class ForAllGroup(
     Clause
 
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "forAll")
-
-fun validateForGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
-    validateDoubleMidOptionalQuadrupleSectionGroup(
-        tracker,
-        rawNode,
-        "forAll",
-        ::validateForSection,
-        "where?",
-        ::validateWhereSection,
-        "suchThat?",
-        ::validateSuchThatSection,
-        "then",
-        ::validateThenSection,
-        ::ForAllGroup)
 
 fun neoValidateForGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

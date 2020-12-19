@@ -29,9 +29,6 @@ data class AbstractionNode(val abstraction: Abstraction) : ZeroPartNode(abstract
 
 fun isAbstraction(node: Phase1Node) = node is Abstraction
 
-fun validateAbstractionNode(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateWrappedNode(tracker, node, "AbstractionNode", { it as? Abstraction }, ::AbstractionNode)
-
 fun neoValidateAbstractionNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =

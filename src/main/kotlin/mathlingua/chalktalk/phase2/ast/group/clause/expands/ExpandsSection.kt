@@ -16,23 +16,19 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.expands
 
+import mathlingua.chalktalk.phase1.ast.Abstraction
 import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.getColumn
+import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_EXPANDS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
-import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
-import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.newLocationTracker
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class ExpandsSection(val targets: List<AbstractionNode>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
@@ -50,77 +46,38 @@ data class ExpandsSection(val targets: List<AbstractionNode>) : Phase2Node {
                 targets = targets.map { it.transform(chalkTransformer) as AbstractionNode }))
 }
 
-private data class PseudoExpandsSection(val targets: List<Target>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        throw RuntimeException("PseudoExpandsSection.forEach() should never be invoked")
-    }
-
-    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        throw RuntimeException("PseudoExpandsSection.toCode() should never be invoked")
-    }
-
-    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
-        throw RuntimeException("PseudoExpandsSection.transform() should never be invoked")
-    }
-}
-
 // only x... or {x}... is valid
-private fun isValidAbstraction(node: AbstractionNode) =
-    node.abstraction.subParams == null &&
-        node.abstraction.parts.size == 1 &&
-        node.abstraction.parts[0].subParams == null &&
-        node.abstraction.parts[0].params == null &&
-        ((!node.abstraction.isEnclosed && node.abstraction.parts[0].name.text.endsWith("...")) ||
-            (node.abstraction.isEnclosed &&
-                node.abstraction.isVarArgs &&
-                !node.abstraction.parts[0].name.text.endsWith("...")))
-
-fun validateExpandsSection(
-    node: Phase1Node, tracker: MutableLocationTracker
-): Validation<ExpandsSection> =
-    when (val validation = validateTargetList(tracker, node, "expands", ::PseudoExpandsSection)
-    ) {
-        is ValidationFailure -> validationFailure(validation.errors)
-        is ValidationSuccess -> {
-            val newErrors = mutableListOf<ParseError>()
-            val targets = mutableListOf<AbstractionNode>()
-            for (target in validation.value.targets) {
-                val id =
-                    if (target is AbstractionNode && isValidAbstraction(target)) {
-                        target
-                    } else {
-                        null
-                    }
-                if (id == null) {
-                    newErrors.add(
-                        ParseError(
-                            message =
-                                "an 'expands' section can only contain <name>... or {<name>}...",
-                            row = tracker.getLocationOf(target)?.row ?: -1,
-                            column = tracker.getLocationOf(target)?.column ?: -1))
-                } else {
-                    targets.add(id)
-                }
-            }
-
-            if (newErrors.isEmpty()) {
-                validationSuccess(tracker, node, ExpandsSection(targets = targets))
-            } else {
-                validationFailure(newErrors)
-            }
-        }
-    }
+private fun isValidAbstraction(abstraction: Abstraction) =
+    abstraction.subParams == null &&
+        abstraction.parts.size == 1 &&
+        abstraction.parts[0].subParams == null &&
+        abstraction.parts[0].params == null &&
+        ((!abstraction.isEnclosed && abstraction.parts[0].name.text.endsWith("...")) ||
+            (abstraction.isEnclosed &&
+                abstraction.isVarArgs &&
+                !abstraction.parts[0].name.text.endsWith("...")))
 
 fun neoValidateExpandsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-): ExpandsSection =
+) =
     neoTrack(node, tracker) {
-        when (val validation = validateExpandsSection(node, newLocationTracker())
-        ) {
-            is ValidationSuccess -> validation.value
-            is ValidationFailure -> {
-                errors.addAll(validation.errors)
+        neoValidateSection(node, errors, "expands", DEFAULT_EXPANDS_SECTION) { section ->
+            if (section.args.isEmpty() ||
+                section.args.any {
+                    it.chalkTalkTarget !is Abstraction || !isValidAbstraction(it.chalkTalkTarget)
+                }) {
+                errors.add(
+                    ParseError(
+                        message = "Expected an abstraction",
+                        row = getRow(node),
+                        column = getColumn(node)))
                 DEFAULT_EXPANDS_SECTION
+            } else {
+                ExpandsSection(
+                    targets =
+                        section.args.map {
+                            AbstractionNode(abstraction = it.chalkTalkTarget as Abstraction)
+                        })
             }
         }
     }

@@ -16,9 +16,20 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section
 
+import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.Phase1Token
+import mathlingua.chalktalk.phase1.ast.getColumn
+import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
+import mathlingua.chalktalk.phase2.ast.DEFAULT_SOURCE_ITEM_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.indentedStringSection
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
+import mathlingua.support.MutableLocationTracker
+import mathlingua.support.ParseError
 
 data class SourceItemSection(val sourceReference: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -30,3 +41,23 @@ data class SourceItemSection(val sourceReference: String) : Phase2Node {
         return chalkTransformer(this)
     }
 }
+
+fun neoValidateSourceItemSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(node, tracker) {
+        neoValidateSection(node, errors, "source", DEFAULT_SOURCE_ITEM_SECTION) { section ->
+            neoValidateSingleArg(section, errors, DEFAULT_SOURCE_ITEM_SECTION, "string") { arg ->
+                if (arg !is Phase1Token || arg.type != ChalkTalkTokenType.String) {
+                    errors.add(
+                        ParseError(
+                            message = "Expected a string",
+                            row = getRow(node),
+                            column = getColumn(node)))
+                    DEFAULT_SOURCE_ITEM_SECTION
+                } else {
+                    SourceItemSection(sourceReference = arg.text)
+                }
+            }
+        }
+    }

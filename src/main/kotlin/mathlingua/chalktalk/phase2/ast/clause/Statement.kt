@@ -19,8 +19,6 @@ package mathlingua.chalktalk.phase2.ast.clause
 import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_STATEMENT
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
@@ -51,44 +49,6 @@ data class Statement(val text: String, val texTalkRoot: Validation<ExpressionTex
 
 fun isStatement(node: Phase1Node) =
     node is Phase1Token && node.type === ChalkTalkTokenType.Statement
-
-fun validateStatement(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Statement> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Phase1Token) {
-        errors.add(ParseError("Expected a statement", getRow(node), getColumn(node)))
-        return validationFailure(errors)
-    }
-
-    val (rawText, type, row, column) = node
-    if (type !== ChalkTalkTokenType.Statement) {
-        errors.add(ParseError("Cannot convert a " + node.toCode() + " to a Statement", row, column))
-        return validationFailure(errors)
-    }
-
-    // the text is of the form '...'
-    // so the open and closing ' need to be trimmed
-    val text = rawText.substring(1, rawText.length - 1)
-
-    val texTalkErrors = ArrayList<ParseError>()
-
-    val lexer = newTexTalkLexer(text)
-    texTalkErrors.addAll(lexer.errors)
-
-    val parser = newTexTalkParser()
-    val result = parser.parse(lexer)
-    texTalkErrors.addAll(result.errors)
-
-    val validation: Validation<ExpressionTexTalkNode> =
-        if (texTalkErrors.isEmpty()) {
-            validationSuccess(result.root)
-        } else {
-            validationFailure(texTalkErrors)
-        }
-
-    return validationSuccess(tracker, rawNode, Statement(text, validation))
-}
 
 fun neoValidateStatement(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

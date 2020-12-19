@@ -24,20 +24,16 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_MAPPING_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_MAPPING_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_TO_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
-import mathlingua.chalktalk.phase2.ast.clause.Validator
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.AsSection
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.neoValidateAsSection
-import mathlingua.chalktalk.phase2.ast.group.clause.expands.validateAsSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.validationSuccess
 
 data class MappingGroup(
     val mappingSection: MappingSection,
@@ -66,25 +62,6 @@ data class MappingGroup(
 }
 
 fun isMappingGroup(node: Phase1Node) = firstSectionMatchesName(node, "mapping")
-
-fun validateMappingGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
-    validateGroup(
-        tracker,
-        rawNode,
-        listOf(
-            Validator(name = "mapping", optional = false, validate = ::validateMappingSection),
-            Validator(name = "from", optional = false, validate = ::validateFromSection),
-            Validator(name = "to", optional = false, validate = ::validateToSection),
-            Validator(name = "as", optional = false, validate = ::validateAsSection))) {
-        validationSuccess(
-            tracker,
-            rawNode,
-            MappingGroup(
-                mappingSection = it["mapping"] as MappingSection,
-                fromSection = it["from"] as FromSection,
-                toSection = it["to"] as ToSection,
-                asSection = it["as"] as AsSection))
-    }
 
 fun neoValidateMappingGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

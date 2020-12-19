@@ -23,7 +23,6 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_IF_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateDoubleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
@@ -52,10 +51,6 @@ data class IfGroup(val ifSection: IfSection, val thenSection: ThenSection) : Cla
 }
 
 fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
-
-fun validateIfGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
-    validateDoubleSectionGroup(
-        tracker, rawNode, "if", ::validateIfSection, "then", ::validateThenSection, ::IfGroup)
 
 fun neoValidateIfGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

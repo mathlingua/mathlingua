@@ -25,8 +25,6 @@ import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.validator.AtLeast
-import mathlingua.chalktalk.phase2.ast.validator.validateClauseList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -48,9 +46,6 @@ data class AsSection(val clauses: ClauseListNode) : Phase2Node {
 }
 
 fun isAsSection(sec: Section) = sec.name.text == "as"
-
-fun validateAsSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateClauseList(AtLeast(1), tracker, node, "as", ::AsSection)
 
 fun neoValidateAsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

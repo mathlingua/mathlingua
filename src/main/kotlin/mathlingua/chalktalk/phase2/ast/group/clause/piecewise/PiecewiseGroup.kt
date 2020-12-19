@@ -14,7 +14,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.clause.piecewise
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
@@ -25,22 +24,19 @@ import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.validateElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.WhenToPair
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.isToSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateToSection
+import mathlingua.chalktalk.phase2.ast.group.clause.mapping.neoValidateToSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class PiecewiseGroup(
     val piecewiseSection: PiecewiseSection,
@@ -84,102 +80,61 @@ data class PiecewiseGroup(
 
 fun isPiecewiseGroup(node: Phase1Node) = firstSectionMatchesName(node, "piecewise")
 
-fun validatePiecewiseGroup(
-    rawNode: Phase1Node, tracker: MutableLocationTracker
-): Validation<PiecewiseGroup> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Group) {
-        errors.add(ParseError("Expected a Group", getRow(node), getColumn(node)))
-        return validationFailure(errors)
-    }
-
-    val row = getRow(node)
-    val column = getColumn(node)
-
-    val whenToList = mutableListOf<WhenToPair>()
-    var elseSection: ElseSection? = null
-    if (node.sections.isEmpty()) {
-        errors.add(
-            ParseError(message = "Expected an piecewise: section", row = row, column = column))
-    } else {
-        var i = 1
-        while (i < node.sections.size) {
-            val sec = node.sections[i]
-            if (!isWhenSection(sec)) {
-                break
-            }
-            i++
-
-            var whenSection: WhenSection? = null
-            when (val validation = validateWhenSection(sec, tracker)
-            ) {
-                is ValidationSuccess -> whenSection = validation.value
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-
-            if (i >= node.sections.size || !isToSection(node.sections[i])) {
-                errors.add(
-                    ParseError(
-                        message = "A when: section must have an to: section",
-                        row = getRow(sec),
-                        column = getColumn(sec)))
-                break
-            }
-
-            var toSection: ToSection? = null
-            when (val validation = validateToSection(node.sections[i], tracker)
-            ) {
-                is ValidationSuccess -> {
-                    i++
-                    toSection = validation.value
-                }
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-
-            if (whenSection != null && toSection != null) {
-                whenToList.add(WhenToPair(whenSection, toSection))
-            }
-        }
-
-        if (i < node.sections.size && isElseSection(node.sections[i])) {
-            when (val validation = validateElseSection(node.sections[i], tracker)
-            ) {
-                is ValidationSuccess -> {
-                    i++
-                    elseSection = validation.value
-                }
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-        }
-
-        while (i < node.sections.size) {
-            val sec = node.sections[i++]
-            errors.add(
-                ParseError(
-                    message = "Unexpected section ${sec.name.text}",
-                    row = getRow(sec),
-                    column = getColumn(sec)))
-        }
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else {
-        validationSuccess(
-            PiecewiseGroup(piecewiseSection = PiecewiseSection(), whenTo = whenToList, elseSection))
-    }
-}
-
 fun neoValidatePiecewiseGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    when (val validation = validatePiecewiseGroup(node, tracker)
-    ) {
-        is ValidationSuccess -> validation.value
-        is ValidationFailure -> {
-            errors.addAll(validation.errors)
-            DEFAULT_PIECEWISE_GROUP
+    neoTrack(node, tracker) {
+        neoValidateGroup(node.resolve(), errors, "piecewise", DEFAULT_PIECEWISE_GROUP) { group ->
+            if (group.sections.isEmpty() || !isPiecewiseSection(group.sections.first())) {
+                errors.add(
+                    ParseError(
+                        message = "Expected an piecewise: section",
+                        row = getRow(node),
+                        column = getColumn(node)))
+                return@neoValidateGroup DEFAULT_PIECEWISE_GROUP
+            }
+
+            val piecewiseSection =
+                neoValidatePiecewiseSection(group.sections.first(), errors, tracker)
+            val whenToList = mutableListOf<WhenToPair>()
+            var elseSection: ElseSection? = null
+
+            var i = 1
+            while (i < group.sections.size) {
+                val sec = group.sections[i]
+                if (!isWhenSection(sec)) {
+                    break
+                }
+                i++
+
+                val whenSection = neoValidateWhenSection(sec, errors, tracker)
+                if (i >= group.sections.size || !isToSection(group.sections[i])) {
+                    errors.add(
+                        ParseError(
+                            message = "A when: section must have an to: section",
+                            row = getRow(sec),
+                            column = getColumn(sec)))
+                    break
+                }
+
+                val toSection = neoValidateToSection(group.sections[i++], errors, tracker)
+                whenToList.add(WhenToPair(whenSection, toSection))
+            }
+
+            if (i < group.sections.size && isElseSection(group.sections[i])) {
+                elseSection = neoValidateElseSection(group.sections[i++], errors, tracker)
+            }
+
+            while (i < group.sections.size) {
+                val sec = group.sections[i++]
+                errors.add(
+                    ParseError(
+                        message = "Unexpected section ${sec.name.text}",
+                        row = getRow(sec),
+                        column = getColumn(sec)))
+            }
+
+            PiecewiseGroup(
+                piecewiseSection = piecewiseSection, whenTo = whenToList, elseSection = elseSection)
         }
     }

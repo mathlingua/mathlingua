@@ -20,7 +20,6 @@ import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
@@ -34,11 +33,6 @@ import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 val SOURCE_ITEM_CONSTRAINTS =
     mapOf(
@@ -71,106 +65,84 @@ class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validateResourceSection(
-    section: Section, tracker: MutableLocationTracker
-): Validation<ResourceSection> {
-    if (section.name.text != "Resource") {
-        return validationFailure(
-            listOf(
-                ParseError(
-                    "Expected a 'Resource' but found '${section.name.text}'",
-                    getRow(section),
-                    getColumn(section))))
-    }
-
-    val errors = mutableListOf<ParseError>()
-    val items = mutableListOf<StringSectionGroup>()
-    for (arg in section.args) {
-        if (isSingleSectionGroup(arg.chalkTalkTarget)) {
-            val group = arg.chalkTalkTarget as Group
-            val sect = group.sections[0]
-            val name = sect.name.text
-            if (SOURCE_ITEM_CONSTRAINTS.containsKey(name)) {
-                val expectedCount = SOURCE_ITEM_CONSTRAINTS[name]!!
-                if (expectedCount >= 0 && sect.args.size != expectedCount) {
-                    errors.add(
-                        ParseError(
-                            message =
-                                "Expected $expectedCount arguments for " +
-                                    "section $name but found ${sect.args.size}",
-                            row = getRow(sect),
-                            column = getColumn(sect)))
-                } else if (expectedCount < 0 && sect.args.size < -expectedCount) {
-                    errors.add(
-                        ParseError(
-                            message =
-                                "Expected at least ${-expectedCount} arguments for " +
-                                    "section $name but found ${sect.args.size}",
-                            row = getRow(sect),
-                            column = getColumn(sect)))
-                }
-
-                val values = mutableListOf<String>()
-                for (a in sect.args) {
-                    if (a.chalkTalkTarget is Phase1Token &&
-                        a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
-                        values.add(a.chalkTalkTarget.text)
-                    } else {
-                        errors.add(
-                            ParseError(
-                                message = "Expected a string but found ${a.chalkTalkTarget}",
-                                row = getRow(a.chalkTalkTarget),
-                                column = getColumn(a.chalkTalkTarget)))
-                    }
-                }
-
-                val location = Location(row = getRow(arg), column = getColumn(arg))
-
-                val s = StringSection(name = name, values = values)
-                tracker.setLocationOf(s, location)
-
-                val res = StringSectionGroup(section = s)
-                tracker.setLocationOf(res, location)
-
-                items.add(res)
-            } else {
-                errors.add(
-                    ParseError(
-                        message =
-                            "Expected a section with one of " +
-                                "the names ${SOURCE_ITEM_CONSTRAINTS.keys}",
-                        row = getRow(arg),
-                        column = getColumn(arg)))
-            }
-        } else {
-            errors.add(
-                ParseError(
-                    message = "Unexpected item '${arg.toCode()}'",
-                    row = getRow(arg),
-                    column = getColumn(arg)))
-        }
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else {
-        validationSuccess(tracker, section, ResourceSection(items = items))
-    }
-}
-
 fun neoValidateResourceSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "Resource", DEFAULT_RESOURCE_SECTION) {
-        section ->
-            when (val validation = validateResourceSection(section, tracker)
-            ) {
-                is ValidationSuccess -> validation.value
-                is ValidationFailure -> {
-                    errors.addAll(validation.errors)
-                    DEFAULT_RESOURCE_SECTION
+        neoValidateSection(node, errors, "Resource", DEFAULT_RESOURCE_SECTION) { section ->
+            val startErrorCount = errors.size
+            val items = mutableListOf<StringSectionGroup>()
+            for (arg in section.args) {
+                if (isSingleSectionGroup(arg.chalkTalkTarget)) {
+                    val group = arg.chalkTalkTarget as Group
+                    val sect = group.sections[0]
+                    val name = sect.name.text
+                    if (SOURCE_ITEM_CONSTRAINTS.containsKey(name)) {
+                        val expectedCount = SOURCE_ITEM_CONSTRAINTS[name]!!
+                        if (expectedCount >= 0 && sect.args.size != expectedCount) {
+                            errors.add(
+                                ParseError(
+                                    message =
+                                        "Expected $expectedCount arguments for " +
+                                            "section $name but found ${sect.args.size}",
+                                    row = getRow(sect),
+                                    column = getColumn(sect)))
+                        } else if (expectedCount < 0 && sect.args.size < -expectedCount) {
+                            errors.add(
+                                ParseError(
+                                    message =
+                                        "Expected at least ${-expectedCount} arguments for " +
+                                            "section $name but found ${sect.args.size}",
+                                    row = getRow(sect),
+                                    column = getColumn(sect)))
+                        }
+
+                        val values = mutableListOf<String>()
+                        for (a in sect.args) {
+                            if (a.chalkTalkTarget is Phase1Token &&
+                                a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
+                                values.add(a.chalkTalkTarget.text)
+                            } else {
+                                errors.add(
+                                    ParseError(
+                                        message =
+                                            "Expected a string but found ${a.chalkTalkTarget}",
+                                        row = getRow(a.chalkTalkTarget),
+                                        column = getColumn(a.chalkTalkTarget)))
+                            }
+                        }
+
+                        val location = Location(row = getRow(arg), column = getColumn(arg))
+
+                        val s = StringSection(name = name, values = values)
+                        tracker.setLocationOf(s, location)
+
+                        val res = StringSectionGroup(section = s)
+                        tracker.setLocationOf(res, location)
+
+                        items.add(res)
+                    } else {
+                        errors.add(
+                            ParseError(
+                                message =
+                                    "Expected a section with one of " +
+                                        "the names ${SOURCE_ITEM_CONSTRAINTS.keys}",
+                                row = getRow(arg),
+                                column = getColumn(arg)))
+                    }
+                } else {
+                    errors.add(
+                        ParseError(
+                            message = "Unexpected item '${arg.toCode()}'",
+                            row = getRow(arg),
+                            column = getColumn(arg)))
                 }
+            }
+
+            if (startErrorCount != errors.size) {
+                DEFAULT_RESOURCE_SECTION
+            } else {
+                ResourceSection(items = items)
             }
         }
     }

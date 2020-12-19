@@ -19,8 +19,6 @@ package mathlingua.chalktalk.phase2.ast.clause
 import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_TEXT
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
@@ -28,9 +26,6 @@ import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class Text(val text: String) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -46,24 +41,6 @@ data class Text(val text: String) : Clause {
 }
 
 fun isText(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.String
-
-fun validateText(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Text> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Phase1Token) {
-        errors.add(
-            ParseError("Cannot convert a to a ChalkTalkToken", getRow(node), getColumn(node)))
-    }
-
-    val (text, type, row, column) = node as Phase1Token
-    if (type !== ChalkTalkTokenType.String) {
-        errors.add(ParseError("Cannot convert a " + node.toCode() + " to Text", row, column))
-        return validationFailure(errors)
-    }
-
-    return validationSuccess(tracker, rawNode, Text(text))
-}
 
 fun neoValidateText(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

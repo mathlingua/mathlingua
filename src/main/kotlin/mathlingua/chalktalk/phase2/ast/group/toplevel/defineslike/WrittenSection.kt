@@ -25,12 +25,10 @@ import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.toplevel.validateTextListSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
 
 data class WrittenSection(val forms: List<String>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -51,11 +49,6 @@ data class WrittenSection(val forms: List<String>) : Phase2Node {
 }
 
 fun isWrittenSection(sec: Section) = sec.name.text == "written"
-
-fun validateWrittenSection(
-    rawNode: Phase1Node, tracker: MutableLocationTracker
-): Validation<WrittenSection> =
-    validateTextListSection(rawNode, tracker, "written", ::WrittenSection)
 
 fun neoValidateWrittenSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

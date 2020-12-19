@@ -16,7 +16,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_FOUNDATION_GROUP
@@ -28,7 +27,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.group.toplevel.validateSingleSectionMetaDataGroup
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -62,10 +60,6 @@ data class FoundationGroup(
 }
 
 fun isFoundationGroup(node: Phase1Node) = firstSectionMatchesName(node, "Foundation")
-
-fun validateFoundationGroup(groupNode: Group, tracker: MutableLocationTracker) =
-    validateSingleSectionMetaDataGroup(
-        tracker, groupNode, "Foundation", ::validateFoundationSection, ::FoundationGroup)
 
 fun neoValidateFoundationGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

@@ -16,7 +16,6 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_CONJECTURE_GROUP
@@ -36,7 +35,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ne
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.group.toplevel.validateResultLikeGroup
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -97,10 +95,6 @@ data class ConjectureGroup(
 }
 
 fun isConjectureGroup(node: Phase1Node) = firstSectionMatchesName(node, "Conjecture")
-
-fun validateConjectureGroup(groupNode: Group, tracker: MutableLocationTracker) =
-    validateResultLikeGroup(
-        tracker, groupNode, "Conjecture", ::validateConjectureSection, ::ConjectureGroup)
 
 fun neoValidateConjectureGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

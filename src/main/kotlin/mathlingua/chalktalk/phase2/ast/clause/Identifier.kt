@@ -19,8 +19,6 @@ package mathlingua.chalktalk.phase2.ast.clause
 import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_IDENTIFIER
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
@@ -28,9 +26,6 @@ import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -46,33 +41,6 @@ data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
 }
 
 fun isIdentifier(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Name
-
-fun validateIdentifier(
-    rawNode: Phase1Node, tracker: MutableLocationTracker
-): Validation<Identifier> {
-    val node = rawNode.resolve()
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Phase1Token) {
-        errors.add(ParseError("Cannot convert to a ChalkTalkToken", getRow(node), getColumn(node)))
-        return validationFailure(errors)
-    }
-
-    val (text, type, row, column) = node
-    if (type !== ChalkTalkTokenType.Name) {
-        errors.add(ParseError("A token of type $type is not an identifier", row, column))
-        return validationFailure(errors)
-    }
-
-    var realText = text
-    var isVarArgs = false
-    if (text.endsWith("...")) {
-        realText = text.substring(0, text.length - 3)
-        isVarArgs = true
-    }
-
-    return validationSuccess(tracker, rawNode, Identifier(name = realText, isVarArgs = isVarArgs))
-}
 
 fun neoValidateIdentifier(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

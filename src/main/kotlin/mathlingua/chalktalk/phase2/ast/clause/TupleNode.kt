@@ -29,9 +29,6 @@ data class TupleNode(val tuple: Tuple) : ZeroPartNode(tuple), Target
 
 fun isTuple(node: Phase1Node) = node is Tuple
 
-fun validateTupleNode(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateWrappedNode(tracker, node, "TupleNode", { it as? Tuple }, ::TupleNode)
-
 fun neoValidateTupleNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =

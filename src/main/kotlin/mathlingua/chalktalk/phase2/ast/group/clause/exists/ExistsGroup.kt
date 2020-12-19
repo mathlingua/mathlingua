@@ -22,11 +22,9 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_EXISTS_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.chalktalk.phase2.ast.clause.validateMidOptionalTripleSectionGroup
 import mathlingua.chalktalk.phase2.ast.common.ThreePartNode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -45,18 +43,6 @@ data class ExistsGroup(
     Clause
 
 fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
-
-fun validateExistsGroup(rawNode: Phase1Node, tracker: MutableLocationTracker) =
-    validateMidOptionalTripleSectionGroup(
-        tracker,
-        rawNode,
-        "exists",
-        ::validateExistsSection,
-        "where?",
-        ::validateWhereSection,
-        "suchThat",
-        ::validateSuchThatSection,
-        ::ExistsGroup)
 
 fun neoValidateExistsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

@@ -16,18 +16,8 @@
 
 package mathlingua.chalktalk.phase2.ast.section
 
-import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.Section
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.support.MutableLocationTracker
-import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class TextSection(val name: String, val text: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -43,47 +33,4 @@ data class TextSection(val name: String, val text: String) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(this)
-}
-
-fun validateTextSection(
-    rawNode: Phase1Node, name: String, tracker: MutableLocationTracker
-): Validation<TextSection> {
-    val node = rawNode.resolve()
-    val row = getRow(node)
-    val column = getColumn(node)
-
-    val errors = ArrayList<ParseError>()
-    if (node !is Section) {
-        errors.add(ParseError("Expected a Section", getRow(node), getColumn(node)))
-    }
-
-    val sect = node as Section
-    if (sect.name.text != name) {
-        errors.add(
-            ParseError(
-                "Expected a Section with name " + name + " but found " + sect.name.text,
-                row,
-                column))
-    }
-
-    if (sect.args.size != 1) {
-        errors.add(
-            ParseError(
-                "Section '" + sect.name.text + "' requires exactly one text argument.",
-                row,
-                column))
-        return validationFailure(errors)
-    }
-
-    val arg = sect.args[0].chalkTalkTarget
-    if (arg !is Phase1Token) {
-        errors.add(ParseError("Expected a string but found ${arg.toCode()}", row, column))
-    }
-
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else {
-        validationSuccess(
-            tracker, rawNode, TextSection(name = name, text = (arg as Phase1Token).text))
-    }
 }

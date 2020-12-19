@@ -114,7 +114,16 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.Theorem
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ReferenceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SourceItemGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ContentItemSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.OffsetItemSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.PageItemSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ReferenceSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SourceItemSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.StringSection
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -560,3 +569,27 @@ val DEFAULT_EVALUATES_GROUP =
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_SOURCE_ITEM_SECTION = SourceItemSection(sourceReference = "")
+
+val DEFAULT_CONTENT_ITEM_SECTION = ContentItemSection(content = "")
+
+val DEFAULT_OFFSET_ITEM_SECTION = OffsetItemSection(offset = "")
+
+val DEFAULT_PAGE_ITEM_SECTION = PageItemSection(page = "")
+
+val DEFAULT_REFERENCE_SECTION = ReferenceSection(sourceItems = emptyList())
+
+val DEFAULT_REFERENCE_GROUP = ReferenceGroup(referenceSection = DEFAULT_REFERENCE_SECTION)
+
+val DEFAULT_STRING_SECTION = StringSection(name = "", values = emptyList())
+
+val DEFAULT_SOURCE_ITEM_GROUP =
+    SourceItemGroup(
+        sourceSection = DEFAULT_SOURCE_ITEM_SECTION,
+        pageSection = DEFAULT_PAGE_ITEM_SECTION,
+        offsetSection = DEFAULT_OFFSET_ITEM_SECTION,
+        contentSection = DEFAULT_CONTENT_ITEM_SECTION)
+
+val DEFAULT_META_DATA_ITEM =
+    StringSectionGroup(section = StringSection(name = "", values = emptyList()))

@@ -26,14 +26,8 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_CONTENT_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.section.validateTextSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class ContentSection(val text: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
@@ -49,16 +43,6 @@ data class ContentSection(val text: String) : Phase2Node {
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(this)
 }
-
-fun validateContentSection(
-    rawNode: Phase1Node, tracker: MutableLocationTracker
-): Validation<ContentSection> =
-    when (val validation = validateTextSection(rawNode, "content", tracker)
-    ) {
-        is ValidationFailure -> validationFailure(validation.errors)
-        is ValidationSuccess ->
-            validationSuccess(tracker, rawNode, ContentSection(validation.value.text))
-    }
 
 fun neoValidateContentSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

@@ -24,7 +24,6 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateTargetSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
-import mathlingua.chalktalk.phase2.ast.validator.validateTargetList
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -42,9 +41,6 @@ data class DefinesSection(val targets: List<Target>) : Phase2Node {
         chalkTransformer(
             DefinesSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
 }
-
-fun validateDefinesSection(node: Phase1Node, tracker: MutableLocationTracker) =
-    validateTargetList(tracker, node, "Defines", ::DefinesSection)
 
 fun neoValidateDefinesSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

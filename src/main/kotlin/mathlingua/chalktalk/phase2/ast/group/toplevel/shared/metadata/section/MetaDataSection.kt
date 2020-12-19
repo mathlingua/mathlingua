@@ -19,29 +19,22 @@ package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section
 import mathlingua.chalktalk.phase1.ast.Argument
 import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Group
-import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.DEFAULT_META_DATA_SECTION
+import mathlingua.chalktalk.phase2.ast.DEFAULT_META_DATA_ITEM
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.isSingleSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.MetaDataItem
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isReferenceGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateReferenceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.neoValidateReferenceGroup
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 private val META_DATA_ITEM_CONSTRAINTS =
     mapOf(
@@ -75,114 +68,78 @@ data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
 
 fun isMetadataSection(sec: Section) = sec.name.text == "Metadata"
 
-fun validateMetaDataSection(
-    section: Section, tracker: MutableLocationTracker
-): Validation<MetaDataSection> {
-    if (section.name.text != "Metadata") {
-        return validationFailure(
-            listOf(
-                ParseError(
-                    "Expected a 'Metadata' but found '${section.name.text}'",
-                    getRow(section),
-                    getColumn(section))))
-    }
+fun neoValidateMetaDataSection(
+    section: Section, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
+    neoTrack(section, tracker) {
+        val items = mutableListOf<MetaDataItem>()
+        for (arg in section.args) {
+            if (isReferenceGroup(arg.chalkTalkTarget)) {
+                items.add(neoValidateMetaDataItem(arg, errors, tracker))
+            } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
+                val group = arg.chalkTalkTarget as Group
+                val sect = group.sections[0]
+                val name = sect.name.text
+                if (META_DATA_ITEM_CONSTRAINTS.containsKey(name)) {
+                    val expectedCount = META_DATA_ITEM_CONSTRAINTS[name]!!
+                    if (expectedCount >= 0 && sect.args.size != expectedCount) {
+                        errors.add(
+                            ParseError(
+                                message =
+                                    "Expected $expectedCount arguments for " +
+                                        "section $name but found ${sect.args.size}",
+                                row = getRow(sect),
+                                column = getColumn(sect)))
+                    }
+                    val values = mutableListOf<String>()
+                    for (a in sect.args) {
+                        if (a.chalkTalkTarget is Phase1Token &&
+                            a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
+                            values.add(a.chalkTalkTarget.text)
+                        } else {
+                            errors.add(
+                                ParseError(
+                                    message = "Expected a string but found ${a.chalkTalkTarget}",
+                                    row = getRow(a.chalkTalkTarget),
+                                    column = getColumn(a.chalkTalkTarget)))
+                        }
+                    }
+                    val location = Location(row = getRow(sect), column = getColumn(sect))
 
-    val errors = mutableListOf<ParseError>()
-    val items = mutableListOf<MetaDataItem>()
-    for (arg in section.args) {
-        if (isReferenceGroup(arg.chalkTalkTarget)) {
-            when (val validation = validateMetaDataItem(arg, tracker)
-            ) {
-                is ValidationSuccess -> items.add(validation.value)
-                is ValidationFailure -> errors.addAll(validation.errors)
-            }
-        } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
-            val group = arg.chalkTalkTarget as Group
-            val sect = group.sections[0]
-            val name = sect.name.text
-            if (META_DATA_ITEM_CONSTRAINTS.containsKey(name)) {
-                val expectedCount = META_DATA_ITEM_CONSTRAINTS[name]!!
-                if (expectedCount >= 0 && sect.args.size != expectedCount) {
+                    val s = StringSection(name = name, values = values)
+                    tracker.setLocationOf(s, location)
+
+                    val res = StringSectionGroup(section = s)
+                    tracker.setLocationOf(res, location)
+
+                    items.add(res)
+                } else {
                     errors.add(
                         ParseError(
                             message =
-                                "Expected $expectedCount arguments for " +
-                                    "section $name but found ${sect.args.size}",
-                            row = getRow(sect),
-                            column = getColumn(sect)))
+                                "Expected a section with one of " +
+                                    "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
+                            row = getRow(arg),
+                            column = getColumn(arg)))
                 }
-                val values = mutableListOf<String>()
-                for (a in sect.args) {
-                    if (a.chalkTalkTarget is Phase1Token &&
-                        a.chalkTalkTarget.type == ChalkTalkTokenType.String) {
-                        values.add(a.chalkTalkTarget.text)
-                    } else {
-                        errors.add(
-                            ParseError(
-                                message = "Expected a string but found ${a.chalkTalkTarget}",
-                                row = getRow(a.chalkTalkTarget),
-                                column = getColumn(a.chalkTalkTarget)))
-                    }
-                }
-                val location = Location(row = getRow(sect), column = getColumn(sect))
-
-                val s = StringSection(name = name, values = values)
-                tracker.setLocationOf(s, location)
-
-                val res = StringSectionGroup(section = s)
-                tracker.setLocationOf(res, location)
-
-                items.add(res)
             } else {
                 errors.add(
                     ParseError(
-                        message =
-                            "Expected a section with one of " +
-                                "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
+                        message = "Unexpected item '${arg.toCode()}'",
                         row = getRow(arg),
                         column = getColumn(arg)))
             }
-        } else {
-            errors.add(
-                ParseError(
-                    message = "Unexpected item '${arg.toCode()}'",
-                    row = getRow(arg),
-                    column = getColumn(arg)))
         }
+        MetaDataSection(items = items)
     }
 
-    return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else {
-        validationSuccess(tracker, section, MetaDataSection(items = items))
-    }
-}
-
-private fun validateMetaDataItem(
-    arg: Argument, tracker: MutableLocationTracker
-): Validation<MetaDataItem> {
+private fun neoValidateMetaDataItem(
+    arg: Argument, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+): MetaDataItem =
     if (arg.chalkTalkTarget !is Group) {
-        return validationFailure(
-            listOf(
-                ParseError(
-                    message = "Expected a group", row = getRow(arg), column = getColumn(arg))))
-    }
-
-    return validateReferenceGroup(arg.chalkTalkTarget, tracker)
-}
-
-fun neoValidateMetaDataSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    neoTrack(node, tracker) {
-        neoValidateSection(node, errors, "Metadata", DEFAULT_META_DATA_SECTION) {
-            when (val validation = validateMetaDataSection(it, tracker)
-            ) {
-                is ValidationSuccess -> validation.value
-                is ValidationFailure -> {
-                    errors.addAll(validation.errors)
-                    DEFAULT_META_DATA_SECTION
-                }
-            }
-        }
+        errors.add(
+            ParseError(message = "Expected a group", row = getRow(arg), column = getColumn(arg)))
+        DEFAULT_META_DATA_ITEM
+    } else {
+        neoValidateReferenceGroup(arg.chalkTalkTarget, errors, tracker)
     }

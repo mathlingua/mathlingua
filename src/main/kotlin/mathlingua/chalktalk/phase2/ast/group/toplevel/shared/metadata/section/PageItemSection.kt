@@ -22,7 +22,6 @@ import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.DEFAULT_CONTENT_ITEM_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_PAGE_ITEM_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.indentedStringSection
@@ -43,7 +42,9 @@ data class PageItemSection(val page: String) : Phase2Node {
     }
 }
 
-fun neoValidatePageItemSection(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidatePageItemSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateSection(node, errors, "page", DEFAULT_PAGE_ITEM_SECTION) { section ->
             neoValidateSingleArg(section, errors, DEFAULT_PAGE_ITEM_SECTION, "string") { arg ->
@@ -52,14 +53,10 @@ fun neoValidatePageItemSection(node: Phase1Node, errors: MutableList<ParseError>
                         ParseError(
                             message = "Expected a string",
                             row = getRow(node),
-                            column = getColumn(node)
-                        )
-                    )
+                            column = getColumn(node)))
                     DEFAULT_PAGE_ITEM_SECTION
                 } else {
-                    PageItemSection(
-                        page = arg.text
-                    )
+                    PageItemSection(page = arg.text)
                 }
             }
         }

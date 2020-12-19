@@ -570,45 +570,26 @@ val DEFAULT_EVALUATES_GROUP =
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_SOURCE_ITEM_SECTION = SourceItemSection(
-    sourceReference = ""
-)
+val DEFAULT_SOURCE_ITEM_SECTION = SourceItemSection(sourceReference = "")
 
-val DEFAULT_CONTENT_ITEM_SECTION = ContentItemSection(
-    content = ""
-)
+val DEFAULT_CONTENT_ITEM_SECTION = ContentItemSection(content = "")
 
-val DEFAULT_OFFSET_ITEM_SECTION = OffsetItemSection(
-    offset = ""
-)
+val DEFAULT_OFFSET_ITEM_SECTION = OffsetItemSection(offset = "")
 
-val DEFAULT_PAGE_ITEM_SECTION = PageItemSection(
-    page = ""
-)
+val DEFAULT_PAGE_ITEM_SECTION = PageItemSection(page = "")
 
-val DEFAULT_REFERENCE_SECTION = ReferenceSection(
-    sourceItems = emptyList()
-)
+val DEFAULT_REFERENCE_SECTION = ReferenceSection(sourceItems = emptyList())
 
-val DEFAULT_REFERENCE_GROUP = ReferenceGroup(
-    referenceSection = DEFAULT_REFERENCE_SECTION
-)
+val DEFAULT_REFERENCE_GROUP = ReferenceGroup(referenceSection = DEFAULT_REFERENCE_SECTION)
 
-val DEFAULT_STRING_SECTION = StringSection(
-    name = "",
-    values = emptyList()
-)
+val DEFAULT_STRING_SECTION = StringSection(name = "", values = emptyList())
 
-val DEFAULT_SOURCE_ITEM_GROUP = SourceItemGroup(
-    sourceSection = DEFAULT_SOURCE_ITEM_SECTION,
-    pageSection = DEFAULT_PAGE_ITEM_SECTION,
-    offsetSection = DEFAULT_OFFSET_ITEM_SECTION,
-    contentSection = DEFAULT_CONTENT_ITEM_SECTION
-)
+val DEFAULT_SOURCE_ITEM_GROUP =
+    SourceItemGroup(
+        sourceSection = DEFAULT_SOURCE_ITEM_SECTION,
+        pageSection = DEFAULT_PAGE_ITEM_SECTION,
+        offsetSection = DEFAULT_OFFSET_ITEM_SECTION,
+        contentSection = DEFAULT_CONTENT_ITEM_SECTION)
 
-val DEFAULT_META_DATA_ITEM = StringSectionGroup(
-    section = StringSection(
-        name = "",
-        values = emptyList()
-    )
-)
+val DEFAULT_META_DATA_ITEM =
+    StringSectionGroup(section = StringSection(name = "", values = emptyList()))

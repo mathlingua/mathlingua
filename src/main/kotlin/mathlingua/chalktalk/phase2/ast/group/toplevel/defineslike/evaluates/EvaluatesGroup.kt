@@ -117,7 +117,9 @@ data class EvaluatesGroup(
 
 fun isEvaluatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Evaluates")
 
-fun neoValidateEvaluatesGroup(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateEvaluatesGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateGroup(node, errors, "Evaluates", DEFAULT_EVALUATES_GROUP) { group ->
             val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
@@ -126,9 +128,7 @@ fun neoValidateEvaluatesGroup(node: Phase1Node, errors: MutableList<ParseError>,
                     ParseError(
                         message = "Expected an Evaluates section",
                         row = getRow(node),
-                        column = getColumn(node)
-                    )
-                )
+                        column = getColumn(node)))
                 DEFAULT_EVALUATES_GROUP
             } else {
                 val startErrorCount = errors.size
@@ -185,7 +185,8 @@ fun neoValidateEvaluatesGroup(node: Phase1Node, errors: MutableList<ParseError>,
                 }
 
                 if (i < group.sections.size && isMetadataSection(group.sections[i])) {
-                    metaDataSection = neoValidateMetaDataSection(group.sections[i++], errors, tracker)
+                    metaDataSection =
+                        neoValidateMetaDataSection(group.sections[i++], errors, tracker)
                 }
 
                 while (i < group.sections.size) {
@@ -202,8 +203,7 @@ fun neoValidateEvaluatesGroup(node: Phase1Node, errors: MutableList<ParseError>,
                         ParseError(
                             message = "Expected an else: section",
                             row = getRow(node),
-                            column = getColumn(node)
-                        ))
+                            column = getColumn(node)))
                 }
 
                 if (startErrorCount != errors.size) {
@@ -212,15 +212,15 @@ fun neoValidateEvaluatesGroup(node: Phase1Node, errors: MutableList<ParseError>,
                     EvaluatesGroup(
                         signature = id.signature(),
                         id = id,
-                        evaluatesSection = neoEnsureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {
-                            neoValidateEvaluatesSection(it, errors, tracker)
-                        },
+                        evaluatesSection =
+                            neoEnsureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {
+                                neoValidateEvaluatesSection(it, errors, tracker)
+                            },
                         whenTo = whenToList,
                         elseSection = elseSection!!,
                         usingSection = usingSection,
                         writtenSection = writtenSection,
-                        metaDataSection = metaDataSection
-                    )
+                        metaDataSection = metaDataSection)
                 }
             }
         }

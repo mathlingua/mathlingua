@@ -22,14 +22,10 @@ import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.DEFAULT_AXIOM_SECTION
-import mathlingua.chalktalk.phase2.ast.DEFAULT_CONTENT_ITEM_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_STRING_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -56,7 +52,9 @@ class StringSection(val name: String, val values: List<String>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun neoValidateStringSection(name: String, node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateStringSection(
+    name: String, node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateSection(node, errors, name, DEFAULT_STRING_SECTION) { section ->
             if (section.args.isNotEmpty() &&
@@ -73,8 +71,7 @@ fun neoValidateStringSection(name: String, node: Phase1Node, errors: MutableList
             } else {
                 StringSection(
                     name = name,
-                    values = section.args.map { (it.chalkTalkTarget as Phase1Token).text }
-                )
+                    values = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
             }
         }
     }

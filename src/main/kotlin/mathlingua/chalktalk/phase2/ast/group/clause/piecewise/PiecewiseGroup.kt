@@ -81,7 +81,8 @@ data class PiecewiseGroup(
 fun isPiecewiseGroup(node: Phase1Node) = firstSectionMatchesName(node, "piecewise")
 
 fun neoValidatePiecewiseGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateGroup(node.resolve(), errors, "piecewise", DEFAULT_PIECEWISE_GROUP) { group ->
             if (group.sections.isEmpty() || !isPiecewiseSection(group.sections.first())) {
@@ -89,13 +90,12 @@ fun neoValidatePiecewiseGroup(
                     ParseError(
                         message = "Expected an piecewise: section",
                         row = getRow(node),
-                        column = getColumn(node)
-                    )
-                )
+                        column = getColumn(node)))
                 return@neoValidateGroup DEFAULT_PIECEWISE_GROUP
             }
 
-            val piecewiseSection = neoValidatePiecewiseSection(group.sections.first(), errors, tracker)
+            val piecewiseSection =
+                neoValidatePiecewiseSection(group.sections.first(), errors, tracker)
             val whenToList = mutableListOf<WhenToPair>()
             var elseSection: ElseSection? = null
 
@@ -135,9 +135,6 @@ fun neoValidatePiecewiseGroup(
             }
 
             PiecewiseGroup(
-                piecewiseSection = piecewiseSection,
-                whenTo = whenToList,
-                elseSection = elseSection
-            )
+                piecewiseSection = piecewiseSection, whenTo = whenToList, elseSection = elseSection)
         }
     }

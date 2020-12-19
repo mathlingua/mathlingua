@@ -20,7 +20,6 @@ import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
@@ -34,11 +33,6 @@ import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 val SOURCE_ITEM_CONSTRAINTS =
     mapOf(
@@ -71,7 +65,9 @@ class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun neoValidateResourceSection(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateResourceSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateSection(node, errors, "Resource", DEFAULT_RESOURCE_SECTION) { section ->
             val startErrorCount = errors.size
@@ -87,16 +83,16 @@ fun neoValidateResourceSection(node: Phase1Node, errors: MutableList<ParseError>
                             errors.add(
                                 ParseError(
                                     message =
-                                    "Expected $expectedCount arguments for " +
-                                        "section $name but found ${sect.args.size}",
+                                        "Expected $expectedCount arguments for " +
+                                            "section $name but found ${sect.args.size}",
                                     row = getRow(sect),
                                     column = getColumn(sect)))
                         } else if (expectedCount < 0 && sect.args.size < -expectedCount) {
                             errors.add(
                                 ParseError(
                                     message =
-                                    "Expected at least ${-expectedCount} arguments for " +
-                                        "section $name but found ${sect.args.size}",
+                                        "Expected at least ${-expectedCount} arguments for " +
+                                            "section $name but found ${sect.args.size}",
                                     row = getRow(sect),
                                     column = getColumn(sect)))
                         }
@@ -109,7 +105,8 @@ fun neoValidateResourceSection(node: Phase1Node, errors: MutableList<ParseError>
                             } else {
                                 errors.add(
                                     ParseError(
-                                        message = "Expected a string but found ${a.chalkTalkTarget}",
+                                        message =
+                                            "Expected a string but found ${a.chalkTalkTarget}",
                                         row = getRow(a.chalkTalkTarget),
                                         column = getColumn(a.chalkTalkTarget)))
                             }
@@ -128,8 +125,8 @@ fun neoValidateResourceSection(node: Phase1Node, errors: MutableList<ParseError>
                         errors.add(
                             ParseError(
                                 message =
-                                "Expected a section with one of " +
-                                    "the names ${SOURCE_ITEM_CONSTRAINTS.keys}",
+                                    "Expected a section with one of " +
+                                        "the names ${SOURCE_ITEM_CONSTRAINTS.keys}",
                                 row = getRow(arg),
                                 column = getColumn(arg)))
                     }
@@ -145,9 +142,7 @@ fun neoValidateResourceSection(node: Phase1Node, errors: MutableList<ParseError>
             if (startErrorCount != errors.size) {
                 DEFAULT_RESOURCE_SECTION
             } else {
-                ResourceSection(
-                    items = items
-                )
+                ResourceSection(items = items)
             }
         }
     }

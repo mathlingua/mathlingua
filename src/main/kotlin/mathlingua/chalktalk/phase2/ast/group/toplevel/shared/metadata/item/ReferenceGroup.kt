@@ -16,22 +16,15 @@
 
 package mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item
 
-import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.Section
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.ast.DEFAULT_REFERENCE_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_REFERENCE_SECTION
-import mathlingua.chalktalk.phase2.ast.DEFAULT_RESOURCE_GROUP
-import mathlingua.chalktalk.phase2.ast.DEFAULT_RESOURCE_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ReferenceSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateReferenceSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
-import mathlingua.chalktalk.phase2.ast.section.identifySections
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.support.MutableLocationTracker
@@ -42,15 +35,18 @@ data class ReferenceGroup(val referenceSection: ReferenceSection) :
 
 fun isReferenceGroup(node: Phase1Node) = firstSectionMatchesName(node, "reference")
 
-fun neoValidateReferenceGroup(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateReferenceGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateGroup(node, errors, "reference", DEFAULT_REFERENCE_GROUP) { group ->
-            neoIdentifySections(group, errors, DEFAULT_REFERENCE_GROUP, listOf("reference")) { sections ->
+            neoIdentifySections(group, errors, DEFAULT_REFERENCE_GROUP, listOf("reference")) {
+            sections ->
                 ReferenceGroup(
-                    referenceSection = neoEnsureNonNull(sections["reference"], DEFAULT_REFERENCE_SECTION) {
-                        neoValidateReferenceSection(it, errors, tracker)
-                    }
-                )
+                    referenceSection =
+                        neoEnsureNonNull(sections["reference"], DEFAULT_REFERENCE_SECTION) {
+                            neoValidateReferenceSection(it, errors, tracker)
+                        })
             }
         }
     }

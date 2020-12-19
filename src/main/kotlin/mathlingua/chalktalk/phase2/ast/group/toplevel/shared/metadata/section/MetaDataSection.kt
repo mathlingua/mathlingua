@@ -68,7 +68,9 @@ data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
 
 fun isMetadataSection(sec: Section) = sec.name.text == "Metadata"
 
-fun neoValidateMetaDataSection(section: Section, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateMetaDataSection(
+    section: Section, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(section, tracker) {
         val items = mutableListOf<MetaDataItem>()
         for (arg in section.args) {
@@ -84,8 +86,8 @@ fun neoValidateMetaDataSection(section: Section, errors: MutableList<ParseError>
                         errors.add(
                             ParseError(
                                 message =
-                                "Expected $expectedCount arguments for " +
-                                    "section $name but found ${sect.args.size}",
+                                    "Expected $expectedCount arguments for " +
+                                        "section $name but found ${sect.args.size}",
                                 row = getRow(sect),
                                 column = getColumn(sect)))
                     }
@@ -115,8 +117,8 @@ fun neoValidateMetaDataSection(section: Section, errors: MutableList<ParseError>
                     errors.add(
                         ParseError(
                             message =
-                            "Expected a section with one of " +
-                                "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
+                                "Expected a section with one of " +
+                                    "the names ${META_DATA_ITEM_CONSTRAINTS.keys}",
                             row = getRow(arg),
                             column = getColumn(arg)))
                 }
@@ -128,15 +130,15 @@ fun neoValidateMetaDataSection(section: Section, errors: MutableList<ParseError>
                         column = getColumn(arg)))
             }
         }
-        MetaDataSection(
-            items = items
-        )
+        MetaDataSection(items = items)
     }
 
-private fun neoValidateMetaDataItem(arg: Argument, errors: MutableList<ParseError>, tracker: MutableLocationTracker): MetaDataItem =
+private fun neoValidateMetaDataItem(
+    arg: Argument, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+): MetaDataItem =
     if (arg.chalkTalkTarget !is Group) {
-        errors.add(ParseError(
-            message = "Expected a group", row = getRow(arg), column = getColumn(arg)))
+        errors.add(
+            ParseError(message = "Expected a group", row = getRow(arg), column = getColumn(arg)))
         DEFAULT_META_DATA_ITEM
     } else {
         neoValidateReferenceGroup(arg.chalkTalkTarget, errors, tracker)

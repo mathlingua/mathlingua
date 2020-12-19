@@ -42,7 +42,9 @@ data class SourceItemSection(val sourceReference: String) : Phase2Node {
     }
 }
 
-fun neoValidateSourceItemSection(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateSourceItemSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateSection(node, errors, "source", DEFAULT_SOURCE_ITEM_SECTION) { section ->
             neoValidateSingleArg(section, errors, DEFAULT_SOURCE_ITEM_SECTION, "string") { arg ->
@@ -51,14 +53,10 @@ fun neoValidateSourceItemSection(node: Phase1Node, errors: MutableList<ParseErro
                         ParseError(
                             message = "Expected a string",
                             row = getRow(node),
-                            column = getColumn(node)
-                        )
-                    )
+                            column = getColumn(node)))
                     DEFAULT_SOURCE_ITEM_SECTION
                 } else {
-                    SourceItemSection(
-                        sourceReference = arg.text
-                    )
+                    SourceItemSection(sourceReference = arg.text)
                 }
             }
         }

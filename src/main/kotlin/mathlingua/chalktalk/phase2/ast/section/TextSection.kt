@@ -16,18 +16,8 @@
 
 package mathlingua.chalktalk.phase2.ast.section
 
-import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.Phase1Token
-import mathlingua.chalktalk.phase1.ast.Section
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.support.MutableLocationTracker
-import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
 
 data class TextSection(val name: String, val text: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}

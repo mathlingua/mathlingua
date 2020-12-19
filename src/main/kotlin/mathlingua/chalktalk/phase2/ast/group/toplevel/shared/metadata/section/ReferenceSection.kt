@@ -46,11 +46,12 @@ data class ReferenceSection(val sourceItems: List<SourceItemGroup>) : Phase2Node
                 sourceItems = sourceItems.map { chalkTransformer(it) as SourceItemGroup }))
 }
 
-fun neoValidateReferenceSection(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateReferenceSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateSection(node, errors, "reference", DEFAULT_REFERENCE_SECTION) { section ->
             ReferenceSection(
-                sourceItems = section.args.map { neoValidateSourceItemGroup(it, errors, tracker) }
-            )
+                sourceItems = section.args.map { neoValidateSourceItemGroup(it, errors, tracker) })
         }
     }

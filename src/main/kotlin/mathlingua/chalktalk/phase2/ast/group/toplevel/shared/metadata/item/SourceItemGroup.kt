@@ -75,24 +75,31 @@ data class SourceItemGroup(
 
 fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
 
-fun neoValidateSourceItemGroup(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateSourceItemGroup(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoValidateGroup(node, errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->
-        neoIdentifySections(group, errors, DEFAULT_SOURCE_ITEM_GROUP, listOf(
-            "source", "page?", "offset?", "content?"
-        )) { sections ->
+        neoIdentifySections(
+            group,
+            errors,
+            DEFAULT_SOURCE_ITEM_GROUP,
+            listOf("source", "page?", "offset?", "content?")) { sections ->
             SourceItemGroup(
-                sourceSection = neoEnsureNonNull(sections["source"], DEFAULT_SOURCE_ITEM_SECTION) {
-                    neoValidateSourceItemSection(it, errors, tracker)
-                },
-                pageSection = neoIfNonNull(sections["page"]) {
-                    neoValidatePageItemSection(it, errors, tracker)
-                },
-                offsetSection = neoIfNonNull(sections["offset"]) {
-                    neoValidateOffsetItemSection(it, errors, tracker)
-                },
-                contentSection = neoIfNonNull(sections["content"]) {
-                    neoValidateContentItemSection(it, errors, tracker)
-                }
-            )
+                sourceSection =
+                    neoEnsureNonNull(sections["source"], DEFAULT_SOURCE_ITEM_SECTION) {
+                        neoValidateSourceItemSection(it, errors, tracker)
+                    },
+                pageSection =
+                    neoIfNonNull(sections["page"]) {
+                        neoValidatePageItemSection(it, errors, tracker)
+                    },
+                offsetSection =
+                    neoIfNonNull(sections["offset"]) {
+                        neoValidateOffsetItemSection(it, errors, tracker)
+                    },
+                contentSection =
+                    neoIfNonNull(sections["content"]) {
+                        neoValidateContentItemSection(it, errors, tracker)
+                    })
         }
     }

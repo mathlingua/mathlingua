@@ -57,27 +57,27 @@ private fun isValidAbstraction(abstraction: Abstraction) =
                 abstraction.isVarArgs &&
                 !abstraction.parts[0].name.text.endsWith("...")))
 
-fun neoValidateExpandsSection(node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) =
+fun neoValidateExpandsSection(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+) =
     neoTrack(node, tracker) {
         neoValidateSection(node, errors, "expands", DEFAULT_EXPANDS_SECTION) { section ->
             if (section.args.isEmpty() ||
-                section.args.any {it.chalkTalkTarget !is Abstraction || !isValidAbstraction(it.chalkTalkTarget)} ) {
+                section.args.any {
+                    it.chalkTalkTarget !is Abstraction || !isValidAbstraction(it.chalkTalkTarget)
+                }) {
                 errors.add(
                     ParseError(
                         message = "Expected an abstraction",
                         row = getRow(node),
-                        column = getColumn(node)
-                    )
-                )
+                        column = getColumn(node)))
                 DEFAULT_EXPANDS_SECTION
             } else {
                 ExpandsSection(
-                    targets = section.args.map {
-                        AbstractionNode(
-                            abstraction = it.chalkTalkTarget as Abstraction
-                        )
-                    }
-                )
+                    targets =
+                        section.args.map {
+                            AbstractionNode(abstraction = it.chalkTalkTarget as Abstraction)
+                        })
             }
         }
     }

@@ -14,42 +14,49 @@
  * limitations under the License.
  */
 
-package mathlingua.chalktalk.phase2.ast.group.clause.If
+package mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines
 
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
-import mathlingua.chalktalk.phase2.ast.DEFAULT_ELSE_IF_SECTION
-import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
+import mathlingua.chalktalk.phase2.ast.DEFAULT_INSTANTIATED_SECTION
+import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.clause.neoValidateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
-data class ElseIfSection(val clauses: ClauseListNode) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
+data class InstantiatedSection(val statements: List<Statement>) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        statements.forEach(fn)
+    }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("elseIf")
-        if (clauses.clauses.isNotEmpty()) {
-            writer.writeNewline()
+        writer.writeHeader("instantiated")
+        if (statements.size > 1) {
+            for (stmt in statements) {
+                writer.writeNewline()
+                writer.append(stmt, true, indent + 2)
+            }
+        } else {
+            writer.append(statements[0], false, 1)
         }
-        writer.append(clauses, true, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ElseIfSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            InstantiatedSection(statements = statements.map { chalkTransformer(it) as Statement }))
 }
 
-fun neoValidateElseIfSection(
+fun neoValidateInstantiatedSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "elseIf", DEFAULT_ELSE_IF_SECTION) {
-            ElseIfSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        neoValidateSection(node.resolve(), errors, "instantiated", DEFAULT_INSTANTIATED_SECTION) {
+            InstantiatedSection(
+                statements = it.args.map { arg -> neoValidateStatement(arg, errors, tracker) })
         }
     }

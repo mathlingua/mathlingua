@@ -1,26 +1,100 @@
-Row: 1
-Column: 10
+Row: 2
+Column: 1
 Message:
-If the signature of a Defines contains a parens then then the defines must define a function like that has the exact same signature as the parens in the signature of the Defines.
+For pattern:
+
+Defines:
+where:
+when?:
+means:
+using?:
+written:
+Metadata?:
+
+Expected 'where' but found 'means'
 EndMessage:
 
 
-Row: 5
-Column: 10
+Row: 6
+Column: 1
 Message:
-If the signature of a Defines contains a parens then then the defines must define a function like that has the exact same signature as the parens in the signature of the Defines.
+For pattern:
+
+Defines:
+where:
+when?:
+means:
+using?:
+written:
+Metadata?:
+
+Expected 'where' but found 'means'
 EndMessage:
 
 
-Row: 9
-Column: 11
+Row: 10
+Column: 1
 Message:
-If the signature of a Defines contains a parens then the function type it defines cannot describe a sequence like, set like, or variadic form.
+For pattern:
+
+Defines:
+where:
+when?:
+means:
+using?:
+written:
+Metadata?:
+
+Expected 'where' but found 'means'
 EndMessage:
 
 
-Row: 13
-Column: 10
+Row: 14
+Column: 1
 Message:
-If the signature of a Defines contains a parens then then the defines must define a function like that has the exact same signature as the parens in the signature of the Defines.
+For pattern:
+
+Defines:
+where:
+when?:
+means:
+using?:
+written:
+Metadata?:
+
+Expected 'where' but found 'means'
+EndMessage:
+
+
+Row: 18
+Column: 1
+Message:
+For pattern:
+
+Defines:
+where:
+when?:
+means:
+using?:
+written:
+Metadata?:
+
+Expected 'where' but found 'means'
+EndMessage:
+
+
+Row: 22
+Column: 1
+Message:
+For pattern:
+
+Defines:
+where:
+when?:
+means:
+using?:
+written:
+Metadata?:
+
+Expected 'where' but found 'means'
 EndMessage:

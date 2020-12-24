@@ -1,11 +1,12 @@
 [\f(x)]
 Defines:
 . f(x)
-evaluated:
-. mapping:
-  from:
+where:
+. 'f is \function'
+maps:
+. from:
   . 'A'
   to:
   . 'A'
-  as:
-  . 'f(x) := x'
+written:
+. "f(x?)"

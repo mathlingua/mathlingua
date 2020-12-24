@@ -25,12 +25,12 @@ import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.isThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.WhenToPair
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.isToSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.neoValidateToSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.WhenThenPair
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
@@ -58,7 +58,7 @@ data class EvaluatesGroup(
     val signature: String?,
     val id: IdStatement,
     val evaluatesSection: EvaluatesSection,
-    val whenTo: List<WhenToPair>,
+    val whenThen: List<WhenThenPair>,
     val elseSection: ElseSection,
     val usingSection: UsingSection?,
     val writtenSection: WrittenSection?,
@@ -68,9 +68,9 @@ data class EvaluatesGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(evaluatesSection)
-        for (wt in whenTo) {
+        for (wt in whenThen) {
             fn(wt.whenSection)
-            fn(wt.toSection)
+            fn(wt.thenSection)
         }
         fn(elseSection)
         if (usingSection != null) {
@@ -86,9 +86,9 @@ data class EvaluatesGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf<Phase2Node?>(evaluatesSection)
-        for (wt in whenTo) {
+        for (wt in whenThen) {
             sections.add(wt.whenSection)
-            sections.add(wt.toSection)
+            sections.add(wt.thenSection)
         }
         sections.add(elseSection)
         sections.add(usingSection)
@@ -103,11 +103,11 @@ data class EvaluatesGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 evaluatesSection = evaluatesSection.transform(chalkTransformer) as EvaluatesSection,
-                whenTo =
-                    whenTo.map {
-                        WhenToPair(
+                whenThen =
+                    whenThen.map {
+                        WhenThenPair(
                             whenSection = chalkTransformer(it.whenSection) as WhenSection,
-                            toSection = chalkTransformer(it.toSection) as ToSection)
+                            thenSection = chalkTransformer(it.thenSection) as ThenSection)
                     },
                 elseSection = elseSection.transform(chalkTransformer) as ElseSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -132,7 +132,7 @@ fun neoValidateEvaluatesGroup(
                 DEFAULT_EVALUATES_GROUP
             } else {
                 val startErrorCount = errors.size
-                val whenToList = mutableListOf<WhenToPair>()
+                val whenToList = mutableListOf<WhenThenPair>()
                 var elseSection: ElseSection? = null
                 var usingSection: UsingSection? = null
                 var metaDataSection: MetaDataSection? = null
@@ -147,17 +147,17 @@ fun neoValidateEvaluatesGroup(
                     i++
 
                     val whenSection = neoValidateWhenSection(sec, errors, tracker)
-                    if (i >= group.sections.size || !isToSection(group.sections[i])) {
+                    if (i >= group.sections.size || !isThenSection(group.sections[i])) {
                         errors.add(
                             ParseError(
-                                message = "A when: section must have an to: section",
+                                message = "A when: section must have an then: section",
                                 row = getRow(sec),
                                 column = getColumn(sec)))
                         break
                     }
 
-                    val toSection = neoValidateToSection(group.sections[i++], errors, tracker)
-                    whenToList.add(WhenToPair(whenSection, toSection))
+                    val thenSection = neoValidateThenSection(group.sections[i++], errors, tracker)
+                    whenToList.add(WhenThenPair(whenSection, thenSection))
                 }
 
                 if (i < group.sections.size && isElseSection(group.sections[i])) {
@@ -216,7 +216,7 @@ fun neoValidateEvaluatesGroup(
                             neoEnsureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {
                                 neoValidateEvaluatesSection(it, errors, tracker)
                             },
-                        whenTo = whenToList,
+                        whenThen = whenToList,
                         elseSection = elseSection!!,
                         usingSection = usingSection,
                         writtenSection = writtenSection,

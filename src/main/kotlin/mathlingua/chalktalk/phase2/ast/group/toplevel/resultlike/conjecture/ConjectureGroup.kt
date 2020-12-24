@@ -21,6 +21,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_CONJECTURE_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_CONJECTURE_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
+import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
@@ -35,6 +36,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ne
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.chalktalk.phase2.ast.neoGetOptionalId
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -42,17 +44,23 @@ import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
+import mathlingua.transform.signature
 
 data class ConjectureGroup(
+    val signature: String?,
+    val id: IdStatement?,
     val conjectureSection: ConjectureSection,
     val givenSection: GivenSection?,
-    val givenWhereSection: WhereSection?,
+    val whereSection: WhereSection?,
     val thenSection: ThenSection,
     val usingSection: UsingSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        if (id != null) {
+            fn(id)
+        }
         fn(conjectureSection)
         if (usingSection != null) {
             fn(usingSection)
@@ -60,8 +68,8 @@ data class ConjectureGroup(
         if (givenSection != null) {
             fn(givenSection)
         }
-        if (givenWhereSection != null) {
-            fn(givenWhereSection)
+        if (whereSection != null) {
+            fn(whereSection)
         }
         fn(thenSection)
         if (metaDataSection != null) {
@@ -74,10 +82,10 @@ data class ConjectureGroup(
             writer,
             isArg,
             indent,
-            null,
+            id,
             conjectureSection,
             givenSection,
-            givenWhereSection,
+            whereSection,
             thenSection,
             usingSection,
             metaDataSection)
@@ -85,10 +93,12 @@ data class ConjectureGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             ConjectureGroup(
+                signature = signature,
+                id = id?.transform(chalkTransformer) as IdStatement?,
                 conjectureSection =
                     conjectureSection.transform(chalkTransformer) as ConjectureSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
-                givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
+                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
@@ -101,6 +111,7 @@ fun neoValidateConjectureGroup(
 ) =
     neoTrack(node, tracker) {
         neoValidateGroup(node.resolve(), errors, "Conjecture", DEFAULT_CONJECTURE_GROUP) { group ->
+            val id = neoGetOptionalId(group, errors, tracker)
             neoIdentifySections(
                 group,
                 errors,
@@ -108,6 +119,8 @@ fun neoValidateConjectureGroup(
                 listOf("Conjecture", "given?", "where?", "then", "using?", "Metadata?")) {
             sections ->
                 ConjectureGroup(
+                    signature = id?.signature(),
+                    id = id,
                     conjectureSection =
                         neoEnsureNonNull(sections["Conjecture"], DEFAULT_CONJECTURE_SECTION) {
                             neoValidateConjectureSection(it, errors, tracker)
@@ -116,7 +129,7 @@ fun neoValidateConjectureGroup(
                         neoIfNonNull(sections["given"]) {
                             neoValidateGivenSection(it, errors, tracker)
                         },
-                    givenWhereSection =
+                    whereSection =
                         neoIfNonNull(sections["where"]) {
                             neoValidateWhereSection(it, errors, tracker)
                         },

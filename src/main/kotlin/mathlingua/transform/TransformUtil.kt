@@ -16,9 +16,6 @@
 
 package mathlingua.transform
 
-import mathlingua.chalktalk.phase2.ast.Document
-import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
-import mathlingua.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.Identifier
@@ -27,14 +24,11 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
-import mathlingua.chalktalk.phase2.getChalkTalkAncestry
 import mathlingua.chalktalk.phase2.hasChild
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
@@ -319,6 +313,7 @@ internal fun replaceRepresents(
     return RootTarget(root = newRoot, target = newTarget ?: target)
 }
 
+/*
 internal fun replaceIsNodes(
     root: Phase2Node, defs: List<DefinesGroup>, target: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
@@ -463,7 +458,9 @@ internal fun replaceIsNodes(
     val newRoot = root.transform(::chalkTransformer)
     return RootTarget(root = newRoot, target = newTarget ?: target)
 }
+*/
 
+/*
 internal fun toCanonicalForm(def: DefinesGroup) =
     DefinesGroup(
         signature = def.signature,
@@ -475,7 +472,9 @@ internal fun toCanonicalForm(def: DefinesGroup) =
         metaDataSection = def.metaDataSection,
         evaluatedSection = def.evaluatedSection,
         writtenSection = def.writtenSection)
+*/
 
+/*
 internal fun buildIfThens(def: DefinesGroup) =
     IfGroup(
         ifSection =
@@ -484,6 +483,7 @@ internal fun buildIfThens(def: DefinesGroup) =
         thenSection =
             ThenSection(
                 clauses = def.meansSection?.clauses ?: ClauseListNode(clauses = emptyList())))
+*/
 
 internal fun buildIfThens(def: StatesGroup) =
     IfGroup(
@@ -492,6 +492,7 @@ internal fun buildIfThens(def: StatesGroup) =
         thenSection =
             ThenSection(clauses = def.thatSection.clauses ?: ClauseListNode(clauses = emptyList())))
 
+/*
 internal fun getDefinesDirectVars(def: DefinesGroup): List<String> {
     val vars = mutableListOf<String>()
     for (target in def.definesSection.targets) {
@@ -507,6 +508,7 @@ internal fun getDefinesIdVars(def: DefinesGroup): List<String> {
     }
     return vars
 }
+*/
 
 internal fun getRepresentsIdVars(rep: StatesGroup): List<String> {
     val vars = mutableListOf<String>()
@@ -516,6 +518,7 @@ internal fun getRepresentsIdVars(rep: StatesGroup): List<String> {
     return vars
 }
 
+/*
 internal fun expandAtNode(
     root: Phase2Node, target: Phase2Node, defines: List<DefinesGroup>, represents: List<StatesGroup>
 ): Phase2Node {
@@ -547,10 +550,14 @@ internal fun expandAtNode(
 
     return transformed
 }
+*/
 
+/*
 internal fun fullExpandOnce(doc: Document) =
     expandAtNode(doc, doc, doc.defines(), doc.states()) as Document
+*/
 
+/*
 internal fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
     val snapshots = mutableSetOf<String>()
 
@@ -570,6 +577,7 @@ internal fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
 
     return transformed
 }
+*/
 
 internal fun separateInfixOperatorStatements(
     root: Phase2Node, follow: Phase2Node

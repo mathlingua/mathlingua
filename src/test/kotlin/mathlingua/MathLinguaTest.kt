@@ -26,11 +26,15 @@ internal class MathLinguaTest {
             """
             [\finite.set]
             Defines: X
+            where: '\something'
             means: '\something'
+            written: "something"
 
             [\infinite.set]
             Defines: X
+            where: '\something'
             means: '\something.else'
+            written: "something"
         """.trimIndent()
 
         val supplemental =
@@ -38,9 +42,11 @@ internal class MathLinguaTest {
                 """
             [\set]
             Defines: X
+            where: 'something'
             means:
             . if: X
               then: '\something.else'
+            written: "something"
         """.trimIndent(),
                 """
             Theorem:
@@ -58,15 +64,21 @@ internal class MathLinguaTest {
             """
             [\finite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
 
             [\another.name]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
 
             [\infinite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something.else'
+            written: "something"
         """.trimIndent()
 
         val supplemental =
@@ -74,9 +86,11 @@ internal class MathLinguaTest {
                 """
             [\set]
             Defines: X
+            where: 'X is \something'
             means:
             . if: X
               then: '\something.else'
+            written: "something"
         """.trimIndent(),
                 """
             Theorem:
@@ -85,7 +99,7 @@ internal class MathLinguaTest {
         """.trimIndent())
 
         val dups = MathLingua.findDuplicateContent(input, supplemental)
-        assertThat(dups).isEqualTo(listOf(Location(row = 4, column = 1)))
+        assertThat(dups).isEqualTo(listOf(Location(row = 6, column = 1)))
     }
 
     @Test
@@ -94,15 +108,21 @@ internal class MathLinguaTest {
             """
             [\finite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
 
             [\infinite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something.else'
+            written: "something"
 
             [\finite.set]
             Defines: Y
+            where: 'X is \something'
             means: '\yet.something.else'
+            written: "something"
         """.trimIndent()
 
         val supplemental =
@@ -110,9 +130,11 @@ internal class MathLinguaTest {
                 """
             [\set]
             Defines: X
+            where: 'X is \something'
             means:
             . if: X
               then: '\something.else'
+            written: "something"
         """.trimIndent(),
                 """
             Theorem:
@@ -123,7 +145,7 @@ internal class MathLinguaTest {
         val dups = MathLingua.findDuplicateSignatures(input, supplemental)
         assertThat(dups)
             .isEqualTo(
-                listOf(Signature(form = "\\finite.set", location = Location(row = 8, column = 1))))
+                listOf(Signature(form = "\\finite.set", location = Location(row = 12, column = 1))))
     }
 
     @Test
@@ -132,11 +154,15 @@ internal class MathLinguaTest {
             """
             [\finite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
 
             [\infinite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something.else'
+            written: "something"
         """.trimIndent()
 
         val supplemental =
@@ -144,13 +170,17 @@ internal class MathLinguaTest {
                 """
             [\set]
             Defines: X
+            where: 'X is \something'
             means:
             . if: X
               then: '\something.else'
+            written: "something"
 
             [\another.name]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
         """.trimIndent(),
                 """
             Theorem:
@@ -168,11 +198,15 @@ internal class MathLinguaTest {
             """
             [\finite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
 
             [\infinite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something.else'
+            written: "something"
         """.trimIndent()
 
         val supplemental =
@@ -180,9 +214,11 @@ internal class MathLinguaTest {
                 """
             [\set]
             Defines: X
+            where: 'X is \something'
             means:
             . if: X
               then: '\something.else'
+            written: "something"
         """.trimIndent(),
                 """
             Theorem:
@@ -191,7 +227,9 @@ internal class MathLinguaTest {
 
             [\finite.set]
             Defines: Y
+            where: 'X is \something'
             means: '\yet.something.else'
+            written: "something"
         """.trimIndent())
 
         val dups = MathLingua.findDuplicateSignatures(input, supplemental)
@@ -206,11 +244,15 @@ internal class MathLinguaTest {
             """
             [\finite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
 
             [\infinite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something.else'
+            written: "something"
         """.trimIndent()
 
         val supplemental =
@@ -218,9 +260,11 @@ internal class MathLinguaTest {
                 """
             [\set]
             Defines: X
+            where: 'X is \something'
             means:
             . if: X
               then: '\something.else'
+            written: "something"
 
             Theorem:
             then:
@@ -242,11 +286,15 @@ internal class MathLinguaTest {
             """
             [\finite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something'
+            written: "something"
 
             [\infinite.set]
             Defines: X
+            where: 'X is \something'
             means: '\something.else'
+            written: "something"
         """.trimIndent()
 
         val supplemental =
@@ -254,9 +302,11 @@ internal class MathLinguaTest {
                 """
             [\set]
             Defines: X
+            where: 'X is \something'
             means:
             . if: X
               then: '\something.else'
+            written: "something"
         """.trimIndent(),
                 """
             Theorem:
@@ -265,7 +315,9 @@ internal class MathLinguaTest {
 
             [\set]
             Defines: Y
+            where: 'X is \something'
             means: '\yet.something.else'
+            written: "something"
         """.trimIndent())
 
         val dups = MathLingua.findDuplicateSignatures(input, supplemental)

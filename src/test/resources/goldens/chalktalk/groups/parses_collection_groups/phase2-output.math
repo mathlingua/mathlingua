@@ -1,9 +1,11 @@
 [\evens]
 Defines: X
-evaluated:
-. collection:
-  of: '2*k'
-  in: '\integer'
-  forAll: k
+where:
+. 'X is \set'
+collects:
+. given: k
   where:
   . 'k is \integer'
+  where: '2*k'
+written:
+. "\textrm{evens}"

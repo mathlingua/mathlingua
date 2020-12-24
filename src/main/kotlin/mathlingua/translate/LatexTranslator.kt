@@ -185,6 +185,7 @@ class LatexTranslator(
     }
 
     fun translate(definesGroup: DefinesGroup?) {
+        /*
         if (definesGroup != null) {
             append("\\textbf{Definition} A")
             val written = definesGroup.writtenSection?.forms?.getOrNull(0)
@@ -199,6 +200,7 @@ class LatexTranslator(
             translate(definesGroup.providedSection)
             translate(definesGroup.meansSection)
         }
+         */
     }
 
     fun translate(representsGroup: StatesGroup?) {

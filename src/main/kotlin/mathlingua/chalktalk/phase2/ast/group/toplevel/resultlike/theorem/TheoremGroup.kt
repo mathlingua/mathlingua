@@ -21,6 +21,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEOREM_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEOREM_SECTION
+import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
@@ -33,6 +34,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ne
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.chalktalk.phase2.ast.neoGetOptionalId
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -40,8 +42,11 @@ import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
+import mathlingua.transform.signature
 
 data class TheoremGroup(
+    val signature: String?,
+    val id: IdStatement?,
     val theoremSection: TheoremSection,
     val givenSection: GivenSection?,
     val givenWhereSection: WhereSection?,
@@ -51,6 +56,9 @@ data class TheoremGroup(
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        if (id != null) {
+            fn(id)
+        }
         fn(theoremSection)
         if (usingSection != null) {
             fn(usingSection)
@@ -72,7 +80,7 @@ data class TheoremGroup(
             writer,
             isArg,
             indent,
-            null,
+            id,
             theoremSection,
             givenSection,
             givenWhereSection,
@@ -83,6 +91,8 @@ data class TheoremGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             TheoremGroup(
+                signature = signature,
+                id = id?.transform(chalkTransformer) as IdStatement?,
                 theoremSection = theoremSection.transform(chalkTransformer) as TheoremSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
@@ -98,12 +108,15 @@ fun neoValidateTheoremGroup(
 ) =
     neoTrack(node, tracker) {
         neoValidateGroup(node.resolve(), errors, "Theorem", DEFAULT_THEOREM_GROUP) { group ->
+            val id = neoGetOptionalId(group, errors, tracker)
             neoIdentifySections(
                 group,
                 errors,
                 DEFAULT_THEOREM_GROUP,
                 listOf("Theorem", "given?", "where?", "then", "using?", "Metadata?")) { sections ->
                 TheoremGroup(
+                    signature = id?.signature(),
+                    id = id,
                     theoremSection =
                         neoEnsureNonNull(sections["Theorem"], DEFAULT_THEOREM_SECTION) {
                             neoValidateTheoremSection(it, errors, tracker)

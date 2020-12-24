@@ -40,11 +40,12 @@ import mathlingua.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.chalktalk.phase2.ast.clause.neoValidateClause
 import mathlingua.chalktalk.phase2.ast.clause.neoValidateIdStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseIfSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.and.AndGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.and.AndSection
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.CollectionGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.CollectionSection
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.InSection
@@ -57,6 +58,9 @@ import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.ExpandsSection
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
+import mathlingua.chalktalk.phase2.ast.group.clause.from.FromGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.given.AllSection
+import mathlingua.chalktalk.phase2.ast.group.clause.given.GivenGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffSection
 import mathlingua.chalktalk.phase2.ast.group.clause.inductively.ConstantGroup
@@ -69,7 +73,6 @@ import mathlingua.chalktalk.phase2.ast.group.clause.inductively.InductivelySecti
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.FromSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.MappingGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.MappingSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
 import mathlingua.chalktalk.phase2.ast.group.clause.matching.MatchingGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.matching.MatchingSection
 import mathlingua.chalktalk.phase2.ast.group.clause.not.NotGroup
@@ -79,9 +82,18 @@ import mathlingua.chalktalk.phase2.ast.group.clause.or.OrSection
 import mathlingua.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.CollectsSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesCollectsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesEvaluatedGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGeneratedGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesInstantiatedGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMapsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.EvaluatedSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.GeneratedSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.InstantiatedSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MapsSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
@@ -248,12 +260,9 @@ fun <T> neoValidateTargetSection(
         }
     }
 
-fun neoGetId(
-    node: Phase1Node,
-    errors: MutableList<ParseError>,
-    default: IdStatement,
-    tracker: MutableLocationTracker
-): IdStatement {
+fun neoGetOptionalId(
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+): IdStatement? {
     val group = node.resolve()
     return if (group is Group && group.id != null) {
         val (rawText, _, row, column) = group.id
@@ -263,7 +272,21 @@ fun neoGetId(
         val stmtToken = Phase1Token(statementText, ChalkTalkTokenType.Statement, row, column)
         neoValidateIdStatement(stmtToken, errors, tracker)
     } else {
-        errors.add(ParseError("Expected an Id", getRow(group), getColumn(group)))
+        null
+    }
+}
+
+fun neoGetId(
+    node: Phase1Node,
+    errors: MutableList<ParseError>,
+    default: IdStatement,
+    tracker: MutableLocationTracker
+): IdStatement {
+    val id = neoGetOptionalId(node, errors, tracker)
+    return if (id != null) {
+        id
+    } else {
+        errors.add(ParseError("Expected an Id", getRow(node), getColumn(node)))
         DEFAULT_ID_STATEMENT
     }
 }
@@ -320,8 +343,6 @@ val DEFAULT_SUCH_THAT_SECTION = SuchThatSection(clauses = DEFAULT_CLAUSE_LIST_NO
 
 val DEFAULT_ELSE_SECTION = ElseSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_ELSE_IF_SECTION = ElseIfSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
-
 val DEFAULT_IF_SECTION = IfSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_THEN_SECTION = ThenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
@@ -346,6 +367,10 @@ val DEFAULT_NOT_SECTION = NotSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_OR_SECTION = OrSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
+val DEFAULT_AND_SECTION = AndSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+
+val DEFAULT_AND_GROUP = AndGroup(andSection = DEFAULT_AND_SECTION)
+
 val DEFAULT_PIECEWISE_SECTION = PiecewiseSection()
 
 val DEFAULT_EVALUATED_SECTION = EvaluatedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
@@ -362,13 +387,18 @@ val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_WHERE_SECTION = WhereSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
+val DEFAULT_ALL_SECTION = AllSection(statement = DEFAULT_STATEMENT)
+
 val DEFAULT_OF_SECTION = OfSection(statement = DEFAULT_STATEMENT)
 
 val DEFAULT_FROM_SECTION = FromSection(statements = emptyList())
 
-val DEFAULT_TO_SECTION = ToSection(statements = emptyList())
+val DEFAULT_TO_SECTION =
+    mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection(statements = emptyList())
 
 val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+
+val DEFAULT_INSTANTIATED_SECTION = InstantiatedSection(statements = emptyList())
 
 val DEFAULT_STATES_SECTION = StatesSection()
 
@@ -396,21 +426,7 @@ val DEFAULT_EVALUATES_SECTION = EvaluatesSection()
 
 val DEFAULT_WRITTEN_SECTION = WrittenSection(forms = emptyList())
 
-val META_DATA_SECTION = MetaDataSection(items = emptyList())
-
-val DEFAULT_DEFINES_GROUP =
-    DefinesGroup(
-        signature = null,
-        id = DEFAULT_ID_STATEMENT,
-        definesSection = DEFAULT_DEFINES_SECTION,
-        providedSection = DEFAULT_PROVIDED_SECTION,
-        meansSection = DEFAULT_MEANS_SECTION,
-        evaluatedSection = DEFAULT_EVALUATED_SECTION,
-        usingSection = DEFAULT_USING_SECTION,
-        writtenSection = DEFAULT_WRITTEN_SECTION,
-        metaDataSection = META_DATA_SECTION)
-
-val DEFAULT_FOUNDATION_SECTION = FoundationSection(content = DEFAULT_DEFINES_GROUP)
+val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList())
 
 val DEFAULT_MUTUALLY_SECTION = MutuallySection(items = emptyList())
 
@@ -456,7 +472,7 @@ val DEFAULT_MAPPING_GROUP =
     MappingGroup(
         mappingSection = DEFAULT_MAPPING_SECTION,
         fromSection = DEFAULT_FROM_SECTION,
-        toSection = DEFAULT_TO_SECTION,
+        thenSection = DEFAULT_TO_SECTION,
         asSection = DEFAULT_AS_SECTION)
 
 val DEFAULT_NOT_GROUP = NotGroup(notSection = DEFAULT_NOT_SECTION)
@@ -464,12 +480,6 @@ val DEFAULT_NOT_GROUP = NotGroup(notSection = DEFAULT_NOT_SECTION)
 val DEFAULT_OR_GROUP = OrGroup(orSection = DEFAULT_OR_SECTION)
 
 val DEFAULT_MATCHING_GROUP = MatchingGroup(matchingSection = DEFAULT_MATCHING_SECTION)
-
-val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList())
-
-val DEFAULT_FOUNDATION_GROUP =
-    FoundationGroup(
-        foundationSection = DEFAULT_FOUNDATION_SECTION, metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_MUTUALLY_GROUP =
     MutuallyGroup(
@@ -509,6 +519,8 @@ val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
 
 val DEFAULT_AXIOM_GROUP =
     AxiomGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
         axiomSection = DEFAULT_AXIOM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
@@ -518,15 +530,19 @@ val DEFAULT_AXIOM_GROUP =
 
 val DEFAULT_CONJECTURE_GROUP =
     ConjectureGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
         conjectureSection = DEFAULT_CONJECTURE_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
-        givenWhereSection = DEFAULT_WHERE_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_THEOREM_GROUP =
     TheoremGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
         theoremSection = DEFAULT_THEOREM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         givenWhereSection = DEFAULT_WHERE_SECTION,
@@ -556,7 +572,7 @@ val DEFAULT_RESOURCE_GROUP =
 val DEFAULT_PIECEWISE_GROUP =
     PiecewiseGroup(
         piecewiseSection = DEFAULT_PIECEWISE_SECTION,
-        whenTo = emptyList(),
+        whenThen = emptyList(),
         elseSection = DEFAULT_ELSE_SECTION)
 
 val DEFAULT_EVALUATES_GROUP =
@@ -564,7 +580,7 @@ val DEFAULT_EVALUATES_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         evaluatesSection = DEFAULT_EVALUATES_SECTION,
-        whenTo = emptyList(),
+        whenThen = emptyList(),
         elseSection = DEFAULT_ELSE_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -593,3 +609,96 @@ val DEFAULT_SOURCE_ITEM_GROUP =
 
 val DEFAULT_META_DATA_ITEM =
     StringSectionGroup(section = StringSection(name = "", values = emptyList()))
+
+val DEFAULT_GIVEN_GROUP =
+    GivenGroup(
+        givenSection = DEFAULT_GIVEN_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
+        allSection = DEFAULT_ALL_SECTION,
+        suchThatSection = DEFAULT_SUCH_THAT_SECTION)
+
+val DEFAULT_FROM_GROUP =
+    FromGroup(fromSection = DEFAULT_FROM_SECTION, toSection = DEFAULT_TO_SECTION)
+
+val DEFAULT_COLLECTS_SECTION = CollectsSection(givenGroup = DEFAULT_GIVEN_GROUP)
+
+val DEFAULT_MAPS_SECTION = MapsSection(fromGroup = DEFAULT_FROM_GROUP)
+
+val DEFAULT_GENERATED_SECTION = GeneratedSection(inductivelyGroup = DEFAULT_INDUCTIVELY_GROUP)
+
+val DEFAULT_DEFINES_MEANS_GROUP =
+    DefinesMeansGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
+        definesSection = DEFAULT_DEFINES_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
+        meansSection = DEFAULT_MEANS_SECTION,
+        usingSection = DEFAULT_USING_SECTION,
+        writtenSection = DEFAULT_WRITTEN_SECTION,
+        metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_DEFINES_INSTANTIATED_GROUP =
+    DefinesInstantiatedGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
+        definesSection = DEFAULT_DEFINES_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
+        instantiatedSection = DEFAULT_INSTANTIATED_SECTION,
+        usingSection = DEFAULT_USING_SECTION,
+        writtenSection = DEFAULT_WRITTEN_SECTION,
+        metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_DEFINES_EVALUATED_GROUP =
+    DefinesEvaluatedGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
+        definesSection = DEFAULT_DEFINES_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
+        evaluatedSection = DEFAULT_EVALUATED_SECTION,
+        usingSection = DEFAULT_USING_SECTION,
+        writtenSection = DEFAULT_WRITTEN_SECTION,
+        metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_DEFINES_COLLECTS_GROUP =
+    DefinesCollectsGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
+        definesSection = DEFAULT_DEFINES_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
+        collectsSection = DEFAULT_COLLECTS_SECTION,
+        usingSection = DEFAULT_USING_SECTION,
+        writtenSection = DEFAULT_WRITTEN_SECTION,
+        metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_DEFINES_MAPS_GROUP =
+    DefinesMapsGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
+        definesSection = DEFAULT_DEFINES_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
+        mapsSection = DEFAULT_MAPS_SECTION,
+        usingSection = DEFAULT_USING_SECTION,
+        writtenSection = DEFAULT_WRITTEN_SECTION,
+        metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_DEFINES_GENERATED_GROUP =
+    DefinesGeneratedGroup(
+        signature = null,
+        id = DEFAULT_ID_STATEMENT,
+        definesSection = DEFAULT_DEFINES_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
+        generatedSection = DEFAULT_GENERATED_SECTION,
+        usingSection = DEFAULT_USING_SECTION,
+        writtenSection = DEFAULT_WRITTEN_SECTION,
+        metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_FOUNDATION_SECTION = FoundationSection(content = DEFAULT_DEFINES_MEANS_GROUP)
+
+val DEFAULT_FOUNDATION_GROUP =
+    FoundationGroup(
+        foundationSection = DEFAULT_FOUNDATION_SECTION, metaDataSection = DEFAULT_META_DATA_SECTION)

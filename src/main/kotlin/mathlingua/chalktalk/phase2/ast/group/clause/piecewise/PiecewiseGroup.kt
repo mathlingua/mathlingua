@@ -23,12 +23,12 @@ import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.isThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.WhenToPair
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.isToSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.neoValidateToSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.WhenThenPair
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhenSection
@@ -40,15 +40,15 @@ import mathlingua.support.ParseError
 
 data class PiecewiseGroup(
     val piecewiseSection: PiecewiseSection,
-    val whenTo: List<WhenToPair>,
+    val whenThen: List<WhenThenPair>,
     val elseSection: ElseSection?
 ) : Clause {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(piecewiseSection)
-        for (wt in whenTo) {
+        for (wt in whenThen) {
             fn(wt.whenSection)
-            fn(wt.toSection)
+            fn(wt.thenSection)
         }
         if (elseSection != null) {
             fn(elseSection)
@@ -57,9 +57,9 @@ data class PiecewiseGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections = mutableListOf<Phase2Node?>(piecewiseSection)
-        for (wt in whenTo) {
+        for (wt in whenThen) {
             sections.add(wt.whenSection)
-            sections.add(wt.toSection)
+            sections.add(wt.thenSection)
         }
         sections.add(elseSection)
         return topLevelToCode(writer, isArg, indent, null, *sections.toTypedArray())
@@ -69,11 +69,11 @@ data class PiecewiseGroup(
         chalkTransformer(
             PiecewiseGroup(
                 piecewiseSection = piecewiseSection.transform(chalkTransformer) as PiecewiseSection,
-                whenTo =
-                    whenTo.map {
-                        WhenToPair(
+                whenThen =
+                    whenThen.map {
+                        WhenThenPair(
                             whenSection = chalkTransformer(it.whenSection) as WhenSection,
-                            toSection = chalkTransformer(it.toSection) as ToSection)
+                            thenSection = chalkTransformer(it.thenSection) as ThenSection)
                     },
                 elseSection = elseSection?.transform(chalkTransformer) as ElseSection?))
 }
@@ -96,7 +96,7 @@ fun neoValidatePiecewiseGroup(
 
             val piecewiseSection =
                 neoValidatePiecewiseSection(group.sections.first(), errors, tracker)
-            val whenToList = mutableListOf<WhenToPair>()
+            val whenToList = mutableListOf<WhenThenPair>()
             var elseSection: ElseSection? = null
 
             var i = 1
@@ -108,17 +108,17 @@ fun neoValidatePiecewiseGroup(
                 i++
 
                 val whenSection = neoValidateWhenSection(sec, errors, tracker)
-                if (i >= group.sections.size || !isToSection(group.sections[i])) {
+                if (i >= group.sections.size || !isThenSection(group.sections[i])) {
                     errors.add(
                         ParseError(
-                            message = "A when: section must have an to: section",
+                            message = "A when: section must have an then: section",
                             row = getRow(sec),
                             column = getColumn(sec)))
                     break
                 }
 
-                val toSection = neoValidateToSection(group.sections[i++], errors, tracker)
-                whenToList.add(WhenToPair(whenSection, toSection))
+                val thenSection = neoValidateThenSection(group.sections[i++], errors, tracker)
+                whenToList.add(WhenThenPair(whenSection, thenSection))
             }
 
             if (i < group.sections.size && isElseSection(group.sections[i])) {
@@ -135,6 +135,8 @@ fun neoValidatePiecewiseGroup(
             }
 
             PiecewiseGroup(
-                piecewiseSection = piecewiseSection, whenTo = whenToList, elseSection = elseSection)
+                piecewiseSection = piecewiseSection,
+                whenThen = whenToList,
+                elseSection = elseSection)
         }
     }

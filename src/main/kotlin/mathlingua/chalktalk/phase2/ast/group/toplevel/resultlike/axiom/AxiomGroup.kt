@@ -21,6 +21,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_AXIOM_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_AXIOM_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
+import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
@@ -35,6 +36,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ne
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.chalktalk.phase2.ast.neoGetOptionalId
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
@@ -42,8 +44,11 @@ import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
+import mathlingua.transform.signature
 
 data class AxiomGroup(
+    val signature: String?,
+    val id: IdStatement?,
     val axiomSection: AxiomSection,
     val givenSection: GivenSection?,
     val whereSection: WhereSection?,
@@ -53,6 +58,9 @@ data class AxiomGroup(
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        if (id != null) {
+            fn(id)
+        }
         fn(axiomSection)
         if (usingSection != null) {
             fn(usingSection)
@@ -74,7 +82,7 @@ data class AxiomGroup(
             writer,
             isArg,
             indent,
-            null,
+            id,
             axiomSection,
             givenSection,
             whereSection,
@@ -85,6 +93,8 @@ data class AxiomGroup(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             AxiomGroup(
+                signature = signature,
+                id = id?.transform(chalkTransformer) as IdStatement?,
                 axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
@@ -100,12 +110,15 @@ fun neoValidateAxiomGroup(
 ) =
     neoTrack(node, tracker) {
         neoValidateGroup(node.resolve(), errors, "Axiom", DEFAULT_AXIOM_GROUP) { group ->
+            val id = neoGetOptionalId(group, errors, tracker)
             neoIdentifySections(
                 group,
                 errors,
                 DEFAULT_AXIOM_GROUP,
                 listOf("Axiom", "given?", "where?", "then", "using?", "Metadata?")) { sections ->
                 AxiomGroup(
+                    signature = id?.signature(),
+                    id = id,
                     axiomSection =
                         neoEnsureNonNull(sections["Axiom"], DEFAULT_AXIOM_SECTION) {
                             neoValidateAxiomSection(it, errors, tracker)

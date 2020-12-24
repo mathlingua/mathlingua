@@ -1,5 +1,15 @@
-Row: 0
-Column: 0
+Row: 1
+Column: 1
 Message:
-Expected an Id
+For pattern:
+
+Defines:
+where:
+when?:
+means:
+using?:
+written:
+Metadata?:
+
+Expected 'where' but found 'means'
 EndMessage:

@@ -31,7 +31,9 @@ import org.junit.jupiter.api.Test
 internal class SignatureUtilKtTest {
     @Test
     fun findAllStatementSignaturesNonGluedTest() {
-        val validation = MathLingua.parse("[\\xyz{x}]\nDefines: y\nmeans: 'something'")
+        val validation =
+            MathLingua.parse(
+                "[\\xyz{x}]\nDefines: y\nwhere: 'something'\nmeans: 'something'\nwritten: \"something\"")
         val doc = (validation as ValidationSuccess).value
         val defines = doc.defines()
         assertThat(defines.size).isEqualTo(1)
@@ -44,7 +46,10 @@ internal class SignatureUtilKtTest {
 
     @Test
     fun statementSignaturesNotAllowedToBeGluedTest() {
-        val validation = MathLingua.parse("[\\abc \\xyz{x}]\nDefines: y\nmeans: 'something'")
+        val validation =
+            MathLingua.parse(
+                "[\\abc \\xyz{x}]\nDefines: y\nwhere: 'something'\nmeans: 'something'\n" +
+                    "written: \"something\"")
         assertThat(validation is ValidationFailure)
         assertThat((validation as ValidationFailure).errors)
             .isEqualTo(
@@ -60,7 +65,10 @@ internal class SignatureUtilKtTest {
 
     @Test
     fun findAllStatementSignaturesInfixTest() {
-        val validation = MathLingua.parse("[x \\abc y]\nDefines: y\nmeans: 'something'")
+        val validation =
+            MathLingua.parse(
+                "[x \\abc y]\nDefines: y\nwhere: 'something'\nmeans: 'something'\n" +
+                    "written: \"something\"")
         val doc = (validation as ValidationSuccess).value
         val defines = doc.defines()
         assertThat(defines.size).isEqualTo(1)

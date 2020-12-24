@@ -1,5 +1,9 @@
 [A]
 Defines:
 . B
+where:
+. 'B is \something'
 means:
 . "C"
+written:
+. "something"

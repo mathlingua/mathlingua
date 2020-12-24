@@ -1,3 +1,5 @@
 [\f{x...}]
 Defines: X...#x...
+where: 'X is \something'
 means: "something for X...#x..."
+written: "something"

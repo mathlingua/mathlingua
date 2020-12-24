@@ -25,7 +25,13 @@ import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesCollectsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesEvaluatedGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGeneratedGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesInstantiatedGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMapsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -34,7 +40,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGrou
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.chalktalk.phase2.ast.validateDocument
-import mathlingua.chalktalk.phase2.findNode
 import mathlingua.support.Location
 import mathlingua.support.LocationTracker
 import mathlingua.support.ParseError
@@ -49,8 +54,6 @@ import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.OperatorTexTalkNode
 import mathlingua.textalk.TexTalkNode
 import mathlingua.transform.expandAsWritten
-import mathlingua.transform.expandAtNode
-import mathlingua.transform.fullExpandComplete
 import mathlingua.transform.getSignature
 import mathlingua.transform.locateAllCommands
 import mathlingua.transform.locateAllSignatures
@@ -121,7 +124,52 @@ object MathLingua {
                                     validationSuccess(
                                         ExpressionTexTalkNode(children = emptyList()))),
                         metaDataSection = null)
-                is DefinesGroup ->
+                is DefinesCollectsGroup ->
+                    group.copy(
+                        id =
+                            IdStatement(
+                                text = "",
+                                texTalkRoot =
+                                    validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList()))),
+                        metaDataSection = null)
+                is DefinesEvaluatedGroup ->
+                    group.copy(
+                        id =
+                            IdStatement(
+                                text = "",
+                                texTalkRoot =
+                                    validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList()))),
+                        metaDataSection = null)
+                is DefinesGeneratedGroup ->
+                    group.copy(
+                        id =
+                            IdStatement(
+                                text = "",
+                                texTalkRoot =
+                                    validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList()))),
+                        metaDataSection = null)
+                is DefinesInstantiatedGroup ->
+                    group.copy(
+                        id =
+                            IdStatement(
+                                text = "",
+                                texTalkRoot =
+                                    validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList()))),
+                        metaDataSection = null)
+                is DefinesMapsGroup ->
+                    group.copy(
+                        id =
+                            IdStatement(
+                                text = "",
+                                texTalkRoot =
+                                    validationSuccess(
+                                        ExpressionTexTalkNode(children = emptyList()))),
+                        metaDataSection = null)
+                is DefinesMeansGroup ->
                     group.copy(
                         id =
                             IdStatement(
@@ -327,7 +375,7 @@ object MathLingua {
                             null
                         } else {
                             Signature(
-                                form = it.signature,
+                                form = it.signature!!,
                                 location = tracker.getLocationOf(it)
                                         ?: Location(row = -1, column = -1))
                         }
@@ -349,6 +397,7 @@ object MathLingua {
         }
     }
 
+    /*
     fun expandAtPosition(
         text: String,
         row: Int,
@@ -367,8 +416,9 @@ object MathLingua {
                 validationSuccess(newDoc)
             }
         }
+     */
 
-    fun expand(doc: Document) = fullExpandComplete(doc)
+    // fun expand(doc: Document) = fullExpandComplete(doc)
 
     fun getPatternsToWrittenAs(
         defines: List<DefinesGroup>,

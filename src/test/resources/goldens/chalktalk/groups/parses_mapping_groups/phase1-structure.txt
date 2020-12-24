@@ -41,25 +41,33 @@ Root(
                             ),
                             Section(
                               name = Phase1Token(
-                                text = "evaluated"
+                                text = "where"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
                                 column = 1
                               )
                               args = [
                                        Argument(
+                                         chalkTalkTarget = Phase1Token(
+                                           text = "'f is \function'"
+                                           type = ChalkTalkTokenType.Statement
+                                           row = 2
+                                           column = 8
+                                         )
+                                       )
+                                     ]
+                            ),
+                            Section(
+                              name = Phase1Token(
+                                text = "maps"
+                                type = ChalkTalkTokenType.Name
+                                row = 3
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
                                          chalkTalkTarget = Group(
                                            sections = [
-                                                        Section(
-                                                          name = Phase1Token(
-                                                            text = "mapping"
-                                                            type = ChalkTalkTokenType.Name
-                                                            row = 3
-                                                            column = 3
-                                                          )
-                                                          args = [
-                                                                 ]
-                                                        ),
                                                         Section(
                                                           name = Phase1Token(
                                                             text = "from"
@@ -95,27 +103,27 @@ Root(
                                                                      )
                                                                    )
                                                                  ]
-                                                        ),
-                                                        Section(
-                                                          name = Phase1Token(
-                                                            text = "as"
-                                                            type = ChalkTalkTokenType.Name
-                                                            row = 6
-                                                            column = 3
-                                                          )
-                                                          args = [
-                                                                   Argument(
-                                                                     chalkTalkTarget = Phase1Token(
-                                                                       text = "'f(x) := x'"
-                                                                       type = ChalkTalkTokenType.Statement
-                                                                       row = 6
-                                                                       column = 7
-                                                                     )
-                                                                   )
-                                                                 ]
                                                         )
                                                       ]
                                            id = null
+                                         )
+                                       )
+                                     ]
+                            ),
+                            Section(
+                              name = Phase1Token(
+                                text = "written"
+                                type = ChalkTalkTokenType.Name
+                                row = 6
+                                column = 1
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Phase1Token(
+                                           text = ""f(x?)""
+                                           type = ChalkTalkTokenType.String
+                                           row = 6
+                                           column = 10
                                          )
                                        )
                                      ]

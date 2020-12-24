@@ -38,26 +38,26 @@ import mathlingua.support.ParseError
 data class MappingGroup(
     val mappingSection: MappingSection,
     val fromSection: FromSection,
-    val toSection: ToSection,
+    val thenSection: ToSection,
     val asSection: AsSection
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(mappingSection)
         fn(fromSection)
-        fn(toSection)
+        fn(thenSection)
         fn(asSection)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
         mathlingua.chalktalk.phase2.ast.clause.toCode(
-            writer, isArg, indent, mappingSection, fromSection, toSection, asSection)
+            writer, isArg, indent, mappingSection, fromSection, thenSection, asSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             MappingGroup(
                 mappingSection = mappingSection.transform(chalkTransformer) as MappingSection,
                 fromSection = fromSection.transform(chalkTransformer) as FromSection,
-                toSection = toSection.transform(chalkTransformer) as ToSection,
+                thenSection = thenSection.transform(chalkTransformer) as ToSection,
                 asSection = asSection.transform(chalkTransformer) as AsSection))
 }
 
@@ -80,7 +80,7 @@ fun neoValidateMappingGroup(
                         neoEnsureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
                             neoValidateFromSection(it, errors, tracker)
                         },
-                    toSection =
+                    thenSection =
                         neoEnsureNonNull(sections["to"], DEFAULT_TO_SECTION) {
                             neoValidateToSection(it, errors, tracker)
                         },

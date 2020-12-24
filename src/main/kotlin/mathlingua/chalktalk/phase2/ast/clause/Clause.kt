@@ -23,6 +23,8 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isIfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateIfGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.and.isAndGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.and.neoValidateAndGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.isCollectionGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.neoValidateCollectionGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.isExistsGroup
@@ -76,6 +78,15 @@ fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     } else sections[0].name.text == name
 }
 
+fun sectionsMatchNames(node: Phase1Node, name1: String, name2: String): Boolean {
+    if (node !is Group) {
+        return false
+    }
+
+    val name2Index = node.sections.indexOfFirst { it.name.text == name2 }
+    return node.sections.isNotEmpty() && node.sections[0].name.text == name1 && name2Index >= 0
+}
+
 fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1Node): CodeWriter {
     writer.writeIndent(isArg, indent)
     writer.writePhase1Node(phase1Node)
@@ -119,6 +130,7 @@ private val NEO_CLAUSE_VALIDATORS =
         NeoValidationPair(::isExistsGroup, ::neoValidateExistsGroup),
         NeoValidationPair(::isNotGroup, ::neoValidateNotGroup),
         NeoValidationPair(::isOrGroup, ::neoValidateOrGroup),
+        NeoValidationPair(::isAndGroup, ::neoValidateAndGroup),
         NeoValidationPair(::isIfGroup, ::neoValidateIfGroup),
         NeoValidationPair(::isIffGroup, ::neoValidateIffGroup),
         NeoValidationPair(::isExpandsGroup, ::neoValidateExpandsGroup),

@@ -349,7 +349,7 @@ private fun processFile(
 
             for (def in document.defines()) {
                 if (def.signature != null) {
-                    defSignatures.add(def.signature)
+                    defSignatures.add(def.signature!!)
                 }
             }
 

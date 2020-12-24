@@ -1,6 +1,6 @@
 Document(
   groups = [
-             DefinesGroup(
+             DefinesMeansGroup(
                signature = "\f"
                id = IdStatement(
                  text = "\f{x...}"
@@ -72,7 +72,65 @@ Document(
                              )
                            ]
                )
-               providedSection = null
+               whereSection = WhereSection(
+                 clauses = ClauseListNode(
+                   clauses = [
+                               Statement(
+                                 text = "X is \something"
+                                 texTalkRoot = ValidationSuccessImpl(
+                                   v = ExpressionTexTalkNode(
+                                     children = [
+                                                  IsTexTalkNode(
+                                                    lhs = ParametersTexTalkNode(
+                                                      items = [
+                                                                ExpressionTexTalkNode(
+                                                                  children = [
+                                                                               TextTexTalkNode(
+                                                                                 type = TexTalkNodeType.Identifier
+                                                                                 tokenType = TexTalkTokenType.Identifier
+                                                                                 text = "X"
+                                                                                 isVarArg = false
+                                                                               )
+                                                                             ]
+                                                                )
+                                                              ]
+                                                    )
+                                                    rhs = ParametersTexTalkNode(
+                                                      items = [
+                                                                ExpressionTexTalkNode(
+                                                                  children = [
+                                                                               Command(
+                                                                                 parts = [
+                                                                                           CommandPart(
+                                                                                             name = TextTexTalkNode(
+                                                                                               type = TexTalkNodeType.Identifier
+                                                                                               tokenType = TexTalkTokenType.Identifier
+                                                                                               text = "something"
+                                                                                               isVarArg = false
+                                                                                             )
+                                                                                             square = null
+                                                                                             subSup = null
+                                                                                             groups = [
+                                                                                                      ]
+                                                                                             paren = null
+                                                                                             namedGroups = [
+                                                                                                           ]
+                                                                                           )
+                                                                                         ]
+                                                                               )
+                                                                             ]
+                                                                )
+                                                              ]
+                                                    )
+                                                  )
+                                                ]
+                                   )
+                                 )
+                               )
+                             ]
+                 )
+               )
+               whenSection = null
                meansSection = MeansSection(
                  clauses = ClauseListNode(
                    clauses = [
@@ -82,9 +140,12 @@ Document(
                              ]
                  )
                )
-               evaluatedSection = null
                usingSection = null
-               writtenSection = null
+               writtenSection = WrittenSection(
+                 forms = [
+                           ""something""
+                         ]
+               )
                metaDataSection = null
              )
            ]

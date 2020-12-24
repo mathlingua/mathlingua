@@ -21,14 +21,15 @@ import java.awt.BorderLayout
 import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
+import java.io.File
+import java.util.concurrent.CompletableFuture
 import javax.swing.*
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
-import java.io.File
-import java.util.concurrent.CompletableFuture
 
 val BASE_DIR = File(System.getProperty("user.home"), "mlg-playground")
+
 val OUT_FILE = File(BASE_DIR, "out.lean")
 
 var isProcessing = false
@@ -39,8 +40,7 @@ data class LeanMessage(
     val pos_col: Int,
     val pos_line: Int,
     val severity: String,
-    val text: String
-)
+    val text: String)
 
 fun main() {
     if (!BASE_DIR.exists()) {
@@ -111,14 +111,20 @@ fun main() {
             CompletableFuture.runAsync {
                 outputErrorArea.text = "Processing..."
                 OUT_FILE.writeText(outputArea.text)
-                val outText = Runtime.getRuntime().exec("lean --json $OUT_FILE").inputStream.bufferedReader().readText()
+                val outText =
+                    Runtime.getRuntime()
+                        .exec("lean --json $OUT_FILE")
+                        .inputStream
+                        .bufferedReader()
+                        .readText()
                 isProcessing = false
 
                 SwingUtilities.invokeLater {
-                    val text = outText.split("\n").filter { it.trim().isNotEmpty() }.joinToString("\n") {
-                        val message = Klaxon().parse<LeanMessage>(it)
-                        "${message?.severity}: ${message?.text}"
-                    }
+                    val text =
+                        outText.split("\n").filter { it.trim().isNotEmpty() }.joinToString("\n") {
+                            val message = Klaxon().parse<LeanMessage>(it)
+                            "${message?.severity}: ${message?.text}"
+                        }
 
                     outputErrorArea.text = text
                 }
@@ -126,34 +132,30 @@ fun main() {
         }
     }
 
-    inputArea.addKeyListener(object : KeyListener {
-        override fun keyTyped(e: KeyEvent?) {
-        }
+    inputArea.addKeyListener(
+        object : KeyListener {
+            override fun keyTyped(e: KeyEvent?) {}
 
-        override fun keyPressed(e: KeyEvent?) {
-        }
+            override fun keyPressed(e: KeyEvent?) {}
 
-        override fun keyReleased(e: KeyEvent?) {
-            if (e == null) {
-                return
+            override fun keyReleased(e: KeyEvent?) {
+                if (e == null) {
+                    return
+                }
+
+                outputArea.text = inputArea.text
+                leanParse()
             }
+        })
 
-            outputArea.text = inputArea.text
-            leanParse()
-        }
-    })
+    outputArea.addKeyListener(
+        object : KeyListener {
+            override fun keyTyped(e: KeyEvent?) {}
 
+            override fun keyPressed(e: KeyEvent?) {}
 
-
-    outputArea.addKeyListener(object : KeyListener {
-        override fun keyTyped(e: KeyEvent?) {
-        }
-
-        override fun keyPressed(e: KeyEvent?) {
-        }
-
-        override fun keyReleased(e: KeyEvent?) {
-            leanParse()
-        }
-    })
+            override fun keyReleased(e: KeyEvent?) {
+                leanParse()
+            }
+        })
 }

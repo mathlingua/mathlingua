@@ -19,10 +19,10 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_COLLECTS_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.given.GivenGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.given.neoValidateGivenGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.given.validateGivenGroup
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
+import mathlingua.chalktalk.phase2.ast.validateSection
+import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -44,14 +44,13 @@ data class CollectsSection(val givenGroup: GivenGroup) : Phase2Node {
             CollectsSection(givenGroup = givenGroup.transform(chalkTransformer) as GivenGroup))
 }
 
-fun neoValidateCollectsSection(
+fun validateCollectsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "collects", DEFAULT_COLLECTS_SECTION) {
-        section ->
-            neoValidateSingleArg(section, errors, DEFAULT_COLLECTS_SECTION, "given group") { arg ->
-                CollectsSection(givenGroup = neoValidateGivenGroup(arg.resolve(), errors, tracker))
+        validateSection(node.resolve(), errors, "collects", DEFAULT_COLLECTS_SECTION) { section ->
+            validateSingleArg(section, errors, DEFAULT_COLLECTS_SECTION, "given group") { arg ->
+                CollectsSection(givenGroup = validateGivenGroup(arg.resolve(), errors, tracker))
             }
         }
     }

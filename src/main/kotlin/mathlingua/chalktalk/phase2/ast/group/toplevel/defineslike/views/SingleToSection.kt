@@ -20,11 +20,11 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_SINGLE_TO_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.chalktalk.phase2.ast.clause.neoValidateStatement
+import mathlingua.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
+import mathlingua.chalktalk.phase2.ast.validateSection
+import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -43,15 +43,15 @@ data class SingleToSection(val clauses: ClauseListNode) : Phase2Node {
             SingleToSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun neoValidateSingleToSection(
+fun validateSingleToSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "to", DEFAULT_SINGLE_TO_SECTION) { section ->
-            neoValidateSingleArg(section, errors, DEFAULT_SINGLE_TO_SECTION, "statement") {
+        validateSection(node.resolve(), errors, "to", DEFAULT_SINGLE_TO_SECTION) { section ->
+            validateSingleArg(section, errors, DEFAULT_SINGLE_TO_SECTION, "statement") {
                 SingleToSection(
                     clauses =
-                        ClauseListNode(clauses = listOf(neoValidateStatement(it, errors, tracker))))
+                        ClauseListNode(clauses = listOf(validateStatement(it, errors, tracker))))
             }
         }
     }

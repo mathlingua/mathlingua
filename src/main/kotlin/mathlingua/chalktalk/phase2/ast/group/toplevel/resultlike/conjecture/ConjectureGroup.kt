@@ -25,23 +25,23 @@ import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.neoValidateGivenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoGetOptionalId
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.transform.signature
@@ -106,11 +106,11 @@ data class ConjectureGroup(
 
 fun isConjectureGroup(node: Phase1Node) = firstSectionMatchesName(node, "Conjecture")
 
-fun neoValidateConjectureGroup(
+fun validateConjectureGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "Conjecture", DEFAULT_CONJECTURE_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "Conjecture", DEFAULT_CONJECTURE_GROUP) { group ->
             val id = neoGetOptionalId(group, errors, tracker)
             neoIdentifySections(
                 group,
@@ -123,27 +123,27 @@ fun neoValidateConjectureGroup(
                     id = id,
                     conjectureSection =
                         neoEnsureNonNull(sections["Conjecture"], DEFAULT_CONJECTURE_SECTION) {
-                            neoValidateConjectureSection(it, errors, tracker)
+                            validateConjectureSection(it, errors, tracker)
                         },
                     givenSection =
                         neoIfNonNull(sections["given"]) {
-                            neoValidateGivenSection(it, errors, tracker)
+                            validateGivenSection(it, errors, tracker)
                         },
                     whereSection =
                         neoIfNonNull(sections["where"]) {
-                            neoValidateWhereSection(it, errors, tracker)
+                            validateWhereSection(it, errors, tracker)
                         },
                     thenSection =
                         neoEnsureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
-                            neoValidateThenSection(it, errors, tracker)
+                            validateThenSection(it, errors, tracker)
                         },
                     usingSection =
                         neoIfNonNull(sections["using"]) {
-                            neoValidateUsingSection(it, errors, tracker)
+                            validateUsingSection(it, errors, tracker)
                         },
                     metaDataSection =
                         neoIfNonNull(sections["Metadata"]) {
-                            neoValidateMetaDataSection(it, errors, tracker)
+                            validateMetaDataSection(it, errors, tracker)
                         })
             }
         }

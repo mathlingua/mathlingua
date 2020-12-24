@@ -21,10 +21,10 @@ import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_PROVIDED_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
+import mathlingua.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -48,11 +48,11 @@ data class ProvidedSection(val clauses: ClauseListNode) : Phase2Node {
 
 fun isProvidedSection(sec: Section) = sec.name.text == "provided"
 
-fun neoValidateProvidedSection(
+fun validateProvidedSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "provided", DEFAULT_PROVIDED_SECTION) {
-            ProvidedSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        validateSection(node.resolve(), errors, "provided", DEFAULT_PROVIDED_SECTION) {
+            ProvidedSection(clauses = validateClauseListNode(it, errors, tracker))
         }
     }

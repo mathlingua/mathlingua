@@ -26,15 +26,15 @@ import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.WhenThenPair
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -80,22 +80,21 @@ data class PiecewiseGroup(
 
 fun isPiecewiseGroup(node: Phase1Node) = firstSectionMatchesName(node, "piecewise")
 
-fun neoValidatePiecewiseGroup(
+fun validatePiecewiseGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "piecewise", DEFAULT_PIECEWISE_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "piecewise", DEFAULT_PIECEWISE_GROUP) { group ->
             if (group.sections.isEmpty() || !isPiecewiseSection(group.sections.first())) {
                 errors.add(
                     ParseError(
                         message = "Expected an piecewise: section",
                         row = getRow(node),
                         column = getColumn(node)))
-                return@neoValidateGroup DEFAULT_PIECEWISE_GROUP
+                return@validateGroup DEFAULT_PIECEWISE_GROUP
             }
 
-            val piecewiseSection =
-                neoValidatePiecewiseSection(group.sections.first(), errors, tracker)
+            val piecewiseSection = validatePiecewiseSection(group.sections.first(), errors, tracker)
             val whenToList = mutableListOf<WhenThenPair>()
             var elseSection: ElseSection? = null
 
@@ -107,7 +106,7 @@ fun neoValidatePiecewiseGroup(
                 }
                 i++
 
-                val whenSection = neoValidateWhenSection(sec, errors, tracker)
+                val whenSection = validateWhenSection(sec, errors, tracker)
                 if (i >= group.sections.size || !isThenSection(group.sections[i])) {
                     errors.add(
                         ParseError(
@@ -117,12 +116,12 @@ fun neoValidatePiecewiseGroup(
                     break
                 }
 
-                val thenSection = neoValidateThenSection(group.sections[i++], errors, tracker)
+                val thenSection = validateThenSection(group.sections[i++], errors, tracker)
                 whenToList.add(WhenThenPair(whenSection, thenSection))
             }
 
             if (i < group.sections.size && isElseSection(group.sections[i])) {
-                elseSection = neoValidateElseSection(group.sections[i++], errors, tracker)
+                elseSection = validateElseSection(group.sections[i++], errors, tracker)
             }
 
             while (i < group.sections.size) {

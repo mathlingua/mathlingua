@@ -22,11 +22,11 @@ import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.FromSection
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.neoValidateFromSection
+import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateFromSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -39,23 +39,22 @@ data class ConstructorGroup(
 
 fun isConstructorGroup(node: Phase1Node) = firstSectionMatchesName(node, "constructor")
 
-fun neoValidateConstructorGroup(
+fun validateConstructorGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "constructor", DEFAULT_CONSTRUCTOR_GROUP) {
-        group ->
+        validateGroup(node.resolve(), errors, "constructor", DEFAULT_CONSTRUCTOR_GROUP) { group ->
             neoIdentifySections(
                 group, errors, DEFAULT_CONSTRUCTOR_GROUP, listOf("constructor", "from")) {
             sections ->
                 ConstructorGroup(
                     constructorSection =
                         neoEnsureNonNull(sections["constructor"], DEFAULT_CONSTRUCTOR_SECTION) {
-                            neoValidateConstructorSection(it, errors, tracker)
+                            validateConstructorSection(it, errors, tracker)
                         },
                     fromSection =
                         neoEnsureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
-                            neoValidateFromSection(it, errors, tracker)
+                            validateFromSection(it, errors, tracker)
                         })
             }
         }

@@ -22,43 +22,43 @@ import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isIfGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateIfGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateIfGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.and.isAndGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.and.neoValidateAndGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.and.validateAndGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.collection.isCollectionGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.collection.neoValidateCollectionGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.collection.validateCollectionGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.isExistsGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.neoValidateExistsGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.exists.validateExistsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.isExpandsGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.expands.neoValidateExpandsGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.expands.validateExpandsGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.isForGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.forAll.neoValidateForGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.forAll.validateForGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.isIffGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.iff.neoValidateIffGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.iff.validateIffGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.inductively.isConstantGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.inductively.isConstructorGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.inductively.isInductivelyGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.inductively.neoValidateConstantGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.inductively.neoValidateConstructorGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.inductively.neoValidateInductivelyGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.inductively.validateConstantGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.inductively.validateConstructorGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.inductively.validateInductivelyGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.isMappingGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.mapping.neoValidateMappingGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateMappingGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.matching.isMatchingGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.matching.neoValidateMatchingGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.matching.validateMatchingGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.not.isNotGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.not.neoValidateNotGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.not.validateNotGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.or.isOrGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.or.neoValidateOrGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.or.validateOrGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.piecewise.isPiecewiseGroup
-import mathlingua.chalktalk.phase2.ast.group.clause.piecewise.neoValidatePiecewiseGroup
+import mathlingua.chalktalk.phase2.ast.group.clause.piecewise.validatePiecewiseGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.neoValidateDefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.neoValidateEvaluatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.neoValidateStatesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.neoValidateViewsGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -120,33 +120,33 @@ private data class NeoValidationPair<T>(
 
 private val NEO_CLAUSE_VALIDATORS =
     listOf(
-        NeoValidationPair<Clause>(::isAbstraction, ::neoValidateAbstractionNode),
-        NeoValidationPair(::isTuple, ::neoValidateTupleNode),
-        NeoValidationPair(::isAssignment, ::neoValidateAssignmentNode),
-        NeoValidationPair(::isIdentifier, ::neoValidateIdentifier),
-        NeoValidationPair(::isStatement, ::neoValidateStatement),
-        NeoValidationPair(::isText, ::neoValidateText),
-        NeoValidationPair(::isForGroup, ::neoValidateForGroup),
-        NeoValidationPair(::isExistsGroup, ::neoValidateExistsGroup),
-        NeoValidationPair(::isNotGroup, ::neoValidateNotGroup),
-        NeoValidationPair(::isOrGroup, ::neoValidateOrGroup),
-        NeoValidationPair(::isAndGroup, ::neoValidateAndGroup),
-        NeoValidationPair(::isIfGroup, ::neoValidateIfGroup),
-        NeoValidationPair(::isIffGroup, ::neoValidateIffGroup),
-        NeoValidationPair(::isExpandsGroup, ::neoValidateExpandsGroup),
-        NeoValidationPair(::isMappingGroup, ::neoValidateMappingGroup),
-        NeoValidationPair(::isCollectionGroup, ::neoValidateCollectionGroup),
-        NeoValidationPair(::isMatchingGroup, ::neoValidateMatchingGroup),
-        NeoValidationPair(::isConstantGroup, ::neoValidateConstantGroup),
-        NeoValidationPair(::isConstructorGroup, ::neoValidateConstructorGroup),
-        NeoValidationPair(::isInductivelyGroup, ::neoValidateInductivelyGroup),
-        NeoValidationPair(::isPiecewiseGroup, ::neoValidatePiecewiseGroup),
-        NeoValidationPair(::isEvaluatesGroup, ::neoValidateEvaluatesGroup),
-        NeoValidationPair(::isDefinesGroup, ::neoValidateDefinesGroup),
-        NeoValidationPair(::isStatesGroup, ::neoValidateStatesGroup),
-        NeoValidationPair(::isViewsGroup, ::neoValidateViewsGroup))
+        NeoValidationPair<Clause>(::isAbstraction, ::validateAbstractionNode),
+        NeoValidationPair(::isTuple, ::validateTupleNode),
+        NeoValidationPair(::isAssignment, ::validateAssignmentNode),
+        NeoValidationPair(::isIdentifier, ::validateIdentifier),
+        NeoValidationPair(::isStatement, ::validateStatement),
+        NeoValidationPair(::isText, ::validateText),
+        NeoValidationPair(::isForGroup, ::validateForGroup),
+        NeoValidationPair(::isExistsGroup, ::validateExistsGroup),
+        NeoValidationPair(::isNotGroup, ::validateNotGroup),
+        NeoValidationPair(::isOrGroup, ::validateOrGroup),
+        NeoValidationPair(::isAndGroup, ::validateAndGroup),
+        NeoValidationPair(::isIfGroup, ::validateIfGroup),
+        NeoValidationPair(::isIffGroup, ::validateIffGroup),
+        NeoValidationPair(::isExpandsGroup, ::validateExpandsGroup),
+        NeoValidationPair(::isMappingGroup, ::validateMappingGroup),
+        NeoValidationPair(::isCollectionGroup, ::validateCollectionGroup),
+        NeoValidationPair(::isMatchingGroup, ::validateMatchingGroup),
+        NeoValidationPair(::isConstantGroup, ::validateConstantGroup),
+        NeoValidationPair(::isConstructorGroup, ::validateConstructorGroup),
+        NeoValidationPair(::isInductivelyGroup, ::validateInductivelyGroup),
+        NeoValidationPair(::isPiecewiseGroup, ::validatePiecewiseGroup),
+        NeoValidationPair(::isEvaluatesGroup, ::validateEvaluatesGroup),
+        NeoValidationPair(::isDefinesGroup, ::validateDefinesGroup),
+        NeoValidationPair(::isStatesGroup, ::validateStatesGroup),
+        NeoValidationPair(::isViewsGroup, ::validateViewsGroup))
 
-fun neoValidateClause(
+fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): Clause {
     val node = rawNode.resolve()

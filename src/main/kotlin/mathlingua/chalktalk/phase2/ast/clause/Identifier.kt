@@ -23,7 +23,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_IDENTIFIER
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
+import mathlingua.chalktalk.phase2.ast.validateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -42,11 +42,11 @@ data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
 
 fun isIdentifier(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Name
 
-fun neoValidateIdentifier(
+fun validateIdentifier(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateByTransform(
+        validateByTransform(
             node = node.resolve(),
             errors = errors,
             default = DEFAULT_IDENTIFIER,

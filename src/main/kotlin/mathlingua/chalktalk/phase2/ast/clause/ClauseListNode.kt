@@ -23,7 +23,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_CLAUSE_LIST_NODE
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -48,11 +48,11 @@ data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
     }
 }
 
-fun neoValidateClauseListNode(
+fun validateClauseListNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, DEFAULT_CLAUSE_LIST_NODE) {
+        validateSection(node.resolve(), errors, DEFAULT_CLAUSE_LIST_NODE) {
             if (it.args.isEmpty()) {
                 errors.add(
                     ParseError(
@@ -62,7 +62,7 @@ fun neoValidateClauseListNode(
                 DEFAULT_CLAUSE_LIST_NODE
             } else {
                 ClauseListNode(
-                    clauses = it.args.map { arg -> neoValidateClause(arg, errors, tracker) })
+                    clauses = it.args.map { arg -> validateClause(arg, errors, tracker) })
             }
         }
     }

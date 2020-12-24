@@ -26,15 +26,15 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.Co
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.OffsetItemSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.PageItemSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SourceItemSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateContentItemSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateOffsetItemSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidatePageItemSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateSourceItemSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateContentItemSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateOffsetItemSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validatePageItemSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateSourceItemSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -75,10 +75,10 @@ data class SourceItemGroup(
 
 fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
 
-fun neoValidateSourceItemGroup(
+fun validateSourceItemGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoValidateGroup(node, errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->
+    validateGroup(node, errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->
         neoIdentifySections(
             group,
             errors,
@@ -87,19 +87,17 @@ fun neoValidateSourceItemGroup(
             SourceItemGroup(
                 sourceSection =
                     neoEnsureNonNull(sections["source"], DEFAULT_SOURCE_ITEM_SECTION) {
-                        neoValidateSourceItemSection(it, errors, tracker)
+                        validateSourceItemSection(it, errors, tracker)
                     },
                 pageSection =
-                    neoIfNonNull(sections["page"]) {
-                        neoValidatePageItemSection(it, errors, tracker)
-                    },
+                    neoIfNonNull(sections["page"]) { validatePageItemSection(it, errors, tracker) },
                 offsetSection =
                     neoIfNonNull(sections["offset"]) {
-                        neoValidateOffsetItemSection(it, errors, tracker)
+                        validateOffsetItemSection(it, errors, tracker)
                     },
                 contentSection =
                     neoIfNonNull(sections["content"]) {
-                        neoValidateContentItemSection(it, errors, tracker)
+                        validateContentItemSection(it, errors, tracker)
                     })
         }
     }

@@ -22,11 +22,11 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_REFERENCE_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ReferenceSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateReferenceSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateReferenceSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -35,17 +35,17 @@ data class ReferenceGroup(val referenceSection: ReferenceSection) :
 
 fun isReferenceGroup(node: Phase1Node) = firstSectionMatchesName(node, "reference")
 
-fun neoValidateReferenceGroup(
+fun validateReferenceGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node, errors, "reference", DEFAULT_REFERENCE_GROUP) { group ->
+        validateGroup(node, errors, "reference", DEFAULT_REFERENCE_GROUP) { group ->
             neoIdentifySections(group, errors, DEFAULT_REFERENCE_GROUP, listOf("reference")) {
             sections ->
                 ReferenceGroup(
                     referenceSection =
                         neoEnsureNonNull(sections["reference"], DEFAULT_REFERENCE_SECTION) {
-                            neoValidateReferenceSection(it, errors, tracker)
+                            validateReferenceSection(it, errors, tracker)
                         })
             }
         }

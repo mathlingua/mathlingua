@@ -35,26 +35,26 @@ abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
 
 fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
 
-fun neoValidateDefinesGroup(
+fun validateDefinesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): DefinesGroup =
     when {
         isDefinesCollectsGroup(node) -> {
-            neoValidateDefinesCollectsGroup(node, errors, tracker)
+            validateDefinesCollectsGroup(node, errors, tracker)
         }
         isDefinesGeneratedGroup(node) -> {
-            neoValidateDefinesGeneratedGroup(node, errors, tracker)
+            validateDefinesGeneratedGroup(node, errors, tracker)
         }
         isDefinesInstantiatedGroup(node) -> {
-            neoValidateDefinesInstantiatedGroup(node, errors, tracker)
+            validateDefinesInstantiatedGroup(node, errors, tracker)
         }
         isDefinesMapsGroup(node) -> {
-            neoValidateDefinesMapsGroup(node, errors, tracker)
+            validateDefinesMapsGroup(node, errors, tracker)
         }
         isDefinesEvaluatedGroup(node) -> {
-            neoValidateDefinesEvaluatedGroup(node, errors, tracker)
+            validateDefinesEvaluatedGroup(node, errors, tracker)
         }
         else -> {
-            neoValidateDefinesMeansGroup(node, errors, tracker)
+            validateDefinesMeansGroup(node, errors, tracker)
         }
     }

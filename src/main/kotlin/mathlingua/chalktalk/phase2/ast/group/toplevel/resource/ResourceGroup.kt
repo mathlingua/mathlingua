@@ -25,13 +25,13 @@ import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.validationFailure
@@ -68,11 +68,11 @@ data class ResourceGroup(
 
 fun isResourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Resource")
 
-fun neoValidateResourceGroup(
+fun validateResourceGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "Resource", DEFAULT_RESOURCE_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "Resource", DEFAULT_RESOURCE_GROUP) { group ->
             neoIdentifySections(
                 group, errors, DEFAULT_RESOURCE_GROUP, listOf("Resource", "Metadata?")) {
             sections ->
@@ -83,11 +83,11 @@ fun neoValidateResourceGroup(
                         id = group.id.text.removeSurrounding("[", "]"),
                         sourceSection =
                             neoEnsureNonNull(sections["Resource"], DEFAULT_RESOURCE_SECTION) {
-                                neoValidateResourceSection(it, errors, tracker)
+                                validateResourceSection(it, errors, tracker)
                             },
                         metaDataSection =
                             neoIfNonNull(sections["Metadata"]) {
-                                neoValidateMetaDataSection(it, errors, tracker)
+                                validateMetaDataSection(it, errors, tracker)
                             })
                 }
             }

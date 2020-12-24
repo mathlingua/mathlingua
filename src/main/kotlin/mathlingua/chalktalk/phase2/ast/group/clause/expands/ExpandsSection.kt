@@ -25,8 +25,8 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_EXPANDS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -57,11 +57,11 @@ private fun isValidAbstraction(abstraction: Abstraction) =
                 abstraction.isVarArgs &&
                 !abstraction.parts[0].name.text.endsWith("...")))
 
-fun neoValidateExpandsSection(
+fun validateExpandsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node, errors, "expands", DEFAULT_EXPANDS_SECTION) { section ->
+        validateSection(node, errors, "expands", DEFAULT_EXPANDS_SECTION) { section ->
             if (section.args.isEmpty() ||
                 section.args.any {
                     it.chalkTalkTarget !is Abstraction || !isValidAbstraction(it.chalkTalkTarget)

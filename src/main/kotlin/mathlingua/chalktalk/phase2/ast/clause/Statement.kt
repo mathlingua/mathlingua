@@ -23,7 +23,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_STATEMENT
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateByTransform
+import mathlingua.chalktalk.phase2.ast.validateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
@@ -50,11 +50,11 @@ data class Statement(val text: String, val texTalkRoot: Validation<ExpressionTex
 fun isStatement(node: Phase1Node) =
     node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 
-fun neoValidateStatement(
+fun validateStatement(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateByTransform(
+        validateByTransform(
             node = node.resolve(),
             errors = errors,
             default = DEFAULT_STATEMENT,

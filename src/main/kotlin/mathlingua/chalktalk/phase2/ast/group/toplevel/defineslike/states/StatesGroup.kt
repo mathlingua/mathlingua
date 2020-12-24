@@ -28,20 +28,20 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.neoValidateWrittenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoGetId
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.transform.signature
@@ -99,11 +99,11 @@ data class StatesGroup(
 
 fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
 
-fun neoValidateStatesGroup(
+fun validateStatesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "States", DEFAULT_STATES_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "States", DEFAULT_STATES_GROUP) { group ->
             neoIdentifySections(
                 group,
                 errors,
@@ -115,27 +115,25 @@ fun neoValidateStatesGroup(
                     id = id,
                     statesSection =
                         neoEnsureNonNull(sections["States"], DEFAULT_STATES_SECTION) {
-                            neoValidateStatesSection(it, errors, tracker)
+                            validateStatesSection(it, errors, tracker)
                         },
                     whenSection =
-                        neoIfNonNull(sections["when"]) {
-                            neoValidateWhenSection(it, errors, tracker)
-                        },
+                        neoIfNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
                     thatSection =
                         neoEnsureNonNull(sections["that"], DEFAULT_THAT_SECTION) {
-                            neoValidateThatSection(it, errors, tracker)
+                            validateThatSection(it, errors, tracker)
                         },
                     usingSection =
                         neoIfNonNull(sections["using"]) {
-                            neoValidateUsingSection(it, errors, tracker)
+                            validateUsingSection(it, errors, tracker)
                         },
                     writtenSection =
                         neoIfNonNull(sections["written"]) {
-                            neoValidateWrittenSection(it, errors, tracker)
+                            validateWrittenSection(it, errors, tracker)
                         },
                     metaDataSection =
                         neoIfNonNull(sections["Metadata"]) {
-                            neoValidateMetaDataSection(it, errors, tracker)
+                            validateMetaDataSection(it, errors, tracker)
                         })
             }
         }

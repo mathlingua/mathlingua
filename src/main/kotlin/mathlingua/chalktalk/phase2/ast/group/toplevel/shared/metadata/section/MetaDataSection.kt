@@ -30,7 +30,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.isSingleSe
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.MetaDataItem
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isReferenceGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.neoValidateReferenceGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateReferenceGroup
 import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
@@ -68,14 +68,14 @@ data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
 
 fun isMetadataSection(sec: Section) = sec.name.text == "Metadata"
 
-fun neoValidateMetaDataSection(
+fun validateMetaDataSection(
     section: Section, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(section, tracker) {
         val items = mutableListOf<MetaDataItem>()
         for (arg in section.args) {
             if (isReferenceGroup(arg.chalkTalkTarget)) {
-                items.add(neoValidateMetaDataItem(arg, errors, tracker))
+                items.add(validateMetaDataItem(arg, errors, tracker))
             } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
                 val group = arg.chalkTalkTarget as Group
                 val sect = group.sections[0]
@@ -133,7 +133,7 @@ fun neoValidateMetaDataSection(
         MetaDataSection(items = items)
     }
 
-private fun neoValidateMetaDataItem(
+private fun validateMetaDataItem(
     arg: Argument, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): MetaDataItem =
     if (arg.chalkTalkTarget !is Group) {
@@ -141,5 +141,5 @@ private fun neoValidateMetaDataItem(
             ParseError(message = "Expected a group", row = getRow(arg), column = getColumn(arg)))
         DEFAULT_META_DATA_ITEM
     } else {
-        neoValidateReferenceGroup(arg.chalkTalkTarget, errors, tracker)
+        validateReferenceGroup(arg.chalkTalkTarget, errors, tracker)
     }

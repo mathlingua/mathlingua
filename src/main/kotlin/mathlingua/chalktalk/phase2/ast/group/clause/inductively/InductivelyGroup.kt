@@ -22,9 +22,9 @@ import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -37,23 +37,22 @@ data class InductivelyGroup(
 
 fun isInductivelyGroup(node: Phase1Node) = firstSectionMatchesName(node, "inductively")
 
-fun neoValidateInductivelyGroup(
+fun validateInductivelyGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "inductively", DEFAULT_INDUCTIVELY_GROUP) {
-        group ->
+        validateGroup(node.resolve(), errors, "inductively", DEFAULT_INDUCTIVELY_GROUP) { group ->
             neoIdentifySections(
                 group, errors, DEFAULT_INDUCTIVELY_GROUP, listOf("inductively", "from")) {
             sections ->
                 InductivelyGroup(
                     inductivelySection =
                         neoEnsureNonNull(sections["inductively"], DEFAULT_INDUCTIVELY_SECTION) {
-                            neoValidateInductivelySection(it, errors, tracker)
+                            validateInductivelySection(it, errors, tracker)
                         },
                     fromSection =
                         neoEnsureNonNull(sections["from"], DEFAULT_INDUCTIVELY_FROM_SECTION) {
-                            neoValidateInductivelyFromSection(it, errors, tracker)
+                            validateInductivelyFromSection(it, errors, tracker)
                         })
             }
         }

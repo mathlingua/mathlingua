@@ -21,9 +21,9 @@ import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -32,17 +32,17 @@ data class ConstantGroup(val constantSection: ConstantSection) :
 
 fun isConstantGroup(node: Phase1Node) = firstSectionMatchesName(node, "constant")
 
-fun neoValidateConstantGroup(
+fun validateConstantGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "constant", DEFAULT_CONSTANT_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "constant", DEFAULT_CONSTANT_GROUP) { group ->
             neoIdentifySections(group, errors, DEFAULT_CONSTANT_GROUP, listOf("constant")) {
             sections ->
                 ConstantGroup(
                     constantSection =
                         neoEnsureNonNull(sections["constant"], DEFAULT_CONSTANT_SECTION) {
-                            neoValidateConstantSection(it, errors, tracker)
+                            validateConstantSection(it, errors, tracker)
                         })
             }
         }

@@ -28,28 +28,28 @@ import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isThenSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateElseSection
-import mathlingua.chalktalk.phase2.ast.group.clause.If.neoValidateThenSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateElseSection
+import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.WhenThenPair
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.isWrittenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.neoValidateWrittenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.isUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.isMetadataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoGetId
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.transform.signature
@@ -117,11 +117,11 @@ data class EvaluatesGroup(
 
 fun isEvaluatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Evaluates")
 
-fun neoValidateEvaluatesGroup(
+fun validateEvaluatesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node, errors, "Evaluates", DEFAULT_EVALUATES_GROUP) { group ->
+        validateGroup(node, errors, "Evaluates", DEFAULT_EVALUATES_GROUP) { group ->
             val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
             if (group.sections.isEmpty() || !isEvaluatesSection(group.sections.first())) {
                 errors.add(
@@ -146,7 +146,7 @@ fun neoValidateEvaluatesGroup(
                     }
                     i++
 
-                    val whenSection = neoValidateWhenSection(sec, errors, tracker)
+                    val whenSection = validateWhenSection(sec, errors, tracker)
                     if (i >= group.sections.size || !isThenSection(group.sections[i])) {
                         errors.add(
                             ParseError(
@@ -156,13 +156,13 @@ fun neoValidateEvaluatesGroup(
                         break
                     }
 
-                    val thenSection = neoValidateThenSection(group.sections[i++], errors, tracker)
+                    val thenSection = validateThenSection(group.sections[i++], errors, tracker)
                     whenToList.add(WhenThenPair(whenSection, thenSection))
                 }
 
                 if (i < group.sections.size && isElseSection(group.sections[i])) {
                     val errorCount = errors.size
-                    elseSection = neoValidateElseSection(group.sections[i], errors, tracker)
+                    elseSection = validateElseSection(group.sections[i], errors, tracker)
                     if (errorCount == errors.size) {
                         i++
                     }
@@ -170,7 +170,7 @@ fun neoValidateEvaluatesGroup(
 
                 if (i < group.sections.size && isUsingSection(group.sections[i])) {
                     val errorCount = errors.size
-                    usingSection = neoValidateUsingSection(group.sections[i], errors, tracker)
+                    usingSection = validateUsingSection(group.sections[i], errors, tracker)
                     if (errorCount == errors.size) {
                         i++
                     }
@@ -178,15 +178,14 @@ fun neoValidateEvaluatesGroup(
 
                 if (i < group.sections.size && isWrittenSection(group.sections[i])) {
                     val errorCount = errors.size
-                    writtenSection = neoValidateWrittenSection(group.sections[i], errors, tracker)
+                    writtenSection = validateWrittenSection(group.sections[i], errors, tracker)
                     if (errorCount == errors.size) {
                         i++
                     }
                 }
 
                 if (i < group.sections.size && isMetadataSection(group.sections[i])) {
-                    metaDataSection =
-                        neoValidateMetaDataSection(group.sections[i++], errors, tracker)
+                    metaDataSection = validateMetaDataSection(group.sections[i++], errors, tracker)
                 }
 
                 while (i < group.sections.size) {
@@ -214,7 +213,7 @@ fun neoValidateEvaluatesGroup(
                         id = id,
                         evaluatesSection =
                             neoEnsureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {
-                                neoValidateEvaluatesSection(it, errors, tracker)
+                                validateEvaluatesSection(it, errors, tracker)
                             },
                         whenThen = whenToList,
                         elseSection = elseSection!!,

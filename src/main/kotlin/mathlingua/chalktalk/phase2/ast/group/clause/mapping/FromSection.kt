@@ -20,10 +20,10 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_FROM_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Statement
-import mathlingua.chalktalk.phase2.ast.clause.neoValidateStatement
+import mathlingua.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -51,12 +51,11 @@ data class FromSection(val statements: List<Statement>) : Phase2Node {
             FromSection(statements = statements.map { chalkTransformer(it) as Statement }))
 }
 
-fun neoValidateFromSection(
+fun validateFromSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "from", DEFAULT_FROM_SECTION) {
-            FromSection(
-                statements = it.args.map { arg -> neoValidateStatement(arg, errors, tracker) })
+        validateSection(node.resolve(), errors, "from", DEFAULT_FROM_SECTION) {
+            FromSection(statements = it.args.map { arg -> validateStatement(arg, errors, tracker) })
         }
     }

@@ -26,7 +26,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -50,11 +50,11 @@ data class WrittenSection(val forms: List<String>) : Phase2Node {
 
 fun isWrittenSection(sec: Section) = sec.name.text == "written"
 
-fun neoValidateWrittenSection(
+fun validateWrittenSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "written", DEFAULT_WRITTEN_SECTION) { section ->
+        validateSection(node.resolve(), errors, "written", DEFAULT_WRITTEN_SECTION) { section ->
             if (section.args.isEmpty() ||
                 !section.args.all {
                     it.chalkTalkTarget is Phase1Token &&

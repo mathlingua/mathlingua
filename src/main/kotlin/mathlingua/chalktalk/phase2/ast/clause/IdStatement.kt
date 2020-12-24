@@ -41,10 +41,10 @@ data class IdStatement(val text: String, val texTalkRoot: Validation<ExpressionT
     fun toStatement() = Statement(text = text, texTalkRoot = texTalkRoot)
 }
 
-fun neoValidateIdStatement(
+fun validateIdStatement(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        val statement = neoValidateStatement(node.resolve(), errors, tracker)
+        val statement = validateStatement(node.resolve(), errors, tracker)
         IdStatement(text = statement.text, texTalkRoot = statement.texTalkRoot)
     }

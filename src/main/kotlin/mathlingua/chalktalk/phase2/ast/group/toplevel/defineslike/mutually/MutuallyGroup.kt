@@ -22,13 +22,13 @@ import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -55,22 +55,22 @@ data class MutuallyGroup(
 
 fun isMutuallyGroup(node: Phase1Node) = firstSectionMatchesName(node, "Mutually")
 
-fun neoValidateMutuallyGroup(
+fun validateMutuallyGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "Mutually", DEFAULT_MUTUALLY_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "Mutually", DEFAULT_MUTUALLY_GROUP) { group ->
             neoIdentifySections(
                 group, errors, DEFAULT_MUTUALLY_GROUP, listOf("Mutually", "Metadata?")) {
             sections ->
                 MutuallyGroup(
                     mutuallySection =
                         neoEnsureNonNull(sections["Mutually"], DEFAULT_MUTUALLY_SECTION) {
-                            neoValidateMutuallySection(it, errors, tracker)
+                            validateMutuallySection(it, errors, tracker)
                         },
                     metaDataSection =
                         neoIfNonNull(sections["Metadata"]) {
-                            neoValidateMetaDataSection(it, errors, tracker)
+                            validateMetaDataSection(it, errors, tracker)
                         })
             }
         }

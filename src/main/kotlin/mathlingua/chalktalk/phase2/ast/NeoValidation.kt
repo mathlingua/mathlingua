@@ -37,8 +37,8 @@ import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.clause.Text
 import mathlingua.chalktalk.phase2.ast.clause.TupleNode
-import mathlingua.chalktalk.phase2.ast.clause.neoValidateClause
-import mathlingua.chalktalk.phase2.ast.clause.neoValidateIdStatement
+import mathlingua.chalktalk.phase2.ast.clause.validateClause
+import mathlingua.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.IfGroup
@@ -149,7 +149,7 @@ fun <T : Phase2Node> neoTrack(
     return phase2Node
 }
 
-fun <T, U> neoValidateByTransform(
+fun <T, U> validateByTransform(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     default: T,
@@ -166,14 +166,14 @@ fun <T, U> neoValidateByTransform(
     }
 }
 
-fun <T> neoValidateGroup(
+fun <T> validateGroup(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     name: String,
     default: T,
     builder: (group: Group) -> T
 ) =
-    neoValidateByTransform(
+    validateByTransform(
         node,
         errors,
         default,
@@ -187,26 +187,26 @@ fun <T> neoValidateGroup(
         },
         builder)
 
-fun <T> neoValidateSection(
+fun <T> validateSection(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     name: String,
     default: T,
     builder: (section: Section) -> T
-) = neoValidateSectionImpl(node, errors, name, default, builder)
+) = validateSectionImpl(node, errors, name, default, builder)
 
-fun <T> neoValidateSection(
+fun <T> validateSection(
     node: Phase1Node, errors: MutableList<ParseError>, default: T, builder: (section: Section) -> T
-) = neoValidateSectionImpl(node, errors, null, default, builder)
+) = validateSectionImpl(node, errors, null, default, builder)
 
-private fun <T> neoValidateSectionImpl(
+private fun <T> validateSectionImpl(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     name: String?,
     default: T,
     builder: (section: Section) -> T
 ) =
-    neoValidateByTransform(
+    validateByTransform(
         node,
         errors,
         default,
@@ -224,7 +224,7 @@ private fun <T> neoValidateSectionImpl(
         },
         builder)
 
-fun <T> neoValidateTargetSection(
+fun <T> validateTargetSection(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     name: String,
@@ -232,7 +232,7 @@ fun <T> neoValidateTargetSection(
     tracker: MutableLocationTracker,
     builder: (targets: List<Target>) -> T
 ) =
-    neoValidateSection(node, errors, name, default) { section ->
+    validateSection(node, errors, name, default) { section ->
         if (section.args.isEmpty()) {
             errors.add(
                 ParseError(
@@ -244,7 +244,7 @@ fun <T> neoValidateTargetSection(
             val targets = mutableListOf<Target>()
             for (arg in section.args) {
                 var shouldContinue = false
-                val clause = neoValidateClause(arg, errors, tracker)
+                val clause = validateClause(arg, errors, tracker)
                 if (clause is Target) {
                     targets.add(clause)
                     shouldContinue = true
@@ -270,7 +270,7 @@ fun neoGetOptionalId(
         // Convert it to look like a statement.
         val statementText = "'" + rawText.substring(1, rawText.length - 1) + "'"
         val stmtToken = Phase1Token(statementText, ChalkTalkTokenType.Statement, row, column)
-        neoValidateIdStatement(stmtToken, errors, tracker)
+        validateIdStatement(stmtToken, errors, tracker)
     } else {
         null
     }
@@ -291,7 +291,7 @@ fun neoGetId(
     }
 }
 
-fun <T> neoValidateSingleArg(
+fun <T> validateSingleArg(
     section: Section,
     errors: MutableList<ParseError>,
     default: T,

@@ -20,10 +20,10 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.chalktalk.phase2.ast.clause.neoValidateClauseListNode
+import mathlingua.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -45,11 +45,11 @@ data class SuchThatSection(val clauses: ClauseListNode) : Phase2Node {
             SuchThatSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun neoValidateSuchThatSection(
+fun validateSuchThatSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "suchThat", DEFAULT_SUCH_THAT_SECTION) {
-            SuchThatSection(clauses = neoValidateClauseListNode(it, errors, tracker))
+        validateSection(node.resolve(), errors, "suchThat", DEFAULT_SUCH_THAT_SECTION) {
+            SuchThatSection(clauses = validateClauseListNode(it, errors, tracker))
         }
     }

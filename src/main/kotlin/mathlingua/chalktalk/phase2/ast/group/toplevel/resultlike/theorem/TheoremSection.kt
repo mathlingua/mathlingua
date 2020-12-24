@@ -25,7 +25,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_THEOREM_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -49,11 +49,11 @@ data class TheoremSection(val names: List<String>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun neoValidateTheoremSection(
+fun validateTheoremSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "Theorem", DEFAULT_THEOREM_SECTION) { section ->
+        validateSection(node.resolve(), errors, "Theorem", DEFAULT_THEOREM_SECTION) { section ->
             if (section.args.isNotEmpty() &&
                 !section.args.all {
                     it.chalkTalkTarget is Phase1Token &&

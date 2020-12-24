@@ -31,15 +31,15 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.neoValidateMetaDataSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateUsingSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.chalktalk.phase2.ast.neoGetId
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.transform.signature
@@ -99,11 +99,11 @@ data class ViewsGroup(
 
 fun isViewsGroup(node: Phase1Node) = firstSectionMatchesName(node, "Views")
 
-fun neoValidateViewsGroup(
+fun validateViewsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "Views", DEFAULT_VIEWS_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "Views", DEFAULT_VIEWS_GROUP) { group ->
             neoIdentifySections(
                 group,
                 errors,
@@ -115,27 +115,27 @@ fun neoValidateViewsGroup(
                     id = id,
                     viewsSection =
                         neoEnsureNonNull(sections["Views"], DEFAULT_VIEWS_SECTION) {
-                            neoValidateViewsSection(it, errors, tracker)
+                            validateViewsSection(it, errors, tracker)
                         },
                     singleFromSection =
                         neoEnsureNonNull(sections["from"], DEFAULT_SINGLE_FROM_SECTION) {
-                            neoValidateSingleFromSection(it, errors, tracker)
+                            validateSingleFromSection(it, errors, tracker)
                         },
                     singleToSection =
                         neoEnsureNonNull(sections["to"], DEFAULT_SINGLE_TO_SECTION) {
-                            neoValidateSingleToSection(it, errors, tracker)
+                            validateSingleToSection(it, errors, tracker)
                         },
                     asSection =
                         neoEnsureNonNull(sections["as"], DEFAULT_SINGLE_AS_SECTION) {
-                            neoValidateSingleAsSection(it, errors, tracker)
+                            validateSingleAsSection(it, errors, tracker)
                         },
                     usingSection =
                         neoIfNonNull(sections["using"]) {
-                            neoValidateUsingSection(it, errors, tracker)
+                            validateUsingSection(it, errors, tracker)
                         },
                     metaDataSection =
                         neoIfNonNull(sections["Metadata"]) {
-                            neoValidateMetaDataSection(it, errors, tracker)
+                            validateMetaDataSection(it, errors, tracker)
                         })
             }
         }

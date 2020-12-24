@@ -22,8 +22,8 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_FOR_ALL_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateTargetSection
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
+import mathlingua.chalktalk.phase2.ast.validateTargetSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -42,10 +42,10 @@ data class ForAllSection(val targets: List<Target>) : Phase2Node {
             ForAllSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
 }
 
-fun neoValidateForSection(
+fun validateForSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateTargetSection(
+        validateTargetSection(
             node.resolve(), errors, "forAll", DEFAULT_FOR_ALL_SECTION, tracker, ::ForAllSection)
     }

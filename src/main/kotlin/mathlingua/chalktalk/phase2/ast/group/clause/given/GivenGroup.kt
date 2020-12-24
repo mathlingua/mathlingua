@@ -25,16 +25,16 @@ import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.FourPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
-import mathlingua.chalktalk.phase2.ast.group.clause.exists.neoValidateSuchThatSection
+import mathlingua.chalktalk.phase2.ast.group.clause.exists.validateSuchThatSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.neoValidateGivenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
-import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.neoValidateWhereSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
 import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -50,30 +50,30 @@ data class GivenGroup(
 
 fun isGivenGroup(node: Phase1Node) = firstSectionMatchesName(node, "given")
 
-fun neoValidateGivenGroup(
+fun validateGivenGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "given", DEFAULT_GIVEN_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "given", DEFAULT_GIVEN_GROUP) { group ->
             neoIdentifySections(
                 group, errors, DEFAULT_GIVEN_GROUP, listOf("given", "where", "all", "suchThat?")) {
             sections ->
                 GivenGroup(
                     givenSection =
                         neoEnsureNonNull(sections["given"], DEFAULT_GIVEN_SECTION) {
-                            neoValidateGivenSection(it, errors, tracker)
+                            validateGivenSection(it, errors, tracker)
                         },
                     whereSection =
                         neoEnsureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
-                            neoValidateWhereSection(it, errors, tracker)
+                            validateWhereSection(it, errors, tracker)
                         },
                     allSection =
                         neoEnsureNonNull(sections["all"], DEFAULT_ALL_SECTION) {
-                            neoValidateAllSection(it, errors, tracker)
+                            validateAllSection(it, errors, tracker)
                         },
                     suchThatSection =
                         neoIfNonNull(sections["suchThat"]) {
-                            neoValidateSuchThatSection(it, errors, tracker)
+                            validateSuchThatSection(it, errors, tracker)
                         })
             }
         }

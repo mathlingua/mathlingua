@@ -25,7 +25,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_AXIOM_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
+import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -49,11 +49,11 @@ data class AxiomSection(val names: List<String>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun neoValidateAxiomSection(
+fun validateAxiomSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node.resolve(), errors, "Axiom", DEFAULT_AXIOM_SECTION) { section ->
+        validateSection(node.resolve(), errors, "Axiom", DEFAULT_AXIOM_SECTION) { section ->
             if (section.args.isNotEmpty() &&
                 !section.args.all {
                     it.chalkTalkTarget is Phase1Token &&

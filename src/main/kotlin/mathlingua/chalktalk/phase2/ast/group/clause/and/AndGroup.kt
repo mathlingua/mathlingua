@@ -23,9 +23,9 @@ import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateGroup
 import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
 import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -34,16 +34,16 @@ data class AndGroup(val andSection: AndSection) :
 
 fun isAndGroup(node: Phase1Node) = firstSectionMatchesName(node, "and")
 
-fun neoValidateAndGroup(
+fun validateAndGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateGroup(node.resolve(), errors, "and", DEFAULT_AND_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "and", DEFAULT_AND_GROUP) { group ->
             neoIdentifySections(group, errors, DEFAULT_AND_GROUP, listOf("and")) { sections ->
                 AndGroup(
                     andSection =
                         neoEnsureNonNull(sections["and"], DEFAULT_AND_SECTION) {
-                            neoValidateAndSection(it, errors, tracker)
+                            validateAndSection(it, errors, tracker)
                         })
             }
         }

@@ -26,8 +26,8 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_PAGE_ITEM_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.indentedStringSection
 import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.neoValidateSection
-import mathlingua.chalktalk.phase2.ast.neoValidateSingleArg
+import mathlingua.chalktalk.phase2.ast.validateSection
+import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -42,12 +42,12 @@ data class PageItemSection(val page: String) : Phase2Node {
     }
 }
 
-fun neoValidatePageItemSection(
+fun validatePageItemSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     neoTrack(node, tracker) {
-        neoValidateSection(node, errors, "page", DEFAULT_PAGE_ITEM_SECTION) { section ->
-            neoValidateSingleArg(section, errors, DEFAULT_PAGE_ITEM_SECTION, "string") { arg ->
+        validateSection(node, errors, "page", DEFAULT_PAGE_ITEM_SECTION) { section ->
+            validateSingleArg(section, errors, DEFAULT_PAGE_ITEM_SECTION, "string") { arg ->
                 if (arg !is Phase1Token || arg.type != ChalkTalkTokenType.String) {
                     errors.add(
                         ParseError(

@@ -20,7 +20,7 @@ author: Dominic Kramer
 description:
 
 # DO NOT CHANGE THE LINE OF THIS FILE without editing .circleci/circle_urls.sh
-baseurl: "/docsy-jekyll" # the subpath of your site, e.g. /blog
+baseurl: "/docs" # the subpath of your site, e.g. /blog
 
 # This is mostly for testing
 url: "http://www.mathlingua.org/" # the base hostname & protocol for your site

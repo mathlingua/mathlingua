@@ -40,9 +40,9 @@ import mathlingua.support.ParseError
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 
-private const val TOOL_VERSION = "0.7"
+private const val TOOL_VERSION = "0.8"
 
-private const val MATHLINGUA_VERSION = "0.7"
+private const val MATHLINGUA_VERSION = "0.8"
 
 private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
 

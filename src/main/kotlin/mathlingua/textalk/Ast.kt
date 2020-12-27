@@ -32,6 +32,7 @@ enum class TexTalkNodeType {
     Parameters,
     Comma,
     Is,
+    In,
     ColonColonEquals,
     ColonEquals
 }
@@ -70,6 +71,37 @@ data class IsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexT
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(
             IsTexTalkNode(
+                lhs = lhs.transform(transformer) as ParametersTexTalkNode,
+                rhs = rhs.transform(transformer) as ParametersTexTalkNode))
+}
+
+data class InTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
+    TexTalkNode {
+
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.In
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val builder = StringBuilder()
+        builder.append(lhs.toCode(interceptor))
+        builder.append(" in ")
+        builder.append(rhs.toCode(interceptor))
+        return builder.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(
+            InTexTalkNode(
                 lhs = lhs.transform(transformer) as ParametersTexTalkNode,
                 rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
@@ -571,6 +603,7 @@ enum class TexTalkTokenType {
     ColonEquals,
     ColonColonEquals,
     Is,
+    In,
     DotDotDot,
     Invalid
 }

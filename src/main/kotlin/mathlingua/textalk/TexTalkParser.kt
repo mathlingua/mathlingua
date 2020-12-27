@@ -60,7 +60,7 @@ private class TexTalkParserImpl : TexTalkParser {
 
         fun parse(): ExpressionTexTalkNode {
             val exp = expression(null) ?: ExpressionTexTalkNode(emptyList())
-            return resolveColonOrColonColonEqualsNode(resolveIsNode(exp)) as ExpressionTexTalkNode
+            return resolveColonOrColonColonEqualsNode(resolveInNode(resolveIsNode(exp))) as ExpressionTexTalkNode
         }
 
         private fun resolveIsNode(texTalkNode: TexTalkNode): TexTalkNode {
@@ -87,6 +87,32 @@ private class TexTalkParserImpl : TexTalkParser {
             val lhs = parameters(texTalkNode.children, 0, isIndex)
             val rhs = parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
             return ExpressionTexTalkNode(listOf(IsTexTalkNode(lhs, rhs)))
+        }
+
+        private fun resolveInNode(texTalkNode: TexTalkNode): TexTalkNode {
+            if (texTalkNode !is ExpressionTexTalkNode) {
+                return texTalkNode
+            }
+
+            var isIndex = -1
+            for (i in texTalkNode.children.indices) {
+                val child = texTalkNode.children[i]
+                if (child is TextTexTalkNode && child.type == TexTalkNodeType.In) {
+                    if (isIndex < 0) {
+                        isIndex = i
+                    } else {
+                        addError("A statement can only contain one 'in' statement")
+                    }
+                }
+            }
+
+            if (isIndex < 0) {
+                return texTalkNode
+            }
+
+            val lhs = parameters(texTalkNode.children, 0, isIndex)
+            val rhs = parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
+            return ExpressionTexTalkNode(listOf(InTexTalkNode(lhs, rhs)))
         }
 
         private fun resolveColonOrColonColonEqualsNode(texTalkNode: TexTalkNode): TexTalkNode {
@@ -149,7 +175,7 @@ private class TexTalkParserImpl : TexTalkParser {
             while (i < endEx) {
                 val items = mutableListOf<TexTalkNode>()
                 while (i < endEx && texTalkNodes[i].type != TexTalkNodeType.Comma) {
-                    items.add(resolveIsNode(texTalkNodes[i++]))
+                    items.add(resolveInNode(resolveIsNode(texTalkNodes[i++])))
                 }
                 if (i < endEx && texTalkNodes[i].type !== TexTalkNodeType.Comma) {
                     addError("Expected a Comma but found ${texTalkNodes[i].type}")
@@ -224,11 +250,17 @@ private class TexTalkParserImpl : TexTalkParser {
         }
 
         private fun commandPart(): CommandPart? {
-            if (!has(TexTalkTokenType.Identifier)) {
+            // allow commands such as '\set.in' or '\custom.is'
+            // in those cases treat 'in' and 'is' as identifiers
+            if (!has(TexTalkTokenType.Identifier) &&
+                !has(TexTalkTokenType.Is) &&
+                !has(TexTalkTokenType.In)) {
                 return null
             }
 
             val name = text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, false)
+                ?: text(TexTalkTokenType.Is, TexTalkNodeType.Identifier, false)
+                ?: text(TexTalkTokenType.In, TexTalkNodeType.Identifier, false)
             val square = group(TexTalkNodeType.SquareGroup)
             val subSup = subSup()
             val groups = mutableListOf<GroupTexTalkNode>()
@@ -493,6 +525,7 @@ private class TexTalkParserImpl : TexTalkParser {
                     command()
                         ?: group(TexTalkNodeType.ParenGroup) ?: group(TexTalkNodeType.CurlyGroup)
                             ?: text(TexTalkTokenType.Is, TexTalkNodeType.Is, false)
+                            ?: text(TexTalkTokenType.In, TexTalkNodeType.In, false)
                             ?: text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, true)
                             ?: text(TexTalkTokenType.Operator, TexTalkNodeType.Operator, false)
                             ?: text(TexTalkTokenType.Comma, TexTalkNodeType.Comma, false)

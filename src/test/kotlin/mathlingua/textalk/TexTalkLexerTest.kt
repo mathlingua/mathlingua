@@ -111,11 +111,7 @@ internal class TexTalkLexerTest {
                     tokenType = TexTalkTokenType.ColonColonEquals,
                     row = 0,
                     column = 81),
-                TexTalkToken(
-                    text = "in",
-                    tokenType = TexTalkTokenType.In,
-                    row = 0,
-                    column = 84),
+                TexTalkToken(text = "in", tokenType = TexTalkTokenType.In, row = 0, column = 84),
                 TexTalkToken(
                     text = "integer",
                     tokenType = TexTalkTokenType.Identifier,

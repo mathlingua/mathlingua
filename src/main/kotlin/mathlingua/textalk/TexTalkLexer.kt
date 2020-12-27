@@ -55,13 +55,19 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
             } else if (c == '\\') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Backslash, line, column))
                 // make sure not to match words that start with 'is' such as 'isomorphic'
-            } else if (c == 'i' && i < text.length && text[i] == 's' && (i+1 >= text.length || !isIdentifierChar(text[i+1]))) {
+            } else if (c == 'i' &&
+                i < text.length &&
+                text[i] == 's' &&
+                (i + 1 >= text.length || !isIdentifierChar(text[i + 1]))) {
                 this.tokens.add(TexTalkToken("is", TexTalkTokenType.Is, line, column))
                 // skip the 's'
                 i++
                 column++
                 // make sure not to match words that start with 'in' such as 'integers'
-            } else if (c == 'i' && i < text.length && text[i] == 'n' && (i+1 >= text.length || !isIdentifierChar(text[i+1]))) {
+            } else if (c == 'i' &&
+                i < text.length &&
+                text[i] == 'n' &&
+                (i + 1 >= text.length || !isIdentifierChar(text[i + 1]))) {
                 this.tokens.add(TexTalkToken("in", TexTalkTokenType.In, line, column))
                 // skip the 'n'
                 i++

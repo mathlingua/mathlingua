@@ -60,7 +60,8 @@ private class TexTalkParserImpl : TexTalkParser {
 
         fun parse(): ExpressionTexTalkNode {
             val exp = expression(null) ?: ExpressionTexTalkNode(emptyList())
-            return resolveColonOrColonColonEqualsNode(resolveInNode(resolveIsNode(exp))) as ExpressionTexTalkNode
+            return resolveColonOrColonColonEqualsNode(
+                resolveInNode(resolveIsNode(exp))) as ExpressionTexTalkNode
         }
 
         private fun resolveIsNode(texTalkNode: TexTalkNode): TexTalkNode {
@@ -258,9 +259,10 @@ private class TexTalkParserImpl : TexTalkParser {
                 return null
             }
 
-            val name = text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, false)
-                ?: text(TexTalkTokenType.Is, TexTalkNodeType.Identifier, false)
-                ?: text(TexTalkTokenType.In, TexTalkNodeType.Identifier, false)
+            val name =
+                text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, false)
+                    ?: text(TexTalkTokenType.Is, TexTalkNodeType.Identifier, false)
+                        ?: text(TexTalkTokenType.In, TexTalkNodeType.Identifier, false)
             val square = group(TexTalkNodeType.SquareGroup)
             val subSup = subSup()
             val groups = mutableListOf<GroupTexTalkNode>()

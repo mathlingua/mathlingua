@@ -62,7 +62,7 @@ fun validateClauseListNode(
                 DEFAULT_CLAUSE_LIST_NODE
             } else {
                 ClauseListNode(
-                    clauses = it.args.map { arg -> validateClause(arg, errors, tracker) })
+                    clauses = it.args.map { arg -> validateClause(arg.resolve(), errors, tracker) })
             }
         }
     }

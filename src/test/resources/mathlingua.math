@@ -91,6 +91,18 @@ Foundation:
   written: "X?"
 
 
+Foundation:
+. [\X]
+  Defines: X
+  where: 'X is \set'
+  collects:
+  . given: x
+    where: 'x'
+    all: 'x'
+    suchThat: 'x'
+  written: "X"
+
+
 Mutually:
 . [\X]
   Defines: X

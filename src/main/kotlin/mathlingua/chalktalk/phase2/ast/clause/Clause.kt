@@ -153,7 +153,7 @@ fun validateClause(
 
     for (pair in NEO_CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
-            return pair.validate(rawNode, errors, tracker) as Clause
+            return pair.validate(node, errors, tracker) as Clause
         }
     }
 

@@ -18,6 +18,7 @@ package mathlingua.mathlingua.chalktalk.phase2
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
 import assertk.assertions.isTrue
@@ -35,9 +36,15 @@ import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.support.newLocationTracker
 import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
 
 internal class ChalkTalkParserTest {
+    @Test
+    fun `OVERWRITE_GOLDEN_FILES is false`() {
+        assertThat(OVERWRITE_GOLDEN_FILES).isFalse()
+    }
+
     @TestFactory
     fun `Golden Validation Tests`(): Collection<DynamicTest> {
         val testCases = loadTestCases(GoldenType.Chalktalk)

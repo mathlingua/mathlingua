@@ -376,7 +376,7 @@ private fun identifyInfixCommandOperators(
                     val lhs = section[0]
                     val cmd = section[1]
                     val rhs = section[2]
-                    if (cmd !is Command) {
+                    if (cmd !is Command || !cmd.hasSuffix) {
                         throw ParseException(
                             ParseError(
                                 message = "Expected an argument but found ${cmd.toCode()}",
@@ -402,7 +402,7 @@ private fun identifyInfixCommandOperators(
                         ParseError(
                             message =
                                 "Multiple infix operators cannot be side by side ('${it.toCode()}').  " +
-                                    "They can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', or 'x \\op y'",
+                                    "They can only be one of the forms: '\\x \\op/ \\y', '\\x \\op/ y', 'x \\op/ \\y', or 'x \\op/ y'",
                             row = -1,
                             column = -1))
                 }

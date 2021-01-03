@@ -248,7 +248,7 @@ data class CommandPart(
                     namedGroups.map { it.transform(transformer) as NamedGroupTexTalkNode }))
 }
 
-data class Command(val parts: List<CommandPart>) : TexTalkNode {
+data class Command(val parts: List<CommandPart>, val hasSuffix: Boolean) : TexTalkNode {
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Command
@@ -266,6 +266,9 @@ data class Command(val parts: List<CommandPart>) : TexTalkNode {
             }
             builder.append(parts[i].toCode(interceptor))
         }
+        if (hasSuffix) {
+            builder.append("/")
+        }
         return builder.toString()
     }
 
@@ -274,7 +277,8 @@ data class Command(val parts: List<CommandPart>) : TexTalkNode {
     }
 
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
-        transformer(Command(parts = parts.map { it.transform(transformer) as CommandPart }))
+        transformer(
+            Command(parts = parts.map { it.transform(transformer) as CommandPart }, hasSuffix))
 }
 
 data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode {

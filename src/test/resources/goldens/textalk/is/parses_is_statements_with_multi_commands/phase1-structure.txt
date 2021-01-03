@@ -37,6 +37,7 @@ ExpressionTexTalkNode(
                                                                         ]
                                                         )
                                                       ]
+                                              hasSuffix = false
                                             ),
                                             Command(
                                               parts = [
@@ -56,6 +57,7 @@ ExpressionTexTalkNode(
                                                                         ]
                                                         )
                                                       ]
+                                              hasSuffix = false
                                             ),
                                             Command(
                                               parts = [
@@ -75,6 +77,7 @@ ExpressionTexTalkNode(
                                                                         ]
                                                         )
                                                       ]
+                                              hasSuffix = false
                                             )
                                           ]
                              )

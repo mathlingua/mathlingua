@@ -76,6 +76,7 @@ ExpressionTexTalkNode(
                                                  ]
                                  )
                                ]
+                       hasSuffix = false
                      )
                    )
                    command = TextTexTalkNode(
@@ -138,6 +139,7 @@ ExpressionTexTalkNode(
                                                ]
                                )
                              ]
+                     hasSuffix = false
                    )
                  )
                )

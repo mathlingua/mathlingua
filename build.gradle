@@ -42,6 +42,12 @@ mainClassName = 'mathlingua.MainKt'
 
 repositories {
     mavenCentral()
+    maven {
+        url "https://oss.sonatype.org/content/repositories/snapshots"
+        mavenContent {
+            snapshotsOnly()
+        }
+    }
 }
 
 dependencies {
@@ -78,7 +84,7 @@ testlogger {
 }
 
 jacoco {
-    toolVersion = '0.8.4'
+    toolVersion = '0.8.7-SNAPSHOT'
 }
 
 spotless {

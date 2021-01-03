@@ -27,6 +27,8 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.IfOrIffSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.validateIfOrIffSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
@@ -50,6 +52,7 @@ data class TheoremGroup(
     val theoremSection: TheoremSection,
     val givenSection: GivenSection?,
     val givenWhereSection: WhereSection?,
+    val ifOrIffSection: IfOrIffSection?,
     val thenSection: ThenSection,
     val usingSection: UsingSection?,
     override val metaDataSection: MetaDataSection?
@@ -69,6 +72,9 @@ data class TheoremGroup(
         if (givenWhereSection != null) {
             fn(givenWhereSection)
         }
+        if (ifOrIffSection != null) {
+            fn(ifOrIffSection.resolve())
+        }
         fn(thenSection)
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -84,6 +90,7 @@ data class TheoremGroup(
             theoremSection,
             givenSection,
             givenWhereSection,
+            ifOrIffSection?.resolve(),
             thenSection,
             usingSection,
             metaDataSection)
@@ -96,6 +103,7 @@ data class TheoremGroup(
                 theoremSection = theoremSection.transform(chalkTransformer) as TheoremSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 givenWhereSection = givenWhereSection?.transform(chalkTransformer) as WhereSection?,
+                ifOrIffSection = ifOrIffSection?.transform(chalkTransformer),
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
@@ -113,7 +121,9 @@ fun validateTheoremGroup(
                 group,
                 errors,
                 DEFAULT_THEOREM_GROUP,
-                listOf("Theorem", "given?", "where?", "then", "using?", "Metadata?")) { sections ->
+                listOf(
+                    "Theorem", "given?", "where?", "if?", "iff?", "then", "using?", "Metadata?")) {
+            sections ->
                 TheoremGroup(
                     signature = id?.signature(),
                     id = id,
@@ -129,6 +139,7 @@ fun validateTheoremGroup(
                         neoIfNonNull(sections["where"]) {
                             validateWhereSection(it, errors, tracker)
                         },
+                    ifOrIffSection = validateIfOrIffSection(node, sections, errors, tracker),
                     thenSection =
                         neoEnsureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
                             validateThenSection(it, errors, tracker)

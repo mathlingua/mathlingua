@@ -93,6 +93,7 @@ ExpressionTexTalkNode(
                                            ]
                            )
                          ]
+                 hasSuffix = false
                )
              ]
 )

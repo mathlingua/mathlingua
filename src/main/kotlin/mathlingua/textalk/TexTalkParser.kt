@@ -195,6 +195,7 @@ private class TexTalkParserImpl : TexTalkParser {
 
             val backSlash = expect(TexTalkTokenType.Backslash)
 
+            var hasSuffix = false
             val parts = mutableListOf<CommandPart>()
             while (hasNext()) {
                 val part = commandPart()
@@ -213,13 +214,16 @@ private class TexTalkParserImpl : TexTalkParser {
                                     TextTexTalkNode(
                                         type = TexTalkNodeType.Identifier,
                                         tokenType = TexTalkTokenType.Operator,
-                                        text = operator.text,
+                                        text = operator.text.removeSuffix("/"),
                                         isVarArg = false),
                                 square = null,
                                 subSup = null,
                                 groups = emptyList(),
                                 paren = null,
                                 namedGroups = emptyList()))
+                        if (operator.text.endsWith("/")) {
+                            hasSuffix = true
+                        }
                         break
                     } else if (has(TexTalkTokenType.Caret)) {
                         val caret = expect(TexTalkTokenType.Caret)
@@ -247,7 +251,13 @@ private class TexTalkParserImpl : TexTalkParser {
                 addError("Expected at least one command part", backSlash)
             }
 
-            return Command(parts)
+            if (has(TexTalkTokenType.Operator) && texTalkLexer.peek().text == "/") {
+                // absorb the /
+                next()
+                hasSuffix = true
+            }
+
+            return Command(parts, hasSuffix)
         }
 
         private fun commandPart(): CommandPart? {

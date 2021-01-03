@@ -35,6 +35,7 @@ ExpressionTexTalkNode(
                                            ]
                            )
                          ]
+                 hasSuffix = false
                )
              ]
 )

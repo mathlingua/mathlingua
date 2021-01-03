@@ -21,7 +21,7 @@ written: "\textrm{some.function}(x?)"
 Defines: Z := (X, +)
 instantiated:
 . 'X := \set'
-. 'x + y := x \integer.+ y'
+. 'x + y := x \integer.+/ y'
 written: "\mathbb{Z}"
 
 
@@ -126,10 +126,10 @@ as: 'X'
 [x + y]
 Evaluates:
 when: 'x, y is \natural'
-then: 'x + y := x \natural.+ y'
+then: 'x + y := x \natural.+/ y'
 when: 'x, y is \real'
-then: 'x + y := x \real.+ y'
-else: 'x + y := x \complex.+ y'
+then: 'x + y := x \real.+/ y'
+else: 'x + y := x \complex.+/ y'
 
 
 Theorem: "some name"

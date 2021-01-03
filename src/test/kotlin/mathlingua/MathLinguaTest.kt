@@ -392,7 +392,8 @@ internal class MathLinguaTest {
                                                                         isVarArg = false))))),
                                         isVarArg = false)),
                             paren = null,
-                            namedGroups = emptyList())))
+                            namedGroups = emptyList())),
+                false)
         val expected =
             mapOf(
                 OperatorTexTalkNode(lhs = null, command = expectedCommand, rhs = null) to

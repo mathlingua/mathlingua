@@ -280,7 +280,7 @@ internal fun glueCommands(commands: List<Command>): List<Command> {
         val parts = mutableListOf<CommandPart>()
         parts.addAll(cmd.parts)
         parts.addAll(last.parts)
-        newCommands.add(Command(parts = parts))
+        newCommands.add(Command(parts = parts, false))
     }
     return newCommands
 }

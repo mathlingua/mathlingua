@@ -114,7 +114,7 @@ internal fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): S
     }
 
     if (commandParts.isNotEmpty()) {
-        return Command(parts = commandParts).signature()
+        return Command(parts = commandParts, false).signature()
     }
 
     return null

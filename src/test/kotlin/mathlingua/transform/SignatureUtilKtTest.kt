@@ -57,8 +57,8 @@ internal class SignatureUtilKtTest {
                     ParseError(
                         message =
                             "Multiple infix operators cannot be side by side ('\\abc \\xyz{x}').  They " +
-                                "can only be one of the forms: '\\x \\op \\y', '\\x \\op y', 'x \\op \\y', " +
-                                "or 'x \\op y'",
+                                "can only be one of the forms: '\\x \\op/ \\y', '\\x \\op/ y', 'x \\op/ \\y', " +
+                                "or 'x \\op/ y'",
                         row = -1,
                         column = -1)))
     }
@@ -67,7 +67,7 @@ internal class SignatureUtilKtTest {
     fun findAllStatementSignaturesInfixTest() {
         val validation =
             MathLingua.parse(
-                "[x \\abc y]\nDefines: y\nwhere: 'something'\nmeans: 'something'\n" +
+                "[x \\abc/ y]\nDefines: y\nwhere: 'something'\nmeans: 'something'\n" +
                     "written: \"something\"")
         val doc = (validation as ValidationSuccess).value
         val defines = doc.defines()

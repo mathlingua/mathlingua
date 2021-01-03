@@ -57,12 +57,12 @@ class MatcherKtTest {
             mapOf(
                 OperatorTexTalkNode(
                     lhs = buildText("A"),
-                    command = buildCommand("\\set.in"),
-                    rhs = buildText("B")) to "A? \\in B?")
-        val node = buildNode("X \\set.in Y")
+                    command = buildCommand("\\set.in/"),
+                    rhs = buildText("B")) to "A? \\in/ B?")
+        val node = buildNode("X \\set.in/ Y")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded.errors).isEmpty()
-        assertThat(expanded.text).isEqualTo("X \\in Y")
+        assertThat(expanded.text).isEqualTo("X \\in/ Y")
     }
 
     @Test
@@ -71,12 +71,12 @@ class MatcherKtTest {
             mapOf(
                 OperatorTexTalkNode(
                     lhs = buildText("A"),
-                    command = buildCommand("\\set.in{T}"),
-                    rhs = buildText("B")) to "A? \\in B? (with respect to T?)")
-        val node = buildNode("X \\set.in{Z} Y")
+                    command = buildCommand("\\set.in{T}/"),
+                    rhs = buildText("B")) to "A? \\in/ B? (with respect to T?)")
+        val node = buildNode("X \\set.in{Z}/ Y")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded.errors).isEmpty()
-        assertThat(expanded.text).isEqualTo("X \\in Y (with respect to Z)")
+        assertThat(expanded.text).isEqualTo("X \\in/ Y (with respect to Z)")
     }
 
     @Test

@@ -27,8 +27,10 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.IfOrIffSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.validateIfOrIffSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
@@ -51,6 +53,7 @@ data class ConjectureGroup(
     val id: IdStatement?,
     val conjectureSection: ConjectureSection,
     val givenSection: GivenSection?,
+    val ifOrIffSection: IfOrIffSection?,
     val whereSection: WhereSection?,
     val thenSection: ThenSection,
     val usingSection: UsingSection?,
@@ -71,6 +74,9 @@ data class ConjectureGroup(
         if (whereSection != null) {
             fn(whereSection)
         }
+        if (ifOrIffSection != null) {
+            fn(ifOrIffSection.resolve())
+        }
         fn(thenSection)
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -86,6 +92,7 @@ data class ConjectureGroup(
             conjectureSection,
             givenSection,
             whereSection,
+            ifOrIffSection?.resolve(),
             thenSection,
             usingSection,
             metaDataSection)
@@ -98,6 +105,7 @@ data class ConjectureGroup(
                 conjectureSection =
                     conjectureSection.transform(chalkTransformer) as ConjectureSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
+                ifOrIffSection = ifOrIffSection?.transform(chalkTransformer),
                 whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -116,8 +124,15 @@ fun validateConjectureGroup(
                 group,
                 errors,
                 DEFAULT_CONJECTURE_GROUP,
-                listOf("Conjecture", "given?", "where?", "then", "using?", "Metadata?")) {
-            sections ->
+                listOf(
+                    "Conjecture",
+                    "given?",
+                    "where?",
+                    "if?",
+                    "iff?",
+                    "then",
+                    "using?",
+                    "Metadata?")) { sections ->
                 ConjectureGroup(
                     signature = id?.signature(),
                     id = id,
@@ -133,6 +148,7 @@ fun validateConjectureGroup(
                         neoIfNonNull(sections["where"]) {
                             validateWhereSection(it, errors, tracker)
                         },
+                    ifOrIffSection = validateIfOrIffSection(node, sections, errors, tracker),
                     thenSection =
                         neoEnsureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
                             validateThenSection(it, errors, tracker)

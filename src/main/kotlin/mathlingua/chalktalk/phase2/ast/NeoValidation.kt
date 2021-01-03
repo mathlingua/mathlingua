@@ -120,6 +120,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGrou
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureSection
+import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.newIfOrIffSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
@@ -517,6 +518,8 @@ val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
 val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
 
+val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
+
 val DEFAULT_AXIOM_GROUP =
     AxiomGroup(
         signature = null,
@@ -524,6 +527,7 @@ val DEFAULT_AXIOM_GROUP =
         axiomSection = DEFAULT_AXIOM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
+        ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
@@ -535,6 +539,7 @@ val DEFAULT_CONJECTURE_GROUP =
         conjectureSection = DEFAULT_CONJECTURE_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
+        ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
@@ -546,6 +551,7 @@ val DEFAULT_THEOREM_GROUP =
         theoremSection = DEFAULT_THEOREM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         givenWhereSection = DEFAULT_WHERE_SECTION,
+        ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)

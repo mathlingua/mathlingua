@@ -138,16 +138,46 @@ where: 'x, y is \something'
 then: 'x + y is \something'
 
 
+Theorem:
+if: 'x'
+then: 'y'
+
+
+Theorem:
+iff: 'x'
+then: 'y'
+
+
 Axiom: "some name"
 given: x, y
 where: 'x, y is \something'
 then: 'x + y is \something'
 
 
+Axiom:
+if: 'x'
+then: 'y'
+
+
+Axiom:
+iff: 'x'
+then: 'y'
+
+
 Conjecture: "some name"
 given: x, y
 where: 'x, y is \something'
 then: 'x + y is \something'
+
+
+Conjecture:
+if: 'x'
+then: 'y'
+
+
+Conjecture:
+iff: 'x'
+then: 'y'
 
 
 [some.resource]

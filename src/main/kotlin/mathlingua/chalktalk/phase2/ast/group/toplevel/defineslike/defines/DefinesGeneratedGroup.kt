@@ -22,7 +22,6 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_DEFINES_GENERATED_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_GENERATED_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
-import mathlingua.chalktalk.phase2.ast.DEFAULT_WHERE_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.sectionsMatchNames
@@ -52,7 +51,7 @@ data class DefinesGeneratedGroup(
     override val signature: String?,
     override val id: IdStatement,
     val definesSection: DefinesSection,
-    val whereSection: WhereSection,
+    val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val generatedSection: GeneratedSection,
     val usingSection: UsingSection?,
@@ -63,7 +62,9 @@ data class DefinesGeneratedGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
-        fn(whereSection)
+        if (whereSection != null) {
+            fn(whereSection)
+        }
         if (whenSection != null) {
             fn(whenSection)
         }
@@ -95,7 +96,7 @@ data class DefinesGeneratedGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
-                whereSection = whereSection.transform(chalkTransformer) as WhereSection,
+                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 generatedSection = generatedSection.transform(chalkTransformer) as GeneratedSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -115,7 +116,7 @@ fun validateDefinesGeneratedGroup(
                 errors,
                 DEFAULT_DEFINES_GENERATED_GROUP,
                 listOf(
-                    "Defines", "where", "when?", "generated", "using?", "written", "Metadata?")) {
+                    "Defines", "where?", "when?", "generated", "using?", "written", "Metadata?")) {
             sections ->
                 val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesGeneratedGroup(
@@ -126,7 +127,7 @@ fun validateDefinesGeneratedGroup(
                             validateDefinesSection(it, errors, tracker)
                         },
                     whereSection =
-                        neoEnsureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
+                        neoIfNonNull(sections["where"]) {
                             validateWhereSection(it, errors, tracker)
                         },
                     whenSection =

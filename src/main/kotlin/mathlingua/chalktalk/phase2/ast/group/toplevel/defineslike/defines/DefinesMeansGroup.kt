@@ -22,7 +22,6 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_DEFINES_MEANS_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.chalktalk.phase2.ast.DEFAULT_MEANS_SECTION
-import mathlingua.chalktalk.phase2.ast.DEFAULT_WHERE_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.sectionsMatchNames
@@ -52,7 +51,7 @@ data class DefinesMeansGroup(
     override val signature: String?,
     override val id: IdStatement,
     val definesSection: DefinesSection,
-    val whereSection: WhereSection,
+    val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val meansSection: MeansSection,
     val usingSection: UsingSection?,
@@ -63,7 +62,9 @@ data class DefinesMeansGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
-        fn(whereSection)
+        if (whereSection != null) {
+            fn(whereSection)
+        }
         if (whenSection != null) {
             fn(whenSection)
         }
@@ -95,7 +96,7 @@ data class DefinesMeansGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
-                whereSection = whereSection.transform(chalkTransformer) as WhereSection,
+                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection.transform(chalkTransformer) as MeansSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -114,7 +115,7 @@ fun validateDefinesMeansGroup(
                 group,
                 errors,
                 DEFAULT_DEFINES_MEANS_GROUP,
-                listOf("Defines", "where", "when?", "means", "using?", "written", "Metadata?")) {
+                listOf("Defines", "where?", "when?", "means", "using?", "written", "Metadata?")) {
             sections ->
                 val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesMeansGroup(
@@ -125,7 +126,7 @@ fun validateDefinesMeansGroup(
                             validateDefinesSection(it, errors, tracker)
                         },
                     whereSection =
-                        neoEnsureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
+                        neoIfNonNull(sections["where"]) {
                             validateWhereSection(it, errors, tracker)
                         },
                     whenSection =

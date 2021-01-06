@@ -1,15 +1,15 @@
-Row: 1
-Column: 1
+Row: 0
+Column: 0
 Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'means'
+Expected a written
 EndMessage:

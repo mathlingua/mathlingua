@@ -4,12 +4,12 @@ Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'assumes'
+Expected 'means' but found 'assumes'
 EndMessage:

@@ -22,7 +22,6 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_DEFINES_EVALUATED_GROUP
 import mathlingua.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_EVALUATED_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
-import mathlingua.chalktalk.phase2.ast.DEFAULT_WHERE_SECTION
 import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.sectionsMatchNames
@@ -52,7 +51,7 @@ data class DefinesEvaluatedGroup(
     override val signature: String?,
     override val id: IdStatement,
     val definesSection: DefinesSection,
-    val whereSection: WhereSection,
+    val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val evaluatedSection: EvaluatedSection,
     val usingSection: UsingSection?,
@@ -63,7 +62,9 @@ data class DefinesEvaluatedGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
-        fn(whereSection)
+        if (whereSection != null) {
+            fn(whereSection)
+        }
         if (whenSection != null) {
             fn(whenSection)
         }
@@ -95,7 +96,7 @@ data class DefinesEvaluatedGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
-                whereSection = whereSection.transform(chalkTransformer) as WhereSection,
+                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 evaluatedSection = evaluatedSection.transform(chalkTransformer) as EvaluatedSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -115,7 +116,7 @@ fun validateDefinesEvaluatedGroup(
                 errors,
                 DEFAULT_DEFINES_EVALUATED_GROUP,
                 listOf(
-                    "Defines", "where", "when?", "evaluated", "using?", "written", "Metadata?")) {
+                    "Defines", "where?", "when?", "evaluated", "using?", "written", "Metadata?")) {
             sections ->
                 val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesEvaluatedGroup(
@@ -126,7 +127,7 @@ fun validateDefinesEvaluatedGroup(
                             validateDefinesSection(it, errors, tracker)
                         },
                     whereSection =
-                        neoEnsureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
+                        neoIfNonNull(sections["where"]) {
                             validateWhereSection(it, errors, tracker)
                         },
                     whenSection =

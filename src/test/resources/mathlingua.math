@@ -7,9 +7,25 @@ means: 'X is \some.other.thing'
 written: "\textrm{something} A?"
 
 
+[\something2{A}]
+Defines: X
+when: 'A is \something.else'
+means: 'X is \some.other.thing'
+written: "\textrm{something} A?"
+
+
 [\some.function{A}(x)]
 Defines: f(x)
 where: 'f is \function'
+when: 'A is \something'
+maps:
+. from: '\reals'
+  to: '\reals'
+written: "\textrm{some.function}(x?)"
+
+
+[\some.function2{A}(x)]
+Defines: f(x)
 when: 'A is \something'
 maps:
 . from: '\reals'
@@ -37,9 +53,30 @@ generated:
 written: "\mathbb{N}"
 
 
+[\naturals2]
+Defines: N
+generated:
+. inductively:
+  from:
+  . constant: 0
+  . constructor: succ(x)
+    from: '\natural'
+written: "\mathbb{N}"
+
+
 [\even.primes]
 Defines: X
 where: 'X is \set'
+collects:
+. given: p
+  where: 'p is \prime'
+  all: 'p'
+  suchThat: 'p is \even'
+written: "\textbf{even primes}"
+
+
+[\even.primes2]
+Defines: X
 collects:
 . given: p
   where: 'p is \prime'
@@ -55,6 +92,12 @@ evaluated: 'f(x) := x + 1'
 written: "f1(x?)"
 
 
+[\f12(x)]
+Defines: f(x)
+evaluated: 'f(x) := x + 1'
+written: "f1(x?)"
+
+
 [\f2(x)]
 Defines: f(x)
 where: 'f is \function'
@@ -64,9 +107,29 @@ evaluated:
 written: "f2(x?)"
 
 
+[\f22(x)]
+Defines: f(x)
+evaluated:
+. matching:
+  . 'f(x?) ::= x + 1'
+written: "f2(x?)"
+
+
 [\f3(x)]
 Defines: f(x)
 where: 'f is \function'
+evaluated:
+. piecewise:
+  when: 'x > 0'
+  then: 'f(x) := 1'
+  when: 'x < 0'
+  then: 'f(x) := -1'
+  else: 'f(x) := 0'
+written: "f3(x?)"
+
+
+[\f32(x)]
+Defines: f(x)
 evaluated:
 . piecewise:
   when: 'x > 0'

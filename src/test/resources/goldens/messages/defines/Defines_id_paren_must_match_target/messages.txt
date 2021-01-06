@@ -1,100 +1,101 @@
-Row: 2
+
+Row: 1
 Column: 1
 Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'means'
+Expected a written
 EndMessage:
 
 
-Row: 6
+Row: 5
 Column: 1
 Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'means'
+Expected a written
 EndMessage:
 
 
-Row: 10
+Row: 9
 Column: 1
 Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'means'
+Expected a written
 EndMessage:
 
 
-Row: 14
+Row: 13
 Column: 1
 Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'means'
+Expected a written
 EndMessage:
 
 
-Row: 18
+Row: 17
 Column: 1
 Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'means'
+Expected a written
 EndMessage:
 
 
-Row: 22
+Row: 21
 Column: 1
 Message:
 For pattern:
 
 Defines:
-where:
+where?:
 when?:
 means:
 using?:
 written:
 Metadata?:
 
-Expected 'where' but found 'means'
+Expected a written
 EndMessage:

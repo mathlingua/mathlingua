@@ -29,6 +29,7 @@ import mathlingua.support.ParseError
 abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     TopLevelGroup(metaDataSection), DefinesStatesOrViews {
     abstract val signature: String?
+    abstract val definesSection: DefinesSection
     abstract val id: IdStatement
     abstract val writtenSection: WrittenSection
 }

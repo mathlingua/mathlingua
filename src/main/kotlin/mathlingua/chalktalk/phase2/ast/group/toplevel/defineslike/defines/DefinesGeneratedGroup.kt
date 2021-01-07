@@ -50,7 +50,7 @@ import mathlingua.transform.signature
 data class DefinesGeneratedGroup(
     override val signature: String?,
     override val id: IdStatement,
-    val definesSection: DefinesSection,
+    override val definesSection: DefinesSection,
     val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val generatedSection: GeneratedSection,

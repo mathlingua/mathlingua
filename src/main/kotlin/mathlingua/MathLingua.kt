@@ -20,6 +20,7 @@ import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.chalktalk.phase2.HtmlCodeWriter
 import mathlingua.chalktalk.phase2.MathLinguaCodeWriter
+import mathlingua.chalktalk.phase2.SymbolAnalyzer
 import mathlingua.chalktalk.phase2.ast.Document
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.Statement
@@ -275,6 +276,39 @@ object MathLingua {
             }
         }
         return result
+    }
+
+    fun findInvalidTypes(input: String, supplemental: List<String>): List<ParseError> {
+        val inputDefines =
+            when (val validation = parse(input)
+            ) {
+                is ValidationFailure -> emptyList()
+                is ValidationSuccess -> {
+                    validation.value.defines()
+                }
+            }
+        val suppDefines =
+            when (val validation = parse(supplemental.joinToString("\n\n\n"))
+            ) {
+                is ValidationFailure -> emptyList()
+                is ValidationSuccess -> {
+                    validation.value.defines()
+                }
+            }
+        val allDefines = mutableListOf<DefinesGroup>()
+        allDefines.addAll(inputDefines)
+        allDefines.addAll(suppDefines)
+        val symbolAnalyzer = SymbolAnalyzer(allDefines)
+        val errors = mutableListOf<ParseError>()
+        when (val validation = parseWithLocations(input)
+        ) {
+            is ValidationSuccess -> {
+                for (group in validation.value.document.groups) {
+                    errors.addAll(symbolAnalyzer.findInvalidTypes(group, validation.value.tracker))
+                }
+            }
+        }
+        return errors
     }
 
     fun findDuplicateContent(input: String, supplemental: List<String>): List<Location> {

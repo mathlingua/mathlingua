@@ -122,6 +122,11 @@ fun main() {
                     errorBuilder.append('\n')
                 }
 
+                for (err in MathLingua.findInvalidTypes(input, emptyList())) {
+                    errorBuilder.append("ERROR: ${err.message} (${err.row+1}, ${err.column})")
+                    errorBuilder.append('\n')
+                }
+
                 if (root != null) {
                     phase1Tree.model = DefaultTreeModel(toTreeNode(root))
                     val numPhase1Rows = phase1Tree.rowCount

@@ -50,7 +50,7 @@ import mathlingua.transform.signature
 data class DefinesCollectsGroup(
     override val signature: String?,
     override val id: IdStatement,
-    val definesSection: DefinesSection,
+    override val definesSection: DefinesSection,
     val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val collectsSection: CollectsSection,

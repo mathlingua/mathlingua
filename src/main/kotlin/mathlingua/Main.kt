@@ -40,34 +40,34 @@ import mathlingua.support.ParseError
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 
-private const val TOOL_VERSION = "0.8"
+const val TOOL_VERSION = "0.8"
 
-private const val MATHLINGUA_VERSION = "0.8"
+const val MATHLINGUA_VERSION = "0.8"
 
-private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
+fun bold(text: String) = "\u001B[1m$text\u001B[0m"
 
-private fun green(text: String) = "\u001B[32m$text\u001B[0m"
+fun green(text: String) = "\u001B[32m$text\u001B[0m"
 
-private fun red(text: String) = "\u001B[31m$text\u001B[0m"
+fun red(text: String) = "\u001B[31m$text\u001B[0m"
 
-private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
+fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 
-private enum class OutputType {
+enum class OutputType {
     Json,
     TestCase,
     UserFocused
 }
 
-private fun error(msg: String) = TermUi.echo(message = msg, err = true)
+fun error(msg: String) = TermUi.echo(message = msg, err = true)
 
-private fun log(msg: String) = TermUi.echo(message = msg, err = false)
+fun log(msg: String) = TermUi.echo(message = msg, err = false)
 
-private enum class MessageType(val text: String) {
+enum class MessageType(val text: String) {
     Error("ERROR"),
     Warning("WARNING")
 }
 
-private fun String.jsonSanitize() =
+fun String.jsonSanitize() =
     this.replace("\\", "\\\\")
         .replace("\b", "\\b")
         .replace("\n", "\\n")
@@ -75,7 +75,7 @@ private fun String.jsonSanitize() =
         .replace("\r", "\\r")
         .replace("\"", "\\\"")
 
-private data class MessageInfo(
+data class MessageInfo(
     val file: File,
     val messageType: MessageType,
     val message: String,
@@ -152,15 +152,31 @@ private suspend fun runMlg(
     }
 
     val outputBuilder = StringBuilder()
+    val contents = StringBuilder()
+    for (f in files) {
+        contents.append(f.readText())
+        contents.append("\n\n\n")
+    }
+    val allContent = contents.toString()
+
+    for (f in files) {
+        val suppContent = files.filter { it != f }.map { it.readText() }
+        val input = f.readText()
+        for (err in MathLingua.findInvalidTypes(input, suppContent)) {
+            allErrorInfo.add(
+                MessageInfo(
+                    file = f,
+                    messageType = MessageType.Error,
+                    message = err.message,
+                    failedLine = "",
+                    row = err.row,
+                    column = err.column))
+        }
+    }
 
     when {
         output.toLowerCase() == "html" || output.toLowerCase() == "mathlingua" -> {
-            val contents = StringBuilder()
-            for (f in files) {
-                contents.append(f.readText())
-                contents.append("\n\n\n")
-            }
-            when (val validation = MathLingua.parse(contents.toString())
+            when (val validation = MathLingua.parse(allContent)
             ) {
                 is ValidationFailure -> {
                     error("Could not output the contents due to the errors:")
@@ -310,6 +326,8 @@ private suspend fun runMlg(
         log(outputBuilder.toString())
     }
 
+    log(getDuplicateSignaturesSummary(inputs.map { it.absolutePath }, printJson))
+
     return if (failed) 1 else 0
 }
 
@@ -371,7 +389,6 @@ private class Mlg : CliktCommand() {
 private class Check : CliktCommand(help = "Analyzes input files for errors.") {
     private val file: List<String> by argument(help = "The *.math files to process")
         .multiple(required = false)
-    private val failOnWarnings: Boolean by option(help = "Treat warnings as errors").flag()
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
     override fun run() =
@@ -379,7 +396,7 @@ private class Check : CliktCommand(help = "Analyzes input files for errors.") {
             runBlocking {
                 runMlg(
                     printJson = json,
-                    failOnWarnings = failOnWarnings,
+                    failOnWarnings = true,
                     generateTestCases = false,
                     inputs =
                         if (file.isEmpty()) {
@@ -616,95 +633,96 @@ private class DuplicateContent :
         }
 }
 
+private fun getDuplicateSignaturesSummary(files: List<String>, json: Boolean): String =
+    runBlocking {
+        val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+        val inputFiles =
+            if (files.isEmpty()) {
+                listOf(cwd.absolutePath)
+            } else {
+                files
+            }
+
+        val allFiles = mutableListOf<File>()
+        for (curPath in inputFiles) {
+            val curFile = File(curPath)
+            if (curFile.isFile && curPath.endsWith(".math")) {
+                allFiles.add(curFile)
+            } else if (curFile.isDirectory) {
+                allFiles.addAll(curFile.walk().filter { it.isFile && it.name.endsWith(".math") })
+            }
+        }
+
+        val filesMap = mutableMapOf<String, String>()
+        awaitAll(*allFiles.map { async { filesMap[it.path] = it.readText() } }.toTypedArray())
+
+        val output = StringBuilder()
+        if (json) {
+            output.append("[")
+        }
+
+        var isFirst = true
+        var count = 0
+        val sigLocations = MathLingua.findSignatureLocations(filesMap)
+        for ((signature, locationSet) in sigLocations) {
+            if (!signature.trim().startsWith("\\")) {
+                // only process non-proto signatures
+                continue
+            }
+
+            if (locationSet.size > 1) {
+                count++
+                if (json) {
+                    for (loc in locationSet) {
+                        if (!isFirst) {
+                            output.append(",")
+                        }
+                        output.append("{")
+                        output.append("\"path\": \"${loc.path.jsonSanitize()}\",")
+                        output.append("\"row\": ${loc.location.row},")
+                        output.append("\"column\": ${loc.location.column}")
+                        output.append("}")
+                        isFirst = false
+                    }
+                } else {
+                    output.append(bold(signature))
+                    output.append("\n")
+                    output.append(
+                        "-".repeat(signature.split("\n").map { it.length }.maxOrNull() ?: 1))
+                    output.append("\n")
+                    val cwdPath = cwd.absolutePath
+                    for (loc in locationSet) {
+                        output.append(
+                            "- ${loc.path.relativeTo(cwdPath)} (${loc.location.row + 1}, ${loc.location.column + 1})")
+                        output.append("\n")
+                    }
+                    output.append("\n\n")
+                }
+                isFirst = false
+            }
+        }
+
+        if (json) {
+            output.append("]")
+        } else {
+            output.append(
+                "Found $count duplicate signature${if (count > 1) {
+                "s"
+            } else {
+                ""
+            }}")
+        }
+
+        output.toString()
+    }
+
 private class DuplicateSignatures :
     CliktCommand(name = "dup-sig", help = "Identifies duplicate signature definitions.") {
     private val file: List<String> by argument(help = "The *.math files to process")
         .multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
-    override fun run() =
-        runBlocking {
-            val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-            val inputFiles =
-                if (file.isEmpty()) {
-                    listOf(cwd.absolutePath)
-                } else {
-                    file
-                }
-
-            val allFiles = mutableListOf<File>()
-            for (curPath in inputFiles) {
-                val curFile = File(curPath)
-                if (curFile.isFile && curPath.endsWith(".math")) {
-                    allFiles.add(curFile)
-                } else if (curFile.isDirectory) {
-                    allFiles.addAll(
-                        curFile.walk().filter { it.isFile && it.name.endsWith(".math") })
-                }
-            }
-
-            val filesMap = mutableMapOf<String, String>()
-            awaitAll(*allFiles.map { async { filesMap[it.path] = it.readText() } }.toTypedArray())
-
-            val output = StringBuilder()
-            if (json) {
-                output.append("[")
-            }
-
-            var isFirst = true
-            var count = 0
-            val sigLocations = MathLingua.findSignatureLocations(filesMap)
-            for ((signature, locationSet) in sigLocations) {
-                if (!signature.trim().startsWith("\\")) {
-                    // only process non-proto signatures
-                    continue
-                }
-
-                if (locationSet.size > 1) {
-                    count++
-                    if (json) {
-                        for (loc in locationSet) {
-                            if (!isFirst) {
-                                output.append(",")
-                            }
-                            output.append("{")
-                            output.append("\"path\": \"${loc.path.jsonSanitize()}\",")
-                            output.append("\"row\": ${loc.location.row},")
-                            output.append("\"column\": ${loc.location.column}")
-                            output.append("}")
-                            isFirst = false
-                        }
-                    } else {
-                        output.append(bold(signature))
-                        output.append("\n")
-                        output.append(
-                            "-".repeat(signature.split("\n").map { it.length }.maxOrNull() ?: 1))
-                        output.append("\n")
-                        val cwdPath = cwd.absolutePath
-                        for (loc in locationSet) {
-                            output.append(
-                                "- ${loc.path.relativeTo(cwdPath)} (${loc.location.row + 1}, ${loc.location.column + 1})")
-                            output.append("\n")
-                        }
-                        output.append("\n\n")
-                    }
-                    isFirst = false
-                }
-            }
-
-            if (json) {
-                output.append("]")
-            } else {
-                output.append(
-                    "Found $count duplicate signature${if (count > 1) {
-                    "s"
-                } else {
-                    ""
-                }}")
-            }
-
-            log(output.toString())
-        }
+    override fun run() = runBlocking { log(getDuplicateSignaturesSummary(file, json)) }
 }
 
 private class UndefinedSignatures :

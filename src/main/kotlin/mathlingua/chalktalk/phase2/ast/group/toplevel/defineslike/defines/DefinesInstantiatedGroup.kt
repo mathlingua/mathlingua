@@ -48,7 +48,7 @@ import mathlingua.transform.signature
 data class DefinesInstantiatedGroup(
     override val signature: String?,
     override val id: IdStatement,
-    val definesSection: DefinesSection,
+    override val definesSection: DefinesSection,
     val whenSection: WhenSection?,
     val instantiatedSection: InstantiatedSection,
     val usingSection: UsingSection?,

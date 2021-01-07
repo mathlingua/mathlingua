@@ -1,0 +1,29 @@
+
+[\function]
+Defines: f(x)
+means: 'something'
+written: "f"
+
+
+[\function:on{A}to{B}]
+Defines: f(x)
+means: 'f is \function'
+written: "f"
+
+[\set]
+Defines: X
+means: 'something'
+written: "set"
+
+Theorem:
+given: f
+where:
+. 'f is \function'
+. 'f is \function:on{A}to{B}'
+then: 'something'
+
+
+
+
+
+

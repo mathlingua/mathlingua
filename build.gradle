@@ -38,7 +38,7 @@ group = 'mathlingua'
 version = '0.7'
 sourceCompatibility = '1.8'
 
-mainClassName = 'mathlingua.Main2Kt'
+mainClassName = 'mathlingua.MainKt'
 
 repositories {
     mavenCentral()

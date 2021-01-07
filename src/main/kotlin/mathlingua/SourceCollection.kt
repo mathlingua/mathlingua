@@ -18,6 +18,7 @@ package mathlingua
 
 import java.io.File
 import mathlingua.chalktalk.phase2.SymbolAnalyzer
+import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.support.Location
@@ -43,6 +44,7 @@ data class ValueSourceTracker<T>(
 
 class SourceCollection(filesOrDirs: List<File>) {
     private val sourceFiles = mutableMapOf<File, SourceFile>()
+    private val allGroups = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<DefinesGroup>>()
     private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
 
@@ -68,6 +70,12 @@ class SourceCollection(filesOrDirs: List<File>) {
 
                 statesGroups.addAll(
                     validation.value.document.states().map {
+                        ValueSourceTracker(
+                            source = sf, tracker = validation.value.tracker, value = it)
+                    })
+
+                allGroups.addAll(
+                    validation.value.document.groups.map {
                         ValueSourceTracker(
                             source = sf, tracker = validation.value.tracker, value = it)
                     })
@@ -191,6 +199,21 @@ class SourceCollection(filesOrDirs: List<File>) {
                         })
                 }
             }
+        }
+        return result
+    }
+
+    fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>> {
+        val result = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
+        val allContent = mutableSetOf<String>()
+        for (group in allGroups) {
+            val content = group.value.toCode(false, 0).getCode()
+            if (allContent.contains(content)) {
+                result.add(
+                    ValueSourceTracker(
+                        source = group.source, tracker = group.tracker, value = group.value))
+            }
+            allContent.add(content)
         }
         return result
     }

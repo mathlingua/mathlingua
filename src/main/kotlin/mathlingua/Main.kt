@@ -20,6 +20,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.arguments.argument
+import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -68,12 +69,20 @@ private class Mlg : CliktCommand() {
 }
 
 private class Check : CliktCommand(help = "Check input files for errors.") {
+    private val file: List<String> by argument(
+            help = "The *.math files and/or directories to process")
+        .multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
     override fun run(): Unit =
         runBlocking {
-            val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-            val sourceCollection = SourceCollection(listOf(cwd))
+            val sourceCollection =
+                SourceCollection(
+                    if (file.isEmpty()) {
+                        listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
+                    } else {
+                        file.map { File(it) }
+                    })
             val errors = mutableListOf<ValueSourceTracker<ParseError>>()
             errors.addAll(sourceCollection.getParseErrors())
             errors.addAll(
@@ -105,11 +114,19 @@ private class Check : CliktCommand(help = "Check input files for errors.") {
 
 private class DuplicateContent :
     CliktCommand(name = "dup-content", help = "Identifies duplicate content.") {
+    private val file: List<String> by argument(
+            help = "The *.math files and/or directories to process")
+        .multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
     override fun run() {
-        val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-        val sourceCollection = SourceCollection(listOf(cwd))
+        val sourceCollection =
+            SourceCollection(
+                if (file.isEmpty()) {
+                    listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
+                } else {
+                    file.map { File(it) }
+                })
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         for (grp in sourceCollection.getDuplicateContent()) {
             val location = grp.tracker?.getLocationOf(grp.value) ?: Location(row = -1, column = -1)
@@ -129,11 +146,19 @@ private class DuplicateContent :
 
 private class DuplicateSignatures :
     CliktCommand(name = "dup-sig", help = "Identifies duplicate signature definitions.") {
+    private val file: List<String> by argument(
+            help = "The *.math files and/or directories to process")
+        .multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
     override fun run() {
-        val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-        val sourceCollection = SourceCollection(listOf(cwd))
+        val sourceCollection =
+            SourceCollection(
+                if (file.isEmpty()) {
+                    listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
+                } else {
+                    file.map { File(it) }
+                })
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         errors.addAll(
             sourceCollection.getDuplicateDefinedSignatures().map {
@@ -154,11 +179,19 @@ private class UndefinedSignatures :
     CliktCommand(
         name = "undef-sig",
         help = "Identifies command that have been used but have not been defined.") {
+    private val file: List<String> by argument(
+            help = "The *.math files and/or directories to process")
+        .multiple(required = false)
     private val json: Boolean by option(help = "Output the results in JSON format.").flag()
 
     override fun run() {
-        val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-        val sourceCollection = SourceCollection(listOf(cwd))
+        val sourceCollection =
+            SourceCollection(
+                if (file.isEmpty()) {
+                    listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
+                } else {
+                    file.map { File(it) }
+                })
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         errors.addAll(
             sourceCollection.getUndefinedSignatures().map {

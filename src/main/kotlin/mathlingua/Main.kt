@@ -26,6 +26,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.choice
 import java.io.File
+import java.lang.IllegalArgumentException
 import java.nio.file.Paths
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
@@ -108,7 +109,7 @@ private class Check : CliktCommand(help = "Check input files for errors.") {
                                 column = it.value.location.column))
                 })
             errors.addAll(sourceCollection.findInvalidTypes())
-            log(getErrorOutput(errors, json))
+            log(getErrorOutput(errors, sourceCollection.size(), json))
         }
 }
 
@@ -140,7 +141,7 @@ private class DuplicateContent :
                             row = location.row,
                             column = location.column)))
         }
-        log(getErrorOutput(errors, json))
+        log(getErrorOutput(errors, sourceCollection.size(), json))
     }
 }
 
@@ -171,7 +172,7 @@ private class DuplicateSignatures :
                             row = it.value.location.row,
                             column = it.value.location.column))
             })
-        log(getErrorOutput(errors, json))
+        log(getErrorOutput(errors, sourceCollection.size(), json))
     }
 }
 
@@ -204,7 +205,7 @@ private class UndefinedSignatures :
                             row = it.value.location.row,
                             column = it.value.location.column))
             })
-        log(getErrorOutput(errors, json))
+        log(getErrorOutput(errors, sourceCollection.size(), json))
     }
 }
 
@@ -353,11 +354,14 @@ private class Render :
     }
 }
 
-private fun getErrorOutput(errors: List<ValueSourceTracker<ParseError>>, json: Boolean): String {
+private fun getErrorOutput(
+    errors: List<ValueSourceTracker<ParseError>>, numFilesProcessed: Int, json: Boolean
+): String {
     val builder = StringBuilder()
     if (json) {
         builder.append("[")
     }
+    val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
     for (i in errors.indices) {
         val err = errors[i]
         if (json) {
@@ -377,22 +381,41 @@ private fun getErrorOutput(errors: List<ValueSourceTracker<ParseError>>, json: B
             builder.append(bold(red("ERROR: ")))
             builder.append(
                 bold(
-                    "${err.source.file} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
+                    "${err.source.file.relativePath(cwd)} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
             builder.append(err.value.message.trim())
-            if (i != errors.size - 1) {
-                builder.append("\n\n")
-            } else {
-                builder.append("\n")
-            }
+            builder.append("\n\n")
         }
     }
 
     if (json) {
         builder.append("]")
+    } else {
+        builder.append(
+            if (errors.isEmpty()) {
+                bold(green("SUCCESS\n"))
+            } else {
+                bold(red("FAILED\n"))
+            })
+        builder.append("Processed $numFilesProcessed ${maybePlural("file", numFilesProcessed)}\n")
+        builder.append("${errors.size} ${maybePlural("error", errors.size)} detected")
     }
 
     return builder.toString()
 }
+
+private fun File.relativePath(dir: File) =
+    try {
+        this.relativeTo(dir).path
+    } catch (e: IllegalArgumentException) {
+        this.path
+    }
+
+private fun maybePlural(text: String, count: Int) =
+    if (count == 1) {
+        text
+    } else {
+        "${text}s"
+    }
 
 fun main(args: Array<String>) =
     Mlg()

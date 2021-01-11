@@ -17,9 +17,18 @@
 package mathlingua
 
 import java.io.File
+import mathlingua.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.chalktalk.phase1.ast.Phase1Node
+import mathlingua.chalktalk.phase1.ast.Phase1Token
+import mathlingua.chalktalk.phase1.newChalkTalkLexer
+import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.chalktalk.phase2.SymbolAnalyzer
+import mathlingua.chalktalk.phase2.ast.clause.Statement
+import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.support.Location
 import mathlingua.support.LocationTracker
@@ -27,6 +36,9 @@ import mathlingua.support.ParseError
 import mathlingua.support.Validation
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
+import mathlingua.textalk.TexTalkNode
+import mathlingua.textalk.newTexTalkLexer
+import mathlingua.textalk.newTexTalkParser
 import mathlingua.transform.locateAllSignatures
 
 data class SourceFile(val file: File, val content: String, val validation: Validation<Parse>)
@@ -47,6 +59,8 @@ class SourceCollection(filesOrDirs: List<File>) {
     private val allGroups = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<DefinesGroup>>()
     private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
+    private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
+    private val mutuallyGroups = mutableListOf<ValueSourceTracker<MutuallyGroup>>()
 
     init {
         for (f in filesOrDirs) {
@@ -70,6 +84,18 @@ class SourceCollection(filesOrDirs: List<File>) {
 
                 statesGroups.addAll(
                     validation.value.document.states().map {
+                        ValueSourceTracker(
+                            source = sf, tracker = validation.value.tracker, value = it)
+                    })
+
+                foundationGroups.addAll(
+                    validation.value.document.foundations().map {
+                        ValueSourceTracker(
+                            source = sf, tracker = validation.value.tracker, value = it)
+                    })
+
+                mutuallyGroups.addAll(
+                    validation.value.document.mutually().map {
                         ValueSourceTracker(
                             source = sf, tracker = validation.value.tracker, value = it)
                     })
@@ -115,6 +141,8 @@ class SourceCollection(filesOrDirs: List<File>) {
         }
         return result
     }
+
+    fun size() = sourceFiles.size
 
     fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>> {
         val result = mutableSetOf<ValueSourceTracker<Signature>>()
@@ -169,6 +197,43 @@ class SourceCollection(filesOrDirs: List<File>) {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
         val analyzer = SymbolAnalyzer(definesGroups.map { it.value })
         for (sf in sourceFiles) {
+            val lexer = newChalkTalkLexer(sf.value.content)
+            val parse = newChalkTalkParser().parse(lexer)
+            result.addAll(
+                parse.errors.map {
+                    ValueSourceTracker(
+                        source = sf.value,
+                        tracker = null,
+                        value =
+                            ParseError(
+                                message = it.message,
+                                row = it.row.coerceAtLeast(0),
+                                column = it.column.coerceAtLeast(0)))
+                })
+
+            val root = parse.root
+            if (root != null) {
+                for (stmtNode in findAllPhase1Statements(root)) {
+                    val text = stmtNode.text.removeSurrounding("'", "'")
+                    val texTalkLexer = newTexTalkLexer(text)
+                    val texTalkResult = newTexTalkParser().parse(texTalkLexer)
+                    result.addAll(
+                        texTalkResult.errors.map {
+                            ValueSourceTracker(
+                                source = sf.value,
+                                tracker = null,
+                                value =
+                                    ParseError(
+                                        message = it.message,
+                                        row =
+                                            stmtNode.row.coerceAtLeast(0) + it.row.coerceAtLeast(0),
+                                        column =
+                                            stmtNode.column.coerceAtLeast(0) +
+                                                it.column.coerceAtLeast(0)))
+                        })
+                }
+            }
+
             val validation = sf.value.validation
             when (validation) {
                 is ValidationSuccess -> {
@@ -178,13 +243,88 @@ class SourceCollection(filesOrDirs: List<File>) {
                         val errors = analyzer.findInvalidTypes(grp, tracker)
                         result.addAll(
                             errors.map {
-                                ValueSourceTracker(source = sf.value, tracker = tracker, value = it)
+                                ValueSourceTracker(
+                                    source = sf.value,
+                                    tracker = tracker,
+                                    value =
+                                        ParseError(
+                                            message = it.message,
+                                            row = it.row.coerceAtLeast(0),
+                                            column = it.column.coerceAtLeast(0)))
                             })
+                    }
+
+                    for (stmt in findAllStatements(doc)) {
+                        val location = tracker.getLocationOf(stmt) ?: Location(row = 0, column = 0)
+                        for (node in findAllTexTalkNodes(stmt)) {
+                            val expansion =
+                                MathLingua.expandWrittenAs(
+                                    node,
+                                    definesGroups.map { it.value },
+                                    statesGroups.map { it.value },
+                                    foundationGroups.map { it.value },
+                                    mutableListOf())
+                            result.addAll(
+                                expansion.errors.map {
+                                    ValueSourceTracker(
+                                        source = sf.value,
+                                        tracker = tracker,
+                                        value =
+                                            ParseError(
+                                                message = it,
+                                                row = location.row.coerceAtLeast(0),
+                                                column = location.column.coerceAtLeast(0)))
+                                })
+                        }
                     }
                 }
             }
         }
         return result
+    }
+
+    private fun findAllPhase1Statements(node: Phase1Node): List<Phase1Token> {
+        val result = mutableListOf<Phase1Token>()
+        findAllPhase1StatementsImpl(node, result)
+        return result
+    }
+
+    private fun findAllPhase1StatementsImpl(node: Phase1Node, result: MutableList<Phase1Token>) {
+        if (node is Phase1Token && node.type == ChalkTalkTokenType.Statement) {
+            result.add(node)
+        }
+        node.forEach { findAllPhase1StatementsImpl(it, result) }
+    }
+
+    private fun findAllStatements(node: Phase2Node): List<Statement> {
+        val result = mutableListOf<Statement>()
+        findAllStatementsImpl(node, result)
+        return result
+    }
+
+    private fun findAllStatementsImpl(node: Phase2Node, result: MutableList<Statement>) {
+        if (node is Statement) {
+            result.add(node)
+        }
+        node.forEach { findAllStatementsImpl(it, result) }
+    }
+
+    private fun findAllTexTalkNodes(node: Phase2Node): List<TexTalkNode> {
+        val result = mutableListOf<TexTalkNode>()
+        findAllTexTalkNodesImpl(node, result)
+        return result
+    }
+
+    private fun findAllTexTalkNodesImpl(node: Phase2Node, result: MutableList<TexTalkNode>) {
+        if (node is Statement) {
+            when (val validation = node.texTalkRoot
+            ) {
+                is ValidationSuccess -> {
+                    result.add(validation.value)
+                }
+            }
+        }
+        node.forEach { findAllTexTalkNodesImpl(it, result) }
     }
 
     fun getParseErrors(): List<ValueSourceTracker<ParseError>> {

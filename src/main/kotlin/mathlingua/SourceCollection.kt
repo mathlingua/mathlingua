@@ -31,7 +31,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.Fou
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.support.Location
-import mathlingua.support.LocationTracker
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
 import mathlingua.support.ValidationFailure
@@ -40,8 +40,9 @@ import mathlingua.textalk.TexTalkNode
 import mathlingua.textalk.newTexTalkLexer
 import mathlingua.textalk.newTexTalkParser
 import mathlingua.transform.locateAllSignatures
+import mathlingua.transform.normalize
 
-data class SourceFile(val file: File, val content: String, val validation: Validation<Parse>)
+data class SourceFile(val file: File?, val content: String, val validation: Validation<Parse>)
 
 private fun isMathLinguaFile(file: File) = file.isFile && file.extension == "math"
 
@@ -52,7 +53,7 @@ private fun buildSourceFile(file: File): SourceFile {
 }
 
 data class ValueSourceTracker<T>(
-    val value: T, val source: SourceFile, val tracker: LocationTracker?)
+    val value: T, val source: SourceFile, val tracker: MutableLocationTracker?)
 
 class SourceCollection(filesOrDirs: List<File>) {
     private val sourceFiles = mutableMapOf<File, SourceFile>()
@@ -79,31 +80,41 @@ class SourceCollection(filesOrDirs: List<File>) {
                 definesGroups.addAll(
                     validation.value.document.defines().map {
                         ValueSourceTracker(
-                            source = sf, tracker = validation.value.tracker, value = it)
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as DefinesGroup)
                     })
 
                 statesGroups.addAll(
                     validation.value.document.states().map {
                         ValueSourceTracker(
-                            source = sf, tracker = validation.value.tracker, value = it)
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as StatesGroup)
                     })
 
                 foundationGroups.addAll(
                     validation.value.document.foundations().map {
                         ValueSourceTracker(
-                            source = sf, tracker = validation.value.tracker, value = it)
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as FoundationGroup)
                     })
 
                 mutuallyGroups.addAll(
                     validation.value.document.mutually().map {
                         ValueSourceTracker(
-                            source = sf, tracker = validation.value.tracker, value = it)
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as MutuallyGroup)
                     })
 
                 allGroups.addAll(
                     validation.value.document.groups.map {
                         ValueSourceTracker(
-                            source = sf, tracker = validation.value.tracker, value = it)
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as TopLevelGroup)
                     })
             }
         }
@@ -195,7 +206,7 @@ class SourceCollection(filesOrDirs: List<File>) {
 
     fun findInvalidTypes(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
-        val analyzer = SymbolAnalyzer(definesGroups.map { it.value })
+        val analyzer = SymbolAnalyzer(definesGroups)
         for (sf in sourceFiles) {
             val lexer = newChalkTalkLexer(sf.value.content)
             val parse = newChalkTalkParser().parse(lexer)
@@ -259,7 +270,7 @@ class SourceCollection(filesOrDirs: List<File>) {
                         for (node in findAllTexTalkNodes(stmt)) {
                             val expansion =
                                 MathLingua.expandWrittenAs(
-                                    node,
+                                    normalize(node),
                                     definesGroups.map { it.value },
                                     statesGroups.map { it.value },
                                     foundationGroups.map { it.value },

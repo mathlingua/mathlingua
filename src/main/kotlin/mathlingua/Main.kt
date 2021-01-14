@@ -367,7 +367,7 @@ private fun getErrorOutput(
         if (json) {
             builder.append("{")
             builder.append(
-                "  \"file\": \"${err.source.file.normalize().absolutePath.jsonSanitize()}\",")
+                "  \"file\": \"${err.source.file?.normalize()?.absolutePath?.jsonSanitize() ?: "None"}\",")
             builder.append("  \"type\": \"ERROR\",")
             builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
             builder.append("  \"failedLine\": \"\",")
@@ -381,7 +381,7 @@ private fun getErrorOutput(
             builder.append(bold(red("ERROR: ")))
             builder.append(
                 bold(
-                    "${err.source.file.relativePath(cwd)} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
+                    "${err.source.file?.relativePath(cwd) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
             builder.append(err.value.message.trim())
             builder.append("\n\n")
         }

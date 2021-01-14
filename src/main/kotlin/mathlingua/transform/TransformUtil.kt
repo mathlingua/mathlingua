@@ -30,6 +30,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.Define
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.hasChild
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.support.validationSuccess
@@ -580,7 +581,7 @@ internal fun fullExpandComplete(doc: Document, maxSteps: Int = 10): Document {
 */
 
 internal fun separateInfixOperatorStatements(
-    root: Phase2Node, follow: Phase2Node
+    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
@@ -595,10 +596,15 @@ internal fun separateInfixOperatorStatements(
                                 is ValidationSuccess -> {
                                     val expRoot = validation.value
                                     for (expanded in getExpandedInfixOperators(expRoot)) {
-                                        newClauses.add(
+                                        val stmt =
                                             Statement(
                                                 text = expanded.toCode(),
-                                                texTalkRoot = validationSuccess(expanded)))
+                                                texTalkRoot = validationSuccess(expanded))
+                                        val location = tracker.getLocationOf(c)
+                                        if (location != null) {
+                                            tracker.setLocationOf(stmt, location)
+                                        }
+                                        newClauses.add(stmt)
                                     }
                                 }
                                 is ValidationFailure -> newClauses.add(c)

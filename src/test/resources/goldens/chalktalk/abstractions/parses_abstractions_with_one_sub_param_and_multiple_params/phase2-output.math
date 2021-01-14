@@ -1,3 +1,5 @@
 Theorem:
 then:
 . forAll: a_n(x, y)
+  then:
+  . b

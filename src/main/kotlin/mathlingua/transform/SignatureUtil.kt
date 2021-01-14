@@ -25,7 +25,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.Define
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.section.TextSection
 import mathlingua.support.Location
-import mathlingua.support.LocationTracker
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.textalk.Command
@@ -35,15 +35,15 @@ import mathlingua.textalk.IsTexTalkNode
 import mathlingua.textalk.TexTalkNode
 
 internal fun locateAllSignatures(
-    node: Phase2Node, locationTracker: LocationTracker
+    node: Phase2Node, locationTracker: MutableLocationTracker
 ): Set<Signature> {
     val signatures = mutableSetOf<Signature>()
-    findAllSignaturesImpl(node, signatures, locationTracker)
+    findAllSignaturesImpl(normalize(node, locationTracker), signatures, locationTracker)
     return signatures
 }
 
 private fun findAllSignaturesImpl(
-    node: Phase2Node, signatures: MutableSet<Signature>, locationTracker: LocationTracker
+    node: Phase2Node, signatures: MutableSet<Signature>, locationTracker: MutableLocationTracker
 ) {
     if (node is Statement) {
         signatures.addAll(findAllStatementSignatures(node, locationTracker))
@@ -70,9 +70,9 @@ private fun getSignature(section: TextSection): String? {
 }
 
 internal fun findAllStatementSignatures(
-    stmt: Statement, locationTracker: LocationTracker
+    stmt: Statement, locationTracker: MutableLocationTracker
 ): Set<Signature> {
-    val gluedStmt = glueCommands(stmt, stmt).root as Statement
+    val gluedStmt = glueCommands(stmt, stmt, locationTracker).root as Statement
     return when (val rootValidation = gluedStmt.texTalkRoot
     ) {
         is ValidationSuccess -> {

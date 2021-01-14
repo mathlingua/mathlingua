@@ -7,5 +7,7 @@ collects:
   where:
   . 'k is \integer'
   where: '2*k'
+  suchThat:
+  . 'k > 10'
 written:
 . "\textrm{evens}"

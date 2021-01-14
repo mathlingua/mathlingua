@@ -21,6 +21,7 @@ import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.hasChild
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.support.validationSuccess
@@ -36,11 +37,37 @@ import mathlingua.textalk.TextTexTalkNode
 
 data class RootTarget<R, T>(val root: R, val target: T)
 
-internal fun locateAllCommands(phase2Node: Phase2Node): List<Command> {
+internal fun normalize(node: Phase2Node, tracker: MutableLocationTracker): Phase2Node {
+    var result = node
+    result = commaSeparateCompoundCommands(result, result, tracker).root
+    result = separateIsStatements(result, result, tracker).root
+    result = separateInfixOperatorStatements(result, result, tracker).root
+    return glueCommands(result, result, tracker).root
+}
+
+// replaces anything of the form `x is \a \b \c` as `x \a.b.c`
+internal fun normalize(node: TexTalkNode): TexTalkNode {
+    return node.transform {
+        if (it is ExpressionTexTalkNode) {
+            val allCmd = it.children.all { it is Command }
+            if (allCmd) {
+                ExpressionTexTalkNode(children = getCommandsToGlue(it))
+            } else {
+                it
+            }
+        } else {
+            it
+        }
+    }
+}
+
+internal fun locateAllCommands(
+    phase2Node: Phase2Node, tracker: MutableLocationTracker
+): List<Command> {
     var root = phase2Node
-    root = separateIsStatements(root, root).root
-    root = separateInfixOperatorStatements(root, root).root
-    root = glueCommands(root, root).root
+    root = separateIsStatements(root, root, tracker).root
+    root = separateInfixOperatorStatements(root, root, tracker).root
+    root = glueCommands(root, root, tracker).root
 
     val commands = mutableListOf<Command>()
     findCommandsImpl(root, commands)
@@ -133,8 +160,57 @@ private fun findCommandsImpl(texTalkNode: TexTalkNode, commands: MutableList<Com
     texTalkNode.forEach { findCommandsImpl(it, commands) }
 }
 
+internal fun commaSeparateCompoundCommands(
+    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
+): RootTarget<Phase2Node, Phase2Node> {
+    var newFollow: Phase2Node? = null
+    val newRoot =
+        root.transform {
+            val result =
+                if (it is Statement) {
+                    if (it.texTalkRoot is ValidationSuccess) {
+                        val newRoot =
+                            it.texTalkRoot.value.transform { texTalkNode ->
+                                if (texTalkNode is IsTexTalkNode) {
+                                    val newExpressions = mutableListOf<ExpressionTexTalkNode>()
+                                    for (exp in texTalkNode.rhs.items) {
+                                        newExpressions.addAll(
+                                            getCommandsToGlue(exp).map { cmd ->
+                                                ExpressionTexTalkNode(children = listOf(cmd))
+                                            })
+                                    }
+                                    IsTexTalkNode(
+                                        lhs = texTalkNode.lhs,
+                                        rhs = texTalkNode.rhs.copy(items = newExpressions))
+                                } else {
+                                    texTalkNode
+                                }
+                            }
+                        val newStatement =
+                            Statement(
+                                text = newRoot.toCode(),
+                                texTalkRoot = validationSuccess(newRoot as ExpressionTexTalkNode))
+                        if (newFollow == null && hasChild(it, follow)) {
+                            newFollow = newStatement
+                        }
+                        newStatement
+                    } else {
+                        it
+                    }
+                } else {
+                    it
+                }
+            val location = tracker.getLocationOf(it)
+            if (location != null) {
+                tracker.setLocationOf(result, location)
+            }
+            result
+        }
+    return RootTarget(root = newRoot, target = newFollow ?: follow)
+}
+
 internal fun separateIsStatements(
-    root: Phase2Node, follow: Phase2Node
+    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
@@ -151,9 +227,15 @@ internal fun separateIsStatements(
                                 newClauses.addAll(
                                     separated.map {
                                         val expRoot = ExpressionTexTalkNode(children = listOf(it))
-                                        Statement(
-                                            text = expRoot.toCode(),
-                                            texTalkRoot = validationSuccess(expRoot))
+                                        val stmt =
+                                            Statement(
+                                                text = expRoot.toCode(),
+                                                texTalkRoot = validationSuccess(expRoot))
+                                        val location = tracker.getLocationOf(clause)
+                                        if (location != null) {
+                                            tracker.setLocationOf(stmt, location)
+                                        }
+                                        stmt
                                     })
                             }
                         } else {
@@ -205,7 +287,7 @@ private fun separateIsStatementsUnder(isNode: IsTexTalkNode): List<IsTexTalkNode
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
 internal fun glueCommands(
-    root: Phase2Node, follow: Phase2Node
+    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
@@ -241,6 +323,10 @@ internal fun glueCommands(
                                                             children = listOf(gluedCmds[0])))))))
                     val result =
                         Statement(text = newExp.toCode(), texTalkRoot = validationSuccess(newExp))
+                    val location = tracker.getLocationOf(it)
+                    if (location != null) {
+                        tracker.setLocationOf(result, location)
+                    }
                     if (newFollow == null && hasChild(it, follow)) {
                         newFollow = result
                     }

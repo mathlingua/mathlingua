@@ -55,12 +55,9 @@ internal class SignatureUtilKtTest {
             .isEqualTo(
                 listOf(
                     ParseError(
-                        message =
-                            "Multiple infix operators cannot be side by side ('\\abc \\xyz{x}').  They " +
-                                "can only be one of the forms: '\\x \\op/ \\y', '\\x \\op/ y', 'x \\op/ \\y', " +
-                                "or 'x \\op/ y'",
-                        row = -1,
-                        column = -1)))
+                        message = "A command in an id cannot be of the form \\x \\y ...",
+                        row = 0,
+                        column = 0)))
     }
 
     @Test

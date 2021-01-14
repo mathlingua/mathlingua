@@ -102,8 +102,8 @@ private data class IfOrIffSectionImpl(val ifSection: IfSection?, val iffSection:
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): IfOrIffSection =
         if (isIf()) {
-            newIfOrIffSection(asIf())
+            newIfOrIffSection(chalkTransformer(asIf().transform(chalkTransformer)) as IfSection)
         } else {
-            newIfOrIffSection(asIff())
+            newIfOrIffSection(chalkTransformer(asIff().transform(chalkTransformer)) as IffSection)
         }
 }

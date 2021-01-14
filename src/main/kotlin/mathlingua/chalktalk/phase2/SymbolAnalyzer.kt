@@ -17,6 +17,7 @@
 package mathlingua.chalktalk.phase2
 
 import java.lang.StringBuilder
+import mathlingua.ValueSourceTracker
 import mathlingua.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.chalktalk.phase2.ast.clause.Identifier
@@ -26,25 +27,28 @@ import mathlingua.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.support.LocationTracker
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.ValidationSuccess
+import mathlingua.support.newLocationTracker
 import mathlingua.textalk.Command
 import mathlingua.textalk.ExpressionTexTalkNode
 import mathlingua.textalk.IsTexTalkNode
 import mathlingua.textalk.TexTalkNode
 import mathlingua.textalk.TextTexTalkNode
+import mathlingua.transform.normalize
 import mathlingua.transform.signature
 
-class SymbolAnalyzer(defines: List<DefinesGroup>) {
+class SymbolAnalyzer(defines: List<ValueSourceTracker<DefinesGroup>>) {
     private val signatureMap = mutableMapOf<String, Set<String>>()
 
     init {
-        for (def in defines) {
-            val sig = def.signature
+        for (vst in defines) {
+            val sig = vst.value.signature
             if (sig != null) {
-                val name = getTargetName(def.definesSection.targets[0])
-                signatureMap[sig] = getDefSignatures(def, name)
+                val name = getTargetName(vst.value.definesSection.targets[0])
+                signatureMap[sig] =
+                    getDefSignatures(vst.value, name, vst.tracker ?: newLocationTracker())
             }
         }
     }
@@ -59,9 +63,11 @@ class SymbolAnalyzer(defines: List<DefinesGroup>) {
         }
     }
 
-    private fun getAllTypes(node: Phase2Node, target: String): List<Command> {
+    private fun getAllTypes(
+        node: Phase2Node, target: String, tracker: MutableLocationTracker
+    ): List<Command> {
         val result = mutableListOf<Command>()
-        getAllTypesImpl(node, target, result)
+        getAllTypesImpl(normalize(node, tracker), target, result)
         return result
     }
 
@@ -147,12 +153,13 @@ class SymbolAnalyzer(defines: List<DefinesGroup>) {
         }
     }
 
-    fun findInvalidTypes(group: TopLevelGroup, tracker: LocationTracker): List<ParseError> {
+    fun findInvalidTypes(grp: TopLevelGroup, tracker: MutableLocationTracker): List<ParseError> {
+        val group = normalize(grp, tracker)
         val errors = mutableListOf<ParseError>()
         val names = findAllNames(group)
         for (name in names) {
             val allPaths = mutableListOf<List<String>>()
-            for (sig in getDefSignatures(group, name.name)) {
+            for (sig in getDefSignatures(group, name.name, tracker)) {
                 allPaths.addAll(getTypePaths(sig))
             }
             val baseTypes = mutableSetOf<String>()
@@ -177,8 +184,10 @@ class SymbolAnalyzer(defines: List<DefinesGroup>) {
         return errors
     }
 
-    private fun getDefSignatures(node: Phase2Node, name: String): Set<String> {
-        val commands = getAllTypes(node, name)
+    private fun getDefSignatures(
+        node: Phase2Node, name: String, tracker: MutableLocationTracker
+    ): Set<String> {
+        val commands = getAllTypes(node, name, tracker)
         val typeSet = mutableSetOf<String>()
         for (cmd in commands) {
             typeSet.add(cmd.signature())

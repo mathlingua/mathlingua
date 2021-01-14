@@ -398,6 +398,7 @@ private fun identifyInfixCommandOperators(
                     newChildren.add(section[1])
                     newChildren.add(section[0])
                 } else {
+                    /*
                     throw ParseException(
                         ParseError(
                             message =
@@ -405,6 +406,8 @@ private fun identifyInfixCommandOperators(
                                     "They can only be one of the forms: '\\x \\op/ \\y', '\\x \\op/ y', 'x \\op/ \\y', or 'x \\op/ y'",
                             row = -1,
                             column = -1))
+                     */
+                    newChildren.addAll(section)
                 }
             }
             ExpressionTexTalkNode(children = newChildren)

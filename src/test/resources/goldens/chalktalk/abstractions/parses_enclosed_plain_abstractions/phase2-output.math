@@ -1,3 +1,5 @@
 Theorem:
 then:
 . forAll: {f}
+  then:
+  . x

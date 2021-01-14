@@ -33,16 +33,71 @@ import mathlingua.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.chalktalk.phase1.newChalkTalkParser
 import mathlingua.chalktalk.phase2.ast.Document
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.chalktalk.phase2.ast.validateDocument
 import mathlingua.support.Location
 import mathlingua.support.LocationTracker
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 import mathlingua.support.newLocationTracker
 import mathlingua.textalk.TexTalkNode
+import mathlingua.transform.moveInlineCommandsToIsNode
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
+
+enum class Normalization(
+    val parent: Normalization?,
+    val fn:
+        (
+            doc: Document,
+            defines: List<DefinesGroup>,
+            states: List<StatesGroup>,
+            tracker: MutableLocationTracker) -> Document
+) {
+    None(null, { doc, _defines, _states, _tracker -> doc }),
+    CommaSeparateCompoundNodes(
+        None,
+        { doc, _defines, _states, tracker ->
+            mathlingua.transform.commaSeparateCompoundCommands(doc, doc, tracker).root as Document
+        }),
+    SeparateIs(
+        CommaSeparateCompoundNodes,
+        { doc, _defines, _states, tracker ->
+            mathlingua.transform.separateIsStatements(doc, doc, tracker).root as Document
+        }),
+    SeparateInfixOps(
+        SeparateIs,
+        { doc, _defines, _states, tracker ->
+            mathlingua.transform.separateInfixOperatorStatements(doc, doc, tracker).root as Document
+        }),
+    GlueCommands(
+        SeparateInfixOps,
+        { doc, _defines, _states, tracker ->
+            mathlingua.transform.glueCommands(doc, doc, tracker).root as Document
+        }),
+    MoveInlineIs(
+        GlueCommands,
+        { doc, defines, _states, tracker ->
+            moveInlineCommandsToIsNode(defines, doc, doc).root as Document
+        }),
+    ReplaceStates(
+        MoveInlineIs,
+        { doc, _defines, states, tracker ->
+            mathlingua.transform.replaceRepresents(doc, states, doc).root as Document
+        });
+
+    fun transform(
+        doc: Document,
+        defines: List<DefinesGroup>,
+        states: List<StatesGroup>,
+        tracker: MutableLocationTracker
+    ): Document {
+        return fn(parent?.transform(doc, defines, states, tracker) ?: doc, defines, states, tracker)
+    }
+}
 
 fun main() {
     // enable sub-pixel antialiasing
@@ -86,6 +141,17 @@ fun main() {
     inputArea.font = font
     inputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
 
+    val normalizeBox =
+        JComboBox(
+            arrayOf(
+                Normalization.None,
+                Normalization.CommaSeparateCompoundNodes,
+                Normalization.SeparateIs,
+                Normalization.SeparateInfixOps,
+                Normalization.GlueCommands,
+                Normalization.MoveInlineIs,
+                Normalization.ReplaceStates))
+
     fun processInput() {
         SwingUtilities.invokeLater {
             var doc: Document? = null
@@ -122,7 +188,7 @@ fun main() {
                     errorBuilder.append('\n')
                 }
 
-                for (err in MathLingua.findInvalidTypes(input, emptyList())) {
+                for (err in MathLingua.findInvalidTypes(input, emptyList(), tracker)) {
                     errorBuilder.append("ERROR: ${err.message} (${err.row+1}, ${err.column})")
                     errorBuilder.append('\n')
                 }
@@ -136,7 +202,12 @@ fun main() {
 
                     when (val documentValidation = validateDocument(root, tracker)
                     ) {
-                        is ValidationSuccess -> doc = documentValidation.value
+                        is ValidationSuccess -> {
+                            doc = documentValidation.value
+                            doc =
+                                (normalizeBox.selectedItem as Normalization).transform(
+                                    doc, doc.defines(), doc.states(), tracker)
+                        }
                         is ValidationFailure -> {
                             for ((message, row, column) in documentValidation.errors) {
                                 errorBuilder.append(message)
@@ -199,6 +270,7 @@ fun main() {
 
     val bottomPanel = JPanel(FlowLayout(FlowLayout.CENTER))
     bottomPanel.add(parseButton)
+    bottomPanel.add(normalizeBox)
 
     val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
     inputSplitPane.leftComponent = RTextScrollPane(inputArea)

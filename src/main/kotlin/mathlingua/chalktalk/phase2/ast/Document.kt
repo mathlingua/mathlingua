@@ -58,6 +58,9 @@ import mathlingua.support.ParseError
 import mathlingua.support.Validation
 import mathlingua.support.validationFailure
 import mathlingua.support.validationSuccess
+import mathlingua.textalk.newTexTalkLexer
+import mathlingua.textalk.newTexTalkParser
+import mathlingua.transform.normalize
 
 data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
 
@@ -140,6 +143,23 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
                         "Expected a top level group but found " + group.toCode(),
                         getRow(group),
                         getColumn(group)))
+            }
+        }
+    }
+
+    for (group in node.groups) {
+        val id = group.id
+        if (id != null) {
+            val lexer = newTexTalkLexer(id.text)
+            val parse = newTexTalkParser().parse(lexer)
+            val idBefore = parse.root.toCode()
+            val idAfter = normalize(parse.root).toCode()
+            if (idBefore != idAfter) {
+                errors.add(
+                    ParseError(
+                        message = "A command in an id cannot be of the form \\x \\y ...",
+                        row = getRow(group),
+                        column = getColumn(group)))
             }
         }
     }

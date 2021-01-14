@@ -42,7 +42,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.Conj
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.chalktalk.phase2.ast.validateDocument
 import mathlingua.support.Location
-import mathlingua.support.LocationTracker
+import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.Validation
 import mathlingua.support.ValidationFailure
@@ -60,7 +60,7 @@ import mathlingua.transform.locateAllCommands
 import mathlingua.transform.locateAllSignatures
 import mathlingua.transform.signature
 
-data class Parse(val document: Document, val tracker: LocationTracker)
+data class Parse(val document: Document, val tracker: MutableLocationTracker)
 
 data class Signature(val form: String, val location: Location)
 
@@ -109,10 +109,11 @@ object MathLingua {
 
     fun signatureOf(command: Command) = command.signature()
 
-    fun findAllSignatures(node: Phase2Node, locationTracker: LocationTracker) =
+    fun findAllSignatures(node: Phase2Node, locationTracker: MutableLocationTracker) =
         locateAllSignatures(node, locationTracker)
 
-    fun findAllCommands(node: Phase2Node) = locateAllCommands(node).toList()
+    fun findAllCommands(node: Phase2Node, tracker: MutableLocationTracker) =
+        locateAllCommands(node, tracker).toList()
 
     private fun getContent(group: TopLevelGroup) =
         when (group) {
@@ -278,24 +279,40 @@ object MathLingua {
         return result
     }
 
-    fun findInvalidTypes(input: String, supplemental: List<String>): List<ParseError> {
+    fun findInvalidTypes(
+        input: String, supplemental: List<String>, tracker: MutableLocationTracker
+    ): List<ParseError> {
         val inputDefines =
-            when (val validation = parse(input)
+            when (val validation = parseWithLocations(input)
             ) {
                 is ValidationFailure -> emptyList()
                 is ValidationSuccess -> {
-                    validation.value.defines()
+                    validation.value.document.defines().map {
+                        ValueSourceTracker(
+                            value = it,
+                            tracker = validation.value.tracker,
+                            source =
+                                SourceFile(file = null, content = input, validation = validation))
+                    }
                 }
             }
+        val suppContent = supplemental.joinToString("\n\n\n")
         val suppDefines =
-            when (val validation = parse(supplemental.joinToString("\n\n\n"))
+            when (val validation = parseWithLocations(suppContent)
             ) {
                 is ValidationFailure -> emptyList()
                 is ValidationSuccess -> {
-                    validation.value.defines()
+                    validation.value.document.defines().map {
+                        ValueSourceTracker(
+                            value = it,
+                            tracker = validation.value.tracker,
+                            source =
+                                SourceFile(
+                                    file = null, content = suppContent, validation = validation))
+                    }
                 }
             }
-        val allDefines = mutableListOf<DefinesGroup>()
+        val allDefines = mutableListOf<ValueSourceTracker<DefinesGroup>>()
         allDefines.addAll(inputDefines)
         allDefines.addAll(suppDefines)
         val symbolAnalyzer = SymbolAnalyzer(allDefines)

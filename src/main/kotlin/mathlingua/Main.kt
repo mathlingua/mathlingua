@@ -36,12 +36,11 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.Define
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.support.Location
 import mathlingua.support.ParseError
 import mathlingua.support.ValidationFailure
 import mathlingua.support.ValidationSuccess
 
-const val TOOL_VERSION = "0.8"
+const val TOOL_VERSION = "0.9"
 
 const val MATHLINGUA_VERSION = "0.8"
 
@@ -113,6 +112,7 @@ private class Check : CliktCommand(help = "Check input files for errors.") {
         }
 }
 
+/*
 private class DuplicateContent :
     CliktCommand(name = "dup-content", help = "Identifies duplicate content.") {
     private val file: List<String> by argument(
@@ -144,70 +144,7 @@ private class DuplicateContent :
         log(getErrorOutput(errors, sourceCollection.size(), json))
     }
 }
-
-private class DuplicateSignatures :
-    CliktCommand(name = "dup-sig", help = "Identifies duplicate signature definitions.") {
-    private val file: List<String> by argument(
-            help = "The *.math files and/or directories to process")
-        .multiple(required = false)
-    private val json: Boolean by option(help = "Output the results in JSON format.").flag()
-
-    override fun run() {
-        val sourceCollection =
-            SourceCollection(
-                if (file.isEmpty()) {
-                    listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
-                } else {
-                    file.map { File(it) }
-                })
-        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-        errors.addAll(
-            sourceCollection.getDuplicateDefinedSignatures().map {
-                ValueSourceTracker(
-                    source = it.source,
-                    tracker = it.tracker,
-                    value =
-                        ParseError(
-                            message = "Duplicate defined signature '${it.value.form}'",
-                            row = it.value.location.row,
-                            column = it.value.location.column))
-            })
-        log(getErrorOutput(errors, sourceCollection.size(), json))
-    }
-}
-
-private class UndefinedSignatures :
-    CliktCommand(
-        name = "undef-sig",
-        help = "Identifies command that have been used but have not been defined.") {
-    private val file: List<String> by argument(
-            help = "The *.math files and/or directories to process")
-        .multiple(required = false)
-    private val json: Boolean by option(help = "Output the results in JSON format.").flag()
-
-    override fun run() {
-        val sourceCollection =
-            SourceCollection(
-                if (file.isEmpty()) {
-                    listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
-                } else {
-                    file.map { File(it) }
-                })
-        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-        errors.addAll(
-            sourceCollection.getUndefinedSignatures().map {
-                ValueSourceTracker(
-                    source = it.source,
-                    tracker = it.tracker,
-                    value =
-                        ParseError(
-                            message = "Undefined signature '${it.value.form}'",
-                            row = it.value.location.row,
-                            column = it.value.location.column))
-            })
-        log(getErrorOutput(errors, sourceCollection.size(), json))
-    }
-}
+ */
 
 private class Version : CliktCommand(help = "Prints the tool and MathLingua language version.") {
     override fun run() {
@@ -417,13 +354,4 @@ private fun maybePlural(text: String, count: Int) =
         "${text}s"
     }
 
-fun main(args: Array<String>) =
-    Mlg()
-        .subcommands(
-            Check(),
-            Render(),
-            DuplicateContent(),
-            DuplicateSignatures(),
-            UndefinedSignatures(),
-            Version())
-        .main(args)
+fun main(args: Array<String>) = Mlg().subcommands(Check(), Render(), Version()).main(args)

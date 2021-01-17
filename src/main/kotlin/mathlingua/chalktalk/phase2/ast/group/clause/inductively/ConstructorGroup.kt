@@ -23,9 +23,9 @@ import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.FromSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateFromSection
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -42,18 +42,18 @@ fun isConstructorGroup(node: Phase1Node) = firstSectionMatchesName(node, "constr
 fun validateConstructorGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "constructor", DEFAULT_CONSTRUCTOR_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group, errors, DEFAULT_CONSTRUCTOR_GROUP, listOf("constructor", "from")) {
             sections ->
                 ConstructorGroup(
                     constructorSection =
-                        neoEnsureNonNull(sections["constructor"], DEFAULT_CONSTRUCTOR_SECTION) {
+                        ensureNonNull(sections["constructor"], DEFAULT_CONSTRUCTOR_SECTION) {
                             validateConstructorSection(it, errors, tracker)
                         },
                     fromSection =
-                        neoEnsureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
+                        ensureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
                             validateFromSection(it, errors, tracker)
                         })
             }

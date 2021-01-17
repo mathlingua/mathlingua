@@ -28,7 +28,7 @@ import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.isSingleSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.StringSection
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
@@ -68,7 +68,7 @@ class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
 fun validateResourceSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node, errors, "Resource", DEFAULT_RESOURCE_SECTION) { section ->
             val startErrorCount = errors.size
             val items = mutableListOf<StringSectionGroup>()

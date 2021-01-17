@@ -1,4 +1,11 @@
 Row: 9
+Column: 10
+Message:
+Unrecognized character ;
+EndMessage:
+
+
+Row: 9
 Column: 4
 Message:
 Unrecognized token 'Result

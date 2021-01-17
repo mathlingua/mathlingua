@@ -28,9 +28,9 @@ import mathlingua.chalktalk.phase2.ast.group.clause.mapping.FromSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.ToSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateFromSection
 import mathlingua.chalktalk.phase2.ast.group.clause.mapping.validateToSection
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -56,17 +56,16 @@ fun isFromGroup(node: Phase1Node) = firstSectionMatchesName(node, "from")
 fun validateFromGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "from", DEFAULT_FROM_GROUP) { group ->
-            neoIdentifySections(group, errors, DEFAULT_FROM_GROUP, listOf("from", "to")) {
-            sections ->
+            identifySections(group, errors, DEFAULT_FROM_GROUP, listOf("from", "to")) { sections ->
                 FromGroup(
                     fromSection =
-                        neoEnsureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
+                        ensureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
                             validateFromSection(it, errors, tracker)
                         },
                     toSection =
-                        neoEnsureNonNull(sections["to"], DEFAULT_TO_SECTION) {
+                        ensureNonNull(sections["to"], DEFAULT_TO_SECTION) {
                             validateToSection(it, errors, tracker)
                         })
             }

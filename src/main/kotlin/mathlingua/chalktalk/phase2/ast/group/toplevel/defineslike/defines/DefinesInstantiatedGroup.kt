@@ -26,6 +26,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.sectionsMatchNames
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.getId
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
@@ -35,11 +36,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.va
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoGetId
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -99,39 +99,37 @@ fun isDefinesInstantiatedGroup(node: Phase1Node) =
 fun validateDefinesInstantiatedGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "Defines", DEFAULT_DEFINES_INSTANTIATED_GROUP) {
         group ->
-            neoIdentifySections(
+            identifySections(
                 group,
                 errors,
                 DEFAULT_DEFINES_INSTANTIATED_GROUP,
                 listOf("Defines", "when?", "instantiated", "using?", "written", "Metadata?")) {
             sections ->
-                val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+                val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesInstantiatedGroup(
                     signature = id.signature(),
                     id = id,
                     definesSection =
-                        neoEnsureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
+                        ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
                             validateDefinesSection(it, errors, tracker)
                         },
                     whenSection =
-                        neoIfNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
+                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
                     instantiatedSection =
-                        neoEnsureNonNull(sections["instantiated"], DEFAULT_INSTANTIATED_SECTION) {
+                        ensureNonNull(sections["instantiated"], DEFAULT_INSTANTIATED_SECTION) {
                             validateInstantiatedSection(it, errors, tracker)
                         },
                     usingSection =
-                        neoIfNonNull(sections["using"]) {
-                            validateUsingSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
                     writtenSection =
-                        neoEnsureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
                             validateWrittenSection(it, errors, tracker)
                         },
                     metaDataSection =
-                        neoIfNonNull(sections["Metadata"]) {
+                        ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
                         })
             }

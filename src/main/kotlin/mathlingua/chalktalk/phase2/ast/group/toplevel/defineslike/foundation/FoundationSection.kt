@@ -21,7 +21,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_FOUNDATION_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -47,7 +47,7 @@ data class FoundationSection(val content: DefinesStatesOrViews) : Phase2Node {
 fun validateFoundationSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "Foundation", DEFAULT_FOUNDATION_SECTION) {
             val clauseList = validateClauseListNode(node, errors, tracker)
             if (clauseList.clauses.isEmpty() || clauseList.clauses[0] !is DefinesStatesOrViews) {

@@ -24,6 +24,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_THEOREM_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.getOptionalId
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
@@ -36,11 +37,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.va
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoGetOptionalId
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -114,10 +114,10 @@ fun isTheoremGroup(node: Phase1Node) = firstSectionMatchesName(node, "Theorem")
 fun validateTheoremGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "Theorem", DEFAULT_THEOREM_GROUP) { group ->
-            val id = neoGetOptionalId(group, errors, tracker)
-            neoIdentifySections(
+            val id = getOptionalId(group, errors, tracker)
+            identifySections(
                 group,
                 errors,
                 DEFAULT_THEOREM_GROUP,
@@ -128,28 +128,22 @@ fun validateTheoremGroup(
                     signature = id?.signature(),
                     id = id,
                     theoremSection =
-                        neoEnsureNonNull(sections["Theorem"], DEFAULT_THEOREM_SECTION) {
+                        ensureNonNull(sections["Theorem"], DEFAULT_THEOREM_SECTION) {
                             validateTheoremSection(it, errors, tracker)
                         },
                     givenSection =
-                        neoIfNonNull(sections["given"]) {
-                            validateGivenSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["given"]) { validateGivenSection(it, errors, tracker) },
                     givenWhereSection =
-                        neoIfNonNull(sections["where"]) {
-                            validateWhereSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) },
                     ifOrIffSection = validateIfOrIffSection(node, sections, errors, tracker),
                     thenSection =
-                        neoEnsureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                        ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
                             validateThenSection(it, errors, tracker)
                         },
                     usingSection =
-                        neoIfNonNull(sections["using"]) {
-                            validateUsingSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
                     metaDataSection =
-                        neoIfNonNull(sections["Metadata"]) {
+                        ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
                         })
             }

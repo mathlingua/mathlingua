@@ -25,6 +25,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_THAT_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.getId
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
@@ -36,11 +37,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.va
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoGetId
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -102,37 +102,35 @@ fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
 fun validateStatesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "States", DEFAULT_STATES_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group,
                 errors,
                 DEFAULT_STATES_GROUP,
                 listOf("States", "when?", "that", "using?", "written?", "Metadata?")) { sections ->
-                val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+                val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 StatesGroup(
                     signature = id.signature(),
                     id = id,
                     statesSection =
-                        neoEnsureNonNull(sections["States"], DEFAULT_STATES_SECTION) {
+                        ensureNonNull(sections["States"], DEFAULT_STATES_SECTION) {
                             validateStatesSection(it, errors, tracker)
                         },
                     whenSection =
-                        neoIfNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
+                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
                     thatSection =
-                        neoEnsureNonNull(sections["that"], DEFAULT_THAT_SECTION) {
+                        ensureNonNull(sections["that"], DEFAULT_THAT_SECTION) {
                             validateThatSection(it, errors, tracker)
                         },
                     usingSection =
-                        neoIfNonNull(sections["using"]) {
-                            validateUsingSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
                     writtenSection =
-                        neoIfNonNull(sections["written"]) {
+                        ifNonNull(sections["written"]) {
                             validateWrittenSection(it, errors, tracker)
                         },
                     metaDataSection =
-                        neoIfNonNull(sections["Metadata"]) {
+                        ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
                         })
             }

@@ -28,10 +28,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -69,28 +69,28 @@ fun isEntryGroup(node: Phase1Node) = firstSectionMatchesName(node, "Entry")
 fun validateEntryGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "Entry", DEFAULT_ENTRY_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group,
                 errors,
                 DEFAULT_ENTRY_GROUP,
                 listOf("Entry", "type", "content", "Metadata?")) { sections ->
                 EntryGroup(
                     entrySection =
-                        neoEnsureNonNull(sections["Entry"], DEFAULT_ENTRY_SECTION) {
+                        ensureNonNull(sections["Entry"], DEFAULT_ENTRY_SECTION) {
                             validateEntrySection(it, errors, tracker)
                         },
                     typeSection =
-                        neoEnsureNonNull(sections["type"], DEFAULT_TYPE_SECTION) {
+                        ensureNonNull(sections["type"], DEFAULT_TYPE_SECTION) {
                             validateTypeSection(it, errors, tracker)
                         },
                     contentSection =
-                        neoEnsureNonNull(sections["content"], DEFAULT_CONTENT_SECTION) {
+                        ensureNonNull(sections["content"], DEFAULT_CONTENT_SECTION) {
                             validateContentSection(it, errors, tracker)
                         },
                     metaDataSection =
-                        neoIfNonNull(sections["Metadata"]) {
+                        ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
                         })
             }

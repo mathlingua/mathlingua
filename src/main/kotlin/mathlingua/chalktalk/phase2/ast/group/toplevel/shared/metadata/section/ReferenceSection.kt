@@ -22,7 +22,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_REFERENCE_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SourceItemGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateSourceItemGroup
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -49,7 +49,7 @@ data class ReferenceSection(val sourceItems: List<SourceItemGroup>) : Phase2Node
 fun validateReferenceSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node, errors, "reference", DEFAULT_REFERENCE_SECTION) { section ->
             ReferenceSection(
                 sourceItems = section.args.map { validateSourceItemGroup(it, errors, tracker) })

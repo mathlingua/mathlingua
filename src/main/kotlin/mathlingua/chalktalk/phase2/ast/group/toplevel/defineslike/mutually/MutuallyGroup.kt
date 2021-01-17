@@ -24,10 +24,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -58,18 +58,18 @@ fun isMutuallyGroup(node: Phase1Node) = firstSectionMatchesName(node, "Mutually"
 fun validateMutuallyGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "Mutually", DEFAULT_MUTUALLY_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group, errors, DEFAULT_MUTUALLY_GROUP, listOf("Mutually", "Metadata?")) {
             sections ->
                 MutuallyGroup(
                     mutuallySection =
-                        neoEnsureNonNull(sections["Mutually"], DEFAULT_MUTUALLY_SECTION) {
+                        ensureNonNull(sections["Mutually"], DEFAULT_MUTUALLY_SECTION) {
                             validateMutuallySection(it, errors, tracker)
                         },
                     metaDataSection =
-                        neoIfNonNull(sections["Metadata"]) {
+                        ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
                         })
             }

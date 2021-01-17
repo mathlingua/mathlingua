@@ -22,7 +22,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_ALL_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
@@ -47,7 +47,7 @@ data class AllSection(val statement: Statement) : Phase2Node {
 fun validateAllSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "all", DEFAULT_ALL_SECTION) { section ->
             validateSingleArg(section, errors, DEFAULT_ALL_SECTION, "statement") {
                 AllSection(statement = validateStatement(it, errors, tracker))

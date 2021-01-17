@@ -20,7 +20,7 @@ import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase1.ast.Tuple
 import mathlingua.chalktalk.phase2.ast.DEFAULT_TUPLE
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -32,7 +32,7 @@ fun isTuple(node: Phase1Node) = node is Tuple
 fun validateTupleNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateByTransform(
             node = node.resolve(),
             errors = errors,

@@ -27,6 +27,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_VIEWS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.getId
 import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
@@ -34,11 +35,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.Me
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoGetId
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -102,39 +102,37 @@ fun isViewsGroup(node: Phase1Node) = firstSectionMatchesName(node, "Views")
 fun validateViewsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "Views", DEFAULT_VIEWS_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group,
                 errors,
                 DEFAULT_VIEWS_GROUP,
                 listOf("Views", "from", "to", "as", "using?", "Metadata?")) { sections ->
-                val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+                val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 ViewsGroup(
                     signature = id.signature(),
                     id = id,
                     viewsSection =
-                        neoEnsureNonNull(sections["Views"], DEFAULT_VIEWS_SECTION) {
+                        ensureNonNull(sections["Views"], DEFAULT_VIEWS_SECTION) {
                             validateViewsSection(it, errors, tracker)
                         },
                     singleFromSection =
-                        neoEnsureNonNull(sections["from"], DEFAULT_SINGLE_FROM_SECTION) {
+                        ensureNonNull(sections["from"], DEFAULT_SINGLE_FROM_SECTION) {
                             validateSingleFromSection(it, errors, tracker)
                         },
                     singleToSection =
-                        neoEnsureNonNull(sections["to"], DEFAULT_SINGLE_TO_SECTION) {
+                        ensureNonNull(sections["to"], DEFAULT_SINGLE_TO_SECTION) {
                             validateSingleToSection(it, errors, tracker)
                         },
                     asSection =
-                        neoEnsureNonNull(sections["as"], DEFAULT_SINGLE_AS_SECTION) {
+                        ensureNonNull(sections["as"], DEFAULT_SINGLE_AS_SECTION) {
                             validateSingleAsSection(it, errors, tracker)
                         },
                     usingSection =
-                        neoIfNonNull(sections["using"]) {
-                            validateUsingSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
                     metaDataSection =
-                        neoIfNonNull(sections["Metadata"]) {
+                        ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
                         })
             }

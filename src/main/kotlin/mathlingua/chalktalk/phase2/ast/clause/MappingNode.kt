@@ -20,7 +20,7 @@ import mathlingua.chalktalk.phase1.ast.Mapping
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.ast.DEFAULT_MAPPING_NODE
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -29,10 +29,10 @@ data class MappingNode(val mapping: Mapping) : ZeroPartNode(mapping)
 
 fun isMapping(node: Phase1Node) = node is Mapping
 
-fun neoMappingNode(
+fun validateMappingNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateByTransform(
             node = node.resolve(),
             errors = errors,

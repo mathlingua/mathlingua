@@ -24,9 +24,9 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -55,16 +55,16 @@ fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
 fun validateIfGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "if", DEFAULT_IF_GROUP) { group ->
-            neoIdentifySections(group, errors, DEFAULT_IF_GROUP, listOf("if", "then")) { sections ->
+            identifySections(group, errors, DEFAULT_IF_GROUP, listOf("if", "then")) { sections ->
                 IfGroup(
                     ifSection =
-                        neoEnsureNonNull(sections["if"], DEFAULT_IF_SECTION) {
+                        ensureNonNull(sections["if"], DEFAULT_IF_SECTION) {
                             validateIfSection(it, errors, tracker)
                         },
                     thenSection =
-                        neoEnsureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                        ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
                             validateThenSection(it, errors, tracker)
                         })
             }

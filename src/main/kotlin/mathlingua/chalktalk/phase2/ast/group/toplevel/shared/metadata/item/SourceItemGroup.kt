@@ -31,9 +31,9 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.va
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validatePageItemSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateSourceItemSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -79,24 +79,24 @@ fun validateSourceItemGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     validateGroup(node, errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->
-        neoIdentifySections(
+        identifySections(
             group,
             errors,
             DEFAULT_SOURCE_ITEM_GROUP,
             listOf("source", "page?", "offset?", "content?")) { sections ->
             SourceItemGroup(
                 sourceSection =
-                    neoEnsureNonNull(sections["source"], DEFAULT_SOURCE_ITEM_SECTION) {
+                    ensureNonNull(sections["source"], DEFAULT_SOURCE_ITEM_SECTION) {
                         validateSourceItemSection(it, errors, tracker)
                     },
                 pageSection =
-                    neoIfNonNull(sections["page"]) { validatePageItemSection(it, errors, tracker) },
+                    ifNonNull(sections["page"]) { validatePageItemSection(it, errors, tracker) },
                 offsetSection =
-                    neoIfNonNull(sections["offset"]) {
+                    ifNonNull(sections["offset"]) {
                         validateOffsetItemSection(it, errors, tracker)
                     },
                 contentSection =
-                    neoIfNonNull(sections["content"]) {
+                    ifNonNull(sections["content"]) {
                         validateContentItemSection(it, errors, tracker)
                     })
         }

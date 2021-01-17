@@ -30,10 +30,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSe
 import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -53,26 +53,26 @@ fun isGivenGroup(node: Phase1Node) = firstSectionMatchesName(node, "given")
 fun validateGivenGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "given", DEFAULT_GIVEN_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group, errors, DEFAULT_GIVEN_GROUP, listOf("given", "where", "all", "suchThat?")) {
             sections ->
                 GivenGroup(
                     givenSection =
-                        neoEnsureNonNull(sections["given"], DEFAULT_GIVEN_SECTION) {
+                        ensureNonNull(sections["given"], DEFAULT_GIVEN_SECTION) {
                             validateGivenSection(it, errors, tracker)
                         },
                     whereSection =
-                        neoEnsureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
+                        ensureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
                             validateWhereSection(it, errors, tracker)
                         },
                     allSection =
-                        neoEnsureNonNull(sections["all"], DEFAULT_ALL_SECTION) {
+                        ensureNonNull(sections["all"], DEFAULT_ALL_SECTION) {
                             validateAllSection(it, errors, tracker)
                         },
                     suchThatSection =
-                        neoIfNonNull(sections["suchThat"]) {
+                        ifNonNull(sections["suchThat"]) {
                             validateSuchThatSection(it, errors, tracker)
                         })
             }

@@ -24,21 +24,21 @@ import mathlingua.chalktalk.phase1.ast.getColumn
 import mathlingua.chalktalk.phase1.ast.getRow
 import mathlingua.support.ParseError
 
-fun <T, U> neoEnsureNonNull(value: T?, default: U, builder: (value: T) -> U) =
+fun <T, U> ensureNonNull(value: T?, default: U, builder: (value: T) -> U) =
     if (value == null) {
         default
     } else {
         builder(value)
     }
 
-fun <T, U> neoIfNonNull(value: T?, builder: (value: T) -> U) =
+fun <T, U> ifNonNull(value: T?, builder: (value: T) -> U) =
     if (value == null) {
         null
     } else {
         builder(value)
     }
 
-fun <T> neoIdentifySections(
+fun <T> identifySections(
     group: Group,
     errors: MutableList<ParseError>,
     default: T,

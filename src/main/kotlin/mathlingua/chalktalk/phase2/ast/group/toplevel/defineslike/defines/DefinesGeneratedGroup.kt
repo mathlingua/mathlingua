@@ -26,6 +26,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.sectionsMatchNames
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.getId
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
@@ -37,11 +38,10 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSectio
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoGetId
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -109,43 +109,39 @@ fun isDefinesGeneratedGroup(node: Phase1Node) = sectionsMatchNames(node, "Define
 fun validateDefinesGeneratedGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "Defines", DEFAULT_DEFINES_GENERATED_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group,
                 errors,
                 DEFAULT_DEFINES_GENERATED_GROUP,
                 listOf(
                     "Defines", "where?", "when?", "generated", "using?", "written", "Metadata?")) {
             sections ->
-                val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+                val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesGeneratedGroup(
                     signature = id.signature(),
                     id = id,
                     definesSection =
-                        neoEnsureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
+                        ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
                             validateDefinesSection(it, errors, tracker)
                         },
                     whereSection =
-                        neoIfNonNull(sections["where"]) {
-                            validateWhereSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) },
                     whenSection =
-                        neoIfNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
+                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
                     generatedSection =
-                        neoEnsureNonNull(sections["generated"], DEFAULT_GENERATED_SECTION) {
+                        ensureNonNull(sections["generated"], DEFAULT_GENERATED_SECTION) {
                             validateGeneratedSection(it, errors, tracker)
                         },
                     usingSection =
-                        neoIfNonNull(sections["using"]) {
-                            validateUsingSection(it, errors, tracker)
-                        },
+                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
                     writtenSection =
-                        neoEnsureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
                             validateWrittenSection(it, errors, tracker)
                         },
                     metaDataSection =
-                        neoIfNonNull(sections["Metadata"]) {
+                        ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
                         })
             }

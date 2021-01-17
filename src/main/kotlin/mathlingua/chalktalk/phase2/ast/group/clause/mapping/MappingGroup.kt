@@ -28,9 +28,9 @@ import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.AsSection
 import mathlingua.chalktalk.phase2.ast.group.clause.expands.validateAsSection
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -66,26 +66,26 @@ fun isMappingGroup(node: Phase1Node) = firstSectionMatchesName(node, "mapping")
 fun validateMappingGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "mapping", DEFAULT_MAPPING_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group, errors, DEFAULT_MAPPING_GROUP, listOf("mapping", "from", "to", "as")) {
             sections ->
                 MappingGroup(
                     mappingSection =
-                        neoEnsureNonNull(sections["mapping"], DEFAULT_MAPPING_SECTION) {
+                        ensureNonNull(sections["mapping"], DEFAULT_MAPPING_SECTION) {
                             validateMappingSection(it, errors, tracker)
                         },
                     fromSection =
-                        neoEnsureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
+                        ensureNonNull(sections["from"], DEFAULT_FROM_SECTION) {
                             validateFromSection(it, errors, tracker)
                         },
                     thenSection =
-                        neoEnsureNonNull(sections["to"], DEFAULT_TO_SECTION) {
+                        ensureNonNull(sections["to"], DEFAULT_TO_SECTION) {
                             validateToSection(it, errors, tracker)
                         },
                     asSection =
-                        neoEnsureNonNull(sections["as"], DEFAULT_AS_SECTION) {
+                        ensureNonNull(sections["as"], DEFAULT_AS_SECTION) {
                             validateAsSection(it, errors, tracker)
                         })
             }

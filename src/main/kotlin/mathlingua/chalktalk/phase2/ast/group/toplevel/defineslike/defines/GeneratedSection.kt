@@ -20,7 +20,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_GENERATED_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.inductively.InductivelyGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.inductively.validateInductivelyGroup
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
@@ -48,7 +48,7 @@ data class GeneratedSection(val inductivelyGroup: InductivelyGroup) : Phase2Node
 fun validateGeneratedSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "generated", DEFAULT_GENERATED_SECTION) { section ->
             validateSingleArg(section, errors, DEFAULT_GENERATED_SECTION, "generated group") {
                 GeneratedSection(inductivelyGroup = validateInductivelyGroup(it, errors, tracker))

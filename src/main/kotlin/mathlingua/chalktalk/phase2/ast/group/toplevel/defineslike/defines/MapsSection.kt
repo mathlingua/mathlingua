@@ -20,7 +20,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_MAPS_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.from.FromGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.from.validateFromGroup
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
@@ -47,7 +47,7 @@ data class MapsSection(val fromGroup: FromGroup) : Phase2Node {
 fun validateMapsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "maps", DEFAULT_MAPS_SECTION) { section ->
             validateSingleArg(section, errors, DEFAULT_MAPS_SECTION, "from group") {
                 MapsSection(fromGroup = validateFromGroup(it, errors, tracker))

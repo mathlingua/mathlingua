@@ -24,6 +24,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.chalktalk.phase2.ast.getId
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ElseSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isElseSection
@@ -46,9 +47,8 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.va
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.chalktalk.phase2.ast.neoGetId
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -120,9 +120,9 @@ fun isEvaluatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Evaluate
 fun validateEvaluatesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node, errors, "Evaluates", DEFAULT_EVALUATES_GROUP) { group ->
-            val id = neoGetId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+            val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
             if (group.sections.isEmpty() || !isEvaluatesSection(group.sections.first())) {
                 errors.add(
                     ParseError(
@@ -212,7 +212,7 @@ fun validateEvaluatesGroup(
                         signature = id.signature(),
                         id = id,
                         evaluatesSection =
-                            neoEnsureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {
+                            ensureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {
                                 validateEvaluatesSection(it, errors, tracker)
                             },
                         whenThen = whenToList,

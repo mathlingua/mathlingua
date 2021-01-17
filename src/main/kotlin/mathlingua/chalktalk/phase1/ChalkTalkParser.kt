@@ -48,9 +48,7 @@ private val INVALID = Phase1Token("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
 private class ChalkTalkParserImpl : ChalkTalkParser {
     override fun parse(chalkTalkLexer: ChalkTalkLexer): ChalkTalkParseResult {
         val worker = ParserWorker(chalkTalkLexer)
-        val errors = worker.errors
-        val root: Root? = worker.root()
-        return ChalkTalkParseResult(root, errors)
+        return ChalkTalkParseResult(worker.root(), worker.errors)
     }
 }
 

@@ -26,7 +26,7 @@ import mathlingua.chalktalk.phase2.ast.group.clause.If.IfSection
 import mathlingua.chalktalk.phase2.ast.group.clause.If.validateIfSection
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.IffSection
 import mathlingua.chalktalk.phase2.ast.group.clause.iff.validateIffSection
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 
@@ -49,8 +49,8 @@ fun validateIfOrIffSection(
     errors: MutableList<ParseError>,
     tracker: MutableLocationTracker
 ): IfOrIffSection? {
-    val ifSection = neoIfNonNull(sections["if"]) { validateIfSection(it, errors, tracker) }
-    val iffSection = neoIfNonNull(sections["iff"]) { validateIffSection(it, errors, tracker) }
+    val ifSection = ifNonNull(sections["if"]) { validateIfSection(it, errors, tracker) }
+    val iffSection = ifNonNull(sections["iff"]) { validateIffSection(it, errors, tracker) }
 
     return if (ifSection == null && iffSection == null) {
         null

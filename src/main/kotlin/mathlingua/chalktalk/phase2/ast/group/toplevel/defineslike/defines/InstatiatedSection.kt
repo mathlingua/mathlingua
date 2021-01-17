@@ -22,7 +22,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_INSTANTIATED_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -54,7 +54,7 @@ data class InstantiatedSection(val statements: List<Statement>) : Phase2Node {
 fun validateInstantiatedSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "instantiated", DEFAULT_INSTANTIATED_SECTION) {
             InstantiatedSection(
                 statements = it.args.map { arg -> validateStatement(arg, errors, tracker) })

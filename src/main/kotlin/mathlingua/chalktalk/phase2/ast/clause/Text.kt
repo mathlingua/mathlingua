@@ -22,7 +22,7 @@ import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_TEXT
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -45,7 +45,7 @@ fun isText(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTok
 fun validateText(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateByTransform(
             node = node.resolve(),
             errors = errors,

@@ -20,7 +20,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_COLLECTS_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.given.GivenGroup
 import mathlingua.chalktalk.phase2.ast.group.clause.given.validateGivenGroup
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
@@ -47,7 +47,7 @@ data class CollectsSection(val givenGroup: GivenGroup) : Phase2Node {
 fun validateCollectsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "collects", DEFAULT_COLLECTS_SECTION) { section ->
             validateSingleArg(section, errors, DEFAULT_COLLECTS_SECTION, "given group") { arg ->
                 CollectsSection(givenGroup = validateGivenGroup(arg.resolve(), errors, tracker))

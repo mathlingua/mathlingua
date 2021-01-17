@@ -23,7 +23,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -51,7 +51,7 @@ fun isThenSection(sec: Section) = sec.name.text == "then"
 fun validateThenSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "then", DEFAULT_THEN_SECTION) {
             ThenSection(clauses = validateClauseListNode(it, errors, tracker))
         }

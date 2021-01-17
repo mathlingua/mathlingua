@@ -22,9 +22,9 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_OR_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.OnePartNode
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -36,12 +36,12 @@ fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
 fun validateOrGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "or", DEFAULT_OR_GROUP) { group ->
-            neoIdentifySections(group, errors, DEFAULT_OR_GROUP, listOf("or")) { sections ->
+            identifySections(group, errors, DEFAULT_OR_GROUP, listOf("or")) { sections ->
                 OrGroup(
                     orSection =
-                        neoEnsureNonNull(sections["or"], DEFAULT_OR_SECTION) {
+                        ensureNonNull(sections["or"], DEFAULT_OR_SECTION) {
                             validateOrSection(it, errors, tracker)
                         })
             }

@@ -25,7 +25,7 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_CONTENT_ITEM_SECTION
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.indentedStringSection
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.support.MutableLocationTracker
@@ -45,7 +45,7 @@ data class ContentItemSection(val content: String) : Phase2Node {
 fun validateContentItemSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node, errors, "content", DEFAULT_CONTENT_ITEM_SECTION) { section ->
             validateSingleArg(section, errors, DEFAULT_CONTENT_ITEM_SECTION, "string") { arg ->
                 if (arg !is Phase1Token || arg.type != ChalkTalkTokenType.String) {

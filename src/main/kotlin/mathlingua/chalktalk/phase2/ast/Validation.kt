@@ -142,9 +142,7 @@ import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
 import mathlingua.support.validationFailure
 
-fun <T : Phase2Node> neoTrack(
-    node: Phase1Node, tracker: MutableLocationTracker, builder: () -> T
-): T {
+fun <T : Phase2Node> track(node: Phase1Node, tracker: MutableLocationTracker, builder: () -> T): T {
     val phase2Node = builder()
     tracker.setLocationOf(phase2Node, Location(row = getRow(node), column = getColumn(node)))
     return phase2Node
@@ -261,7 +259,7 @@ fun <T> validateTargetSection(
         }
     }
 
-fun neoGetOptionalId(
+fun getOptionalId(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): IdStatement? {
     val group = node.resolve()
@@ -277,13 +275,13 @@ fun neoGetOptionalId(
     }
 }
 
-fun neoGetId(
+fun getId(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     default: IdStatement,
     tracker: MutableLocationTracker
 ): IdStatement {
-    val id = neoGetOptionalId(node, errors, tracker)
+    val id = getOptionalId(node, errors, tracker)
     return if (id != null) {
         id
     } else {

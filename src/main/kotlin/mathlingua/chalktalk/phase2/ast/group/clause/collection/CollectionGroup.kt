@@ -30,10 +30,10 @@ import mathlingua.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
 import mathlingua.chalktalk.phase2.ast.group.clause.forAll.validateForSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
-import mathlingua.chalktalk.phase2.ast.section.neoIfNonNull
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -82,30 +82,30 @@ fun isCollectionGroup(node: Phase1Node) = firstSectionMatchesName(node, "collect
 fun validateCollectionGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "collection", DEFAULT_COLLECTION_GROUP) { group ->
-            neoIdentifySections(
+            identifySections(
                 group,
                 errors,
                 DEFAULT_COLLECTION_GROUP,
                 listOf("collection", "of", "in?", "forAll", "where")) { sections ->
                 CollectionGroup(
                     collectionSection =
-                        neoEnsureNonNull(sections["collection"], DEFAULT_COLLECTION_SECTION) {
+                        ensureNonNull(sections["collection"], DEFAULT_COLLECTION_SECTION) {
                             validateCollectionSection(it, errors, tracker)
                         },
                     ofSection =
-                        neoEnsureNonNull(sections["of"], DEFAULT_OF_SECTION) {
+                        ensureNonNull(sections["of"], DEFAULT_OF_SECTION) {
                             validateOfSection(it, errors, tracker)
                         },
                     inSection =
-                        neoIfNonNull(sections["in"]) { validateInSection(it, errors, tracker) },
+                        ifNonNull(sections["in"]) { validateInSection(it, errors, tracker) },
                     forAllSection =
-                        neoEnsureNonNull(sections["forAll"], DEFAULT_FOR_ALL_SECTION) {
+                        ensureNonNull(sections["forAll"], DEFAULT_FOR_ALL_SECTION) {
                             validateForSection(it, errors, tracker)
                         },
                     whereSection =
-                        neoEnsureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
+                        ensureNonNull(sections["where"], DEFAULT_WHERE_SECTION) {
                             validateWhereSection(it, errors, tracker)
                         })
             }

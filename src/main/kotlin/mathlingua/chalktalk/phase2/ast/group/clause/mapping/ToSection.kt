@@ -23,7 +23,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_TO_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Statement
 import mathlingua.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -57,7 +57,7 @@ fun isToSection(sec: Section) = sec.name.text == "to"
 fun validateToSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "to", DEFAULT_TO_SECTION) {
             ToSection(statements = it.args.map { arg -> validateStatement(arg, errors, tracker) })
         }

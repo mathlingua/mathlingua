@@ -19,8 +19,8 @@ import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_CONSTRUCTOR_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Target
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
 import mathlingua.chalktalk.phase2.ast.section.appendTargetArgs
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateTargetSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -43,7 +43,7 @@ data class ConstructorSection(val targets: List<Target>) : Phase2Node {
 fun validateConstructorSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateTargetSection(
             node.resolve(),
             errors,

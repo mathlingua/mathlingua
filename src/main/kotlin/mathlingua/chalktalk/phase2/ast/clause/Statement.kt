@@ -22,7 +22,7 @@ import mathlingua.chalktalk.phase1.ast.Phase1Token
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.DEFAULT_STATEMENT
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -53,7 +53,7 @@ fun isStatement(node: Phase1Node) =
 fun validateStatement(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateByTransform(
             node = node.resolve(),
             errors = errors,

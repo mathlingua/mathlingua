@@ -31,7 +31,7 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.MetaD
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isReferenceGroup
 import mathlingua.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateReferenceGroup
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.support.Location
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -71,7 +71,7 @@ fun isMetadataSection(sec: Section) = sec.name.text == "Metadata"
 fun validateMetaDataSection(
     section: Section, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(section, tracker) {
+    track(section, tracker) {
         val items = mutableListOf<MetaDataItem>()
         for (arg in section.args) {
             if (isReferenceGroup(arg.chalkTalkTarget)) {

@@ -18,7 +18,6 @@ package mathlingua.chalktalk.phase2.ast.clause
 
 import mathlingua.chalktalk.phase1.ast.Group
 import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.Section
 import mathlingua.chalktalk.phase2.CodeWriter
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.chalktalk.phase2.ast.group.clause.If.isIfGroup
@@ -61,7 +60,6 @@ import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsG
 import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
-import mathlingua.support.Validation
 
 interface Clause : Phase2Node
 
@@ -108,50 +106,45 @@ fun toCode(
     return writer
 }
 
-data class Validator(
-    val name: String,
-    val optional: Boolean,
-    val validate: (section: Section, tracker: MutableLocationTracker) -> Validation<Phase2Node>)
-
-private data class NeoValidationPair<T>(
+private data class ValidationPair<T>(
     val matches: (node: Phase1Node) -> Boolean,
     val validate:
         (node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) -> T)
 
-private val NEO_CLAUSE_VALIDATORS =
+private val CLAUSE_VALIDATORS =
     listOf(
-        NeoValidationPair<Clause>(::isAbstraction, ::validateAbstractionNode),
-        NeoValidationPair(::isTuple, ::validateTupleNode),
-        NeoValidationPair(::isAssignment, ::validateAssignmentNode),
-        NeoValidationPair(::isIdentifier, ::validateIdentifier),
-        NeoValidationPair(::isStatement, ::validateStatement),
-        NeoValidationPair(::isText, ::validateText),
-        NeoValidationPair(::isForGroup, ::validateForGroup),
-        NeoValidationPair(::isExistsGroup, ::validateExistsGroup),
-        NeoValidationPair(::isNotGroup, ::validateNotGroup),
-        NeoValidationPair(::isOrGroup, ::validateOrGroup),
-        NeoValidationPair(::isAndGroup, ::validateAndGroup),
-        NeoValidationPair(::isIfGroup, ::validateIfGroup),
-        NeoValidationPair(::isIffGroup, ::validateIffGroup),
-        NeoValidationPair(::isExpandsGroup, ::validateExpandsGroup),
-        NeoValidationPair(::isMappingGroup, ::validateMappingGroup),
-        NeoValidationPair(::isCollectionGroup, ::validateCollectionGroup),
-        NeoValidationPair(::isMatchingGroup, ::validateMatchingGroup),
-        NeoValidationPair(::isConstantGroup, ::validateConstantGroup),
-        NeoValidationPair(::isConstructorGroup, ::validateConstructorGroup),
-        NeoValidationPair(::isInductivelyGroup, ::validateInductivelyGroup),
-        NeoValidationPair(::isPiecewiseGroup, ::validatePiecewiseGroup),
-        NeoValidationPair(::isEvaluatesGroup, ::validateEvaluatesGroup),
-        NeoValidationPair(::isDefinesGroup, ::validateDefinesGroup),
-        NeoValidationPair(::isStatesGroup, ::validateStatesGroup),
-        NeoValidationPair(::isViewsGroup, ::validateViewsGroup))
+        ValidationPair<Clause>(::isAbstraction, ::validateAbstractionNode),
+        ValidationPair(::isTuple, ::validateTupleNode),
+        ValidationPair(::isAssignment, ::validateAssignmentNode),
+        ValidationPair(::isIdentifier, ::validateIdentifier),
+        ValidationPair(::isStatement, ::validateStatement),
+        ValidationPair(::isText, ::validateText),
+        ValidationPair(::isForGroup, ::validateForGroup),
+        ValidationPair(::isExistsGroup, ::validateExistsGroup),
+        ValidationPair(::isNotGroup, ::validateNotGroup),
+        ValidationPair(::isOrGroup, ::validateOrGroup),
+        ValidationPair(::isAndGroup, ::validateAndGroup),
+        ValidationPair(::isIfGroup, ::validateIfGroup),
+        ValidationPair(::isIffGroup, ::validateIffGroup),
+        ValidationPair(::isExpandsGroup, ::validateExpandsGroup),
+        ValidationPair(::isMappingGroup, ::validateMappingGroup),
+        ValidationPair(::isCollectionGroup, ::validateCollectionGroup),
+        ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
+        ValidationPair(::isConstantGroup, ::validateConstantGroup),
+        ValidationPair(::isConstructorGroup, ::validateConstructorGroup),
+        ValidationPair(::isInductivelyGroup, ::validateInductivelyGroup),
+        ValidationPair(::isPiecewiseGroup, ::validatePiecewiseGroup),
+        ValidationPair(::isEvaluatesGroup, ::validateEvaluatesGroup),
+        ValidationPair(::isDefinesGroup, ::validateDefinesGroup),
+        ValidationPair(::isStatesGroup, ::validateStatesGroup),
+        ValidationPair(::isViewsGroup, ::validateViewsGroup))
 
 fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): Clause {
     val node = rawNode.resolve()
 
-    for (pair in NEO_CLAUSE_VALIDATORS) {
+    for (pair in CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
             return pair.validate(node, errors, tracker) as Clause
         }

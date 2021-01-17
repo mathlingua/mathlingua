@@ -22,9 +22,9 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_EXPANDS_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.Clause
 import mathlingua.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.chalktalk.phase2.ast.common.TwoPartNode
-import mathlingua.chalktalk.phase2.ast.neoTrack
-import mathlingua.chalktalk.phase2.ast.section.neoEnsureNonNull
-import mathlingua.chalktalk.phase2.ast.section.neoIdentifySections
+import mathlingua.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.chalktalk.phase2.ast.section.identifySections
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateGroup
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -37,17 +37,17 @@ fun isExpandsGroup(node: Phase1Node) = firstSectionMatchesName(node, "expands")
 fun validateExpandsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateGroup(node.resolve(), errors, "expands", DEFAULT_AS_SECTION) { group ->
-            neoIdentifySections(group, errors, DEFAULT_AS_SECTION, listOf("expands", "as")) {
+            identifySections(group, errors, DEFAULT_AS_SECTION, listOf("expands", "as")) {
             sections ->
                 ExpandsGroup(
                     expandsSection =
-                        neoEnsureNonNull(sections["expands"], DEFAULT_EXPANDS_SECTION) {
+                        ensureNonNull(sections["expands"], DEFAULT_EXPANDS_SECTION) {
                             validateExpandsSection(it, errors, tracker)
                         },
                     asSection =
-                        neoEnsureNonNull(sections["as"], DEFAULT_AS_SECTION) {
+                        ensureNonNull(sections["as"], DEFAULT_AS_SECTION) {
                             validateAsSection(it, errors, tracker)
                         })
             }

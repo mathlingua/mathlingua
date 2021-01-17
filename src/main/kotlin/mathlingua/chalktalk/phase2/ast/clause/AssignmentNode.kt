@@ -20,7 +20,7 @@ import mathlingua.chalktalk.phase1.ast.Assignment
 import mathlingua.chalktalk.phase1.ast.Phase1Node
 import mathlingua.chalktalk.phase2.ast.DEFAULT_ASSIGNMENT
 import mathlingua.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateByTransform
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -32,7 +32,7 @@ fun isAssignment(node: Phase1Node) = node is Assignment
 fun validateAssignmentNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateByTransform(
             node = node.resolve(),
             errors = errors,

@@ -22,7 +22,7 @@ import mathlingua.chalktalk.phase2.ast.DEFAULT_MATCHING_SECTION
 import mathlingua.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.neoTrack
+import mathlingua.chalktalk.phase2.ast.track
 import mathlingua.chalktalk.phase2.ast.validateSection
 import mathlingua.support.MutableLocationTracker
 import mathlingua.support.ParseError
@@ -48,7 +48,7 @@ data class MatchingSection(val clauses: ClauseListNode) : Phase2Node {
 fun validateMatchingSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    neoTrack(node, tracker) {
+    track(node, tracker) {
         validateSection(node.resolve(), errors, "matching", DEFAULT_MATCHING_SECTION) {
             MatchingSection(clauses = validateClauseListNode(it, errors, tracker))
         }

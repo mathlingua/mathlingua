@@ -26,24 +26,23 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import mathlingua.MathLingua
-import mathlingua.chalktalk.phase1.ast.Phase1Node
-import mathlingua.chalktalk.phase1.ast.getColumn
-import mathlingua.chalktalk.phase1.ast.getRow
-import mathlingua.chalktalk.phase1.newChalkTalkLexer
-import mathlingua.chalktalk.phase1.newChalkTalkParser
-import mathlingua.chalktalk.phase2.ast.Document
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.chalktalk.phase2.ast.validateDocument
-import mathlingua.support.Location
-import mathlingua.support.LocationTracker
-import mathlingua.support.MutableLocationTracker
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.newLocationTracker
-import mathlingua.textalk.TexTalkNode
-import mathlingua.transform.moveInlineCommandsToIsNode
+import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase1.ast.getColumn
+import mathlingua.frontend.chalktalk.phase1.ast.getRow
+import mathlingua.frontend.chalktalk.phase1.newChalkTalkLexer
+import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
+import mathlingua.frontend.chalktalk.phase2.ast.Document
+import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.validateDocument
+import mathlingua.frontend.support.Location
+import mathlingua.frontend.support.LocationTracker
+import mathlingua.frontend.support.MutableLocationTracker
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.support.newLocationTracker
+import mathlingua.frontend.textalk.TexTalkNode
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -61,32 +60,24 @@ enum class Normalization(
     CommaSeparateCompoundNodes(
         None,
         { doc, _defines, _states, tracker ->
-            mathlingua.transform.commaSeparateCompoundCommands(doc, doc, tracker).root as Document
+            mathlingua.backend.transform.commaSeparateCompoundCommands(doc, doc, tracker)
+                .root as Document
         }),
     SeparateIs(
         CommaSeparateCompoundNodes,
         { doc, _defines, _states, tracker ->
-            mathlingua.transform.separateIsStatements(doc, doc, tracker).root as Document
+            mathlingua.backend.transform.separateIsStatements(doc, doc, tracker).root as Document
         }),
     SeparateInfixOps(
         SeparateIs,
         { doc, _defines, _states, tracker ->
-            mathlingua.transform.separateInfixOperatorStatements(doc, doc, tracker).root as Document
+            mathlingua.backend.transform.separateInfixOperatorStatements(doc, doc, tracker)
+                .root as Document
         }),
     GlueCommands(
         SeparateInfixOps,
         { doc, _defines, _states, tracker ->
-            mathlingua.transform.glueCommands(doc, doc, tracker).root as Document
-        }),
-    MoveInlineIs(
-        GlueCommands,
-        { doc, defines, _states, tracker ->
-            moveInlineCommandsToIsNode(defines, doc, doc).root as Document
-        }),
-    ReplaceStates(
-        MoveInlineIs,
-        { doc, _defines, states, tracker ->
-            mathlingua.transform.replaceRepresents(doc, states, doc).root as Document
+            mathlingua.backend.transform.glueCommands(doc, doc, tracker).root as Document
         });
 
     fun transform(
@@ -148,9 +139,7 @@ fun main() {
                 Normalization.CommaSeparateCompoundNodes,
                 Normalization.SeparateIs,
                 Normalization.SeparateInfixOps,
-                Normalization.GlueCommands,
-                Normalization.MoveInlineIs,
-                Normalization.ReplaceStates))
+                Normalization.GlueCommands))
 
     fun processInput() {
         SwingUtilities.invokeLater {

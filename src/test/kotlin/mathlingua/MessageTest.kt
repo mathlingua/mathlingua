@@ -19,9 +19,9 @@ package mathlingua.mathlingua
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import assertk.assertions.isInstanceOf
-import mathlingua.MathLingua
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.support.ValidationFailure
 import mathlingua.loadMessageTestCases
-import mathlingua.support.ValidationFailure
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.TestFactory
 
@@ -32,7 +32,7 @@ internal class MessageTest {
 
         return testCases.map {
             DynamicTest.dynamicTest("Reports errors: ${it.name}") {
-                val validation = MathLingua.parse(it.input)
+                val validation = FrontEnd.parse(it.input)
                 assertThat(validation).isInstanceOf(ValidationFailure::class.java)
                 val failure = validation as ValidationFailure
                 assertThat(failure.errors).isEqualTo(it.expectedErrors)

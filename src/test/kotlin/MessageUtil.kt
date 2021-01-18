@@ -21,8 +21,9 @@ import java.io.IOException
 import java.lang.RuntimeException
 import java.lang.StringBuilder
 import java.nio.file.Paths
-import mathlingua.support.ParseError
-import mathlingua.support.ValidationFailure
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.support.ParseError
+import mathlingua.frontend.support.ValidationFailure
 
 data class MessageTestCase(
     val name: String, val input: String, val expectedErrors: List<ParseError>)
@@ -89,7 +90,7 @@ fun loadMessageTestCases(): List<MessageTestCase> {
         val input = File(caseDir, "input.math").readText()
         val expectedErrors =
             if (OVERWRITE_GOLDEN_FILES) {
-                val validation = MathLingua.parse(input)
+                val validation = FrontEnd.parse(input)
                 val errors =
                     if (validation is ValidationFailure) {
                         validation.errors

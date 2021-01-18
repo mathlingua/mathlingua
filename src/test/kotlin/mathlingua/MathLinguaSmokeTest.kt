@@ -19,9 +19,9 @@ import assertk.assertions.isEqualTo
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
-import mathlingua.MathLingua
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
 import org.junit.jupiter.api.Test
 
 val MATHLINGUA_SOURCE_FILE: File = Paths.get("src", "test", "resources", "mathlingua.math").toFile()
@@ -30,7 +30,7 @@ internal class MathLinguaDataTest {
     @Test
     fun `input MathLingua input file is valid`() {
         val input = Files.readString(MATHLINGUA_SOURCE_FILE.toPath())
-        val result = MathLingua.parse(input)
+        val result = FrontEnd.parse(input)
         val builder = StringBuilder()
         if (result is ValidationFailure) {
             for (err in result.errors) {

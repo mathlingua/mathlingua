@@ -5,17 +5,18 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import mathlingua.MathLingua
 import mathlingua.Signature
-import mathlingua.support.Location
-import mathlingua.support.ValidationSuccess
-import mathlingua.textalk.Command
-import mathlingua.textalk.CommandPart
-import mathlingua.textalk.ExpressionTexTalkNode
-import mathlingua.textalk.GroupTexTalkNode
-import mathlingua.textalk.OperatorTexTalkNode
-import mathlingua.textalk.ParametersTexTalkNode
-import mathlingua.textalk.TexTalkNodeType
-import mathlingua.textalk.TexTalkTokenType
-import mathlingua.textalk.TextTexTalkNode
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.support.Location
+import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.textalk.Command
+import mathlingua.frontend.textalk.CommandPart
+import mathlingua.frontend.textalk.ExpressionTexTalkNode
+import mathlingua.frontend.textalk.GroupTexTalkNode
+import mathlingua.frontend.textalk.OperatorTexTalkNode
+import mathlingua.frontend.textalk.ParametersTexTalkNode
+import mathlingua.frontend.textalk.TexTalkNodeType
+import mathlingua.frontend.textalk.TexTalkTokenType
+import mathlingua.frontend.textalk.TextTexTalkNode
 import org.junit.jupiter.api.Test
 
 internal class MathLinguaTest {
@@ -327,7 +328,7 @@ internal class MathLinguaTest {
     @Test
     fun expandWrittenAs() {
         val validation =
-            MathLingua.parse(
+            FrontEnd.parse(
                 """
             [\or{a}{b}]
             States:

@@ -24,9 +24,9 @@ import java.awt.event.KeyListener
 import java.io.File
 import java.util.concurrent.CompletableFuture
 import javax.swing.*
-import mathlingua.MathLingua
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -147,7 +147,7 @@ fun main() {
                 }
 
                 inputErrorArea.text = "Processing..."
-                when (val validation = MathLingua.parse(inputArea.text)
+                when (val validation = FrontEnd.parse(inputArea.text)
                 ) {
                     is ValidationSuccess -> {
                         // TODO: implement transpiling MathLingua to Lean

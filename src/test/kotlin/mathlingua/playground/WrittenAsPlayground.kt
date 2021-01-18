@@ -27,8 +27,8 @@ import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.WindowConstants
 import mathlingua.MathLingua
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane

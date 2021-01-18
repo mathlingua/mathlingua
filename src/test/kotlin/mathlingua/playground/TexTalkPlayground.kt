@@ -7,11 +7,11 @@ import java.awt.event.KeyListener
 import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
-import mathlingua.textalk.Command
-import mathlingua.textalk.TexTalkNode
-import mathlingua.textalk.newTexTalkLexer
-import mathlingua.textalk.newTexTalkParser
-import mathlingua.transform.signature
+import mathlingua.backend.transform.signature
+import mathlingua.frontend.textalk.Command
+import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.newTexTalkLexer
+import mathlingua.frontend.textalk.newTexTalkParser
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane

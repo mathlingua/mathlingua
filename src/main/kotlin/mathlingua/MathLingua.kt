@@ -16,94 +16,57 @@
 
 package mathlingua
 
-import mathlingua.chalktalk.phase1.newChalkTalkLexer
-import mathlingua.chalktalk.phase1.newChalkTalkParser
-import mathlingua.chalktalk.phase2.HtmlCodeWriter
-import mathlingua.chalktalk.phase2.MathLinguaCodeWriter
-import mathlingua.chalktalk.phase2.SymbolAnalyzer
-import mathlingua.chalktalk.phase2.ast.Document
-import mathlingua.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.chalktalk.phase2.ast.clause.Statement
-import mathlingua.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesCollectsGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesEvaluatedGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGeneratedGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesInstantiatedGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMapsGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
-import mathlingua.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
-import mathlingua.chalktalk.phase2.ast.validateDocument
-import mathlingua.support.Location
-import mathlingua.support.MutableLocationTracker
-import mathlingua.support.ParseError
-import mathlingua.support.Validation
-import mathlingua.support.ValidationFailure
-import mathlingua.support.ValidationSuccess
-import mathlingua.support.newLocationTracker
-import mathlingua.support.validationFailure
-import mathlingua.support.validationSuccess
-import mathlingua.textalk.Command
-import mathlingua.textalk.ExpressionTexTalkNode
-import mathlingua.textalk.OperatorTexTalkNode
-import mathlingua.textalk.TexTalkNode
-import mathlingua.transform.expandAsWritten
-import mathlingua.transform.getSignature
-import mathlingua.transform.locateAllCommands
-import mathlingua.transform.locateAllSignatures
-import mathlingua.transform.signature
-
-data class Parse(val document: Document, val tracker: MutableLocationTracker)
+import mathlingua.backend.SourceFile
+import mathlingua.backend.SymbolAnalyzer
+import mathlingua.backend.ValueSourceTracker
+import mathlingua.backend.transform.expandAsWritten
+import mathlingua.backend.transform.getSignature
+import mathlingua.backend.transform.locateAllCommands
+import mathlingua.backend.transform.locateAllSignatures
+import mathlingua.backend.transform.signature
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.chalktalk.phase2.HtmlCodeWriter
+import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
+import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
+import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesCollectsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesEvaluatedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGeneratedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesInstantiatedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMapsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
+import mathlingua.frontend.support.Location
+import mathlingua.frontend.support.MutableLocationTracker
+import mathlingua.frontend.support.ParseError
+import mathlingua.frontend.support.Validation
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.support.validationSuccess
+import mathlingua.frontend.textalk.Command
+import mathlingua.frontend.textalk.ExpressionTexTalkNode
+import mathlingua.frontend.textalk.OperatorTexTalkNode
+import mathlingua.frontend.textalk.TexTalkNode
 
 data class Signature(val form: String, val location: Location)
 
 data class ContentLocation(val path: String, val location: Location)
 
 object MathLingua {
-    fun parse(input: String): Validation<Document> =
-        when (val validation = parseWithLocations(input)
-        ) {
-            is ValidationSuccess -> validationSuccess(validation.value.document)
-            is ValidationFailure -> validationFailure(validation.errors)
-        }
 
-    fun parseWithLocations(input: String): Validation<Parse> {
-        val lexer = newChalkTalkLexer(input)
+    fun justify(text: String, width: Int) = mathlingua.frontend.support.justify(text, width)
 
-        val allErrors = mutableListOf<ParseError>()
-        allErrors.addAll(lexer.errors())
-
-        val parser = newChalkTalkParser()
-        val (root, errors) = parser.parse(lexer)
-        allErrors.addAll(errors)
-
-        if (root == null || allErrors.isNotEmpty()) {
-            return validationFailure(allErrors)
-        }
-
-        val tracker = newLocationTracker()
-        return when (val documentValidation = validateDocument(root, tracker)
-        ) {
-            is ValidationSuccess ->
-                validationSuccess(Parse(document = documentValidation.value, tracker = tracker))
-            is ValidationFailure -> {
-                allErrors.addAll(documentValidation.errors)
-                validationFailure(allErrors)
-            }
-        }
-    }
-
-    fun justify(text: String, width: Int) = mathlingua.support.justify(text, width)
-
-    fun prettyPrintIdentifier(text: String) =
-        mathlingua.chalktalk.phase2.prettyPrintIdentifier(text)
+    // fun prettyPrintIdentifier(text: String) = prettyPrintIdentifier(text)
 
     fun signatureOf(group: TopLevelGroup) = getSignature(group)
 
@@ -200,7 +163,7 @@ object MathLingua {
 
         val result = mutableMapOf<String, MutableSet<ContentLocation>>()
         for ((path, content) in files.entries.sortedBy { it.key }) {
-            val validation = parseWithLocations(content)
+            val validation = FrontEnd.parseWithLocations(content)
             if (validation is ValidationSuccess) {
                 val doc = validation.value.document
                 val tracker = validation.value.tracker
@@ -222,7 +185,7 @@ object MathLingua {
     fun findContentLocations(files: Map<String, String>): Map<String, Set<ContentLocation>> {
         val result = mutableMapOf<String, MutableSet<ContentLocation>>()
         for ((path, content) in files.entries.sortedBy { it.key }) {
-            val validation = parseWithLocations(content)
+            val validation = FrontEnd.parseWithLocations(content)
             if (validation is ValidationSuccess) {
                 val doc = validation.value.document
                 val tracker = validation.value.tracker
@@ -245,7 +208,7 @@ object MathLingua {
     fun findSignatureLocations(files: Map<String, String>): Map<String, Set<ContentLocation>> {
         val result = mutableMapOf<String, MutableSet<ContentLocation>>()
         for ((path, content) in files.entries.sortedBy { it.key }) {
-            val validation = parseWithLocations(content)
+            val validation = FrontEnd.parseWithLocations(content)
             if (validation is ValidationSuccess) {
                 val doc = validation.value.document
                 val tracker = validation.value.tracker
@@ -283,7 +246,7 @@ object MathLingua {
         input: String, supplemental: List<String>, tracker: MutableLocationTracker
     ): List<ParseError> {
         val inputDefines =
-            when (val validation = parseWithLocations(input)
+            when (val validation = FrontEnd.parseWithLocations(input)
             ) {
                 is ValidationFailure -> emptyList()
                 is ValidationSuccess -> {
@@ -298,7 +261,7 @@ object MathLingua {
             }
         val suppContent = supplemental.joinToString("\n\n\n")
         val suppDefines =
-            when (val validation = parseWithLocations(suppContent)
+            when (val validation = FrontEnd.parseWithLocations(suppContent)
             ) {
                 is ValidationFailure -> emptyList()
                 is ValidationSuccess -> {
@@ -317,7 +280,7 @@ object MathLingua {
         allDefines.addAll(suppDefines)
         val symbolAnalyzer = SymbolAnalyzer(allDefines)
         val errors = mutableListOf<ParseError>()
-        when (val validation = parseWithLocations(input)
+        when (val validation = FrontEnd.parseWithLocations(input)
         ) {
             is ValidationSuccess -> {
                 for (group in validation.value.document.groups) {
@@ -330,15 +293,15 @@ object MathLingua {
 
     fun findDuplicateContent(input: String, supplemental: List<String>): List<Location> {
         val suppContent =
-            when (val validation = parse(supplemental.joinToString("\n\n\n"))
+            when (val validation = FrontEnd.parse(supplemental.joinToString("\n\n\n"))
             ) {
-                is ValidationFailure -> emptySet()
+                is ValidationFailure -> emptySet<Location>()
                 is ValidationSuccess -> {
                     validation.value.groups.map { getContent(it) }.toSet()
                 }
             }
 
-        return when (val validation = parseWithLocations(input)
+        return when (val validation = FrontEnd.parseWithLocations(input)
         ) {
             is ValidationFailure -> emptyList()
             is ValidationSuccess -> {
@@ -396,7 +359,7 @@ object MathLingua {
             definedSignatures.addAll(getAllDefinedSignatures(sup).map { it.form })
         }
 
-        return when (val validation = parseWithLocations(input)
+        return when (val validation = FrontEnd.parseWithLocations(input)
         ) {
             is ValidationSuccess -> {
                 val result = mutableListOf<Signature>()
@@ -414,7 +377,7 @@ object MathLingua {
     }
 
     private fun getAllDefinedSignatures(input: String): List<Signature> {
-        return when (val validation = parseWithLocations(input)
+        return when (val validation = FrontEnd.parseWithLocations(input)
         ) {
             is ValidationSuccess -> {
                 val result = mutableListOf<Signature>()
@@ -456,7 +419,7 @@ object MathLingua {
         defines: List<DefinesGroup>,
         represents: List<StatesGroup>
     ): Validation<Document> =
-        when (val validation = parseWithLocations(text)
+        when (val validation = FrontEnd.parseWithLocations(text)
         ) {
             is ValidationFailure -> validationFailure(validation.errors)
             is ValidationSuccess -> {
@@ -574,7 +537,7 @@ object MathLingua {
 
     fun printExpanded(input: String, supplemental: String, html: Boolean): Validation<String> {
         val totalText = "$input\n\n\n$supplemental"
-        val totalTextValidation = parse(totalText)
+        val totalTextValidation = FrontEnd.parse(totalText)
         val defines =
             when (totalTextValidation) {
                 is ValidationFailure -> emptyList()
@@ -599,7 +562,7 @@ object MathLingua {
         val result = StringBuilder()
         val errors = mutableListOf<ParseError>()
         for (part in input.split("\n\n").filter { it.isNotBlank() }) {
-            when (val validation = parse(part)
+            when (val validation = FrontEnd.parse(part)
             ) {
                 is ValidationFailure -> {
                     errors.addAll(validation.errors)

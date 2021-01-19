@@ -16,7 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
-import mathlingua.MathLingua
+import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
 import mathlingua.backend.transform.expandAsWritten
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
@@ -190,8 +190,7 @@ open class HtmlCodeWriter(
                         foundations.isNotEmpty() ||
                         mutuallyGroups.isNotEmpty())) {
                     val patternsToWrittenAs =
-                        MathLingua.getPatternsToWrittenAs(
-                            defines, states, foundations, mutuallyGroups)
+                        getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
                     val result =
                         expandAsWritten(
                             root.value.transform {
@@ -228,8 +227,7 @@ open class HtmlCodeWriter(
                 val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
                 if (lhsParsed.errors.isEmpty()) {
                     val patternsToWrittenAs =
-                        MathLingua.getPatternsToWrittenAs(
-                            defines, states, foundations, mutuallyGroups)
+                        getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
                     builder.append(
                         "\\[${
                         expandAsWritten(lhsParsed.root.transform {
@@ -387,7 +385,7 @@ class MathLinguaCodeWriter(
                 foundations.isNotEmpty() ||
                 mutuallyGroups.isNotEmpty())) {
             val patternsToWrittenAs =
-                MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+                getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
             val expansion = expandAsWritten(root.value, patternsToWrittenAs)
             builder.append(
                 if (expansion.text != null) {
@@ -558,8 +556,7 @@ private fun expandTextAsWritten(
     }
 
     val errors = mutableListOf<String>()
-    val patternsToWrittenAs =
-        MathLingua.getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+    val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
     val parts = splitByMathlingua(text)
     val builder = StringBuilder()
     for (part in parts) {

@@ -28,21 +28,14 @@ import com.github.ajalt.clikt.parameters.types.choice
 import java.io.File
 import java.lang.IllegalArgumentException
 import java.nio.file.Paths
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
 import mathlingua.backend.BackEnd
-import mathlingua.backend.SourceCollection
+import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
-import mathlingua.frontend.FrontEnd
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.backend.isMathLinguaFile
+import mathlingua.backend.newSourceCollectionFromFiles
 import mathlingua.frontend.support.ParseError
-import mathlingua.frontend.support.ValidationFailure
-import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.support.validationFailure
 
 const val TOOL_VERSION = "0.9"
 
@@ -81,7 +74,7 @@ private class Check : CliktCommand(help = "Check input files for errors.") {
     override fun run(): Unit =
         runBlocking {
             val sourceCollection =
-                SourceCollection(
+                newSourceCollectionFromFiles(
                     if (file.isEmpty()) {
                         listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
                     } else {
@@ -101,11 +94,9 @@ private class Version : CliktCommand(help = "Prints the tool and MathLingua lang
 
 private class Render :
     CliktCommand("Generates either HTML or MathLingua code with definitions expanded.") {
-    private val file: String by argument(help = "The .math file to process")
-    private val filter: String? by option(
-        help =
-            "If a file path contains this string(s) it will be " +
-                "processed for definitions.  Separate multiple filters with commas.")
+    private val file: List<String> by argument(
+            help = "The *.math files and/or directories to process")
+        .multiple(required = false)
     private val format by option(help = "Whether to generate HTML or Mathlingua.")
         .choice("html", "mathlingua")
         .default("html")
@@ -119,24 +110,54 @@ private class Render :
                     "'.out.math' extension.")
         .flag()
 
-    override fun run() =
+    override fun run(): Unit =
         runBlocking {
-            val f = File(file)
-            if (f.isFile) {
-                processFile(f)
-            } else {
-                f.walk().filter { it.isFile && it.name.endsWith(".math") }.forEach {
-                    processFile(it)
+            val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+            val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
+            val filesToProcess = mutableListOf<File>()
+            val inputFiles =
+                if (file.isEmpty()) {
+                    listOf(cwd)
+                } else {
+                    file.map { File(it) }
                 }
+            for (f in inputFiles) {
+                if (f.isDirectory) {
+                    filesToProcess.addAll(f.walk().filter { isMathLinguaFile(it) })
+                } else if (isMathLinguaFile(f)) {
+                    filesToProcess.add(f)
+                }
+            }
+
+            val html = format == "html"
+            val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+            for (f in filesToProcess) {
+                val pair = sourceCollection.prettyPrint(file = f, html = html, doExpand = !noexpand)
+                errors.addAll(
+                    pair.second.map {
+                        ValueSourceTracker(
+                            value = it,
+                            source =
+                                SourceFile(
+                                    file = f,
+                                    content = "",
+                                    validation = validationFailure(emptyList())),
+                            tracker = null)
+                    })
+                write(content = pair.first, fileBeingProcessed = f, stdout = stdout, html = html)
+            }
+
+            if (!stdout) {
+                log(getErrorOutput(errors, sourceCollection.size(), false))
             }
         }
 
-    private fun write(content: String, fileBeingProcessed: File) {
+    private fun write(content: String, fileBeingProcessed: File, stdout: Boolean, html: Boolean) {
         if (stdout) {
             log(content)
         } else {
             val ext =
-                if (format == "html") {
+                if (html) {
                     ".html"
                 } else {
                     ".out.math"
@@ -145,94 +166,6 @@ private class Render :
                 File(fileBeingProcessed.parentFile, fileBeingProcessed.nameWithoutExtension + ext)
             outFile.writeText(content)
             log("Wrote ${outFile.absolutePath}")
-        }
-    }
-
-    private suspend fun processFile(fileToProcess: File) {
-        when (val validation = FrontEnd.parse(fileToProcess.readText())
-        ) {
-            is ValidationFailure -> {
-                when (format) {
-                    "html" -> {
-                        val builder = StringBuilder()
-                        builder.append(
-                            "<html><head><style>.content { font-size: 1em; }" +
-                                "</style></head><body class='content'><ul>")
-                        for (err in validation.errors) {
-                            builder.append(
-                                "<li><span style='color: #e61919;'>ERROR:</span> " +
-                                    "${err.message} (${err.row + 1}, ${err.column + 1})</li>")
-                        }
-                        builder.append("</ul></body></html>")
-                        write(builder.toString(), fileToProcess)
-                    }
-                    "mathlingua" -> {
-                        val builder = StringBuilder()
-                        for (err in validation.errors) {
-                            builder.append(
-                                "ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})\n")
-                        }
-                        write(builder.toString(), fileToProcess)
-                    }
-                }
-            }
-            is ValidationSuccess -> {
-                val defines = mutableListOf<DefinesGroup>()
-                val states = mutableListOf<StatesGroup>()
-                val foundations = mutableListOf<FoundationGroup>()
-                val mutuallyGroups = mutableListOf<MutuallyGroup>()
-
-                val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-                val filterItems =
-                    (filter ?: "").split(",").map { it.trim() }.filter { it.isNotEmpty() }
-
-                if (!noexpand) {
-                    val allFiles =
-                        cwd.walk()
-                            .filter { it.isFile && it.name.endsWith(".math") }
-                            .filter {
-                                if (filterItems.isEmpty()) {
-                                    return@filter true
-                                }
-
-                                var matchesOne = false
-                                for (f in filterItems) {
-                                    if (it.absolutePath.contains(f)) {
-                                        matchesOne = true
-                                        break
-                                    }
-                                }
-                                matchesOne
-                            }
-                            .toList()
-
-                    awaitAll(
-                        *allFiles
-                            .map {
-                                GlobalScope.async {
-                                    val result = FrontEnd.parse(it.readText())
-                                    if (result is ValidationSuccess) {
-                                        defines.addAll(result.value.defines())
-                                        states.addAll(result.value.states())
-                                        foundations.addAll(result.value.foundations())
-                                        mutuallyGroups.addAll(result.value.mutually())
-                                    }
-                                }
-                            }
-                            .toTypedArray())
-                }
-
-                val content =
-                    MathLingua.prettyPrint(
-                        node = validation.value,
-                        defines = defines,
-                        states = states,
-                        foundations = foundations,
-                        mutuallyGroups = mutuallyGroups,
-                        html = format == "html")
-
-                write(content, fileToProcess)
-            }
         }
     }
 }

@@ -17,8 +17,8 @@
 package mathlingua.backend
 
 import java.io.File
-import mathlingua.MathLingua
-import mathlingua.Signature
+import mathlingua.backend.transform.Signature
+import mathlingua.backend.transform.expandAsWritten
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
 import mathlingua.frontend.FrontEnd
@@ -28,6 +28,8 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
+import mathlingua.frontend.chalktalk.phase2.HtmlCodeWriter
+import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
@@ -41,13 +43,15 @@ import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.textalk.Command
+import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
 data class SourceFile(val file: File?, val content: String, val validation: Validation<Parse>)
 
-private fun isMathLinguaFile(file: File) = file.isFile && file.extension == "math"
+fun isMathLinguaFile(file: File) = file.isFile && file.extension == "math"
 
 private fun buildSourceFile(file: File): SourceFile {
     val content = file.readText()
@@ -58,26 +62,56 @@ private fun buildSourceFile(file: File): SourceFile {
 data class ValueSourceTracker<T>(
     val value: T, val source: SourceFile, val tracker: MutableLocationTracker?)
 
-class SourceCollection(filesOrDirs: List<File>) {
-    private val sourceFiles = mutableMapOf<File, SourceFile>()
+interface SourceCollection {
+    fun size(): Int
+    fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>>
+    fun getDuplicateDefinedSignatures(): List<ValueSourceTracker<Signature>>
+    fun getUsedSignatures(): Set<ValueSourceTracker<Signature>>
+    fun getUndefinedSignatures(): Set<ValueSourceTracker<Signature>>
+    fun findInvalidTypes(): List<ValueSourceTracker<ParseError>>
+    fun getParseErrors(): List<ValueSourceTracker<ParseError>>
+    fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
+    fun prettyPrint(file: File, html: Boolean, doExpand: Boolean): Pair<String, List<ParseError>>
+    fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String
+}
+
+fun newSourceCollectionFromFiles(filesOrDirs: List<File>): SourceCollection {
+    val sources = mutableListOf<SourceFile>()
+    for (f in filesOrDirs) {
+        if (f.isDirectory) {
+            sources.addAll(f.walk().filter { isMathLinguaFile(it) }.map { buildSourceFile(it) })
+        } else if (isMathLinguaFile(f)) {
+            sources.add(buildSourceFile(f))
+        }
+    }
+    return SourceCollectionImpl(sources)
+}
+
+fun newSourceCollectionFromContent(sources: List<String>): SourceCollection {
+    val sourceFiles =
+        sources.map {
+            SourceFile(file = null, content = it, validation = FrontEnd.parseWithLocations(it))
+        }
+    return SourceCollectionImpl(sourceFiles)
+}
+
+class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
+    private val sourceFiles = mutableMapOf<String, SourceFile>()
     private val allGroups = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<DefinesGroup>>()
     private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
     private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
     private val mutuallyGroups = mutableListOf<ValueSourceTracker<MutuallyGroup>>()
+    private val patternsToWrittenAs: Map<OperatorTexTalkNode, String>
 
     init {
-        for (f in filesOrDirs) {
-            if (f.isDirectory) {
-                f.walk().filter { isMathLinguaFile(it) }.forEach {
-                    sourceFiles[it] = buildSourceFile(it)
-                }
-            } else if (isMathLinguaFile(f)) {
-                sourceFiles[f] = buildSourceFile(f)
+        for (sf in sources) {
+            if (sf.file != null) {
+                sourceFiles[sf.file.normalize().canonicalPath] = sf
             }
         }
 
-        for (sf in sourceFiles.values) {
+        for (sf in sources) {
             val validation = sf.validation
             if (validation is ValidationSuccess) {
                 definesGroups.addAll(
@@ -121,6 +155,13 @@ class SourceCollection(filesOrDirs: List<File>) {
                     })
             }
         }
+
+        patternsToWrittenAs =
+            getPatternsToWrittenAs(
+                defines = definesGroups.map { it.value },
+                states = statesGroups.map { it.value },
+                foundations = foundationGroups.map { it.value },
+                mutuallyGroups = mutuallyGroups.map { it.value })
     }
 
     private fun getAllDefinedSignatures(): List<ValueSourceTracker<Signature>> {
@@ -156,15 +197,15 @@ class SourceCollection(filesOrDirs: List<File>) {
         return result
     }
 
-    fun size() = sourceFiles.size
+    override fun size() = sourceFiles.size
 
-    fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>> {
+    override fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>> {
         val result = mutableSetOf<ValueSourceTracker<Signature>>()
         result.addAll(getAllDefinedSignatures())
         return result
     }
 
-    fun getDuplicateDefinedSignatures(): List<ValueSourceTracker<Signature>> {
+    override fun getDuplicateDefinedSignatures(): List<ValueSourceTracker<Signature>> {
         val duplicates = mutableListOf<ValueSourceTracker<Signature>>()
         val found = mutableSetOf<String>()
         for (sig in getAllDefinedSignatures()) {
@@ -176,7 +217,7 @@ class SourceCollection(filesOrDirs: List<File>) {
         return duplicates
     }
 
-    fun getUsedSignatures(): Set<ValueSourceTracker<Signature>> {
+    override fun getUsedSignatures(): Set<ValueSourceTracker<Signature>> {
         val result = mutableSetOf<ValueSourceTracker<Signature>>()
         for (sf in sourceFiles) {
             val validation = sf.value.validation
@@ -195,7 +236,7 @@ class SourceCollection(filesOrDirs: List<File>) {
         return result
     }
 
-    fun getUndefinedSignatures(): Set<ValueSourceTracker<Signature>> {
+    override fun getUndefinedSignatures(): Set<ValueSourceTracker<Signature>> {
         val usedSigs = getUsedSignatures()
         val definedSigs = getDefinedSignatures().map { it.value.form }.toSet()
         val result = mutableSetOf<ValueSourceTracker<Signature>>()
@@ -207,7 +248,7 @@ class SourceCollection(filesOrDirs: List<File>) {
         return result
     }
 
-    fun findInvalidTypes(): List<ValueSourceTracker<ParseError>> {
+    override fun findInvalidTypes(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
         val analyzer = SymbolAnalyzer(definesGroups)
         for (sf in sourceFiles) {
@@ -271,13 +312,7 @@ class SourceCollection(filesOrDirs: List<File>) {
                     for (stmt in findAllStatements(doc)) {
                         val location = tracker.getLocationOf(stmt) ?: Location(row = 0, column = 0)
                         for (node in findAllTexTalkNodes(stmt)) {
-                            val expansion =
-                                MathLingua.expandWrittenAs(
-                                    normalize(node),
-                                    definesGroups.map { it.value },
-                                    statesGroups.map { it.value },
-                                    foundationGroups.map { it.value },
-                                    mutableListOf())
+                            val expansion = expandAsWritten(node, patternsToWrittenAs)
                             result.addAll(
                                 expansion.errors.map {
                                     ValueSourceTracker(
@@ -341,7 +376,7 @@ class SourceCollection(filesOrDirs: List<File>) {
         node.forEach { findAllTexTalkNodesImpl(it, result) }
     }
 
-    fun getParseErrors(): List<ValueSourceTracker<ParseError>> {
+    override fun getParseErrors(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
         for (sf in sourceFiles) {
             val validation = sf.value.validation
@@ -357,7 +392,7 @@ class SourceCollection(filesOrDirs: List<File>) {
         return result
     }
 
-    fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>> {
+    override fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>> {
         val result = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
         val allContent = mutableSetOf<String>()
         for (group in allGroups) {
@@ -371,4 +406,402 @@ class SourceCollection(filesOrDirs: List<File>) {
         }
         return result
     }
+
+    override fun prettyPrint(
+        file: File, html: Boolean, doExpand: Boolean
+    ): Pair<String, List<ParseError>> {
+        val sourceFile = sourceFiles[file.normalize().canonicalPath]
+        if (sourceFile == null) {
+            val err = "Unknown file: ${file.absolutePath}"
+            return Pair("<html>$err</html>", listOf(ParseError(message = err, row = 0, column = 0)))
+        }
+
+        val content =
+            when (val validation = sourceFile.validation
+            ) {
+                is ValidationFailure -> {
+                    if (html) {
+                        val builder = StringBuilder()
+                        builder.append(
+                            "<html><head><style>.content { font-size: 1em; }" +
+                                "</style></head><body class='content'><ul>")
+                        for (err in validation.errors) {
+                            builder.append(
+                                "<li><span style='color: #e61919;'>ERROR:</span> " +
+                                    "${err.message} (${err.row + 1}, ${err.column + 1})</li>")
+                        }
+                        builder.append("</ul></body></html>")
+                        builder.toString()
+                    } else {
+                        val builder = StringBuilder()
+                        for (err in validation.errors) {
+                            builder.append(
+                                "ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})\n")
+                        }
+                        builder.toString()
+                    }
+                }
+                is ValidationSuccess ->
+                    prettyPrint(node = validation.value.document, html = html, doExpand = doExpand)
+            }
+
+        return when (val validation = sourceFile.validation
+        ) {
+            is ValidationFailure -> Pair(content, validation.errors)
+            is ValidationSuccess -> Pair(content, emptyList())
+        }
+    }
+
+    override fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String {
+        val writer =
+            if (html) {
+                HtmlCodeWriter(
+                    defines = doExpand.thenUse { definesGroups.map { it.value } },
+                    states = doExpand.thenUse { statesGroups.map { it.value } },
+                    foundations = doExpand.thenUse { foundationGroups.map { it.value } },
+                    mutuallyGroups = doExpand.thenUse { mutuallyGroups.map { it.value } })
+            } else {
+                MathLinguaCodeWriter(
+                    defines = doExpand.thenUse { definesGroups.map { it.value } },
+                    states = doExpand.thenUse { statesGroups.map { it.value } },
+                    foundations = doExpand.thenUse { foundationGroups.map { it.value } },
+                    mutuallyGroups = doExpand.thenUse { mutuallyGroups.map { it.value } })
+            }
+        val code = node.toCode(false, 0, writer = writer).getCode()
+        return if (html) {
+            getHtml(code)
+        } else {
+            code
+        }
+    }
 }
+
+fun getPatternsToWrittenAs(
+    defines: List<DefinesGroup>,
+    states: List<StatesGroup>,
+    foundations: List<FoundationGroup>,
+    mutuallyGroups: List<MutuallyGroup>
+): Map<OperatorTexTalkNode, String> {
+    val allDefines = mutableListOf<DefinesGroup>()
+    allDefines.addAll(defines)
+
+    val allStates = mutableListOf<StatesGroup>()
+    allStates.addAll(states)
+
+    for (f in foundations) {
+        val content = f.foundationSection.content
+        if (content is DefinesGroup) {
+            allDefines.add(content)
+        } else if (content is StatesGroup) {
+            allStates.add(content)
+        }
+    }
+
+    for (m in mutuallyGroups) {
+        for (item in m.mutuallySection.items) {
+            if (item is DefinesGroup) {
+                allDefines.add(item)
+            } else if (item is StatesGroup) {
+                allStates.add(item)
+            }
+        }
+    }
+
+    val result = mutableMapOf<OperatorTexTalkNode, String>()
+    for (rep in allStates) {
+        val writtenAs =
+            rep.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
+
+        val validation = rep.id.texTalkRoot
+        if (validation is ValidationSuccess) {
+            val exp = validation.value
+            if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
+                result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+            } else if (exp.children.size == 1 && exp.children[0] is Command) {
+                result[
+                    OperatorTexTalkNode(
+                        lhs = null, command = exp.children[0] as Command, rhs = null)] = writtenAs
+            }
+        }
+    }
+
+    for (def in allDefines) {
+        val writtenAs =
+            def.writtenSection.forms.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
+
+        val validation = def.id.texTalkRoot
+        if (validation is ValidationSuccess) {
+            val exp = validation.value
+            if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
+                result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+            } else if (exp.children.size == 1 && exp.children[0] is Command) {
+                val cmd = exp.children[0] as Command
+                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] = writtenAs
+            }
+        }
+    }
+
+    return result
+}
+
+private fun <T> Boolean.thenUse(value: () -> List<T>) =
+    if (this) {
+        value()
+    } else {
+        emptyList()
+    }
+
+private fun getHtml(body: String) =
+    """
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet"
+              href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
+              integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
+              crossorigin="anonymous">
+        <script defer
+                src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
+                integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
+                crossorigin="anonymous">
+        </script>
+        <script>
+            function buildMathFragment(rawText) {
+                var text = rawText;
+                if (text[0] === '"') {
+                    text = text.substring(1);
+                }
+                if (text[text.length - 1] === '"') {
+                    text = text.substring(0, text.length - 1);
+                }
+                text = text.replace(/([a-zA-Z0-9])\?\??/g, '${'$'}1');
+                const fragment = document.createDocumentFragment();
+                var buffer = '';
+                var i = 0;
+                while (i < text.length) {
+                    if (text[i] === '\\' && text[i+1] === '[') {
+                        i += 2; // skip over \ and [
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                            !(text[i] === '\\' && text[i+1] === ']')) {
+                            math += text[i++];
+                        }
+                        if (text[i] === '\\') {
+                            i++; // move past the \
+                        }
+                        if (text[i] === ']') {
+                            i++; // move past the ]
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else if (text[i] === '\\' && text[i+1] === '(') {
+                        i += 2; // skip over \ and ()
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                            !(text[i] === '\\' && text[i+1] === ')')) {
+                            math += text[i++];
+                        }
+                        if (text[i] === '\\') {
+                            i++; // move past the \
+                        }
+                        if (text[i] === ')') {
+                            i++; // move past the )
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else if (text[i] === '${'$'}' && text[i+1] === '${'$'}') {
+                        i += 2; // skip over ${'$'} and ${'$'}
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                            !(text[i] === '${'$'}' && text[i+1] === '${'$'}')) {
+                            math += text[i++];
+                        }
+                        if (text[i] === '${'$'}') {
+                            i++; // move past the ${'$'}
+                        }
+                        if (text[i] === '${'$'}') {
+                            i++; // move past the ${'$'}
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else if (text[i] === '${'$'}') {
+                        i++; // skip over the ${'$'}
+                        fragment.appendChild(document.createTextNode(buffer));
+                        buffer = '';
+
+                        const span = document.createElement('span');
+                        var math = '';
+                        while (i < text.length &&
+                             text[i] !== '${'$'}') {
+                            math += text[i++];
+                        }
+                        if (text[i] === '${'$'}') {
+                            i++; // move past the ${'$'}
+                        }
+                        try {
+                            katex.render(math, span, {
+                                throwOnError: true,
+                                displayMode: true
+                            });
+                        } catch {
+                            span.appendChild(document.createTextNode(math));
+                        }
+                        fragment.appendChild(span);
+                    } else {
+                        buffer += text[i++];
+                    }
+                }
+
+                if (buffer.length > 0) {
+                    fragment.appendChild(document.createTextNode(buffer));
+                }
+
+                return fragment;
+            }
+
+            function render(node) {
+                if (node.className && node.className.indexOf('no-render') >= 0) {
+                    return;
+                }
+
+                let isInWritten = false;
+                const parent = node.parentNode;
+                if (node.className === 'mathlingua') {
+                    for (let i=0; i<node.childNodes.length; i++) {
+                        const n = node.childNodes[i];
+                        if (n && n.className === 'mathlingua-header' &&
+                            n.textContent === 'written:') {
+                            isInWritten = true;
+                            break;
+                        }
+                    }
+                }
+
+                for (let i = 0; i < node.childNodes.length; i++) {
+                    const child = node.childNodes[i];
+
+                    // node is an element node => nodeType === 1
+                    // node is an attribute node => nodeType === 2
+                    // node is a text node => nodeType === 3
+                    // node is a comment node => nodeType === 8
+                    if (child.nodeType === 3) {
+                        let text = child.textContent;
+                        if (text.trim()) {
+                            if (isInWritten) {
+                                // if the text is in a written: section
+                                // turn "some text" to \[some text\]
+                                // so the text is in math mode
+                                if (text[0] === '"') {
+                                    text = text.substring(1);
+                                }
+                                if (text[text.length - 1] === '"') {
+                                    text = text.substring(0, text.length - 1);
+                                }
+                                text = '\\[' + text + '\\]';
+                            }
+                            const fragment = buildMathFragment(text);
+                            i += fragment.childNodes.length - 1;
+                            node.replaceChild(fragment, child);
+                        }
+                    } else if (child.nodeType === 1) {
+                        render(child);
+                    }
+                }
+            }
+        </script>
+        <style>
+            .content {
+                margin-top: 1em;
+                margin-bottom: 1em;
+                font-size: 1em;
+            }
+
+            .mathlingua {
+                font-family: monospace;
+            }
+
+            .mathlingua-header {
+                font-weight: bold;
+                color: #0055bb;
+            }
+
+            .mathlingua-whitespace {
+                padding: 0;
+                margin: 0;
+                margin-left: 1ex;
+            }
+
+            .mathlingua-id {
+                font-weight: bold;
+                color: #5500aa;
+            }
+
+            .mathlingua-text {
+                color: #007700;
+            }
+
+            .mathlingua-text-no-render {
+                color: #007700;
+            }
+
+            .mathlingua-statement-no-render {
+                color: #007377;
+            }
+
+            .katex {
+                font-size: 0.75em;
+            }
+
+            .katex-display {
+                display: contents;
+            }
+
+            .katex-display > .katex {
+                display: contents;
+            }
+
+            .katex-display > .katex > .katex-html {
+                display: contents;
+            }
+        </style>
+    </head>
+    <body onload="render(document.body)">
+        <div class="content">
+            $body
+        </div>
+    </body>
+</html>
+"""

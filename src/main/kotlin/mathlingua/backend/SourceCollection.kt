@@ -72,6 +72,9 @@ interface SourceCollection {
     fun getParseErrors(): List<ValueSourceTracker<ParseError>>
     fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
     fun prettyPrint(file: File, html: Boolean, doExpand: Boolean): Pair<String, List<ParseError>>
+    fun prettyPrint(
+        input: String, html: Boolean, doExpand: Boolean
+    ): Pair<String, List<ParseError>>
     fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String
 }
 
@@ -411,14 +414,24 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         file: File, html: Boolean, doExpand: Boolean
     ): Pair<String, List<ParseError>> {
         val sourceFile = sourceFiles[file.normalize().canonicalPath]
-        if (sourceFile == null) {
-            val err = "Unknown file: ${file.absolutePath}"
-            return Pair("<html>$err</html>", listOf(ParseError(message = err, row = 0, column = 0)))
+        return if (sourceFile != null) {
+            prettyPrint(sourceFile.validation, html, doExpand)
+        } else {
+            prettyPrint(file.readText(), html, doExpand)
         }
+    }
 
+    override fun prettyPrint(
+        input: String, html: Boolean, doExpand: Boolean
+    ): Pair<String, List<ParseError>> {
+        return prettyPrint(FrontEnd.parseWithLocations(input), html, doExpand)
+    }
+
+    private fun prettyPrint(
+        validation: Validation<Parse>, html: Boolean, doExpand: Boolean
+    ): Pair<String, List<ParseError>> {
         val content =
-            when (val validation = sourceFile.validation
-            ) {
+            when (validation) {
                 is ValidationFailure -> {
                     if (html) {
                         val builder = StringBuilder()
@@ -445,8 +458,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     prettyPrint(node = validation.value.document, html = html, doExpand = doExpand)
             }
 
-        return when (val validation = sourceFile.validation
-        ) {
+        return when (validation) {
             is ValidationFailure -> Pair(content, validation.errors)
             is ValidationSuccess -> Pair(content, emptyList())
         }

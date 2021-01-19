@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.backend
+package mathlingua
 
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.subcommands
@@ -32,7 +32,9 @@ import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.runBlocking
-import mathlingua.MathLingua
+import mathlingua.backend.BackEnd
+import mathlingua.backend.SourceCollection
+import mathlingua.backend.ValueSourceTracker
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
@@ -85,68 +87,10 @@ private class Check : CliktCommand(help = "Check input files for errors.") {
                     } else {
                         file.map { File(it) }
                     })
-            val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-            errors.addAll(sourceCollection.getParseErrors())
-            errors.addAll(
-                sourceCollection.getUndefinedSignatures().map {
-                    ValueSourceTracker(
-                        source = it.source,
-                        tracker = it.tracker,
-                        value =
-                            ParseError(
-                                message = "Undefined signature '${it.value.form}'",
-                                row = it.value.location.row,
-                                column = it.value.location.column))
-                })
-            errors.addAll(
-                sourceCollection.getDuplicateDefinedSignatures().map {
-                    ValueSourceTracker(
-                        source = it.source,
-                        tracker = it.tracker,
-                        value =
-                            ParseError(
-                                message = "Duplicate defined signature '${it.value.form}'",
-                                row = it.value.location.row,
-                                column = it.value.location.column))
-                })
-            errors.addAll(sourceCollection.findInvalidTypes())
+            val errors = BackEnd.check(sourceCollection)
             log(getErrorOutput(errors, sourceCollection.size(), json))
         }
 }
-
-/*
-private class DuplicateContent :
-    CliktCommand(name = "dup-content", help = "Identifies duplicate content.") {
-    private val file: List<String> by argument(
-            help = "The *.math files and/or directories to process")
-        .multiple(required = false)
-    private val json: Boolean by option(help = "Output the results in JSON format.").flag()
-
-    override fun run() {
-        val sourceCollection =
-            SourceCollection(
-                if (file.isEmpty()) {
-                    listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
-                } else {
-                    file.map { File(it) }
-                })
-        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-        for (grp in sourceCollection.getDuplicateContent()) {
-            val location = grp.tracker?.getLocationOf(grp.value) ?: Location(row = -1, column = -1)
-            errors.add(
-                ValueSourceTracker(
-                    source = grp.source,
-                    tracker = grp.tracker,
-                    value =
-                        ParseError(
-                            message = "Duplicate content detected",
-                            row = location.row,
-                            column = location.column)))
-        }
-        log(getErrorOutput(errors, sourceCollection.size(), json))
-    }
-}
- */
 
 private class Version : CliktCommand(help = "Prints the tool and MathLingua language version.") {
     override fun run() {

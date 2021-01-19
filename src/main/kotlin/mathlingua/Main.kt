@@ -165,7 +165,7 @@ private class Render :
             val outFile =
                 File(fileBeingProcessed.parentFile, fileBeingProcessed.nameWithoutExtension + ext)
             outFile.writeText(content)
-            log("Wrote ${outFile.absolutePath}")
+            log("Wrote ${outFile.normalize().canonicalPath}")
         }
     }
 }

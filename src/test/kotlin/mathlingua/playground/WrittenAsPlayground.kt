@@ -26,9 +26,14 @@ import javax.swing.JTextArea
 import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.WindowConstants
-import mathlingua.MathLingua
+import mathlingua.backend.newSourceCollectionFromContent
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.support.ParseError
+import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.support.validationSuccess
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -78,7 +83,7 @@ fun main() {
                     try {
                         val input = inputArea.text
                         outputArea.text = ""
-                        when (val validation = MathLingua.printExpanded(input, input, false)
+                        when (val validation = printExpanded(input, input, false)
                         ) {
                             is ValidationSuccess -> outputArea.text = validation.value
                             is ValidationFailure -> {
@@ -114,4 +119,51 @@ fun main() {
     frame.contentPane = textPane
     frame.defaultCloseOperation = WindowConstants.EXIT_ON_CLOSE
     frame.isVisible = true
+}
+
+private fun printExpanded(input: String, supplemental: String, html: Boolean): Validation<String> {
+    val totalText = "$input\n\n\n$supplemental"
+    val totalTextValidation = FrontEnd.parse(totalText)
+    val defines =
+        when (totalTextValidation) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> totalTextValidation.value.defines()
+        }
+    val states =
+        when (totalTextValidation) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> totalTextValidation.value.states()
+        }
+    val foundations =
+        when (totalTextValidation) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> totalTextValidation.value.foundations()
+        }
+    val mutuallyGroups =
+        when (totalTextValidation) {
+            is ValidationFailure -> emptyList()
+            is ValidationSuccess -> totalTextValidation.value.mutually()
+        }
+
+    val result = StringBuilder()
+    val errors = mutableListOf<ParseError>()
+    for (part in input.split("\n\n").filter { it.isNotBlank() }) {
+        when (val validation = FrontEnd.parse(part)
+        ) {
+            is ValidationFailure -> {
+                errors.addAll(validation.errors)
+            }
+            is ValidationSuccess -> {
+                val collection = newSourceCollectionFromContent(listOf(input, supplemental))
+                result.append(
+                    collection.prettyPrint(node = validation.value, html = html, doExpand = true))
+            }
+        }
+    }
+
+    return if (errors.isNotEmpty()) {
+        validationFailure(errors)
+    } else {
+        validationSuccess(result.toString())
+    }
 }

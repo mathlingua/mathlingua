@@ -25,7 +25,7 @@ import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
-import mathlingua.MathLingua
+import mathlingua.backend.newSourceCollectionFromContent
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
 import mathlingua.frontend.chalktalk.phase1.ast.getRow
@@ -177,7 +177,12 @@ fun main() {
                     errorBuilder.append('\n')
                 }
 
-                for (err in MathLingua.findInvalidTypes(input, emptyList(), tracker)) {
+                val invalidTypesErrors =
+                    newSourceCollectionFromContent(listOf(input)).findInvalidTypes().map {
+                        it.value
+                    }
+
+                for (err in invalidTypesErrors) {
                     errorBuilder.append("ERROR: ${err.message} (${err.row+1}, ${err.column})")
                     errorBuilder.append('\n')
                 }
@@ -220,8 +225,12 @@ fun main() {
                 signaturesList.text = ""
                 phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
             } else {
+                val signatures =
+                    newSourceCollectionFromContent(listOf(inputArea.text))
+                        .getDefinedSignatures()
+                        .map { it.value }
                 val sigBuilder = StringBuilder()
-                for (sig in MathLingua.findAllSignatures(doc, newLocationTracker())) {
+                for (sig in signatures) {
                     sigBuilder.append(sig.form)
                     sigBuilder.append('\n')
                 }

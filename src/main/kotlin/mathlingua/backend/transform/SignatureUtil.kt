@@ -16,7 +16,6 @@
 
 package mathlingua.backend.transform
 
-import mathlingua.Signature
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -33,6 +32,8 @@ import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+
+data class Signature(val form: String, val location: Location)
 
 internal fun locateAllSignatures(
     node: Phase2Node, locationTracker: MutableLocationTracker

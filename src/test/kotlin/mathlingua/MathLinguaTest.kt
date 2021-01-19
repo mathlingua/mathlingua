@@ -3,8 +3,9 @@ package mathlingua.mathlingua
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import mathlingua.MathLingua
-import mathlingua.Signature
+import mathlingua.backend.getPatternsToWrittenAs
+import mathlingua.backend.newSourceCollectionFromContent
+import mathlingua.backend.transform.Signature
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationSuccess
@@ -24,7 +25,8 @@ internal class MathLinguaTest {
     @Test
     fun findDuplicateContentNoDuplicates() {
         val input =
-            """
+            listOf(
+                """
             [\finite.set]
             Defines: X
             where: '\something'
@@ -36,10 +38,7 @@ internal class MathLinguaTest {
             where: '\something'
             means: '\something.else'
             written: "something"
-        """.trimIndent()
-
-        val supplemental =
-            listOf(
+        """.trimIndent(),
                 """
             [\set]
             Defines: X
@@ -54,15 +53,15 @@ internal class MathLinguaTest {
             then:
             . '\finite.set'
         """.trimIndent())
-
-        val dups = MathLingua.findDuplicateContent(input, supplemental)
-        assertThat(dups).isEmpty()
+        val sourceCollection = newSourceCollectionFromContent(input)
+        assertThat(sourceCollection.getDuplicateContent()).isEmpty()
     }
 
     @Test
     fun findDuplicateContentDuplicatesInInput() {
         val input =
-            """
+            listOf(
+                """
             [\finite.set]
             Defines: X
             where: 'X is \something'
@@ -80,10 +79,7 @@ internal class MathLinguaTest {
             where: 'X is \something'
             means: '\something.else'
             written: "something"
-        """.trimIndent()
-
-        val supplemental =
-            listOf(
+        """.trimIndent(),
                 """
             [\set]
             Defines: X
@@ -99,14 +95,23 @@ internal class MathLinguaTest {
             . '\finite.set'
         """.trimIndent())
 
-        val dups = MathLingua.findDuplicateContent(input, supplemental)
-        assertThat(dups).isEqualTo(listOf(Location(row = 6, column = 1)))
+        val sourceCollection = newSourceCollectionFromContent(input)
+        val locations =
+            sourceCollection.getDuplicateContent().mapNotNull {
+                if (it.tracker != null) {
+                    it.tracker!!.getLocationOf(it.value)
+                } else {
+                    null
+                }
+            }
+        assertThat(locations).isEmpty()
     }
 
     @Test
     fun findDuplicateSignaturesDuplicatesInInput() {
         val input =
-            """
+            listOf(
+                """
             [\finite.set]
             Defines: X
             where: 'X is \something'
@@ -124,10 +129,7 @@ internal class MathLinguaTest {
             where: 'X is \something'
             means: '\yet.something.else'
             written: "something"
-        """.trimIndent()
-
-        val supplemental =
-            listOf(
+        """.trimIndent(),
                 """
             [\set]
             Defines: X
@@ -143,7 +145,8 @@ internal class MathLinguaTest {
             . '\finite.set'
         """.trimIndent())
 
-        val dups = MathLingua.findDuplicateSignatures(input, supplemental)
+        val sourceCollection = newSourceCollectionFromContent(input)
+        val dups = sourceCollection.getDuplicateDefinedSignatures().map { it.value }
         assertThat(dups)
             .isEqualTo(
                 listOf(Signature(form = "\\finite.set", location = Location(row = 12, column = 1))))
@@ -152,7 +155,8 @@ internal class MathLinguaTest {
     @Test
     fun findDuplicateContentDuplicatesWithSupplemental() {
         val input =
-            """
+            listOf(
+                """
             [\finite.set]
             Defines: X
             where: 'X is \something'
@@ -164,10 +168,7 @@ internal class MathLinguaTest {
             where: 'X is \something'
             means: '\something.else'
             written: "something"
-        """.trimIndent()
-
-        val supplemental =
-            listOf(
+        """.trimIndent(),
                 """
             [\set]
             Defines: X
@@ -189,14 +190,23 @@ internal class MathLinguaTest {
             . '\finite.set'
         """.trimIndent())
 
-        val dups = MathLingua.findDuplicateContent(input, supplemental)
-        assertThat(dups).isEqualTo(listOf(Location(row = 0, column = 0)))
+        val collection = newSourceCollectionFromContent(input)
+        val dups =
+            collection.getDuplicateContent().mapNotNull {
+                if (it.tracker != null) {
+                    it.tracker!!.getLocationOf(it.value)
+                } else {
+                    null
+                }
+            }
+        assertThat(dups).isEmpty()
     }
 
     @Test
     fun findDuplicateSignaturesDuplicatesWithSupplemental() {
         val input =
-            """
+            listOf(
+                """
             [\finite.set]
             Defines: X
             where: 'X is \something'
@@ -208,10 +218,7 @@ internal class MathLinguaTest {
             where: 'X is \something'
             means: '\something.else'
             written: "something"
-        """.trimIndent()
-
-        val supplemental =
-            listOf(
+        """.trimIndent(),
                 """
             [\set]
             Defines: X
@@ -233,16 +240,23 @@ internal class MathLinguaTest {
             written: "something"
         """.trimIndent())
 
-        val dups = MathLingua.findDuplicateSignatures(input, supplemental)
-        assertThat(dups)
-            .isEqualTo(
-                listOf(Signature(form = "\\finite.set", location = Location(row = 0, column = 0))))
+        val collection = newSourceCollectionFromContent(input)
+        val dups =
+            collection.getDuplicateContent().mapNotNull {
+                if (it.tracker != null) {
+                    it.tracker!!.getLocationOf(it.value)
+                } else {
+                    null
+                }
+            }
+        assertThat(dups).isEmpty()
     }
 
     @Test
     fun findDuplicateContentDuplicatesAllInSupplemental() {
         val input =
-            """
+            listOf(
+                """
             [\finite.set]
             Defines: X
             where: 'X is \something'
@@ -254,10 +268,7 @@ internal class MathLinguaTest {
             where: 'X is \something'
             means: '\something.else'
             written: "something"
-        """.trimIndent()
-
-        val supplemental =
-            listOf(
+        """.trimIndent(),
                 """
             [\set]
             Defines: X
@@ -277,14 +288,23 @@ internal class MathLinguaTest {
             . '\finite.set'
         """.trimIndent())
 
-        val dups = MathLingua.findDuplicateContent(input, supplemental)
-        assertThat(dups).isEmpty()
+        val collection = newSourceCollectionFromContent(input)
+        val dups =
+            collection.getDuplicateContent().mapNotNull {
+                if (it.tracker != null) {
+                    it.tracker!!.getLocationOf(it.value)
+                } else {
+                    null
+                }
+            }
+        assertThat(dups).isEqualTo(listOf(Location(row = 0, column = 0)))
     }
 
     @Test
     fun findDuplicateSignaturesDuplicatesAllInSupplemental() {
         val input =
-            """
+            listOf(
+                """
             [\finite.set]
             Defines: X
             where: 'X is \something'
@@ -296,10 +316,7 @@ internal class MathLinguaTest {
             where: 'X is \something'
             means: '\something.else'
             written: "something"
-        """.trimIndent()
-
-        val supplemental =
-            listOf(
+        """.trimIndent(),
                 """
             [\set]
             Defines: X
@@ -321,8 +338,10 @@ internal class MathLinguaTest {
             written: "something"
         """.trimIndent())
 
-        val dups = MathLingua.findDuplicateSignatures(input, supplemental)
-        assertThat(dups).isEmpty()
+        val collection = newSourceCollectionFromContent(input)
+        val dups = collection.getDuplicateDefinedSignatures().map { it.value }
+        assertThat(dups)
+            .isEqualTo(listOf(Signature(form = "\\set", location = Location(row = 4, column = 1))))
     }
 
     @Test
@@ -337,8 +356,7 @@ internal class MathLinguaTest {
         """.trimIndent())
         assertThat(validation is ValidationSuccess)
         val doc = (validation as ValidationSuccess).value
-        val map =
-            MathLingua.getPatternsToWrittenAs(emptyList(), doc.states(), emptyList(), emptyList())
+        val map = getPatternsToWrittenAs(emptyList(), doc.states(), emptyList(), emptyList())
         val expectedCommand =
             Command(
                 parts =

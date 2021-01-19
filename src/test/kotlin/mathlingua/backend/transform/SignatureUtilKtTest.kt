@@ -18,7 +18,7 @@ package mathlingua.mathlingua.transform
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
-import mathlingua.Signature
+import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.findAllStatementSignatures
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.Location

@@ -37,7 +37,7 @@ import mathlingua.backend.newSourceCollectionFromFiles
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-const val TOOL_VERSION = "0.9"
+const val TOOL_VERSION = "0.10"
 
 const val MATHLINGUA_VERSION = "0.8"
 
@@ -233,4 +233,17 @@ private fun maybePlural(text: String, count: Int) =
         "${text}s"
     }
 
-fun main(args: Array<String>) = Mlg().subcommands(Check(), Render(), Version()).main(args)
+// this value will be populated in main()
+var helpText = ""
+
+class Help : CliktCommand(help = "Show this message and exit") {
+    override fun run() {
+        log(helpText)
+    }
+}
+
+fun main(args: Array<String>) {
+    val mlg = Mlg().subcommands(Help(), Check(), Render(), Version())
+    helpText = mlg.getFormattedHelp()
+    mlg.main(args)
+}

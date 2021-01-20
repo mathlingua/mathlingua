@@ -17,6 +17,7 @@
 package mathlingua.backend
 
 import java.lang.StringBuilder
+import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
@@ -38,17 +39,16 @@ import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-class SymbolAnalyzer(defines: List<ValueSourceTracker<DefinesGroup>>) {
+class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGroup>>) {
     private val signatureMap = mutableMapOf<String, Set<String>>()
 
     init {
-        for (vst in defines) {
-            val sig = vst.value.signature
-            if (sig != null) {
-                val name = getTargetName(vst.value.definesSection.targets[0])
-                signatureMap[sig] =
-                    getDefSignatures(vst.value, name, vst.tracker ?: newLocationTracker())
-            }
+        for (pair in defines) {
+            val sig = pair.first.value
+            val def = pair.second
+            val name = getTargetName(def.definesSection.targets[0])
+            signatureMap[sig.form] =
+                getDefSignatures(def, name, pair.first.tracker ?: newLocationTracker())
         }
     }
 

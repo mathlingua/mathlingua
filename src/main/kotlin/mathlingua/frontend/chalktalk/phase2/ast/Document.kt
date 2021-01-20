@@ -38,6 +38,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutua
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.ViewsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
@@ -66,6 +67,7 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
 
     fun defines() = groups.filterIsInstance<DefinesGroup>()
     fun states() = groups.filterIsInstance<StatesGroup>()
+    fun views() = groups.filterIsInstance<ViewsGroup>()
     fun foundations() = groups.filterIsInstance<FoundationGroup>()
     fun mutually() = groups.filterIsInstance<MutuallyGroup>()
     fun theorems() = groups.filterIsInstance<TheoremGroup>()

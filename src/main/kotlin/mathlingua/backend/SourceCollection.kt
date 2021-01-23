@@ -18,6 +18,7 @@ package mathlingua.backend
 
 import java.io.File
 import mathlingua.backend.transform.Signature
+import mathlingua.backend.transform.checkVars
 import mathlingua.backend.transform.expandAsWritten
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
@@ -48,6 +49,7 @@ import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
@@ -76,6 +78,7 @@ interface SourceCollection {
     fun findInvalidTypes(): List<ValueSourceTracker<ParseError>>
     fun getParseErrors(): List<ValueSourceTracker<ParseError>>
     fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
+    fun getSymbolErrors(): List<ValueSourceTracker<ParseError>>
     fun prettyPrint(file: File, html: Boolean, doExpand: Boolean): Pair<String, List<ParseError>>
     fun prettyPrint(
         input: String, html: Boolean, doExpand: Boolean
@@ -595,6 +598,17 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         } else {
             code
         }
+    }
+
+    override fun getSymbolErrors(): List<ValueSourceTracker<ParseError>> {
+        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+        for (grp in allGroups) {
+            val tracker = grp.tracker ?: newLocationTracker()
+            val errs = checkVars(grp.value, tracker)
+            result.addAll(
+                errs.map { ValueSourceTracker(value = it, source = grp.source, tracker = tracker) })
+        }
+        return result
     }
 }
 

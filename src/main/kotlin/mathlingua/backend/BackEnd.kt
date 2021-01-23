@@ -26,6 +26,7 @@ object BackEnd {
         errors.addAll(checkUndefinedSignatures(sourceCollection))
         errors.addAll(checkDuplicateDefinedSignatures(sourceCollection))
         errors.addAll(checkInvalidTypes(sourceCollection))
+        errors.addAll(checkSymbolErrors(sourceCollection))
         return errors
     }
 
@@ -74,5 +75,11 @@ object BackEnd {
                             column = location.column)))
         }
         return errors
+    }
+
+    fun checkSymbolErrors(
+        sourceCollection: SourceCollection
+    ): List<ValueSourceTracker<ParseError>> {
+        return sourceCollection.getSymbolErrors()
     }
 }

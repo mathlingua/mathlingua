@@ -29,6 +29,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.ViewsGroup
@@ -200,20 +201,21 @@ private fun checkVarsImpl(
         }
         is DefinesGroup -> {
             varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
+            varsToRemove.addAll(checkDefineSectionVars(node.definesSection, vars, tracker, errors))
         }
         is TheoremGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
             }
         }
         is AxiomGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
             }
         }
         is ConjectureGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
             }
         }
         is ForAllGroup -> {
@@ -253,7 +255,28 @@ private fun checkVarsImpl(
     vars.removeAll(varsToRemove)
 }
 
-private fun checkVars(
+private fun checkDefineSectionVars(
+    node: DefinesSection,
+    vars: MutableSet<String>,
+    tracker: LocationTracker,
+    errors: MutableList<ParseError>
+): List<String> {
+    val location = tracker.getLocationOf(node) ?: Location(-1, -1)
+    val givenVars = node.targets.map { getVars(it) }.flatten()
+    for (v in givenVars) {
+        if (vars.contains(v)) {
+            errors.add(
+                ParseError(
+                    message = "Duplicate defined symbol '$v'",
+                    row = location.row,
+                    column = location.column))
+        }
+        vars.add(v)
+    }
+    return givenVars
+}
+
+private fun checkGivenSectionVars(
     node: GivenSection,
     vars: MutableSet<String>,
     tracker: LocationTracker,

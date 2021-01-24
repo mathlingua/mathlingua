@@ -54,7 +54,7 @@ data class DefinesCollectsGroup(
     val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val collectsSection: CollectsSection,
-    val usingSection: UsingSection?,
+    override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
     override val metaDataSection: MetaDataSection?
 ) : DefinesGroup(metaDataSection) {

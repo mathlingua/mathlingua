@@ -19,6 +19,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
@@ -27,7 +28,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
-    TopLevelGroup(metaDataSection), DefinesStatesOrViews {
+    TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
     abstract val signature: String?
     abstract val definesSection: DefinesSection
     abstract val id: IdStatement

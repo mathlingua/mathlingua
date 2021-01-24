@@ -27,6 +27,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getId
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
@@ -52,10 +53,10 @@ data class StatesGroup(
     val statesSection: StatesSection,
     val whenSection: WhenSection?,
     val thatSection: ThatSection,
-    val usingSection: UsingSection?,
+    override val usingSection: UsingSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
-) : TopLevelGroup(metaDataSection), DefinesStatesOrViews {
+) : TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)

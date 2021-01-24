@@ -54,7 +54,7 @@ data class DefinesGeneratedGroup(
     val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val generatedSection: GeneratedSection,
-    val usingSection: UsingSection?,
+    override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
     override val metaDataSection: MetaDataSection?
 ) : DefinesGroup(metaDataSection) {

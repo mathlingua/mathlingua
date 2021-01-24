@@ -54,7 +54,7 @@ data class DefinesEvaluatedGroup(
     val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val evaluatedSection: EvaluatedSection,
-    val usingSection: UsingSection?,
+    override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
     override val metaDataSection: MetaDataSection?
 ) : DefinesGroup(metaDataSection) {

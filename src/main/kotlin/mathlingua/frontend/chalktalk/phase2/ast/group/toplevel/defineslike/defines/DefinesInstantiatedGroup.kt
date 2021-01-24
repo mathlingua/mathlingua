@@ -51,7 +51,7 @@ data class DefinesInstantiatedGroup(
     override val definesSection: DefinesSection,
     val whenSection: WhenSection?,
     val instantiatedSection: InstantiatedSection,
-    val usingSection: UsingSection?,
+    override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
     override val metaDataSection: MetaDataSection?
 ) : DefinesGroup(metaDataSection) {

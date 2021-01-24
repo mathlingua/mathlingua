@@ -28,6 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getOptionalId
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateThenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.IfOrIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.validateIfOrIffSection
@@ -54,9 +55,9 @@ data class TheoremGroup(
     val givenWhereSection: WhereSection?,
     val ifOrIffSection: IfOrIffSection?,
     val thenSection: ThenSection,
-    val usingSection: UsingSection?,
+    override val usingSection: UsingSection?,
     override val metaDataSection: MetaDataSection?
-) : TopLevelGroup(metaDataSection) {
+) : TopLevelGroup(metaDataSection), HasUsingSection {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         if (id != null) {

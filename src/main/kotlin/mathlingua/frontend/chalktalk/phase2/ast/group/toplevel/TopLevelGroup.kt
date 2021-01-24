@@ -19,6 +19,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
@@ -47,4 +48,8 @@ fun topLevelToCode(
     writer.endTopLevel()
 
     return writer
+}
+
+internal interface HasUsingSection {
+    val usingSection: UsingSection?
 }

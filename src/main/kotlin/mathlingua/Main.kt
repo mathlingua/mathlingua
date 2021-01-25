@@ -28,6 +28,7 @@ import com.github.ajalt.clikt.parameters.types.choice
 import java.io.File
 import java.lang.IllegalArgumentException
 import java.nio.file.Paths
+import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceFile
@@ -37,7 +38,7 @@ import mathlingua.backend.newSourceCollectionFromFiles
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-const val TOOL_VERSION = "0.10"
+const val TOOL_VERSION = "0.11"
 
 const val MATHLINGUA_VERSION = "0.8"
 
@@ -87,6 +88,12 @@ private class Check : CliktCommand(help = "Check input files for errors.") {
                     })
             val errors = BackEnd.check(sourceCollection)
             log(getErrorOutput(errors, sourceCollection.size(), json))
+            exitProcess(
+                if (errors.isEmpty()) {
+                    0
+                } else {
+                    1
+                })
         }
 }
 
@@ -94,6 +101,7 @@ private class Version : CliktCommand(help = "Prints the tool and MathLingua lang
     override fun run() {
         log("MathLingua CLI Version:      $TOOL_VERSION")
         log("MathLingua Language Version: $MATHLINGUA_VERSION")
+        exitProcess(0)
     }
 }
 
@@ -167,6 +175,13 @@ private class Render :
             if (!stdout) {
                 log(getErrorOutput(errors, sourceCollection.size(), false))
             }
+
+            exitProcess(
+                if (errors.isEmpty()) {
+                    0
+                } else {
+                    1
+                })
         }
 
     private fun write(content: String, outFile: File, stdout: Boolean) {
@@ -253,6 +268,7 @@ var helpText = ""
 class Help : CliktCommand(help = "Show this message and exit") {
     override fun run() {
         log(helpText)
+        exitProcess(0)
     }
 }
 
@@ -261,8 +277,10 @@ class Clean : CliktCommand(help = "Delete the docs directory") {
         val docsDir = getDocsDirectory()
         if (docsDir.deleteRecursively()) {
             log("Deleted directory $docsDir")
+            exitProcess(0)
         } else {
             log("${bold(red("ERROR: "))} Failed to delete directory $docsDir")
+            exitProcess(1)
         }
     }
 }

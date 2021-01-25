@@ -61,6 +61,11 @@ private fun String.jsonSanitize() =
         .replace("\r", "\\r")
         .replace("\"", "\\\"")
 
+private fun getDocsDirectory(): File {
+    val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+    return File(cwd, "docs")
+}
+
 private class Mlg : CliktCommand() {
     override fun run() = Unit
 }
@@ -129,6 +134,8 @@ private class Render :
                 }
             }
 
+            val docsDir = getDocsDirectory()
+
             val html = format == "html"
             val errors = mutableListOf<ValueSourceTracker<ParseError>>()
             for (f in filesToProcess) {
@@ -144,7 +151,17 @@ private class Render :
                                     validation = validationFailure(emptyList())),
                             tracker = null)
                     })
-                write(content = pair.first, fileBeingProcessed = f, stdout = stdout, html = html)
+                val ext =
+                    if (html) {
+                        ".html"
+                    } else {
+                        ".out.math"
+                    }
+                val docRelFile = File(docsDir, f.relativePath(cwd))
+                val docRelParent = docRelFile.parentFile
+                val docRelName = docRelFile.nameWithoutExtension + ext
+                val outFile = File(docRelParent, docRelName)
+                write(content = pair.first, outFile = outFile, stdout = stdout)
             }
 
             if (!stdout) {
@@ -152,20 +169,17 @@ private class Render :
             }
         }
 
-    private fun write(content: String, fileBeingProcessed: File, stdout: Boolean, html: Boolean) {
+    private fun write(content: String, outFile: File, stdout: Boolean) {
         if (stdout) {
             log(content)
         } else {
-            val ext =
-                if (html) {
-                    ".html"
-                } else {
-                    ".out.math"
-                }
-            val outFile =
-                File(fileBeingProcessed.parentFile, fileBeingProcessed.nameWithoutExtension + ext)
+            val docsDir = getDocsDirectory()
+            val parent = outFile.parentFile
+            if (!parent.exists()) {
+                parent.mkdirs()
+            }
             outFile.writeText(content)
-            log("Wrote ${outFile.normalize().canonicalPath}")
+            log("Wrote ${outFile.normalize().relativePath(docsDir)}")
         }
     }
 }
@@ -242,8 +256,19 @@ class Help : CliktCommand(help = "Show this message and exit") {
     }
 }
 
+class Clean : CliktCommand(help = "Delete the docs directory") {
+    override fun run() {
+        val docsDir = getDocsDirectory()
+        if (docsDir.deleteRecursively()) {
+            log("Deleted directory $docsDir")
+        } else {
+            log("${bold(red("ERROR: "))} Failed to delete directory $docsDir")
+        }
+    }
+}
+
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Render(), Version())
+    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

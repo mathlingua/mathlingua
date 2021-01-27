@@ -38,7 +38,7 @@ import mathlingua.backend.newSourceCollectionFromFiles
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-const val TOOL_VERSION = "0.11"
+const val TOOL_VERSION = "0.12"
 
 const val MATHLINGUA_VERSION = "0.8"
 
@@ -143,8 +143,14 @@ private class Render :
             }
 
             val docsDir = getDocsDirectory()
+            docsDir.mkdirs()
 
             val html = format == "html"
+            if (html) {
+                val indexFile = writeIndexFile(cwd, docsDir)
+                log("Wrote ${indexFile.relativeTo(cwd)}")
+            }
+
             val errors = mutableListOf<ValueSourceTracker<ParseError>>()
             for (f in filesToProcess) {
                 val pair = sourceCollection.prettyPrint(file = f, html = html, doExpand = !noexpand)
@@ -169,7 +175,7 @@ private class Render :
                 val docRelParent = docRelFile.parentFile
                 val docRelName = docRelFile.nameWithoutExtension + ext
                 val outFile = File(docRelParent, docRelName)
-                write(content = pair.first, outFile = outFile, stdout = stdout)
+                write(cwd = cwd, content = pair.first, outFile = outFile, stdout = stdout)
             }
 
             if (!stdout) {
@@ -184,17 +190,58 @@ private class Render :
                 })
         }
 
-    private fun write(content: String, outFile: File, stdout: Boolean) {
+    private fun write(cwd: File, content: String, outFile: File, stdout: Boolean) {
         if (stdout) {
             log(content)
         } else {
-            val docsDir = getDocsDirectory()
             val parent = outFile.parentFile
             if (!parent.exists()) {
                 parent.mkdirs()
             }
             outFile.writeText(content)
-            log("Wrote ${outFile.normalize().relativePath(docsDir)}")
+            log("Wrote ${outFile.normalize().relativePath(cwd)}")
+        }
+    }
+
+    private fun writeIndexFile(cwd: File, docsDir: File): File {
+        val firstSrc = arrayOf("")
+        val builder = StringBuilder()
+        if (cwd.isDirectory) {
+            val children = cwd.listFiles()
+            if (children != null) {
+                for (child in children) {
+                    buildFileList(cwd, child, 0, builder, firstSrc)
+                }
+            }
+        }
+        val html = getIndexHtml(builder.toString(), firstSrc[0])
+        val indexFile = File(docsDir, "index.html")
+        indexFile.writeText(html)
+        return indexFile
+    }
+
+    private fun buildFileList(
+        cwd: File, file: File, indent: Int, builder: StringBuilder, firstSrc: Array<String>
+    ) {
+        val childBuilder = StringBuilder()
+        if (file.isDirectory) {
+            val children = file.listFiles()
+            if (children != null) {
+                for (child in children) {
+                    buildFileList(cwd, child, indent + 12, childBuilder, firstSrc)
+                }
+            }
+        }
+
+        val isMathFile = file.isFile && file.extension == "math"
+        if ((file.isDirectory && childBuilder.isNotEmpty()) || isMathFile) {
+            val src = file.relativePath(cwd).replace(".math", ".html")
+            if (isMathFile && firstSrc[0].isEmpty()) {
+                firstSrc[0] = src
+            }
+            builder.append(
+                "<a onclick=\"view('$src')\"><span style=\"padding-left: ${indent}px\">${file.name}</span></a>")
+            builder.append(childBuilder.toString())
         }
     }
 }
@@ -290,3 +337,83 @@ fun main(args: Array<String>) {
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }
+
+fun getIndexHtml(fileListHtml: String, initialSrc: String) =
+    """
+<html>
+    <head>
+        <style>
+            .sidebar {
+                height: 100%;
+                width: 15%;
+                position: fixed;
+                z-index: 1;
+                top: 0;
+                left: 0;
+                background-color: #f0f0f0;
+                overflow-x: scroll;
+                padding-top: 50px;
+                transition: 0.5s;
+            }
+
+            .sidebar a {
+                padding: 8px 8px 8px 32px;
+                text-decoration: none;
+                color: #000000;
+                display: block;
+                transition: 0.3s;
+                font-size: 80%;
+            }
+
+            .closeButton {
+                text-decoration: none;
+                color: black;
+            }
+
+            #main {
+                transition: margin-left .5s;
+                padding: 20px;
+                margin-left: 15%;
+            }
+
+            #content {
+                border: none;
+                width: 100%;
+                height: 100%;
+            }
+        </style>
+        <script>
+            let open = true;
+
+            function toggleSidePanel() {
+                if (open) {
+                    document.getElementById('sidebar').style.width = '0';
+                    document.getElementById('main').style.marginLeft = '0';
+                    document.getElementById('closeButton').textContent = '›';
+                } else {
+                    document.getElementById('sidebar').style.width = '15%';
+                    document.getElementById('main').style.marginLeft = '15%';
+                    document.getElementById('closeButton').textContent = '‹';
+                }
+                open = !open;
+            }
+
+            function view(path) {
+                const content = document.getElementById('content');
+                if (content) {
+                    content.src = path;
+                }
+            }
+        </script>
+    </head>
+    <body id="main">
+        <div id="sidebar" class="sidebar">
+            $fileListHtml
+        </div>
+
+        <a href="javascript:void(0)" id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2039;</a>
+
+        <iframe id="content" src="$initialSrc"></iframe>
+    </body>
+</html>
+"""

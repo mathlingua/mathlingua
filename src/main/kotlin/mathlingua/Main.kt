@@ -38,7 +38,7 @@ import mathlingua.backend.newSourceCollectionFromFiles
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-const val TOOL_VERSION = "0.12"
+const val TOOL_VERSION = "0.13"
 
 const val MATHLINGUA_VERSION = "0.8"
 
@@ -146,7 +146,7 @@ private class Render :
             docsDir.mkdirs()
 
             val html = format == "html"
-            if (html) {
+            if (html && !stdout) {
                 val indexFile = writeIndexFile(cwd, docsDir)
                 log("Wrote ${indexFile.relativeTo(cwd)}")
             }

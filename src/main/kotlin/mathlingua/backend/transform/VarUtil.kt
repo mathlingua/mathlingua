@@ -62,15 +62,15 @@ internal fun getVars(node: Phase1Node): List<String> {
     return vars
 }
 
-internal fun getVars(node: Phase2Node): List<String> {
+internal fun getVars(node: Phase2Node, ignoreParen: Boolean): List<String> {
     val vars = mutableListOf<String>()
-    getVarsImpl(node, vars)
+    getVarsImpl(node, vars, ignoreParen)
     return vars
 }
 
-internal fun getVars(texTalkNode: TexTalkNode): List<String> {
+internal fun getVars(texTalkNode: TexTalkNode, ignoreParens: Boolean): List<String> {
     val vars = mutableListOf<String>()
-    getVarsImpl(texTalkNode, vars)
+    getVarsImpl(texTalkNode, vars, ignoreParens)
     return vars
 }
 
@@ -115,7 +115,7 @@ internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node 
 
 internal fun checkVars(node: Phase2Node, tracker: LocationTracker): Set<ParseError> {
     val errors = mutableListOf<ParseError>()
-    checkVarsImpl(node, mutableSetOf(), tracker, errors)
+    checkVarsImpl(node, mutableSetOf(), tracker, errors, ignoreParen = false)
     return errors.toSet()
 }
 
@@ -129,7 +129,7 @@ private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
     }
 }
 
-private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>) {
+private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>, ignoreParen: Boolean) {
     if (node is Identifier) {
         vars.add(node.name)
     } else if (node is TupleNode) {
@@ -142,15 +142,15 @@ private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>) {
     } else if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
-                getVarsImpl(node.texTalkRoot.value, vars)
+                getVarsImpl(node.texTalkRoot.value, vars, ignoreParen)
             }
         }
     } else {
-        node.forEach { getVarsImpl(it, vars) }
+        node.forEach { getVarsImpl(it, vars, ignoreParen) }
     }
 }
 
-private fun getVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>) {
+private fun getVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>, ignoreParen: Boolean) {
     if (texTalkNode is TextTexTalkNode) {
         vars.add(
             texTalkNode.text +
@@ -161,24 +161,24 @@ private fun getVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>) {
                 })
     } else if (texTalkNode is CommandPart) {
         for (grp in texTalkNode.groups) {
-            getVarsImpl(grp, vars)
+            getVarsImpl(grp, vars, ignoreParen)
         }
         for (grp in texTalkNode.namedGroups) {
-            grp.groups.forEach { getVarsImpl(it, vars) }
+            grp.groups.forEach { getVarsImpl(it, vars, ignoreParen) }
         }
-        if (texTalkNode.paren != null) {
-            getVarsImpl(texTalkNode.paren, vars)
+        if (texTalkNode.paren != null && !ignoreParen) {
+            getVarsImpl(texTalkNode.paren, vars, ignoreParen)
         }
         if (texTalkNode.square != null) {
-            getVarsImpl(texTalkNode.square, vars)
+            getVarsImpl(texTalkNode.square, vars, ignoreParen)
         }
         if (texTalkNode.subSup != null) {
-            getVarsImpl(texTalkNode.subSup, vars)
+            getVarsImpl(texTalkNode.subSup, vars, ignoreParen)
         }
     } else if (texTalkNode is ParametersTexTalkNode) {
-        texTalkNode.forEach { getVarsImpl(it, vars) }
+        texTalkNode.forEach { getVarsImpl(it, vars, ignoreParen) }
     } else {
-        texTalkNode.forEach { getVarsImpl(it, vars) }
+        texTalkNode.forEach { getVarsImpl(it, vars, ignoreParen) }
     }
 }
 
@@ -188,7 +188,8 @@ private fun checkVarsImpl(
     node: Phase2Node,
     vars: MutableSet<String>,
     tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    errors: MutableList<ParseError>,
+    ignoreParen: Boolean
 ): List<String> {
     val varsToRemove = mutableSetOf<String>()
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
@@ -266,25 +267,29 @@ private fun checkVarsImpl(
         }
         is DefinesGroup -> {
             varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
-            varsToRemove.addAll(checkDefineSectionVars(node.definesSection, vars, tracker, errors))
+            varsToRemove.addAll(
+                checkDefineSectionVars(node.definesSection, vars, tracker, errors, ignoreParen))
         }
         is TheoremGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(
+                    checkGivenSectionVars(node.givenSection, vars, tracker, errors, ignoreParen))
             }
         }
         is AxiomGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(
+                    checkGivenSectionVars(node.givenSection, vars, tracker, errors, ignoreParen))
             }
         }
         is ConjectureGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(
+                    checkGivenSectionVars(node.givenSection, vars, tracker, errors, ignoreParen))
             }
         }
         is ForAllGroup -> {
-            val forAllVars = node.forAllSection.targets.map { getVars(it) }.flatten()
+            val forAllVars = node.forAllSection.targets.map { getVars(it, ignoreParen) }.flatten()
             for (v in forAllVars) {
                 if (vars.contains(v)) {
                     errors.add(
@@ -298,7 +303,8 @@ private fun checkVarsImpl(
             varsToRemove.addAll(forAllVars)
         }
         is ExistsGroup -> {
-            val existsVars = node.existsSection.identifiers.map { getVars(it) }.flatten()
+            val existsVars =
+                node.existsSection.identifiers.map { getVars(it, ignoreParen) }.flatten()
             for (v in existsVars) {
                 if (vars.contains(v)) {
                     errors.add(
@@ -312,7 +318,7 @@ private fun checkVarsImpl(
             varsToRemove.addAll(existsVars)
         }
         is GivenGroup -> {
-            val givenVars = node.givenSection.targets.map { getVars(it) }.flatten()
+            val givenVars = node.givenSection.targets.map { getVars(it, ignoreParen) }.flatten()
             for (v in givenVars) {
                 if (vars.contains(v)) {
                     errors.add(
@@ -326,7 +332,7 @@ private fun checkVarsImpl(
             varsToRemove.addAll(givenVars)
         }
         is Statement -> {
-            varsToRemove.addAll(checkVarsImpl(node, vars, tracker, errors))
+            varsToRemove.addAll(checkVarsImpl(node, vars, tracker, errors, ignoreParen))
         }
     }
 
@@ -337,9 +343,11 @@ private fun checkVarsImpl(
         // statements in the `using:` section after `x := y`
         // can reference the symbol `x`.
         val usingVars = mutableSetOf<String>()
-        node.forEach { usingVars.addAll(checkVarsImpl(it, usingVars, tracker, errors)) }
+        node.forEach {
+            usingVars.addAll(checkVarsImpl(it, usingVars, tracker, errors, ignoreParen))
+        }
     } else {
-        node.forEach { checkVarsImpl(it, vars, tracker, errors) }
+        node.forEach { checkVarsImpl(it, vars, tracker, errors, ignoreParen) }
         vars.removeAll(varsToRemove)
     }
 
@@ -350,10 +358,11 @@ private fun checkDefineSectionVars(
     node: DefinesSection,
     vars: MutableSet<String>,
     tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    errors: MutableList<ParseError>,
+    ignoreParen: Boolean
 ): List<String> {
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
-    val givenVars = node.targets.map { getVars(it) }.flatten()
+    val givenVars = node.targets.map { getVars(it, ignoreParen) }.flatten()
     for (v in givenVars) {
         if (vars.contains(v)) {
             errors.add(
@@ -371,10 +380,11 @@ private fun checkGivenSectionVars(
     node: GivenSection,
     vars: MutableSet<String>,
     tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    errors: MutableList<ParseError>,
+    ignoreParen: Boolean
 ): List<String> {
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
-    val givenVars = node.targets.map { getVars(it) }.flatten()
+    val givenVars = node.targets.map { getVars(it, ignoreParen) }.flatten()
     for (v in givenVars) {
         if (vars.contains(v)) {
             errors.add(
@@ -392,7 +402,8 @@ private fun checkVarsImpl(
     statement: Statement,
     vars: MutableSet<String>,
     tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    errors: MutableList<ParseError>,
+    ignoreParen: Boolean
 ): List<String> {
     return if (statement.texTalkRoot is ValidationSuccess) {
         val location = tracker.getLocationOf(statement) ?: Location(-1, -1)
@@ -426,14 +437,14 @@ private fun checkVarsImpl(
                 // f(x) := ...
                 if (child is OperatorTexTalkNode) {
                     if (child.lhs != null) {
-                        names.addAll(getVars(child.lhs))
+                        names.addAll(getVars(child.lhs, ignoreParen))
                     }
 
                     if (child.rhs != null) {
-                        names.addAll(getVars(child.rhs))
+                        names.addAll(getVars(child.rhs, ignoreParen))
                     }
                 } else if (child is GroupTexTalkNode) {
-                    names.addAll(getVars(child.parameters))
+                    names.addAll(getVars(child.parameters, ignoreParen))
                 } else if (child is TextTexTalkNode) {
                     names.add(child.text)
                 }
@@ -443,7 +454,7 @@ private fun checkVarsImpl(
             varsCopy.addAll(vars)
             varsCopy.addAll(names)
 
-            val subFound = checkVarsImpl(colonEquals.rhs, location, varsCopy, errors)
+            val subFound = checkVarsImpl(colonEquals.rhs, location, varsCopy, errors, ignoreParen)
             val result = mutableListOf<String>()
             result.addAll(definedSymbols)
             result.addAll(subFound)
@@ -451,7 +462,7 @@ private fun checkVarsImpl(
         } else {
             // otherwise there aren't any additional symbols to add before
             // checking for the use of undefined symbols
-            checkVarsImpl(statement.texTalkRoot.value, location, vars, errors)
+            checkVarsImpl(statement.texTalkRoot.value, location, vars, errors, ignoreParen)
         }
     } else {
         emptyList()
@@ -462,7 +473,8 @@ private fun checkVarsImpl(
     texTalkNode: TexTalkNode,
     location: Location,
     vars: MutableSet<String>,
-    errors: MutableList<ParseError>
+    errors: MutableList<ParseError>,
+    ignoreParen: Boolean
 ): List<String> {
     val varsToRemove = mutableSetOf<String>()
     if (texTalkNode is TextTexTalkNode) {
@@ -479,7 +491,7 @@ private fun checkVarsImpl(
             // process the square braces first because any symbols
             // specified there are then available in the other groups
             if (part.square != null) {
-                val squareVars = getVars(part.square)
+                val squareVars = getVars(part.square, ignoreParen)
                 varsToRemove.addAll(squareVars)
                 for (v in squareVars) {
                     if (vars.contains(v)) {
@@ -491,23 +503,23 @@ private fun checkVarsImpl(
                     }
                     vars.add(v)
                 }
-                checkVarsImpl(part.square, location, vars, errors)
+                checkVarsImpl(part.square, location, vars, errors, ignoreParen)
             }
             for (grp in part.groups) {
-                checkVarsImpl(grp, location, vars, errors)
+                checkVarsImpl(grp, location, vars, errors, ignoreParen)
             }
             for (grp in part.namedGroups) {
-                grp.groups.forEach { checkVarsImpl(it, location, vars, errors) }
+                grp.groups.forEach { checkVarsImpl(it, location, vars, errors, ignoreParen) }
             }
             if (part.paren != null) {
-                checkVarsImpl(part.paren, location, vars, errors)
+                checkVarsImpl(part.paren, location, vars, errors, ignoreParen)
             }
             if (part.subSup != null) {
-                checkVarsImpl(part.subSup, location, vars, errors)
+                checkVarsImpl(part.subSup, location, vars, errors, ignoreParen)
             }
         }
     } else {
-        texTalkNode.forEach { checkVarsImpl(it, location, vars, errors) }
+        texTalkNode.forEach { checkVarsImpl(it, location, vars, errors, ignoreParen) }
     }
     vars.removeAll(varsToRemove)
     return varsToRemove.toList()
@@ -521,7 +533,21 @@ private fun checkVarsImpl(
 ): List<String> {
     return if (id.texTalkRoot is ValidationSuccess) {
         val location = tracker.getLocationOf(id) ?: Location(-1, -1)
-        val idVars = getVars(id.texTalkRoot.value)
+        // Do not add variables in parens because they will be added
+        // in the description in a Defines section
+        //
+        // That is consider:
+        //
+        // [\some.function(x)]
+        // Defines: f(x)
+        // ...
+        //
+        // Then the `x` in `f(x)` will be marked as a variable.  If the `x`
+        // in `\some.function(x)` is also marked as a variable, then the `x`
+        // in `f(x)` will be found to be a duplicate defined variable.  Thus,
+        // skip variables in parens in ids (in \some.function(x)) in this
+        // example.
+        val idVars = getVars(id.texTalkRoot.value, ignoreParens = true)
         for (v in idVars) {
             if (vars.contains(v)) {
                 errors.add(

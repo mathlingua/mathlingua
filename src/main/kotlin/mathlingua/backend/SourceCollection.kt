@@ -509,21 +509,24 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
 
                     val allDefines = mutableListOf<DefinesGroup>()
                     allDefines.addAll(doc.defines())
-                    allDefines.addAll(foundations.map {
-                        it.foundationSection.content
-                    }.filterIsInstance<DefinesGroup>())
+                    allDefines.addAll(
+                        foundations
+                            .map { it.foundationSection.content }
+                            .filterIsInstance<DefinesGroup>())
 
                     val allViews = mutableListOf<ViewsGroup>()
                     allViews.addAll(doc.views())
-                    allViews.addAll(foundations.map {
-                        it.foundationSection.content
-                    }.filterIsInstance<ViewsGroup>())
+                    allViews.addAll(
+                        foundations
+                            .map { it.foundationSection.content }
+                            .filterIsInstance<ViewsGroup>())
 
                     val allStates = mutableListOf<StatesGroup>()
                     allStates.addAll(doc.states())
-                    allStates.addAll(foundations.map {
-                        it.foundationSection.content
-                    }.filterIsInstance<StatesGroup>())
+                    allStates.addAll(
+                        foundations
+                            .map { it.foundationSection.content }
+                            .filterIsInstance<StatesGroup>())
 
                     val allSigRoot = mutableListOf<Validation<TexTalkNode>>()
                     allSigRoot.addAll(allDefines.map { it.id.texTalkRoot })
@@ -534,7 +537,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                         if (vald is ValidationFailure) {
                             result.addAll(
                                 vald.errors.map {
-                                    ValueSourceTracker(source = sf.value, tracker = null, value = it)
+                                    ValueSourceTracker(
+                                        source = sf.value, tracker = null, value = it)
                                 })
                         }
                     }

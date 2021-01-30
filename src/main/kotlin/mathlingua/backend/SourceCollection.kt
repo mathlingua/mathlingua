@@ -503,6 +503,46 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                             ValueSourceTracker(source = sf.value, tracker = null, value = it)
                         })
                 }
+                is ValidationSuccess -> {
+                    val doc = validation.value.document
+                    val foundations = doc.foundations()
+
+                    val allDefines = mutableListOf<DefinesGroup>()
+                    allDefines.addAll(doc.defines())
+                    allDefines.addAll(
+                        foundations
+                            .map { it.foundationSection.content }
+                            .filterIsInstance<DefinesGroup>())
+
+                    val allViews = mutableListOf<ViewsGroup>()
+                    allViews.addAll(doc.views())
+                    allViews.addAll(
+                        foundations
+                            .map { it.foundationSection.content }
+                            .filterIsInstance<ViewsGroup>())
+
+                    val allStates = mutableListOf<StatesGroup>()
+                    allStates.addAll(doc.states())
+                    allStates.addAll(
+                        foundations
+                            .map { it.foundationSection.content }
+                            .filterIsInstance<StatesGroup>())
+
+                    val allSigRoot = mutableListOf<Validation<TexTalkNode>>()
+                    allSigRoot.addAll(allDefines.map { it.id.texTalkRoot })
+                    allSigRoot.addAll(allViews.map { it.id.texTalkRoot })
+                    allSigRoot.addAll(allStates.map { it.id.texTalkRoot })
+
+                    for (vald in allSigRoot) {
+                        if (vald is ValidationFailure) {
+                            result.addAll(
+                                vald.errors.map {
+                                    ValueSourceTracker(
+                                        source = sf.value, tracker = null, value = it)
+                                })
+                        }
+                    }
+                }
             }
         }
         return result

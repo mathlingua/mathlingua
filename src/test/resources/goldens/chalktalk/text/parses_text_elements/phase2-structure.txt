@@ -42,7 +42,8 @@ Document(
                            ]
                )
                requiringSection = null
-               whereSection = WhereSection(
+               whenSection = null
+               specifiesSection = SpecifiesSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Statement(
@@ -101,7 +102,6 @@ Document(
                              ]
                  )
                )
-               whenSection = null
                meansSection = MeansSection(
                  clauses = ClauseListNode(
                    clauses = [

@@ -1,8 +1,8 @@
 
 [\something{A}]
 Defines: X
-where: 'X is \something.else'
 when: 'A is \something.else'
+specifies: 'X is \something.else'
 means: 'X is \some.other.thing'
 written: "\textrm{something} A?"
 
@@ -16,8 +16,8 @@ written: "\textrm{something} A?"
 
 [\some.function{A}(x)]
 Defines: f(x)
-where: 'f is \function'
 when: 'A is \something'
+specifies: 'f is \function'
 maps:
 . from: '\reals'
   to: '\reals'
@@ -26,7 +26,7 @@ written: "\textrm{some.function}(x?)"
 
 [\some.function2{A}(x)]
 Defines: f(x)
-when: 'A is \something'
+specifies: 'A is \something'
 maps:
 . from: '\reals'
   to: '\reals'
@@ -43,7 +43,7 @@ written: "\mathbb{Z}"
 
 [\naturals]
 Defines: N
-where: 'N is \type'
+specifies: 'N is \type'
 generated:
 . inductively:
   from:
@@ -66,7 +66,7 @@ written: "\mathbb{N}"
 
 [\even.primes]
 Defines: X
-where: 'X is \set'
+specifies: 'X is \set'
 collects:
 . given: p
   where: 'p is \prime'
@@ -87,7 +87,7 @@ written: "\textbf{even primes}"
 
 [\f1(x)]
 Defines: f(x)
-where: 'f is \function'
+specifies: 'f is \function'
 evaluated: 'f(x) := x + 1'
 written: "f1(x?)"
 
@@ -100,7 +100,7 @@ written: "f1(x?)"
 
 [\f2(x)]
 Defines: f(x)
-where: 'f is \function'
+specifies: 'f is \function'
 evaluated:
 . matching:
   . 'f(x?) ::= x + 1'
@@ -117,7 +117,7 @@ written: "f2(x?)"
 
 [\f3(x)]
 Defines: f(x)
-where: 'f is \function'
+specifies: 'f is \function'
 evaluated:
 . piecewise:
   when: 'x > 0'
@@ -149,7 +149,7 @@ that: 'A + B - C is \something'
 Foundation:
 . [\X]
   Defines: X
-  where: 'X is \something'
+  specifies: 'X is \something'
   means: 'X is \something.else'
   written: "X?"
 
@@ -157,7 +157,7 @@ Foundation:
 Foundation:
 . [\X]
   Defines: X
-  where: 'X is \set'
+  specifies: 'X is \set'
   collects:
   . given: x
     where: 'x'
@@ -169,12 +169,12 @@ Foundation:
 Mutually:
 . [\X]
   Defines: X
-  where: 'X is \X'
+  specifies: 'X is \X'
   means: 'X is \Y'
   written: "X?"
 . [\Y]
   Defines: Y
-  where: 'Y is \Y'
+  specifies: 'Y is \Y'
   means: 'Y is \X'
   written: "Y?"
 

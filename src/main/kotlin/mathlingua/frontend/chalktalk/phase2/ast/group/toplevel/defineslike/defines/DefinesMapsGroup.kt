@@ -32,12 +32,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Writt
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
@@ -52,8 +50,8 @@ data class DefinesMapsGroup(
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
-    val whereSection: WhereSection?,
     val whenSection: WhenSection?,
+    val specifiesSection: SpecifiesSection?,
     val mapsSection: MapsSection,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -66,11 +64,11 @@ data class DefinesMapsGroup(
         if (requiringSection != null) {
             fn(requiringSection)
         }
-        if (whereSection != null) {
-            fn(whereSection)
-        }
         if (whenSection != null) {
             fn(whenSection)
+        }
+        if (specifiesSection != null) {
+            fn(specifiesSection)
         }
         fn(mapsSection)
         if (usingSection != null) {
@@ -87,8 +85,8 @@ data class DefinesMapsGroup(
             mutableListOf(
                 definesSection,
                 requiringSection,
-                whereSection,
                 whenSection,
+                specifiesSection,
                 mapsSection,
                 writtenSection,
                 metaDataSection)
@@ -103,8 +101,9 @@ data class DefinesMapsGroup(
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
-                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                specifiesSection =
+                    specifiesSection?.transform(chalkTransformer) as SpecifiesSection?,
                 mapsSection = mapsSection.transform(chalkTransformer) as MapsSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -125,8 +124,8 @@ fun validateDefinesMapsGroup(
                 listOf(
                     "Defines",
                     "requiring?",
-                    "where?",
                     "when?",
+                    "specifies?",
                     "maps",
                     "using?",
                     "written",
@@ -143,10 +142,12 @@ fun validateDefinesMapsGroup(
                         ifNonNull(sections["requiring"]) {
                             validateRequiringSection(it, errors, tracker)
                         },
-                    whereSection =
-                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
+                    specifiesSection =
+                        ifNonNull(sections["specifies"]) {
+                            validateSpecifiesSection(it, errors, tracker)
+                        },
                     mapsSection =
                         ensureNonNull(sections["maps"], DEFAULT_MAPS_SECTION) {
                             validateMapsSection(it, errors, tracker)

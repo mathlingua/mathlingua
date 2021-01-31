@@ -56,7 +56,8 @@ Document(
                            ]
                )
                requiringSection = null
-               whereSection = WhereSection(
+               whenSection = null
+               specifiesSection = SpecifiesSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Statement(
@@ -115,7 +116,6 @@ Document(
                              ]
                  )
                )
-               whenSection = null
                collectsSection = CollectsSection(
                  givenGroup = GivenGroup(
                    givenSection = GivenSection(

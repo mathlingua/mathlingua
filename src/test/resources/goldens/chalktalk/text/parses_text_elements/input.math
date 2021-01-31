@@ -1,5 +1,5 @@
 [A]
 Defines: B
-where: 'B is \something'
+specifies: 'B is \something'
 means: "C"
 written: "something"

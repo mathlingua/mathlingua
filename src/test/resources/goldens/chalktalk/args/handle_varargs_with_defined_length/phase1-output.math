@@ -1,7 +1,7 @@
 [\f{x...}]
 Defines:
 . X...#x...
-where:
+specifies:
 . 'X is \something'
 means:
 . "something for X...#x..."

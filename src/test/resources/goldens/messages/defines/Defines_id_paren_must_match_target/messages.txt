@@ -5,8 +5,8 @@ For pattern:
 
 Defines:
 requiring?:
-where?:
 when?:
+specifies?:
 means:
 using?:
 written:
@@ -23,8 +23,8 @@ For pattern:
 
 Defines:
 requiring?:
-where?:
 when?:
+specifies?:
 means:
 using?:
 written:
@@ -41,8 +41,8 @@ For pattern:
 
 Defines:
 requiring?:
-where?:
 when?:
+specifies?:
 means:
 using?:
 written:
@@ -59,8 +59,8 @@ For pattern:
 
 Defines:
 requiring?:
-where?:
 when?:
+specifies?:
 means:
 using?:
 written:
@@ -77,8 +77,8 @@ For pattern:
 
 Defines:
 requiring?:
-where?:
 when?:
+specifies?:
 means:
 using?:
 written:
@@ -95,8 +95,8 @@ For pattern:
 
 Defines:
 requiring?:
-where?:
 when?:
+specifies?:
 means:
 using?:
 written:

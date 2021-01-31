@@ -114,26 +114,26 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\something.else'
             written: "something"
 
             [\finite.set]
             Defines: Y
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\yet.something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means:
             . if: X
               then: '\something.else'
@@ -259,20 +259,20 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means:
             . if: X
               then: '\something.else'
@@ -307,20 +307,20 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            where: 'X is \something'
+            specifies: 'X is \something'
             means:
             . if: X
               then: '\something.else'
@@ -333,7 +333,7 @@ internal class MathLinguaTest {
 
             [\set]
             Defines: Y
-            where: 'X is \something'
+            specifies: 'X is \something'
             means: '\yet.something.else'
             written: "something"
         """.trimIndent())

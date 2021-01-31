@@ -32,12 +32,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Writt
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
@@ -52,8 +50,8 @@ data class DefinesEvaluatedGroup(
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
-    val whereSection: WhereSection?,
     val whenSection: WhenSection?,
+    val specifiesSection: SpecifiesSection?,
     val evaluatedSection: EvaluatedSection,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -66,11 +64,11 @@ data class DefinesEvaluatedGroup(
         if (requiringSection != null) {
             fn(requiringSection)
         }
-        if (whereSection != null) {
-            fn(whereSection)
-        }
         if (whenSection != null) {
             fn(whenSection)
+        }
+        if (specifiesSection != null) {
+            fn(specifiesSection)
         }
         fn(evaluatedSection)
         if (usingSection != null) {
@@ -87,8 +85,8 @@ data class DefinesEvaluatedGroup(
             mutableListOf(
                 definesSection,
                 requiringSection,
-                whereSection,
                 whenSection,
+                specifiesSection,
                 evaluatedSection,
                 writtenSection,
                 metaDataSection)
@@ -103,8 +101,9 @@ data class DefinesEvaluatedGroup(
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
-                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                specifiesSection =
+                    specifiesSection?.transform(chalkTransformer) as SpecifiesSection?,
                 evaluatedSection = evaluatedSection.transform(chalkTransformer) as EvaluatedSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -125,8 +124,8 @@ fun validateDefinesEvaluatedGroup(
                 listOf(
                     "Defines",
                     "requiring?",
-                    "where?",
                     "when?",
+                    "specifies?",
                     "evaluated",
                     "using?",
                     "written",
@@ -143,10 +142,12 @@ fun validateDefinesEvaluatedGroup(
                         ifNonNull(sections["requiring"]) {
                             validateRequiringSection(it, errors, tracker)
                         },
-                    whereSection =
-                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
+                    specifiesSection =
+                        ifNonNull(sections["specifies"]) {
+                            validateSpecifiesSection(it, errors, tracker)
+                        },
                     evaluatedSection =
                         ensureNonNull(sections["evaluated"], DEFAULT_EVALUATED_SECTION) {
                             validateEvaluatedSection(it, errors, tracker)

@@ -4,6 +4,7 @@ Message:
 For pattern:
 
 Defines:
+requiring?:
 where?:
 when?:
 means:

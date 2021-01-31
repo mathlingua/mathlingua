@@ -4,6 +4,7 @@ Message:
 For pattern:
 
 Defines:
+requiring?:
 where?:
 when?:
 means:
@@ -21,6 +22,7 @@ Message:
 For pattern:
 
 Defines:
+requiring?:
 where?:
 when?:
 means:
@@ -38,6 +40,7 @@ Message:
 For pattern:
 
 Defines:
+requiring?:
 where?:
 when?:
 means:
@@ -55,6 +58,7 @@ Message:
 For pattern:
 
 Defines:
+requiring?:
 where?:
 when?:
 means:
@@ -72,6 +76,7 @@ Message:
 For pattern:
 
 Defines:
+requiring?:
 where?:
 when?:
 means:
@@ -89,6 +94,7 @@ Message:
 For pattern:
 
 Defines:
+requiring?:
 where?:
 when?:
 means:

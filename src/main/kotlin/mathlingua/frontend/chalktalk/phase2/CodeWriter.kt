@@ -61,6 +61,8 @@ interface CodeWriter {
 
 const val IS = " is "
 
+const val IN = " in "
+
 open class HtmlCodeWriter(
     val defines: List<DefinesGroup>,
     val states: List<StatesGroup>,
@@ -236,6 +238,30 @@ open class HtmlCodeWriter(
                             else -> it
                         }
                     }, patternsToWrittenAs).text ?: lhsParsed.root.toCode()}\\]")
+                } else {
+                    writeDirect(lhs)
+                }
+            } else if (stmtText.contains(IN)) {
+                val index = stmtText.indexOf(IN)
+                builder.append("\\[${stmtText.substring(0, index)}")
+                writeDirect(" \\in ")
+                val lhs = stmtText.substring(index + IN.length).trim()
+                val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
+                if (lhsParsed.errors.isEmpty()) {
+                    val patternsToWrittenAs =
+                        getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+                    builder.append(
+                        expandAsWritten(
+                                lhsParsed.root.transform {
+                                    when (it) {
+                                        is TextTexTalkNode ->
+                                            it.copy(text = prettyPrintIdentifier(it.text))
+                                        else -> it
+                                    }
+                                },
+                                patternsToWrittenAs)
+                            .text
+                            ?: lhsParsed.root.toCode())
                 } else {
                     writeDirect(lhs)
                 }

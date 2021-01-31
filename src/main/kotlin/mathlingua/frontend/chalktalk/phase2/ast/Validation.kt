@@ -96,6 +96,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MapsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
@@ -517,6 +518,8 @@ val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
 val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
 
+val DEFAULT_REQUIRING_SECTION = RequiringSection(targets = listOf())
+
 val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
 
 val DEFAULT_AXIOM_GROUP =
@@ -636,6 +639,7 @@ val DEFAULT_DEFINES_MEANS_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
+        requiringSection = DEFAULT_REQUIRING_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
@@ -648,6 +652,7 @@ val DEFAULT_DEFINES_INSTANTIATED_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
+        requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         instantiatedSection = DEFAULT_INSTANTIATED_SECTION,
         usingSection = DEFAULT_USING_SECTION,
@@ -659,6 +664,7 @@ val DEFAULT_DEFINES_EVALUATED_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
+        requiringSection = DEFAULT_REQUIRING_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         evaluatedSection = DEFAULT_EVALUATED_SECTION,
@@ -671,6 +677,7 @@ val DEFAULT_DEFINES_COLLECTS_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
+        requiringSection = DEFAULT_REQUIRING_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         collectsSection = DEFAULT_COLLECTS_SECTION,
@@ -683,6 +690,7 @@ val DEFAULT_DEFINES_MAPS_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
+        requiringSection = DEFAULT_REQUIRING_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         mapsSection = DEFAULT_MAPS_SECTION,
@@ -695,6 +703,7 @@ val DEFAULT_DEFINES_GENERATED_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
+        requiringSection = DEFAULT_REQUIRING_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         generatedSection = DEFAULT_GENERATED_SECTION,

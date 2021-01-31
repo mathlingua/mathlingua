@@ -51,6 +51,7 @@ data class DefinesGeneratedGroup(
     override val signature: String?,
     override val id: IdStatement,
     override val definesSection: DefinesSection,
+    override val requiringSection: RequiringSection?,
     val whereSection: WhereSection?,
     val whenSection: WhenSection?,
     val generatedSection: GeneratedSection,
@@ -62,6 +63,9 @@ data class DefinesGeneratedGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
+        if (requiringSection != null) {
+            fn(requiringSection)
+        }
         if (whereSection != null) {
             fn(whereSection)
         }
@@ -82,6 +86,7 @@ data class DefinesGeneratedGroup(
         val sections =
             mutableListOf(
                 definesSection,
+                requiringSection,
                 whereSection,
                 whenSection,
                 generatedSection,
@@ -96,6 +101,8 @@ data class DefinesGeneratedGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
+                requiringSection =
+                    requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 generatedSection = generatedSection.transform(chalkTransformer) as GeneratedSection,
@@ -116,8 +123,14 @@ fun validateDefinesGeneratedGroup(
                 errors,
                 DEFAULT_DEFINES_GENERATED_GROUP,
                 listOf(
-                    "Defines", "where?", "when?", "generated", "using?", "written", "Metadata?")) {
-            sections ->
+                    "Defines",
+                    "requiring?",
+                    "where?",
+                    "when?",
+                    "generated",
+                    "using?",
+                    "written",
+                    "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesGeneratedGroup(
                     signature = id.signature(),
@@ -125,6 +138,10 @@ fun validateDefinesGeneratedGroup(
                     definesSection =
                         ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
                             validateDefinesSection(it, errors, tracker)
+                        },
+                    requiringSection =
+                        ifNonNull(sections["requiring"]) {
+                            validateRequiringSection(it, errors, tracker)
                         },
                     whereSection =
                         ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) },

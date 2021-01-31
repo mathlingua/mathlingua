@@ -55,6 +55,7 @@ Document(
                              )
                            ]
                )
+               requiringSection = null
                whereSection = WhereSection(
                  clauses = ClauseListNode(
                    clauses = [

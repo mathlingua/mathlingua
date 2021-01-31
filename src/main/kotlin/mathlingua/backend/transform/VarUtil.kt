@@ -32,6 +32,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.given.GivenGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.ViewsGroup
@@ -269,6 +270,11 @@ private fun checkVarsImpl(
             varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
             varsToRemove.addAll(
                 checkDefineSectionVars(node.definesSection, vars, tracker, errors, ignoreParen))
+            if (node.requiringSection != null) {
+                varsToRemove.addAll(
+                    checkRequiresSectionVars(
+                        node.requiringSection!!, vars, tracker, errors, ignoreParen))
+            }
         }
         is TheoremGroup -> {
             if (node.givenSection != null) {
@@ -356,6 +362,28 @@ private fun checkVarsImpl(
 
 private fun checkDefineSectionVars(
     node: DefinesSection,
+    vars: MutableSet<String>,
+    tracker: LocationTracker,
+    errors: MutableList<ParseError>,
+    ignoreParen: Boolean
+): List<String> {
+    val location = tracker.getLocationOf(node) ?: Location(-1, -1)
+    val givenVars = node.targets.map { getVars(it, ignoreParen) }.flatten()
+    for (v in givenVars) {
+        if (vars.contains(v)) {
+            errors.add(
+                ParseError(
+                    message = "Duplicate defined symbol '$v'",
+                    row = location.row,
+                    column = location.column))
+        }
+        vars.add(v)
+    }
+    return givenVars
+}
+
+private fun checkRequiresSectionVars(
+    node: RequiringSection,
     vars: MutableSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>,

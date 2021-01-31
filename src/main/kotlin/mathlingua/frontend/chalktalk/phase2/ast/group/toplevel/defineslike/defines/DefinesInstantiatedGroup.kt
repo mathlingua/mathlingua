@@ -49,6 +49,7 @@ data class DefinesInstantiatedGroup(
     override val signature: String?,
     override val id: IdStatement,
     override val definesSection: DefinesSection,
+    override val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
     val instantiatedSection: InstantiatedSection,
     override val usingSection: UsingSection?,
@@ -59,6 +60,9 @@ data class DefinesInstantiatedGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
+        if (requiringSection != null) {
+            fn(requiringSection)
+        }
         if (whenSection != null) {
             fn(whenSection)
         }
@@ -75,7 +79,12 @@ data class DefinesInstantiatedGroup(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         val sections =
             mutableListOf(
-                definesSection, whenSection, instantiatedSection, writtenSection, metaDataSection)
+                definesSection,
+                requiringSection,
+                whenSection,
+                instantiatedSection,
+                writtenSection,
+                metaDataSection)
         return topLevelToCode(writer, isArg, indent, id, *sections.toTypedArray())
     }
 
@@ -85,6 +94,8 @@ data class DefinesInstantiatedGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
+                requiringSection =
+                    requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 instantiatedSection =
                     instantiatedSection.transform(chalkTransformer) as InstantiatedSection,
@@ -106,8 +117,14 @@ fun validateDefinesInstantiatedGroup(
                 group,
                 errors,
                 DEFAULT_DEFINES_INSTANTIATED_GROUP,
-                listOf("Defines", "when?", "instantiated", "using?", "written", "Metadata?")) {
-            sections ->
+                listOf(
+                    "Defines",
+                    "requiring?",
+                    "when?",
+                    "instantiated",
+                    "using?",
+                    "written",
+                    "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesInstantiatedGroup(
                     signature = id.signature(),
@@ -115,6 +132,10 @@ fun validateDefinesInstantiatedGroup(
                     definesSection =
                         ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
                             validateDefinesSection(it, errors, tracker)
+                        },
+                    requiringSection =
+                        ifNonNull(sections["requiring"]) {
+                            validateRequiringSection(it, errors, tracker)
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },

@@ -1,7 +1,7 @@
 [\evens]
 Defines:
 . X
-where:
+specifies:
 . 'X is \set'
 collects:
 . given:

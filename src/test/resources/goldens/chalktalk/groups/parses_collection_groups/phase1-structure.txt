@@ -34,7 +34,7 @@ Root(
                             ),
                             Section(
                               name = Phase1Token(
-                                text = "where"
+                                text = "specifies"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
                                 column = 1
@@ -45,7 +45,7 @@ Root(
                                            text = "'X is \set'"
                                            type = ChalkTalkTokenType.Statement
                                            row = 2
-                                           column = 8
+                                           column = 12
                                          )
                                        )
                                      ]

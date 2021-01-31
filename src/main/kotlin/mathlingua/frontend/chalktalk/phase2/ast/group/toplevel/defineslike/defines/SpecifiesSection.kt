@@ -18,36 +18,38 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_REQUIRING_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SPECIFIES_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.frontend.chalktalk.phase2.ast.track
-import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
+import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class RequiringSection(val targets: List<Target>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
+data class SpecifiesSection(val clauses: ClauseListNode) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("requiring")
-        appendTargetArgs(writer, targets, indent + 2)
+        writer.writeHeader("specifies")
+        if (clauses.clauses.isNotEmpty()) {
+            writer.writeNewline()
+        }
+        writer.append(clauses, true, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            RequiringSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
+            SpecifiesSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateRequiringSection(
+fun validateSpecifiesSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateTargetSection(
-            node.resolve(), errors, "requiring", DEFAULT_REQUIRING_SECTION, tracker) { targets ->
-            RequiringSection(targets = targets)
+        validateSection(node.resolve(), errors, "specifies", DEFAULT_SPECIFIES_SECTION) {
+            SpecifiesSection(clauses = validateClauseListNode(it, errors, tracker))
         }
     }

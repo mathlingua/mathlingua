@@ -1,6 +1,6 @@
 [\evens]
 Defines: X
-where: 'X is \set'
+specifies: 'X is \set'
 collects:
 . given: k
   where: 'k is \integer'

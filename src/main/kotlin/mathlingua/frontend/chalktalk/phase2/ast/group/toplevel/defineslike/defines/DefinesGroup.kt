@@ -29,10 +29,10 @@ import mathlingua.frontend.support.ParseError
 
 abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
+    abstract val id: IdStatement
     abstract val signature: String?
     abstract val definesSection: DefinesSection
     abstract val requiringSection: RequiringSection?
-    abstract val id: IdStatement
     abstract val writtenSection: WrittenSection
 }
 

@@ -1,6 +1,6 @@
 [A]
 Defines: B
-where:
+specifies:
 . 'B is \something'
 means:
 . "C"

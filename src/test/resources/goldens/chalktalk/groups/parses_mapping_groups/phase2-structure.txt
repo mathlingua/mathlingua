@@ -80,7 +80,8 @@ Document(
                            ]
                )
                requiringSection = null
-               whereSection = WhereSection(
+               whenSection = null
+               specifiesSection = SpecifiesSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Statement(
@@ -139,7 +140,6 @@ Document(
                              ]
                  )
                )
-               whenSection = null
                mapsSection = MapsSection(
                  fromGroup = FromGroup(
                    fromSection = FromSection(

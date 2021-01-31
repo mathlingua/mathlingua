@@ -469,6 +469,8 @@ private fun checkVarsImpl(
     }
 }
 
+private fun isNumberLiteral(text: String) = Regex("[+-]?\\d+(\\.\\d+)?").matchEntire(text) != null
+
 private fun checkVarsImpl(
     texTalkNode: TexTalkNode,
     location: Location,
@@ -479,7 +481,7 @@ private fun checkVarsImpl(
     val varsToRemove = mutableSetOf<String>()
     if (texTalkNode is TextTexTalkNode) {
         val name = texTalkNode.text
-        if (name != "=" && !vars.contains(name)) {
+        if (name != "=" && !isNumberLiteral(name) && !vars.contains(name)) {
             errors.add(
                 ParseError(
                     message = "Undefined symbol '$name'",

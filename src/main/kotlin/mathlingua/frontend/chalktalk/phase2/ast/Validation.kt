@@ -97,7 +97,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SpecifiesSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
@@ -388,7 +388,7 @@ val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_WHERE_SECTION = WhereSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_SPECIFIES_SECTION = SpecifiesSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+val DEFAULT_SATISFYING_SECTION = SatisfyingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_ALL_SECTION = AllSection(statement = DEFAULT_STATEMENT)
 
@@ -644,7 +644,7 @@ val DEFAULT_DEFINES_MEANS_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        specifiesSection = DEFAULT_SPECIFIES_SECTION,
+        satisfyingSection = DEFAULT_SATISFYING_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -669,7 +669,7 @@ val DEFAULT_DEFINES_EVALUATED_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        specifiesSection = DEFAULT_SPECIFIES_SECTION,
+        meansSection = DEFAULT_MEANS_SECTION,
         evaluatedSection = DEFAULT_EVALUATED_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -682,7 +682,7 @@ val DEFAULT_DEFINES_COLLECTS_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        specifiesSection = DEFAULT_SPECIFIES_SECTION,
+        meansSection = DEFAULT_MEANS_SECTION,
         collectsSection = DEFAULT_COLLECTS_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -695,7 +695,7 @@ val DEFAULT_DEFINES_MAPS_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        specifiesSection = DEFAULT_SPECIFIES_SECTION,
+        meansSection = DEFAULT_MEANS_SECTION,
         mapsSection = DEFAULT_MAPS_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -708,7 +708,7 @@ val DEFAULT_DEFINES_GENERATED_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        specifiesSection = DEFAULT_SPECIFIES_SECTION,
+        meansSection = DEFAULT_MEANS_SECTION,
         generatedSection = DEFAULT_GENERATED_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,

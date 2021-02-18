@@ -1,6 +1,6 @@
 [\evens]
 Defines: X
-specifies:
+means:
 . 'X is \set'
 collects:
 . given: k

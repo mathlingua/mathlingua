@@ -2,8 +2,8 @@
 [\something{A}]
 Defines: X
 when: 'A is \something.else'
-specifies: 'X is \something.else'
-means: 'X is \some.other.thing'
+means: 'X is \something.else'
+satisfying: 'X is \some.other.thing'
 written: "\textrm{something} A?"
 
 
@@ -17,7 +17,7 @@ written: "\textrm{something} A?"
 [\some.function{A}(x)]
 Defines: f(x)
 when: 'A is \something'
-specifies: 'f is \function'
+means: 'f is \function'
 maps:
 . from: '\reals'
   to: '\reals'
@@ -26,7 +26,7 @@ written: "\textrm{some.function}(x?)"
 
 [\some.function2{A}(x)]
 Defines: f(x)
-specifies: 'A is \something'
+means: 'A is \something'
 maps:
 . from: '\reals'
   to: '\reals'
@@ -43,7 +43,7 @@ written: "\mathbb{Z}"
 
 [\naturals]
 Defines: N
-specifies: 'N is \type'
+means: 'N is \type'
 generated:
 . inductively:
   from:
@@ -66,7 +66,7 @@ written: "\mathbb{N}"
 
 [\even.primes]
 Defines: X
-specifies: 'X is \set'
+means: 'X is \set'
 collects:
 . given: p
   where: 'p is \prime'
@@ -87,7 +87,7 @@ written: "\textbf{even primes}"
 
 [\f1(x)]
 Defines: f(x)
-specifies: 'f is \function'
+means: 'f is \function'
 evaluated: 'f(x) := x + 1'
 written: "f1(x?)"
 
@@ -100,7 +100,7 @@ written: "f1(x?)"
 
 [\f2(x)]
 Defines: f(x)
-specifies: 'f is \function'
+means: 'f is \function'
 evaluated:
 . matching:
   . 'f(x?) ::= x + 1'
@@ -117,7 +117,7 @@ written: "f2(x?)"
 
 [\f3(x)]
 Defines: f(x)
-specifies: 'f is \function'
+means: 'f is \function'
 evaluated:
 . piecewise:
   when: 'x > 0'
@@ -149,15 +149,15 @@ that: 'A + B - C is \something'
 Foundation:
 . [\X]
   Defines: X
-  specifies: 'X is \something'
-  means: 'X is \something.else'
+  means: 'X is \something'
+  satisfying: 'X is \something.else'
   written: "X?"
 
 
 Foundation:
 . [\X]
   Defines: X
-  specifies: 'X is \set'
+  means: 'X is \set'
   collects:
   . given: x
     where: 'x'
@@ -169,13 +169,13 @@ Foundation:
 Mutually:
 . [\X]
   Defines: X
-  specifies: 'X is \X'
-  means: 'X is \Y'
+  means: 'X is \X'
+  satisfying: 'X is \Y'
   written: "X?"
 . [\Y]
   Defines: Y
-  specifies: 'Y is \Y'
-  means: 'Y is \X'
+  means: 'Y is \Y'
+  satisfying: 'Y is \X'
   written: "Y?"
 
 

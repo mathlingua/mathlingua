@@ -114,27 +114,27 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            specifies: 'X is \something'
-            means: '\something'
+            means: 'X is \something'
+            satisfying: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
-            specifies: 'X is \something'
-            means: '\something.else'
+            means: 'X is \something'
+            satisfying: '\something.else'
             written: "something"
 
             [\finite.set]
             Defines: Y
-            specifies: 'X is \something'
-            means: '\yet.something.else'
+            means: 'X is \something'
+            satisfying: '\yet.something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            specifies: 'X is \something'
-            means:
+            means: 'X is \something'
+            satisfying:
             . if: X
               then: '\something.else'
             written: "something"
@@ -259,21 +259,21 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            specifies: 'X is \something'
-            means: '\something'
+            means: 'X is \something'
+            satisfying: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
-            specifies: 'X is \something'
-            means: '\something.else'
+            means: 'X is \something'
+            satisfying: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            specifies: 'X is \something'
-            means:
+            means: 'X is \something'
+            satisfying:
             . if: X
               then: '\something.else'
             written: "something"
@@ -307,21 +307,21 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            specifies: 'X is \something'
-            means: '\something'
+            means: 'X is \something'
+            satisfying: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
-            specifies: 'X is \something'
-            means: '\something.else'
+            means: 'X is \something'
+            satisfying: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            specifies: 'X is \something'
-            means:
+            means: 'X is \something'
+            satisfying:
             . if: X
               then: '\something.else'
             written: "something"
@@ -333,8 +333,8 @@ internal class MathLinguaTest {
 
             [\set]
             Defines: Y
-            specifies: 'X is \something'
-            means: '\yet.something.else'
+            means: 'X is \something'
+            satisfying: '\yet.something.else'
             written: "something"
         """.trimIndent())
 

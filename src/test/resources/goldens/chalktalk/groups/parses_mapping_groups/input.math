@@ -1,6 +1,6 @@
 [\f(x)]
 Defines: f(x)
-specifies: 'f is \function'
+means: 'f is \function'
 maps:
 . from: 'A'
   to: 'A'

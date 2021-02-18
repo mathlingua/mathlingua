@@ -51,7 +51,7 @@ data class DefinesGeneratedGroup(
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
-    val specifiesSection: SpecifiesSection?,
+    val meansSection: MeansSection?,
     val generatedSection: GeneratedSection,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -67,8 +67,8 @@ data class DefinesGeneratedGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
-        if (specifiesSection != null) {
-            fn(specifiesSection)
+        if (meansSection != null) {
+            fn(meansSection)
         }
         fn(generatedSection)
         if (usingSection != null) {
@@ -86,7 +86,7 @@ data class DefinesGeneratedGroup(
                 definesSection,
                 requiringSection,
                 whenSection,
-                specifiesSection,
+                meansSection,
                 generatedSection,
                 writtenSection,
                 metaDataSection)
@@ -102,8 +102,7 @@ data class DefinesGeneratedGroup(
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
-                specifiesSection =
-                    specifiesSection?.transform(chalkTransformer) as SpecifiesSection?,
+                meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 generatedSection = generatedSection.transform(chalkTransformer) as GeneratedSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -125,7 +124,7 @@ fun validateDefinesGeneratedGroup(
                     "Defines",
                     "requiring?",
                     "when?",
-                    "specifies?",
+                    "means?",
                     "generated",
                     "using?",
                     "written",
@@ -144,10 +143,8 @@ fun validateDefinesGeneratedGroup(
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    specifiesSection =
-                        ifNonNull(sections["specifies"]) {
-                            validateSpecifiesSection(it, errors, tracker)
-                        },
+                    meansSection =
+                        ifNonNull(sections["means"]) { validateMeansSection(it, errors, tracker) },
                     generatedSection =
                         ensureNonNull(sections["generated"], DEFAULT_GENERATED_SECTION) {
                             validateGeneratedSection(it, errors, tracker)

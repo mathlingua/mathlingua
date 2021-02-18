@@ -18,7 +18,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SPECIFIES_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SATISFYING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -27,12 +27,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class SpecifiesSection(val clauses: ClauseListNode) : Phase2Node {
+data class SatisfyingSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("specifies")
+        writer.writeHeader("satisfying")
         if (clauses.clauses.isNotEmpty()) {
             writer.writeNewline()
         }
@@ -42,14 +42,14 @@ data class SpecifiesSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            SpecifiesSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            SatisfyingSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
 fun validateSpecifiesSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "specifies", DEFAULT_SPECIFIES_SECTION) {
-            SpecifiesSection(clauses = validateClauseListNode(it, errors, tracker))
+        validateSection(node.resolve(), errors, "satisfying", DEFAULT_SATISFYING_SECTION) {
+            SatisfyingSection(clauses = validateClauseListNode(it, errors, tracker))
         }
     }

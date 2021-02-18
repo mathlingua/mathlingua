@@ -34,7 +34,7 @@ Root(
                             ),
                             Section(
                               name = Phase1Token(
-                                text = "specifies"
+                                text = "means"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
                                 column = 1
@@ -45,14 +45,14 @@ Root(
                                            text = "'B is \something'"
                                            type = ChalkTalkTokenType.Statement
                                            row = 2
-                                           column = 12
+                                           column = 8
                                          )
                                        )
                                      ]
                             ),
                             Section(
                               name = Phase1Token(
-                                text = "means"
+                                text = "satisfying"
                                 type = ChalkTalkTokenType.Name
                                 row = 3
                                 column = 1
@@ -63,7 +63,7 @@ Root(
                                            text = ""C""
                                            type = ChalkTalkTokenType.String
                                            row = 3
-                                           column = 8
+                                           column = 13
                                          )
                                        )
                                      ]

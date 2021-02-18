@@ -1,8 +1,8 @@
 [A]
 Defines: B
-specifies:
-. 'B is \something'
 means:
+. 'B is \something'
+satisfying:
 . "C"
 written:
 . "something"

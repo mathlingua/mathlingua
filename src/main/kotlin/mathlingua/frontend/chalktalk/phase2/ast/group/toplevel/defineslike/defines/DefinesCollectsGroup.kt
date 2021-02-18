@@ -51,7 +51,7 @@ data class DefinesCollectsGroup(
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
-    val specifiesSection: SpecifiesSection?,
+    val meansSection: MeansSection?,
     val collectsSection: CollectsSection,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -67,8 +67,8 @@ data class DefinesCollectsGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
-        if (specifiesSection != null) {
-            fn(specifiesSection)
+        if (meansSection != null) {
+            fn(meansSection)
         }
         fn(collectsSection)
         if (usingSection != null) {
@@ -86,7 +86,7 @@ data class DefinesCollectsGroup(
                 definesSection,
                 requiringSection,
                 whenSection,
-                specifiesSection,
+                meansSection,
                 collectsSection,
                 writtenSection,
                 metaDataSection)
@@ -102,8 +102,7 @@ data class DefinesCollectsGroup(
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
-                specifiesSection =
-                    specifiesSection?.transform(chalkTransformer) as SpecifiesSection?,
+                meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 collectsSection = collectsSection.transform(chalkTransformer) as CollectsSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -125,7 +124,7 @@ fun validateDefinesCollectsGroup(
                     "Defines",
                     "requiring?",
                     "when?",
-                    "specifies?",
+                    "means?",
                     "collects",
                     "using?",
                     "written",
@@ -144,10 +143,8 @@ fun validateDefinesCollectsGroup(
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    specifiesSection =
-                        ifNonNull(sections["specifies"]) {
-                            validateSpecifiesSection(it, errors, tracker)
-                        },
+                    meansSection =
+                        ifNonNull(sections["means"]) { validateMeansSection(it, errors, tracker) },
                     collectsSection =
                         ensureNonNull(sections["collects"], DEFAULT_COLLECTS_SECTION) {
                             validateCollectsSection(it, errors, tracker)

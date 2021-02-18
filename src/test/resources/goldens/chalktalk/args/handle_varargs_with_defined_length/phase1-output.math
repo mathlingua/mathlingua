@@ -1,9 +1,9 @@
 [\f{x...}]
 Defines:
 . X...#x...
-specifies:
-. 'X is \something'
 means:
+. 'X is \something'
+satisfying:
 . "something for X...#x..."
 written:
 . "something"

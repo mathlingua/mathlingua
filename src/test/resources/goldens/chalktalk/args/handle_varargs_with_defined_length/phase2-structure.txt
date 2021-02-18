@@ -75,7 +75,7 @@ Document(
                )
                requiringSection = null
                whenSection = null
-               specifiesSection = SpecifiesSection(
+               meansSection = MeansSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Statement(
@@ -134,7 +134,7 @@ Document(
                              ]
                  )
                )
-               meansSection = MeansSection(
+               satisfyingSection = SatisfyingSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Text(

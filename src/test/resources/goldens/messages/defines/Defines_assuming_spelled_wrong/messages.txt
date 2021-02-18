@@ -6,8 +6,8 @@ For pattern:
 Defines:
 requiring?:
 when?:
-specifies?:
 means:
+satisfying?:
 using?:
 written:
 Metadata?:

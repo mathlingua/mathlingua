@@ -1,5 +1,5 @@
 [A]
 Defines: B
-specifies: 'B is \something'
-means: "C"
+means: 'B is \something'
+satisfying: "C"
 written: "something"

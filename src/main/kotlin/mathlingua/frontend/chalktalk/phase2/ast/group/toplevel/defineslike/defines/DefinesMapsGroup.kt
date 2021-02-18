@@ -51,7 +51,7 @@ data class DefinesMapsGroup(
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
-    val specifiesSection: SpecifiesSection?,
+    val meansSection: MeansSection?,
     val mapsSection: MapsSection,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -67,8 +67,8 @@ data class DefinesMapsGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
-        if (specifiesSection != null) {
-            fn(specifiesSection)
+        if (meansSection != null) {
+            fn(meansSection)
         }
         fn(mapsSection)
         if (usingSection != null) {
@@ -86,7 +86,7 @@ data class DefinesMapsGroup(
                 definesSection,
                 requiringSection,
                 whenSection,
-                specifiesSection,
+                meansSection,
                 mapsSection,
                 writtenSection,
                 metaDataSection)
@@ -102,8 +102,7 @@ data class DefinesMapsGroup(
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
-                specifiesSection =
-                    specifiesSection?.transform(chalkTransformer) as SpecifiesSection?,
+                meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 mapsSection = mapsSection.transform(chalkTransformer) as MapsSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -125,7 +124,7 @@ fun validateDefinesMapsGroup(
                     "Defines",
                     "requiring?",
                     "when?",
-                    "specifies?",
+                    "means?",
                     "maps",
                     "using?",
                     "written",
@@ -144,10 +143,8 @@ fun validateDefinesMapsGroup(
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    specifiesSection =
-                        ifNonNull(sections["specifies"]) {
-                            validateSpecifiesSection(it, errors, tracker)
-                        },
+                    meansSection =
+                        ifNonNull(sections["means"]) { validateMeansSection(it, errors, tracker) },
                     mapsSection =
                         ensureNonNull(sections["maps"], DEFAULT_MAPS_SECTION) {
                             validateMapsSection(it, errors, tracker)

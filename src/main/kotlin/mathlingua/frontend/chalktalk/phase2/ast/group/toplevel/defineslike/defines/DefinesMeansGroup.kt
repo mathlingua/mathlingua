@@ -51,8 +51,8 @@ data class DefinesMeansGroup(
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
-    val specifiesSection: SpecifiesSection?,
     val meansSection: MeansSection,
+    val satisfyingSection: SatisfyingSection?,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
     override val metaDataSection: MetaDataSection?
@@ -67,10 +67,10 @@ data class DefinesMeansGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
-        if (specifiesSection != null) {
-            fn(specifiesSection)
-        }
         fn(meansSection)
+        if (satisfyingSection != null) {
+            fn(satisfyingSection)
+        }
         if (usingSection != null) {
             fn(usingSection)
         }
@@ -86,8 +86,8 @@ data class DefinesMeansGroup(
                 definesSection,
                 requiringSection,
                 whenSection,
-                specifiesSection,
                 meansSection,
+                satisfyingSection,
                 writtenSection,
                 metaDataSection)
         return topLevelToCode(writer, isArg, indent, id, *sections.toTypedArray())
@@ -102,9 +102,9 @@ data class DefinesMeansGroup(
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
-                specifiesSection =
-                    specifiesSection?.transform(chalkTransformer) as SpecifiesSection?,
                 meansSection = meansSection.transform(chalkTransformer) as MeansSection,
+                satisfyingSection =
+                    satisfyingSection?.transform(chalkTransformer) as SatisfyingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
@@ -125,8 +125,8 @@ fun validateDefinesMeansGroup(
                     "Defines",
                     "requiring?",
                     "when?",
-                    "specifies?",
                     "means",
+                    "satisfying?",
                     "using?",
                     "written",
                     "Metadata?")) { sections ->
@@ -144,13 +144,13 @@ fun validateDefinesMeansGroup(
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    specifiesSection =
-                        ifNonNull(sections["specifies"]) {
-                            validateSpecifiesSection(it, errors, tracker)
-                        },
                     meansSection =
                         ensureNonNull(sections["means"], DEFAULT_MEANS_SECTION) {
                             validateMeansSection(it, errors, tracker)
+                        },
+                    satisfyingSection =
+                        ifNonNull(sections["satisfying"]) {
+                            validateSpecifiesSection(it, errors, tracker)
                         },
                     usingSection =
                         ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },

@@ -57,7 +57,7 @@ Document(
                )
                requiringSection = null
                whenSection = null
-               specifiesSection = SpecifiesSection(
+               meansSection = MeansSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Statement(

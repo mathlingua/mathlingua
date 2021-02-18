@@ -51,7 +51,7 @@ data class DefinesEvaluatedGroup(
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
-    val specifiesSection: SpecifiesSection?,
+    val meansSection: MeansSection?,
     val evaluatedSection: EvaluatedSection,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -67,8 +67,8 @@ data class DefinesEvaluatedGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
-        if (specifiesSection != null) {
-            fn(specifiesSection)
+        if (meansSection != null) {
+            fn(meansSection)
         }
         fn(evaluatedSection)
         if (usingSection != null) {
@@ -86,7 +86,7 @@ data class DefinesEvaluatedGroup(
                 definesSection,
                 requiringSection,
                 whenSection,
-                specifiesSection,
+                meansSection,
                 evaluatedSection,
                 writtenSection,
                 metaDataSection)
@@ -102,8 +102,7 @@ data class DefinesEvaluatedGroup(
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
-                specifiesSection =
-                    specifiesSection?.transform(chalkTransformer) as SpecifiesSection?,
+                meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 evaluatedSection = evaluatedSection.transform(chalkTransformer) as EvaluatedSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -125,7 +124,7 @@ fun validateDefinesEvaluatedGroup(
                     "Defines",
                     "requiring?",
                     "when?",
-                    "specifies?",
+                    "means?",
                     "evaluated",
                     "using?",
                     "written",
@@ -144,10 +143,8 @@ fun validateDefinesEvaluatedGroup(
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    specifiesSection =
-                        ifNonNull(sections["specifies"]) {
-                            validateSpecifiesSection(it, errors, tracker)
-                        },
+                    meansSection =
+                        ifNonNull(sections["means"]) { validateMeansSection(it, errors, tracker) },
                     evaluatedSection =
                         ensureNonNull(sections["evaluated"], DEFAULT_EVALUATED_SECTION) {
                             validateEvaluatedSection(it, errors, tracker)

@@ -299,8 +299,14 @@ private fun handleVariadicGroupSubstitutions(
             }
         } else {
             subs.doesMatch = false
+            val groupOrGroups =
+                if (patternGroups.size == 1) {
+                    "group"
+                } else {
+                    "groups"
+                }
             subs.errors.add(
-                "Expected at least ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
+                "Expected at least ${patternGroups.size} curly brace parameter $groupOrGroups but found ${valueGroups.size}")
         }
     } else {
         if (valueGroups.size == patternGroups.size) {
@@ -309,8 +315,14 @@ private fun handleVariadicGroupSubstitutions(
             }
         } else {
             subs.doesMatch = false
+            val groupOrGroups =
+                if (patternGroups.size == 1) {
+                    "group"
+                } else {
+                    "groups"
+                }
             subs.errors.add(
-                "Expected exactly ${patternGroups.size} groups but found ${valueGroups.size} for '${valueGroups.joinToString { it.toCode() }}'")
+                "Expected exactly ${patternGroups.size} curly brace parameter $groupOrGroups but found ${valueGroups.size}")
         }
     }
 }

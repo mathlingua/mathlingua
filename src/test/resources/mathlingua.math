@@ -140,7 +140,7 @@ evaluated:
 written: "f3(x?)"
 
 
-[\some.thing{A}:on{B}to{C}]
+[\some.thing{A}:on{B}:to{C}]
 States:
 when: 'A, B, C is \something'
 that: 'A + B - C is \something'

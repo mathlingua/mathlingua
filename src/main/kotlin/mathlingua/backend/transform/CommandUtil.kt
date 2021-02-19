@@ -19,6 +19,7 @@ package mathlingua.backend.transform
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.hasChild
+import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
@@ -35,11 +36,12 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 
 data class RootTarget<R, T>(val root: R, val target: T)
 
-internal fun getCommandsToGlue(node: ExpressionTexTalkNode): List<Command> {
+internal fun getCommandsToGlue(node: ExpressionTexTalkNode, location: Location): List<Command> {
     val cmds = mutableListOf<Command>()
     for (n in node.children) {
         if (n !is Command) {
-            throw Error("Unexpected non-Command node")
+            throw Error(
+                "Unexpected non-Command node: ${n.toCode()} (${location.row+1}, ${location.column+1})")
         }
         cmds.add(n)
     }
@@ -133,7 +135,9 @@ internal fun glueCommands(
                     if (isNode.rhs.items.size != 1) {
                         throw Error("Expected 'is' node $isNode to only contain a single rhs item")
                     }
-                    val cmds = getCommandsToGlue(isNode.rhs.items[0])
+                    val cmds =
+                        getCommandsToGlue(
+                            isNode.rhs.items[0], tracker.getLocationOf(root) ?: Location(-1, -1))
                     val gluedCmds = glueCommands(cmds)
                     if (gluedCmds.size != 1) {
                         throw Error("Expected 'is' node $isNode to have only one glued rhs command")

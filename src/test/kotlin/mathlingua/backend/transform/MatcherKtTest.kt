@@ -141,9 +141,9 @@ class MatcherKtTest {
     fun testSimpleCommandExpandAsWritten() {
         val patternToExpansion =
             mapOf(
-                buildOperator(buildCommand("\\function:on{A}to{B}")) to
+                buildOperator(buildCommand("\\function:on{A}:to{B}")) to
                     "\\cdot : A? \\rightarrow B?")
-        val node = buildNode("\\function:on{X}to{Y}")
+        val node = buildNode("\\function:on{X}:to{Y}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded.errors).isEmpty()
         assertThat(expanded.text).isEqualTo("\\cdot : X \\rightarrow Y")
@@ -240,9 +240,9 @@ class MatcherKtTest {
     fun testSetOfWhere() {
         val patternToExpansion =
             mapOf(
-                buildOperator(buildCommand("\\set[x...]:of{form...}where{condition}...")) to
+                buildOperator(buildCommand("\\set[x...]:of{form...}:where{condition}...")) to
                     "\\left \\{ form{... , ...}? \\: : \\: condition{... \\text{ and } ...}? \\right \\}")
-        val node = buildNode("\\set[x, y]:of{f(x), g(y)}where{x > 0}{f(x) > 0}{y < 0}{g(y) < 0}")
+        val node = buildNode("\\set[x, y]:of{f(x), g(y)}:where{x > 0}{f(x) > 0}{y < 0}{g(y) < 0}")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded.errors).isEmpty()
         assertThat(expanded.text)

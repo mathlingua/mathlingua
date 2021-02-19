@@ -55,6 +55,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
+import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
@@ -155,7 +156,9 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             val lexer = newTexTalkLexer(id.text)
             val parse = newTexTalkParser().parse(lexer)
             val idBefore = parse.root.toCode()
-            val idAfter = normalize(parse.root).toCode()
+            val idAfter =
+                normalize(parse.root, Location(row = getRow(group), column = getColumn(group)))
+                    .toCode()
             if (idBefore != idAfter) {
                 errors.add(
                     ParseError(

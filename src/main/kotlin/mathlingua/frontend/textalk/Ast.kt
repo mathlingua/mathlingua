@@ -207,9 +207,6 @@ data class CommandPart(
             buffer.append(paren.toCode(interceptor))
         }
 
-        if (namedGroups.isNotEmpty()) {
-            buffer.append(":")
-        }
         for (namedGrp in namedGroups) {
             buffer.append(namedGrp.toCode(interceptor))
         }
@@ -413,6 +410,7 @@ data class NamedGroupTexTalkNode(val name: TextTexTalkNode, val groups: List<Gro
         }
 
         val buffer = StringBuilder()
+        buffer.append(":")
         buffer.append(name.toCode(interceptor))
         for (grp in groups) {
             buffer.append(grp.toCode(interceptor))

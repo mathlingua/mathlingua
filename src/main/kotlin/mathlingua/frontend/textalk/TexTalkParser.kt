@@ -285,13 +285,11 @@ private class TexTalkParserImpl : TexTalkParser {
 
             val paren = group(TexTalkNodeType.ParenGroup)
             val namedGroups = mutableListOf<NamedGroupTexTalkNode>()
-            if (has(TexTalkTokenType.Colon)) {
+            while (has(TexTalkTokenType.Colon)) {
                 expect(TexTalkTokenType.Colon) // absorb the colon
-                while (hasNext()) {
-                    val namedGrp = namedGroup()
-                    namedGrp ?: break
-                    namedGroups.add(namedGrp)
-                }
+                val namedGrp = namedGroup()
+                namedGrp ?: break
+                namedGroups.add(namedGrp)
             }
 
             return CommandPart(name!!, square, subSup, groups, paren, namedGroups)

@@ -21,6 +21,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.hasChild
+import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
@@ -43,12 +44,12 @@ internal fun normalize(node: Phase2Node, tracker: MutableLocationTracker): Phase
 }
 
 // replaces anything of the form `x is \a \b \c` as `x \a.b.c`
-internal fun normalize(node: TexTalkNode): TexTalkNode {
+internal fun normalize(node: TexTalkNode, location: Location): TexTalkNode {
     return node.transform {
         if (it is ExpressionTexTalkNode) {
             val allCmd = it.children.all { it is Command }
             if (allCmd) {
-                ExpressionTexTalkNode(children = getCommandsToGlue(it))
+                ExpressionTexTalkNode(children = getCommandsToGlue(it, location))
             } else {
                 it
             }
@@ -117,9 +118,10 @@ internal fun commaSeparateCompoundCommands(
                             it.texTalkRoot.value.transform { texTalkNode ->
                                 if (texTalkNode is IsTexTalkNode) {
                                     val newExpressions = mutableListOf<ExpressionTexTalkNode>()
+                                    val location = tracker.getLocationOf(root) ?: Location(-1, -1)
                                     for (exp in texTalkNode.rhs.items) {
                                         newExpressions.addAll(
-                                            getCommandsToGlue(exp).map { cmd ->
+                                            getCommandsToGlue(exp, location).map { cmd ->
                                                 ExpressionTexTalkNode(children = listOf(cmd))
                                             })
                                     }

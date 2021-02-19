@@ -30,6 +30,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.getId
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateRequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
@@ -51,6 +53,7 @@ data class StatesGroup(
     val signature: String?,
     val id: IdStatement,
     val statesSection: StatesSection,
+    val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
     val thatSection: ThatSection,
     override val usingSection: UsingSection?,
@@ -61,6 +64,9 @@ data class StatesGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(statesSection)
+        if (requiringSection != null) {
+            fn(requiringSection)
+        }
         if (whenSection != null) {
             fn(whenSection)
         }
@@ -77,7 +83,7 @@ data class StatesGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        val sections = mutableListOf(statesSection, whenSection)
+        val sections = mutableListOf(statesSection, requiringSection, whenSection)
         sections.add(thatSection)
         sections.add(usingSection)
         sections.add(writtenSection)
@@ -91,6 +97,8 @@ data class StatesGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 statesSection = statesSection.transform(chalkTransformer) as StatesSection,
+                requiringSection =
+                    requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 thatSection = chalkTransformer(thatSection) as ThatSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -109,7 +117,9 @@ fun validateStatesGroup(
                 group,
                 errors,
                 DEFAULT_STATES_GROUP,
-                listOf("States", "when?", "that", "using?", "written?", "Metadata?")) { sections ->
+                listOf(
+                    "States", "requiring?", "when?", "that", "using?", "written?", "Metadata?")) {
+            sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 StatesGroup(
                     signature = id.signature(),
@@ -117,6 +127,10 @@ fun validateStatesGroup(
                     statesSection =
                         ensureNonNull(sections["States"], DEFAULT_STATES_SECTION) {
                             validateStatesSection(it, errors, tracker)
+                        },
+                    requiringSection =
+                        ifNonNull(sections["requiring"]) {
+                            validateRequiringSection(it, errors, tracker)
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },

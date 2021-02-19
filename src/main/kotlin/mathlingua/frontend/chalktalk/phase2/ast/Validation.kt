@@ -489,11 +489,14 @@ val DEFAULT_MUTUALLY_GROUP =
     MutuallyGroup(
         mutuallySection = DEFAULT_MUTUALLY_SECTION, metaDataSection = DEFAULT_META_DATA_SECTION)
 
+val DEFAULT_REQUIRING_SECTION = RequiringSection(targets = listOf())
+
 val DEFAULT_STATES_GROUP =
     StatesGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         statesSection = DEFAULT_STATES_SECTION,
+        requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = DEFAULT_USING_SECTION,
@@ -520,8 +523,6 @@ val DEFAULT_CONJECTURE_SECTION = ConjectureSection(names = emptyList())
 val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
 val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
-
-val DEFAULT_REQUIRING_SECTION = RequiringSection(targets = listOf())
 
 val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
 

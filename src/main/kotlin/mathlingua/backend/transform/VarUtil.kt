@@ -194,6 +194,17 @@ private fun checkVarsImpl(
 ): List<String> {
     val varsToRemove = mutableSetOf<String>()
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
+    if (node is DefinesGroup) {
+        varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
+        varsToRemove.addAll(
+            checkDefineSectionVars(node.definesSection, vars, tracker, errors, ignoreParen))
+        if (node.requiringSection != null) {
+            varsToRemove.addAll(
+                checkRequiringSectionVars(
+                    node.requiringSection!!, vars, tracker, errors, ignoreParen))
+        }
+    }
+
     if (node is HasUsingSection && node.usingSection != null) {
         for (clause in node.usingSection!!.clauses.clauses) {
             val clauseLocation = tracker.getLocationOf(clause) ?: Location(-1, -1)
@@ -265,16 +276,6 @@ private fun checkVarsImpl(
         }
         is StatesGroup -> {
             varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
-        }
-        is DefinesGroup -> {
-            varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
-            varsToRemove.addAll(
-                checkDefineSectionVars(node.definesSection, vars, tracker, errors, ignoreParen))
-            if (node.requiringSection != null) {
-                varsToRemove.addAll(
-                    checkRequiresSectionVars(
-                        node.requiringSection!!, vars, tracker, errors, ignoreParen))
-            }
         }
         is TheoremGroup -> {
             if (node.givenSection != null) {
@@ -382,7 +383,7 @@ private fun checkDefineSectionVars(
     return givenVars
 }
 
-private fun checkRequiresSectionVars(
+private fun checkRequiringSectionVars(
     node: RequiringSection,
     vars: MutableSet<String>,
     tracker: LocationTracker,

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SINGLE_FROM_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEWED_AS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -28,30 +28,29 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class SingleFromSection(val statement: Statement) : Phase2Node {
+data class ViewedAsSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("from")
+        writer.writeHeader("as")
         writer.append(statement, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(
-            SingleFromSection(statement = statement.transform(chalkTransformer) as Statement))
+        chalkTransformer(ViewedAsSection(statement = chalkTransformer(statement) as Statement))
 }
 
-fun validateSingleFromSection(
+fun validateViewedAsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "from", DEFAULT_SINGLE_FROM_SECTION) { section ->
-            validateSingleArg(section, errors, DEFAULT_SINGLE_FROM_SECTION, "statement") {
-                SingleFromSection(statement = validateStatement(it, errors, tracker))
+        validateSection(node.resolve(), errors, "as", DEFAULT_VIEWED_AS_SECTION) {
+            validateSingleArg(it, errors, DEFAULT_VIEWED_AS_SECTION, "statement") {
+                ViewedAsSection(statement = validateStatement(it, errors, tracker))
             }
         }
     }

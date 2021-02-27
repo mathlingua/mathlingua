@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,38 +14,43 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEWS_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THROUGH_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.frontend.chalktalk.phase2.ast.track
-import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
+import mathlingua.frontend.chalktalk.phase2.ast.validateSection
+import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ViewsSection(val targets: List<Target>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
+data class ThroughSection(val statement: Statement) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(statement)
+    }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("Views")
-        appendTargetArgs(writer, targets, indent + 2)
+        writer.writeHeader("through")
+        writer.append(statement, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(
-            ViewsSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
+        chalkTransformer(ThroughSection(statement = chalkTransformer(statement) as Statement))
 }
 
-fun validateViewsSection(
+fun validateThroughSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateTargetSection(
-            node.resolve(), errors, "Views", DEFAULT_VIEWS_SECTION, tracker, ::ViewsSection)
+        validateSection(node.resolve(), errors, DEFAULT_THROUGH_SECTION) {
+            validateSingleArg(it, errors, DEFAULT_THROUGH_SECTION, "statement") {
+                ThroughSection(statement = validateStatement(it, errors, tracker))
+            }
+        }
     }

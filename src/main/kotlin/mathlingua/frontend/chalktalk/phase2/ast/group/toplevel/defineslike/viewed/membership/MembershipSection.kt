@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,44 +14,35 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SINGLE_TO_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MEMBERSHIP_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class SingleToSection(val clauses: ClauseListNode) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
+class MembershipSection : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("to")
-        writer.append(clauses, false, 1)
+        writer.writeHeader("membership")
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(
-            SingleToSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+        chalkTransformer(this)
 }
 
-fun validateSingleToSection(
+fun validateMembershipSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "to", DEFAULT_SINGLE_TO_SECTION) { section ->
-            validateSingleArg(section, errors, DEFAULT_SINGLE_TO_SECTION, "statement") {
-                SingleToSection(
-                    clauses =
-                        ClauseListNode(clauses = listOf(validateStatement(it, errors, tracker))))
-            }
+        validateSection(node.resolve(), errors, "membership", DEFAULT_MEMBERSHIP_SECTION) {
+            MembershipSection()
         }
     }

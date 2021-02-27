@@ -56,8 +56,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evalu
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.isViewsGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.validateViewsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership.isMembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership.validateMembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.isViewedAsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.validateViewedAsGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
@@ -74,6 +76,17 @@ fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     return if (sections.isEmpty()) {
         false
     } else sections[0].name.text == name
+}
+
+fun secondSectionMatchesName(node: Phase1Node, name: String): Boolean {
+    if (node !is Group) {
+        return false
+    }
+
+    val (sections) = node
+    return if (sections.size < 2) {
+        false
+    } else sections[1].name.text == name
 }
 
 fun sectionsMatchNames(node: Phase1Node, name1: String, name2: String): Boolean {
@@ -137,7 +150,8 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isEvaluatesGroup, ::validateEvaluatesGroup),
         ValidationPair(::isDefinesGroup, ::validateDefinesGroup),
         ValidationPair(::isStatesGroup, ::validateStatesGroup),
-        ValidationPair(::isViewsGroup, ::validateViewsGroup))
+        ValidationPair(::isMembershipGroup, ::validateMembershipGroup),
+        ValidationPair(::isViewedAsGroup, ::validateViewedAsGroup))
 
 fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

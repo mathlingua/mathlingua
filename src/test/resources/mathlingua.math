@@ -140,6 +140,21 @@ evaluated:
 written: "f3(x?)"
 
 
+[\semigroup]
+Defines: G := (X, *)
+means: 'G is \something'
+satisfying:
+. forAll: x, y, z
+  where: 'x, y, z in X'
+  then: '(x*y)*z = x*(y*z)'
+viewed:
+. as: '\set'
+  via: 'X'
+. membership:
+  through: 'X'
+written: "\textrm{semigroup}"
+
+
 [\some.thing{A}:on{B}:to{C}]
 States:
 when: 'A, B, C is \something'
@@ -177,13 +192,6 @@ Mutually:
   means: 'Y is \Y'
   satisfying: 'Y is \X'
   written: "Y?"
-
-
-[\group.to.set]
-Views: G := (X, *)
-from: '\group'
-to: '\set'
-as: 'X'
 
 
 [x + y]

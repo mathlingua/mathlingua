@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SINGLE_AS_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIA_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -28,30 +28,29 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class SingleAsSection(val statement: Statement) : Phase2Node {
+data class ViaSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("as")
+        writer.writeHeader("via")
         writer.append(statement, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(
-            SingleAsSection(statement = statement.transform(chalkTransformer) as Statement))
+        chalkTransformer(ViaSection(statement = chalkTransformer(statement) as Statement))
 }
 
-fun validateSingleAsSection(
+fun validateViaSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "as", DEFAULT_SINGLE_AS_SECTION) { section ->
-            validateSingleArg(section, errors, DEFAULT_SINGLE_AS_SECTION, "statement") {
-                SingleAsSection(statement = validateStatement(it, errors, tracker))
+        validateSection(node.resolve(), errors, "via", DEFAULT_VIA_SECTION) {
+            validateSingleArg(it, errors, DEFAULT_VIA_SECTION, "statement") {
+                ViaSection(statement = validateStatement(it, errors, tracker))
             }
         }
     }

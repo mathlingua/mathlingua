@@ -30,6 +30,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getId
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.ViewedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.validateViewedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
@@ -53,6 +55,7 @@ data class DefinesMapsGroup(
     val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val mapsSection: MapsSection,
+    override val viewedSection: ViewedSection?,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
     override val metaDataSection: MetaDataSection?
@@ -71,6 +74,9 @@ data class DefinesMapsGroup(
             fn(meansSection)
         }
         fn(mapsSection)
+        if (viewedSection != null) {
+            fn(viewedSection)
+        }
         if (usingSection != null) {
             fn(usingSection)
         }
@@ -88,6 +94,8 @@ data class DefinesMapsGroup(
                 whenSection,
                 meansSection,
                 mapsSection,
+                viewedSection,
+                usingSection,
                 writtenSection,
                 metaDataSection)
         return topLevelToCode(writer, isArg, indent, id, *sections.toTypedArray())
@@ -104,6 +112,7 @@ data class DefinesMapsGroup(
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 mapsSection = mapsSection.transform(chalkTransformer) as MapsSection,
+                viewedSection = viewedSection?.transform(chalkTransformer) as ViewedSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
@@ -126,6 +135,7 @@ fun validateDefinesMapsGroup(
                     "when?",
                     "means?",
                     "maps",
+                    "viewed?",
                     "using?",
                     "written",
                     "Metadata?")) { sections ->
@@ -148,6 +158,10 @@ fun validateDefinesMapsGroup(
                     mapsSection =
                         ensureNonNull(sections["maps"], DEFAULT_MAPS_SECTION) {
                             validateMapsSection(it, errors, tracker)
+                        },
+                    viewedSection =
+                        ifNonNull(sections["viewed"]) {
+                            validateViewedSection(it, errors, tracker)
                         },
                     usingSection =
                         ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },

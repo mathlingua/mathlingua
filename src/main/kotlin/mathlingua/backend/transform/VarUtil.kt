@@ -35,7 +35,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.ViewsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
@@ -269,9 +268,6 @@ private fun checkVarsImpl(
 
     when (node) {
         is EvaluatesGroup -> {
-            varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
-        }
-        is ViewsGroup -> {
             varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
         }
         is StatesGroup -> {

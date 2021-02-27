@@ -42,7 +42,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.views.ViewsGroup
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
@@ -111,7 +110,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     private val allGroups = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<DefinesGroup>>()
     private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
-    private val viewsGroups = mutableListOf<ValueSourceTracker<ViewsGroup>>()
     private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
     private val mutuallyGroups = mutableListOf<ValueSourceTracker<MutuallyGroup>>()
     private val patternsToWrittenAs: Map<OperatorTexTalkNode, String>
@@ -140,14 +138,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                             source = sf,
                             tracker = validation.value.tracker,
                             value = normalize(it, validation.value.tracker) as StatesGroup)
-                    })
-
-                viewsGroups.addAll(
-                    validation.value.document.views().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as ViewsGroup)
                     })
 
                 foundationGroups.addAll(
@@ -260,22 +250,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         }
 
-        fun processViews(pair: ValueSourceTracker<ViewsGroup>) {
-            val signature = pair.value.signature
-            if (signature != null) {
-                val vst =
-                    ValueSourceTracker(
-                        source = pair.source,
-                        tracker = pair.tracker,
-                        value =
-                            Signature(
-                                form = signature,
-                                location = pair.tracker?.getLocationOf(pair.value)
-                                        ?: Location(row = -1, column = -1)))
-                result.add(Pair(vst, pair.value))
-            }
-        }
-
         for (pair in foundationGroups) {
             when (val item = pair.value.foundationSection.content
             ) {
@@ -287,15 +261,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     processStates(
                         ValueSourceTracker(
                             value = item, source = pair.source, tracker = pair.tracker))
-                is ViewsGroup ->
-                    processViews(
-                        ValueSourceTracker(
-                            value = item, source = pair.source, tracker = pair.tracker))
             }
-        }
-
-        for (pair in viewsGroups) {
-            processViews(pair)
         }
 
         for (pair in definesGroups) {
@@ -514,13 +480,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                             .map { it.foundationSection.content }
                             .filterIsInstance<DefinesGroup>())
 
-                    val allViews = mutableListOf<ViewsGroup>()
-                    allViews.addAll(doc.views())
-                    allViews.addAll(
-                        foundations
-                            .map { it.foundationSection.content }
-                            .filterIsInstance<ViewsGroup>())
-
                     val allStates = mutableListOf<StatesGroup>()
                     allStates.addAll(doc.states())
                     allStates.addAll(
@@ -530,7 +489,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
 
                     val allSigRoot = mutableListOf<Validation<TexTalkNode>>()
                     allSigRoot.addAll(allDefines.map { it.id.texTalkRoot })
-                    allSigRoot.addAll(allViews.map { it.id.texTalkRoot })
                     allSigRoot.addAll(allStates.map { it.id.texTalkRoot })
 
                     for (vald in allSigRoot) {

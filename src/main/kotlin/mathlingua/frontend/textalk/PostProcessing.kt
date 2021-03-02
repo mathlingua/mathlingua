@@ -278,13 +278,39 @@ private fun identifyIdentifierFunctionCalls(root: TexTalkNode) =
         }
     } as ExpressionTexTalkNode
 
-private fun isSpecialOperator(node: TexTalkNode?) =
-    node != null &&
+private fun isSpecialOperator(node: TexTalkNode?) = getCommandOperatorSymbolText(node) != null
+
+private fun getCommandOperatorSymbolText(node: TexTalkNode?): String? {
+    return if (node != null &&
         node is TextTexTalkNode &&
         (node.tokenType == TexTalkTokenType.Operator ||
             node.tokenType == TexTalkTokenType.Caret ||
             node.tokenType == TexTalkTokenType.Underscore ||
-            node.tokenType == TexTalkTokenType.DotDotDot)
+            node.tokenType == TexTalkTokenType.DotDotDot)) {
+        node.text
+    } else if (node != null &&
+        node is Command &&
+        node.parts.isNotEmpty() &&
+        isOperatorText(node.parts.last().name.text)) {
+        node.parts.last().name.text
+    } else {
+        null
+    }
+}
+
+private fun isOperatorText(name: String): Boolean {
+    if (name.isEmpty()) {
+        return false
+    }
+
+    for (i in name.indices) {
+        if (!isOpChar(name[i])) {
+            return false
+        }
+    }
+
+    return true
+}
 
 private fun identifySpecialPrefixOperators(
     root: ExpressionTexTalkNode, isNodeRhsExpressions: Set<ExpressionTexTalkNode>
@@ -489,7 +515,7 @@ private fun getPrecedence(op: String): Int {
 
 private fun getPrecedence(node: TexTalkNode) =
     when {
-        isSpecialOperator(node) -> getPrecedence((node as TextTexTalkNode).text)
+        isSpecialOperator(node) -> getPrecedence(getCommandOperatorSymbolText(node)!!)
         else ->
             throw ParseException(
                 ParseError(
@@ -501,7 +527,7 @@ private fun getPrecedence(node: TexTalkNode) =
 private fun getAssociativity(node: TexTalkNode) =
     when {
         isSpecialOperator(node) -> {
-            val op = (node as TextTexTalkNode).text
+            val op = getCommandOperatorSymbolText(node)
             when {
                 (op == "+" || op == "-" || op == "*" || op == "/" || op == "_") ->
                     Associativity.Left

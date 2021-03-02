@@ -207,19 +207,19 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
         return builder.toString()
     }
 
-    private fun isOpChar(c: Char) =
-        (c == '!' ||
-            c == '@' ||
-            c == '%' ||
-            c == '&' ||
-            c == '*' ||
-            c == '-' ||
-            c == '+' ||
-            c == '=' ||
-            c == '|' ||
-            c == '/' ||
-            c == '<' ||
-            c == '>')
-
     private fun isIdentifierChar(c: Char) = Regex("[$#a-zA-Z0-9]+").matches("$c")
 }
+
+fun isOpChar(c: Char) =
+    (c == '!' ||
+        c == '@' ||
+        c == '%' ||
+        c == '&' ||
+        c == '*' ||
+        c == '-' ||
+        c == '+' ||
+        c == '=' ||
+        c == '|' ||
+        c == '/' ||
+        c == '<' ||
+        c == '>')

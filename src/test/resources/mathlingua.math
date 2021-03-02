@@ -142,7 +142,9 @@ written: "f3(x?)"
 
 [\semigroup]
 Defines: G := (X, *)
-means: 'G is \something'
+means:
+. 'X is \set'
+. '* is \binary.operation:on{X}'
 satisfying:
 . forAll: x, y, z
   where: 'x, y, z in X'

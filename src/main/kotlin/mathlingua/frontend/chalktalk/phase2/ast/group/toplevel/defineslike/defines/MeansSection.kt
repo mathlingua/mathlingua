@@ -17,8 +17,6 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MEANS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
@@ -52,17 +50,6 @@ fun validateMeansSection(
 ) =
     track(node, tracker) {
         validateSection(node.resolve(), errors, "means", DEFAULT_MEANS_SECTION) {
-            if (it.args.size != 1) {
-                errors.add(
-                    ParseError(
-                        message =
-                            "A 'means:' section must have exactly one " +
-                                "statement but found ${it.args.size}",
-                        row = getRow(node),
-                        column = getColumn(node)))
-                DEFAULT_MEANS_SECTION
-            } else {
-                MeansSection(clauses = validateClauseListNode(it, errors, tracker))
-            }
+            MeansSection(clauses = validateClauseListNode(it, errors, tracker))
         }
     }

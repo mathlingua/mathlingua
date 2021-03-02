@@ -179,8 +179,9 @@ import mathlingua.frontend.support.ParseError
 
 internal fun parseOperators(root: ExpressionTexTalkNode): TexTalkParseResult {
     try {
-        val isRhsExpressions = findIsRhsExpressions(root)
-        val funcCallRoot = identifyIdentifierFunctionCalls(root)
+        val isOpToNameRoot = isLhsOperatorToName(root)
+        val isRhsExpressions = findIsRhsExpressions(isOpToNameRoot)
+        val funcCallRoot = identifyIdentifierFunctionCalls(isOpToNameRoot)
         val idPrefixOpRoot = identifySpecialPrefixOperators(funcCallRoot, isRhsExpressions)
         val idPostfixOpRoot = identifySpecialPostfixOperators(idPrefixOpRoot, isRhsExpressions)
         val idInfixOpRoot = identifyInfixCommandOperators(idPostfixOpRoot, isRhsExpressions)
@@ -196,9 +197,37 @@ internal fun parseOperators(root: ExpressionTexTalkNode): TexTalkParseResult {
 
 // -----------------------------------------------------------------------------
 
+// updates statements of the form `* is \something` so that the `*` is marked
+// as an identifier instead of an operator
+private fun isLhsOperatorToName(root: ExpressionTexTalkNode) =
+    root.transform {
+        if (it is IsTexTalkNode) {
+            val lhs = mutableListOf<ExpressionTexTalkNode>()
+            for (left in it.lhs.items) {
+                if (left.children.size == 1 &&
+                    left.children[0] is TextTexTalkNode &&
+                    (left.children[0] as TextTexTalkNode).tokenType == TexTalkTokenType.Operator) {
+                    val op = left.children[0] as TextTexTalkNode
+                    lhs.add(
+                        ExpressionTexTalkNode(
+                            children =
+                                listOf(
+                                    op.copy(
+                                        type = TexTalkNodeType.Identifier,
+                                        tokenType = TexTalkTokenType.Identifier))))
+                } else {
+                    lhs.add(left)
+                }
+            }
+            IsTexTalkNode(lhs = ParametersTexTalkNode(items = lhs), rhs = it.rhs)
+        } else {
+            it
+        }
+    }
+
 private class ParseException(val parseError: ParseError) : Exception(parseError.message)
 
-private fun findIsRhsExpressions(root: ExpressionTexTalkNode): Set<ExpressionTexTalkNode> {
+private fun findIsRhsExpressions(root: TexTalkNode): Set<ExpressionTexTalkNode> {
     val result = mutableSetOf<ExpressionTexTalkNode>()
     findIsRhsExpressionsImpl(root, result)
     return result
@@ -212,7 +241,7 @@ private fun findIsRhsExpressionsImpl(node: TexTalkNode, result: MutableSet<Expre
     node.forEach { findIsRhsExpressionsImpl(it, result) }
 }
 
-private fun identifyIdentifierFunctionCalls(root: ExpressionTexTalkNode) =
+private fun identifyIdentifierFunctionCalls(root: TexTalkNode) =
     root.transform {
         if (it is ExpressionTexTalkNode) {
             val newChildren = mutableListOf<TexTalkNode>()

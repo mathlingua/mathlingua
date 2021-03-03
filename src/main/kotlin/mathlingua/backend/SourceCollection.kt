@@ -118,6 +118,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         for (sf in sources) {
             if (sf.file != null) {
                 sourceFiles[sf.file.normalize().canonicalPath] = sf
+            } else {
+                sourceFiles[sf.content] = sf
             }
         }
 

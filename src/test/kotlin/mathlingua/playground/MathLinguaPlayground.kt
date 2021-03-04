@@ -22,6 +22,7 @@ import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
 import java.io.File
+import java.io.IOException
 import java.lang.StringBuilder
 import javax.swing.JButton
 import javax.swing.JFrame
@@ -37,6 +38,19 @@ import mathlingua.backend.newSourceCollectionFromContent
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
+
+val STATE_FILE = File(System.getProperty("user.home"), ".mathlingua_playground")
+
+fun saveState(text: String) {
+    STATE_FILE.writeText(text)
+}
+
+fun readState() =
+    try {
+        STATE_FILE.readText()
+    } catch (e: IOException) {
+        ""
+    }
 
 fun main() {
     // enable sub-pixel antialiasing
@@ -69,6 +83,7 @@ fun main() {
     inputArea.highlightCurrentLine = false
     inputArea.font = font
     inputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
+    inputArea.text = readState()
 
     fun processInput() {
         SwingUtilities.invokeLater {
@@ -107,6 +122,8 @@ fun main() {
             override fun keyTyped(keyEvent: KeyEvent) {}
 
             override fun keyReleased(keyEvent: KeyEvent) {
+                saveState(inputArea.text)
+
                 if (!keyEvent.isShiftDown || keyEvent.keyCode != KeyEvent.VK_ENTER) {
                     return
                 }

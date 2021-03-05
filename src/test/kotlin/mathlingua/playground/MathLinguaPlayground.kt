@@ -25,6 +25,7 @@ import java.io.File
 import java.io.IOException
 import java.lang.StringBuilder
 import javax.swing.JButton
+import javax.swing.JCheckBox
 import javax.swing.JFrame
 import javax.swing.JPanel
 import javax.swing.JScrollPane
@@ -85,6 +86,8 @@ fun main() {
     inputArea.syntaxScheme.getStyle(org.fife.ui.rsyntaxtextarea.Token.IDENTIFIER).font = boldFont
     inputArea.text = readState()
 
+    val expandButton = JCheckBox("Expand", true)
+
     fun processInput() {
         SwingUtilities.invokeLater {
             val collection = newSourceCollectionFromContent(listOf(inputArea.text))
@@ -94,8 +97,10 @@ fun main() {
                 builder.append("${err.value.message} (${err.value.row+1}, ${err.value.column+1})\n")
             }
 
+            val expand = expandButton.isSelected
+
             val htmlPair =
-                collection.prettyPrint(input = inputArea.text, html = true, doExpand = false)
+                collection.prettyPrint(input = inputArea.text, html = true, doExpand = expand)
 
             val homeDir = File(System.getProperty("user.home"))
             val outputFile = File(homeDir, "mathlingua-playground.html")
@@ -107,7 +112,7 @@ fun main() {
             }
 
             val inputPair =
-                collection.prettyPrint(input = inputArea.text, html = false, doExpand = false)
+                collection.prettyPrint(input = inputArea.text, html = false, doExpand = expand)
             outputArea.text = inputPair.first
             for (err in inputPair.second) {
                 builder.append("${err.message} (${err.row+1}, ${err.column+1})\n")
@@ -134,11 +139,12 @@ fun main() {
             override fun keyPressed(keyEvent: KeyEvent) {}
         })
 
-    val parseButton = JButton("Parse")
-    parseButton.addActionListener { processInput() }
+    val checkButton = JButton("check")
+    checkButton.addActionListener { processInput() }
 
     val bottomPanel = JPanel(FlowLayout(FlowLayout.CENTER))
-    bottomPanel.add(parseButton)
+    bottomPanel.add(checkButton)
+    bottomPanel.add(expandButton)
 
     val inputSplitPane = JSplitPane(JSplitPane.HORIZONTAL_SPLIT)
     inputSplitPane.leftComponent = RTextScrollPane(inputArea)

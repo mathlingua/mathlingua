@@ -157,12 +157,17 @@ open class HtmlCodeWriter(
         builder.append("</span>")
     }
 
+    private fun newlinesToHtml(text: String) =
+        text.replace(Regex("[\r\n][\r\n]+"), "<br/></br>&nbsp;&nbsp;&nbsp;")
+
     override fun writeText(text: String) {
+        val textWithBreaks = newlinesToHtml(text)
         if (shouldExpand()) {
             val expansion =
-                expandTextAsWritten(text, false, defines, states, foundations, mutuallyGroups)
+                expandTextAsWritten(
+                    textWithBreaks, false, defines, states, foundations, mutuallyGroups)
             val title =
-                text +
+                textWithBreaks +
                     if (expansion.errors.isNotEmpty()) {
                             "\n\nWarning:\n" + expansion.errors.joinToString("\n\n")
                         } else {
@@ -170,11 +175,11 @@ open class HtmlCodeWriter(
                         }
                         .removeSurrounding("\"", "\"")
             builder.append("<span class='mathlingua-text' title=\"$title\">")
-            builder.append((expansion.text ?: text).replace("?", ""))
+            builder.append(newlinesToHtml(expansion.text ?: textWithBreaks).replace("?", ""))
             builder.append("</span>")
         } else {
             builder.append("<span class='mathlingua-text-no-render'>")
-            builder.append("\"${text}\"")
+            builder.append(textWithBreaks)
             builder.append("</span>")
         }
     }
@@ -279,7 +284,7 @@ open class HtmlCodeWriter(
             builder.append("</span>")
         } else {
             builder.append("<span class='mathlingua-statement-no-render'>")
-            builder.append("'$stmtText'")
+            builder.append(stmtText)
             builder.append("</span>")
         }
     }

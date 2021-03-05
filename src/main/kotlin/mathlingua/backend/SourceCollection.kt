@@ -971,7 +971,7 @@ private fun getHtml(body: String) =
             }
 
             .katex {
-                font-size: 0.75em;
+                font-size: 0.9em;
             }
 
             .katex-display {

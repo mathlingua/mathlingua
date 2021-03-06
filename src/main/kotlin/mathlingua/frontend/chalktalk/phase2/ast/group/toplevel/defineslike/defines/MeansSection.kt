@@ -33,10 +33,20 @@ data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("means")
-        if (clauses.clauses.isNotEmpty()) {
-            writer.writeNewline()
+        // A single means entry should be printed on the same line. That is,
+        //   means: '...'
+        // instead of
+        //   means:
+        //   . '...'
+        //
+        if (clauses.clauses.size == 1) {
+            writer.append(clauses.clauses[0], false, 1)
+        } else {
+            if (clauses.clauses.isNotEmpty()) {
+                writer.writeNewline()
+            }
+            writer.append(clauses, true, indent + 2)
         }
-        writer.append(clauses, true, indent + 2)
         return writer
     }
 

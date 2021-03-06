@@ -286,8 +286,14 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 val startColumn = column
                 var str = "" + c
                 while (i < text.length && text[i] != '"') {
-                    str += text[i++]
-                    column++
+                    val cur = text[i++]
+                    str += cur
+                    if (cur == '\n' || cur == '\r') {
+                        line++
+                        column = 0
+                    } else {
+                        column++
+                    }
                 }
                 if (i == text.length) {
                     errors.add(ParseError("Expected a terminating \"", line, column))
@@ -304,8 +310,14 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 val startColumn = column
                 var stmt = "" + c
                 while (i < text.length && text[i] != '\'') {
-                    stmt += text[i++]
-                    column++
+                    val cur = text[i++]
+                    stmt += cur
+                    if (cur == '\n' || cur == '\r') {
+                        line++
+                        column = 0
+                    } else {
+                        column++
+                    }
                 }
                 if (i == text.length) {
                     errors.add(ParseError("Expected a terminating '", line, column))

@@ -157,8 +157,7 @@ open class HtmlCodeWriter(
         builder.append("</span>")
     }
 
-    private fun newlinesToHtml(text: String) =
-        text.replace(Regex("[\r\n][\r\n]+"), "<br/></br>&nbsp;&nbsp;&nbsp;")
+    private fun newlinesToHtml(text: String) = text.replace(Regex("[\r\n][\r\n]+"), "<br/></br>")
 
     override fun writeText(text: String) {
         val textWithBreaks = newlinesToHtml(text)

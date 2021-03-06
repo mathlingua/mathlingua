@@ -960,10 +960,16 @@ private fun getHtml(body: String) =
 
             .mathlingua-text {
                 color: #007700;
+                display: block;
+                margin: 0 0 -1.5em 0;
+                padding: 0 0 0 2.5em;
             }
 
             .mathlingua-text-no-render {
                 color: #007700;
+                display: block;
+                margin: 0 0 -1.5em 0;
+                padding: 0 0 0 2.5em;
             }
 
             .mathlingua-statement-no-render {

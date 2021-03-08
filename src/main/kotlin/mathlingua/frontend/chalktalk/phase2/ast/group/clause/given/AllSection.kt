@@ -35,7 +35,7 @@ data class AllSection(val statement: Statement) : Phase2Node {
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("where")
+        writer.writeHeader("all")
         writer.append(statement, false, 1)
         return writer
     }

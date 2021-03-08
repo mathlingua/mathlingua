@@ -27,7 +27,6 @@ abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase
 fun topLevelToCode(
     writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?
 ): CodeWriter {
-    writer.beginTopLevel()
     var useAsArg = isArg
     if (id != null) {
         writer.writeIndent(isArg, indent)
@@ -45,7 +44,6 @@ fun topLevelToCode(
             writer.writeNewline()
         }
     }
-    writer.endTopLevel()
 
     return writer
 }

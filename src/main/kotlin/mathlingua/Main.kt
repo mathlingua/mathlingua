@@ -343,6 +343,10 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
 <html>
     <head>
         <style>
+            body {
+                background-color: #f7f7f7;
+            }
+
             .sidebar {
                 height: 100%;
                 width: 15%;
@@ -350,7 +354,10 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                 z-index: 1;
                 top: 0;
                 left: 0;
-                background-color: #f0f0f0;
+                background-color: #ffffff;
+                border-right: solid;
+                border-width: 1px;
+                border-color: #dddddd;
                 overflow-x: scroll;
                 padding-top: 50px;
                 transition: 0.5s;

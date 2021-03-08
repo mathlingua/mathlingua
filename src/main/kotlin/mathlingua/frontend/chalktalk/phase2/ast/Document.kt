@@ -78,7 +78,9 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         for (grp in groups) {
+            writer.beginTopLevel()
             writer.append(grp, false, 0)
+            writer.endTopLevel()
             writer.writeNewline(3)
         }
         return writer

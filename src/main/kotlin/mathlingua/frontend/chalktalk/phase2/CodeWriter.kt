@@ -302,12 +302,12 @@ open class HtmlCodeWriter(
     }
 
     override fun beginTopLevel() {
-        builder.append("<span class='mathlingua-top-level'>")
+        builder.append("<div class='mathlingua-top-level'>")
     }
 
     override fun endTopLevel() {
-        builder.append("</span>")
-        builder.append("<span class='end-mathlingua-top-level'/>")
+        builder.append("</div>")
+        builder.append("<div class='end-mathlingua-top-level'></div>")
     }
 
     override fun newCodeWriter(

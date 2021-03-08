@@ -938,13 +938,31 @@ private fun getHtml(body: String) =
                 font-size: 1em;
             }
 
+            body {
+                background-color: #fafafa;
+            }
+
+            .mathlingua-top-level {
+                background-color: white;
+                border: solid;
+                border-width: 1px;
+                border-color: #dddddd;
+                border-radius: 2px;
+                padding-top: 1em;
+                padding-bottom: 1em;
+                padding-left: 1em;
+                padding-right: 1em;
+                width: max-content;
+                max-width: 90%;
+            }
+
             .mathlingua {
                 font-family: monospace;
             }
 
             .mathlingua-header {
-                font-weight: bold;
                 color: #0055bb;
+                text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
             }
 
             .mathlingua-whitespace {
@@ -954,21 +972,20 @@ private fun getHtml(body: String) =
             }
 
             .mathlingua-id {
-                font-weight: bold;
                 color: #5500aa;
             }
 
             .mathlingua-text {
                 color: #007700;
                 display: block;
-                margin: 0 0 -1.5em 0;
+                margin: 0 0 -1em 0;
                 padding: 0 0 0 2.5em;
             }
 
             .mathlingua-text-no-render {
                 color: #007700;
                 display: block;
-                margin: 0 0 -1.5em 0;
+                margin: 0 0 -1em 0;
                 padding: 0 0 0 2.5em;
             }
 

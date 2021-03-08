@@ -27,7 +27,10 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.choice
 import java.io.File
 import java.lang.IllegalArgumentException
+import java.nio.file.FileSystems
 import java.nio.file.Paths
+import java.nio.file.StandardWatchEventKinds
+import java.nio.file.WatchService
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 import mathlingua.backend.BackEnd
@@ -105,6 +108,193 @@ private class Version : CliktCommand(help = "Prints the tool and MathLingua lang
     }
 }
 
+private fun write(cwd: File, content: String, outFile: File, stdout: Boolean) {
+    if (stdout) {
+        log(content)
+    } else {
+        val parent = outFile.parentFile
+        if (!parent.exists()) {
+            parent.mkdirs()
+        }
+        outFile.writeText(content)
+        log("Wrote ${outFile.normalize().relativePath(cwd)}")
+    }
+}
+
+private fun buildFileList(
+    cwd: File, file: File, indent: Int, builder: StringBuilder, firstSrc: Array<String>
+) {
+    val childBuilder = StringBuilder()
+    if (file.isDirectory) {
+        val children = file.listFiles()
+        if (children != null) {
+            for (child in children) {
+                buildFileList(cwd, child, indent + 12, childBuilder, firstSrc)
+            }
+        }
+    }
+
+    val isMathFile = file.isFile && file.extension == "math"
+    if ((file.isDirectory && childBuilder.isNotEmpty()) || isMathFile) {
+        val src = file.relativePath(cwd).replace(".math", ".html")
+        if (isMathFile && firstSrc[0].isEmpty()) {
+            firstSrc[0] = src
+        }
+        val cssBuilder = StringBuilder()
+        cssBuilder.append("padding-left: ${indent}px;")
+        if (file.isDirectory) {
+            cssBuilder.append("font-weight: bold;")
+        }
+        builder.append(
+            "<a onclick=\"view('$src')\"><span style=\"${cssBuilder}\">${file.name.removeSuffix(".math")}</span></a>")
+        builder.append(childBuilder.toString())
+    }
+}
+
+private fun writeIndexFile(cwd: File, docsDir: File): File {
+    val firstSrc = arrayOf("")
+    val builder = StringBuilder()
+    if (cwd.isDirectory) {
+        val children = cwd.listFiles()
+        if (children != null) {
+            for (child in children) {
+                buildFileList(cwd, child, 0, builder, firstSrc)
+            }
+        }
+    }
+    val html = getIndexHtml(builder.toString(), firstSrc[0])
+    val indexFile = File(docsDir, "index.html")
+    indexFile.writeText(html)
+    return indexFile
+}
+
+private fun render(
+    files: List<String>, format: String, stdout: Boolean, noexpand: Boolean
+): List<ValueSourceTracker<ParseError>> {
+    val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+    val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
+    val filesToProcess = mutableListOf<File>()
+    val inputFiles =
+        if (files.isEmpty()) {
+            listOf(cwd)
+        } else {
+            files.map { File(it) }
+        }
+    for (f in inputFiles) {
+        if (f.isDirectory) {
+            filesToProcess.addAll(f.walk().filter { isMathLinguaFile(it) })
+        } else if (isMathLinguaFile(f)) {
+            filesToProcess.add(f)
+        }
+    }
+
+    val docsDir = getDocsDirectory()
+    docsDir.mkdirs()
+
+    val html = format == "html"
+    if (html && !stdout) {
+        val indexFile = writeIndexFile(cwd, docsDir)
+        log("Wrote ${indexFile.relativeTo(cwd)}")
+    }
+
+    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+    for (f in filesToProcess) {
+        val pair = sourceCollection.prettyPrint(file = f, html = html, doExpand = !noexpand)
+        errors.addAll(
+            pair.second.map {
+                ValueSourceTracker(
+                    value = it,
+                    source =
+                        SourceFile(
+                            file = f, content = "", validation = validationFailure(emptyList())),
+                    tracker = null)
+            })
+        val ext =
+            if (html) {
+                ".html"
+            } else {
+                ".out.math"
+            }
+        val docRelFile = File(docsDir, f.relativePath(cwd))
+        val docRelParent = docRelFile.parentFile
+        val docRelName = docRelFile.nameWithoutExtension + ext
+        val outFile = File(docRelParent, docRelName)
+        write(cwd = cwd, content = pair.first, outFile = outFile, stdout = stdout)
+    }
+
+    if (!stdout) {
+        log(getErrorOutput(errors, sourceCollection.size(), false))
+    }
+
+    return errors
+}
+
+private class Watch :
+    CliktCommand("Watches the working directory for changes and renders the code on file changes") {
+
+    private fun isHidden(file: File): Boolean {
+        if (file.name.startsWith(".")) {
+            return true
+        }
+
+        val parent = file.parentFile ?: return false
+        return isHidden(parent)
+    }
+
+    override fun run(): Unit =
+        runBlocking {
+            fun registerAll(file: File, watchService: WatchService) {
+                if (file.isDirectory) {
+                    file.walk().forEach {
+                        val path = it.toPath()
+                        if (it.isDirectory && !isHidden(it)) {
+                            path.register(
+                                watchService,
+                                StandardWatchEventKinds.ENTRY_CREATE,
+                                StandardWatchEventKinds.ENTRY_DELETE,
+                                StandardWatchEventKinds.ENTRY_MODIFY)
+                        }
+                    }
+                }
+            }
+
+            var watchService = FileSystems.getDefault().newWatchService()
+            val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+            registerAll(cwd, watchService)
+
+            log("Waiting for changes...")
+            while (true) {
+                var doRender = false
+                val watchKey = watchService.take()
+                for (event in watchKey.pollEvents()) {
+                    val filename = event.context().toString()
+                    if (!filename.endsWith(".html")) {
+                        doRender = true
+                    }
+                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE ||
+                        event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
+                        watchService.close()
+                        watchService = FileSystems.getDefault().newWatchService()
+                        registerAll(cwd, watchService)
+                    }
+                }
+
+                if (doRender) {
+                    log("Change detected...")
+                    render(
+                        files = listOf(cwd.absolutePath),
+                        format = "html",
+                        stdout = false,
+                        noexpand = false)
+                    println()
+                    println()
+                }
+
+                watchKey.reset()
+            }
+        }
+}
+
 private class Render :
     CliktCommand("Generates either HTML or MathLingua code with definitions expanded.") {
     private val file: List<String> by argument(
@@ -125,63 +315,7 @@ private class Render :
 
     override fun run(): Unit =
         runBlocking {
-            val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-            val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
-            val filesToProcess = mutableListOf<File>()
-            val inputFiles =
-                if (file.isEmpty()) {
-                    listOf(cwd)
-                } else {
-                    file.map { File(it) }
-                }
-            for (f in inputFiles) {
-                if (f.isDirectory) {
-                    filesToProcess.addAll(f.walk().filter { isMathLinguaFile(it) })
-                } else if (isMathLinguaFile(f)) {
-                    filesToProcess.add(f)
-                }
-            }
-
-            val docsDir = getDocsDirectory()
-            docsDir.mkdirs()
-
-            val html = format == "html"
-            if (html && !stdout) {
-                val indexFile = writeIndexFile(cwd, docsDir)
-                log("Wrote ${indexFile.relativeTo(cwd)}")
-            }
-
-            val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-            for (f in filesToProcess) {
-                val pair = sourceCollection.prettyPrint(file = f, html = html, doExpand = !noexpand)
-                errors.addAll(
-                    pair.second.map {
-                        ValueSourceTracker(
-                            value = it,
-                            source =
-                                SourceFile(
-                                    file = f,
-                                    content = "",
-                                    validation = validationFailure(emptyList())),
-                            tracker = null)
-                    })
-                val ext =
-                    if (html) {
-                        ".html"
-                    } else {
-                        ".out.math"
-                    }
-                val docRelFile = File(docsDir, f.relativePath(cwd))
-                val docRelParent = docRelFile.parentFile
-                val docRelName = docRelFile.nameWithoutExtension + ext
-                val outFile = File(docRelParent, docRelName)
-                write(cwd = cwd, content = pair.first, outFile = outFile, stdout = stdout)
-            }
-
-            if (!stdout) {
-                log(getErrorOutput(errors, sourceCollection.size(), false))
-            }
-
+            val errors = render(files = file, format = format, stdout = stdout, noexpand = noexpand)
             exitProcess(
                 if (errors.isEmpty()) {
                     0
@@ -189,61 +323,6 @@ private class Render :
                     1
                 })
         }
-
-    private fun write(cwd: File, content: String, outFile: File, stdout: Boolean) {
-        if (stdout) {
-            log(content)
-        } else {
-            val parent = outFile.parentFile
-            if (!parent.exists()) {
-                parent.mkdirs()
-            }
-            outFile.writeText(content)
-            log("Wrote ${outFile.normalize().relativePath(cwd)}")
-        }
-    }
-
-    private fun writeIndexFile(cwd: File, docsDir: File): File {
-        val firstSrc = arrayOf("")
-        val builder = StringBuilder()
-        if (cwd.isDirectory) {
-            val children = cwd.listFiles()
-            if (children != null) {
-                for (child in children) {
-                    buildFileList(cwd, child, 0, builder, firstSrc)
-                }
-            }
-        }
-        val html = getIndexHtml(builder.toString(), firstSrc[0])
-        val indexFile = File(docsDir, "index.html")
-        indexFile.writeText(html)
-        return indexFile
-    }
-
-    private fun buildFileList(
-        cwd: File, file: File, indent: Int, builder: StringBuilder, firstSrc: Array<String>
-    ) {
-        val childBuilder = StringBuilder()
-        if (file.isDirectory) {
-            val children = file.listFiles()
-            if (children != null) {
-                for (child in children) {
-                    buildFileList(cwd, child, indent + 12, childBuilder, firstSrc)
-                }
-            }
-        }
-
-        val isMathFile = file.isFile && file.extension == "math"
-        if ((file.isDirectory && childBuilder.isNotEmpty()) || isMathFile) {
-            val src = file.relativePath(cwd).replace(".math", ".html")
-            if (isMathFile && firstSrc[0].isEmpty()) {
-                firstSrc[0] = src
-            }
-            builder.append(
-                "<a onclick=\"view('$src')\"><span style=\"padding-left: ${indent}px\">${file.name}</span></a>")
-            builder.append(childBuilder.toString())
-        }
-    }
 }
 
 private fun getErrorOutput(
@@ -333,7 +412,7 @@ class Clean : CliktCommand(help = "Delete the docs directory") {
 }
 
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Version())
+    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Watch(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }
@@ -344,7 +423,7 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
     <head>
         <style>
             body {
-                background-color: #f7f7f7;
+                background-color: #fafafa;
             }
 
             .sidebar {
@@ -359,17 +438,21 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                 border-width: 1px;
                 border-color: #dddddd;
                 overflow-x: scroll;
-                padding-top: 50px;
+                padding-top: 25px;
                 transition: 0.5s;
             }
 
             .sidebar a {
-                padding: 8px 8px 8px 32px;
                 text-decoration: none;
                 color: #000000;
                 display: block;
                 transition: 0.3s;
                 font-size: 80%;
+                padding-left: 15px;
+                padding-right: 0px;
+                padding-top: 5px;
+                padding-bottom: 5px;
+                margin: 0px;
             }
 
             .closeButton {

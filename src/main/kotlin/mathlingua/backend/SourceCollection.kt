@@ -946,8 +946,9 @@ private fun getHtml(body: String) =
                 background-color: white;
                 border: solid;
                 border-width: 1px;
-                border-color: #dddddd;
+                border-color: #e5e5e5;
                 border-radius: 2px;
+                box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
                 padding-top: 1em;
                 padding-bottom: 1em;
                 padding-left: 1em;

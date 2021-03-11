@@ -54,6 +54,7 @@ import mathlingua.frontend.textalk.GroupTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.ParametersTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal fun getVars(node: Phase1Node): List<String> {
@@ -123,7 +124,7 @@ internal fun checkVars(node: Phase2Node, tracker: LocationTracker): Set<ParseErr
 
 private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
     if (node is Phase1Token) {
-        vars.add(node.text)
+        vars.add(node.text.removeSuffix("..."))
     } else {
         node.forEach { getVarsImpl(it, vars) }
     }
@@ -131,13 +132,13 @@ private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
 
 private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>, ignoreParen: Boolean) {
     if (node is Identifier) {
-        vars.add(node.name)
+        vars.add(node.name.removeSuffix("..."))
     } else if (node is TupleNode) {
         getVarsImpl(node.tuple, vars)
     } else if (node is AbstractionNode) {
         getVarsImpl(node.abstraction, vars)
     } else if (node is AssignmentNode) {
-        vars.add(node.assignment.lhs.text)
+        vars.add(node.assignment.lhs.text.removeSuffix("..."))
         getVarsImpl(node.assignment.rhs, vars)
     } else if (node is Statement) {
         when (node.texTalkRoot) {
@@ -152,13 +153,10 @@ private fun getVarsImpl(node: Phase2Node, vars: MutableList<String>, ignoreParen
 
 private fun getVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>, ignoreParen: Boolean) {
     if (texTalkNode is TextTexTalkNode) {
-        vars.add(
-            texTalkNode.text +
-                if (texTalkNode.isVarArg) {
-                    "..."
-                } else {
-                    ""
-                })
+        if (texTalkNode.tokenType != TexTalkTokenType.ColonEquals &&
+            texTalkNode.tokenType != TexTalkTokenType.ColonColonEquals) {
+            vars.add(texTalkNode.text.removeSuffix("..."))
+        }
     } else if (texTalkNode is CommandPart) {
         for (grp in texTalkNode.groups) {
             getVarsImpl(grp, vars, ignoreParen)

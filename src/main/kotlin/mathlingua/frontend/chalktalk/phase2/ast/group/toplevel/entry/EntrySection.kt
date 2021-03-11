@@ -38,7 +38,7 @@ data class EntrySection(val names: List<String>) : Phase2Node {
         if (names.size == 1) {
             writer.writeIndent(false, 1)
             writer.writeDirect(names[0])
-        } else {
+        } else if (names.isNotEmpty()) {
             writer.writeNewline()
             for (name in names) {
                 writer.writeIndent(true, indent + 2)

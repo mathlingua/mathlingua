@@ -78,7 +78,7 @@ fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source"
 fun validateSourceItemGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
-    validateGroup(node, errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->
+    validateGroup(node.resolve(), errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->
         identifySections(
             group,
             errors,

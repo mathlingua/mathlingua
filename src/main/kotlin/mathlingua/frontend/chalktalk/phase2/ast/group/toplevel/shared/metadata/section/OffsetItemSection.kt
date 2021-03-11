@@ -48,7 +48,8 @@ fun validateOffsetItemSection(
     track(node, tracker) {
         validateSection(node, errors, "offset", DEFAULT_OFFSET_ITEM_SECTION) { section ->
             validateSingleArg(section, errors, DEFAULT_OFFSET_ITEM_SECTION, "string") { arg ->
-                if (arg !is Phase1Token || arg.type != ChalkTalkTokenType.String) {
+                val resolved = arg.resolve()
+                if (resolved !is Phase1Token || resolved.type != ChalkTalkTokenType.String) {
                     errors.add(
                         ParseError(
                             message = "Expected a string",
@@ -56,7 +57,7 @@ fun validateOffsetItemSection(
                             column = getColumn(node)))
                     DEFAULT_OFFSET_ITEM_SECTION
                 } else {
-                    OffsetItemSection(offset = arg.text)
+                    OffsetItemSection(offset = resolved.text)
                 }
             }
         }

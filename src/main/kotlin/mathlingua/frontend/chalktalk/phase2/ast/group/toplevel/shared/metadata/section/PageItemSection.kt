@@ -48,7 +48,8 @@ fun validatePageItemSection(
     track(node, tracker) {
         validateSection(node, errors, "page", DEFAULT_PAGE_ITEM_SECTION) { section ->
             validateSingleArg(section, errors, DEFAULT_PAGE_ITEM_SECTION, "string") { arg ->
-                if (arg !is Phase1Token || arg.type != ChalkTalkTokenType.String) {
+                val resolved = arg.resolve()
+                if (resolved !is Phase1Token || resolved.type != ChalkTalkTokenType.String) {
                     errors.add(
                         ParseError(
                             message = "Expected a string",
@@ -56,7 +57,7 @@ fun validatePageItemSection(
                             column = getColumn(node)))
                     DEFAULT_PAGE_ITEM_SECTION
                 } else {
-                    PageItemSection(page = arg.text)
+                    PageItemSection(page = resolved.text)
                 }
             }
         }

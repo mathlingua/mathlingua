@@ -52,7 +52,7 @@ data class DefinesCollectsGroup(
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
-    val whenSection: WhenSection?,
+    override val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val collectsSection: CollectsSection,
     override val viewedSection: ViewedSection?,

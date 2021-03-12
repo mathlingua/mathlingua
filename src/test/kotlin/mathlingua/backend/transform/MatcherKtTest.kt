@@ -58,11 +58,11 @@ class MatcherKtTest {
                 OperatorTexTalkNode(
                     lhs = buildText("A"),
                     command = buildCommand("\\set.in/"),
-                    rhs = buildText("B")) to "A? \\in/ B?")
+                    rhs = buildText("B")) to "A? \\in B?")
         val node = buildNode("X \\set.in/ Y")
         val expanded = expandAsWritten(node, patternToExpansion)
         assertThat(expanded.errors).isEmpty()
-        assertThat(expanded.text).isEqualTo("X \\in/ Y")
+        assertThat(expanded.text).isEqualTo("X \\in Y")
     }
 
     @Test

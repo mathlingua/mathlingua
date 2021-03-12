@@ -52,7 +52,7 @@ data class DefinesInstantiatedGroup(
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
-    val whenSection: WhenSection?,
+    override val whenSection: WhenSection?,
     val instantiatedSection: InstantiatedSection,
     override val viewedSection: ViewedSection?,
     override val usingSection: UsingSection?,

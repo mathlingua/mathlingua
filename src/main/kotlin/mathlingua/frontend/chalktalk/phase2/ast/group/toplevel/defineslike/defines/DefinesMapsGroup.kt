@@ -52,7 +52,7 @@ data class DefinesMapsGroup(
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
-    val whenSection: WhenSection?,
+    override val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val mapsSection: MapsSection,
     override val viewedSection: ViewedSection?,

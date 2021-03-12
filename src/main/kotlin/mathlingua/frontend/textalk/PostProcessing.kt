@@ -179,9 +179,8 @@ import mathlingua.frontend.support.ParseError
 
 internal fun parseOperators(root: ExpressionTexTalkNode): TexTalkParseResult {
     try {
-        val isOpToNameRoot = isLhsOperatorToName(root)
-        val isRhsExpressions = findIsRhsExpressions(isOpToNameRoot)
-        val funcCallRoot = identifyIdentifierFunctionCalls(isOpToNameRoot)
+        val isRhsExpressions = findIsRhsExpressions(root)
+        val funcCallRoot = identifyIdentifierFunctionCalls(root)
         val idPrefixOpRoot = identifySpecialPrefixOperators(funcCallRoot, isRhsExpressions)
         val idPostfixOpRoot = identifySpecialPostfixOperators(idPrefixOpRoot, isRhsExpressions)
         val idInfixOpRoot = identifyInfixCommandOperators(idPostfixOpRoot, isRhsExpressions)

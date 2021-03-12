@@ -52,7 +52,7 @@ data class DefinesGeneratedGroup(
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
-    val whenSection: WhenSection?,
+    override val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val generatedSection: GeneratedSection,
     override val viewedSection: ViewedSection?,

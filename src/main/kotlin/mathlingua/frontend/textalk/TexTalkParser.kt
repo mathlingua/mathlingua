@@ -60,110 +60,155 @@ private class TexTalkParserImpl : TexTalkParser {
 
         fun parse(): ExpressionTexTalkNode {
             val exp = expression(null) ?: ExpressionTexTalkNode(emptyList())
-            return resolveColonOrColonColonEqualsNode(
-                resolveInNode(resolveIsNode(exp))) as ExpressionTexTalkNode
+            return standaloneOperatorToIdentifier(
+                resolveColonOrColonColonEqualsNode(
+                    resolveInNode(
+                        resolveIsNode(exp))) as ExpressionTexTalkNode) as ExpressionTexTalkNode
         }
 
-        private fun resolveIsNode(texTalkNode: TexTalkNode): TexTalkNode {
-            if (texTalkNode !is ExpressionTexTalkNode) {
-                return texTalkNode
-            }
+        private fun isSpecialOperator(node: TexTalkNode) =
+            node is TextTexTalkNode &&
+                (node.tokenType == TexTalkTokenType.Operator ||
+                    node.tokenType == TexTalkTokenType.Caret ||
+                    node.tokenType == TexTalkTokenType.Underscore ||
+                    node.tokenType == TexTalkTokenType.DotDotDot)
 
-            var isIndex = -1
-            for (i in texTalkNode.children.indices) {
-                val child = texTalkNode.children[i]
-                if (child is TextTexTalkNode && child.type == TexTalkNodeType.Is) {
-                    if (isIndex < 0) {
-                        isIndex = i
-                    } else {
-                        addError("A statement can only contain one 'is' statement")
+        private fun standaloneOperatorToIdentifier(root: ExpressionTexTalkNode) =
+            root.transform {
+                if (it is ExpressionTexTalkNode) {
+                    val newChildren = mutableListOf<TexTalkNode>()
+                    for (i in it.children.indices) {
+                        val prev = it.children.getOrNull(i - 1)
+                        val cur = it.children[i]
+                        val next = it.children.getOrNull(i + 1)
+                        if (prev == null &&
+                            cur is TextTexTalkNode &&
+                            isSpecialOperator(cur) &&
+                            next == null) {
+                            newChildren.add(
+                                cur.copy(
+                                    type = TexTalkNodeType.Identifier,
+                                    tokenType = TexTalkTokenType.Identifier))
+                        } else {
+                            newChildren.add(cur)
+                        }
                     }
+                    ExpressionTexTalkNode(children = newChildren)
+                } else {
+                    it
                 }
             }
 
-            if (isIndex < 0) {
-                return texTalkNode
-            }
-
-            val lhs = parameters(texTalkNode.children, 0, isIndex)
-            val rhs = parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
-            return ExpressionTexTalkNode(listOf(IsTexTalkNode(lhs, rhs)))
-        }
-
-        private fun resolveInNode(texTalkNode: TexTalkNode): TexTalkNode {
-            if (texTalkNode !is ExpressionTexTalkNode) {
-                return texTalkNode
-            }
-
-            var isIndex = -1
-            for (i in texTalkNode.children.indices) {
-                val child = texTalkNode.children[i]
-                if (child is TextTexTalkNode && child.type == TexTalkNodeType.In) {
-                    if (isIndex < 0) {
-                        isIndex = i
-                    } else {
-                        addError("A statement can only contain one 'in' statement")
-                    }
-                }
-            }
-
-            if (isIndex < 0) {
-                return texTalkNode
-            }
-
-            val lhs = parameters(texTalkNode.children, 0, isIndex)
-            val rhs = parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
-            return ExpressionTexTalkNode(listOf(InTexTalkNode(lhs, rhs)))
-        }
-
-        private fun resolveColonOrColonColonEqualsNode(texTalkNode: TexTalkNode): TexTalkNode {
-            if (texTalkNode !is ExpressionTexTalkNode) {
-                return texTalkNode
-            }
-
-            var colonEqualsIndex = -1
-            var colonColonEqualsIndex = -1
-            for (i in texTalkNode.children.indices) {
-                val child = texTalkNode.children[i]
-                if (child is TextTexTalkNode && child.type == TexTalkNodeType.ColonEquals) {
-                    if (colonEqualsIndex < 0) {
-                        colonEqualsIndex = i
-                    } else {
-                        addError("A statement can only contain one ':='")
-                    }
-                } else if (child is TextTexTalkNode &&
-                    child.type == TexTalkNodeType.ColonColonEquals) {
-                    if (colonColonEqualsIndex < 0) {
-                        colonColonEqualsIndex = i
-                    } else {
-                        addError("A statement can only contain one '::='")
-                    }
-                }
-            }
-
-            if (colonEqualsIndex >= 0 && colonColonEqualsIndex >= 0) {
-                addError("A statement can only contain ':=' or '::=', but not both.")
-            }
-
-            return when {
-                colonEqualsIndex >= 0 -> {
-                    val lhs = parameters(texTalkNode.children, 0, colonEqualsIndex)
-                    val rhs =
-                        parameters(
-                            texTalkNode.children, colonEqualsIndex + 1, texTalkNode.children.size)
-                    ExpressionTexTalkNode(listOf(ColonEqualsTexTalkNode(lhs, rhs)))
-                }
-                colonColonEqualsIndex >= 0 -> {
-                    val lhs = parameters(texTalkNode.children, 0, colonColonEqualsIndex)
-                    val rhs =
-                        parameters(
-                            texTalkNode.children,
-                            colonColonEqualsIndex + 1,
-                            texTalkNode.children.size)
-                    ExpressionTexTalkNode(listOf(ColonColonEqualsTexTalkNode(lhs, rhs)))
-                }
-                else -> {
+        private fun resolveIsNode(node: TexTalkNode): TexTalkNode {
+            return node.transform { texTalkNode ->
+                if (texTalkNode !is ExpressionTexTalkNode) {
                     texTalkNode
+                } else {
+                    var isIndex = -1
+                    for (i in texTalkNode.children.indices) {
+                        val child = texTalkNode.children[i]
+                        if (child is TextTexTalkNode && child.type == TexTalkNodeType.Is) {
+                            if (isIndex < 0) {
+                                isIndex = i
+                            } else {
+                                addError("A statement can only contain one 'is' statement")
+                            }
+                        }
+                    }
+
+                    if (isIndex < 0) {
+                        texTalkNode
+                    } else {
+                        val lhs = parameters(texTalkNode.children, 0, isIndex)
+                        val rhs =
+                            parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
+                        ExpressionTexTalkNode(listOf(IsTexTalkNode(lhs, rhs)))
+                    }
+                }
+            }
+        }
+
+        private fun resolveInNode(node: TexTalkNode): TexTalkNode {
+            return node.transform { texTalkNode ->
+                if (texTalkNode !is ExpressionTexTalkNode) {
+                    texTalkNode
+                } else {
+                    var isIndex = -1
+                    for (i in texTalkNode.children.indices) {
+                        val child = texTalkNode.children[i]
+                        if (child is TextTexTalkNode && child.type == TexTalkNodeType.In) {
+                            if (isIndex < 0) {
+                                isIndex = i
+                            } else {
+                                addError("A statement can only contain one 'in' statement")
+                            }
+                        }
+                    }
+
+                    if (isIndex < 0) {
+                        texTalkNode
+                    } else {
+                        val lhs = parameters(texTalkNode.children, 0, isIndex)
+                        val rhs =
+                            parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
+                        ExpressionTexTalkNode(listOf(InTexTalkNode(lhs, rhs)))
+                    }
+                }
+            }
+        }
+
+        private fun resolveColonOrColonColonEqualsNode(node: TexTalkNode): TexTalkNode {
+            return node.transform { texTalkNode ->
+                if (texTalkNode !is ExpressionTexTalkNode) {
+                    texTalkNode
+                } else {
+                    var colonEqualsIndex = -1
+                    var colonColonEqualsIndex = -1
+                    for (i in texTalkNode.children.indices) {
+                        val child = texTalkNode.children[i]
+                        if (child is TextTexTalkNode && child.type == TexTalkNodeType.ColonEquals) {
+                            if (colonEqualsIndex < 0) {
+                                colonEqualsIndex = i
+                            } else {
+                                addError("A statement can only contain one ':='")
+                            }
+                        } else if (child is TextTexTalkNode &&
+                            child.type == TexTalkNodeType.ColonColonEquals) {
+                            if (colonColonEqualsIndex < 0) {
+                                colonColonEqualsIndex = i
+                            } else {
+                                addError("A statement can only contain one '::='")
+                            }
+                        }
+                    }
+
+                    if (colonEqualsIndex >= 0 && colonColonEqualsIndex >= 0) {
+                        addError("A statement can only contain ':=' or '::=', but not both.")
+                    }
+
+                    when {
+                        colonEqualsIndex >= 0 -> {
+                            val lhs = parameters(texTalkNode.children, 0, colonEqualsIndex)
+                            val rhs =
+                                parameters(
+                                    texTalkNode.children,
+                                    colonEqualsIndex + 1,
+                                    texTalkNode.children.size)
+                            ExpressionTexTalkNode(listOf(ColonEqualsTexTalkNode(lhs, rhs)))
+                        }
+                        colonColonEqualsIndex >= 0 -> {
+                            val lhs = parameters(texTalkNode.children, 0, colonColonEqualsIndex)
+                            val rhs =
+                                parameters(
+                                    texTalkNode.children,
+                                    colonColonEqualsIndex + 1,
+                                    texTalkNode.children.size)
+                            ExpressionTexTalkNode(listOf(ColonColonEqualsTexTalkNode(lhs, rhs)))
+                        }
+                        else -> {
+                            texTalkNode
+                        }
+                    }
                 }
             }
         }

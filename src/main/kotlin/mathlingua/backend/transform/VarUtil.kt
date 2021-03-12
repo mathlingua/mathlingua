@@ -40,12 +40,14 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationSuccess
+import mathlingua.frontend.textalk.ColonColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
@@ -192,6 +194,12 @@ private fun checkVarsImpl(
     val varsToRemove = mutableSetOf<String>()
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
     if (node is DefinesGroup) {
+        val whenSection = node.whenSection
+        if (whenSection != null) {
+            varsToRemove.addAll(
+                checkWhenSectionVars(
+                    node = whenSection, vars = vars, tracker = tracker, errors = errors))
+        }
         varsToRemove.addAll(checkVarsImpl(node.id, vars, tracker, errors))
         varsToRemove.addAll(
             checkDefineSectionVars(node.definesSection, vars, tracker, errors, ignoreParen))
@@ -353,6 +361,84 @@ private fun checkVarsImpl(
     }
 
     return varsToRemove.toList()
+}
+
+private fun checkWhenSectionVars(
+    node: WhenSection,
+    vars: MutableSet<String>,
+    tracker: LocationTracker,
+    errors: MutableList<ParseError>
+): List<String> {
+    val whenVars = mutableListOf<String>()
+    for (clause in node.clauses.clauses) {
+        whenVars.addAll(
+            checkColonOrColonColonEqualsRhsSymbols(
+                clause, tracker = tracker, vars = vars, errors = errors))
+    }
+    return whenVars
+}
+
+private fun checkColonOrColonColonEqualsRhsSymbols(
+    node: Phase2Node,
+    tracker: LocationTracker,
+    vars: MutableSet<String>,
+    errors: MutableList<ParseError>
+): List<String> {
+    val result = mutableListOf<String>()
+    if (node is Statement) {
+        result.addAll(
+            checkColonOrColonColonEqualsRhsSymbols(
+                statement = node, tracker = tracker, vars = vars, errors = errors))
+    }
+    node.forEach { checkColonOrColonColonEqualsRhsSymbols(it, tracker, vars, errors) }
+    return result
+}
+
+private fun checkColonOrColonColonEqualsRhsSymbols(
+    statement: Statement,
+    tracker: LocationTracker,
+    vars: MutableSet<String>,
+    errors: MutableList<ParseError>
+): List<String> {
+    val result = mutableListOf<String>()
+    val validation = statement.texTalkRoot
+    if (validation is ValidationSuccess) {
+        val location = tracker.getLocationOf(statement) ?: Location(-1, -1)
+        result.addAll(
+            checkColonOrColonColonEqualsRhsSymbols(
+                node = validation.value, location = location, vars = vars, errors = errors))
+    }
+    return result
+}
+
+private fun checkColonOrColonColonEqualsRhsSymbols(
+    node: TexTalkNode, location: Location, vars: MutableSet<String>, errors: MutableList<ParseError>
+): List<String> {
+    val result = mutableListOf<String>()
+    val params =
+        if (node is ColonEqualsTexTalkNode) {
+            node.rhs
+        } else if (node is ColonColonEqualsTexTalkNode) {
+            node.rhs
+        } else {
+            null
+        }
+    if (params != null) {
+        for (v in getVars(params, false)) {
+            if (vars.contains(v)) {
+                errors.add(
+                    ParseError(
+                        message = "Duplicate defined symbol '$v'",
+                        row = location.row,
+                        column = location.column))
+            }
+            vars.add(v)
+        }
+    }
+    node.forEach {
+        result.addAll(checkColonOrColonColonEqualsRhsSymbols(it, location, vars, errors))
+    }
+    return result
 }
 
 private fun checkDefineSectionVars(

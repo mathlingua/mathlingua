@@ -52,7 +52,7 @@ data class DefinesMeansGroup(
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
-    val whenSection: WhenSection?,
+    override val whenSection: WhenSection?,
     val meansSection: MeansSection,
     val satisfyingSection: SatisfyingSection?,
     override val viewedSection: ViewedSection?,

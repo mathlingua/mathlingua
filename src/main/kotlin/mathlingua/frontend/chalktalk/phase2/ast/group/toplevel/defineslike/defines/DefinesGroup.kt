@@ -24,6 +24,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.ViewedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
@@ -34,6 +35,7 @@ abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     abstract val signature: String?
     abstract val definesSection: DefinesSection
     abstract val requiringSection: RequiringSection?
+    abstract val whenSection: WhenSection?
     abstract val viewedSection: ViewedSection?
     abstract val writtenSection: WrittenSection
 }

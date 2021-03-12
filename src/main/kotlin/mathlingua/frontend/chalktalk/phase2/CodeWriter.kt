@@ -183,6 +183,28 @@ open class HtmlCodeWriter(
         }
     }
 
+    private fun prettyPrintTexTalk(text: String): String {
+        val newText = "{${text}}"
+        val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(newText))
+        return if (lhsParsed.errors.isEmpty()) {
+                val patternsToWrittenAs =
+                    getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+                expandAsWritten(
+                        lhsParsed.root.transform {
+                            when (it) {
+                                is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
+                                else -> it
+                            }
+                        },
+                        patternsToWrittenAs)
+                    .text
+                    ?: lhsParsed.root.toCode()
+            } else {
+                newText
+            }
+            .removeSurrounding("{", "}")
+    }
+
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
         if (shouldExpand()) {
             val expansionErrors = mutableListOf<String>()
@@ -225,50 +247,22 @@ open class HtmlCodeWriter(
             builder.append("<span class='mathlingua-statement' title='$title'>")
             if (stmtText.contains(IS)) {
                 val index = stmtText.indexOf(IS)
-                builder.append("\\[${stmtText.substring(0, index)}\\]")
+                val lhs = stmtText.substring(0, index)
+                builder.append("\\[${prettyPrintTexTalk(lhs)}\\]")
                 writeSpace()
                 writeDirect("<span class='mathlingua-is'>is</span>")
                 writeSpace()
-                val lhs = stmtText.substring(index + IS.length).trim()
-                val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
-                if (lhsParsed.errors.isEmpty()) {
-                    val patternsToWrittenAs =
-                        getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
-                    builder.append(
-                        "\\[${
-                        expandAsWritten(lhsParsed.root.transform {
-                        when (it) {
-                            is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
-                            else -> it
-                        }
-                    }, patternsToWrittenAs).text ?: lhsParsed.root.toCode()}\\]")
-                } else {
-                    writeDirect(lhs)
-                }
+                val rhs = stmtText.substring(index + IS.length).trim()
+                builder.append("\\[${prettyPrintTexTalk(rhs)}\\]")
             } else if (stmtText.contains(IN)) {
                 val index = stmtText.indexOf(IN)
-                builder.append("\\[${stmtText.substring(0, index)}")
+                val lhs = stmtText.substring(0, index)
+                builder.append("\\[")
+                builder.append(prettyPrintTexTalk(lhs))
                 writeDirect(" \\in ")
-                val lhs = stmtText.substring(index + IN.length).trim()
-                val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(lhs))
-                if (lhsParsed.errors.isEmpty()) {
-                    val patternsToWrittenAs =
-                        getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
-                    builder.append(
-                        expandAsWritten(
-                                lhsParsed.root.transform {
-                                    when (it) {
-                                        is TextTexTalkNode ->
-                                            it.copy(text = prettyPrintIdentifier(it.text))
-                                        else -> it
-                                    }
-                                },
-                                patternsToWrittenAs)
-                            .text
-                            ?: lhsParsed.root.toCode())
-                } else {
-                    writeDirect(lhs)
-                }
+                val rhs = stmtText.substring(index + IN.length).trim()
+                builder.append(prettyPrintTexTalk(rhs))
+                builder.append("\\]")
             } else {
                 if (root is ValidationSuccess &&
                     (defines.isNotEmpty() ||

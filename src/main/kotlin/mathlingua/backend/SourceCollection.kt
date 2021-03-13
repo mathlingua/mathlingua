@@ -969,6 +969,8 @@ private fun getHtml(body: String) =
             .mathlingua-header {
                 color: #0055bb;
                 text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+                font-size: 80%;
+                font-family: Georgia, 'Times New Roman', Times, serif;
             }
 
             .mathlingua-whitespace {

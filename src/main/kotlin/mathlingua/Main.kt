@@ -436,8 +436,9 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                 background-color: #ffffff;
                 border-right: solid;
                 border-width: 1px;
-                border-color: #e5e5e5;
-                box-shadow: rgba(0, 0, 0, 0.2) 0px 0px 10px;
+                border-color: rgba(200, 200, 200);
+                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
                 overflow-x: scroll;
                 padding-top: 25px;
                 transition: 0.5s;

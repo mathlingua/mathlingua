@@ -958,6 +958,7 @@ private fun getHtml(body: String) =
                 padding-left: 1em;
                 padding-right: 1em;
                 width: max-content;
+                max-width: 90%;
                 margin-left: auto; /* for centering content */
                 margin-right: auto; /* for centering content */
             }

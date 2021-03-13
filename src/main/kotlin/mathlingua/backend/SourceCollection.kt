@@ -936,6 +936,9 @@ private fun getHtml(body: String) =
                 margin-top: 1em;
                 margin-bottom: 1em;
                 font-size: 1em;
+                width: 50%;
+                margin-left: auto; /* for centering content */
+                margin-right: auto; /* for centering content */
             }
 
             body {
@@ -946,15 +949,17 @@ private fun getHtml(body: String) =
                 background-color: white;
                 border: solid;
                 border-width: 1px;
-                border-color: #e5e5e5;
+                border-color: rgba(200, 200, 200);
                 border-radius: 2px;
-                box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px;
+                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
                 padding-top: 1em;
                 padding-bottom: 1em;
                 padding-left: 1em;
                 padding-right: 1em;
                 width: max-content;
-                max-width: 90%;
+                margin-left: auto; /* for centering content */
+                margin-right: auto; /* for centering content */
             }
 
             .mathlingua {

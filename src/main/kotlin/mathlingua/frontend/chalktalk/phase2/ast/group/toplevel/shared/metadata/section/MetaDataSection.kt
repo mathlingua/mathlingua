@@ -37,22 +37,14 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 private val META_DATA_ITEM_CONSTRAINTS =
-    mapOf(
-        "name" to -1,
-        "classification" to -1,
-        "tag" to -1,
-        "author" to -1,
-        "contributor" to -1,
-        "note" to -1,
-        "id" to 1,
-        "concept" to 1,
-        "summary" to 1)
+    mapOf("overview" to 1, "tag" to -1, "author" to -1, "contributor" to -1, "id" to 1)
 
 data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
+        writer.writeHorizontalLine()
         writer.writeHeader("Metadata")
         for (i in items.indices) {
             writer.writeNewline()

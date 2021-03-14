@@ -48,6 +48,7 @@ interface CodeWriter {
     fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
     fun writeDirect(text: String)
+    fun writeHorizontalLine()
     fun beginTopLevel()
     fun endTopLevel()
     fun newCodeWriter(
@@ -300,8 +301,8 @@ open class HtmlCodeWriter(
     }
 
     override fun endTopLevel() {
-        builder.append("</div>")
         builder.append("<div class='end-mathlingua-top-level'></div>")
+        builder.append("</div>")
     }
 
     override fun newCodeWriter(
@@ -318,6 +319,10 @@ open class HtmlCodeWriter(
                 .replace(Regex("(\\s*<\\s*br\\s*/\\s*>\\s*)+$"), "")
                 .replace(Regex("^(\\s*<\\s*br\\s*/\\s*>\\s*)+$"), "")
         return "<span class='mathlingua'>$text</span>"
+    }
+
+    override fun writeHorizontalLine() {
+        builder.append("<hr/>")
     }
 
     private fun shouldExpand() =
@@ -436,6 +441,8 @@ class MathLinguaCodeWriter(
     override fun beginTopLevel() {}
 
     override fun endTopLevel() {}
+
+    override fun writeHorizontalLine() {}
 
     override fun newCodeWriter(
         defines: List<DefinesGroup>,

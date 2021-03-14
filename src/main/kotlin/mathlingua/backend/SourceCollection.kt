@@ -945,6 +945,10 @@ private fun getHtml(body: String) =
                 background-color: #fafafa;
             }
 
+            hr {
+                border: 1px solid #efefef;
+            }
+
             .mathlingua-top-level {
                 background-color: white;
                 border: solid;
@@ -953,14 +957,19 @@ private fun getHtml(body: String) =
                 border-radius: 2px;
                 box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
                             inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
-                padding-top: 1em;
+                padding-top: 1.25em;
                 padding-bottom: 1em;
-                padding-left: 1em;
-                padding-right: 1em;
+                padding-left: 1.1em;
+                padding-right: 1.1em;
                 width: max-content;
                 max-width: 90%;
                 margin-left: auto; /* for centering content */
                 margin-right: auto; /* for centering content */
+            }
+
+            .end-mathlingua-top-level {
+                padding-top: 0.5em;
+                margin: 0;
             }
 
             .mathlingua {
@@ -985,17 +994,21 @@ private fun getHtml(body: String) =
             }
 
             .mathlingua-text {
-                color: #007700;
+                color: #000000;
                 display: block;
                 margin: 0 0 -1em 0;
                 padding: 0 0 0 2.5em;
+                font-size: 80%;
+                font-family: Georgia, 'Times New Roman', Times, serif;
             }
 
             .mathlingua-text-no-render {
-                color: #007700;
+                color: #000000;
                 display: block;
                 margin: 0 0 -1em 0;
                 padding: 0 0 0 2.5em;
+                font-size: 80%;
+                font-family: Georgia, 'Times New Roman', Times, serif;
             }
 
             .mathlingua-statement-no-render {

@@ -425,12 +425,11 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
         <style>
             body {
                 background-color: #fafafa;
-                overflow: hidden;
             }
 
             .sidebar {
                 height: 100%;
-                width: 20%;
+                width: 30%;
                 position: fixed;
                 z-index: 1;
                 top: 0;
@@ -473,7 +472,7 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
             #main {
                 transition: margin-left .5s;
                 padding: 20px;
-                margin-left: 20%;
+                margin-left: 30%;
             }
 
             @media screen and (max-width: 400px) {
@@ -501,7 +500,7 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                     document.getElementById('main').style.marginLeft = '0';
                     document.getElementById('closeButton').textContent = '›';
                 } else {
-                    let margin = forMobile() ? '50%' : '20%';
+                    let margin = forMobile() ? '50%' : '30%';
                     document.getElementById('sidebar').style.width = margin;
                     document.getElementById('main').style.marginLeft = margin;
                     document.getElementById('closeButton').textContent = '‹';

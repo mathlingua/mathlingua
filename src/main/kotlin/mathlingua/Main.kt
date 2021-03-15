@@ -421,14 +421,16 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
     """
 <html>
     <head>
+        <meta name="viewport" content="width=100%, initial-scale=1.0">
         <style>
             body {
                 background-color: #fafafa;
+                overflow: hidden;
             }
 
             .sidebar {
                 height: 100%;
-                width: 15%;
+                width: 20%;
                 position: fixed;
                 z-index: 1;
                 top: 0;
@@ -442,6 +444,12 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                 overflow-x: scroll;
                 padding-top: 25px;
                 transition: 0.5s;
+            }
+
+            @media screen and (max-width: 400px) {
+                .sidebar {
+                    width: 0%;
+                }
             }
 
             .sidebar a {
@@ -465,7 +473,13 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
             #main {
                 transition: margin-left .5s;
                 padding: 20px;
-                margin-left: 15%;
+                margin-left: 20%;
+            }
+
+            @media screen and (max-width: 400px) {
+                #main {
+                    margin-left: 0%;
+                }
             }
 
             #content {
@@ -475,7 +489,11 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
             }
         </style>
         <script>
-            let open = true;
+            function forMobile() {
+                return window?.screen?.width <= 400;
+            }
+
+            let open = !forMobile();
 
             function toggleSidePanel() {
                 if (open) {
@@ -483,8 +501,9 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                     document.getElementById('main').style.marginLeft = '0';
                     document.getElementById('closeButton').textContent = '›';
                 } else {
-                    document.getElementById('sidebar').style.width = '15%';
-                    document.getElementById('main').style.marginLeft = '15%';
+                    let margin = forMobile() ? '50%' : '20%';
+                    document.getElementById('sidebar').style.width = margin;
+                    document.getElementById('main').style.marginLeft = margin;
                     document.getElementById('closeButton').textContent = '‹';
                 }
                 open = !open;
@@ -496,14 +515,22 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                     content.src = path;
                 }
             }
+
+            function updateCloseButton() {
+                if (forMobile()) {
+                    document.getElementById('closeButton').textContent = '›';
+                } else {
+                    document.getElementById('closeButton').textContent = '‹';
+                }
+            }
         </script>
     </head>
-    <body id="main">
+    <body id="main" onload="updateCloseButton()">
         <div id="sidebar" class="sidebar">
             $fileListHtml
         </div>
 
-        <a href="javascript:void(0)" id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2039;</a>
+        <a href="javascript:void(0)" id="closeButton" class="closeButton" onclick="toggleSidePanel()"></a>
 
         <iframe id="content" src="$initialSrc"></iframe>
     </body>

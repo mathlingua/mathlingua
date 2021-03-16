@@ -950,6 +950,7 @@ private fun getHtml(body: String) =
 
             body {
                 background-color: #fafafa;
+                padding-bottom: 1em;
             }
 
             hr {

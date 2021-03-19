@@ -676,10 +676,21 @@ fun getIndexHtml(
                 open = !open;
             }
 
-            function view(path) {
+                        function view(path) {
                 const content = document.getElementById('__content__frame__');
                 if (content) {
                     content.src = path;
+                    for (const path of ALL_FILE_IDS) {
+                        const el = document.getElementById(path);
+                        if (el) {
+                            el.style.fontStyle = 'normal';
+                        }
+                    }
+                    const id = path.replace(/\.html.*/, '');
+                    const selectedEntry = document.getElementById(id);
+                    if (selectedEntry) {
+                        selectedEntry.style.fontStyle = 'italic';
+                    }
                 }
             }
 
@@ -714,6 +725,7 @@ fun getIndexHtml(
                         return;
                     }
 
+                    let firstPath = null;
                     const pathToNewPath = new Map();
                     for (const [path, ids] of pathsToIndices) {
                         let newPath = path + '.html';
@@ -726,6 +738,9 @@ fun getIndexHtml(
                                 }
                                 isFirst = false;
                                 newPath += "show=" + id;
+                            }
+                            if (!firstPath) {
+                                firstPath = newPath;
                             }
                             pathToNewPath.set(path, newPath);
                         }
@@ -758,6 +773,10 @@ fun getIndexHtml(
                             }
                         }
                     }
+
+                    if (firstPath) {
+                        view(firstPath);
+                    }
                 }
             }
 
@@ -778,7 +797,7 @@ fun getIndexHtml(
         <div id="top-bar" class="topbar">
             <a id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2630;</a>
             <span class="search-area">
-                <input type="search" id="search-input" onkeypress="searchListener(event)" aria-label="search">
+                <input type="search" id="search-input" aria-label="search">
                 <button type="button" onclick="clearSearch()">Clear</button>
                 <button type="button" onclick="search()">Search</button>
             </span>

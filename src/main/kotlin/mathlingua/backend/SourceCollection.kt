@@ -746,6 +746,8 @@ private fun getHtml(body: String) =
 <html>
     <head>
         <meta name="viewport" content="width=100%, initial-scale=1.0">
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+        <meta content="utf-8" http-equiv="encoding">
         <link rel="stylesheet"
               href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
               integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
@@ -931,10 +933,31 @@ private fun getHtml(body: String) =
                     }
                 }
             }
+
+            function setup() {
+                render(document.body);
+                const params = new URLSearchParams(window.location.search);
+                const showIds = new Set(params.getAll('show'));
+                if (showIds.size > 0) {
+                    let i = 0;
+                    while (true) {
+                        const id = '' + (i++);
+                        const el = document.getElementById(id);
+                        if (!el) {
+                            break;
+                        }
+                        if (showIds.has(id)) {
+                            el.style.display = 'block';
+                        } else {
+                            el.style.display = 'none';
+                        }
+                    }
+                }
+            }
         </script>
         <style>
             .content {
-                margin-top: 1em;
+                margin-top: 1.5em;
                 margin-bottom: 1em;
                 font-size: 1em;
                 width: 50%;
@@ -1040,7 +1063,7 @@ private fun getHtml(body: String) =
             }
         </style>
     </head>
-    <body onload="render(document.body)">
+    <body onload="setup()">
         <div class="content">
             $body
         </div>

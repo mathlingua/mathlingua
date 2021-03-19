@@ -49,8 +49,8 @@ interface CodeWriter {
     fun writeText(text: String)
     fun writeDirect(text: String)
     fun writeHorizontalLine()
-    fun beginTopLevel()
-    fun endTopLevel()
+    fun beginTopLevel(label: String)
+    fun endTopLevel(numNewlines: Int)
     fun newCodeWriter(
         defines: List<DefinesGroup>,
         states: List<StatesGroup>,
@@ -296,12 +296,15 @@ open class HtmlCodeWriter(
         builder.append(text)
     }
 
-    override fun beginTopLevel() {
+    override fun beginTopLevel(label: String) {
+        builder.append("<div id='$label'>")
         builder.append("<div class='mathlingua-top-level'>")
     }
 
-    override fun endTopLevel() {
+    override fun endTopLevel(numNewlines: Int) {
         builder.append("<div class='end-mathlingua-top-level'></div>")
+        builder.append("</div>")
+        writeNewline(numNewlines)
         builder.append("</div>")
     }
 
@@ -438,9 +441,11 @@ class MathLinguaCodeWriter(
         builder.append(text)
     }
 
-    override fun beginTopLevel() {}
+    override fun beginTopLevel(label: String) {}
 
-    override fun endTopLevel() {}
+    override fun endTopLevel(numNewlines: Int) {
+        writeNewline(numNewlines)
+    }
 
     override fun writeHorizontalLine() {}
 

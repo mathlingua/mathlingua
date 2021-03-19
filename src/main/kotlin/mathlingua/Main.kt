@@ -38,8 +38,16 @@ import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
 import mathlingua.backend.isMathLinguaFile
 import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
+import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.support.ParseError
+import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TextTexTalkNode
 
 const val TOOL_VERSION = "0.13"
 
@@ -68,6 +76,11 @@ private fun String.jsonSanitize() =
 private fun getDocsDirectory(): File {
     val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
     return File(cwd, "docs")
+}
+
+private fun getContentDirectory(): File {
+    val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+    return File(cwd, "content")
 }
 
 private class Mlg : CliktCommand() {
@@ -122,14 +135,19 @@ private fun write(cwd: File, content: String, outFile: File, stdout: Boolean) {
 }
 
 private fun buildFileList(
-    cwd: File, file: File, indent: Int, builder: StringBuilder, firstSrc: Array<String>
+    cwd: File,
+    file: File,
+    indent: Int,
+    builder: StringBuilder,
+    allFileIds: MutableList<String>,
+    firstSrc: Array<String>
 ) {
     val childBuilder = StringBuilder()
     if (file.isDirectory) {
         val children = file.listFiles()
         if (children != null) {
             for (child in children) {
-                buildFileList(cwd, child, indent + 12, childBuilder, firstSrc)
+                buildFileList(cwd, child, indent + 12, childBuilder, allFileIds, firstSrc)
             }
         }
     }
@@ -145,24 +163,133 @@ private fun buildFileList(
         if (file.isDirectory) {
             cssBuilder.append("font-weight: bold;")
         }
+        val id = src.removeSuffix(".html")
+        allFileIds.add(id)
         builder.append(
-            "<a onclick=\"view('$src')\"><span style=\"${cssBuilder}\">${file.name.removeSuffix(".math")}</span></a>")
+            "<a id='$id' onclick=\"view('$src')\"><span style=\"${cssBuilder}\">${file.name.removeSuffix(".math")}</span></a>")
         builder.append(childBuilder.toString())
     }
 }
 
-private fun writeIndexFile(cwd: File, docsDir: File): File {
+fun getAllWords(node: Phase2Node): Set<String> {
+    val result = mutableSetOf<String>()
+    getAllWordsImpl(node, result)
+    return result
+}
+
+private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
+    when (node) {
+        is Statement -> {
+            val root = node.texTalkRoot
+            if (root is ValidationSuccess) {
+                getAllWordsImpl(root.value, words)
+            }
+        }
+        is Identifier -> {
+            words.add(node.name.toLowerCase())
+        }
+        is Text -> {
+            words.addAll(
+                node.text.split(" ").map { it.trim() }.filter { it.isNotEmpty() }.map {
+                    it.toLowerCase()
+                })
+        }
+    }
+
+    node.forEach { getAllWordsImpl(it, words) }
+}
+
+private fun getAllWordsImpl(node: TexTalkNode, words: MutableSet<String>) {
+    when (node) {
+        is TextTexTalkNode -> {
+            words.add(node.text.toLowerCase())
+        }
+    }
+
+    node.forEach { getAllWordsImpl(it, words) }
+}
+
+private fun generateSearchIndex(cwd: File, contentDir: File): Map<String, Map<String, Set<Int>>> {
+    val result = mutableMapOf<String, MutableMap<String, MutableSet<Int>>>()
+    generateSearchIndexImpl(cwd, contentDir, result)
+    return result
+}
+
+private fun generateSearchIndexImpl(
+    cwd: File, file: File, index: MutableMap<String, MutableMap<String, MutableSet<Int>>>
+) {
+    if (file.isDirectory) {
+        val children = file.listFiles()
+        if (children != null) {
+            for (child in children) {
+                generateSearchIndexImpl(cwd, child, index)
+            }
+        }
+    }
+
+    if (file.isFile && file.extension == "math") {
+        val path = file.relativePath(cwd).removeSuffix(".math")
+        when (val validation = FrontEnd.parse(file.readText())
+        ) {
+            is ValidationSuccess -> {
+                val doc = validation.value
+                val groups = doc.groups
+                for (i in groups.indices) {
+                    val words = getAllWords(groups[i])
+                    for (word in words) {
+                        val pathToIndex = index.getOrDefault(word, mutableMapOf())
+                        val indices = pathToIndex.getOrDefault(path, mutableSetOf())
+                        indices.add(i)
+                        pathToIndex[path] = indices
+                        index[word] = pathToIndex
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun writeIndexFile(cwd: File, docsDir: File, contentDir: File): File {
+    val allFileIds = mutableListOf<String>()
     val firstSrc = arrayOf("")
     val builder = StringBuilder()
     if (cwd.isDirectory) {
         val children = cwd.listFiles()
         if (children != null) {
             for (child in children) {
-                buildFileList(cwd, child, 0, builder, firstSrc)
+                buildFileList(cwd, child, 0, builder, allFileIds, firstSrc)
             }
         }
     }
-    val html = getIndexHtml(builder.toString(), firstSrc[0])
+
+    val searchIndex = generateSearchIndex(cwd, contentDir)
+    val searchIndexBuilder = StringBuilder()
+    searchIndexBuilder.append("const index = new Map();\n")
+    val words = searchIndex.keys.toList()
+    for (i in words.indices) {
+        val word = words[i]
+        val pathToIndices = searchIndex[word]
+        if (pathToIndices != null) {
+            searchIndexBuilder.append("const map$i = new Map();\n")
+            val paths = pathToIndices.keys.toList()
+            for (j in paths.indices) {
+                val path = paths[j]
+                val ids = pathToIndices[path]
+                if (ids != null) {
+                    searchIndexBuilder.append("const set${i}_$j = new Set();\n")
+                    for (id in ids) {
+                        searchIndexBuilder.append("set${i}_$j.add($id);\n")
+                    }
+                    searchIndexBuilder.append("map$i.set('$path', set${i}_$j);\n")
+                }
+            }
+            searchIndexBuilder.append("index.set('$word', map$i);\n")
+        }
+    }
+    searchIndexBuilder.append("return index;")
+
+    val html =
+        getIndexHtml(builder.toString(), searchIndexBuilder.toString(), allFileIds, firstSrc[0])
     val indexFile = File(docsDir, "index.html")
     indexFile.writeText(html)
     return indexFile
@@ -191,9 +318,12 @@ private fun render(
     val docsDir = getDocsDirectory()
     docsDir.mkdirs()
 
+    val contentDir = getContentDirectory()
+    contentDir.mkdirs()
+
     val html = format == "html"
     if (html && !stdout) {
-        val indexFile = writeIndexFile(cwd, docsDir)
+        val indexFile = writeIndexFile(cwd, docsDir, contentDir)
         log("Wrote ${indexFile.relativeTo(cwd)}")
     }
 
@@ -417,15 +547,40 @@ fun main(args: Array<String>) {
     mlg.main(args)
 }
 
-fun getIndexHtml(fileListHtml: String, initialSrc: String) =
+fun getIndexHtml(
+    fileListHtml: String, searchIndexInitCode: String, allFileIds: List<String>, initialSrc: String
+) =
     """
 <html>
     <head>
         <meta name="viewport" content="width=100%, initial-scale=1.0">
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+        <meta content="utf-8" http-equiv="encoding">
         <style>
             body {
                 background-color: #fafafa;
                 overflow: hidden;
+            }
+
+            .topbar {
+                display: block;
+                height: 1.75em;
+                background-color: #ffffff;
+                position: fixed;
+                z-index: 2;
+                top: 0;
+                left: 0;
+                width: 100%;
+                border-width: 1px;
+                border-color: rgba(200, 200, 200);
+                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+                padding-top: 0.5em;
+            }
+
+            .search-area {
+                margin-left: auto;
+                margin-right: auto;
             }
 
             .sidebar {
@@ -433,7 +588,7 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                 width: 20%;
                 position: fixed;
                 z-index: 1;
-                top: 0;
+                top: 1.75em;
                 left: 0;
                 background-color: #ffffff;
                 border-right: solid;
@@ -468,6 +623,7 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
             .closeButton {
                 text-decoration: none;
                 color: black;
+                margin-left: 0.75em;
             }
 
             #main {
@@ -487,7 +643,7 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                 }
             }
 
-            #content {
+            #__content__frame__ {
                 border: none;
                 width: 100%;
                 height: 100%;
@@ -496,6 +652,12 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
             }
         </style>
         <script>
+            const ALL_FILE_IDS = [${allFileIds.joinToString(",") { "'$it'" }}];
+            const INITIAL_SRC = "$initialSrc";
+            const SEARCH_INDEX = (function() {
+                $searchIndexInitCode
+            })();
+
             function forMobile() {
                 return window?.screen?.width <= 400;
             }
@@ -506,40 +668,127 @@ fun getIndexHtml(fileListHtml: String, initialSrc: String) =
                 if (open) {
                     document.getElementById('sidebar').style.width = '0';
                     document.getElementById('main').style.marginLeft = '0';
-                    document.getElementById('closeButton').textContent = '›';
                 } else {
                     let margin = forMobile() ? '50%' : '20%';
                     document.getElementById('sidebar').style.width = margin;
                     document.getElementById('main').style.marginLeft = margin;
-                    document.getElementById('closeButton').textContent = '‹';
                 }
                 open = !open;
             }
 
             function view(path) {
-                const content = document.getElementById('content');
+                const content = document.getElementById('__content__frame__');
                 if (content) {
                     content.src = path;
                 }
             }
 
-            function updateCloseButton() {
-                if (forMobile()) {
-                    document.getElementById('closeButton').textContent = '›';
-                } else {
-                    document.getElementById('closeButton').textContent = '‹';
+            function clearSearch() {
+                for (const id of ALL_FILE_IDS) {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = 'block';
+                        el.setAttribute('onclick', "view('" + id + ".html" + "')");
+                    }
+                }
+                view(INITIAL_SRC);
+                const el = document.getElementById('search-input');
+                if (el) {
+                    el.value = '';
+                }
+            }
+
+            function search(terms) {
+                const el = document.getElementById('search-input');
+                if (el) {
+                    const term = el.value;
+                    if (!term) {
+                        clearSearch();
+                        return;
+                    }
+
+                    view('');
+                    const pathsToIndices = SEARCH_INDEX.get(term);
+                    if (!pathsToIndices) {
+                        alert('No results found');
+                        return;
+                    }
+
+                    const pathToNewPath = new Map();
+                    for (const [path, ids] of pathsToIndices) {
+                        let newPath = path + '.html';
+                        if (ids.size > 0) {
+                            newPath += '?';
+                            let isFirst = true;
+                            for (const id of ids) {
+                                if (!isFirst) {
+                                    newPath += '&'
+                                }
+                                isFirst = false;
+                                newPath += "show=" + id;
+                            }
+                            pathToNewPath.set(path, newPath);
+                        }
+                    }
+
+                    for (const id of ALL_FILE_IDS) {
+                        const el = document.getElementById(id);
+                        if (el) {
+                            if (pathToNewPath.has(id)) {
+                                el.style.display = 'block';
+                                el.setAttribute('onclick', "view('" + pathToNewPath.get(id) + "')");
+                            } else {
+                                el.style.display = 'none';
+                            }
+                        }
+                    }
+
+                    for (const id of ALL_FILE_IDS) {
+                        if (pathToNewPath.has(id)) {
+                            const parts = id.split('/');
+                            while (parts.length > 0) {
+                                parts.pop();
+                                let parent = parts.join('/');
+                                if (parent) {
+                                    const parentEl = document.getElementById(parent);
+                                    if (parentEl) {
+                                        parentEl.style.display = 'block';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            function initPage() {
+                const el = document.getElementById('search-input');
+                if (el) {
+                    el.addEventListener("keyup", function(event) {
+                        if (event.keyCode === 13) {
+                            event.preventDefault();
+                            search();
+                        }
+                    });
                 }
             }
         </script>
     </head>
-    <body id="main" onload="updateCloseButton()">
+    <body id="main" onload="initPage()">
+        <div id="top-bar" class="topbar">
+            <a id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2630;</a>
+            <span class="search-area">
+                <input type="search" id="search-input" onkeypress="searchListener(event)" aria-label="search">
+                <button type="button" onclick="clearSearch()">Clear</button>
+                <button type="button" onclick="search()">Search</button>
+            </span>
+        </div>
+
         <div id="sidebar" class="sidebar">
             $fileListHtml
         </div>
 
-        <a href="javascript:void(0)" id="closeButton" class="closeButton" onclick="toggleSidePanel()"></a>
-
-        <iframe id="content" src="$initialSrc"></iframe>
+        <iframe id="__content__frame__" src="$initialSrc"></iframe>
     </body>
 </html>
 """

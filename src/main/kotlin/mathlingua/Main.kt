@@ -43,6 +43,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
@@ -179,6 +180,14 @@ fun getAllWords(node: Phase2Node): Set<String> {
 
 private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
     when (node) {
+        is DefinesGroup -> {
+            when (val validation = node.id.texTalkRoot
+            ) {
+                is ValidationSuccess -> {
+                    getAllWordsImpl(validation.value, words)
+                }
+            }
+        }
         is Statement -> {
             val root = node.texTalkRoot
             if (root is ValidationSuccess) {
@@ -601,7 +610,7 @@ fun getIndexHtml(
                 transition: 0.5s;
             }
 
-            @media screen and (max-width: 400px) {
+            @media screen and (max-width: 500px) {
                 .sidebar {
                     width: 0%;
                 }
@@ -680,10 +689,10 @@ fun getIndexHtml(
             })();
 
             function forMobile() {
-                return window?.screen?.width <= 400;
+                return window?.screen?.width <= 500;
             }
 
-            let open = !forMobile();
+            let open = forMobile();
 
             function toggleSidePanel() {
                 if (open) {
@@ -697,26 +706,34 @@ fun getIndexHtml(
                 open = !open;
             }
 
-                        function view(path) {
+            function view(path) {
                 const content = document.getElementById('__content__frame__');
                 if (content) {
                     content.src = path;
                     for (const path of ALL_FILE_IDS) {
+                        if (!path) {
+                            continue;
+                        }
                         const el = document.getElementById(path);
                         if (el) {
                             el.style.fontStyle = 'normal';
                         }
                     }
                     const id = path.replace(/\.html.*/, '');
-                    const selectedEntry = document.getElementById(id);
-                    if (selectedEntry) {
-                        selectedEntry.style.fontStyle = 'italic';
+                    if (id) {
+                        const selectedEntry = document.getElementById(id);
+                        if (selectedEntry) {
+                            selectedEntry.style.fontStyle = 'italic';
+                        }
                     }
                 }
             }
 
             function clearSearch() {
                 for (const id of ALL_FILE_IDS) {
+                    if (!id) {
+                        continue;
+                    }
                     const el = document.getElementById(id);
                     if (el) {
                         el.style.display = 'block';
@@ -733,21 +750,58 @@ fun getIndexHtml(
             function search(terms) {
                 const el = document.getElementById('search-input');
                 if (el) {
-                    const term = el.value;
-                    if (!term) {
+                    if (!el.value || !el.value.trim()) {
+                        clearSearch();
+                        return;
+                    }
+
+                    const terms = el.value.split(' ')
+                                    .map(it => it.trim().toLowerCase())
+                                    .filter(it => it.length > 0);
+                    if (terms.length == 0) {
                         clearSearch();
                         return;
                     }
 
                     view('');
-                    const pathsToIndices = SEARCH_INDEX.get(term);
-                    if (!pathsToIndices) {
+                    const pathsToIndices = new Map();
+                    if (terms.length > 0) {
+                        const temp = SEARCH_INDEX.get(terms[0]) || new Map();
+                        for (const [path, indices] of temp) {
+                            pathsToIndices.set(path, new Set(indices));
+                        }
+                    }
+
+                    for (let i=1; i<terms.length; i++) {
+                        const term = terms[i];
+                        const temp = SEARCH_INDEX.get(term) || new Map();
+                        for (const path of pathsToIndices.keys()) {
+                            if (!temp.has(path)) {
+                                pathsToIndices.delete(path);
+                            } else {
+                                const intersection = new Set();
+                                const tempIndices = temp.get(path) || new Set();
+                                for (const id of (pathsToIndices.get(path) || new Set())) {
+                                    if (tempIndices.has(id)) {
+                                        intersection.add(id);
+                                    }
+                                }
+                                if (intersection.size > 0) {
+                                    pathsToIndices.set(path, intersection);
+                                } else {
+                                    pathsToIndices.delete(path);
+                                }
+                            }
+                        }
+                    }
+
+                    if (pathsToIndices.size === 0) {
                         alert('No results found');
                         return;
                     }
 
-                    let firstPath = null;
                     const pathToNewPath = new Map();
+                    let firstPath = null;
                     for (const [path, ids] of pathsToIndices) {
                         let newPath = path + '.html';
                         if (ids.size > 0) {
@@ -768,6 +822,9 @@ fun getIndexHtml(
                     }
 
                     for (const id of ALL_FILE_IDS) {
+                        if (!id) {
+                            continue;
+                        }
                         const el = document.getElementById(id);
                         if (el) {
                             if (pathToNewPath.has(id)) {
@@ -802,6 +859,7 @@ fun getIndexHtml(
             }
 
             function initPage() {
+                toggleSidePanel();
                 const el = document.getElementById('search-input');
                 if (el) {
                     el.addEventListener("keyup", function(event) {

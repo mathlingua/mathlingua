@@ -620,6 +620,27 @@ fun getIndexHtml(
                 margin: 0px;
             }
 
+            .search {
+                border: solid;
+                border-width: 1px;
+                border-radius: 3px;
+                border-color: rgba(230, 230, 230);
+                line-height: 1.3em;
+            }
+
+            .button {
+                border: solid;
+                border-width: 1px;
+                border-radius: 3px;
+                padding-left: 0.5em;
+                padding-right: 0.5em;
+                padding-top: 0.2em;
+                padding-bottom: 0.2em;
+                background-color: #ffffff;
+                border-color: rgba(230, 230, 230);
+                color: #000000;
+            }
+
             .closeButton {
                 text-decoration: none;
                 color: black;
@@ -797,9 +818,9 @@ fun getIndexHtml(
         <div id="top-bar" class="topbar">
             <a id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2630;</a>
             <span class="search-area">
-                <input type="search" id="search-input" aria-label="search">
-                <button type="button" onclick="clearSearch()">Clear</button>
-                <button type="button" onclick="search()">Search</button>
+                <input type="search" id="search-input" class="search" aria-label="search">
+                <button type="button" class="button" onclick="clearSearch()">Clear</button>
+                <button type="button" class="button" onclick="search()">Search</button>
             </span>
         </div>
 

@@ -132,13 +132,16 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSecti
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ReferenceGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SiteGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SourceItemGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ContentItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.NameItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.OffsetItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.PageItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ReferenceSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SiteItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SourceItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.StringSection
 import mathlingua.frontend.support.Location
@@ -587,9 +590,17 @@ val DEFAULT_CONTENT_ITEM_SECTION = ContentItemSection(content = "")
 
 val DEFAULT_OFFSET_ITEM_SECTION = OffsetItemSection(offset = "")
 
+val DEFAULT_SITE_ITEM_SECTION = SiteItemSection(url = "")
+
+val DEFAULT_NAME_ITEM_SECTION = NameItemSection(name = "")
+
+val DEFAULT_SITE_GROUP =
+    SiteGroup(
+        siteItemSection = DEFAULT_SITE_ITEM_SECTION, nameItemSection = DEFAULT_NAME_ITEM_SECTION)
+
 val DEFAULT_PAGE_ITEM_SECTION = PageItemSection(page = "")
 
-val DEFAULT_REFERENCE_SECTION = ReferenceSection(sourceItems = emptyList())
+val DEFAULT_REFERENCE_SECTION = ReferenceSection(items = emptyList())
 
 val DEFAULT_REFERENCE_GROUP = ReferenceGroup(referenceSection = DEFAULT_REFERENCE_SECTION)
 

@@ -47,6 +47,7 @@ interface CodeWriter {
     fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>)
     fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
+    fun writeUrl(url: String, name: String?)
     fun writeDirect(text: String)
     fun writeHorizontalLine()
     fun beginTopLevel(label: String)
@@ -159,6 +160,44 @@ open class HtmlCodeWriter(
     }
 
     private fun newlinesToHtml(text: String) = text.replace(Regex("[\r\n][\r\n]+"), "<br/></br>")
+
+    override fun writeUrl(url: String, name: String?) {
+        val urlNoSpace = url.replace(Regex("[ \\r\\n\\t]+"), "")
+        val title =
+            if (name != null) {
+                name
+            } else {
+                val rawName =
+                    urlNoSpace
+                        .replace("https://", "")
+                        .replace("http://", "")
+                        .replace("ftp://", "")
+                        .replace("file://", "")
+                if (rawName.length > 30) {
+                    val questionIndex = rawName.indexOf("?")
+                    val withoutQueryString =
+                        if (questionIndex < 0) {
+                            rawName
+                        } else {
+                            rawName.substring(0, questionIndex)
+                        }
+
+                    if (withoutQueryString.length > 30) {
+                        val parts = withoutQueryString.split("/")
+                        if (parts.size == 1) {
+                            withoutQueryString
+                        } else {
+                            "${parts.first()}/.../${parts.last()}"
+                        }
+                    } else {
+                        withoutQueryString
+                    }
+                } else {
+                    rawName
+                }
+            }
+        builder.append("<a href=\"$urlNoSpace\">$title</a>")
+    }
 
     override fun writeText(text: String) {
         val textWithBreaks = newlinesToHtml(text)
@@ -407,6 +446,12 @@ class MathLinguaCodeWriter(
         builder.append(
             expandTextAsWritten(text, true, defines, states, foundations, mutuallyGroups).text
                 ?: text)
+        builder.append('"')
+    }
+
+    override fun writeUrl(url: String, name: String?) {
+        builder.append('"')
+        builder.append(url)
         builder.append('"')
     }
 

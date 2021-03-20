@@ -20,30 +20,29 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_REFERENCE_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SourceItemGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateSourceItemGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ReferenceItem
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateReferenceItem
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ReferenceSection(val sourceItems: List<SourceItemGroup>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = sourceItems.forEach(fn)
+data class ReferenceSection(val items: List<ReferenceItem>) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("reference")
-        for (sourceItem in sourceItems) {
+        for (item in items) {
             writer.writeNewline()
-            writer.append(sourceItem, true, indent + 2)
+            writer.append(item, true, indent + 2)
         }
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ReferenceSection(
-                sourceItems = sourceItems.map { chalkTransformer(it) as SourceItemGroup }))
+            ReferenceSection(items = items.map { chalkTransformer(it) as ReferenceItem }))
 }
 
 fun validateReferenceSection(
@@ -52,6 +51,6 @@ fun validateReferenceSection(
     track(node, tracker) {
         validateSection(node, errors, "reference", DEFAULT_REFERENCE_SECTION) { section ->
             ReferenceSection(
-                sourceItems = section.args.map { validateSourceItemGroup(it, errors, tracker) })
+                items = section.args.map { validateReferenceItem(it, errors, tracker) })
         }
     }

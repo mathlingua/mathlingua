@@ -562,7 +562,7 @@ fun getIndexHtml(
     """
 <html>
     <head>
-        <meta name="viewport" content="width=100%, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
         <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
         <meta content="utf-8" http-equiv="encoding">
         <style>
@@ -588,8 +588,11 @@ fun getIndexHtml(
             }
 
             .search-area {
-                margin-left: auto;
-                margin-right: auto;
+                position: absolute;
+                left: 50%;
+                top: 50%;
+                transform: translate(-50%, -50%);
+                width: max-content;
             }
 
             .sidebar {
@@ -654,6 +657,10 @@ fun getIndexHtml(
                 text-decoration: none;
                 color: black;
                 margin-left: 0.75em;
+                position: absolute;
+                left: 0;
+                top: 50%;
+                transform: translate(0, -50%);
             }
 
             #main {

@@ -574,15 +574,16 @@ fun getIndexHtml(
             .topbar {
                 display: block;
                 height: 1.75em;
-                background-color: #ffffff;
+                background-color: #444444;
                 position: fixed;
                 z-index: 2;
                 top: 0;
                 left: 0;
                 width: 100%;
                 border-width: 1px;
-                border-color: rgba(200, 200, 200);
-                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                border-color: #555555;
+                border-bottom-style: solid;
+                box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
                             inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
                 padding-top: 0.5em;
             }
@@ -602,12 +603,12 @@ fun getIndexHtml(
                 z-index: 1;
                 top: 1.75em;
                 left: 0;
-                background-color: #ffffff;
+                background-color: #fefefe;
                 border-right: solid;
                 border-width: 1px;
-                border-color: rgba(200, 200, 200);
-                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
-                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+                border-color: rgba(215, 215, 215);
+                box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0);
                 overflow-x: scroll;
                 padding-top: 25px;
                 transition: 0.5s;
@@ -636,8 +637,9 @@ fun getIndexHtml(
                 border: solid;
                 border-width: 1px;
                 border-radius: 3px;
-                border-color: rgba(230, 230, 230);
+                border-color: #303030;
                 line-height: 1.3em;
+                background-color: #eeeeee;
             }
 
             .button {
@@ -648,14 +650,14 @@ fun getIndexHtml(
                 padding-right: 0.5em;
                 padding-top: 0.2em;
                 padding-bottom: 0.2em;
-                background-color: #ffffff;
-                border-color: rgba(230, 230, 230);
-                color: #000000;
+                background-color: #333333;
+                border-color: #303030;
+                color: #cccccc;
             }
 
             .closeButton {
                 text-decoration: none;
-                color: black;
+                color: #cccccc;
                 margin-left: 0.75em;
                 position: absolute;
                 left: 0;

@@ -977,7 +977,7 @@ private fun getHtml(body: String) =
             }
 
             hr {
-                border: 1px solid #efefef;
+                border: 0.5px solid #efefef;
             }
 
             .mathlingua-top-level {
@@ -993,7 +993,6 @@ private fun getHtml(body: String) =
                 padding-left: 1.1em;
                 padding-right: 1.1em;
                 width: max-content;
-                max-width: 90%;
                 margin-left: auto; /* for centering content */
                 margin-right: auto; /* for centering content */
             }

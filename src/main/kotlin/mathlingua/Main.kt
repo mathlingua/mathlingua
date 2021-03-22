@@ -136,19 +136,14 @@ private fun write(cwd: File, content: String, outFile: File, stdout: Boolean) {
 }
 
 private fun buildFileList(
-    cwd: File,
-    file: File,
-    indent: Int,
-    builder: StringBuilder,
-    allFileIds: MutableList<String>,
-    firstSrc: Array<String>
+    cwd: File, file: File, indent: Int, builder: StringBuilder, allFileIds: MutableList<String>
 ) {
     val childBuilder = StringBuilder()
     if (file.isDirectory) {
         val children = file.listFiles()
         if (children != null) {
             for (child in children) {
-                buildFileList(cwd, child, indent + 12, childBuilder, allFileIds, firstSrc)
+                buildFileList(cwd, child, indent + 12, childBuilder, allFileIds)
             }
         }
     }
@@ -156,9 +151,6 @@ private fun buildFileList(
     val isMathFile = file.isFile && file.extension == "math"
     if ((file.isDirectory && childBuilder.isNotEmpty()) || isMathFile) {
         val src = file.relativePath(cwd).replace(".math", ".html")
-        if (isMathFile && firstSrc[0].isEmpty()) {
-            firstSrc[0] = src
-        }
         val cssBuilder = StringBuilder()
         cssBuilder.append("padding-left: ${indent}px;")
         if (file.isDirectory) {
@@ -166,8 +158,14 @@ private fun buildFileList(
         }
         val id = src.removeSuffix(".html")
         allFileIds.add(id)
+        val onclick =
+            if (file.isDirectory) {
+                ""
+            } else {
+                "onclick=\"view('$src')\""
+            }
         builder.append(
-            "<a id='$id' onclick=\"view('$src')\"><span style=\"${cssBuilder}\">${file.name.removeSuffix(".math")}</span></a>")
+            "<a id='$id' $onclick><span style=\"${cssBuilder}\">${file.name.removeSuffix(".math")}</span></a>")
         builder.append(childBuilder.toString())
     }
 }
@@ -260,13 +258,12 @@ private fun generateSearchIndexImpl(
 
 private fun writeIndexFile(cwd: File, docsDir: File, contentDir: File): File {
     val allFileIds = mutableListOf<String>()
-    val firstSrc = arrayOf("")
     val builder = StringBuilder()
     if (cwd.isDirectory) {
         val children = cwd.listFiles()
         if (children != null) {
             for (child in children) {
-                buildFileList(cwd, child, 0, builder, allFileIds, firstSrc)
+                buildFileList(cwd, child, 0, builder, allFileIds)
             }
         }
     }
@@ -297,10 +294,18 @@ private fun writeIndexFile(cwd: File, docsDir: File, contentDir: File): File {
     }
     searchIndexBuilder.append("return index;")
 
-    val html =
-        getIndexHtml(builder.toString(), searchIndexBuilder.toString(), allFileIds, firstSrc[0])
+    val indexHtml = getIndexHtml(builder.toString(), searchIndexBuilder.toString(), allFileIds)
     val indexFile = File(docsDir, "index.html")
-    indexFile.writeText(html)
+    indexFile.writeText(indexHtml)
+    val homeContentFile = File(cwd, "docs-home.html")
+    val homeContent =
+        if (homeContentFile.exists()) {
+            homeContentFile.readText()
+        } else {
+            "<p>Create a file called <code>docs-home.html</code> to describe this repository.</p>"
+        }
+    val homeFile = File(docsDir, "home.html")
+    homeFile.writeText(getHomeHtml(homeContent))
     return indexFile
 }
 
@@ -407,7 +412,7 @@ private class Watch :
                 val watchKey = watchService.take()
                 for (event in watchKey.pollEvents()) {
                     val filename = event.context().toString()
-                    if (!filename.endsWith(".html")) {
+                    if (!filename.endsWith(".html") || filename == "docs-home.html") {
                         doRender = true
                     }
                     if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE ||
@@ -556,9 +561,7 @@ fun main(args: Array<String>) {
     mlg.main(args)
 }
 
-fun getIndexHtml(
-    fileListHtml: String, searchIndexInitCode: String, allFileIds: List<String>, initialSrc: String
-) =
+fun getIndexHtml(fileListHtml: String, searchIndexInitCode: String, allFileIds: List<String>) =
     """
 <html>
     <head>
@@ -689,10 +692,15 @@ fun getIndexHtml(
                 margin: 0;
                 padding: 0;
             }
+
+            hr {
+                border: 0.5px solid #efefef;
+            }
         </style>
         <script>
             const ALL_FILE_IDS = [${allFileIds.joinToString(",") { "'$it'" }}];
-            const INITIAL_SRC = "$initialSrc";
+            ALL_FILE_IDS.push('home');
+            const INITIAL_SRC = "home.html";
             const SEARCH_INDEX = (function() {
                 $searchIndexInitCode
             })();
@@ -892,10 +900,36 @@ fun getIndexHtml(
         </div>
 
         <div id="sidebar" class="sidebar">
+            <a id='home' onclick="view('home.html')" style="padding-top: 0;padding-bottom: 0;margin-top: 0;margin-bottom: 0;"><span style="padding-left: 0px;font-weight: bold;">Home</span></a>
+            <hr>
             $fileListHtml
         </div>
 
-        <iframe id="__content__frame__" src="$initialSrc"></iframe>
+        <iframe id="__content__frame__" src="home.html"></iframe>
+    </body>
+</html>
+"""
+
+fun getHomeHtml(content: String) =
+    """
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta name="viewport" content="width=100%, initial-scale=1.0">
+        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+        <meta content="utf-8" http-equiv="encoding">
+        <style>
+            body {
+                font-family: Georgia, 'Times New Roman', Times, serif;
+            }
+
+            h1, h2, h3, h4 {
+                color: #0055bb;
+            }
+        </style>
+    </head>
+    <body>
+        $content
     </body>
 </html>
 """

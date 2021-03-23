@@ -992,6 +992,7 @@ private fun getHtml(body: String) =
                 padding-bottom: 1em;
                 padding-left: 1.1em;
                 padding-right: 1.1em;
+                max-width: 90%;
                 width: max-content;
                 margin-left: auto; /* for centering content */
                 margin-right: auto; /* for centering content */
@@ -1021,6 +1022,7 @@ private fun getHtml(body: String) =
 
             .mathlingua-id {
                 color: #5500aa;
+                overflow-x: scroll;
             }
 
             .mathlingua-text {
@@ -1033,6 +1035,15 @@ private fun getHtml(body: String) =
             }
 
             .mathlingua-text-no-render {
+                color: #000000;
+                display: block;
+                margin: 0 0 -1em 0;
+                padding: 0 0 0 2.5em;
+                font-size: 80%;
+                font-family: Georgia, 'Times New Roman', Times, serif;
+            }
+
+            .mathlingua-url {
                 color: #000000;
                 display: block;
                 margin: 0 0 -1em 0;

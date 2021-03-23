@@ -680,9 +680,9 @@ fun getIndexHtml(fileListHtml: String, searchIndexInitCode: String, allFileIds: 
                 margin-bottom: 0;
             }
 
-            @media screen and (max-width: 400px) {
+            @media screen and (max-width: 500px) {
                 #main {
-                    margin-left: 0%;
+                    margin-left: 0;
                 }
             }
 
@@ -710,7 +710,7 @@ fun getIndexHtml(fileListHtml: String, searchIndexInitCode: String, allFileIds: 
                 return window?.screen?.width <= 500;
             }
 
-            let open = forMobile();
+            let open = !forMobile();
 
             function toggleSidePanel() {
                 if (open) {
@@ -877,7 +877,6 @@ fun getIndexHtml(fileListHtml: String, searchIndexInitCode: String, allFileIds: 
             }
 
             function initPage() {
-                toggleSidePanel();
                 const el = document.getElementById('search-input');
                 if (el) {
                     el.addEventListener("keyup", function(event) {

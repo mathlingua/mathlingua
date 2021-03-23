@@ -53,7 +53,28 @@ class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
         writer.writeHeader("Resource")
         writer.writeNewline()
         for (i in items.indices) {
-            writer.append(items[i], true, indent + 2)
+            val item = items[i]
+            if (item.section.name == "homepage" || item.section.name == "url") {
+                writer.writeDot()
+                writer.writeSpace()
+                writer.writeHeader(item.section.name)
+                val values = item.section.values
+                if (values.size == 1) {
+                    writer.writeSpace()
+                    writer.writeUrl(values[0].removeSurrounding("\"", "\""), null)
+                } else {
+                    for (j in values.indices) {
+                        writer.writeNewline()
+                        writer.writeSpace()
+                        writer.writeSpace()
+                        writer.writeDot()
+                        writer.writeSpace()
+                        writer.writeUrl(values[j].removeSurrounding("\"", "\""), null)
+                    }
+                }
+            } else {
+                writer.append(items[i], true, indent + 2)
+            }
             if (i != items.size - 1) {
                 writer.writeNewline()
             }

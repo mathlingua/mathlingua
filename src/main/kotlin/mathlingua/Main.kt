@@ -152,7 +152,8 @@ private fun buildFileList(
     if ((file.isDirectory && childBuilder.isNotEmpty()) || isMathFile) {
         val src = file.relativePath(cwd).replace(".math", ".html")
         val cssBuilder = StringBuilder()
-        cssBuilder.append("padding-left: ${indent}px;")
+        cssBuilder.append(
+            "padding-left: ${indent}px;font-family: Georgia, 'Times New Roman', Times, serif;")
         if (file.isDirectory) {
             cssBuilder.append("font-weight: bold;")
         }
@@ -920,6 +921,7 @@ fun getHomeHtml(content: String) =
         <meta content="utf-8" http-equiv="encoding">
         <style>
             body {
+                font-size: 80%;
                 font-family: Georgia, 'Times New Roman', Times, serif;
             }
 

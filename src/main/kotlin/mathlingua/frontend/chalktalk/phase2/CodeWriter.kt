@@ -196,7 +196,8 @@ open class HtmlCodeWriter(
                     rawName
                 }
             }
-        builder.append("<span class=\"mathlingua-url\"><a href=\"$urlNoSpace\">$title</a></span>")
+        builder.append(
+            "<span class=\"mathlingua-url\"><a target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
     }
 
     override fun writeText(text: String) {

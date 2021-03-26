@@ -44,6 +44,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
@@ -257,6 +259,110 @@ private fun generateSearchIndexImpl(
     }
 }
 
+private fun generateSignatureToPath(cwd: File, contentDir: File): Map<String, String> {
+    val result = mutableMapOf<String, String>()
+    generateSignatureToPathImpl(cwd, contentDir, result, 0)
+    return result
+}
+
+private fun generateSignatureToPathImpl(
+    cwd: File, file: File, result: MutableMap<String, String>, depth: Int
+) {
+    if (file.isDirectory) {
+        val children = file.listFiles()
+        if (children != null) {
+            for (child in children) {
+                generateSignatureToPathImpl(cwd, child, result, depth + 1)
+            }
+        }
+    }
+
+    if (file.isFile && file.extension == "math") {
+        val path = file.relativePath(cwd).removeSuffix(".math")
+        when (val validation = FrontEnd.parse(file.readText())
+        ) {
+            is ValidationSuccess -> {
+                val doc = validation.value
+                val groups = doc.groups
+                for (i in groups.indices) {
+                    val grp = groups[i]
+                    val signature =
+                        when (grp) {
+                            is DefinesGroup -> {
+                                grp.signature
+                            }
+                            is StatesGroup -> {
+                                grp.signature
+                            }
+                            is FoundationGroup -> {
+                                val content = grp.foundationSection.content
+                                when (content) {
+                                    is DefinesGroup -> {
+                                        content.signature
+                                    }
+                                    is StatesGroup -> {
+                                        content.signature
+                                    }
+                                    else -> {
+                                        null
+                                    }
+                                }
+                            }
+                            else -> {
+                                null
+                            }
+                        }
+                    if (signature != null) {
+                        val pathBuilder = StringBuilder()
+                        for (j in 0 until depth) {
+                            pathBuilder.append("../")
+                        }
+                        pathBuilder.append(path)
+                        pathBuilder.append(".html?show=")
+                        pathBuilder.append(i)
+                        result[signature] = pathBuilder.toString()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun generateSignatureToPathJsCode(cwd: File, contentDir: File): String {
+    val signatureToPath = generateSignatureToPath(cwd, contentDir)
+    val signatureToPathBuilder = StringBuilder()
+    signatureToPathBuilder.append("const sigToPath = new Map();")
+    for (entry in signatureToPath.entries) {
+        signatureToPathBuilder.append("sigToPath.set('${entry.key}', '${entry.value}');")
+    }
+    signatureToPathBuilder.append("return sigToPath;")
+
+    return """
+        const SIGNATURE_TO_PATH = (function() {
+            $signatureToPathBuilder
+        })();
+
+        function mathlinguaToggleDropdown(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                if (el.className === 'mathlingua-dropdown-menu-hidden') {
+                    el.className = 'mathlingua-dropdown-menu-shown';
+                } else {
+                    el.className = 'mathlingua-dropdown-menu-hidden';
+                }
+            }
+        }
+
+        function mathlinguaViewSignature(signature, id) {
+            mathlinguaToggleDropdown(id);
+            const path = SIGNATURE_TO_PATH.get(signature);
+            if (path) {
+                window.open(path, '_blank');
+            }
+        }
+    """.trimIndent()
+}
+
 private fun writeIndexFile(cwd: File, docsDir: File, contentDir: File): File {
     val allFileIds = mutableListOf<String>()
     val builder = StringBuilder()
@@ -342,9 +448,13 @@ private fun render(
         log("Wrote ${indexFile.relativeTo(cwd)}")
     }
 
+    val sigToPathCode = generateSignatureToPathJsCode(cwd, contentDir)
+
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
     for (f in filesToProcess) {
-        val pair = sourceCollection.prettyPrint(file = f, html = html, doExpand = !noexpand)
+        val pair =
+            sourceCollection.prettyPrint(
+                file = f, html = html, js = sigToPathCode, doExpand = !noexpand)
         errors.addAll(
             pair.second.map {
                 ValueSourceTracker(

@@ -78,11 +78,13 @@ interface SourceCollection {
     fun getParseErrors(): List<ValueSourceTracker<ParseError>>
     fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
     fun getSymbolErrors(): List<ValueSourceTracker<ParseError>>
-    fun prettyPrint(file: File, html: Boolean, doExpand: Boolean): Pair<String, List<ParseError>>
     fun prettyPrint(
-        input: String, html: Boolean, doExpand: Boolean
+        file: File, html: Boolean, js: String?, doExpand: Boolean
     ): Pair<String, List<ParseError>>
-    fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String
+    fun prettyPrint(
+        input: String, html: Boolean, js: String?, doExpand: Boolean
+    ): Pair<String, List<ParseError>>
+    fun prettyPrint(node: Phase2Node, html: Boolean, js: String?, doExpand: Boolean): String
 }
 
 fun newSourceCollectionFromFiles(filesOrDirs: List<File>): SourceCollection {
@@ -524,24 +526,24 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     }
 
     override fun prettyPrint(
-        file: File, html: Boolean, doExpand: Boolean
+        file: File, html: Boolean, js: String?, doExpand: Boolean
     ): Pair<String, List<ParseError>> {
         val sourceFile = sourceFiles[file.normalize().canonicalPath]
         return if (sourceFile != null) {
-            prettyPrint(sourceFile.validation, html, doExpand)
+            prettyPrint(sourceFile.validation, html, js, doExpand)
         } else {
-            prettyPrint(file.readText(), html, doExpand)
+            prettyPrint(file.readText(), html, js, doExpand)
         }
     }
 
     override fun prettyPrint(
-        input: String, html: Boolean, doExpand: Boolean
+        input: String, html: Boolean, js: String?, doExpand: Boolean
     ): Pair<String, List<ParseError>> {
-        return prettyPrint(FrontEnd.parseWithLocations(input), html, doExpand)
+        return prettyPrint(FrontEnd.parseWithLocations(input), html, js, doExpand)
     }
 
     private fun prettyPrint(
-        validation: Validation<Parse>, html: Boolean, doExpand: Boolean
+        validation: Validation<Parse>, html: Boolean, js: String?, doExpand: Boolean
     ): Pair<String, List<ParseError>> {
         val content =
             when (validation) {
@@ -568,7 +570,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     }
                 }
                 is ValidationSuccess ->
-                    prettyPrint(node = validation.value.document, html = html, doExpand = doExpand)
+                    prettyPrint(
+                        node = validation.value.document, html = html, js = js, doExpand = doExpand)
             }
 
         return when (validation) {
@@ -577,7 +580,9 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         }
     }
 
-    override fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String {
+    override fun prettyPrint(
+        node: Phase2Node, html: Boolean, js: String?, doExpand: Boolean
+    ): String {
         val writer =
             if (html) {
                 HtmlCodeWriter(
@@ -594,7 +599,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         val code = node.toCode(false, 0, writer = writer).getCode()
         return if (html) {
-            getHtml(code)
+            getHtml(code, js)
         } else {
             code
         }
@@ -740,7 +745,7 @@ private fun <T> Boolean.thenUse(value: () -> List<T>) =
         emptyList()
     }
 
-private fun getHtml(body: String) =
+private fun getHtml(body: String, js: String?) =
     """
 <!DOCTYPE html>
 <html>
@@ -758,6 +763,8 @@ private fun getHtml(body: String) =
                 crossorigin="anonymous">
         </script>
         <script>
+            ${js ?: ""}
+
             function buildMathFragment(rawText) {
                 var text = rawText;
                 if (text[0] === '"') {
@@ -1054,6 +1061,36 @@ private fun getHtml(body: String) =
 
             .mathlingua-statement-no-render {
                 color: #007377;
+            }
+
+            .mathlingua-statement-container {
+                display: inline;
+            }
+
+            .mathlingua-dropdown-menu-shown {
+                position: absolute;
+                display: block;
+                z-index: 1;
+                background-color: #ffffff;
+                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+                border: solid;
+                border-width: 1px;
+                border-radius: 0px;
+                border-color: rgba(200, 200, 200);
+            }
+
+            .mathlingua-dropdown-menu-hidden {
+                display: none;
+            }
+
+            .mathlingua-dropdown-menu-item {
+                display: block;
+                margin: 0.75ex;
+            }
+
+            .mathlingua-dropdown-menu-item:hover {
+                font-style: italic;
             }
 
             .katex {

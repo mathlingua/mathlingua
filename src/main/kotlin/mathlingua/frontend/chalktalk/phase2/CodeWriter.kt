@@ -16,11 +16,14 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
+import kotlin.random.Random
 import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
 import mathlingua.backend.transform.expandAsWritten
+import mathlingua.backend.transform.findAllStatementSignatures
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
@@ -29,6 +32,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.state
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
@@ -71,6 +75,7 @@ open class HtmlCodeWriter(
     val foundations: List<FoundationGroup>,
     val mutuallyGroups: List<MutuallyGroup>
 ) : CodeWriter {
+    private var statementIndex = System.nanoTime() + Random.Default.nextLong()
     protected val builder = StringBuilder()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
@@ -247,6 +252,9 @@ open class HtmlCodeWriter(
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
+        val dropdownIndex = statementIndex++
+        builder.append(
+            "<div class='mathlingua-statement-container' onclick=\"mathlinguaToggleDropdown('statement-$dropdownIndex')\">")
         if (shouldExpand()) {
             val expansionErrors = mutableListOf<String>()
             if (root is ValidationFailure) {
@@ -320,6 +328,22 @@ open class HtmlCodeWriter(
             builder.append("<span class='mathlingua-statement-no-render'>")
             builder.append(stmtText)
             builder.append("</span>")
+        }
+        builder.append("</div>")
+        if (root is ValidationSuccess) {
+            val stmt = Statement(text = stmtText, texTalkRoot = root)
+            val signatures = findAllStatementSignatures(stmt, newLocationTracker())
+            if (signatures.isNotEmpty()) {
+                builder.append(
+                    "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex'>")
+                for (sig in signatures) {
+                    builder.append(
+                        "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form}', 'statement-$dropdownIndex')\">")
+                    builder.append(sig.form)
+                    builder.append("</a>")
+                }
+                builder.append("</div>")
+            }
         }
     }
 

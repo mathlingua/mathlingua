@@ -754,7 +754,49 @@ fun getIndexHtml(
                 mathlinguaToggleDropdown(id);
                 const path = SIGNATURE_TO_PATH.get(signature);
                 if (path) {
-                    window.open(path, '_blank');
+                    const bottom = document.getElementById('__bottom_panel__');
+                    if (bottom) {
+                        const key = path.replace(/\?.*/g, '')
+                                        .replace(/\.html/g, '.math')
+                                        .replace(/\.\.\//g, '');
+                        const index = path.replace(/.*\?show=/g, '');
+                        const entHtml = PATH_TO_ENTITY_LIST.get(key)[index];
+
+                        const ent = document.createElement('div');
+                        ent.className = 'mathlingua-top-level';
+                        ent.innerHTML = entHtml;
+
+                        const div = document.createElement('div');
+                        div.style.margin = '1em';
+                        div.style.display = 'inline-block';
+                        div.style.backgroundColor = '#ffffff';
+
+                        const closeButton = document.createElement('a');
+                        closeButton.text = '✕';
+                        closeButton.style.fontSize = '80%';
+                        closeButton.style.padding = '1ex';
+                        closeButton.style.float = 'right';
+                        closeButton.onclick = () => {
+                            bottom.removeChild(div);
+                            if (bottom.childElementCount === 0) {
+                                const content = document.getElementById('__main_content__');
+                                if (content) {
+                                    content.style.marginBottom = '1em';
+                                }
+                            }
+                        };
+
+                        div.appendChild(closeButton);
+                        div.appendChild(ent);
+
+                        bottom.appendChild(div);
+                        render(div);
+
+                        const content = document.getElementById('__main_content__');
+                        if (content) {
+                            content.style.marginBottom = bottom.clientHeight + 'px';
+                        }
+                    }
                 }
             }
 
@@ -1420,6 +1462,23 @@ fun getIndexHtml(
                     margin-left: 0;
                 }
             }
+
+            .bottom-panel {
+                background-color: #ffffff;
+                overflow-x: scroll;
+                overflow-y: hidden;
+                white-space: nowrap;
+                width: 100%;
+                max-width: max-content;
+                border-width: 1px;
+                border-color: #555555;
+                border-bottom-style: solid;
+                box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+                z-index: 1;
+                bottom: 0;
+                position: fixed;
+            }
         </style>
     </head>
     <body id="main" onload="initPage()">
@@ -1438,8 +1497,8 @@ fun getIndexHtml(
             $fileListHtml
         </div>
 
-        <div class="content" id="__main_content__">
-        </div>
+        <div class='bottom-panel' id='__bottom_panel__'></div>
+        <div class="content" id="__main_content__"></div>
     </body>
 </html>
 """

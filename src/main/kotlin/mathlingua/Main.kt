@@ -1007,10 +1007,12 @@ fun getIndexHtml(
                 if (open) {
                     document.getElementById('sidebar').style.width = '0';
                     document.getElementById('main').style.marginLeft = '0';
+                    document.getElementById('__bottom_panel__').style.width = '96.5%';
                 } else {
                     let margin = forMobile() ? '50%' : '20%';
                     document.getElementById('sidebar').style.width = margin;
                     document.getElementById('main').style.marginLeft = margin;
+                    document.getElementById('__bottom_panel__').style.width = '76.5%';
                 }
                 open = !open;
             }
@@ -1466,10 +1468,11 @@ fun getIndexHtml(
             .bottom-panel {
                 background-color: #ffffff;
                 overflow-x: scroll;
-                overflow-y: hidden;
+                overflow-y: scroll;
                 white-space: nowrap;
-                width: 100%;
+                width: 76.5%;
                 max-width: max-content;
+                max-height: 50%;
                 border-width: 1px;
                 border-color: #555555;
                 border-bottom-style: solid;

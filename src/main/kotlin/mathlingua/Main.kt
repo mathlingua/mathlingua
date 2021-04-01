@@ -343,15 +343,14 @@ private fun generateSignatureToPathJsCode(cwd: File, contentDir: File): String {
 private fun sanitizeHtmlForJs(html: String) =
     html.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
 
-private fun writeIndexFile(
+private fun getIndexFileText(
     files: List<String>,
     cwd: File,
-    docsDir: File,
     contentDir: File,
     html: Boolean,
     noexpand: Boolean,
     errors: MutableList<ValueSourceTracker<ParseError>>
-): File {
+): String {
     val allFileIds = mutableListOf<String>()
     val fileListBuilder = StringBuilder()
     if (cwd.isDirectory) {
@@ -429,17 +428,13 @@ private fun writeIndexFile(
     val homeHtml =
         sanitizeHtmlForJs(
             "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\"><div class='mathlingua-top-level'>$homeContent</div></div>")
-    val indexHtml =
-        getIndexHtml(
-            fileListBuilder.toString(),
-            homeHtml,
-            searchIndexBuilder.toString(),
-            allFileIds,
-            sigToPathCode,
-            pathToEntityBuilder.toString())
-    val indexFile = File(docsDir, "index.html")
-    indexFile.writeText(indexHtml)
-    return indexFile
+    return buildIndexHtml(
+        fileListBuilder.toString(),
+        homeHtml,
+        searchIndexBuilder.toString(),
+        allFileIds,
+        sigToPathCode,
+        pathToEntityBuilder.toString())
 }
 
 private fun generatePathToEntityList(
@@ -469,24 +464,60 @@ private fun generatePathToEntityList(
 }
 
 private fun render(
+    filename: String, format: String, stdout: Boolean, noexpand: Boolean
+): List<ValueSourceTracker<ParseError>> {
+    val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
+    val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
+
+    val file = File(filename)
+    val html = format == "html"
+    val pair = sourceCollection.prettyPrint(file = file, html = html, doExpand = !noexpand)
+
+    val fileContent = file.readText()
+    val errors =
+        pair.second.map {
+            ValueSourceTracker(
+                value = it,
+                source =
+                    SourceFile(
+                        file = file,
+                        content = fileContent,
+                        validation = validationFailure(emptyList())),
+                tracker = null)
+        }
+
+    val contentBuilder = StringBuilder()
+    for (item in pair.first) {
+        contentBuilder.append("<div class='mathlingua-top-level'>")
+        contentBuilder.append(item)
+        contentBuilder.append("</div><br/><br/>")
+    }
+
+    val text = buildStandaloneHtml(content = contentBuilder.toString())
+
+    if (html && !stdout) {
+        val fileToHtmlExt = File(file.parentFile, file.nameWithoutExtension + ".html")
+        val relPath = fileToHtmlExt.relativePath(cwd)
+        val outFile = File(getDocsDirectory(), relPath)
+        outFile.parentFile.mkdirs()
+        outFile.writeText(text)
+        log("Wrote ${outFile.relativeTo(cwd)}")
+    }
+
+    if (stdout) {
+        log(text)
+    } else {
+        log(getErrorOutput(errors, sourceCollection.size(), false))
+    }
+
+    return errors
+}
+
+private fun render(
     files: List<String>, format: String, stdout: Boolean, noexpand: Boolean
 ): List<ValueSourceTracker<ParseError>> {
     val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
     val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
-    val filesToProcess = mutableListOf<File>()
-    val inputFiles =
-        if (files.isEmpty()) {
-            listOf(cwd)
-        } else {
-            files.map { File(it) }
-        }
-    for (f in inputFiles) {
-        if (f.isDirectory) {
-            filesToProcess.addAll(f.walk().filter { isMathLinguaFile(it) })
-        } else if (isMathLinguaFile(f)) {
-            filesToProcess.add(f)
-        }
-    }
 
     val docsDir = getDocsDirectory()
     docsDir.mkdirs()
@@ -497,12 +528,17 @@ private fun render(
     val html = format == "html"
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
 
+    val indexFileText = getIndexFileText(files, cwd, contentDir, html, noexpand, errors)
+
     if (html && !stdout) {
-        val indexFile = writeIndexFile(files, cwd, docsDir, contentDir, html, noexpand, errors)
+        val indexFile = File(docsDir, "index.html")
+        indexFile.writeText(indexFileText)
         log("Wrote ${indexFile.relativeTo(cwd)}")
     }
 
-    if (!stdout) {
+    if (stdout) {
+        log(indexFileText)
+    } else {
         log(getErrorOutput(errors, sourceCollection.size(), false))
     }
 
@@ -595,7 +631,13 @@ private class Render :
 
     override fun run(): Unit =
         runBlocking {
-            val errors = render(files = file, format = format, stdout = stdout, noexpand = noexpand)
+            val errors =
+                if (file.size == 1) {
+                    render(
+                        filename = file[0], format = format, stdout = stdout, noexpand = noexpand)
+                } else {
+                    render(files = file, format = format, stdout = stdout, noexpand = noexpand)
+                }
             exitProcess(
                 if (errors.isEmpty()) {
                     0
@@ -697,7 +739,382 @@ fun main(args: Array<String>) {
     mlg.main(args)
 }
 
-fun getIndexHtml(
+const val SHARED_HEADER =
+    """
+    <meta name="viewport" content="width=100%, initial-scale=1.0">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
+          integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
+          crossorigin="anonymous">
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
+            integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
+            crossorigin="anonymous">
+    </script>
+"""
+
+const val KATEX_RENDERING_JS =
+    """
+    function buildMathFragment(rawText) {
+        var text = rawText;
+        if (text[0] === '"') {
+            text = text.substring(1);
+        }
+        if (text[text.length - 1] === '"') {
+            text = text.substring(0, text.length - 1);
+        }
+        text = text.replace(/([a-zA-Z0-9])\?\??/g, '${'$'}1');
+        const fragment = document.createDocumentFragment();
+        var buffer = '';
+        var i = 0;
+        while (i < text.length) {
+            if (text[i] === '\\' && text[i+1] === '[') {
+                i += 2; // skip over \ and [
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                var math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ']')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ']') {
+                    i++; // move past the ]
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '(') {
+                i += 2; // skip over \ and ()
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                var math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ')')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ')') {
+                    i++; // move past the )
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '${'$'}' && text[i+1] === '${'$'}') {
+                i += 2; // skip over ${'$'} and ${'$'}
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                var math = '';
+                while (i < text.length &&
+                    !(text[i] === '${'$'}' && text[i+1] === '${'$'}')) {
+                    math += text[i++];
+                }
+                if (text[i] === '${'$'}') {
+                    i++; // move past the ${'$'}
+                }
+                if (text[i] === '${'$'}') {
+                    i++; // move past the ${'$'}
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '${'$'}') {
+                i++; // skip over the ${'$'}
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                var math = '';
+                while (i < text.length &&
+                     text[i] !== '${'$'}') {
+                    math += text[i++];
+                }
+                if (text[i] === '${'$'}') {
+                    i++; // move past the ${'$'}
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else {
+                buffer += text[i++];
+            }
+        }
+
+        if (buffer.length > 0) {
+            fragment.appendChild(document.createTextNode(buffer));
+        }
+
+        return fragment;
+    }
+
+    function render(node) {
+        if (node.className && node.className.indexOf('no-render') >= 0) {
+            return;
+        }
+
+        let isInWritten = false;
+        const parent = node.parentNode;
+        if (node.className === 'mathlingua') {
+            for (let i=0; i<node.childNodes.length; i++) {
+                const n = node.childNodes[i];
+                if (n && n.className === 'mathlingua-header' &&
+                    n.textContent === 'written:') {
+                    isInWritten = true;
+                    break;
+                }
+            }
+        }
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+            const child = node.childNodes[i];
+
+            // node is an element node => nodeType === 1
+            // node is an attribute node => nodeType === 2
+            // node is a text node => nodeType === 3
+            // node is a comment node => nodeType === 8
+            if (child.nodeType === 3) {
+                let text = child.textContent;
+                if (text.trim()) {
+                    if (isInWritten) {
+                        // if the text is in a written: section
+                        // turn "some text" to \[some text\]
+                        // so the text is in math mode
+                        if (text[0] === '"') {
+                            text = text.substring(1);
+                        }
+                        if (text[text.length - 1] === '"') {
+                            text = text.substring(0, text.length - 1);
+                        }
+                        text = '\\[' + text + '\\]';
+                    }
+                    const fragment = buildMathFragment(text);
+                    i += fragment.childNodes.length - 1;
+                    node.replaceChild(fragment, child);
+                }
+            } else if (child.nodeType === 1) {
+                render(child);
+            }
+        }
+    }
+"""
+
+const val SHARED_CSS =
+    """
+    .content {
+        margin-top: 1.5em;
+        margin-bottom: 1em;
+        font-size: 1em;
+        width: 70%;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+    }
+
+    @media screen and (max-width: 400px) {
+        .content {
+            width: 90%;
+        }
+    }
+
+    body {
+        background-color: #fafafa;
+        padding-bottom: 1em;
+    }
+
+    hr {
+        border: 0.5px solid #efefef;
+    }
+
+    h1, h2, h3, h4 {
+        color: #0055bb;
+    }
+
+    .mathlingua-top-level {
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-color: rgba(200, 200, 200);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                    inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+        padding-top: 1.25em;
+        padding-bottom: 1em;
+        padding-left: 1.1em;
+        padding-right: 1.1em;
+        max-width: 90%;
+        width: max-content;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+    }
+
+    .end-mathlingua-top-level {
+        padding-top: 0.5em;
+        margin: 0;
+    }
+
+    .mathlingua {
+        font-family: monospace;
+    }
+
+    .mathlingua-header {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-size: 80%;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-whitespace {
+        padding: 0;
+        margin: 0;
+        margin-left: 1ex;
+    }
+
+    .mathlingua-id {
+        color: #5500aa;
+        overflow-x: scroll;
+    }
+
+    .mathlingua-text {
+        color: #000000;
+        display: block;
+        margin: 0 0 -1em 0;
+        padding: 0 0 0 2.5em;
+        font-size: 80%;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-text-no-render {
+        color: #000000;
+        display: block;
+        margin: 0 0 -1em 0;
+        padding: 0 0 0 2.5em;
+        font-size: 80%;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-url {
+        color: #000000;
+        display: block;
+        margin: 0 0 -1em 0;
+        padding: 0 0 0 2.5em;
+        font-size: 80%;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-statement-no-render {
+        color: #007377;
+    }
+
+    .mathlingua-statement-container {
+        display: inline;
+    }
+
+    .mathlingua-dropdown-menu-shown {
+        position: absolute;
+        display: block;
+        z-index: 1;
+        background-color: #ffffff;
+        box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                    inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+        border: solid;
+        border-width: 1px;
+        border-radius: 0px;
+        border-color: rgba(200, 200, 200);
+    }
+
+    .mathlingua-dropdown-menu-hidden {
+        display: none;
+    }
+
+    .mathlingua-dropdown-menu-item {
+        display: block;
+        margin: 0.75ex;
+    }
+
+    .mathlingua-dropdown-menu-item:hover {
+        font-style: italic;
+    }
+
+    .katex {
+        font-size: 0.9em;
+    }
+
+    .katex-display {
+        display: contents;
+    }
+
+    .katex-display > .katex {
+        display: contents;
+    }
+
+    .katex-display > .katex > .katex-html {
+        display: contents;
+    }
+"""
+
+fun buildStandaloneHtml(content: String) =
+    """
+<!DOCTYPE html>
+<html>
+    <head>
+        $SHARED_HEADER
+        <script>
+            $KATEX_RENDERING_JS
+
+            function initPage() {
+                const el = document.getElementById('__main_content__');
+                if (el) {
+                    render(el);
+                }
+            }
+        </script>
+        <style>
+            $SHARED_CSS
+        </style>
+    </head>
+    <body onload="initPage()">
+        <div class="content" id="__main_content__">
+            $content
+        </div>
+    </body>
+"""
+
+fun buildIndexHtml(
     fileListHtml: String,
     homeHtml: String,
     searchIndexInitCode: String,
@@ -709,18 +1126,7 @@ fun getIndexHtml(
 <!DOCTYPE html>
 <html>
     <head>
-        <meta name="viewport" content="width=100%, initial-scale=1.0">
-        <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
-        <meta content="utf-8" http-equiv="encoding">
-        <link rel="stylesheet"
-              href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
-              integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
-              crossorigin="anonymous">
-        <script defer
-                src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
-                integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
-                crossorigin="anonymous">
-        </script>
+        $SHARED_HEADER
         <script>
             const ALL_FILE_IDS = [${allFileIds.joinToString(",") { "'$it'" }}];
             ALL_FILE_IDS.push('home');
@@ -800,181 +1206,7 @@ fun getIndexHtml(
                 }
             }
 
-            function buildMathFragment(rawText) {
-                var text = rawText;
-                if (text[0] === '"') {
-                    text = text.substring(1);
-                }
-                if (text[text.length - 1] === '"') {
-                    text = text.substring(0, text.length - 1);
-                }
-                text = text.replace(/([a-zA-Z0-9])\?\??/g, '${'$'}1');
-                const fragment = document.createDocumentFragment();
-                var buffer = '';
-                var i = 0;
-                while (i < text.length) {
-                    if (text[i] === '\\' && text[i+1] === '[') {
-                        i += 2; // skip over \ and [
-                        fragment.appendChild(document.createTextNode(buffer));
-                        buffer = '';
-
-                        const span = document.createElement('span');
-                        var math = '';
-                        while (i < text.length &&
-                            !(text[i] === '\\' && text[i+1] === ']')) {
-                            math += text[i++];
-                        }
-                        if (text[i] === '\\') {
-                            i++; // move past the \
-                        }
-                        if (text[i] === ']') {
-                            i++; // move past the ]
-                        }
-                        try {
-                            katex.render(math, span, {
-                                throwOnError: true,
-                                displayMode: true
-                            });
-                        } catch {
-                            span.appendChild(document.createTextNode(math));
-                        }
-                        fragment.appendChild(span);
-                    } else if (text[i] === '\\' && text[i+1] === '(') {
-                        i += 2; // skip over \ and ()
-                        fragment.appendChild(document.createTextNode(buffer));
-                        buffer = '';
-
-                        const span = document.createElement('span');
-                        var math = '';
-                        while (i < text.length &&
-                            !(text[i] === '\\' && text[i+1] === ')')) {
-                            math += text[i++];
-                        }
-                        if (text[i] === '\\') {
-                            i++; // move past the \
-                        }
-                        if (text[i] === ')') {
-                            i++; // move past the )
-                        }
-                        try {
-                            katex.render(math, span, {
-                                throwOnError: true,
-                                displayMode: true
-                            });
-                        } catch {
-                            span.appendChild(document.createTextNode(math));
-                        }
-                        fragment.appendChild(span);
-                    } else if (text[i] === '${'$'}' && text[i+1] === '${'$'}') {
-                        i += 2; // skip over ${'$'} and ${'$'}
-                        fragment.appendChild(document.createTextNode(buffer));
-                        buffer = '';
-
-                        const span = document.createElement('span');
-                        var math = '';
-                        while (i < text.length &&
-                            !(text[i] === '${'$'}' && text[i+1] === '${'$'}')) {
-                            math += text[i++];
-                        }
-                        if (text[i] === '${'$'}') {
-                            i++; // move past the ${'$'}
-                        }
-                        if (text[i] === '${'$'}') {
-                            i++; // move past the ${'$'}
-                        }
-                        try {
-                            katex.render(math, span, {
-                                throwOnError: true,
-                                displayMode: true
-                            });
-                        } catch {
-                            span.appendChild(document.createTextNode(math));
-                        }
-                        fragment.appendChild(span);
-                    } else if (text[i] === '${'$'}') {
-                        i++; // skip over the ${'$'}
-                        fragment.appendChild(document.createTextNode(buffer));
-                        buffer = '';
-
-                        const span = document.createElement('span');
-                        var math = '';
-                        while (i < text.length &&
-                             text[i] !== '${'$'}') {
-                            math += text[i++];
-                        }
-                        if (text[i] === '${'$'}') {
-                            i++; // move past the ${'$'}
-                        }
-                        try {
-                            katex.render(math, span, {
-                                throwOnError: true,
-                                displayMode: true
-                            });
-                        } catch {
-                            span.appendChild(document.createTextNode(math));
-                        }
-                        fragment.appendChild(span);
-                    } else {
-                        buffer += text[i++];
-                    }
-                }
-
-                if (buffer.length > 0) {
-                    fragment.appendChild(document.createTextNode(buffer));
-                }
-
-                return fragment;
-            }
-
-            function render(node) {
-                if (node.className && node.className.indexOf('no-render') >= 0) {
-                    return;
-                }
-
-                let isInWritten = false;
-                const parent = node.parentNode;
-                if (node.className === 'mathlingua') {
-                    for (let i=0; i<node.childNodes.length; i++) {
-                        const n = node.childNodes[i];
-                        if (n && n.className === 'mathlingua-header' &&
-                            n.textContent === 'written:') {
-                            isInWritten = true;
-                            break;
-                        }
-                    }
-                }
-
-                for (let i = 0; i < node.childNodes.length; i++) {
-                    const child = node.childNodes[i];
-
-                    // node is an element node => nodeType === 1
-                    // node is an attribute node => nodeType === 2
-                    // node is a text node => nodeType === 3
-                    // node is a comment node => nodeType === 8
-                    if (child.nodeType === 3) {
-                        let text = child.textContent;
-                        if (text.trim()) {
-                            if (isInWritten) {
-                                // if the text is in a written: section
-                                // turn "some text" to \[some text\]
-                                // so the text is in math mode
-                                if (text[0] === '"') {
-                                    text = text.substring(1);
-                                }
-                                if (text[text.length - 1] === '"') {
-                                    text = text.substring(0, text.length - 1);
-                                }
-                                text = '\\[' + text + '\\]';
-                            }
-                            const fragment = buildMathFragment(text);
-                            i += fragment.childNodes.length - 1;
-                            node.replaceChild(fragment, child);
-                        }
-                    } else if (child.nodeType === 1) {
-                        render(child);
-                    }
-                }
-            }
+            $KATEX_RENDERING_JS
 
             function setup() {
                 render(document.body);
@@ -1204,155 +1436,7 @@ fun getIndexHtml(
             }
         </script>
         <style>
-            .content {
-                margin-top: 1.5em;
-                margin-bottom: 1em;
-                font-size: 1em;
-                width: 70%;
-                margin-left: auto; /* for centering content */
-                margin-right: auto; /* for centering content */
-            }
-
-            @media screen and (max-width: 400px) {
-                .content {
-                    width: 90%;
-                }
-            }
-
-            body {
-                background-color: #fafafa;
-                padding-bottom: 1em;
-            }
-
-            hr {
-                border: 0.5px solid #efefef;
-            }
-
-            h1, h2, h3, h4 {
-                color: #0055bb;
-            }
-
-            .mathlingua-top-level {
-                background-color: white;
-                border: solid;
-                border-width: 1px;
-                border-color: rgba(200, 200, 200);
-                border-radius: 2px;
-                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
-                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
-                padding-top: 1.25em;
-                padding-bottom: 1em;
-                padding-left: 1.1em;
-                padding-right: 1.1em;
-                max-width: 90%;
-                width: max-content;
-                margin-left: auto; /* for centering content */
-                margin-right: auto; /* for centering content */
-            }
-
-            .end-mathlingua-top-level {
-                padding-top: 0.5em;
-                margin: 0;
-            }
-
-            .mathlingua {
-                font-family: monospace;
-            }
-
-            .mathlingua-header {
-                color: #0055bb;
-                text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
-                font-size: 80%;
-                font-family: Georgia, 'Times New Roman', Times, serif;
-            }
-
-            .mathlingua-whitespace {
-                padding: 0;
-                margin: 0;
-                margin-left: 1ex;
-            }
-
-            .mathlingua-id {
-                color: #5500aa;
-                overflow-x: scroll;
-            }
-
-            .mathlingua-text {
-                color: #000000;
-                display: block;
-                margin: 0 0 -1em 0;
-                padding: 0 0 0 2.5em;
-                font-size: 80%;
-                font-family: Georgia, 'Times New Roman', Times, serif;
-            }
-
-            .mathlingua-text-no-render {
-                color: #000000;
-                display: block;
-                margin: 0 0 -1em 0;
-                padding: 0 0 0 2.5em;
-                font-size: 80%;
-                font-family: Georgia, 'Times New Roman', Times, serif;
-            }
-
-            .mathlingua-url {
-                color: #000000;
-                display: block;
-                margin: 0 0 -1em 0;
-                padding: 0 0 0 2.5em;
-                font-size: 80%;
-                font-family: Georgia, 'Times New Roman', Times, serif;
-            }
-
-            .mathlingua-statement-no-render {
-                color: #007377;
-            }
-
-            .mathlingua-statement-container {
-                display: inline;
-            }
-
-            .mathlingua-dropdown-menu-shown {
-                position: absolute;
-                display: block;
-                z-index: 1;
-                background-color: #ffffff;
-                box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
-                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
-                border: solid;
-                border-width: 1px;
-                border-radius: 0px;
-                border-color: rgba(200, 200, 200);
-            }
-
-            .mathlingua-dropdown-menu-hidden {
-                display: none;
-            }
-
-            .mathlingua-dropdown-menu-item {
-                display: block;
-                margin: 0.75ex;
-            }
-
-            .mathlingua-dropdown-menu-item:hover {
-                font-style: italic;
-            }
-
-            .katex {
-                font-size: 0.9em;
-            }
-
-            .katex-display {
-                display: contents;
-            }
-
-            .katex-display > .katex {
-                display: contents;
-            }
-
-            .katex-display > .katex > .katex-html {
-                display: contents;
-            }
+            $SHARED_CSS
 
             .topbar {
                 display: block;

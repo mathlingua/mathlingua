@@ -418,12 +418,12 @@ private fun getIndexFileText(
     }
     pathToEntityBuilder.append("                return map;\n")
 
-    val homeContentFile = File(cwd, "docs-home.html")
+    val homeContentFile = File(getDocsDirectory(), "home.html")
     val homeContent =
         if (homeContentFile.exists()) {
             homeContentFile.readText()
         } else {
-            "<p>Create a file called <code>docs-home.html</code> to describe this repository.</p>"
+            "<p>Create a file <code>docs/home.html</code> to describe this repository.</p>"
         }
     val homeHtml =
         sanitizeHtmlForJs(
@@ -723,12 +723,18 @@ class Help : CliktCommand(help = "Show this message and exit") {
 class Clean : CliktCommand(help = "Delete the docs directory") {
     override fun run() {
         val docsDir = getDocsDirectory()
-        if (docsDir.deleteRecursively()) {
-            log("Deleted directory $docsDir")
+        val indexFile = File(docsDir, "index.html")
+        if (!indexFile.exists()) {
+            log("Nothing to clean")
             exitProcess(0)
         } else {
-            log("${bold(red("ERROR: "))} Failed to delete directory $docsDir")
-            exitProcess(1)
+            if (indexFile.delete()) {
+                log("Deleted $indexFile")
+                exitProcess(0)
+            } else {
+                log("${bold(red("ERROR: "))} Failed to directory $docsDir")
+                exitProcess(1)
+            }
         }
     }
 }

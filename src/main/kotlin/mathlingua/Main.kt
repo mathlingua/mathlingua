@@ -190,6 +190,9 @@ private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
             words.add("@node.id")
         }
         is DefinesGroup -> {
+            if (node.signature != null) {
+                words.add(node.signature!!)
+            }
             when (val validation = node.id.texTalkRoot
             ) {
                 is ValidationSuccess -> {
@@ -393,7 +396,8 @@ private fun getIndexFileText(
                     searchIndexBuilder.append("                map$i.set('$path', set${i}_$j);\n")
                 }
             }
-            searchIndexBuilder.append("                index.set('$word', map$i);\n")
+            searchIndexBuilder.append(
+                "                index.set('${word.replace("\\", "\\\\")}', map$i);\n")
         }
     }
     searchIndexBuilder.append("                return index;")

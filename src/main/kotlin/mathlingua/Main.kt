@@ -47,6 +47,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
@@ -182,6 +183,12 @@ fun getAllWords(node: Phase2Node): Set<String> {
 
 private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
     when (node) {
+        is ResourceGroup -> {
+            // searching for a reference with or without @ in front
+            // should find the associated reference group
+            words.add(node.id)
+            words.add("@node.id")
+        }
         is DefinesGroup -> {
             when (val validation = node.id.texTalkRoot
             ) {
@@ -289,6 +296,9 @@ private fun generateSignatureToPathImpl(
                     val grp = groups[i]
                     val signature =
                         when (grp) {
+                            is ResourceGroup -> {
+                                grp.id
+                            }
                             is DefinesGroup -> {
                                 grp.signature
                             }
@@ -296,8 +306,8 @@ private fun generateSignatureToPathImpl(
                                 grp.signature
                             }
                             is FoundationGroup -> {
-                                val content = grp.foundationSection.content
-                                when (content) {
+                                when (val content = grp.foundationSection.content
+                                ) {
                                     is DefinesGroup -> {
                                         content.signature
                                     }
@@ -1034,12 +1044,18 @@ const val SHARED_CSS =
     }
 
     .mathlingua-url {
-        color: #000000;
+        color: #0000aa;
+        text-decoration: none;
         display: block;
         margin: 0 0 -1em 0;
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-link {
+        color: #0000aa;
+        text-decoration: none;
     }
 
     .mathlingua-statement-no-render {
@@ -1194,6 +1210,7 @@ fun buildIndexHtml(
                                 const content = document.getElementById('__main_content__');
                                 if (content) {
                                     content.style.marginBottom = '1em';
+                                    bottom.style.display = 'none';
                                 }
                             }
                         };
@@ -1202,6 +1219,7 @@ fun buildIndexHtml(
                         div.appendChild(ent);
 
                         bottom.appendChild(div);
+                        bottom.style.display = 'block';
                         render(div);
 
                         const content = document.getElementById('__main_content__');
@@ -1564,6 +1582,7 @@ fun buildIndexHtml(
             }
 
             .bottom-panel {
+                display: none;
                 background-color: #ffffff;
                 overflow-x: scroll;
                 overflow-y: scroll;

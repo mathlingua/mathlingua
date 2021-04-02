@@ -30,6 +30,7 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
+import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
 
@@ -99,7 +100,13 @@ private fun findAllSignaturesImpl(
                 signatures.add(Signature(form = sig, location = location))
             }
         }
-        return
+    } else if (texTalkNode is InTexTalkNode) {
+        for (expNode in texTalkNode.rhs.items) {
+            val sig = getMergedCommandSignature(expNode)
+            if (sig != null) {
+                signatures.add(Signature(form = sig, location = location))
+            }
+        }
     } else if (texTalkNode is Command) {
         val sig = texTalkNode.signature()
         signatures.add(Signature(form = sig, location = location))

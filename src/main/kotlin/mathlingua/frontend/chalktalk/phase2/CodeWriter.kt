@@ -202,10 +202,18 @@ open class HtmlCodeWriter(
                 }
             }
         builder.append(
-            "<span class=\"mathlingua-url\"><a target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
+            "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
     }
 
     override fun writeText(text: String) {
+        if (text.startsWith("@") && !text.contains(' ')) {
+            builder.append("<span class='mathlingua-text-no-render'>")
+            builder.append(
+                "<a class=\"mathlingua-link\" onclick=\"mathlinguaViewSignature('${text.removePrefix("@")}')\">$text</a>")
+            builder.append("</span>")
+            return
+        }
+
         val textWithBreaks = newlinesToHtml(text)
         if (shouldExpand()) {
             val expansion =

@@ -1245,12 +1245,20 @@ fun buildIndexHtml(
                 if (open) {
                     document.getElementById('sidebar').style.width = '0';
                     document.getElementById('main').style.marginLeft = '0';
-                    document.getElementById('__bottom_panel__').style.width = '96.5%';
+                    if (forMobile()) {
+                        document.getElementById('__bottom_panel__').style.width = '91.5%';
+                    } else {
+                        document.getElementById('__bottom_panel__').style.width = '96.5%';
+                    }
                 } else {
                     let margin = forMobile() ? '50%' : '20%';
                     document.getElementById('sidebar').style.width = margin;
                     document.getElementById('main').style.marginLeft = margin;
-                    document.getElementById('__bottom_panel__').style.width = '76.5%';
+                    if (forMobile()) {
+                        document.getElementById('__bottom_panel__').style.width = '43.5%';
+                    } else {
+                        document.getElementById('__bottom_panel__').style.width = '76.5%';
+                    }
                 }
                 open = !open;
             }
@@ -1571,6 +1579,12 @@ fun buildIndexHtml(
                 z-index: 1;
                 bottom: 0;
                 position: fixed;
+            }
+
+            @media screen and (max-width: 500px) {
+                .bottom-panel {
+                    width: 91.5%;
+                }
             }
         </style>
     </head>

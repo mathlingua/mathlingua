@@ -21,10 +21,8 @@ import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
-import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.types.choice
 import java.io.File
 import java.lang.IllegalArgumentException
 import java.nio.file.FileSystems
@@ -478,14 +476,13 @@ private fun generatePathToEntityList(
 }
 
 private fun render(
-    filename: String, format: String, stdout: Boolean, noexpand: Boolean
+    filename: String, stdout: Boolean, noexpand: Boolean
 ): List<ValueSourceTracker<ParseError>> {
     val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
     val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
 
     val file = File(filename)
-    val html = format == "html"
-    val pair = sourceCollection.prettyPrint(file = file, html = html, doExpand = !noexpand)
+    val pair = sourceCollection.prettyPrint(file = file, html = true, doExpand = !noexpand)
 
     val fileContent = file.readText()
     val errors =
@@ -509,7 +506,7 @@ private fun render(
 
     val text = buildStandaloneHtml(content = contentBuilder.toString())
 
-    if (html && !stdout) {
+    if (!stdout) {
         val fileToHtmlExt = File(file.parentFile, file.nameWithoutExtension + ".html")
         val relPath = fileToHtmlExt.relativePath(cwd)
         val outFile = File(getDocsDirectory(), relPath)
@@ -528,7 +525,7 @@ private fun render(
 }
 
 private fun render(
-    files: List<String>, format: String, stdout: Boolean, noexpand: Boolean
+    files: List<String>, stdout: Boolean, noexpand: Boolean
 ): List<ValueSourceTracker<ParseError>> {
     val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
     val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
@@ -539,12 +536,11 @@ private fun render(
     val contentDir = getContentDirectory()
     contentDir.mkdirs()
 
-    val html = format == "html"
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
 
-    val indexFileText = getIndexFileText(files, cwd, contentDir, html, noexpand, errors)
+    val indexFileText = getIndexFileText(files, cwd, contentDir, true, noexpand, errors)
 
-    if (html && !stdout) {
+    if (!stdout) {
         val indexFile = File(docsDir, "index.html")
         indexFile.writeText(indexFileText)
         log("Wrote ${indexFile.relativeTo(cwd)}")
@@ -611,11 +607,7 @@ private class Watch :
 
                 if (doRender) {
                     log("Change detected...")
-                    render(
-                        files = listOf(cwd.absolutePath),
-                        format = "html",
-                        stdout = false,
-                        noexpand = false)
+                    render(files = listOf(cwd.absolutePath), stdout = false, noexpand = false)
                     println()
                     println()
                 }
@@ -630,9 +622,6 @@ private class Render :
     private val file: List<String> by argument(
             help = "The *.math files and/or directories to process")
         .multiple(required = false)
-    private val format by option(help = "Whether to generate HTML or Mathlingua.")
-        .choice("html", "mathlingua")
-        .default("html")
     private val noexpand: Boolean by option(
             help = "Specifies to not expand the contents of entries.")
         .flag()
@@ -647,10 +636,9 @@ private class Render :
         runBlocking {
             val errors =
                 if (file.size == 1) {
-                    render(
-                        filename = file[0], format = format, stdout = stdout, noexpand = noexpand)
+                    render(filename = file[0], stdout = stdout, noexpand = noexpand)
                 } else {
-                    render(files = file, format = format, stdout = stdout, noexpand = noexpand)
+                    render(files = file, stdout = stdout, noexpand = noexpand)
                 }
             exitProcess(
                 if (errors.isEmpty()) {

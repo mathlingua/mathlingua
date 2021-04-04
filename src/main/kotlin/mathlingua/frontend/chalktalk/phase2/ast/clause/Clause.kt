@@ -107,14 +107,13 @@ fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1No
 fun toCode(
     writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Phase2Node?
 ): CodeWriter {
-    for (i in sections.indices) {
-        val sect = sections[i]
-        if (sect != null) {
-            writer.append(sect, isArg && i == 0, indent)
-            if (i != sections.size - 1) {
-                writer.writeNewline()
-            }
+    val nonNullSections = sections.filterNotNull()
+    for (i in nonNullSections.indices) {
+        val sect = nonNullSections[i]
+        if (i != 0) {
+            writer.writeNewline()
         }
+        writer.append(sect, isArg && i == 0, indent)
     }
     return writer
 }

@@ -105,7 +105,7 @@ fun main() {
             val homeDir = File(System.getProperty("user.home"))
             val outputFile = File(homeDir, "mathlingua-playground.html")
             outputFile.writeText(htmlPair.first.joinToString("\n"))
-            Runtime.getRuntime().exec("open --background ${outputFile.absolutePath}")
+            // Runtime.getRuntime().exec("open --background ${outputFile.absolutePath}")
 
             for (err in htmlPair.second) {
                 builder.append("${err.message} (${err.row+1}, ${err.column+1})\n")

@@ -485,7 +485,7 @@ private fun renderAll(
 }
 
 private fun renderFile(
-    target: File, cwd: File, stdout: Boolean, noExpand: Boolean
+    target: File, cwd: File, stdout: Boolean, noExpand: Boolean, raw: Boolean
 ): List<ValueSourceTracker<ParseError>> {
     if (!target.exists()) {
         val message = "ERROR: The file ${target.absolutePath} does not exist"
@@ -535,7 +535,12 @@ private fun renderFile(
         contentBuilder.append("</div><br/><br/>")
     }
 
-    val text = buildStandaloneHtml(content = contentBuilder.toString())
+    val text =
+        if (raw) {
+            contentBuilder.toString()
+        } else {
+            buildStandaloneHtml(content = contentBuilder.toString())
+        }
 
     if (!stdout) {
         val fileToHtmlExt = File(target.parentFile, target.nameWithoutExtension + ".html")
@@ -634,6 +639,12 @@ private class Render : CliktCommand("Generates HTML code with definitions expand
                     "input file except for a '.html' extension if the FILE argument is specified.  Otherwise, the " +
                     "content is written to an `index.html` file in the `docs` directory.")
         .flag()
+    private val raw: Boolean by option(
+            help =
+                "If specified with a single file, the raw HTML will be rendered excluding any " +
+                    "script or style tages.  It is an error to specify this flag without specify a specific " +
+                    "file to render.")
+        .flag()
 
     override fun run(): Unit =
         runBlocking {
@@ -641,9 +652,27 @@ private class Render : CliktCommand("Generates HTML code with definitions expand
             val errors =
                 if (file != null) {
                     renderFile(
-                        target = File(file!!), cwd = cwd, stdout = stdout, noExpand = noexpand)
+                        target = File(file!!),
+                        cwd = cwd,
+                        stdout = stdout,
+                        noExpand = noexpand,
+                        raw = raw)
                 } else {
-                    renderAll(cwd = cwd, stdout = stdout, noExpand = noexpand)
+                    if (raw) {
+                        val message = "ERROR: A file must be provided if --raw is used."
+                        log(message)
+                        listOf(
+                            ValueSourceTracker(
+                                value = ParseError(message = message, row = -1, column = -1),
+                                source =
+                                    SourceFile(
+                                        file = null,
+                                        content = "",
+                                        validation = validationFailure(emptyList())),
+                                tracker = null))
+                    } else {
+                        renderAll(cwd = cwd, stdout = stdout, noExpand = noexpand)
+                    }
                 }
             exitProcess(
                 if (errors.isEmpty()) {

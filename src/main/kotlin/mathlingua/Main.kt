@@ -186,7 +186,7 @@ private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
         }
         is DefinesGroup -> {
             if (node.signature != null) {
-                words.add(node.signature!!)
+                words.add(node.signature!!.form)
             }
             when (val validation = node.id.texTalkRoot
             ) {
@@ -298,19 +298,19 @@ private fun generateSignatureToPathImpl(
                                 grp.id
                             }
                             is DefinesGroup -> {
-                                grp.signature
+                                grp.signature?.form
                             }
                             is StatesGroup -> {
-                                grp.signature
+                                grp.signature?.form
                             }
                             is FoundationGroup -> {
                                 when (val content = grp.foundationSection.content
                                 ) {
                                     is DefinesGroup -> {
-                                        content.signature
+                                        content.signature?.form
                                     }
                                     is StatesGroup -> {
-                                        content.signature
+                                        content.signature?.form
                                     }
                                     else -> {
                                         null

@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture
 
+import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
@@ -50,7 +51,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 data class ConjectureGroup(
-    val signature: String?,
+    val signature: Signature?,
     val id: IdStatement?,
     val conjectureSection: ConjectureSection,
     val givenSection: GivenSection?,
@@ -135,7 +136,7 @@ fun validateConjectureGroup(
                     "using?",
                     "Metadata?")) { sections ->
                 ConjectureGroup(
-                    signature = id?.signature(),
+                    signature = id?.signature(tracker),
                     id = id,
                     conjectureSection =
                         ensureNonNull(sections["Conjecture"], DEFAULT_CONJECTURE_SECTION) {

@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines
 
+import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
@@ -48,7 +49,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 data class DefinesGeneratedGroup(
-    override val signature: String?,
+    override val signature: Signature?,
     override val id: IdStatement,
     override val definesSection: DefinesSection,
     override val requiringSection: RequiringSection?,
@@ -141,7 +142,7 @@ fun validateDefinesGeneratedGroup(
                     "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 DefinesGeneratedGroup(
-                    signature = id.signature(),
+                    signature = id.signature(tracker),
                     id = id,
                     definesSection =
                         ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {

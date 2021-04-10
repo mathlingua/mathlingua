@@ -14,6 +14,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates
 
+import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
@@ -56,7 +57,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 data class EvaluatesGroup(
-    val signature: String?,
+    val signature: Signature?,
     val id: IdStatement,
     val evaluatesSection: EvaluatesSection,
     val whenThen: List<WhenThenPair>,
@@ -210,7 +211,7 @@ fun validateEvaluatesGroup(
                     DEFAULT_EVALUATES_GROUP
                 } else {
                     EvaluatesGroup(
-                        signature = id.signature(),
+                        signature = id.signature(tracker),
                         id = id,
                         evaluatesSection =
                             ensureNonNull(group.sections[0], DEFAULT_EVALUATES_SECTION) {

@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines
 
+import mathlingua.backend.transform.Signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
@@ -32,7 +33,7 @@ import mathlingua.frontend.support.ParseError
 abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
     abstract val id: IdStatement
-    abstract val signature: String?
+    abstract val signature: Signature?
     abstract val definesSection: DefinesSection
     abstract val requiringSection: RequiringSection?
     abstract val whenSection: WhenSection?

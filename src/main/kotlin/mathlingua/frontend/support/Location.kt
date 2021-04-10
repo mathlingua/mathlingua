@@ -28,15 +28,17 @@ interface MutableLocationTracker : LocationTracker {
 }
 
 private class MutableLocationTrackerImpl : MutableLocationTracker {
-    private val map: MutableMap<Phase2Node, Location> = mutableMapOf()
+    private val map: MutableMap<Int, Location> = mutableMapOf()
 
-    override fun hasLocationOf(node: Phase2Node) = map.containsKey(node)
+    override fun hasLocationOf(node: Phase2Node) = map.containsKey(node.id())
 
-    override fun getLocationOf(node: Phase2Node) = map[node]
+    override fun getLocationOf(node: Phase2Node) = map[node.id()]
 
     override fun setLocationOf(node: Phase2Node, location: Location) {
-        map[node] = location
+        map[node.id()] = location
     }
+
+    private fun Phase2Node.id() = System.identityHashCode(this)
 }
 
 fun newLocationTracker(): MutableLocationTracker {

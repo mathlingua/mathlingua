@@ -18,8 +18,8 @@ package mathlingua.backend.transform
 
 import kotlin.math.max
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.frontend.support.ValidationFailure
-import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.support.Location
+import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
@@ -52,20 +52,14 @@ internal fun Command.signature(): String {
     return builder.toString()
 }
 
-internal fun IdStatement.signature() =
-    when (this.texTalkRoot) {
-        is ValidationFailure -> null
-        is ValidationSuccess -> {
-            val root = this.texTalkRoot.value
-            if (root.children.size == 1 && root.children[0] is Command) {
-                (root.children[0] as Command).signature()
-            } else if (root.children.size == 1 && root.children[0] is OperatorTexTalkNode) {
-                (root.children[0] as OperatorTexTalkNode).signature()
-            } else {
-                null
-            }
-        }
-    }
+internal fun IdStatement.signature(locationTracker: MutableLocationTracker): Signature? {
+    val signatures =
+        findAllStatementSignatures(stmt = this.toStatement(), locationTracker = locationTracker)
+    val form = signatures.toList().firstOrNull()?.form ?: return null
+    return Signature(
+        form = form,
+        location = locationTracker.getLocationOf(this) ?: Location(row = -1, column = -1))
+}
 
 data class Substitutions(
     val doesMatch: Boolean,

@@ -1,7 +1,13 @@
 Document(
   groups = [
              DefinesMapsGroup(
-               signature = "\f"
+               signature = Signature(
+                 form = "\f"
+                 location = Location(
+                   row = 0
+                   column = 0
+                 )
+               )
                id = IdStatement(
                  text = "\f(x)"
                  texTalkRoot = ValidationSuccessImpl(

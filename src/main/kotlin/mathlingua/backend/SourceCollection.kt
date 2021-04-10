@@ -24,16 +24,20 @@ import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.Parse
+import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
+import mathlingua.frontend.chalktalk.phase1.ast.Tuple
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
 import mathlingua.frontend.chalktalk.phase2.HtmlCodeWriter
 import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.Document
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstantGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstructorGroup
@@ -43,16 +47,22 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.support.Location
+import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.newLocationTracker
+import mathlingua.frontend.textalk.ColonColonEqualsTexTalkNode
+import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TextTexTalkNode
+import mathlingua.frontend.textalk.isOpChar
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
@@ -73,7 +83,6 @@ interface SourceCollection {
     fun size(): Int
     fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>>
     fun getDuplicateDefinedSignatures(): List<ValueSourceTracker<Signature>>
-    fun getUsedSignatures(): Set<ValueSourceTracker<Signature>>
     fun getUndefinedSignatures(): Set<ValueSourceTracker<Signature>>
     fun findInvalidTypes(): List<ValueSourceTracker<ParseError>>
     fun getParseErrors(): List<ValueSourceTracker<ParseError>>
@@ -180,6 +189,118 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                 mutuallyGroups = mutuallyGroups.map { it.value })
     }
 
+    private fun getOperatorIdentifiers(node: Phase2Node): Set<String> {
+        val result = mutableSetOf<String>()
+        getOperatorIdentifiersImpl(node, result)
+        return result
+    }
+
+    private fun maybeAddAbstractionAsOperatorIdentifier(
+        abs: Abstraction, result: MutableSet<String>
+    ) {
+        if (!abs.isEnclosed &&
+            !abs.isVarArgs &&
+            abs.subParams == null &&
+            abs.parts.size == 1 &&
+            abs.parts[0].params == null &&
+            abs.parts[0].subParams == null &&
+            abs.parts[0].tail == null &&
+            abs.parts[0].name.type == ChalkTalkTokenType.Name &&
+            isOperatorName(abs.parts[0].name.text)) {
+            // it is of a 'simple' form like *, **, etc.
+            result.add(abs.parts[0].name.text)
+        }
+    }
+
+    private fun maybeAddTupleAsOperator(tuple: Tuple, result: MutableSet<String>) {
+        for (item in tuple.items) {
+            if (item is Abstraction) {
+                maybeAddAbstractionAsOperatorIdentifier(item, result)
+            }
+        }
+    }
+
+    private fun getOperatorIdentifiersImpl(node: Phase2Node, result: MutableSet<String>) {
+        if (node is AbstractionNode) {
+            maybeAddAbstractionAsOperatorIdentifier(node.abstraction, result)
+        } else if (node is TupleNode) {
+            maybeAddTupleAsOperator(node.tuple, result)
+        } else if (node is AssignmentNode) {
+            val assign = node.assignment
+            if (assign.rhs is Abstraction) {
+                maybeAddAbstractionAsOperatorIdentifier(assign.rhs, result)
+            } else if (assign.rhs is Tuple) {
+                maybeAddTupleAsOperator(assign.rhs, result)
+            }
+
+            if (assign.lhs.type == ChalkTalkTokenType.Name && isOperatorName(assign.lhs.text)) {
+                result.add(assign.lhs.text)
+            }
+        }
+        node.forEach { getOperatorIdentifiersImpl(it, result) }
+    }
+
+    private fun getInnerDefinedSignatures(whenSection: WhenSection): Set<String> {
+        val result = mutableSetOf<String>()
+        for (clause in whenSection.clauses.clauses) {
+            if (clause is Statement) {
+                when (val validation = clause.texTalkRoot
+                ) {
+                    is ValidationSuccess -> {
+                        getInnerDefinedSignaturesImpl(validation.value, false, result)
+                    }
+                }
+            }
+        }
+        return result
+    }
+
+    private fun getInnerDefinedSignaturesImpl(
+        node: TexTalkNode, isInColonEquals: Boolean, result: MutableSet<String>
+    ) {
+        val isColonEquals = node is ColonEqualsTexTalkNode || node is ColonColonEqualsTexTalkNode
+        if (node is TextTexTalkNode && isOperatorName(node.text)) {
+            result.add(node.text)
+        }
+        node.forEach { getInnerDefinedSignaturesImpl(it, isInColonEquals || isColonEquals, result) }
+    }
+
+    // an 'inner' signature is a signature that is only within scope of the given top level group
+    private fun getInnerDefinedSignatures(
+        group: TopLevelGroup, tracker: LocationTracker?
+    ): Set<Signature> {
+        val result = mutableSetOf<Signature>()
+        if (group is DefinesGroup) {
+            if (group.whenSection != null) {
+                val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
+                result.addAll(
+                    getInnerDefinedSignatures(group.whenSection!!).map {
+                        Signature(form = it, location = location)
+                    })
+            }
+
+            val targets = group.definesSection.targets
+            for (target in targets) {
+                for (op in getOperatorIdentifiers(target)) {
+                    result.add(
+                        Signature(
+                            form = op,
+                            location = tracker?.getLocationOf(target)
+                                    ?: Location(row = -1, column = -1)))
+                }
+            }
+        } else if (group is StatesGroup) {
+            if (group.whenSection != null) {
+                val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
+                result.addAll(
+                    getInnerDefinedSignatures(group.whenSection!!).map {
+                        Signature(form = it, location = location)
+                    })
+            }
+        }
+        return result
+    }
+
     private fun getAllDefinedSignatures():
         List<Pair<ValueSourceTracker<Signature>, TopLevelGroup>> {
         val result = mutableListOf<Pair<ValueSourceTracker<Signature>, TopLevelGroup>>()
@@ -191,9 +312,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     pair.tracker?.getLocationOf(pair.value) ?: Location(row = -1, column = -1)
                 val vst =
                     ValueSourceTracker(
-                        source = pair.source,
-                        tracker = pair.tracker,
-                        value = Signature(form = signature, location = location))
+                        source = pair.source, tracker = pair.tracker, value = signature)
                 result.add(Pair(vst, pair.value))
 
                 when (val defines = pair.value
@@ -245,13 +364,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             if (signature != null) {
                 val vst =
                     ValueSourceTracker(
-                        source = pair.source,
-                        tracker = pair.tracker,
-                        value =
-                            Signature(
-                                form = signature,
-                                location = pair.tracker?.getLocationOf(pair.value)
-                                        ?: Location(row = -1, column = -1)))
+                        source = pair.source, tracker = pair.tracker, value = signature)
                 result.add(Pair(vst, pair.value))
             }
         }
@@ -301,32 +414,18 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         return duplicates
     }
 
-    override fun getUsedSignatures(): Set<ValueSourceTracker<Signature>> {
-        val result = mutableSetOf<ValueSourceTracker<Signature>>()
-        for (sf in sourceFiles) {
-            val validation = sf.value.validation
-            when (validation) {
-                is ValidationSuccess -> {
-                    val signatures =
-                        locateAllSignatures(validation.value.document, validation.value.tracker)
-                    result.addAll(
-                        signatures.map {
-                            ValueSourceTracker(
-                                source = sf.value, tracker = validation.value.tracker, value = it)
-                        })
-                }
-            }
-        }
-        return result
-    }
-
     override fun getUndefinedSignatures(): Set<ValueSourceTracker<Signature>> {
-        val usedSigs = getUsedSignatures()
-        val definedSigs = getDefinedSignatures().map { it.value.form }.toSet()
         val result = mutableSetOf<ValueSourceTracker<Signature>>()
-        for (sig in usedSigs) {
-            if (!definedSigs.contains(sig.value.form)) {
-                result.add(sig)
+        val globalDefinedSigs = getDefinedSignatures().map { it.value.form }.toSet()
+        for (vst in allGroups) {
+            val innerSigs =
+                getInnerDefinedSignatures(vst.value, vst.tracker).map { it.form }.toSet()
+            val usedSigs = locateAllSignatures(vst.value, vst.tracker ?: newLocationTracker())
+            for (sig in usedSigs) {
+                if (!globalDefinedSigs.contains(sig.form) && !innerSigs.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(value = sig, source = vst.source, tracker = vst.tracker))
+                }
             }
         }
         return result
@@ -516,7 +615,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         val result = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
         val allContent = mutableSetOf<String>()
         for (group in allGroups) {
-            val content = group.value.toCode(false, 0).getCode()
+            val content = group.value.toCode(false, 0).getCode().trim()
             if (allContent.contains(content)) {
                 result.add(
                     ValueSourceTracker(
@@ -690,7 +789,7 @@ fun getPatternsToWrittenAs(
                             // Make the code `\natural.0` to be the command recognized
                             // and be written as `0`
                             val tail = nameClause.toCode(false, 0).getCode()
-                            val code = def.signature + "." + tail
+                            val code = def.signature?.form + "." + tail
                             val lexer = newTexTalkLexer(code)
                             val parser = newTexTalkParser()
                             val parse = parser.parse(lexer)
@@ -711,7 +810,7 @@ fun getPatternsToWrittenAs(
                                 // Make the code `\natural.succ(x)` and the written as
                                 // succ(x?)
                                 val tail = target.abstraction.toCode()
-                                val code = def.signature + "." + tail
+                                val code = def.signature?.form + "." + tail
                                 val lexer = newTexTalkLexer(code)
                                 val parser = newTexTalkParser()
                                 val parse = parser.parse(lexer)
@@ -742,3 +841,12 @@ private fun <T> Boolean.thenUse(value: () -> List<T>) =
     } else {
         emptyList()
     }
+
+fun isOperatorName(text: String): Boolean {
+    for (c in text) {
+        if (!isOpChar(c)) {
+            return false
+        }
+    }
+    return true
+}

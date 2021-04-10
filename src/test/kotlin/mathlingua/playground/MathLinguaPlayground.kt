@@ -113,7 +113,7 @@ fun main() {
 
             val inputPair =
                 collection.prettyPrint(input = inputArea.text, html = false, doExpand = expand)
-            outputArea.text = inputPair.first.joinToString("\n")
+            outputArea.text = inputPair.first.joinToString("\n\n\n")
             for (err in inputPair.second) {
                 builder.append("${err.message} (${err.row+1}, ${err.column+1})\n")
             }

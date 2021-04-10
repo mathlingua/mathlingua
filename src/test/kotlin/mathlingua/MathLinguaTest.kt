@@ -289,15 +289,15 @@ internal class MathLinguaTest {
         """.trimIndent())
 
         val collection = newSourceCollectionFromContent(input)
-        val dups =
-            collection.getDuplicateContent().mapNotNull {
-                if (it.tracker != null) {
-                    it.tracker!!.getLocationOf(it.value)
-                } else {
-                    null
-                }
-            }
-        assertThat(dups).isEqualTo(listOf(Location(row = 0, column = 0)))
+        val dups = collection.getDuplicateContent().map { it.value.toCode(false, 0).getCode() }
+        assertThat(dups)
+            .isEqualTo(
+                listOf(
+                    """
+            Theorem:
+            then:
+            . '\finite.set'
+        """.trimIndent()))
     }
 
     @Test

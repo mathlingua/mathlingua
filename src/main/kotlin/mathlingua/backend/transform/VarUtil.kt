@@ -16,6 +16,7 @@
 
 package mathlingua.backend.transform
 
+import mathlingua.backend.isOperatorName
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
@@ -590,7 +591,11 @@ private fun checkVarsImpl(
     val varsToRemove = mutableSetOf<String>()
     if (texTalkNode is TextTexTalkNode) {
         val name = texTalkNode.text
-        if (name != "=" && !isNumberLiteral(name) && !vars.contains(name)) {
+        // Note: operators are treated as signatures, not symbols
+        if (name != "=" &&
+            !isNumberLiteral(name) &&
+            !vars.contains(name) &&
+            !isOperatorName(name)) {
             errors.add(
                 ParseError(
                     message = "Undefined symbol '$name'",

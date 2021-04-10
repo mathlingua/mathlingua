@@ -19,9 +19,6 @@ package mathlingua.backend.transform
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.section.TextSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
@@ -32,7 +29,11 @@ import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
+import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TexTalkNodeType
+import mathlingua.frontend.textalk.TexTalkTokenType
+import mathlingua.frontend.textalk.TextTexTalkNode
 
 data class Signature(val form: String, val location: Location)
 
@@ -110,6 +111,31 @@ private fun findAllSignaturesImpl(
     } else if (texTalkNode is Command) {
         val sig = texTalkNode.signature()
         signatures.add(Signature(form = sig, location = location))
+    } else if (texTalkNode is TextTexTalkNode &&
+        texTalkNode.type == TexTalkNodeType.Operator &&
+        texTalkNode.text != "=") {
+        signatures.add(Signature(form = texTalkNode.text, location = location))
+    } else if (texTalkNode is OperatorTexTalkNode &&
+        texTalkNode.lhs == null &&
+        texTalkNode.command is TextTexTalkNode &&
+        texTalkNode.command.tokenType == TexTalkTokenType.Operator &&
+        texTalkNode.command.text != "=" &&
+        texTalkNode.rhs != null) {
+        signatures.add(Signature(form = texTalkNode.command.text, location = location))
+    } else if (texTalkNode is OperatorTexTalkNode &&
+        texTalkNode.lhs != null &&
+        texTalkNode.command is TextTexTalkNode &&
+        texTalkNode.command.tokenType == TexTalkTokenType.Operator &&
+        texTalkNode.command.text != "=" &&
+        texTalkNode.rhs == null) {
+        signatures.add(Signature(form = texTalkNode.command.text, location = location))
+    } else if (texTalkNode is OperatorTexTalkNode &&
+        texTalkNode.lhs != null &&
+        texTalkNode.command is TextTexTalkNode &&
+        texTalkNode.command.tokenType == TexTalkTokenType.Operator &&
+        texTalkNode.command.text != "=" &&
+        texTalkNode.rhs != null) {
+        signatures.add(Signature(form = texTalkNode.command.text, location = location))
     }
 
     texTalkNode.forEach { findAllSignaturesImpl(it, signatures, location) }
@@ -128,12 +154,4 @@ internal fun getMergedCommandSignature(expressionNode: ExpressionTexTalkNode): S
     }
 
     return null
-}
-
-internal fun getSignature(group: TopLevelGroup): String? {
-    return when (group) {
-        is DefinesGroup -> group.id.signature()
-        is StatesGroup -> group.id.signature()
-        else -> null
-    }
 }

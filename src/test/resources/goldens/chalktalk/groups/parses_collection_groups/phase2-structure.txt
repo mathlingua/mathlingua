@@ -1,7 +1,13 @@
 Document(
   groups = [
              DefinesCollectsGroup(
-               signature = "\evens"
+               signature = Signature(
+                 form = "\evens"
+                 location = Location(
+                   row = 0
+                   column = 0
+                 )
+               )
                id = IdStatement(
                  text = "\evens"
                  texTalkRoot = ValidationSuccessImpl(

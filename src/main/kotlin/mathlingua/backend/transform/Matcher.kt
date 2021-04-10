@@ -54,7 +54,8 @@ internal fun Command.signature(): String {
 
 internal fun IdStatement.signature(locationTracker: MutableLocationTracker): Signature? {
     val signatures =
-        findAllStatementSignatures(stmt = this.toStatement(), locationTracker = locationTracker)
+        findAllStatementSignatures(
+            stmt = this.toStatement(), ignoreLhsEqual = false, locationTracker = locationTracker)
     val form = signatures.toList().firstOrNull()?.form ?: return null
     return Signature(
         form = form,

@@ -47,6 +47,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
@@ -59,8 +62,11 @@ import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.textalk.ColonColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
+import mathlingua.frontend.textalk.ExpressionTexTalkNode
+import mathlingua.frontend.textalk.GroupTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.isOpChar
 import mathlingua.frontend.textalk.newTexTalkLexer
@@ -265,11 +271,145 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         node.forEach { getInnerDefinedSignaturesImpl(it, isInColonEquals || isColonEquals, result) }
     }
 
+    private fun getUsingDefinedName(node: ExpressionTexTalkNode): String? {
+        return if (node.children.size == 1 &&
+            node.children[0] is ColonEqualsTexTalkNode &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.size == 1 &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                0] is GroupTexTalkNode &&
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                    0] as GroupTexTalkNode)
+                .parameters
+                .items
+                .size == 1 &&
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                        0] as GroupTexTalkNode)
+                    .parameters
+                    .items[0]
+                .children
+                .size == 1 &&
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                        0] as GroupTexTalkNode)
+                    .parameters
+                    .items[0]
+                .children[0] is TextTexTalkNode) {
+            // match f(x) := ...
+            (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                            0] as GroupTexTalkNode)
+                        .parameters
+                        .items[0]
+                    .children[0] as TextTexTalkNode)
+                .text
+        } else if (node.children.size == 1 &&
+            node.children[0] is ColonEqualsTexTalkNode &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.size == 1 &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                0] is TextTexTalkNode) {
+            // match f := ...
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                    0] as TextTexTalkNode)
+                .text
+        } else {
+            null
+        }
+    }
+
+    private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {
+        return if (node.children.size == 1 &&
+            node.children[0] is ColonEqualsTexTalkNode &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.size == 1 &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                0] is GroupTexTalkNode &&
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                    0] as GroupTexTalkNode)
+                .parameters
+                .items
+                .size == 1 &&
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                        0] as GroupTexTalkNode)
+                    .parameters
+                    .items[0]
+                .children
+                .size == 1 &&
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                        0] as GroupTexTalkNode)
+                    .parameters
+                    .items[0]
+                .children[0] is OperatorTexTalkNode &&
+            (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                            0] as GroupTexTalkNode)
+                        .parameters
+                        .items[0]
+                    .children[0] as OperatorTexTalkNode)
+                .command is TextTexTalkNode &&
+            ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                                0] as GroupTexTalkNode)
+                            .parameters
+                            .items[0]
+                        .children[0] as OperatorTexTalkNode)
+                    .command as TextTexTalkNode)
+                .tokenType == TexTalkTokenType.Operator) {
+            // match -f := ...
+            ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                                0] as GroupTexTalkNode)
+                            .parameters
+                            .items[0]
+                        .children[0] as OperatorTexTalkNode)
+                    .command as TextTexTalkNode)
+                .text
+        } else {
+            null
+        }
+    }
+
     // an 'inner' signature is a signature that is only within scope of the given top level group
     private fun getInnerDefinedSignatures(
         group: TopLevelGroup, tracker: LocationTracker?
     ): Set<Signature> {
         val result = mutableSetOf<Signature>()
+
+        val usingSection =
+            when (group) {
+                is DefinesGroup -> {
+                    group.usingSection
+                }
+                is StatesGroup -> {
+                    group.usingSection
+                }
+                is TheoremGroup -> {
+                    group.usingSection
+                }
+                is ConjectureGroup -> {
+                    group.usingSection
+                }
+                is AxiomGroup -> {
+                    group.usingSection
+                }
+                else -> {
+                    null
+                }
+            }
+
+        if (usingSection != null) {
+            for (clause in usingSection.clauses.clauses) {
+                if (clause is Statement) {
+                    val location = tracker?.getLocationOf(clause) ?: Location(-1, -1)
+                    when (val validation = clause.texTalkRoot
+                    ) {
+                        is ValidationSuccess -> {
+                            val sigForm = getUsingDefinedSignature(validation.value)
+                            if (sigForm != null) {
+                                result.add(Signature(form = sigForm, location = location))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         if (group is DefinesGroup) {
             if (group.whenSection != null) {
                 val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
@@ -420,7 +560,9 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         for (vst in allGroups) {
             val innerSigs =
                 getInnerDefinedSignatures(vst.value, vst.tracker).map { it.form }.toSet()
-            val usedSigs = locateAllSignatures(vst.value, vst.tracker ?: newLocationTracker())
+            val usedSigs =
+                locateAllSignatures(
+                    vst.value, ignoreLhsEqual = true, vst.tracker ?: newLocationTracker())
             for (sig in usedSigs) {
                 if (!globalDefinedSigs.contains(sig.form) && !innerSigs.contains(sig.form)) {
                     result.add(

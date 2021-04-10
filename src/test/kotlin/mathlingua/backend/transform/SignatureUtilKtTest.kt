@@ -39,7 +39,8 @@ internal class SignatureUtilKtTest {
         assertThat(defines.size).isEqualTo(1)
         val def = defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
+        val signatures =
+            findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
         assertThat(signatures)
             .isEqualTo(setOf(Signature(form = "\\xyz", location = Location(row = -1, column = -1))))
     }
@@ -71,7 +72,8 @@ internal class SignatureUtilKtTest {
         assertThat(defines.size).isEqualTo(1)
         val def = defines[0]
         val stmt = def.id.toStatement()
-        val signatures = findAllStatementSignatures(stmt, newLocationTracker())
+        val signatures =
+            findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
         assertThat(signatures)
             .isEqualTo(setOf(Signature(form = "\\abc", location = Location(row = -1, column = -1))))
     }

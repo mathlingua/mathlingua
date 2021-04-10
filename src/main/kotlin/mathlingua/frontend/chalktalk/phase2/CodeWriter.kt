@@ -340,7 +340,8 @@ open class HtmlCodeWriter(
         builder.append("</div>")
         if (root is ValidationSuccess) {
             val stmt = Statement(text = stmtText, texTalkRoot = root)
-            val signatures = findAllStatementSignatures(stmt, newLocationTracker())
+            val signatures =
+                findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
             if (signatures.isNotEmpty()) {
                 builder.append(
                     "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex'>")

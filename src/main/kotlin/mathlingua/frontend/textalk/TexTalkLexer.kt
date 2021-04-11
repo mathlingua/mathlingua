@@ -140,7 +140,47 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Comma, line, column))
             } else if (c == '?') {
                 this.tokens.add(TexTalkToken("$c", TexTalkTokenType.Identifier, line, column))
-            } else if (isIdentifierChar(c)) {
+            } else if (isDigitIdentifierChar(c)) {
+                val startLine = line
+                val startColumn = column
+
+                val builder = StringBuilder()
+                builder.append(c)
+                while (i < text.length && isDigitIdentifierChar(text[i])) {
+                    builder.append(text[i++])
+                    column++
+                }
+
+                var hasDot = false
+                if (i < text.length && text[i] == '.') {
+                    hasDot = true
+                    builder.append(text[i++])
+                    column++
+                }
+
+                if (hasDot) {
+                    if (i >= text.length || !isDigitIdentifierChar(text[i])) {
+                        this.errors.add(
+                            ParseError(
+                                message =
+                                    "A number literal with a decimal point must have at least one digit after the decimal place",
+                                row = startLine,
+                                column = startColumn))
+                    } else {
+                        while (i < text.length && isDigitIdentifierChar(text[i])) {
+                            builder.append(text[i++])
+                            column++
+                        }
+                    }
+                }
+
+                this.tokens.add(
+                    TexTalkToken(
+                        text = builder.toString(),
+                        tokenType = TexTalkTokenType.Identifier,
+                        row = startLine,
+                        column = startColumn))
+            } else if (isNonDigitIdentifierChar(c)) {
                 val startLine = line
                 val startColumn = column
 
@@ -207,7 +247,11 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
         return builder.toString()
     }
 
-    private fun isIdentifierChar(c: Char) = Regex("[$#a-zA-Z0-9]+").matches("$c")
+    private fun isIdentifierChar(c: Char) = isNonDigitIdentifierChar(c) || isDigitIdentifierChar(c)
+
+    private fun isNonDigitIdentifierChar(c: Char) = Regex("[$#a-zA-Z]+").matches("$c")
+
+    private fun isDigitIdentifierChar(c: Char) = Regex("[0-9]+").matches("$c")
 }
 
 fun isOpChar(c: Char) =

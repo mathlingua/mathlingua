@@ -141,39 +141,54 @@ fun validateDefinesCollectsGroup(
                     "written",
                     "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
-                DefinesCollectsGroup(
-                    signature = id.signature(tracker),
-                    id = id,
-                    definesSection =
-                        ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
-                            validateDefinesSection(it, errors, tracker)
-                        },
-                    requiringSection =
-                        ifNonNull(sections["requiring"]) {
-                            validateRequiringSection(it, errors, tracker)
-                        },
-                    whenSection =
-                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    meansSection =
-                        ifNonNull(sections["means"]) { validateMeansSection(it, errors, tracker) },
-                    collectsSection =
-                        ensureNonNull(sections["collects"], DEFAULT_COLLECTS_SECTION) {
-                            validateCollectsSection(it, errors, tracker)
-                        },
-                    viewedSection =
-                        ifNonNull(sections["viewed"]) {
-                            validateViewedSection(it, errors, tracker)
-                        },
-                    usingSection =
-                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
-                    writtenSection =
-                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
-                            validateWrittenSection(it, errors, tracker)
-                        },
-                    metaDataSection =
-                        ifNonNull(sections["Metadata"]) {
-                            validateMetaDataSection(it, errors, tracker)
-                        })
+                val def =
+                    DefinesCollectsGroup(
+                        signature = id.signature(tracker),
+                        id = id,
+                        definesSection =
+                            ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
+                                validateDefinesSection(it, errors, tracker)
+                            },
+                        requiringSection =
+                            ifNonNull(sections["requiring"]) {
+                                validateRequiringSection(it, errors, tracker)
+                            },
+                        whenSection =
+                            ifNonNull(sections["when"]) {
+                                validateWhenSection(it, errors, tracker)
+                            },
+                        meansSection =
+                            ifNonNull(sections["means"]) {
+                                validateMeansSection(it, errors, tracker)
+                            },
+                        collectsSection =
+                            ensureNonNull(sections["collects"], DEFAULT_COLLECTS_SECTION) {
+                                validateCollectsSection(it, errors, tracker)
+                            },
+                        viewedSection =
+                            ifNonNull(sections["viewed"]) {
+                                validateViewedSection(it, errors, tracker)
+                            },
+                        usingSection =
+                            ifNonNull(sections["using"]) {
+                                validateUsingSection(it, errors, tracker)
+                            },
+                        writtenSection =
+                            ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                                validateWrittenSection(it, errors, tracker)
+                            },
+                        metaDataSection =
+                            ifNonNull(sections["Metadata"]) {
+                                validateMetaDataSection(it, errors, tracker)
+                            })
+
+                val funcArgsError = checkIfFunctionSignatureMatchDefines(def, tracker)
+                if (funcArgsError != null) {
+                    errors.add(funcArgsError)
+                    DEFAULT_DEFINES_COLLECTS_GROUP
+                } else {
+                    def
+                }
             }
         }
     }

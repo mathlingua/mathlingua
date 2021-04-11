@@ -137,37 +137,50 @@ fun validateDefinesInstantiatedGroup(
                     "written",
                     "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
-                DefinesInstantiatedGroup(
-                    signature = id.signature(tracker),
-                    id = id,
-                    definesSection =
-                        ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
-                            validateDefinesSection(it, errors, tracker)
-                        },
-                    requiringSection =
-                        ifNonNull(sections["requiring"]) {
-                            validateRequiringSection(it, errors, tracker)
-                        },
-                    whenSection =
-                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    instantiatedSection =
-                        ensureNonNull(sections["instantiated"], DEFAULT_INSTANTIATED_SECTION) {
-                            validateInstantiatedSection(it, errors, tracker)
-                        },
-                    viewedSection =
-                        ifNonNull(sections["viewed"]) {
-                            validateViewedSection(it, errors, tracker)
-                        },
-                    usingSection =
-                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
-                    writtenSection =
-                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
-                            validateWrittenSection(it, errors, tracker)
-                        },
-                    metaDataSection =
-                        ifNonNull(sections["Metadata"]) {
-                            validateMetaDataSection(it, errors, tracker)
-                        })
+                val def =
+                    DefinesInstantiatedGroup(
+                        signature = id.signature(tracker),
+                        id = id,
+                        definesSection =
+                            ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
+                                validateDefinesSection(it, errors, tracker)
+                            },
+                        requiringSection =
+                            ifNonNull(sections["requiring"]) {
+                                validateRequiringSection(it, errors, tracker)
+                            },
+                        whenSection =
+                            ifNonNull(sections["when"]) {
+                                validateWhenSection(it, errors, tracker)
+                            },
+                        instantiatedSection =
+                            ensureNonNull(sections["instantiated"], DEFAULT_INSTANTIATED_SECTION) {
+                                validateInstantiatedSection(it, errors, tracker)
+                            },
+                        viewedSection =
+                            ifNonNull(sections["viewed"]) {
+                                validateViewedSection(it, errors, tracker)
+                            },
+                        usingSection =
+                            ifNonNull(sections["using"]) {
+                                validateUsingSection(it, errors, tracker)
+                            },
+                        writtenSection =
+                            ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                                validateWrittenSection(it, errors, tracker)
+                            },
+                        metaDataSection =
+                            ifNonNull(sections["Metadata"]) {
+                                validateMetaDataSection(it, errors, tracker)
+                            })
+
+                val funcArgsError = checkIfFunctionSignatureMatchDefines(def, tracker)
+                if (funcArgsError != null) {
+                    errors.add(funcArgsError)
+                    DEFAULT_DEFINES_INSTANTIATED_GROUP
+                } else {
+                    def
+                }
             }
         }
     }

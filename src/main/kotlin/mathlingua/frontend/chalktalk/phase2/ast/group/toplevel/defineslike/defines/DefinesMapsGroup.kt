@@ -141,39 +141,54 @@ fun validateDefinesMapsGroup(
                     "written",
                     "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
-                DefinesMapsGroup(
-                    signature = id.signature(tracker),
-                    id = id,
-                    definesSection =
-                        ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
-                            validateDefinesSection(it, errors, tracker)
-                        },
-                    requiringSection =
-                        ifNonNull(sections["requiring"]) {
-                            validateRequiringSection(it, errors, tracker)
-                        },
-                    whenSection =
-                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    meansSection =
-                        ifNonNull(sections["means"]) { validateMeansSection(it, errors, tracker) },
-                    mapsSection =
-                        ensureNonNull(sections["maps"], DEFAULT_MAPS_SECTION) {
-                            validateMapsSection(it, errors, tracker)
-                        },
-                    viewedSection =
-                        ifNonNull(sections["viewed"]) {
-                            validateViewedSection(it, errors, tracker)
-                        },
-                    usingSection =
-                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
-                    writtenSection =
-                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
-                            validateWrittenSection(it, errors, tracker)
-                        },
-                    metaDataSection =
-                        ifNonNull(sections["Metadata"]) {
-                            validateMetaDataSection(it, errors, tracker)
-                        })
+                val def =
+                    DefinesMapsGroup(
+                        signature = id.signature(tracker),
+                        id = id,
+                        definesSection =
+                            ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
+                                validateDefinesSection(it, errors, tracker)
+                            },
+                        requiringSection =
+                            ifNonNull(sections["requiring"]) {
+                                validateRequiringSection(it, errors, tracker)
+                            },
+                        whenSection =
+                            ifNonNull(sections["when"]) {
+                                validateWhenSection(it, errors, tracker)
+                            },
+                        meansSection =
+                            ifNonNull(sections["means"]) {
+                                validateMeansSection(it, errors, tracker)
+                            },
+                        mapsSection =
+                            ensureNonNull(sections["maps"], DEFAULT_MAPS_SECTION) {
+                                validateMapsSection(it, errors, tracker)
+                            },
+                        viewedSection =
+                            ifNonNull(sections["viewed"]) {
+                                validateViewedSection(it, errors, tracker)
+                            },
+                        usingSection =
+                            ifNonNull(sections["using"]) {
+                                validateUsingSection(it, errors, tracker)
+                            },
+                        writtenSection =
+                            ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                                validateWrittenSection(it, errors, tracker)
+                            },
+                        metaDataSection =
+                            ifNonNull(sections["Metadata"]) {
+                                validateMetaDataSection(it, errors, tracker)
+                            })
+
+                val funcArgsError = checkIfFunctionSignatureMatchDefines(def, tracker)
+                if (funcArgsError != null) {
+                    errors.add(funcArgsError)
+                    DEFAULT_DEFINES_MAPS_GROUP
+                } else {
+                    def
+                }
             }
         }
     }

@@ -18,6 +18,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 
 import mathlingua.backend.transform.Signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
@@ -27,8 +28,15 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.found
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.ViewedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.frontend.support.Location
+import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.textalk.Command
+import mathlingua.frontend.textalk.TexTalkNodeType
+import mathlingua.frontend.textalk.TextTexTalkNode
 
 abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
@@ -66,3 +74,71 @@ fun validateDefinesGroup(
             validateDefinesMeansGroup(node, errors, tracker)
         }
     }
+
+fun checkIfFunctionSignatureMatchDefines(
+    defines: DefinesGroup, tracker: LocationTracker
+): ParseError? {
+    val idArgs =
+        when (val validation = defines.id.texTalkRoot
+        ) {
+            is ValidationSuccess -> {
+                val exp = validation.value
+                // check if the id is of the form `\f.g.h{a}(x, y, z)`
+                if (exp.children.size == 1 &&
+                    exp.children[0] is Command &&
+                    (exp.children[0] as Command).parts.isNotEmpty() &&
+                    (exp.children[0] as Command).parts.last().paren != null &&
+                    (exp.children[0] as Command).parts.last().paren!!.type ==
+                        TexTalkNodeType.ParenGroup) {
+                    // extract 'x, y, z'
+                    (exp.children[0] as Command).parts.last().paren!!.parameters.items.mapNotNull {
+                        if (it.children.size == 1 && it.children[0] is TextTexTalkNode) {
+                            (it.children[0] as TextTexTalkNode).text
+                        } else {
+                            null
+                        }
+                    }
+                } else {
+                    null
+                }
+            }
+            is ValidationFailure -> null
+        }
+            ?: return null
+
+    val location = tracker.getLocationOf(defines.definesSection) ?: Location(row = -1, column = -1)
+
+    var hasParenArgs = false
+    for (target in defines.definesSection.targets) {
+        if (target is AbstractionNode) {
+            val abs = target.abstraction
+            if (!abs.isVarArgs &&
+                !abs.isEnclosed &&
+                abs.subParams == null &&
+                abs.parts.size == 1 &&
+                abs.parts[0].tail == null &&
+                abs.parts[0].subParams == null &&
+                abs.parts[0].params != null) {
+                hasParenArgs = true
+                val defArgs = abs.parts[0].params!!.map { it.text }
+                if (idArgs != defArgs) {
+                    return ParseError(
+                        message =
+                            "Expected function arguments '${idArgs.joinToString(", ").trim()}' but found '${defArgs.joinToString(", ").trim()}'",
+                        row = location.row,
+                        column = location.column)
+                }
+            }
+        }
+    }
+
+    if (!hasParenArgs) {
+        return ParseError(
+            message =
+                "Expected a definition of a function with arguments '${idArgs.joinToString(", ").trim()}'",
+            row = location.row,
+            column = location.column)
+    }
+
+    return null
+}

@@ -593,7 +593,14 @@ private class Watch :
             val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
             registerAll(cwd, watchService)
 
+            // do an initial render to ensure the docs directory is up-to-date
+            // even before any changes occur
+            renderAll(cwd = cwd, stdout = false, noExpand = false)
+            println()
+
             log("Waiting for changes...")
+            println()
+
             while (true) {
                 var doRender = false
                 val watchKey = watchService.take()
@@ -613,7 +620,6 @@ private class Watch :
                 if (doRender) {
                     log("Change detected...")
                     renderAll(cwd = cwd, stdout = false, noExpand = false)
-                    println()
                     println()
                 }
 

@@ -36,7 +36,9 @@ import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.Document
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstantGroup
@@ -50,7 +52,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.state
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
@@ -246,9 +247,9 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         node.forEach { getOperatorIdentifiersImpl(it, result) }
     }
 
-    private fun getInnerDefinedSignatures(whenSection: WhenSection): Set<String> {
+    private fun getInnerDefinedSignatures(clauses: List<Clause>): Set<String> {
         val result = mutableSetOf<String>()
-        for (clause in whenSection.clauses.clauses) {
+        for (clause in clauses) {
             if (clause is Statement) {
                 when (val validation = clause.texTalkRoot
                 ) {
@@ -365,6 +366,22 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         }
     }
 
+    private fun getOperatorIdentifiersFromTargets(
+        targets: List<Target>, tracker: LocationTracker?
+    ): List<Signature> {
+        val result = mutableListOf<Signature>()
+        for (target in targets) {
+            for (op in getOperatorIdentifiers(target)) {
+                result.add(
+                    Signature(
+                        form = op,
+                        location = tracker?.getLocationOf(target)
+                                ?: Location(row = -1, column = -1)))
+            }
+        }
+        return result
+    }
+
     // an 'inner' signature is a signature that is only within scope of the given top level group
     private fun getInnerDefinedSignatures(
         group: TopLevelGroup, tracker: LocationTracker?
@@ -414,28 +431,34 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             if (group.whenSection != null) {
                 val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
                 result.addAll(
-                    getInnerDefinedSignatures(group.whenSection!!).map {
+                    getInnerDefinedSignatures(group.whenSection!!.clauses.clauses).map {
                         Signature(form = it, location = location)
                     })
             }
 
-            val targets = group.definesSection.targets
-            for (target in targets) {
-                for (op in getOperatorIdentifiers(target)) {
-                    result.add(
-                        Signature(
-                            form = op,
-                            location = tracker?.getLocationOf(target)
-                                    ?: Location(row = -1, column = -1)))
-                }
-            }
+            result.addAll(getOperatorIdentifiersFromTargets(group.definesSection.targets, tracker))
         } else if (group is StatesGroup) {
             if (group.whenSection != null) {
                 val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
                 result.addAll(
-                    getInnerDefinedSignatures(group.whenSection!!).map {
+                    getInnerDefinedSignatures(group.whenSection!!.clauses.clauses).map {
                         Signature(form = it, location = location)
                     })
+            }
+        } else if (group is TheoremGroup) {
+            if (group.givenSection != null) {
+                result.addAll(
+                    getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            }
+        } else if (group is AxiomGroup) {
+            if (group.givenSection != null) {
+                result.addAll(
+                    getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            }
+        } else if (group is ConjectureGroup) {
+            if (group.givenSection != null) {
+                result.addAll(
+                    getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
             }
         }
         return result

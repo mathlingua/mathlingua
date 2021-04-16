@@ -23,7 +23,7 @@ Document(
                                                  text = "f"
                                                  type = ChalkTalkTokenType.Name
                                                  row = 1
-                                                 column = 7
+                                                 column = 6
                                                )
                                                subParams = null
                                                params = [
@@ -31,7 +31,7 @@ Document(
                                                             text = "abc..."
                                                             type = ChalkTalkTokenType.Name
                                                             row = 1
-                                                            column = 9
+                                                            column = 8
                                                           )
                                                         ]
                                                tail = null

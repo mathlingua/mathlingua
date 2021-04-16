@@ -1,5 +1,5 @@
 Row: 1
-Column: 1
+Column: 0
 Message:
 For pattern:
 
@@ -18,7 +18,7 @@ EndMessage:
 
 
 Row: 5
-Column: 1
+Column: 0
 Message:
 For pattern:
 
@@ -37,7 +37,7 @@ EndMessage:
 
 
 Row: 9
-Column: 1
+Column: 0
 Message:
 For pattern:
 
@@ -56,7 +56,7 @@ EndMessage:
 
 
 Row: 13
-Column: 1
+Column: 0
 Message:
 For pattern:
 
@@ -75,7 +75,7 @@ EndMessage:
 
 
 Row: 17
-Column: 1
+Column: 0
 Message:
 For pattern:
 
@@ -94,7 +94,7 @@ EndMessage:
 
 
 Row: 21
-Column: 1
+Column: 0
 Message:
 For pattern:
 

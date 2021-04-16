@@ -18,7 +18,10 @@ package mathlingua.frontend.chalktalk.phase2.ast.clause
 
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase1.ast.getColumn
+import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_IF_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.isIfGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateIfGroup
@@ -163,5 +166,10 @@ fun validateClause(
         }
     }
 
-    throw RuntimeException("Unrecognized clause $node")
+    errors.add(
+        ParseError(
+            message = "Unrecognized clause.  Perhaps there is a typo.",
+            row = getRow(rawNode),
+            column = getColumn(rawNode)))
+    return DEFAULT_IF_GROUP
 }

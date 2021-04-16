@@ -1,5 +1,5 @@
 Row: 1
-Column: 7
+Column: 6
 Message:
 Expected a name, but found )
 EndMessage:

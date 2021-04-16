@@ -149,7 +149,7 @@ internal class MathLinguaTest {
         val dups = sourceCollection.getDuplicateDefinedSignatures().map { it.value }
         assertThat(dups)
             .isEqualTo(
-                listOf(Signature(form = "\\finite.set", location = Location(row = 12, column = 1))))
+                listOf(Signature(form = "\\finite.set", location = Location(row = 12, column = 0))))
     }
 
     @Test
@@ -341,7 +341,7 @@ internal class MathLinguaTest {
         val collection = newSourceCollectionFromContent(input)
         val dups = collection.getDuplicateDefinedSignatures().map { it.value }
         assertThat(dups)
-            .isEqualTo(listOf(Signature(form = "\\set", location = Location(row = 4, column = 1))))
+            .isEqualTo(listOf(Signature(form = "\\set", location = Location(row = 4, column = 0))))
     }
 
     @Test

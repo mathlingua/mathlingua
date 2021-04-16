@@ -7,7 +7,7 @@ Root(
                                 text = "Entry"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
-                                column = 1
+                                column = 0
                               )
                               args = [
                                      ]
@@ -17,7 +17,7 @@ Root(
                                 text = "type"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -25,7 +25,7 @@ Root(
                                            text = ""definition""
                                            type = ChalkTalkTokenType.String
                                            row = 2
-                                           column = 7
+                                           column = 6
                                          )
                                        )
                                      ]
@@ -35,7 +35,7 @@ Root(
                                 text = "content"
                                 type = ChalkTalkTokenType.Name
                                 row = 3
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -43,7 +43,7 @@ Root(
                                            text = ""This is a definition""
                                            type = ChalkTalkTokenType.String
                                            row = 4
-                                           column = 3
+                                           column = 2
                                          )
                                        )
                                      ]

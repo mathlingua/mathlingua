@@ -7,7 +7,7 @@ Root(
                                 text = "Defines"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -20,7 +20,7 @@ Root(
                                                          text = "f"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 1
-                                                         column = 10
+                                                         column = 9
                                                        )
                                                        subParams = null
                                                        params = [
@@ -28,7 +28,7 @@ Root(
                                                                     text = "x"
                                                                     type = ChalkTalkTokenType.Name
                                                                     row = 1
-                                                                    column = 12
+                                                                    column = 11
                                                                   )
                                                                 ]
                                                        tail = null
@@ -44,7 +44,7 @@ Root(
                                 text = "means"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -52,7 +52,7 @@ Root(
                                            text = "'f is \function'"
                                            type = ChalkTalkTokenType.Statement
                                            row = 2
-                                           column = 8
+                                           column = 7
                                          )
                                        )
                                      ]
@@ -62,7 +62,7 @@ Root(
                                 text = "maps"
                                 type = ChalkTalkTokenType.Name
                                 row = 3
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -73,7 +73,7 @@ Root(
                                                             text = "from"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 4
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -81,7 +81,7 @@ Root(
                                                                        text = "'A'"
                                                                        type = ChalkTalkTokenType.Statement
                                                                        row = 4
-                                                                       column = 9
+                                                                       column = 8
                                                                      )
                                                                    )
                                                                  ]
@@ -91,7 +91,7 @@ Root(
                                                             text = "to"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 5
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -99,7 +99,7 @@ Root(
                                                                        text = "'A'"
                                                                        type = ChalkTalkTokenType.Statement
                                                                        row = 5
-                                                                       column = 7
+                                                                       column = 6
                                                                      )
                                                                    )
                                                                  ]
@@ -115,7 +115,7 @@ Root(
                                 text = "written"
                                 type = ChalkTalkTokenType.Name
                                 row = 6
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -123,7 +123,7 @@ Root(
                                            text = ""f(x?)""
                                            type = ChalkTalkTokenType.String
                                            row = 6
-                                           column = 10
+                                           column = 9
                                          )
                                        )
                                      ]

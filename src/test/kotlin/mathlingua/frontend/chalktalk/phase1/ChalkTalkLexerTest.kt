@@ -89,6 +89,34 @@ internal class ChalkTalkLexerTest {
     }
 
     @Test
+    fun `correctly handles comments`() {
+        val text = "-- some comment\n\n-- another comment\nabc:\nxyz:"
+        val lexer = newChalkTalkLexer(text)
+        val actual: MutableList<Phase1Token> = ArrayList()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected =
+            listOf(
+                Phase1Token(text = "abc", type = ChalkTalkTokenType.Name, row = 3, column = 0),
+                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 3, column = 3),
+                Phase1Token(
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 4, column = 0),
+                Phase1Token(
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 4, column = 0),
+                Phase1Token(text = "xyz", type = ChalkTalkTokenType.Name, row = 4, column = 0),
+                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 4, column = 3),
+                Phase1Token(
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 5, column = 0),
+                Phase1Token(
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 5, column = 0))
+
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
+    }
+
+    @Test
     fun `correctly reports Being and End tokens`() {
         val text =
             """
@@ -115,44 +143,44 @@ internal class ChalkTalkLexerTest {
                 Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 0, column = 1),
                 Phase1Token(
                     text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 1, column = 1),
-                Phase1Token(text = "a", type = ChalkTalkTokenType.Name, row = 1, column = 3),
-                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 1, column = 4),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 1, column = 0),
+                Phase1Token(text = "a", type = ChalkTalkTokenType.Name, row = 1, column = 2),
+                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 1, column = 3),
                 Phase1Token(
-                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 2, column = 2),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 2, column = 3),
-                Phase1Token(text = "p", type = ChalkTalkTokenType.Name, row = 2, column = 5),
-                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 2, column = 6),
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 2, column = 1),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 2, column = 2),
+                Phase1Token(text = "p", type = ChalkTalkTokenType.Name, row = 2, column = 4),
+                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 2, column = 5),
                 Phase1Token(
                     text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 3, column = 0),
                 Phase1Token(
                     text = "<Unindent>", type = ChalkTalkTokenType.End, row = 3, column = 0),
                 Phase1Token(
                     text = "<Unindent>", type = ChalkTalkTokenType.End, row = 3, column = 0),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 3, column = 1),
-                Phase1Token(text = "b", type = ChalkTalkTokenType.Name, row = 3, column = 3),
-                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 3, column = 4),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 3, column = 0),
+                Phase1Token(text = "b", type = ChalkTalkTokenType.Name, row = 3, column = 2),
+                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 3, column = 3),
                 Phase1Token(
-                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 4, column = 2),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 4, column = 3),
-                Phase1Token(text = "q", type = ChalkTalkTokenType.Name, row = 4, column = 5),
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 4, column = 1),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 4, column = 2),
+                Phase1Token(text = "q", type = ChalkTalkTokenType.Name, row = 4, column = 4),
                 Phase1Token(
-                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 5, column = 2),
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 5, column = 1),
                 Phase1Token(
-                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 5, column = 2),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 5, column = 3),
-                Phase1Token(text = "r", type = ChalkTalkTokenType.Name, row = 5, column = 5),
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 5, column = 1),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 5, column = 2),
+                Phase1Token(text = "r", type = ChalkTalkTokenType.Name, row = 5, column = 4),
                 Phase1Token(
-                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 6, column = 2),
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 6, column = 1),
                 Phase1Token(
-                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 6, column = 2),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 6, column = 3),
-                Phase1Token(text = "s", type = ChalkTalkTokenType.Name, row = 6, column = 5),
-                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 6, column = 6),
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 6, column = 1),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 6, column = 2),
+                Phase1Token(text = "s", type = ChalkTalkTokenType.Name, row = 6, column = 4),
+                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 6, column = 5),
                 Phase1Token(
-                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 7, column = 4),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 7, column = 5),
-                Phase1Token(text = "t", type = ChalkTalkTokenType.Name, row = 7, column = 7),
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 7, column = 3),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 7, column = 4),
+                Phase1Token(text = "t", type = ChalkTalkTokenType.Name, row = 7, column = 6),
                 Phase1Token(
                     text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 8, column = 0),
                 Phase1Token(
@@ -161,13 +189,13 @@ internal class ChalkTalkLexerTest {
                     text = "<Unindent>", type = ChalkTalkTokenType.End, row = 8, column = 0),
                 Phase1Token(
                     text = "<Unindent>", type = ChalkTalkTokenType.End, row = 8, column = 0),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 8, column = 1),
-                Phase1Token(text = "c", type = ChalkTalkTokenType.Name, row = 8, column = 3),
-                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 8, column = 4),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 8, column = 0),
+                Phase1Token(text = "c", type = ChalkTalkTokenType.Name, row = 8, column = 2),
+                Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 8, column = 3),
                 Phase1Token(
-                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 9, column = 2),
-                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 9, column = 3),
-                Phase1Token(text = "u", type = ChalkTalkTokenType.Name, row = 9, column = 5),
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 9, column = 1),
+                Phase1Token(text = ". ", type = ChalkTalkTokenType.DotSpace, row = 9, column = 2),
+                Phase1Token(text = "u", type = ChalkTalkTokenType.Name, row = 9, column = 4),
                 Phase1Token(
                     text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 10, column = 0),
                 Phase1Token(

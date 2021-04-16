@@ -7,7 +7,7 @@ Root(
                                 text = "Defines"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -20,7 +20,7 @@ Root(
                                                          text = "X"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 1
-                                                         column = 10
+                                                         column = 9
                                                        )
                                                        subParams = null
                                                        params = null
@@ -37,7 +37,7 @@ Root(
                                 text = "means"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -45,7 +45,7 @@ Root(
                                            text = "'X is \set'"
                                            type = ChalkTalkTokenType.Statement
                                            row = 2
-                                           column = 8
+                                           column = 7
                                          )
                                        )
                                      ]
@@ -55,7 +55,7 @@ Root(
                                 text = "collects"
                                 type = ChalkTalkTokenType.Name
                                 row = 3
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -66,7 +66,7 @@ Root(
                                                             text = "given"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 4
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -79,7 +79,7 @@ Root(
                                                                                      text = "k"
                                                                                      type = ChalkTalkTokenType.Name
                                                                                      row = 4
-                                                                                     column = 10
+                                                                                     column = 9
                                                                                    )
                                                                                    subParams = null
                                                                                    params = null
@@ -96,7 +96,7 @@ Root(
                                                             text = "where"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 5
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -104,7 +104,7 @@ Root(
                                                                        text = "'k is \integer'"
                                                                        type = ChalkTalkTokenType.Statement
                                                                        row = 5
-                                                                       column = 10
+                                                                       column = 9
                                                                      )
                                                                    )
                                                                  ]
@@ -114,7 +114,7 @@ Root(
                                                             text = "all"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 6
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -122,7 +122,7 @@ Root(
                                                                        text = "'2*k'"
                                                                        type = ChalkTalkTokenType.Statement
                                                                        row = 6
-                                                                       column = 8
+                                                                       column = 7
                                                                      )
                                                                    )
                                                                  ]
@@ -132,7 +132,7 @@ Root(
                                                             text = "suchThat"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 7
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -140,7 +140,7 @@ Root(
                                                                        text = "'k > 10'"
                                                                        type = ChalkTalkTokenType.Statement
                                                                        row = 7
-                                                                       column = 13
+                                                                       column = 12
                                                                      )
                                                                    )
                                                                  ]
@@ -156,7 +156,7 @@ Root(
                                 text = "written"
                                 type = ChalkTalkTokenType.Name
                                 row = 8
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -164,7 +164,7 @@ Root(
                                            text = ""\textrm{evens}""
                                            type = ChalkTalkTokenType.String
                                            row = 8
-                                           column = 10
+                                           column = 9
                                          )
                                        )
                                      ]

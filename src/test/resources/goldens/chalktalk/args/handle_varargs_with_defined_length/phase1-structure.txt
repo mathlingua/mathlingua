@@ -7,7 +7,7 @@ Root(
                                 text = "Defines"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -20,7 +20,7 @@ Root(
                                                          text = "X...#x..."
                                                          type = ChalkTalkTokenType.Name
                                                          row = 1
-                                                         column = 10
+                                                         column = 9
                                                        )
                                                        subParams = null
                                                        params = null
@@ -37,7 +37,7 @@ Root(
                                 text = "means"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -45,7 +45,7 @@ Root(
                                            text = "'X is \something'"
                                            type = ChalkTalkTokenType.Statement
                                            row = 2
-                                           column = 8
+                                           column = 7
                                          )
                                        )
                                      ]
@@ -55,7 +55,7 @@ Root(
                                 text = "satisfying"
                                 type = ChalkTalkTokenType.Name
                                 row = 3
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -63,7 +63,7 @@ Root(
                                            text = ""something for X...#x...""
                                            type = ChalkTalkTokenType.String
                                            row = 3
-                                           column = 13
+                                           column = 12
                                          )
                                        )
                                      ]
@@ -73,7 +73,7 @@ Root(
                                 text = "written"
                                 type = ChalkTalkTokenType.Name
                                 row = 4
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -81,7 +81,7 @@ Root(
                                            text = ""something""
                                            type = ChalkTalkTokenType.String
                                            row = 4
-                                           column = 10
+                                           column = 9
                                          )
                                        )
                                      ]

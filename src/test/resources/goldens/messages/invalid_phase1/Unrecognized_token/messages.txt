@@ -1,12 +1,12 @@
 Row: 9
-Column: 10
+Column: 6
 Message:
 Unrecognized character ;
 EndMessage:
 
 
 Row: 9
-Column: 4
+Column: 0
 Message:
 Unrecognized token 'Result
 EndMessage:

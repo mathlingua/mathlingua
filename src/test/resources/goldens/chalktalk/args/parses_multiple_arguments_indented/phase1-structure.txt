@@ -17,7 +17,7 @@ Root(
                                 text = "then"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -30,7 +30,7 @@ Root(
                                                          text = "a"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 2
-                                                         column = 3
+                                                         column = 2
                                                        )
                                                        subParams = null
                                                        params = null
@@ -50,7 +50,7 @@ Root(
                                                          text = "b"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 3
-                                                         column = 3
+                                                         column = 2
                                                        )
                                                        subParams = null
                                                        params = null
@@ -70,7 +70,7 @@ Root(
                                                          text = "c"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 4
-                                                         column = 3
+                                                         column = 2
                                                        )
                                                        subParams = null
                                                        params = null

@@ -17,7 +17,7 @@ Root(
                                 text = "then"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -30,7 +30,7 @@ Root(
                                                          text = "f"
                                                          type = ChalkTalkTokenType.Name
                                                          row = 1
-                                                         column = 7
+                                                         column = 6
                                                        )
                                                        subParams = null
                                                        params = [
@@ -38,7 +38,7 @@ Root(
                                                                     text = "x"
                                                                     type = ChalkTalkTokenType.Name
                                                                     row = 1
-                                                                    column = 9
+                                                                    column = 8
                                                                   )
                                                                 ]
                                                        tail = null

@@ -49,7 +49,7 @@ Document(
                                                text = "X"
                                                type = ChalkTalkTokenType.Name
                                                row = 1
-                                               column = 10
+                                               column = 9
                                              )
                                              subParams = null
                                              params = null
@@ -136,7 +136,7 @@ Document(
                                                    text = "k"
                                                    type = ChalkTalkTokenType.Name
                                                    row = 4
-                                                   column = 10
+                                                   column = 9
                                                  )
                                                  subParams = null
                                                  params = null

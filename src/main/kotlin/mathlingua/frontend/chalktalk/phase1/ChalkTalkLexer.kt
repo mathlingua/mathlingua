@@ -60,12 +60,15 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 // it is a comment and should be ignored
                 while (i < text.length && text[i] != '\n') {
                     i++
-                    column++
                 }
-                if (i < text.length && text[i] == '\n') {
+                while (i < text.length && text[i] == '\n') {
                     i++
-                    column = 0
                     line++
+                    // since the cursor is now at the next line, move it
+                    // so that it is just before the next line so that when
+                    // the next character is read, column is incremented
+                    // and is at zero, the start of the line
+                    column = -1
                 }
                 continue
             }
@@ -115,18 +118,21 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 column++
             } else if (c == '\n') {
                 line++
-                column = 0
+                // since the cursor is now at the next line, move it
+                // so that it is just before the next line so that when
+                // the next character is read, column is incremented
+                // and is a zero, the start of the row
+                column = -1
 
                 // text[i-1] == c since i was incremented
                 // text[i-2] is the character before c
                 if (i - 2 < 0 || text[i - 2] == '\n') {
                     while (i < text.length && text[i] == '\n') {
                         i++
-                        column++
                         line++
                     }
                     this.chalkTalkTokens.add(
-                        Phase1Token("-", ChalkTalkTokenType.Linebreak, line, column))
+                        Phase1Token("-", ChalkTalkTokenType.Linebreak, line, column = 0))
                     continue
                 }
 
@@ -149,14 +155,14 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 }
 
                 this.chalkTalkTokens.add(
-                    Phase1Token("<Indent>", ChalkTalkTokenType.Begin, line, column))
+                    Phase1Token("<Indent>", ChalkTalkTokenType.Begin, line, maxOf(column, 0)))
                 numOpen++
 
                 val level = levStack.peek()
                 if (indentCount <= level) {
                     while (numOpen > 0 && !levStack.isEmpty() && indentCount <= levStack.peek()) {
                         this.chalkTalkTokens.add(
-                            Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, column))
+                            Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, maxOf(column, 0)))
                         numOpen--
                         levStack.pop()
                     }
@@ -287,12 +293,11 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 var str = "" + c
                 while (i < text.length && text[i] != '"') {
                     val cur = text[i++]
+                    column++
                     str += cur
                     if (cur == '\n' || cur == '\r') {
                         line++
-                        column = 0
-                    } else {
-                        column++
+                        column = -1
                     }
                 }
                 if (i == text.length) {
@@ -311,12 +316,11 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 var stmt = "" + c
                 while (i < text.length && text[i] != '\'') {
                     val cur = text[i++]
+                    column++
                     stmt += cur
                     if (cur == '\n' || cur == '\r') {
                         line++
-                        column = 0
-                    } else {
-                        column++
+                        column = -1
                     }
                 }
                 if (i == text.length) {

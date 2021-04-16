@@ -7,7 +7,7 @@ Root(
                                 text = "Resource"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
-                                column = 1
+                                column = 0
                               )
                               args = [
                                        Argument(
@@ -18,7 +18,7 @@ Root(
                                                             text = "name"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 2
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -26,7 +26,7 @@ Root(
                                                                        text = ""some name""
                                                                        type = ChalkTalkTokenType.String
                                                                        row = 2
-                                                                       column = 9
+                                                                       column = 8
                                                                      )
                                                                    )
                                                                  ]
@@ -43,7 +43,7 @@ Root(
                                                             text = "author"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 3
-                                                            column = 3
+                                                            column = 2
                                                           )
                                                           args = [
                                                                    Argument(
@@ -51,7 +51,7 @@ Root(
                                                                        text = ""author1""
                                                                        type = ChalkTalkTokenType.String
                                                                        row = 4
-                                                                       column = 5
+                                                                       column = 4
                                                                      )
                                                                    ),
                                                                    Argument(
@@ -59,7 +59,7 @@ Root(
                                                                        text = ""author2""
                                                                        type = ChalkTalkTokenType.String
                                                                        row = 5
-                                                                       column = 5
+                                                                       column = 4
                                                                      )
                                                                    ),
                                                                    Argument(
@@ -67,7 +67,7 @@ Root(
                                                                        text = ""author3""
                                                                        type = ChalkTalkTokenType.String
                                                                        row = 6
-                                                                       column = 5
+                                                                       column = 4
                                                                      )
                                                                    )
                                                                  ]

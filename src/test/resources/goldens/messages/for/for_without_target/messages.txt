@@ -1,5 +1,5 @@
 Row: 2
-Column: 3
+Column: 2
 Message:
 Section 'forAll' requires at least one argument.
 EndMessage:

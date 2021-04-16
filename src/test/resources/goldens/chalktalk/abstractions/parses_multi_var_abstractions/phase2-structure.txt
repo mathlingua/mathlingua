@@ -23,7 +23,7 @@ Document(
                                                  text = "f"
                                                  type = ChalkTalkTokenType.Name
                                                  row = 1
-                                                 column = 7
+                                                 column = 6
                                                )
                                                subParams = null
                                                params = [
@@ -31,19 +31,19 @@ Document(
                                                             text = "x"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 1
-                                                            column = 9
+                                                            column = 8
                                                           ),
                                                           Phase1Token(
                                                             text = "y"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 1
-                                                            column = 12
+                                                            column = 11
                                                           ),
                                                           Phase1Token(
                                                             text = "z"
                                                             type = ChalkTalkTokenType.Name
                                                             row = 1
-                                                            column = 15
+                                                            column = 14
                                                           )
                                                         ]
                                                tail = null

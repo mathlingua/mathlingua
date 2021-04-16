@@ -26,20 +26,20 @@ Document(
                                                                  text = "a"
                                                                  type = ChalkTalkTokenType.Name
                                                                  row = 2
-                                                                 column = 11
+                                                                 column = 10
                                                                )
                                                                subParams = [
                                                                              Phase1Token(
                                                                                text = "n"
                                                                                type = ChalkTalkTokenType.Name
                                                                                row = 2
-                                                                               column = 14
+                                                                               column = 13
                                                                              ),
                                                                              Phase1Token(
                                                                                text = "m"
                                                                                type = ChalkTalkTokenType.Name
                                                                                row = 2
-                                                                               column = 17
+                                                                               column = 16
                                                                              )
                                                                            ]
                                                                params = [
@@ -67,7 +67,7 @@ Document(
                                                                    text = "b"
                                                                    type = ChalkTalkTokenType.Name
                                                                    row = 3
-                                                                   column = 9
+                                                                   column = 8
                                                                  )
                                                                  subParams = null
                                                                  params = null

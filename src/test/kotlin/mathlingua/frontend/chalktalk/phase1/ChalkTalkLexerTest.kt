@@ -101,13 +101,16 @@ internal class ChalkTalkLexerTest {
             listOf(
                 Phase1Token(text = "abc", type = ChalkTalkTokenType.Name, row = 3, column = 0),
                 Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 3, column = 3),
-                Phase1Token(text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 4, column = 0),
-                Phase1Token(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 4, column = 0),
+                Phase1Token(
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 4, column = 0),
+                Phase1Token(
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 4, column = 0),
                 Phase1Token(text = "xyz", type = ChalkTalkTokenType.Name, row = 4, column = 0),
                 Phase1Token(text = ":", type = ChalkTalkTokenType.Colon, row = 4, column = 3),
-                Phase1Token(text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 5, column = 0),
-                Phase1Token(text = "<Unindent>", type = ChalkTalkTokenType.End, row = 5, column = 0)
-           )
+                Phase1Token(
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 5, column = 0),
+                Phase1Token(
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 5, column = 0))
 
         assertThat(actual).isEqualTo(expected)
         assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())

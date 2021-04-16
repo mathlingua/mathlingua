@@ -162,7 +162,8 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 if (indentCount <= level) {
                     while (numOpen > 0 && !levStack.isEmpty() && indentCount <= levStack.peek()) {
                         this.chalkTalkTokens.add(
-                            Phase1Token("<Unindent>", ChalkTalkTokenType.End, line, maxOf(column, 0)))
+                            Phase1Token(
+                                "<Unindent>", ChalkTalkTokenType.End, line, maxOf(column, 0)))
                         numOpen--
                         levStack.pop()
                     }

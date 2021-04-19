@@ -3,9 +3,11 @@ package mathlingua.mathlingua
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
+import mathlingua.backend.SourceCollection
 import mathlingua.backend.getPatternsToWrittenAs
-import mathlingua.backend.newSourceCollectionFromContent
+import mathlingua.backend.newSourceCollectionFromFiles
 import mathlingua.backend.transform.Signature
+import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationSuccess
@@ -21,6 +23,17 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 import org.junit.jupiter.api.Test
 
 internal class MathLinguaTest {
+
+    private fun newSourceCollectionFromContent(inputs: List<String>): SourceCollection {
+        val fs = newMemoryFileSystem(listOf(""))
+        val files =
+            inputs.indices.map {
+                val file = fs.getFile(listOf("input$it.math"))
+                file.writeText(inputs[it])
+                file
+            }
+        return newSourceCollectionFromFiles(filesOrDirs = files)
+    }
 
     @Test
     fun findDuplicateContentNoDuplicates() {

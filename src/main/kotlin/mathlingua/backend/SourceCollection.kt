@@ -16,12 +16,12 @@
 
 package mathlingua.backend
 
-import java.io.File
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.checkVars
 import mathlingua.backend.transform.expandAsWritten
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
+import mathlingua.cli.VirtualFile
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.Parse
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
@@ -73,11 +73,13 @@ import mathlingua.frontend.textalk.isOpChar
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
-data class SourceFile(val file: File?, val content: String, val validation: Validation<Parse>)
+data class SourceFile(
+    val file: VirtualFile, val content: String, val validation: Validation<Parse>)
 
-fun isMathLinguaFile(file: File) = file.isFile && file.extension == "math"
+fun isMathLinguaFile(file: VirtualFile) =
+    !file.isDirectory() && file.absolutePath().last().endsWith(".math")
 
-private fun buildSourceFile(file: File): SourceFile {
+private fun buildSourceFile(file: VirtualFile): SourceFile {
     val content = file.readText()
     return SourceFile(
         file = file, content = content, validation = FrontEnd.parseWithLocations(content))
@@ -96,7 +98,7 @@ interface SourceCollection {
     fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
     fun getSymbolErrors(): List<ValueSourceTracker<ParseError>>
     fun prettyPrint(
-        file: File, html: Boolean, doExpand: Boolean
+        file: VirtualFile, html: Boolean, doExpand: Boolean
     ): Pair<List<String>, List<ParseError>>
     fun prettyPrint(
         input: String, html: Boolean, doExpand: Boolean
@@ -105,24 +107,21 @@ interface SourceCollection {
     fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String
 }
 
-fun newSourceCollectionFromFiles(filesOrDirs: List<File>): SourceCollection {
+fun newSourceCollectionFromFiles(filesOrDirs: List<VirtualFile>): SourceCollection {
     val sources = mutableListOf<SourceFile>()
-    for (f in filesOrDirs) {
-        if (f.isDirectory) {
-            sources.addAll(f.walk().filter { isMathLinguaFile(it) }.map { buildSourceFile(it) })
-        } else if (isMathLinguaFile(f)) {
-            sources.add(buildSourceFile(f))
-        }
+    for (file in filesOrDirs) {
+        findVirtualFiles(file, sources)
     }
     return SourceCollectionImpl(sources)
 }
 
-fun newSourceCollectionFromContent(sources: List<String>): SourceCollection {
-    val sourceFiles =
-        sources.map {
-            SourceFile(file = null, content = it, validation = FrontEnd.parseWithLocations(it))
-        }
-    return SourceCollectionImpl(sourceFiles)
+private fun findVirtualFiles(file: VirtualFile, result: MutableList<SourceFile>) {
+    if (isMathLinguaFile(file)) {
+        result.add(buildSourceFile(file))
+    }
+    for (child in file.listFiles()) {
+        findVirtualFiles(child, result)
+    }
 }
 
 class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
@@ -136,11 +135,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
 
     init {
         for (sf in sources) {
-            if (sf.file != null) {
-                sourceFiles[sf.file.normalize().canonicalPath] = sf
-            } else {
-                sourceFiles[sf.content] = sf
-            }
+            sourceFiles[sf.file.absolutePath().joinToString("/")] = sf
         }
 
         for (sf in sources) {
@@ -792,9 +787,9 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     }
 
     override fun prettyPrint(
-        file: File, html: Boolean, doExpand: Boolean
+        file: VirtualFile, html: Boolean, doExpand: Boolean
     ): Pair<List<String>, List<ParseError>> {
-        val sourceFile = sourceFiles[file.normalize().canonicalPath]
+        val sourceFile = sourceFiles[file.absolutePath().joinToString("/")]
         return if (sourceFile != null) {
             prettyPrint(sourceFile.validation, html, doExpand)
         } else {

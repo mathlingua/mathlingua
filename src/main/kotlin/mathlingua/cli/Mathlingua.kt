@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 Google LLC
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,24 +14,9 @@
  * limitations under the License.
  */
 
-package mathlingua
+package mathlingua.cli
 
-import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.core.subcommands
-import com.github.ajalt.clikt.output.TermUi
-import com.github.ajalt.clikt.parameters.arguments.argument
-import com.github.ajalt.clikt.parameters.arguments.multiple
-import com.github.ajalt.clikt.parameters.arguments.optional
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.option
 import java.io.File
-import java.lang.IllegalArgumentException
-import java.nio.file.FileSystems
-import java.nio.file.Paths
-import java.nio.file.StandardWatchEventKinds
-import java.nio.file.WatchService
-import kotlin.system.exitProcess
-import kotlinx.coroutines.runBlocking
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
@@ -65,9 +50,88 @@ private fun red(text: String) = "\u001B[31m$text\u001B[0m"
 
 private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 
-private fun error(msg: String) = TermUi.echo(message = msg, err = true)
+object Mathlingua {
+    fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {
+        val sourceCollection =
+            newSourceCollectionFromFiles(
+                if (files.isEmpty()) {
+                    listOf(fs.cwd())
+                } else {
+                    files
+                })
+        val errors = BackEnd.check(sourceCollection)
+        logger.log(getErrorOutput(fs, errors, sourceCollection.size(), json))
+        return if (errors.isEmpty()) {
+            0
+        } else {
+            1
+        }
+    }
 
-private fun log(msg: String) = TermUi.echo(message = msg, err = false)
+    fun render(
+        fs: VirtualFileSystem,
+        logger: Logger,
+        file: VirtualFile?,
+        noexpand: Boolean,
+        stdout: Boolean,
+        raw: Boolean
+    ): Int {
+        val errors =
+            if (file != null) {
+                renderFile(
+                    fs = fs,
+                    logger = logger,
+                    target = file,
+                    stdout = stdout,
+                    noExpand = noexpand,
+                    raw = raw)
+            } else {
+                if (raw) {
+                    val message = "ERROR: A file must be provided if --raw is used."
+                    logger.log(message)
+                    listOf(
+                        ValueSourceTracker(
+                            value = ParseError(message = message, row = -1, column = -1),
+                            source =
+                                SourceFile(
+                                    file = fs.getFile(listOf("")),
+                                    content = "",
+                                    validation = validationFailure(emptyList())),
+                            tracker = null))
+                } else {
+                    renderAll(fs = fs, logger = logger, stdout = stdout, noExpand = noexpand)
+                }
+            }
+        return if (errors.isEmpty()) {
+            0
+        } else {
+            1
+        }
+    }
+
+    fun clean(fs: VirtualFileSystem, logger: Logger): Int {
+        val indexFile = fs.getFile(listOf("docs", "index.html"))
+        return if (!indexFile.exists()) {
+            logger.log("Nothing to clean")
+            0
+        } else {
+            if (indexFile.delete()) {
+                logger.log("Deleted docs${File.separator}index.html")
+                0
+            } else {
+                logger.log(
+                    "${bold(red("ERROR: "))} Failed to delete docs${File.separator}index.html")
+                1
+            }
+        }
+    }
+
+    fun version(logger: Logger): Int {
+        logger.log("MathLingua CLI Version:      $TOOL_VERSION")
+        logger.log("MathLingua Language Version: $MATHLINGUA_VERSION")
+        return 0
+    }
+}
 
 private fun String.jsonSanitize() =
     this.replace("\\", "\\\\")
@@ -77,97 +141,466 @@ private fun String.jsonSanitize() =
         .replace("\r", "\\r")
         .replace("\"", "\\\"")
 
-private fun getCwd() = Paths.get(".").toAbsolutePath().normalize().toFile()
+private fun sanitizeHtmlForJs(html: String) =
+    html.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
 
-private fun getDocsDirectory(cwd: File) = File(cwd, "docs")
-
-private fun getContentDirectory(cwd: File) = File(cwd, "content")
-
-private class Mlg : CliktCommand() {
-    override fun run() = Unit
-}
-
-private class Check : CliktCommand(help = "Check input files for errors.") {
-    private val file: List<String> by argument(
-            help = "The *.math files and/or directories to process")
-        .multiple(required = false)
-    private val json: Boolean by option(help = "Output the results in JSON format.").flag()
-
-    override fun run(): Unit =
-        runBlocking {
-            val sourceCollection =
-                newSourceCollectionFromFiles(
-                    if (file.isEmpty()) {
-                        listOf(Paths.get(".").toAbsolutePath().normalize().toFile())
-                    } else {
-                        file.map { File(it) }
-                    })
-            val errors = BackEnd.check(sourceCollection)
-            log(getErrorOutput(errors, sourceCollection.size(), json))
-            exitProcess(
-                if (errors.isEmpty()) {
-                    0
-                } else {
-                    1
-                })
-        }
-}
-
-private class Version : CliktCommand(help = "Prints the tool and MathLingua language version.") {
-    override fun run() {
-        log("MathLingua CLI Version:      $TOOL_VERSION")
-        log("MathLingua Language Version: $MATHLINGUA_VERSION")
-        exitProcess(0)
-    }
-}
-
-private fun write(cwd: File, content: String, outFile: File, stdout: Boolean) {
-    if (stdout) {
-        log(content)
+private fun maybePlural(text: String, count: Int) =
+    if (count == 1) {
+        text
     } else {
-        val parent = outFile.parentFile
-        if (!parent.exists()) {
-            parent.mkdirs()
-        }
-        outFile.writeText(content)
-        log("Wrote ${outFile.normalize().relativePath(cwd)}")
+        "${text}s"
     }
+
+private fun getDocsDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("docs"))
+
+private fun getContentDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("content"))
+
+private fun getErrorOutput(
+    fs: VirtualFileSystem,
+    errors: List<ValueSourceTracker<ParseError>>,
+    numFilesProcessed: Int,
+    json: Boolean
+): String {
+    val builder = StringBuilder()
+    if (json) {
+        builder.append("[")
+    }
+    val cwd = fs.cwd()
+    for (i in errors.indices) {
+        val err = errors[i]
+        if (json) {
+            builder.append("{")
+            builder.append(
+                "  \"file\": \"${err.source.file.absolutePath().joinToString(File.separator).jsonSanitize() ?: "None"}\",")
+            builder.append("  \"type\": \"ERROR\",")
+            builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
+            builder.append("  \"failedLine\": \"\",")
+            builder.append("  \"row\": ${err.value.row},")
+            builder.append("  \"column\": ${err.value.column}")
+            builder.append("}")
+            if (i != errors.size - 1) {
+                builder.append(",")
+            }
+        } else {
+            builder.append(bold(red("ERROR: ")))
+            builder.append(
+                bold(
+                    "${err.source.file.relativePathTo(cwd).joinToString(File.separator) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
+            builder.append(err.value.message.trim())
+            builder.append("\n\n")
+        }
+    }
+
+    if (json) {
+        builder.append("]")
+    } else {
+        builder.append(
+            if (errors.isEmpty()) {
+                bold(green("SUCCESS\n"))
+            } else {
+                bold(red("FAILED\n"))
+            })
+        builder.append("Processed $numFilesProcessed ${maybePlural("file", numFilesProcessed)}\n")
+        builder.append("${errors.size} ${maybePlural("error", errors.size)} detected")
+    }
+
+    return builder.toString()
+}
+
+private fun renderFile(
+    fs: VirtualFileSystem,
+    logger: Logger,
+    target: VirtualFile,
+    stdout: Boolean,
+    noExpand: Boolean,
+    raw: Boolean
+): List<ValueSourceTracker<ParseError>> {
+    if (!target.exists()) {
+        val message =
+            "ERROR: The file ${target.absolutePath().joinToString(File.separator)} does not exist"
+        logger.log(message)
+        return listOf(
+            ValueSourceTracker(
+                value = ParseError(message = message, row = -1, column = -1),
+                source =
+                    SourceFile(
+                        file = target, content = "", validation = validationFailure(emptyList())),
+                tracker = null))
+    }
+
+    if (target.isDirectory() || !target.absolutePath().last().endsWith(".math")) {
+        val message =
+            "ERROR: The path ${target.absolutePath().joinToString(File.separator)} is not a .math file"
+        logger.log(message)
+        return listOf(
+            ValueSourceTracker(
+                value = ParseError(message = message, row = -1, column = -1),
+                source =
+                    SourceFile(
+                        file = target, content = "", validation = validationFailure(emptyList())),
+                tracker = null))
+    }
+
+    val sourceCollection = newSourceCollectionFromFiles(listOf(fs.cwd()))
+
+    val pair = sourceCollection.prettyPrint(file = target, html = true, doExpand = !noExpand)
+
+    val fileContent = target.readText()
+    val errors =
+        pair.second.map {
+            ValueSourceTracker(
+                value = it,
+                source =
+                    SourceFile(
+                        file = target,
+                        content = fileContent,
+                        validation = validationFailure(emptyList())),
+                tracker = null)
+        }
+
+    val contentBuilder = StringBuilder()
+    for (item in pair.first) {
+        contentBuilder.append("<div class='mathlingua-top-level'>")
+        contentBuilder.append(item)
+        contentBuilder.append("</div><br/><br/>")
+    }
+
+    val text =
+        if (raw) {
+            contentBuilder.toString()
+        } else {
+            buildStandaloneHtml(content = contentBuilder.toString())
+        }
+
+    if (!stdout) {
+        // get the path relative to the current working directory with
+        // the file extension replaced with ".html"
+        val relHtmlPath = target.relativePathTo(fs.cwd()).toMutableList()
+        if (relHtmlPath.size > 0) {
+            relHtmlPath[relHtmlPath.size - 1] =
+                relHtmlPath[relHtmlPath.size - 1].replace(".math", ".html")
+        }
+        val htmlPath = mutableListOf<String>()
+        htmlPath.add("docs")
+        htmlPath.addAll(relHtmlPath)
+        val outFile = fs.getFile(htmlPath)
+        val parentDir =
+            fs.getDirectory(htmlPath.filterIndexed { index, _ -> index < htmlPath.size - 1 })
+        parentDir.mkdirs()
+        outFile.writeText(text)
+        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(File.separator)}")
+    }
+
+    if (stdout) {
+        logger.log(text)
+    } else {
+        logger.log(getErrorOutput(fs, errors, sourceCollection.size(), false))
+    }
+
+    return errors
+}
+
+private fun renderAll(
+    fs: VirtualFileSystem, logger: Logger, stdout: Boolean, noExpand: Boolean
+): List<ValueSourceTracker<ParseError>> {
+    val sourceCollection = newSourceCollectionFromFiles(listOf(fs.cwd()))
+
+    val docsDir = getDocsDirectory(fs)
+    docsDir.mkdirs()
+
+    val contentDir = getContentDirectory(fs)
+    contentDir.mkdirs()
+
+    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+
+    val indexFileText = getIndexFileText(fs, noExpand, errors)
+
+    if (!stdout) {
+        val indexFile = fs.getFile(listOf("docs", "index.html"))
+        indexFile.writeText(indexFileText)
+        logger.log("Wrote ${indexFile.relativePathTo(fs.cwd()).joinToString(File.separator)}")
+    }
+
+    if (stdout) {
+        logger.log(indexFileText)
+    } else {
+        logger.log(getErrorOutput(fs, errors, sourceCollection.size(), false))
+    }
+
+    return errors
+}
+
+private fun findMathlinguaFiles(fileOrDir: VirtualFile, result: MutableList<VirtualFile>) {
+    if (isMathLinguaFile(fileOrDir)) {
+        result.add(fileOrDir)
+    }
+    if (fileOrDir.isDirectory()) {
+        for (f in fileOrDir.listFiles()) {
+            findMathlinguaFiles(f, result)
+        }
+    }
+}
+
+private fun getIndexFileText(
+    fs: VirtualFileSystem, noexpand: Boolean, errors: MutableList<ValueSourceTracker<ParseError>>
+): String {
+    val cwd = fs.cwd()
+    val allFileIds = mutableListOf<String>()
+    val fileListBuilder = StringBuilder()
+    if (cwd.isDirectory()) {
+        val children = cwd.listFiles()
+        for (child in children) {
+            buildFileList(fs, child, 0, fileListBuilder, allFileIds)
+        }
+    }
+
+    val searchIndex = generateSearchIndex(fs)
+    val searchIndexBuilder = StringBuilder()
+    searchIndexBuilder.append("const index = new Map();\n")
+    val words = searchIndex.keys.toList()
+    for (i in words.indices) {
+        val word = words[i]
+        val pathToIndices = searchIndex[word]
+        if (pathToIndices != null) {
+            searchIndexBuilder.append("                const map$i = new Map();\n")
+            val paths = pathToIndices.keys.toList()
+            for (j in paths.indices) {
+                val path = paths[j]
+                val ids = pathToIndices[path]
+                if (ids != null) {
+                    searchIndexBuilder.append("                const set${i}_$j = new Set();\n")
+                    for (id in ids) {
+                        searchIndexBuilder.append("                set${i}_$j.add($id);\n")
+                    }
+                    searchIndexBuilder.append("                map$i.set('$path', set${i}_$j);\n")
+                }
+            }
+            searchIndexBuilder.append(
+                "                index.set('${word.replace("\\", "\\\\")}', map$i);\n")
+        }
+    }
+    searchIndexBuilder.append("                return index;")
+
+    val sigToPathCode = generateSignatureToPathJsCode(fs)
+
+    val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
+    val filesToProcess = mutableListOf<VirtualFile>()
+    findMathlinguaFiles(cwd, filesToProcess)
+
+    val pathToEntityMap =
+        generatePathToEntityList(fs, filesToProcess, sourceCollection, noexpand, errors)
+    val pathToEntityBuilder = StringBuilder()
+    pathToEntityBuilder.append("                const map = new Map();\n")
+    val keys = pathToEntityMap.keys.toList()
+    for (path in keys) {
+        val key = path.replace("\"", "\\\"")
+        val entities = pathToEntityMap[key]!!.map { sanitizeHtmlForJs(it) }.map { "\"$it\"" }
+        pathToEntityBuilder.append("                map.set(\"$key\", $entities);\n")
+    }
+    pathToEntityBuilder.append("                return map;\n")
+
+    val homeContentFile = fs.getFile(listOf("docs", "home.html"))
+    val homeContent =
+        if (homeContentFile.exists()) {
+            homeContentFile.readText()
+        } else {
+            "<p>Create a file <code>docs/home.html</code> to describe this repository.</p>"
+        }
+    val homeHtml =
+        sanitizeHtmlForJs(
+            "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\"><div class='mathlingua-top-level'>$homeContent</div></div>")
+    return buildIndexHtml(
+        fileListBuilder.toString(),
+        homeHtml,
+        searchIndexBuilder.toString(),
+        allFileIds,
+        sigToPathCode,
+        pathToEntityBuilder.toString())
 }
 
 private fun buildFileList(
-    cwd: File, file: File, indent: Int, builder: StringBuilder, allFileIds: MutableList<String>
+    fs: VirtualFileSystem,
+    file: VirtualFile,
+    indent: Int,
+    builder: StringBuilder,
+    allFileIds: MutableList<String>
 ) {
     val childBuilder = StringBuilder()
-    if (file.isDirectory) {
+    if (file.isDirectory()) {
         val children = file.listFiles()
-        if (children != null) {
-            for (child in children) {
-                buildFileList(cwd, child, indent + 12, childBuilder, allFileIds)
-            }
+        for (child in children) {
+            buildFileList(fs, child, indent + 12, childBuilder, allFileIds)
         }
     }
 
-    val isMathFile = file.isFile && file.extension == "math"
-    if ((file.isDirectory && childBuilder.isNotEmpty()) || isMathFile) {
-        val src = file.relativePath(cwd).replace(".math", ".html")
+    val isMathFile = !file.isDirectory() && file.absolutePath().last().endsWith(".math")
+    if ((file.isDirectory() && childBuilder.isNotEmpty()) || isMathFile) {
+        val src =
+            file.relativePathTo(fs.cwd()).joinToString(File.separator).replace(".math", ".html")
         val cssBuilder = StringBuilder()
         cssBuilder.append(
             "padding-left: ${indent}px;font-family: Georgia, 'Times New Roman', Times, serif;")
-        if (file.isDirectory) {
+        if (file.isDirectory()) {
             cssBuilder.append("font-weight: bold;")
         }
         val id = src.removeSuffix(".html")
         allFileIds.add(id)
         val onclick =
-            if (file.isDirectory) {
+            if (file.isDirectory()) {
                 ""
             } else {
                 "onclick=\"view('$src')\""
             }
         builder.append(
-            "<a id='$id' $onclick><span style=\"${cssBuilder}\">${file.name.removeSuffix(".math")}</span></a>")
+            "<a id='$id' $onclick><span style=\"${cssBuilder}\">${file.absolutePath().last().removeSuffix(".math")}</span></a>")
         builder.append(childBuilder.toString())
     }
+}
+
+private fun generateSearchIndex(fs: VirtualFileSystem): Map<String, Map<String, Set<Int>>> {
+    val result = mutableMapOf<String, MutableMap<String, MutableSet<Int>>>()
+    generateSearchIndexImpl(fs, getContentDirectory(fs), result)
+    return result
+}
+
+private fun generateSearchIndexImpl(
+    fs: VirtualFileSystem,
+    file: VirtualFile,
+    index: MutableMap<String, MutableMap<String, MutableSet<Int>>>
+) {
+    if (file.isDirectory()) {
+        val children = file.listFiles()
+        for (child in children) {
+            generateSearchIndexImpl(fs, child, index)
+        }
+    }
+
+    if (!file.isDirectory() && file.absolutePath().last().endsWith(".math")) {
+        val path = file.relativePathTo(fs.cwd()).joinToString(File.separator).removeSuffix(".math")
+        when (val validation = FrontEnd.parse(file.readText())
+        ) {
+            is ValidationSuccess -> {
+                val doc = validation.value
+                val groups = doc.groups
+                for (i in groups.indices) {
+                    val words = getAllWords(groups[i])
+                    for (word in words) {
+                        val pathToIndex = index.getOrDefault(word, mutableMapOf())
+                        val indices = pathToIndex.getOrDefault(path, mutableSetOf())
+                        indices.add(i)
+                        pathToIndex[path] = indices
+                        index[word] = pathToIndex
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun generateSignatureToPath(fs: VirtualFileSystem): Map<String, String> {
+    val result = mutableMapOf<String, String>()
+    generateSignatureToPathImpl(fs, getContentDirectory(fs), result, 0)
+    return result
+}
+
+private fun generateSignatureToPathImpl(
+    fs: VirtualFileSystem, file: VirtualFile, result: MutableMap<String, String>, depth: Int
+) {
+    if (file.isDirectory()) {
+        val children = file.listFiles()
+        for (child in children) {
+            generateSignatureToPathImpl(fs, child, result, depth + 1)
+        }
+    }
+
+    if (!file.isDirectory() && file.absolutePath().last().endsWith(".math")) {
+        val path = file.relativePathTo(fs.cwd()).joinToString(File.separator).removeSuffix(".math")
+        when (val validation = FrontEnd.parse(file.readText())
+        ) {
+            is ValidationSuccess -> {
+                val doc = validation.value
+                val groups = doc.groups
+                for (i in groups.indices) {
+                    val grp = groups[i]
+                    val signature =
+                        when (grp) {
+                            is ResourceGroup -> {
+                                grp.id
+                            }
+                            is DefinesGroup -> {
+                                grp.signature?.form
+                            }
+                            is StatesGroup -> {
+                                grp.signature?.form
+                            }
+                            is FoundationGroup -> {
+                                when (val content = grp.foundationSection.content
+                                ) {
+                                    is DefinesGroup -> {
+                                        content.signature?.form
+                                    }
+                                    is StatesGroup -> {
+                                        content.signature?.form
+                                    }
+                                    else -> {
+                                        null
+                                    }
+                                }
+                            }
+                            else -> {
+                                null
+                            }
+                        }
+                    if (signature != null) {
+                        val pathBuilder = StringBuilder()
+                        for (j in 0 until depth) {
+                            pathBuilder.append("../")
+                        }
+                        pathBuilder.append(path)
+                        pathBuilder.append(".html?show=")
+                        pathBuilder.append(i)
+                        result[signature] = pathBuilder.toString()
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun generateSignatureToPathJsCode(fs: VirtualFileSystem): String {
+    val signatureToPath = generateSignatureToPath(fs)
+    val signatureToPathBuilder = StringBuilder()
+    signatureToPathBuilder.append("const sigToPath = new Map();")
+    for (entry in signatureToPath.entries) {
+        signatureToPathBuilder.append("sigToPath.set('${entry.key}', '${entry.value}');")
+    }
+    signatureToPathBuilder.append("return sigToPath;")
+    return signatureToPathBuilder.toString()
+}
+
+private fun generatePathToEntityList(
+    fs: VirtualFileSystem,
+    filesToProcess: List<VirtualFile>,
+    sourceCollection: SourceCollection,
+    noexpand: Boolean,
+    errors: MutableList<ValueSourceTracker<ParseError>>
+): Map<String, List<String>> {
+    val result = mutableMapOf<String, List<String>>()
+    for (f in filesToProcess) {
+        val path = f.relativePathTo(fs.cwd()).joinToString(File.separator)
+        val pair = sourceCollection.prettyPrint(file = f, html = true, doExpand = !noexpand)
+        errors.addAll(
+            pair.second.map {
+                ValueSourceTracker(
+                    value = it,
+                    source =
+                        SourceFile(
+                            file = f, content = "", validation = validationFailure(emptyList())),
+                    tracker = null)
+            })
+        result[path] = pair.first
+    }
+    return result
 }
 
 fun getAllWords(node: Phase2Node): Set<String> {
@@ -223,568 +656,6 @@ private fun getAllWordsImpl(node: TexTalkNode, words: MutableSet<String>) {
     }
 
     node.forEach { getAllWordsImpl(it, words) }
-}
-
-private fun generateSearchIndex(cwd: File): Map<String, Map<String, Set<Int>>> {
-    val result = mutableMapOf<String, MutableMap<String, MutableSet<Int>>>()
-    generateSearchIndexImpl(cwd, getContentDirectory(cwd), result)
-    return result
-}
-
-private fun generateSearchIndexImpl(
-    cwd: File, file: File, index: MutableMap<String, MutableMap<String, MutableSet<Int>>>
-) {
-    if (file.isDirectory) {
-        val children = file.listFiles()
-        if (children != null) {
-            for (child in children) {
-                generateSearchIndexImpl(cwd, child, index)
-            }
-        }
-    }
-
-    if (file.isFile && file.extension == "math") {
-        val path = file.relativePath(cwd).removeSuffix(".math")
-        when (val validation = FrontEnd.parse(file.readText())
-        ) {
-            is ValidationSuccess -> {
-                val doc = validation.value
-                val groups = doc.groups
-                for (i in groups.indices) {
-                    val words = getAllWords(groups[i])
-                    for (word in words) {
-                        val pathToIndex = index.getOrDefault(word, mutableMapOf())
-                        val indices = pathToIndex.getOrDefault(path, mutableSetOf())
-                        indices.add(i)
-                        pathToIndex[path] = indices
-                        index[word] = pathToIndex
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun generateSignatureToPath(cwd: File): Map<String, String> {
-    val result = mutableMapOf<String, String>()
-    generateSignatureToPathImpl(cwd, getContentDirectory(cwd), result, 0)
-    return result
-}
-
-private fun generateSignatureToPathImpl(
-    cwd: File, file: File, result: MutableMap<String, String>, depth: Int
-) {
-    if (file.isDirectory) {
-        val children = file.listFiles()
-        if (children != null) {
-            for (child in children) {
-                generateSignatureToPathImpl(cwd, child, result, depth + 1)
-            }
-        }
-    }
-
-    if (file.isFile && file.extension == "math") {
-        val path = file.relativePath(cwd).removeSuffix(".math")
-        when (val validation = FrontEnd.parse(file.readText())
-        ) {
-            is ValidationSuccess -> {
-                val doc = validation.value
-                val groups = doc.groups
-                for (i in groups.indices) {
-                    val grp = groups[i]
-                    val signature =
-                        when (grp) {
-                            is ResourceGroup -> {
-                                grp.id
-                            }
-                            is DefinesGroup -> {
-                                grp.signature?.form
-                            }
-                            is StatesGroup -> {
-                                grp.signature?.form
-                            }
-                            is FoundationGroup -> {
-                                when (val content = grp.foundationSection.content
-                                ) {
-                                    is DefinesGroup -> {
-                                        content.signature?.form
-                                    }
-                                    is StatesGroup -> {
-                                        content.signature?.form
-                                    }
-                                    else -> {
-                                        null
-                                    }
-                                }
-                            }
-                            else -> {
-                                null
-                            }
-                        }
-                    if (signature != null) {
-                        val pathBuilder = StringBuilder()
-                        for (j in 0 until depth) {
-                            pathBuilder.append("../")
-                        }
-                        pathBuilder.append(path)
-                        pathBuilder.append(".html?show=")
-                        pathBuilder.append(i)
-                        result[signature] = pathBuilder.toString()
-                    }
-                }
-            }
-        }
-    }
-}
-
-private fun generateSignatureToPathJsCode(cwd: File): String {
-    val signatureToPath = generateSignatureToPath(cwd)
-    val signatureToPathBuilder = StringBuilder()
-    signatureToPathBuilder.append("const sigToPath = new Map();")
-    for (entry in signatureToPath.entries) {
-        signatureToPathBuilder.append("sigToPath.set('${entry.key}', '${entry.value}');")
-    }
-    signatureToPathBuilder.append("return sigToPath;")
-    return signatureToPathBuilder.toString()
-}
-
-private fun sanitizeHtmlForJs(html: String) =
-    html.replace("\\", "\\\\").replace("\n", "\\n").replace("\"", "\\\"")
-
-private fun getIndexFileText(
-    cwd: File, noexpand: Boolean, errors: MutableList<ValueSourceTracker<ParseError>>
-): String {
-    val allFileIds = mutableListOf<String>()
-    val fileListBuilder = StringBuilder()
-    if (cwd.isDirectory) {
-        val children = cwd.listFiles()
-        if (children != null) {
-            for (child in children) {
-                buildFileList(cwd, child, 0, fileListBuilder, allFileIds)
-            }
-        }
-    }
-
-    val searchIndex = generateSearchIndex(cwd)
-    val searchIndexBuilder = StringBuilder()
-    searchIndexBuilder.append("const index = new Map();\n")
-    val words = searchIndex.keys.toList()
-    for (i in words.indices) {
-        val word = words[i]
-        val pathToIndices = searchIndex[word]
-        if (pathToIndices != null) {
-            searchIndexBuilder.append("                const map$i = new Map();\n")
-            val paths = pathToIndices.keys.toList()
-            for (j in paths.indices) {
-                val path = paths[j]
-                val ids = pathToIndices[path]
-                if (ids != null) {
-                    searchIndexBuilder.append("                const set${i}_$j = new Set();\n")
-                    for (id in ids) {
-                        searchIndexBuilder.append("                set${i}_$j.add($id);\n")
-                    }
-                    searchIndexBuilder.append("                map$i.set('$path', set${i}_$j);\n")
-                }
-            }
-            searchIndexBuilder.append(
-                "                index.set('${word.replace("\\", "\\\\")}', map$i);\n")
-        }
-    }
-    searchIndexBuilder.append("                return index;")
-
-    val sigToPathCode = generateSignatureToPathJsCode(cwd)
-
-    val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
-    val filesToProcess = mutableListOf<File>()
-    filesToProcess.addAll(cwd.walk().filter { isMathLinguaFile(it) })
-
-    val pathToEntityMap =
-        generatePathToEntityList(cwd, filesToProcess, sourceCollection, noexpand, errors)
-    val pathToEntityBuilder = StringBuilder()
-    pathToEntityBuilder.append("                const map = new Map();\n")
-    val keys = pathToEntityMap.keys.toList()
-    for (path in keys) {
-        val key = path.replace("\"", "\\\"")
-        val entities = pathToEntityMap[key]!!.map { sanitizeHtmlForJs(it) }.map { "\"$it\"" }
-        pathToEntityBuilder.append("                map.set(\"$key\", $entities);\n")
-    }
-    pathToEntityBuilder.append("                return map;\n")
-
-    val homeContentFile = File(getDocsDirectory(cwd), "home.html")
-    val homeContent =
-        if (homeContentFile.exists()) {
-            homeContentFile.readText()
-        } else {
-            "<p>Create a file <code>docs/home.html</code> to describe this repository.</p>"
-        }
-    val homeHtml =
-        sanitizeHtmlForJs(
-            "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\"><div class='mathlingua-top-level'>$homeContent</div></div>")
-    return buildIndexHtml(
-        fileListBuilder.toString(),
-        homeHtml,
-        searchIndexBuilder.toString(),
-        allFileIds,
-        sigToPathCode,
-        pathToEntityBuilder.toString())
-}
-
-private fun generatePathToEntityList(
-    cwd: File,
-    filesToProcess: List<File>,
-    sourceCollection: SourceCollection,
-    noexpand: Boolean,
-    errors: MutableList<ValueSourceTracker<ParseError>>
-): Map<String, List<String>> {
-    val result = mutableMapOf<String, List<String>>()
-    for (f in filesToProcess) {
-        val path = f.relativePath(cwd)
-        val pair = sourceCollection.prettyPrint(file = f, html = true, doExpand = !noexpand)
-        errors.addAll(
-            pair.second.map {
-                ValueSourceTracker(
-                    value = it,
-                    source =
-                        SourceFile(
-                            file = f, content = "", validation = validationFailure(emptyList())),
-                    tracker = null)
-            })
-        result[path] = pair.first
-    }
-    return result
-}
-
-private fun renderAll(
-    cwd: File, stdout: Boolean, noExpand: Boolean
-): List<ValueSourceTracker<ParseError>> {
-    val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
-
-    val docsDir = getDocsDirectory(cwd)
-    docsDir.mkdirs()
-
-    val contentDir = getContentDirectory(cwd)
-    contentDir.mkdirs()
-
-    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-
-    val indexFileText = getIndexFileText(cwd, noExpand, errors)
-
-    if (!stdout) {
-        val indexFile = File(docsDir, "index.html")
-        indexFile.writeText(indexFileText)
-        log("Wrote ${indexFile.relativeTo(cwd)}")
-    }
-
-    if (stdout) {
-        log(indexFileText)
-    } else {
-        log(getErrorOutput(errors, sourceCollection.size(), false))
-    }
-
-    return errors
-}
-
-private fun renderFile(
-    target: File, cwd: File, stdout: Boolean, noExpand: Boolean, raw: Boolean
-): List<ValueSourceTracker<ParseError>> {
-    if (!target.exists()) {
-        val message = "ERROR: The file ${target.absolutePath} does not exist"
-        log(message)
-        return listOf(
-            ValueSourceTracker(
-                value = ParseError(message = message, row = -1, column = -1),
-                source =
-                    SourceFile(
-                        file = target, content = "", validation = validationFailure(emptyList())),
-                tracker = null))
-    }
-
-    if (!target.isFile || !target.absolutePath.endsWith(".math")) {
-        val message = "ERROR: The path ${target.absolutePath} is not a .math file"
-        log(message)
-        return listOf(
-            ValueSourceTracker(
-                value = ParseError(message = message, row = -1, column = -1),
-                source =
-                    SourceFile(
-                        file = target, content = "", validation = validationFailure(emptyList())),
-                tracker = null))
-    }
-
-    val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
-
-    val pair = sourceCollection.prettyPrint(file = target, html = true, doExpand = !noExpand)
-
-    val fileContent = target.readText()
-    val errors =
-        pair.second.map {
-            ValueSourceTracker(
-                value = it,
-                source =
-                    SourceFile(
-                        file = target,
-                        content = fileContent,
-                        validation = validationFailure(emptyList())),
-                tracker = null)
-        }
-
-    val contentBuilder = StringBuilder()
-    for (item in pair.first) {
-        contentBuilder.append("<div class='mathlingua-top-level'>")
-        contentBuilder.append(item)
-        contentBuilder.append("</div><br/><br/>")
-    }
-
-    val text =
-        if (raw) {
-            contentBuilder.toString()
-        } else {
-            buildStandaloneHtml(content = contentBuilder.toString())
-        }
-
-    if (!stdout) {
-        val fileToHtmlExt = File(target.parentFile, target.nameWithoutExtension + ".html")
-        val relPath = fileToHtmlExt.relativePath(cwd)
-        val outFile = File(getDocsDirectory(cwd), relPath)
-        outFile.parentFile.mkdirs()
-        outFile.writeText(text)
-        log("Wrote ${outFile.relativeTo(cwd)}")
-    }
-
-    if (stdout) {
-        log(text)
-    } else {
-        log(getErrorOutput(errors, sourceCollection.size(), false))
-    }
-
-    return errors
-}
-
-private class Watch :
-    CliktCommand("Watches the working directory for changes and renders the code on file changes") {
-
-    private fun isHidden(file: File): Boolean {
-        if (file.name.startsWith(".")) {
-            return true
-        }
-
-        val parent = file.parentFile ?: return false
-        return isHidden(parent)
-    }
-
-    override fun run(): Unit =
-        runBlocking {
-            fun registerAll(file: File, watchService: WatchService) {
-                if (file.isDirectory) {
-                    file.walk().forEach {
-                        val path = it.toPath()
-                        if (it.isDirectory && !isHidden(it)) {
-                            path.register(
-                                watchService,
-                                StandardWatchEventKinds.ENTRY_CREATE,
-                                StandardWatchEventKinds.ENTRY_DELETE,
-                                StandardWatchEventKinds.ENTRY_MODIFY)
-                        }
-                    }
-                }
-            }
-
-            var watchService = FileSystems.getDefault().newWatchService()
-            val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-            registerAll(cwd, watchService)
-
-            // do an initial render to ensure the docs directory is up-to-date
-            // even before any changes occur
-            renderAll(cwd = cwd, stdout = false, noExpand = false)
-            println()
-
-            log("Waiting for changes...")
-            println()
-
-            while (true) {
-                var doRender = false
-                val watchKey = watchService.take()
-                for (event in watchKey.pollEvents()) {
-                    val filename = event.context().toString()
-                    if (!filename.endsWith(".html") || filename == "docs-home.html") {
-                        doRender = true
-                    }
-                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE ||
-                        event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
-                        watchService.close()
-                        watchService = FileSystems.getDefault().newWatchService()
-                        registerAll(cwd, watchService)
-                    }
-                }
-
-                if (doRender) {
-                    log("Change detected...")
-                    renderAll(cwd = cwd, stdout = false, noExpand = false)
-                    println()
-                }
-
-                watchKey.reset()
-            }
-        }
-}
-
-private class Render : CliktCommand("Generates HTML code with definitions expanded.") {
-    private val file: String? by argument(
-            help =
-                "If specified, the .math file to render as an HTML document.  Otherwise, all .math files " +
-                    "in the 'contents' directory will be rendered into a single dynamic HTML document.")
-        .optional()
-    private val noexpand: Boolean by option(
-            help =
-                "Specifies to not expand the contents of entries using the 'written' form of definitions.")
-        .flag()
-    private val stdout: Boolean by option(
-            help =
-                "If specified, the rendered content will be printed to standard " +
-                    "out.  Otherwise, it is written to a file in the `docs` directory with the same path as the " +
-                    "input file except for a '.html' extension if the FILE argument is specified.  Otherwise, the " +
-                    "content is written to an `index.html` file in the `docs` directory.")
-        .flag()
-    private val raw: Boolean by option(
-            help =
-                "If specified with a single file, the raw HTML will be rendered excluding any " +
-                    "script or style tages.  It is an error to specify this flag without specify a specific " +
-                    "file to render.")
-        .flag()
-
-    override fun run(): Unit =
-        runBlocking {
-            val cwd = getCwd()
-            val errors =
-                if (file != null) {
-                    renderFile(
-                        target = File(file!!),
-                        cwd = cwd,
-                        stdout = stdout,
-                        noExpand = noexpand,
-                        raw = raw)
-                } else {
-                    if (raw) {
-                        val message = "ERROR: A file must be provided if --raw is used."
-                        log(message)
-                        listOf(
-                            ValueSourceTracker(
-                                value = ParseError(message = message, row = -1, column = -1),
-                                source =
-                                    SourceFile(
-                                        file = null,
-                                        content = "",
-                                        validation = validationFailure(emptyList())),
-                                tracker = null))
-                    } else {
-                        renderAll(cwd = cwd, stdout = stdout, noExpand = noexpand)
-                    }
-                }
-            exitProcess(
-                if (errors.isEmpty()) {
-                    0
-                } else {
-                    1
-                })
-        }
-}
-
-private fun getErrorOutput(
-    errors: List<ValueSourceTracker<ParseError>>, numFilesProcessed: Int, json: Boolean
-): String {
-    val builder = StringBuilder()
-    if (json) {
-        builder.append("[")
-    }
-    val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-    for (i in errors.indices) {
-        val err = errors[i]
-        if (json) {
-            builder.append("{")
-            builder.append(
-                "  \"file\": \"${err.source.file?.normalize()?.absolutePath?.jsonSanitize() ?: "None"}\",")
-            builder.append("  \"type\": \"ERROR\",")
-            builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
-            builder.append("  \"failedLine\": \"\",")
-            builder.append("  \"row\": ${err.value.row},")
-            builder.append("  \"column\": ${err.value.column}")
-            builder.append("}")
-            if (i != errors.size - 1) {
-                builder.append(",")
-            }
-        } else {
-            builder.append(bold(red("ERROR: ")))
-            builder.append(
-                bold(
-                    "${err.source.file?.relativePath(cwd) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
-            builder.append(err.value.message.trim())
-            builder.append("\n\n")
-        }
-    }
-
-    if (json) {
-        builder.append("]")
-    } else {
-        builder.append(
-            if (errors.isEmpty()) {
-                bold(green("SUCCESS\n"))
-            } else {
-                bold(red("FAILED\n"))
-            })
-        builder.append("Processed $numFilesProcessed ${maybePlural("file", numFilesProcessed)}\n")
-        builder.append("${errors.size} ${maybePlural("error", errors.size)} detected")
-    }
-
-    return builder.toString()
-}
-
-private fun File.relativePath(dir: File) =
-    try {
-        this.relativeTo(dir).path
-    } catch (e: IllegalArgumentException) {
-        this.path
-    }
-
-private fun maybePlural(text: String, count: Int) =
-    if (count == 1) {
-        text
-    } else {
-        "${text}s"
-    }
-
-// this value will be populated in main()
-var helpText = ""
-
-class Help : CliktCommand(help = "Show this message and exit") {
-    override fun run() {
-        log(helpText)
-        exitProcess(0)
-    }
-}
-
-class Clean : CliktCommand(help = "Delete the docs directory") {
-    override fun run() {
-        val docsDir = getDocsDirectory(getCwd())
-        val indexFile = File(docsDir, "index.html")
-        if (!indexFile.exists()) {
-            log("Nothing to clean")
-            exitProcess(0)
-        } else {
-            if (indexFile.delete()) {
-                log("Deleted $indexFile")
-                exitProcess(0)
-            } else {
-                log("${bold(red("ERROR: "))} Failed to directory $docsDir")
-                exitProcess(1)
-            }
-        }
-    }
-}
-
-fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Watch(), Version())
-    helpText = mlg.getFormattedHelp()
-    mlg.main(args)
 }
 
 const val SHARED_HEADER =

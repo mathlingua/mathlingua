@@ -26,7 +26,9 @@ import javax.swing.JTextArea
 import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.WindowConstants
-import mathlingua.backend.newSourceCollectionFromContent
+import mathlingua.backend.SourceCollection
+import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
@@ -37,6 +39,15 @@ import mathlingua.frontend.support.validationSuccess
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
+
+private fun newSourceCollectionFromContent(input: String, supplemental: String): SourceCollection {
+    val fs = newMemoryFileSystem(listOf(""))
+    val inputFile = fs.getFile(listOf("input.math"))
+    inputFile.writeText(input)
+    val suppFile = fs.getFile(listOf("supplemental.math"))
+    suppFile.writeText(supplemental)
+    return newSourceCollectionFromFiles(filesOrDirs = listOf(inputFile, suppFile))
+}
 
 fun main() {
     // enable sub-pixel antialiasing
@@ -154,7 +165,7 @@ private fun printExpanded(input: String, supplemental: String, html: Boolean): V
                 errors.addAll(validation.errors)
             }
             is ValidationSuccess -> {
-                val collection = newSourceCollectionFromContent(listOf(input, supplemental))
+                val collection = newSourceCollectionFromContent(input, supplemental)
                 result.append(
                     collection.prettyPrint(node = validation.value, html = html, doExpand = true))
             }

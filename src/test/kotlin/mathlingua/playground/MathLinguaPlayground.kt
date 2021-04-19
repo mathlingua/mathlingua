@@ -35,7 +35,9 @@ import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.WindowConstants
 import mathlingua.backend.BackEnd
-import mathlingua.backend.newSourceCollectionFromContent
+import mathlingua.backend.SourceCollection
+import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.cli.newMemoryFileSystem
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
 import org.fife.ui.rtextarea.RTextScrollPane
@@ -52,6 +54,13 @@ fun readState() =
     } catch (e: IOException) {
         ""
     }
+
+private fun newSourceCollectionFromContent(input: String): SourceCollection {
+    val fs = newMemoryFileSystem(listOf(""))
+    val file = fs.getFile(listOf("input.math"))
+    file.writeText(input)
+    return newSourceCollectionFromFiles(filesOrDirs = listOf(file))
+}
 
 fun main() {
     // enable sub-pixel antialiasing
@@ -90,7 +99,7 @@ fun main() {
 
     fun processInput() {
         SwingUtilities.invokeLater {
-            val collection = newSourceCollectionFromContent(listOf(inputArea.text))
+            val collection = newSourceCollectionFromContent(inputArea.text)
             val errors = BackEnd.check(collection)
             val builder = StringBuilder()
             for (err in errors) {

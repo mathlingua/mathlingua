@@ -25,7 +25,9 @@ import javax.swing.*
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
-import mathlingua.backend.newSourceCollectionFromContent
+import mathlingua.backend.SourceCollection
+import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
 import mathlingua.frontend.chalktalk.phase1.ast.getRow
@@ -88,6 +90,13 @@ enum class Normalization(
     ): Document {
         return fn(parent?.transform(doc, defines, states, tracker) ?: doc, defines, states, tracker)
     }
+}
+
+private fun newSourceCollectionFromContent(input: String): SourceCollection {
+    val fs = newMemoryFileSystem(listOf(""))
+    val file = fs.getFile(listOf("input.math"))
+    file.writeText(input)
+    return newSourceCollectionFromFiles(filesOrDirs = listOf(file))
 }
 
 fun main() {
@@ -178,9 +187,7 @@ fun main() {
                 }
 
                 val invalidTypesErrors =
-                    newSourceCollectionFromContent(listOf(input)).findInvalidTypes().map {
-                        it.value
-                    }
+                    newSourceCollectionFromContent(input).findInvalidTypes().map { it.value }
 
                 for (err in invalidTypesErrors) {
                     errorBuilder.append("ERROR: ${err.message} (${err.row+1}, ${err.column})")
@@ -226,9 +233,9 @@ fun main() {
                 phase2Tree.model = DefaultTreeModel(DefaultMutableTreeNode())
             } else {
                 val signatures =
-                    newSourceCollectionFromContent(listOf(inputArea.text))
-                        .getDefinedSignatures()
-                        .map { it.value }
+                    newSourceCollectionFromContent(inputArea.text).getDefinedSignatures().map {
+                        it.value
+                    }
                 val sigBuilder = StringBuilder()
                 for (sig in signatures) {
                     sigBuilder.append(sig.form)

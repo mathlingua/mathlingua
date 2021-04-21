@@ -22,7 +22,7 @@ import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
 import mathlingua.backend.isMathLinguaFile
-import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.backend.newSourceCollection
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
@@ -53,7 +53,7 @@ private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {
         val sourceCollection =
-            newSourceCollectionFromFiles(
+            newSourceCollection(
                 if (files.isEmpty()) {
                     listOf(fs.cwd())
                 } else {
@@ -241,7 +241,7 @@ private fun renderFile(
                 tracker = null))
     }
 
-    val sourceCollection = newSourceCollectionFromFiles(listOf(fs.cwd()))
+    val sourceCollection = newSourceCollection(listOf(fs.cwd()))
 
     val pair = sourceCollection.prettyPrint(file = target, html = true, doExpand = !noExpand)
 
@@ -303,7 +303,7 @@ private fun renderFile(
 private fun renderAll(
     fs: VirtualFileSystem, logger: Logger, stdout: Boolean, noExpand: Boolean
 ): List<ValueSourceTracker<ParseError>> {
-    val sourceCollection = newSourceCollectionFromFiles(listOf(fs.cwd()))
+    val sourceCollection = newSourceCollection(listOf(fs.cwd()))
 
     val docsDir = getDocsDirectory(fs)
     docsDir.mkdirs()
@@ -383,7 +383,7 @@ private fun getIndexFileText(
 
     val sigToPathCode = generateSignatureToPathJsCode(fs)
 
-    val sourceCollection = newSourceCollectionFromFiles(listOf(cwd))
+    val sourceCollection = newSourceCollection(listOf(cwd))
     val filesToProcess = mutableListOf<VirtualFile>()
     findMathlinguaFiles(cwd, filesToProcess)
 
@@ -884,6 +884,7 @@ const val SHARED_CSS =
     }
 
     .mathlingua-top-level {
+        overflow: auto;
         background-color: white;
         border: solid;
         border-width: 1px;
@@ -931,7 +932,7 @@ const val SHARED_CSS =
     .mathlingua-text {
         color: #000000;
         display: block;
-        margin: 0 0 -1em 0;
+        margin: 0 0 -0.75em 0;
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;

@@ -26,7 +26,7 @@ import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
 import javax.swing.tree.TreePath
 import mathlingua.backend.SourceCollection
-import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.backend.newSourceCollection
 import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
@@ -96,7 +96,7 @@ private fun newSourceCollectionFromContent(input: String): SourceCollection {
     val fs = newMemoryFileSystem(listOf(""))
     val file = fs.getFile(listOf("input.math"))
     file.writeText(input)
-    return newSourceCollectionFromFiles(filesOrDirs = listOf(file))
+    return newSourceCollection(filesOrDirs = listOf(file))
 }
 
 fun main() {

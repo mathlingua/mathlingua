@@ -27,7 +27,7 @@ import javax.swing.SwingUtilities
 import javax.swing.UIManager
 import javax.swing.WindowConstants
 import mathlingua.backend.SourceCollection
-import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.backend.newSourceCollection
 import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.ParseError
@@ -46,7 +46,7 @@ private fun newSourceCollectionFromContent(input: String, supplemental: String):
     inputFile.writeText(input)
     val suppFile = fs.getFile(listOf("supplemental.math"))
     suppFile.writeText(supplemental)
-    return newSourceCollectionFromFiles(filesOrDirs = listOf(inputFile, suppFile))
+    return newSourceCollection(filesOrDirs = listOf(inputFile, suppFile))
 }
 
 fun main() {

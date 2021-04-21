@@ -107,7 +107,7 @@ interface SourceCollection {
     fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String
 }
 
-fun newSourceCollectionFromFiles(filesOrDirs: List<VirtualFile>): SourceCollection {
+fun newSourceCollection(filesOrDirs: List<VirtualFile>): SourceCollection {
     val sources = mutableListOf<SourceFile>()
     for (file in filesOrDirs) {
         findVirtualFiles(file, sources)

@@ -5,7 +5,7 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.getPatternsToWrittenAs
-import mathlingua.backend.newSourceCollectionFromFiles
+import mathlingua.backend.newSourceCollection
 import mathlingua.backend.transform.Signature
 import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.FrontEnd
@@ -32,7 +32,7 @@ internal class MathLinguaTest {
                 file.writeText(inputs[it])
                 file
             }
-        return newSourceCollectionFromFiles(filesOrDirs = files)
+        return newSourceCollection(filesOrDirs = files)
     }
 
     @Test

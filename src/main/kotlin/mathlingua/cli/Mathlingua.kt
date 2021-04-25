@@ -1376,7 +1376,7 @@ fun buildIndexHtml(
 
             .topbar {
                 display: block;
-                height: 1.75em;
+                height: 5%;
                 background-color: #444444;
                 position: fixed;
                 z-index: 2;
@@ -1400,11 +1400,11 @@ fun buildIndexHtml(
             }
 
             .sidebar {
-                height: 100%;
+                height: 92%;
                 width: 20%;
                 position: fixed;
                 z-index: 1;
-                top: 1.75em;
+                top: 5%;
                 left: 0;
                 background-color: #fefefe;
                 border-right: solid;
@@ -1413,7 +1413,7 @@ fun buildIndexHtml(
                 box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px,
                             inset 0  0 10px 0 rgba(200, 200, 200, 0);
                 overflow-x: scroll;
-                padding-top: 25px;
+                padding-top: 2%;
                 transition: 0.5s;
             }
 

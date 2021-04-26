@@ -356,6 +356,20 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                         .children[0] as OperatorTexTalkNode)
                     .command as TextTexTalkNode)
                 .text
+        } else if (node.children.isNotEmpty() &&
+            node.children[0] is ColonEqualsTexTalkNode &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items.isNotEmpty() &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.isNotEmpty() &&
+            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                0] is OperatorTexTalkNode &&
+            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                    0] as OperatorTexTalkNode)
+                .command is TextTexTalkNode) {
+            // match `a + b := ...`
+            (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                        0] as OperatorTexTalkNode)
+                    .command as TextTexTalkNode)
+                .text
         } else {
             null
         }

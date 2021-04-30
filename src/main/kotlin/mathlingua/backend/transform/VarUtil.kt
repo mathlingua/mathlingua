@@ -119,7 +119,7 @@ internal fun renameVars(root: Phase2Node, map: Map<String, String>): Phase2Node 
 
 internal fun checkVars(node: Phase2Node, tracker: LocationTracker): Set<ParseError> {
     val errors = mutableListOf<ParseError>()
-    checkVarsImpl(node, mutableSetOf(), tracker, errors, ignoreParen = false)
+    checkVarsImpl(node, MultiSet(), tracker, errors, ignoreParen = false)
     return errors.toSet()
 }
 
@@ -187,12 +187,12 @@ private fun getVarsImpl(texTalkNode: TexTalkNode, vars: MutableList<String>, ign
 
 private fun checkVarsImpl(
     node: Phase2Node,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>,
     ignoreParen: Boolean
 ): List<String> {
-    val varsToRemove = mutableSetOf<String>()
+    val varsToRemove = MultiSet<String>()
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
     if (node is DefinesGroup) {
         val whenSection = node.whenSection
@@ -352,13 +352,17 @@ private fun checkVarsImpl(
         // example, is defined in a statement, then the
         // statements in the `using:` section after `x := y`
         // can reference the symbol `x`.
-        val usingVars = mutableSetOf<String>()
+        val usingVars = MultiSet<String>()
         node.forEach {
-            usingVars.addAll(checkVarsImpl(it, usingVars, tracker, errors, ignoreParen))
+            for (v in checkVarsImpl(it, usingVars, tracker, errors, ignoreParen)) {
+                usingVars.add(v)
+            }
         }
     } else {
         node.forEach { checkVarsImpl(it, vars, tracker, errors, ignoreParen) }
-        vars.removeAll(varsToRemove)
+        for (v in varsToRemove.toList()) {
+            vars.remove(v)
+        }
     }
 
     return varsToRemove.toList()
@@ -366,7 +370,7 @@ private fun checkVarsImpl(
 
 private fun checkWhenSectionVars(
     node: WhenSection,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>
 ): List<String> {
@@ -382,7 +386,7 @@ private fun checkWhenSectionVars(
 private fun checkColonOrColonColonEqualsRhsSymbols(
     node: Phase2Node,
     tracker: LocationTracker,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     errors: MutableList<ParseError>
 ): List<String> {
     val result = mutableListOf<String>()
@@ -398,7 +402,7 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
 private fun checkColonOrColonColonEqualsRhsSymbols(
     statement: Statement,
     tracker: LocationTracker,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     errors: MutableList<ParseError>
 ): List<String> {
     val result = mutableListOf<String>()
@@ -413,7 +417,7 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
 }
 
 private fun checkColonOrColonColonEqualsRhsSymbols(
-    node: TexTalkNode, location: Location, vars: MutableSet<String>, errors: MutableList<ParseError>
+    node: TexTalkNode, location: Location, vars: MultiSet<String>, errors: MutableList<ParseError>
 ): List<String> {
     val result = mutableListOf<String>()
     val params =
@@ -444,7 +448,7 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
 
 private fun checkDefineSectionVars(
     node: DefinesSection,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>,
     ignoreParen: Boolean
@@ -466,7 +470,7 @@ private fun checkDefineSectionVars(
 
 private fun checkRequiringSectionVars(
     node: RequiringSection,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>,
     ignoreParen: Boolean
@@ -488,7 +492,7 @@ private fun checkRequiringSectionVars(
 
 private fun checkGivenSectionVars(
     node: GivenSection,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>,
     ignoreParen: Boolean
@@ -510,7 +514,7 @@ private fun checkGivenSectionVars(
 
 private fun checkVarsImpl(
     statement: Statement,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>,
     ignoreParen: Boolean
@@ -560,9 +564,14 @@ private fun checkVarsImpl(
                 }
             }
 
-            val varsCopy = mutableSetOf<String>()
-            varsCopy.addAll(vars)
-            varsCopy.addAll(names)
+            for (sym in definedSymbols) {
+                vars.add(sym)
+            }
+
+            val varsCopy = MultiSet.copy(vars)
+            for (n in names) {
+                varsCopy.add(n)
+            }
 
             val subFound = checkVarsImpl(colonEquals.rhs, location, varsCopy, errors, ignoreParen)
             val result = mutableListOf<String>()
@@ -584,11 +593,11 @@ private fun isNumberLiteral(text: String) = Regex("[+-]?\\d+(\\.\\d+)?").matchEn
 private fun checkVarsImpl(
     texTalkNode: TexTalkNode,
     location: Location,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     errors: MutableList<ParseError>,
     ignoreParen: Boolean
 ): List<String> {
-    val varsToRemove = mutableSetOf<String>()
+    val varsToRemove = MultiSet<String>()
     if (texTalkNode is TextTexTalkNode) {
         val name = texTalkNode.text
         // Note: operators are treated as signatures, not symbols
@@ -637,13 +646,15 @@ private fun checkVarsImpl(
     } else {
         texTalkNode.forEach { checkVarsImpl(it, location, vars, errors, ignoreParen) }
     }
-    vars.removeAll(varsToRemove)
+    for (v in varsToRemove.toList()) {
+        vars.remove(v)
+    }
     return varsToRemove.toList()
 }
 
 private fun checkVarsImpl(
     id: IdStatement,
-    vars: MutableSet<String>,
+    vars: MultiSet<String>,
     tracker: LocationTracker,
     errors: MutableList<ParseError>
 ): List<String> {
@@ -677,5 +688,43 @@ private fun checkVarsImpl(
         idVars
     } else {
         emptyList()
+    }
+}
+
+class MultiSet<T> {
+    private val data = mutableMapOf<T, Int>()
+
+    fun add(value: T) {
+        data[value] = 1 + data.getOrDefault(value, 0)
+    }
+
+    fun addAll(values: Collection<T>) {
+        for (v in values) {
+            add(v)
+        }
+    }
+
+    fun remove(value: T) {
+        if (data.containsKey(value)) {
+            val newCount = data[value]!! - 1
+            data[value] = newCount
+            if (newCount <= 0) {
+                data.remove(value)
+            }
+        }
+    }
+
+    fun contains(key: T) = data.getOrDefault(key, 0) > 0
+
+    fun toList() = data.keys.toList()
+
+    companion object {
+        fun <T> copy(set: MultiSet<T>): MultiSet<T> {
+            val copy = MultiSet<T>()
+            for (entry in set.data.entries) {
+                copy.data[entry.key] = entry.value
+            }
+            return copy
+        }
     }
 }

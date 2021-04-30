@@ -247,6 +247,6 @@ class MatcherKtTest {
         assertThat(expanded.errors).isEmpty()
         assertThat(expanded.text)
             .isEqualTo(
-                "\\left \\{ f (x) , g (y) \\: : \\: x > 0 \\text{ and } f (x) > 0 \\text{ and } y < 0 \\text{ and } g (y) < 0 \\right \\}")
+                "\\left \\{ f(x) , g(y) \\: : \\: x > 0 \\text{ and } f(x) > 0 \\text{ and } y < 0 \\text{ and } g(y) < 0 \\right \\}")
     }
 }

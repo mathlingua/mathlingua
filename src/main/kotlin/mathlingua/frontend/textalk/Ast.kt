@@ -293,7 +293,7 @@ data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode 
         for (i in children.indices) {
             val child = children[i]
             builder.append(child.toCode(interceptor))
-            if (i != children.size - 1) {
+            if (i != children.size - 1 && children[i + 1] is Command) {
                 builder.append(" ")
             }
         }

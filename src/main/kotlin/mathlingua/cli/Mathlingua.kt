@@ -55,7 +55,7 @@ object Mathlingua {
         val sourceCollection =
             newSourceCollection(
                 if (files.isEmpty()) {
-                    listOf(fs.cwd())
+                    listOf(fs.getDirectory(listOf("content")))
                 } else {
                     files
                 })

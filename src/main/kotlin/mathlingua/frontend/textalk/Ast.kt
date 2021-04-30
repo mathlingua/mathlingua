@@ -290,12 +290,8 @@ data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode 
         }
 
         val builder = StringBuilder()
-        for (i in children.indices) {
-            val child = children[i]
+        for (child in children) {
             builder.append(child.toCode(interceptor))
-            if (i != children.size - 1) {
-                builder.append(" ")
-            }
         }
         return builder.toString()
     }

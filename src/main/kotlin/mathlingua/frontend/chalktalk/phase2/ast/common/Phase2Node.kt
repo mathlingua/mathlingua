@@ -28,6 +28,7 @@ interface Phase2Node {
             MathLinguaCodeWriter(
                 defines = emptyList(),
                 states = emptyList(),
+                axioms = emptyList(),
                 foundations = emptyList(),
                 mutuallyGroups = emptyList())
     ): CodeWriter

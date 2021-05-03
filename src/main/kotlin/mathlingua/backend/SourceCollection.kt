@@ -129,6 +129,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     private val allGroups = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<DefinesGroup>>()
     private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
+    private val axiomGroups = mutableListOf<ValueSourceTracker<AxiomGroup>>()
     private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
     private val mutuallyGroups = mutableListOf<ValueSourceTracker<MutuallyGroup>>()
     private val patternsToWrittenAs: Map<OperatorTexTalkNode, String>
@@ -155,6 +156,14 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                             source = sf,
                             tracker = validation.value.tracker,
                             value = normalize(it, validation.value.tracker) as StatesGroup)
+                    })
+
+                axiomGroups.addAll(
+                    validation.value.document.axioms().map {
+                        ValueSourceTracker(
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as AxiomGroup)
                     })
 
                 foundationGroups.addAll(
@@ -187,6 +196,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             getPatternsToWrittenAs(
                 defines = definesGroups.map { it.value },
                 states = statesGroups.map { it.value },
+                axioms = axiomGroups.map { it.value },
                 foundations = foundationGroups.map { it.value },
                 mutuallyGroups = mutuallyGroups.map { it.value })
     }
@@ -541,6 +551,16 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         }
 
+        fun processAxiom(pair: ValueSourceTracker<AxiomGroup>) {
+            val signature = pair.value.signature
+            if (signature != null) {
+                val vst =
+                    ValueSourceTracker(
+                        source = pair.source, tracker = pair.tracker, value = signature)
+                result.add(Pair(vst, pair.value))
+            }
+        }
+
         for (pair in foundationGroups) {
             when (val item = pair.value.foundationSection.content
             ) {
@@ -561,6 +581,10 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
 
         for (pair in statesGroups) {
             processStates(pair)
+        }
+
+        for (pair in axiomGroups) {
+            processAxiom(pair)
         }
 
         return result
@@ -864,12 +888,14 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                 HtmlCodeWriter(
                     defines = doExpand.thenUse { definesGroups.map { it.value } },
                     states = doExpand.thenUse { statesGroups.map { it.value } },
+                    axioms = doExpand.thenUse { axiomGroups.map { it.value } },
                     foundations = doExpand.thenUse { foundationGroups.map { it.value } },
                     mutuallyGroups = doExpand.thenUse { mutuallyGroups.map { it.value } })
             } else {
                 MathLinguaCodeWriter(
                     defines = doExpand.thenUse { definesGroups.map { it.value } },
                     states = doExpand.thenUse { statesGroups.map { it.value } },
+                    axioms = doExpand.thenUse { axiomGroups.map { it.value } },
                     foundations = doExpand.thenUse { foundationGroups.map { it.value } },
                     mutuallyGroups = doExpand.thenUse { mutuallyGroups.map { it.value } })
             }
@@ -891,6 +917,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
 fun getPatternsToWrittenAs(
     defines: List<DefinesGroup>,
     states: List<StatesGroup>,
+    axioms: List<AxiomGroup>,
     foundations: List<FoundationGroup>,
     mutuallyGroups: List<MutuallyGroup>
 ): Map<OperatorTexTalkNode, String> {
@@ -933,6 +960,26 @@ fun getPatternsToWrittenAs(
                 result[
                     OperatorTexTalkNode(
                         lhs = null, command = exp.children[0] as Command, rhs = null)] = writtenAs
+            }
+        }
+    }
+
+    for (axiom in axioms) {
+        val validation = axiom.id?.texTalkRoot
+        if (validation is ValidationSuccess) {
+            val exp = validation.value
+            val name = axiom.axiomSection.names.getOrNull(0)
+            val writtenAs =
+                if (name != null) {
+                    "\\textrm{${name.removeSurrounding("\"", "\"")}}"
+                } else {
+                    exp.toCode()
+                }
+            if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
+                result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+            } else if (exp.children.size == 1 && exp.children[0] is Command) {
+                val cmd = exp.children[0] as Command
+                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] = writtenAs
             }
         }
     }

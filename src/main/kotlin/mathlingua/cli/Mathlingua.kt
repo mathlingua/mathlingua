@@ -32,6 +32,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
@@ -524,6 +525,9 @@ private fun generateSignatureToPathImpl(
                     val grp = groups[i]
                     val signature =
                         when (grp) {
+                            is AxiomGroup -> {
+                                grp.id?.text
+                            }
                             is ResourceGroup -> {
                                 grp.id
                             }

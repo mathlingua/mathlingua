@@ -29,6 +29,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
@@ -72,6 +73,7 @@ const val IN = " in "
 open class HtmlCodeWriter(
     val defines: List<DefinesGroup>,
     val states: List<StatesGroup>,
+    val axioms: List<AxiomGroup>,
     val foundations: List<FoundationGroup>,
     val mutuallyGroups: List<MutuallyGroup>
 ) : CodeWriter {
@@ -157,7 +159,8 @@ open class HtmlCodeWriter(
                 .toCode(
                     false,
                     0,
-                    MathLinguaCodeWriter(emptyList(), emptyList(), emptyList(), emptyList()))
+                    MathLinguaCodeWriter(
+                        emptyList(), emptyList(), emptyList(), emptyList(), emptyList()))
                 .getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
@@ -218,7 +221,7 @@ open class HtmlCodeWriter(
         if (shouldExpand()) {
             val expansion =
                 expandTextAsWritten(
-                    textWithBreaks, false, defines, states, foundations, mutuallyGroups)
+                    textWithBreaks, false, defines, states, axioms, foundations, mutuallyGroups)
             val title =
                 textWithBreaks +
                     if (expansion.errors.isNotEmpty()) {
@@ -242,7 +245,7 @@ open class HtmlCodeWriter(
         val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(newText))
         return if (lhsParsed.errors.isEmpty()) {
                 val patternsToWrittenAs =
-                    getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+                    getPatternsToWrittenAs(defines, states, axioms, foundations, mutuallyGroups)
                 expandAsWritten(
                         lhsParsed.root.transform {
                             when (it) {
@@ -275,7 +278,7 @@ open class HtmlCodeWriter(
                         foundations.isNotEmpty() ||
                         mutuallyGroups.isNotEmpty())) {
                     val patternsToWrittenAs =
-                        getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+                        getPatternsToWrittenAs(defines, states, axioms, foundations, mutuallyGroups)
                     val result =
                         expandAsWritten(
                             root.value.transform {
@@ -386,7 +389,7 @@ open class HtmlCodeWriter(
         states: List<StatesGroup>,
         foundations: List<FoundationGroup>,
         mutuallyGroups: List<MutuallyGroup>
-    ) = HtmlCodeWriter(defines, states, foundations, mutuallyGroups)
+    ) = HtmlCodeWriter(defines, states, axioms, foundations, mutuallyGroups)
 
     override fun getCode(): String {
         val text =
@@ -411,6 +414,7 @@ open class HtmlCodeWriter(
 class MathLinguaCodeWriter(
     val defines: List<DefinesGroup>,
     val states: List<StatesGroup>,
+    val axioms: List<AxiomGroup>,
     val foundations: List<FoundationGroup>,
     val mutuallyGroups: List<MutuallyGroup>
 ) : CodeWriter {
@@ -478,7 +482,8 @@ class MathLinguaCodeWriter(
     override fun writeText(text: String) {
         builder.append('"')
         builder.append(
-            expandTextAsWritten(text, true, defines, states, foundations, mutuallyGroups).text
+            expandTextAsWritten(text, true, defines, states, axioms, foundations, mutuallyGroups)
+                .text
                 ?: text)
         builder.append('"')
     }
@@ -496,7 +501,7 @@ class MathLinguaCodeWriter(
                 foundations.isNotEmpty() ||
                 mutuallyGroups.isNotEmpty())) {
             val patternsToWrittenAs =
-                getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+                getPatternsToWrittenAs(defines, states, axioms, foundations, mutuallyGroups)
             val expansion = expandAsWritten(root.value, patternsToWrittenAs)
             builder.append(
                 if (expansion.text != null) {
@@ -533,7 +538,7 @@ class MathLinguaCodeWriter(
         states: List<StatesGroup>,
         foundations: List<FoundationGroup>,
         mutuallyGroups: List<MutuallyGroup>
-    ) = MathLinguaCodeWriter(defines, states, foundations, mutuallyGroups)
+    ) = MathLinguaCodeWriter(defines, states, axioms, foundations, mutuallyGroups)
 
     override fun getCode() = builder.toString()
 }
@@ -663,6 +668,7 @@ private fun expandTextAsWritten(
     addQuotes: Boolean,
     defines: List<DefinesGroup>,
     states: List<StatesGroup>,
+    axioms: List<AxiomGroup>,
     foundations: List<FoundationGroup>,
     mutuallyGroups: List<MutuallyGroup>
 ): Expansion {
@@ -671,7 +677,8 @@ private fun expandTextAsWritten(
     }
 
     val errors = mutableListOf<String>()
-    val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, foundations, mutuallyGroups)
+    val patternsToWrittenAs =
+        getPatternsToWrittenAs(defines, states, axioms, foundations, mutuallyGroups)
     val parts = splitByMathlingua(text)
     val builder = StringBuilder()
     for (part in parts) {

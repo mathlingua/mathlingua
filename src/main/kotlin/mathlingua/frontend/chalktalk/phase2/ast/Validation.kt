@@ -107,13 +107,16 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutua
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.ThatSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.ViewedSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership.MembershipGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership.MembershipSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.ThroughSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.ViaSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.ViewedAsGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.ViewedAsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.BetweenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.EqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.EqualitySection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.MembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.MembershipSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ThroughSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViaSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.ContentSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.EntryGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.EntrySection
@@ -632,7 +635,7 @@ val DEFAULT_MAPS_SECTION = MapsSection(fromGroup = DEFAULT_FROM_GROUP)
 
 val DEFAULT_GENERATED_SECTION = GeneratedSection(inductivelyGroup = DEFAULT_INDUCTIVELY_GROUP)
 
-val DEFAULT_VIEWED_AS_SECTION = ViewedAsSection(statement = DEFAULT_STATEMENT)
+val DEFAULT_VIEWED_AS_SECTION = ViewingAsSection(statement = DEFAULT_STATEMENT)
 
 val DEFAULT_VIA_SECTION = ViaSection(statement = DEFAULT_STATEMENT)
 
@@ -645,9 +648,19 @@ val DEFAULT_MEMBERSHIP_GROUP =
         membershipSection = DEFAULT_MEMBERSHIP_SECTION, throughSection = DEFAULT_THROUGH_SECTION)
 
 val DEFAULT_VIEWED_AS_GROUP =
-    ViewedAsGroup(viewedAsSection = DEFAULT_VIEWED_AS_SECTION, viaSection = DEFAULT_VIA_SECTION)
+    ViewingAsGroup(viewingAsSection = DEFAULT_VIEWED_AS_SECTION, viaSection = DEFAULT_VIA_SECTION)
 
-val DEFAULT_VIEWED_SECTION = ViewedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+val DEFAULT_VIEWING_SECTION = ViewingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+
+val DEFAULT_EQUALITY_SECTION = EqualitySection()
+
+val DEFAULT_BETWEEN_SECTION = BetweenSection(emptyList())
+
+val DEFAULT_EQUALITY_GROUP =
+    EqualityGroup(
+        equalitySection = DEFAULT_EQUALITY_SECTION,
+        betweenSection = DEFAULT_BETWEEN_SECTION,
+        providedSection = DEFAULT_PROVIDED_SECTION)
 
 val DEFAULT_DEFINES_MEANS_GROUP =
     DefinesMeansGroup(
@@ -657,7 +670,7 @@ val DEFAULT_DEFINES_MEANS_GROUP =
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         satisfyingSection = DEFAULT_SATISFYING_SECTION,
-        viewedSection = DEFAULT_VIEWED_SECTION,
+        viewingSection = DEFAULT_VIEWING_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -671,7 +684,7 @@ val DEFAULT_DEFINES_INSTANTIATED_GROUP =
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         instantiatedSection = DEFAULT_INSTANTIATED_SECTION,
-        viewedSection = DEFAULT_VIEWED_SECTION,
+        viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
@@ -685,7 +698,7 @@ val DEFAULT_DEFINES_EVALUATED_GROUP =
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         evaluatedSection = DEFAULT_EVALUATED_SECTION,
-        viewedSection = DEFAULT_VIEWED_SECTION,
+        viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
@@ -699,7 +712,7 @@ val DEFAULT_DEFINES_COLLECTS_GROUP =
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         collectsSection = DEFAULT_COLLECTS_SECTION,
-        viewedSection = DEFAULT_VIEWED_SECTION,
+        viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
@@ -713,7 +726,7 @@ val DEFAULT_DEFINES_MAPS_GROUP =
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         mapsSection = DEFAULT_MAPS_SECTION,
-        viewedSection = DEFAULT_VIEWED_SECTION,
+        viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
@@ -727,7 +740,7 @@ val DEFAULT_DEFINES_GENERATED_GROUP =
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         generatedSection = DEFAULT_GENERATED_SECTION,
-        viewedSection = DEFAULT_VIEWED_SECTION,
+        viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)

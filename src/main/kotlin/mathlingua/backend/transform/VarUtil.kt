@@ -36,6 +36,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.EqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
@@ -311,6 +312,20 @@ private fun checkVarsImpl(
                 vars.add(v)
             }
             varsToRemove.addAll(forAllVars)
+        }
+        is EqualityGroup -> {
+            val betweenVars = node.betweenSection.targets.map { getVars(it, ignoreParen) }.flatten()
+            for (v in betweenVars) {
+                if (vars.contains(v)) {
+                    errors.add(
+                        ParseError(
+                            message = "Duplicate defined symbol '$v'",
+                            row = location.row,
+                            column = location.column))
+                }
+                vars.add(v)
+            }
+            varsToRemove.addAll(betweenVars)
         }
         is ExistsGroup -> {
             val existsVars =

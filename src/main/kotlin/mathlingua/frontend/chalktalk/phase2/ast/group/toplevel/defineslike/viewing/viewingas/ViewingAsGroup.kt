@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIA_SECTION
@@ -31,23 +31,24 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ViewedAsGroup(val viewedAsSection: ViewedAsSection, val viaSection: ViaSection) :
-    TwoPartNode<ViewedAsSection, ViaSection>(viewedAsSection, viaSection, ::ViewedAsGroup), Clause
+data class ViewingAsGroup(val viewingAsSection: ViewingAsSection, val viaSection: ViaSection) :
+    TwoPartNode<ViewingAsSection, ViaSection>(viewingAsSection, viaSection, ::ViewingAsGroup),
+    Clause
 
-fun isViewedAsGroup(node: Phase1Node) =
+fun isViewingAsGroup(node: Phase1Node) =
     firstSectionMatchesName(node, "as") && secondSectionMatchesName(node, "via")
 
-fun validateViewedAsGroup(
+fun validateViewingAsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
         validateGroup(node.resolve(), errors, "as", DEFAULT_VIEWED_AS_GROUP) { group ->
             identifySections(group, errors, DEFAULT_VIEWED_AS_GROUP, listOf("as", "via")) {
             sections ->
-                ViewedAsGroup(
-                    viewedAsSection =
+                ViewingAsGroup(
+                    viewingAsSection =
                         ensureNonNull(sections["as"], DEFAULT_VIEWED_AS_SECTION) {
-                            validateViewedAsSection(it, errors, tracker)
+                            validateViewingAsSection(it, errors, tracker)
                         },
                     viaSection =
                         ensureNonNull(sections["via"], DEFAULT_VIA_SECTION) {

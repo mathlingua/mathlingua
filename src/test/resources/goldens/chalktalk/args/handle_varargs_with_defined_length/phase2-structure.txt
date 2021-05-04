@@ -149,7 +149,7 @@ Document(
                              ]
                  )
                )
-               viewedSection = null
+               viewingSection = null
                usingSection = null
                writtenSection = WrittenSection(
                  forms = [

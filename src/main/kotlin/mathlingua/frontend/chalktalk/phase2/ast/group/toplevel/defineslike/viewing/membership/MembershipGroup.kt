@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MEMBERSHIP_GROUP
@@ -23,8 +23,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THROUGH_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.ThroughSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.validateThroughSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ThroughSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.validateThroughSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.track

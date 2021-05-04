@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEWED_AS_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIA_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -28,29 +28,29 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ViewedAsSection(val statement: Statement) : Phase2Node {
+data class ViaSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("as")
+        writer.writeHeader("via")
         writer.append(statement, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(ViewedAsSection(statement = chalkTransformer(statement) as Statement))
+        chalkTransformer(ViaSection(statement = chalkTransformer(statement) as Statement))
 }
 
-fun validateViewedAsSection(
+fun validateViaSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "as", DEFAULT_VIEWED_AS_SECTION) {
-            validateSingleArg(it, errors, DEFAULT_VIEWED_AS_SECTION, "statement") {
-                ViewedAsSection(statement = validateStatement(it, errors, tracker))
+        validateSection(node.resolve(), errors, "via", DEFAULT_VIA_SECTION) {
+            validateSingleArg(it, errors, DEFAULT_VIA_SECTION, "statement") {
+                ViaSection(statement = validateStatement(it, errors, tracker))
             }
         }
     }

@@ -8,7 +8,7 @@ requiring?:
 when?:
 means:
 satisfying?:
-viewed?:
+viewing?:
 using?:
 written:
 Metadata?:
@@ -27,7 +27,7 @@ requiring?:
 when?:
 means:
 satisfying?:
-viewed?:
+viewing?:
 using?:
 written:
 Metadata?:
@@ -46,7 +46,7 @@ requiring?:
 when?:
 means:
 satisfying?:
-viewed?:
+viewing?:
 using?:
 written:
 Metadata?:
@@ -65,7 +65,7 @@ requiring?:
 when?:
 means:
 satisfying?:
-viewed?:
+viewing?:
 using?:
 written:
 Metadata?:
@@ -84,7 +84,7 @@ requiring?:
 when?:
 means:
 satisfying?:
-viewed?:
+viewing?:
 using?:
 written:
 Metadata?:
@@ -103,7 +103,7 @@ requiring?:
 when?:
 means:
 satisfying?:
-viewed?:
+viewing?:
 using?:
 written:
 Metadata?:

@@ -149,7 +149,7 @@ satisfying:
 . forAll: x, y, z
   where: 'x, y, z in X'
   then: '(x*y)*z = x*(y*z)'
-viewed:
+viewing:
 . as: '\set'
   via: 'X'
 . membership:

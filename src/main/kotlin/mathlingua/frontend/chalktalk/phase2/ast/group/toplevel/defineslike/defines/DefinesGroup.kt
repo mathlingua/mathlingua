@@ -25,7 +25,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.ViewedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.support.Location
@@ -45,7 +45,7 @@ abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     abstract val definesSection: DefinesSection
     abstract val requiringSection: RequiringSection?
     abstract val whenSection: WhenSection?
-    abstract val viewedSection: ViewedSection?
+    abstract val viewingSection: ViewingSection?
     abstract val writtenSection: WrittenSection
 }
 

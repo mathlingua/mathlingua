@@ -59,10 +59,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evalu
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership.isMembershipGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.membership.validateMembershipGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.isViewedAsGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.viewedas.validateViewedAsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.isEqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.validateEqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.isMembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.validateMembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.isViewingAsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.validateViewingAsGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
@@ -153,7 +155,8 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isDefinesGroup, ::validateDefinesGroup),
         ValidationPair(::isStatesGroup, ::validateStatesGroup),
         ValidationPair(::isMembershipGroup, ::validateMembershipGroup),
-        ValidationPair(::isViewedAsGroup, ::validateViewedAsGroup))
+        ValidationPair(::isViewingAsGroup, ::validateViewingAsGroup),
+        ValidationPair(::isEqualityGroup, ::validateEqualityGroup))
 
 fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

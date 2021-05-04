@@ -31,8 +31,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getId
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.ViewedSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewed.validateViewedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
@@ -56,7 +56,7 @@ data class DefinesGeneratedGroup(
     override val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val generatedSection: GeneratedSection,
-    override val viewedSection: ViewedSection?,
+    override val viewingSection: ViewingSection?,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
     override val metaDataSection: MetaDataSection?
@@ -75,8 +75,8 @@ data class DefinesGeneratedGroup(
             fn(meansSection)
         }
         fn(generatedSection)
-        if (viewedSection != null) {
-            fn(viewedSection)
+        if (viewingSection != null) {
+            fn(viewingSection)
         }
         if (usingSection != null) {
             fn(usingSection)
@@ -95,7 +95,7 @@ data class DefinesGeneratedGroup(
                 whenSection,
                 meansSection,
                 generatedSection,
-                viewedSection,
+                viewingSection,
                 usingSection,
                 writtenSection,
                 metaDataSection)
@@ -113,7 +113,7 @@ data class DefinesGeneratedGroup(
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 generatedSection = generatedSection.transform(chalkTransformer) as GeneratedSection,
-                viewedSection = viewedSection?.transform(chalkTransformer) as ViewedSection?,
+                viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
@@ -136,7 +136,7 @@ fun validateDefinesGeneratedGroup(
                     "when?",
                     "means?",
                     "generated",
-                    "viewed?",
+                    "viewing?",
                     "using?",
                     "written",
                     "Metadata?")) { sections ->
@@ -165,9 +165,9 @@ fun validateDefinesGeneratedGroup(
                             ensureNonNull(sections["generated"], DEFAULT_GENERATED_SECTION) {
                                 validateGeneratedSection(it, errors, tracker)
                             },
-                        viewedSection =
-                            ifNonNull(sections["viewed"]) {
-                                validateViewedSection(it, errors, tracker)
+                        viewingSection =
+                            ifNonNull(sections["viewing"]) {
+                                validateViewingSection(it, errors, tracker)
                             },
                         usingSection =
                             ifNonNull(sections["using"]) {

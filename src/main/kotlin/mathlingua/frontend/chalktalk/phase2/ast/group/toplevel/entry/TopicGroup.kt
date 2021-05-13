@@ -19,9 +19,9 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CONTENT_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ENTRY_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ENTRY_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TYPE_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TOPIC_GROUP
+import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
@@ -35,16 +35,16 @@ import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
+import mathlingua.frontend.support.validationFailure
 
-data class EntryGroup(
-    val entrySection: EntrySection,
-    val typeSection: TypeSection,
+data class TopicGroup(
+    val id: String?,
+    val topicSection: TopicSection,
     val contentSection: ContentSection,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(entrySection)
-        fn(typeSection)
+        fn(topicSection)
         fn(contentSection)
         if (metaDataSection != null) {
             fn(metaDataSection)
@@ -53,37 +53,42 @@ data class EntryGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
         topLevelToCode(
-            writer, isArg, indent, null, entrySection, typeSection, contentSection, metaDataSection)
+            writer,
+            isArg,
+            indent,
+            if (id == null) {
+                null
+            } else {
+                IdStatement(text = id, texTalkRoot = validationFailure(emptyList()))
+            },
+            topicSection,
+            contentSection,
+            metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            EntryGroup(
-                entrySection = entrySection.transform(chalkTransformer) as EntrySection,
-                typeSection = typeSection.transform(chalkTransformer) as TypeSection,
+            TopicGroup(
+                id = id,
+                topicSection = topicSection.transform(chalkTransformer) as TopicSection,
                 contentSection = contentSection.transform(chalkTransformer) as ContentSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isEntryGroup(node: Phase1Node) = firstSectionMatchesName(node, "Entry")
+fun isTopicGroup(node: Phase1Node) = firstSectionMatchesName(node, "Topic")
 
-fun validateEntryGroup(
+fun validateTopicGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateGroup(node.resolve(), errors, "Entry", DEFAULT_ENTRY_GROUP) { group ->
+        validateGroup(node.resolve(), errors, "Topic", DEFAULT_TOPIC_GROUP) { group ->
             identifySections(
-                group,
-                errors,
-                DEFAULT_ENTRY_GROUP,
-                listOf("Entry", "type", "content", "Metadata?")) { sections ->
-                EntryGroup(
-                    entrySection =
-                        ensureNonNull(sections["Entry"], DEFAULT_ENTRY_SECTION) {
-                            validateEntrySection(it, errors, tracker)
-                        },
-                    typeSection =
-                        ensureNonNull(sections["type"], DEFAULT_TYPE_SECTION) {
-                            validateTypeSection(it, errors, tracker)
+                group, errors, DEFAULT_TOPIC_GROUP, listOf("Topic", "content", "Metadata?")) {
+            sections ->
+                TopicGroup(
+                    id = group.id?.text?.removeSurrounding("[", "]"),
+                    topicSection =
+                        ensureNonNull(sections["Topic"], DEFAULT_ENTRY_SECTION) {
+                            validateTopicSection(it, errors, tracker)
                         },
                     contentSection =
                         ensureNonNull(sections["content"], DEFAULT_CONTENT_SECTION) {

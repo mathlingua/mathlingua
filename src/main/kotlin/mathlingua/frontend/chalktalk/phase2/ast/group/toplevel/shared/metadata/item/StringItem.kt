@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 Google LLC
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,28 +14,21 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item
 
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TYPE_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
-import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class TypeSection(val text: String) : Phase2Node {
+data class StringItem(val text: String) : ResourceItem {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("type")
-        writer.writeIndent(false, 1)
         writer.writeDirect(text)
         return writer
     }
@@ -44,23 +37,8 @@ data class TypeSection(val text: String) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validateTypeSection(
+fun isStringItem(node: Phase1Node) = node is Phase1Token && node.type == ChalkTalkTokenType.String
+
+fun validateStringItem(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "type", DEFAULT_TYPE_SECTION) { section ->
-            if (section.args.isEmpty() ||
-                section.args[0].chalkTalkTarget !is Phase1Token ||
-                (section.args[0].chalkTalkTarget as Phase1Token).type !=
-                    ChalkTalkTokenType.String) {
-                errors.add(
-                    ParseError(
-                        message = "Expected a string",
-                        row = getRow(section),
-                        column = getColumn(section)))
-                DEFAULT_TYPE_SECTION
-            } else {
-                TypeSection(text = (section.args[0].chalkTalkTarget as Phase1Token).text)
-            }
-        }
-    }
+) = StringItem(text = (node.resolve() as Phase1Token).text)

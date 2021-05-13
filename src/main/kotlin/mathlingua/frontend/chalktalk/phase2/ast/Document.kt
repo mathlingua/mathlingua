@@ -38,8 +38,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutua
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.isEntryGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.validateEntryGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.isTopicGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.validateTopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
@@ -125,8 +125,8 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             isMutuallyGroup(group) -> {
                 allGroups.add(validateMutuallyGroup(group, errors, tracker))
             }
-            isEntryGroup(group) -> {
-                allGroups.add(validateEntryGroup(group, errors, tracker))
+            isTopicGroup(group) -> {
+                allGroups.add(validateTopicGroup(group, errors, tracker))
             }
             isResourceGroup(group) -> {
                 allGroups.add(validateResourceGroup(group, errors, tracker))

@@ -29,12 +29,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class EntrySection(val names: List<String>) : Phase2Node {
+data class TopicSection(val names: List<String>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("Entry")
+        writer.writeHeader("Topic")
         if (names.size == 1) {
             writer.writeIndent(false, 1)
             writer.writeDirect(names[0])
@@ -52,11 +52,11 @@ data class EntrySection(val names: List<String>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validateEntrySection(
+fun validateTopicSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "Entry", DEFAULT_ENTRY_SECTION) { section ->
+        validateSection(node.resolve(), errors, "Topic", DEFAULT_ENTRY_SECTION) { section ->
             if (section.args.isNotEmpty() &&
                 !section.args.all {
                     it.chalkTalkTarget is Phase1Token &&
@@ -69,7 +69,7 @@ fun validateEntrySection(
                         column = getColumn(section)))
                 DEFAULT_ENTRY_SECTION
             } else {
-                EntrySection(names = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
+                TopicSection(names = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
             }
         }
     }

@@ -29,8 +29,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.isSingleSectionGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.MetaDataItem
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isReferenceGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateReferenceGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isRelatedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isResourcesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.isTopicsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateRelatedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateResourcesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateTopicsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
@@ -66,8 +70,12 @@ fun validateMetaDataSection(
     track(section, tracker) {
         val items = mutableListOf<MetaDataItem>()
         for (arg in section.args) {
-            if (isReferenceGroup(arg.chalkTalkTarget)) {
+            if (isResourcesGroup(arg.chalkTalkTarget)) {
                 items.add(validateMetaDataItem(arg, errors, tracker))
+            } else if (isTopicsGroup(arg.chalkTalkTarget)) {
+                items.add(validateTopicsGroup(arg, errors, tracker))
+            } else if (isRelatedGroup(arg.chalkTalkTarget)) {
+                items.add(validateRelatedGroup(arg, errors, tracker))
             } else if (isSingleSectionGroup(arg.chalkTalkTarget)) {
                 val group = arg.chalkTalkTarget as Group
                 val sect = group.sections[0]
@@ -133,5 +141,5 @@ private fun validateMetaDataItem(
             ParseError(message = "Expected a group", row = getRow(arg), column = getColumn(arg)))
         DEFAULT_META_DATA_ITEM
     } else {
-        validateReferenceGroup(arg.chalkTalkTarget, errors, tracker)
+        validateResourcesGroup(arg.chalkTalkTarget, errors, tracker)
     }

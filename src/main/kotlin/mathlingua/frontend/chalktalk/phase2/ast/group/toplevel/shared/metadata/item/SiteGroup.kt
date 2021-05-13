@@ -36,7 +36,7 @@ import mathlingua.frontend.support.ParseError
 data class SiteGroup(val siteItemSection: SiteItemSection, val nameItemSection: NameItemSection?) :
     TwoPartNode<SiteItemSection, NameItemSection?>(siteItemSection, nameItemSection, ::SiteGroup),
     MetaDataItem,
-    ReferenceItem
+    ResourceItem
 
 fun isSiteGroup(node: Phase1Node) = firstSectionMatchesName(node, "site")
 

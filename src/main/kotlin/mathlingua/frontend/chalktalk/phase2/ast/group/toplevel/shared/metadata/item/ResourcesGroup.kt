@@ -17,12 +17,12 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_REFERENCE_GROUP
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_REFERENCE_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_RESOURCES_GROUP
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_RESOURCES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.OnePartNode
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ReferenceSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateReferenceSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ResourcesSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateResourcesSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.track
@@ -30,22 +30,22 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ReferenceGroup(val referenceSection: ReferenceSection) :
-    OnePartNode<ReferenceSection>(referenceSection, ::ReferenceGroup), MetaDataItem
+data class ResourcesGroup(val resourcesSection: ResourcesSection) :
+    OnePartNode<ResourcesSection>(resourcesSection, ::ResourcesGroup), MetaDataItem
 
-fun isReferenceGroup(node: Phase1Node) = firstSectionMatchesName(node, "reference")
+fun isResourcesGroup(node: Phase1Node) = firstSectionMatchesName(node, "resources")
 
-fun validateReferenceGroup(
+fun validateResourcesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateGroup(node, errors, "reference", DEFAULT_REFERENCE_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_REFERENCE_GROUP, listOf("reference")) {
+        validateGroup(node, errors, "resources", DEFAULT_RESOURCES_GROUP) { group ->
+            identifySections(group, errors, DEFAULT_RESOURCES_GROUP, listOf("resources")) {
             sections ->
-                ReferenceGroup(
-                    referenceSection =
-                        ensureNonNull(sections["reference"], DEFAULT_REFERENCE_SECTION) {
-                            validateReferenceSection(it, errors, tracker)
+                ResourcesGroup(
+                    resourcesSection =
+                        ensureNonNull(sections["resources"], DEFAULT_RESOURCES_SECTION) {
+                            validateResourcesSection(it, errors, tracker)
                         })
             }
         }

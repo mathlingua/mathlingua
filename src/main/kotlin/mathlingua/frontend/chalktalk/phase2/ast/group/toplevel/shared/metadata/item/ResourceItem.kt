@@ -17,15 +17,18 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase1.ast.getColumn
+import mathlingua.frontend.chalktalk.phase1.ast.getRow
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STRING_RESOURCE_ITEM
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-interface ReferenceItem : Phase2Node
+interface ResourceItem : Phase2Node
 
-fun validateReferenceItem(
+fun validateResourceItem(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-): ReferenceItem =
+): ResourceItem =
     when {
         isSiteGroup(node.resolve()) -> {
             validateSiteGroup(node, errors, tracker)
@@ -33,7 +36,15 @@ fun validateReferenceItem(
         isSourceItemGroup(node.resolve()) -> {
             validateSourceItemGroup(node, errors, tracker)
         }
+        isStringItem(node.resolve()) -> {
+            validateStringItem(node, errors, tracker)
+        }
         else -> {
-            throw RuntimeException("Unknown ReferenceItem: $node")
+            errors.add(
+                ParseError(
+                    message = "Expected a site:, source:, or string",
+                    row = getRow(node),
+                    column = getColumn(node)))
+            DEFAULT_STRING_RESOURCE_ITEM
         }
     }

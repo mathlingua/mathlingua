@@ -118,9 +118,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.ContentSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.EntryGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.EntrySection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.TypeSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.TopicGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.TopicSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
@@ -134,19 +133,24 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theore
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ReferenceGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.RelatedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ResourcesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SiteGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SourceItemGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringItem
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.TopicsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ContentItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.NameItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.OffsetItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.PageItemSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ReferenceSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.RelatedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ResourcesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SiteItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SourceItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.StringSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.TopicsSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
@@ -503,16 +507,14 @@ val DEFAULT_STATES_GROUP =
         writtenSection = DEFAULT_WRITTEN_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_ENTRY_SECTION = EntrySection(names = emptyList())
-
-val DEFAULT_TYPE_SECTION = TypeSection(text = "")
+val DEFAULT_ENTRY_SECTION = TopicSection(names = emptyList())
 
 val DEFAULT_CONTENT_SECTION = ContentSection(text = "")
 
-val DEFAULT_ENTRY_GROUP =
-    EntryGroup(
-        entrySection = DEFAULT_ENTRY_SECTION,
-        typeSection = DEFAULT_TYPE_SECTION,
+val DEFAULT_TOPIC_GROUP =
+    TopicGroup(
+        id = DEFAULT_ID_STATEMENT.text,
+        topicSection = DEFAULT_ENTRY_SECTION,
         contentSection = DEFAULT_CONTENT_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
@@ -603,11 +605,21 @@ val DEFAULT_SITE_GROUP =
 
 val DEFAULT_PAGE_ITEM_SECTION = PageItemSection(page = "")
 
-val DEFAULT_REFERENCE_SECTION = ReferenceSection(items = emptyList())
+val DEFAULT_RESOURCES_SECTION = ResourcesSection(items = emptyList())
 
-val DEFAULT_REFERENCE_GROUP = ReferenceGroup(referenceSection = DEFAULT_REFERENCE_SECTION)
+val DEFAULT_TOPICS_SECTION = TopicsSection(items = emptyList())
+
+val DEFAULT_RELATED_SECTION = RelatedSection(items = emptyList())
+
+val DEFAULT_RESOURCES_GROUP = ResourcesGroup(resourcesSection = DEFAULT_RESOURCES_SECTION)
+
+val DEFAULT_TOPICS_GROUP = TopicsGroup(topicsSection = DEFAULT_TOPICS_SECTION)
+
+val DEFAULT_RELATED_GROUP = RelatedGroup(relatedSection = DEFAULT_RELATED_SECTION)
 
 val DEFAULT_STRING_SECTION = StringSection(name = "", values = emptyList())
+
+val DEFAULT_STRING_RESOURCE_ITEM = StringItem(text = "")
 
 val DEFAULT_SOURCE_ITEM_GROUP =
     SourceItemGroup(

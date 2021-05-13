@@ -47,7 +47,8 @@ fun validateContentItemSection(
 ) =
     track(node, tracker) {
         validateSection(node, errors, "content", DEFAULT_CONTENT_ITEM_SECTION) { section ->
-            validateSingleArg(section, errors, DEFAULT_CONTENT_ITEM_SECTION, "string") { arg ->
+            validateSingleArg(section, errors, DEFAULT_CONTENT_ITEM_SECTION, "string") { rawArg ->
+                val arg = rawArg.resolve()
                 if (arg !is Phase1Token || arg.type != ChalkTalkTokenType.String) {
                     errors.add(
                         ParseError(

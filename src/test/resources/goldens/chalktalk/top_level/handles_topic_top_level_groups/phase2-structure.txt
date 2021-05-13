@@ -1,15 +1,14 @@
 Document(
   groups = [
-             EntryGroup(
-               entrySection = EntrySection(
+             TopicGroup(
+               id = null
+               topicSection = TopicSection(
                  names = [
+                           ""A name""
                          ]
                )
-               typeSection = TypeSection(
-                 text = ""note""
-               )
                contentSection = ContentSection(
-                 text = ""This is a note""
+                 text = ""This is a topic""
                )
                metaDataSection = null
              )

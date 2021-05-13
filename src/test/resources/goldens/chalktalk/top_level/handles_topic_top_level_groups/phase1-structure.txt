@@ -4,28 +4,18 @@ Root(
                sections = [
                             Section(
                               name = Phase1Token(
-                                text = "Entry"
+                                text = "Topic"
                                 type = ChalkTalkTokenType.Name
                                 row = 1
                                 column = 0
                               )
                               args = [
-                                     ]
-                            ),
-                            Section(
-                              name = Phase1Token(
-                                text = "type"
-                                type = ChalkTalkTokenType.Name
-                                row = 2
-                                column = 0
-                              )
-                              args = [
                                        Argument(
                                          chalkTalkTarget = Phase1Token(
-                                           text = ""note""
+                                           text = ""A name""
                                            type = ChalkTalkTokenType.String
-                                           row = 2
-                                           column = 6
+                                           row = 1
+                                           column = 7
                                          )
                                        )
                                      ]
@@ -34,15 +24,15 @@ Root(
                               name = Phase1Token(
                                 text = "content"
                                 type = ChalkTalkTokenType.Name
-                                row = 3
+                                row = 2
                                 column = 0
                               )
                               args = [
                                        Argument(
                                          chalkTalkTarget = Phase1Token(
-                                           text = ""This is a note""
+                                           text = ""This is a topic""
                                            type = ChalkTalkTokenType.String
-                                           row = 4
+                                           row = 3
                                            column = 2
                                          )
                                        )

@@ -253,7 +253,7 @@ iff: 'x'
 then: 'y'
 
 
-[some.resource]
+[@some.resource]
 Resource:
 . type: "book"
 . name: "some book"
@@ -265,9 +265,9 @@ Resource:
 . related: "some related"
 
 
-Entry:
-type: "theorem"
-content: "some informal statement"
+[#some.topic]
+Topic: "some name"
+content: "some content"
 
 
 Theorem:
@@ -315,3 +315,21 @@ then:
 Theorem:
 then:
 . not: 'A'
+
+
+Theorem:
+then: "something"
+Metadata:
+. resources:
+  . source: "@some.reference"
+    page: "1"
+    offset: "2"
+    content: "some content"
+
+
+Theorem:
+then: "something"
+Metadata:
+. resources:
+  . site: "some.site.com"
+    name: "Some Name"

@@ -693,7 +693,36 @@ const val KATEX_RENDERING_JS =
         var buffer = '';
         var i = 0;
         while (i < text.length) {
-            if (text[i] === '\\' && text[i+1] === '[') {
+            if (text[i] === '${'$'}' && text[i+1] === '${'$'}' && text[i+2] === '${'$'}') {
+                i += 3; // skip over the ${'$'}s
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                var math = '';
+                while (i < text.length &&
+                    !(text[i] === '${'$'}' && text[i+1] === '${'$'}' && text[i+2] === '${'$'}')) {
+                    math += text[i++];
+                }
+                if (text[i] === '${'$'}') {
+                    i++; // move past the ${'$'}
+                }
+                if (text[i] === '${'$'}') {
+                    i++; // move past the second ${'$'}
+                }
+                if (text[i] === '${'$'}') {
+                    i++; // move past the third ${'$'}
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '[') {
                 i += 2; // skip over \ and [
                 fragment.appendChild(document.createTextNode(buffer));
                 buffer = '';
@@ -740,7 +769,7 @@ const val KATEX_RENDERING_JS =
                 try {
                     katex.render(math, span, {
                         throwOnError: true,
-                        displayMode: true
+                        displayMode: false
                     });
                 } catch {
                     span.appendChild(document.createTextNode(math));
@@ -790,7 +819,7 @@ const val KATEX_RENDERING_JS =
                 try {
                     katex.render(math, span, {
                         throwOnError: true,
-                        displayMode: true
+                        displayMode: false
                     });
                 } catch {
                     span.appendChild(document.createTextNode(math));
@@ -838,7 +867,7 @@ const val KATEX_RENDERING_JS =
                 if (text.trim()) {
                     if (isInWritten) {
                         // if the text is in a written: section
-                        // turn "some text" to \[some text\]
+                        // turn "some text" to ${'$'}${'$'}${'$'}some text${'$'}${'$'}${'$'}
                         // so the text is in math mode
                         if (text[0] === '"') {
                             text = text.substring(1);
@@ -846,7 +875,7 @@ const val KATEX_RENDERING_JS =
                         if (text[text.length - 1] === '"') {
                             text = text.substring(0, text.length - 1);
                         }
-                        text = '\\[' + text + '\\]';
+                        text = '${'$'}${'$'}${'$'}' + text + '${'$'}${'$'}${'$'}';
                     }
                     const fragment = buildMathFragment(text);
                     i += fragment.childNodes.length - 1;

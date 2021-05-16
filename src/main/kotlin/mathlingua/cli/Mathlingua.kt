@@ -699,6 +699,7 @@ const val KATEX_RENDERING_JS =
                 buffer = '';
 
                 const span = document.createElement('span');
+                span.className = 'display-mode';
                 var math = '';
                 while (i < text.length &&
                     !(text[i] === '\\' && text[i+1] === ']')) {
@@ -751,6 +752,7 @@ const val KATEX_RENDERING_JS =
                 buffer = '';
 
                 const span = document.createElement('span');
+                span.className = 'display-mode';
                 var math = '';
                 while (i < text.length &&
                     !(text[i] === '${'$'}' && text[i+1] === '${'$'}')) {
@@ -998,6 +1000,13 @@ const val SHARED_CSS =
 
     .mathlingua-dropdown-menu-item:hover {
         font-style: italic;
+    }
+
+    .display-mode {
+        margin-left: auto;
+        margin-right: auto;
+        width: max-content;
+        display: block;
     }
 
     .katex {

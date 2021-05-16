@@ -230,7 +230,7 @@ open class HtmlCodeWriter(
                             ""
                         }
                         .removeSurrounding("\"", "\"")
-            builder.append("<span class='mathlingua-text' title=\"$title\">")
+            builder.append("<span class='mathlingua-text' title=\"${title.replace("\"", "")}\">")
             builder.append(newlinesToHtml(expansion.text ?: textWithBreaks).replace("?", ""))
             builder.append("</span>")
         } else {

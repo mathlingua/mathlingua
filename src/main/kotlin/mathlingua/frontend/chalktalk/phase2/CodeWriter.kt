@@ -136,13 +136,13 @@ open class HtmlCodeWriter(
             builder.append("<span class='mathlingua-argument'>")
             val code = prettyPrintIdentifier(phase1Node.toCode())
             builder.append(
-                "\\[${code
+                "$$$${code
                     .replace("{", "\\{")
                     .replace("}", "\\}")
                     // replace _\{...\} with _{...}
                     // because that is required to support things
                     // like M_{i, j}
-                    .replace(Regex("_\\\\\\{(.*?)\\\\\\}"), "_{$1}")}\\]")
+                    .replace(Regex("_\\\\\\{(.*?)\\\\\\}"), "_{$1}")}$$$")
             builder.append("</span>")
         } else {
             builder.append("<span class='mathlingua-argument-no-render'>")
@@ -308,30 +308,30 @@ open class HtmlCodeWriter(
             if (stmtText.contains(IS)) {
                 val index = stmtText.indexOf(IS)
                 val lhs = stmtText.substring(0, index)
-                builder.append("\\[${prettyPrintTexTalk(lhs)}\\]")
+                builder.append("$$$${prettyPrintTexTalk(lhs)}$$$")
                 writeSpace()
                 writeDirect("<span class='mathlingua-is'>is</span>")
                 writeSpace()
                 val rhs = stmtText.substring(index + IS.length).trim()
-                builder.append("\\[${prettyPrintTexTalk(rhs)}\\]")
+                builder.append("$$$${prettyPrintTexTalk(rhs)}$$$")
             } else if (stmtText.contains(IN)) {
                 val index = stmtText.indexOf(IN)
                 val lhs = stmtText.substring(0, index)
-                builder.append("\\[")
+                builder.append("$$$")
                 builder.append(prettyPrintTexTalk(lhs))
                 writeDirect(" \\in ")
                 val rhs = stmtText.substring(index + IN.length).trim()
                 builder.append(prettyPrintTexTalk(rhs))
-                builder.append("\\]")
+                builder.append("$$$")
             } else {
                 if (root is ValidationSuccess &&
                     (defines.isNotEmpty() ||
                         states.isNotEmpty() ||
                         foundations.isNotEmpty() ||
                         mutuallyGroups.isNotEmpty())) {
-                    builder.append("\\[$fullExpansion\\]")
+                    builder.append("$$$$fullExpansion$$$")
                 } else {
-                    builder.append("\\[$stmtText\\]")
+                    builder.append("$$$$stmtText$$$")
                 }
             }
             builder.append("</span>")
@@ -360,12 +360,12 @@ open class HtmlCodeWriter(
     }
 
     override fun writeIdentifier(name: String, isVarArgs: Boolean) {
-        builder.append("<span class='mathlingua-identifier'>\\[")
+        builder.append("<span class='mathlingua-identifier'>$$$")
         builder.append(prettyPrintIdentifier(name))
         if (isVarArgs) {
             builder.append("...")
         }
-        builder.append("\\]</span>")
+        builder.append("$$$</span>")
     }
 
     override fun writeDirect(text: String) {

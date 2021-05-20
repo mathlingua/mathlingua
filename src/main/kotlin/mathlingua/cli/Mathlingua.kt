@@ -1000,7 +1000,7 @@ const val SHARED_CSS =
     .mathlingua-text {
         color: #000000;
         display: block;
-        margin: 0 0 -0.75em 0;
+        margin: 0.2em 0 -1em 0;
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
@@ -1010,7 +1010,7 @@ const val SHARED_CSS =
     .mathlingua-text-no-render {
         color: #000000;
         display: block;
-        margin: 0 0 -1em 0;
+        margin: 0.2em 0 -1em 0;
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
@@ -1318,6 +1318,27 @@ fun buildIndexHtml(
                             content.appendChild(document.createElement('br'));
                         }
                         render(content);
+                    }
+                }
+
+                // the following code fixes a bug where text spans don't have enough
+                // space under them if they are the last element in a top-level-group
+                const topLevels = document.getElementsByClassName('mathlingua-top-level');
+                if (topLevels) {
+                    for (const topLevel of topLevels) {
+                        let rightmost = null;
+                        let node = topLevel;
+                        while (node && node.childElementCount > 0) {
+                            node = node.lastChild;
+                            if (node && (node.className === 'mathlingua-text' ||
+                                         node.className === 'mathlingua-text-no-render')) {
+                                rightmost = node;
+                                break;
+                            }
+                        }
+                        if (rightmost) {
+                            rightmost.style.marginBottom = '0.2em';
+                        }
                     }
                 }
             }

@@ -35,12 +35,14 @@ data class AxiomSection(val names: List<String>) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("Axiom")
-        if (names.isNotEmpty()) {
+        if (names.size == 1) {
+            writer.writeText(names[0])
+        } else if (names.size > 1) {
             writer.writeNewline()
-        }
-        for (name in names) {
-            writer.writeIndent(true, indent + 2)
-            writer.writeDirect(name)
+            for (name in names) {
+                writer.writeIndent(true, indent + 2)
+                writer.writeText(name)
+            }
         }
         return writer
     }

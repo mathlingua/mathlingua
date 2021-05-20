@@ -99,16 +99,6 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 this.chalkTalkTokens.add(Phase1Token("{", ChalkTalkTokenType.LCurly, line, column))
             } else if (c == '}') {
                 this.chalkTalkTokens.add(Phase1Token("}", ChalkTalkTokenType.RCurly, line, column))
-            } else if (c == ':') {
-                if (i < text.length && text[i] == '=') {
-                    this.chalkTalkTokens.add(
-                        Phase1Token(":=", ChalkTalkTokenType.ColonEquals, line, column))
-                    i++ // move past the =
-                    column++
-                } else {
-                    this.chalkTalkTokens.add(
-                        Phase1Token(":", ChalkTalkTokenType.Colon, line, column))
-                }
             } else if (c == ',') {
                 this.chalkTalkTokens.add(Phase1Token(",", ChalkTalkTokenType.Comma, line, column))
             } else if (c == '.' && i < text.length && text[i] == ' ') {
@@ -362,6 +352,52 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 }
                 this.chalkTalkTokens.add(
                     Phase1Token(id, ChalkTalkTokenType.Id, startLine, startColumn))
+            } else if (c == ':' && i < text.length && text[i] == ':') {
+                val startLine = line
+                val startColumn = column
+                // move past the ::
+                i++
+                column++
+                val builder = StringBuilder("::")
+                while (i < text.length &&
+                    !(text[i] == ':' && i + 1 < text.length && text[i + 1] == ':')) {
+                    val tmp = text[i++]
+                    builder.append(tmp)
+                    if (tmp == '\n' || tmp == '\r') {
+                        line++
+                        column = -1
+                    }
+                }
+                if (i < text.length &&
+                    text[i] == ':' &&
+                    i + 1 < text.length &&
+                    text[i + 1] == ':') {
+                    // move past the ::
+                    i += 2
+                    builder.append("::")
+                }
+                if (i < text.length && text[i] == '\n') {
+                    // address the trailing newline
+                    i++
+                    line++
+                    column = -1
+                }
+                this.chalkTalkTokens.add(
+                    Phase1Token(
+                        builder.toString(),
+                        ChalkTalkTokenType.BlockComment,
+                        startLine,
+                        startColumn))
+            } else if (c == ':') {
+                if (i < text.length && text[i] == '=') {
+                    this.chalkTalkTokens.add(
+                        Phase1Token(":=", ChalkTalkTokenType.ColonEquals, line, column))
+                    i++ // move past the =
+                    column++
+                } else {
+                    this.chalkTalkTokens.add(
+                        Phase1Token(":", ChalkTalkTokenType.Colon, line, column))
+                }
             } else if (c != ' ') { // spaces are ignored
                 errors.add(ParseError("Unrecognized character $c", line, column))
             }

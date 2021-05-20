@@ -16,6 +16,8 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel
 
+import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
+import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -23,6 +25,20 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSecti
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
+
+class TopLevelBlockComment(private val blockComment: BlockComment) : TopLevelGroup(null) {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        writer.writeBlockComment(blockComment.text)
+        return writer
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(this)
+}
+
+fun isBlockComment(node: Phase1Node) = node is BlockComment
 
 fun topLevelToCode(
     writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?

@@ -21,8 +21,10 @@ import mathlingua.frontend.chalktalk.phase1.ast.AbstractionPart
 import mathlingua.frontend.chalktalk.phase1.ast.Argument
 import mathlingua.frontend.chalktalk.phase1.ast.Assignment
 import mathlingua.frontend.chalktalk.phase1.ast.AssignmentRhs
+import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Group
+import mathlingua.frontend.chalktalk.phase1.ast.GroupOrBlockComment
 import mathlingua.frontend.chalktalk.phase1.ast.Mapping
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.Root
@@ -56,8 +58,17 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
     val errors = mutableListOf<ParseError>()
 
     fun root(): Root {
-        val groups = mutableListOf<Group>()
+        val groups = mutableListOf<GroupOrBlockComment>()
         while (hasNext()) {
+            while (true) {
+                val comment = blockComment()
+                if (comment != null) {
+                    groups.add(comment)
+                } else {
+                    break
+                }
+            }
+
             val grp = group()
             grp ?: break
             groups.add(grp)
@@ -65,10 +76,22 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         while (hasNext()) {
             val next = next()
-            addError("Unrecognized token '" + next.text, next)
+            addError("Unrecognized token " + next.text, next)
         }
 
         return Root(groups)
+    }
+
+    private fun blockComment(): BlockComment? {
+        if (has(ChalkTalkTokenType.Linebreak)) {
+            next() // absorb the line break
+        }
+
+        if (!has(ChalkTalkTokenType.BlockComment)) {
+            return null
+        }
+
+        return BlockComment(next().text)
     }
 
     private fun group(): Group? {

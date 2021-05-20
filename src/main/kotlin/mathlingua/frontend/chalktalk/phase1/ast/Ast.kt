@@ -23,13 +23,17 @@ interface Phase1Node {
     fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node
 }
 
-data class Root(val groups: List<Group>) : Phase1Node {
+data class Root(val groups: List<GroupOrBlockComment>) : Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = groups.forEach(fn)
 
     private fun print(buffer: StringBuilder) {
         for (grp in groups) {
-            grp.print(buffer, 0, false)
+            if (grp is Group) {
+                grp.print(buffer, 0, false)
+            } else if (grp is BlockComment) {
+                grp.print(buffer)
+            }
         }
     }
 

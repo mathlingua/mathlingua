@@ -35,10 +35,13 @@ enum class ChalkTalkTokenType {
     LCurly,
     RCurly,
     Underscore,
-    DotDotDot
+    DotDotDot,
+    BlockComment
 }
 
 sealed class Phase1Target : Phase1Node
+
+interface GroupOrBlockComment : Phase1Node
 
 data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() {
 
@@ -58,7 +61,22 @@ data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() 
                 rhs = rhs.transform(transformer) as Phase1Token))
 }
 
-data class Group(val sections: List<Section>, val id: Phase1Token?) : Phase1Target() {
+data class BlockComment(val text: String) : GroupOrBlockComment {
+    override fun forEach(fn: (node: Phase1Node) -> Unit) {}
+
+    override fun toCode() = text
+
+    override fun resolve() = this
+
+    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(this)
+
+    fun print(buffer: StringBuilder) {
+        buffer.append(toCode())
+    }
+}
+
+data class Group(val sections: List<Section>, val id: Phase1Token?) :
+    Phase1Target(), GroupOrBlockComment {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         if (id != null) {

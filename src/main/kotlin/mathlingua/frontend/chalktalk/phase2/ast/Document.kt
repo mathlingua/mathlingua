@@ -17,12 +17,15 @@
 package mathlingua.frontend.chalktalk.phase2.ast
 
 import mathlingua.backend.transform.normalize
+import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
+import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Root
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
 import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
@@ -40,6 +43,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.state
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.isTopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.validateTopicGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.isBlockComment
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
@@ -77,10 +81,17 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        println("document toCode")
         for (i in groups.indices) {
-            writer.beginTopLevel("$i")
-            writer.append(groups[i], false, 0)
-            writer.endTopLevel(3)
+            val grp = groups[i]
+            if (grp is TopLevelBlockComment) {
+                writer.append(grp, false, 0)
+                writer.writeNewline(3)
+            } else {
+                writer.beginTopLevel("$i")
+                writer.append(grp, false, 0)
+                writer.endTopLevel(3)
+            }
         }
         return writer
     }
@@ -134,6 +145,9 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             isEvaluatesGroup(group) -> {
                 allGroups.add(validateEvaluatesGroup(group, errors, tracker))
             }
+            isBlockComment(group) -> {
+                allGroups.add(TopLevelBlockComment(group as BlockComment))
+            }
             else -> {
                 errors.add(
                     ParseError(
@@ -145,20 +159,22 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
     }
 
     for (group in node.groups) {
-        val id = group.id
-        if (id != null) {
-            val lexer = newTexTalkLexer(id.text)
-            val parse = newTexTalkParser().parse(lexer)
-            val idBefore = parse.root.toCode()
-            val idAfter =
-                normalize(parse.root, Location(row = getRow(group), column = getColumn(group)))
-                    .toCode()
-            if (idBefore != idAfter) {
-                errors.add(
-                    ParseError(
-                        message = "A command in an id cannot be of the form \\x \\y ...",
-                        row = getRow(group),
-                        column = getColumn(group)))
+        if (group is Group) {
+            val id = group.id
+            if (id != null) {
+                val lexer = newTexTalkLexer(id.text)
+                val parse = newTexTalkParser().parse(lexer)
+                val idBefore = parse.root.toCode()
+                val idAfter =
+                    normalize(parse.root, Location(row = getRow(group), column = getColumn(group)))
+                        .toCode()
+                if (idBefore != idAfter) {
+                    errors.add(
+                        ParseError(
+                            message = "A command in an id cannot be of the form \\x \\y ...",
+                            row = getRow(group),
+                            column = getColumn(group)))
+                }
             }
         }
     }

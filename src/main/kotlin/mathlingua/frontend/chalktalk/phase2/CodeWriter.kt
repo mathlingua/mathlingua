@@ -54,6 +54,7 @@ interface CodeWriter {
     fun writeText(text: String)
     fun writeUrl(url: String, name: String?)
     fun writeDirect(text: String)
+    fun writeBlockComment(text: String)
     fun writeHorizontalLine()
     fun beginTopLevel(label: String)
     fun endTopLevel(numNewlines: Int)
@@ -167,7 +168,19 @@ open class HtmlCodeWriter(
         builder.append("</span>")
     }
 
-    private fun newlinesToHtml(text: String) = text.replace(Regex("[\r\n][\r\n]+"), "<br/></br>")
+    private fun newlinesToHtml(text: String): String {
+        return text.split("\n")
+            .joinToString("\n") {
+                it.replaceCommandWithHtml("textbf", "b")
+                    .replaceCommandWithHtml("emph", "i")
+                    .replaceCommandWithHtml("title", "h1")
+                    .replaceCommandWithHtml("section", "h2")
+                    .replaceCommandWithHtml("subsection", "h3")
+                    .replaceCommandWithHtml("subsubsection", "h4")
+            }
+            .split("\n\n")
+            .joinToString("<br><br>")
+    }
 
     override fun writeUrl(url: String, name: String?) {
         val urlNoSpace = url.replace(Regex("[ \\r\\n\\t]+"), "")
@@ -372,6 +385,17 @@ open class HtmlCodeWriter(
         builder.append(text)
     }
 
+    override fun writeBlockComment(text: String) {
+        val comment = newlinesToHtml(text.removeSurrounding("::", "::"))
+        val res =
+            expandTextAsWritten(comment, true, defines, states, axioms, foundations, mutuallyGroups)
+                .text
+                ?: comment
+        builder.append("<span class='mathlingua-block-comment'>")
+        builder.append(res)
+        builder.append("</span>")
+    }
+
     override fun beginTopLevel(label: String) {
         builder.append("<div id='$label'>")
         builder.append("<div class='mathlingua-top-level'>")
@@ -488,6 +512,10 @@ class MathLinguaCodeWriter(
         builder.append('"')
     }
 
+    override fun writeBlockComment(text: String) {
+        builder.append(text)
+    }
+
     override fun writeUrl(url: String, name: String?) {
         builder.append('"')
         builder.append(url)
@@ -566,6 +594,15 @@ internal fun prettyPrintIdentifier(text: String): String {
 }
 
 // ------------------------------------------------------------------------------------------------------------------ //
+
+fun String.replaceCommandWithHtml(commandName: String, htmlName: String): String {
+    val regex = Regex("""\\$commandName\{(.*?)\}""")
+    val find = regex.find(this) ?: return this
+    if (find.groupValues.size < 2) {
+        return this
+    }
+    return """<$htmlName>${find.groupValues[1]}</$htmlName>"""
+}
 
 private fun isGreekLetter(letter: String) =
     mutableSetOf(

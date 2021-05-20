@@ -8,19 +8,19 @@ EndMessage:
 Row: 9
 Column: 0
 Message:
-Unrecognized token 'Result
+Unrecognized token Result
 EndMessage:
 
 
 Row: 10
 Column: 0
 Message:
-Unrecognized token '<Indent>
+Unrecognized token <Indent>
 EndMessage:
 
 
 Row: 10
 Column: 0
 Message:
-Unrecognized token '<Unindent>
+Unrecognized token <Unindent>
 EndMessage:

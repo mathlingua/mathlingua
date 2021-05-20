@@ -261,9 +261,13 @@ private fun renderFile(
 
     val contentBuilder = StringBuilder()
     for (item in pair.first) {
-        contentBuilder.append("<div class='mathlingua-top-level'>")
-        contentBuilder.append(item)
-        contentBuilder.append("</div><br/><br/>")
+        if (item.trim().startsWith("::")) {
+            contentBuilder.append(item)
+        } else {
+            contentBuilder.append("<div class='mathlingua-top-level'>")
+            contentBuilder.append(item)
+            contentBuilder.append("</div><br/><br/>")
+        }
     }
 
     val text =
@@ -916,6 +920,7 @@ const val SHARED_CSS =
 
     h1, h2, h3, h4 {
         color: #0055bb;
+        text-align: center;
     }
 
     .mathlingua-top-level {
@@ -935,6 +940,34 @@ const val SHARED_CSS =
         width: max-content;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
+    }
+
+    .mathlingua-block-comment {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 1.1em;
+        padding-bottom: 1em;
+        padding-left: 1.1em;
+        padding-right: 1.1em;
+    }
+
+    .mathlingua-block-comment-top-level {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        font-size: 80%;
+        line-height: 1.3;
+        text-indent: -2.5ex !important;
+        padding-top: 1.5em;
+        padding-bottom: 1.5em;
+        padding-left: 1.5em;
+        padding-right: 1.5em;
+        background-color: #ffffff;
+        max-width: 90%;
+        width: max-content;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+        border: solid;
+        border-width: 1px;
+        border-color: rgba(230, 230, 230);
+        border-radius: 2px;
     }
 
     .end-mathlingua-top-level {
@@ -971,6 +1004,7 @@ const val SHARED_CSS =
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
     }
 
     .mathlingua-text-no-render {
@@ -980,6 +1014,7 @@ const val SHARED_CSS =
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
     }
 
     .mathlingua-url {
@@ -1036,6 +1071,8 @@ const val SHARED_CSS =
         margin-right: auto;
         width: max-content;
         display: block;
+        padding-top: 1ex;
+        padding-bottom: 1ex;
     }
 
     .katex {
@@ -1270,7 +1307,11 @@ fun buildIndexHtml(
                             }
 
                             const el = document.createElement('div');
-                            el.className = 'mathlingua-top-level';
+                            if (entityList[i].indexOf('class=\'mathlingua-block-comment\'') >= 0) {
+                                el.className = 'mathlingua-block-comment-top-level';
+                            } else {
+                                el.className = 'mathlingua-top-level';
+                            }
                             el.innerHTML = entityList[i];
                             content.appendChild(el);
                             content.appendChild(document.createElement('br'));

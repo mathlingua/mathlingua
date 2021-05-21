@@ -1000,7 +1000,7 @@ const val SHARED_CSS =
     .mathlingua-text {
         color: #000000;
         display: block;
-        margin: 0.2em 0 -1em 0;
+        margin: 0.2em 0 -1.2em 0;
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
@@ -1010,7 +1010,7 @@ const val SHARED_CSS =
     .mathlingua-text-no-render {
         color: #000000;
         display: block;
-        margin: 0.2em 0 -1em 0;
+        margin: 0.2em 0 -1.2em 0;
         padding: 0 0 0 2.5em;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;

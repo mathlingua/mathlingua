@@ -1,7 +1,6 @@
 [A]
 Defines: B
 means: 'B is \something'
-satisfying:
-. "C"
+satisfying: "C"
 written:
 . "something"

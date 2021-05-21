@@ -21,6 +21,7 @@ import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_RESOURCES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ResourceItem
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringItem
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateResourceItem
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
@@ -33,9 +34,13 @@ data class ResourcesSection(val items: List<ResourceItem>) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("resources")
-        for (item in items) {
-            writer.writeNewline()
-            writer.append(item, true, indent + 2)
+        if (items.size == 1 && items[0] is StringItem) {
+            writer.append(items[0], false, 1)
+        } else {
+            for (item in items) {
+                writer.writeNewline()
+                writer.append(item, true, indent + 2)
+            }
         }
         return writer
     }

@@ -28,8 +28,8 @@ data class StringItem(val text: String) : ResourceItem {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        writer.writeIndent(isArg, indent)
-        writer.writeDirect(text)
+        writer.writeSpace()
+        writer.writeText(text)
         return writer
     }
 

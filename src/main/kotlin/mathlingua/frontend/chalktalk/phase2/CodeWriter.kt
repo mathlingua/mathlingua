@@ -29,7 +29,18 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.TopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.RelatedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ResourcesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SiteGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SourceItemGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringItem
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringSectionGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.TopicsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
@@ -40,6 +51,7 @@ import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
 interface CodeWriter {
+    fun generateCode(node: Phase2Node): String
     fun append(node: Phase2Node, hasDot: Boolean, indent: Int)
     fun writeHeader(header: String)
     fun writeNewline(count: Int = 1)
@@ -80,6 +92,212 @@ open class HtmlCodeWriter(
 ) : CodeWriter {
     private var statementIndex = System.nanoTime() + Random.Default.nextLong()
     protected val builder = StringBuilder()
+
+    private fun generateMetaDataSectionCode(meta: MetaDataSection): String {
+        val builder = StringBuilder()
+
+        builder.append("<hr/>")
+        builder.append("<span class='mathlingua-metadata'>")
+
+        val overview =
+            meta.items.firstOrNull {
+                it is StringSectionGroup && it.section.name == "overview"
+            } as StringSectionGroup?
+
+        if (overview != null && overview.section.values.isNotEmpty()) {
+            builder.append("<span class='mathlingua-overview'>")
+            builder.append(overview.section.values[0])
+            builder.append("</span>")
+        }
+
+        // TODO: Support tags, authors, and contributors
+        // val tags = meta.items.filter { it is StringSectionGroup && it.section.name ==
+        // "tag" } as List<StringSectionGroup>
+        // val authors = meta.items.filter { it is StringSectionGroup && it.section.name
+        // == "author" } as List<StringSectionGroup>
+        // val contributors = meta.items.filter { it is StringSectionGroup&&
+        // it.section.name == "contributor" } as List<StringSectionGroup>
+
+        val resourceGroups = meta.items.filterIsInstance<ResourcesGroup>()
+        if (resourceGroups.isNotEmpty()) {
+            builder.append("<span class='mathlingua-resources-header'>Resources</span>")
+            for (grp in resourceGroups) {
+                for (res in grp.resourcesSection.items) {
+                    when (res) {
+                        is SiteGroup -> {
+                            val urlNoSpace = getUrlWithoutSpaces(res.siteItemSection.url)
+                            val title =
+                                getUrlTitle(res.siteItemSection.url, res.nameItemSection?.name)
+                            builder.append(
+                                "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
+                        }
+                        is SourceItemGroup -> {
+                            builder.append("<span class='mathlingua-resources-item'>")
+
+                            val textBuilder = StringBuilder()
+                            textBuilder.append(res.sourceSection.sourceReference)
+                            val page = res.pageSection?.page
+                            val offset = res.offsetSection?.offset
+                            if (page != null || offset != null) {
+                                textBuilder.append(" (")
+                                if (page != null) {
+                                    textBuilder.append("Page ")
+                                    textBuilder.append(page)
+                                }
+                                if (offset != null) {
+                                    if (page != null) {
+                                        textBuilder.append(" ")
+                                    }
+                                    textBuilder.append("Offset ")
+                                    textBuilder.append(offset)
+                                }
+                                textBuilder.append(")")
+                            }
+
+                            builder.append(textBuilder.toString())
+                            builder.append("</span>")
+                        }
+                        is StringItem -> {
+                            builder.append("<span class='mathlingua-resources-item'>")
+                            builder.append(res.text.removeSurrounding("\"", "\""))
+                            builder.append("</span>")
+                        }
+                        else -> {
+                            System.err.println(
+                                "ERROR: Unrecognized resource type: ${res.javaClass.simpleName}")
+                        }
+                    }
+                }
+            }
+        }
+
+        val topicsGroups = meta.items.filterIsInstance<TopicsGroup>()
+        if (topicsGroups.isNotEmpty()) {
+            for (topicGrp in topicsGroups) {
+                builder.append("<span class='mathlingua-topics-header'>Topics</span>")
+                for (item in topicGrp.topicsSection.items) {
+                    builder.append("<span class='mathlingua-topic-item'>${item.text}</span>")
+                }
+                builder.append("</span>")
+            }
+        }
+
+        val relatedGroups = meta.items.filterIsInstance<RelatedGroup>()
+        if (relatedGroups.isNotEmpty()) {
+            for (relatedGrp in relatedGroups) {
+                builder.append("<span class='mathlingua-related-header'>Related</span>")
+                for (item in relatedGrp.relatedSection.items) {
+                    builder.append("<span class='mathlingua-related-item'>${item.text}</span>")
+                }
+                builder.append("</span>")
+            }
+        }
+
+        builder.append("</span>")
+        return builder.toString()
+    }
+
+    override fun generateCode(node: Phase2Node): String {
+        return when (node) {
+            is FoundationGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-foundation'>")
+                builder.append("<span class='mathlingua-foundation-header'>Foundation</span>")
+                builder.append(generateCode(node.foundationSection.content))
+                builder.append("</span>")
+                if (node.metaDataSection != null) {
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection))
+                }
+                builder.toString()
+            }
+            is DefinesGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-data'>")
+                builder.append(
+                    node.copyWithoutMetadata()
+                        .toCode(
+                            false,
+                            0,
+                            writer = newCodeWriter(defines, states, foundations, mutuallyGroups))
+                        .getCode())
+                builder.append("</span>")
+                if (node.metaDataSection != null) {
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                }
+                builder.toString()
+            }
+            is TheoremGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-data'>")
+                builder.append(
+                    node.copy(metaDataSection = null)
+                        .toCode(
+                            false,
+                            0,
+                            writer = newCodeWriter(defines, states, foundations, mutuallyGroups))
+                        .getCode())
+                builder.append("</span>")
+                if (node.metaDataSection != null) {
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                }
+                builder.toString()
+            }
+            is AxiomGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-data'>")
+                builder.append(
+                    node.copy(metaDataSection = null)
+                        .toCode(
+                            false,
+                            0,
+                            writer = newCodeWriter(defines, states, foundations, mutuallyGroups))
+                        .getCode())
+                builder.append("</span>")
+                if (node.metaDataSection != null) {
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                }
+                builder.toString()
+            }
+            is ConjectureGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-data'>")
+                builder.append(
+                    node.copy(metaDataSection = null)
+                        .toCode(
+                            false,
+                            0,
+                            writer = newCodeWriter(defines, states, foundations, mutuallyGroups))
+                        .getCode())
+                builder.append("</span>")
+                if (node.metaDataSection != null) {
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                }
+                builder.toString()
+            }
+            is TopicGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-topic-group'>")
+                for (name in node.topicSection.names) {
+                    builder.append("<span class='mathlingua-topic-name'>")
+                    builder.append(name)
+                    builder.append("</span>")
+                }
+                if (node.id != null) {
+                    builder.append("<span class='mathlingua-topic-group-id'>(")
+                    builder.append(node.id)
+                    builder.append(")</span>")
+                }
+                builder.append("<span class='mathlingua-topic-content'>")
+                builder.append(node.contentSection.text)
+                builder.append("</span>")
+                builder.append("</span>")
+                builder.toString()
+            }
+            else -> {
+                node.toCode(false, 0, writer = this).getCode()
+            }
+        }
+    }
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
         builder.append(
@@ -182,41 +400,47 @@ open class HtmlCodeWriter(
             .joinToString("<br><br>")
     }
 
-    override fun writeUrl(url: String, name: String?) {
-        val urlNoSpace = url.replace(Regex("[ \\r\\n\\t]+"), "")
-        val title =
-            if (name != null) {
-                name
-            } else {
-                val rawName =
-                    urlNoSpace
-                        .replace("https://", "")
-                        .replace("http://", "")
-                        .replace("ftp://", "")
-                        .replace("file://", "")
-                if (rawName.length > 30) {
-                    val questionIndex = rawName.indexOf("?")
-                    val withoutQueryString =
-                        if (questionIndex < 0) {
-                            rawName
-                        } else {
-                            rawName.substring(0, questionIndex)
-                        }
+    private fun getUrlWithoutSpaces(url: String) = url.replace(Regex("[ \\r\\n\\t]+"), "")
 
-                    if (withoutQueryString.length > 30) {
-                        val parts = withoutQueryString.split("/")
-                        if (parts.size == 1) {
-                            withoutQueryString
-                        } else {
-                            "${parts.first()}/.../${parts.last()}"
-                        }
+    private fun getUrlTitle(url: String, name: String?): String? {
+        return if (name != null) {
+            name
+        } else {
+            val urlNoSpace = getUrlWithoutSpaces(url)
+            val rawName =
+                urlNoSpace
+                    .replace("https://", "")
+                    .replace("http://", "")
+                    .replace("ftp://", "")
+                    .replace("file://", "")
+            if (rawName.length > 30) {
+                val questionIndex = rawName.indexOf("?")
+                val withoutQueryString =
+                    if (questionIndex < 0) {
+                        rawName
                     } else {
+                        rawName.substring(0, questionIndex)
+                    }
+
+                if (withoutQueryString.length > 30) {
+                    val parts = withoutQueryString.split("/")
+                    if (parts.size == 1) {
                         withoutQueryString
+                    } else {
+                        "${parts.first()}/.../${parts.last()}"
                     }
                 } else {
-                    rawName
+                    withoutQueryString
                 }
+            } else {
+                rawName
             }
+        }
+    }
+
+    override fun writeUrl(url: String, name: String?) {
+        val urlNoSpace = getUrlWithoutSpaces(url)
+        val title = getUrlTitle(url, name)
         builder.append(
             "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
     }
@@ -443,6 +667,8 @@ class MathLinguaCodeWriter(
     val mutuallyGroups: List<MutuallyGroup>
 ) : CodeWriter {
     private val builder = StringBuilder()
+
+    override fun generateCode(node: Phase2Node) = node.toCode(false, 0, writer = this).getCode()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
         builder.append(

@@ -117,6 +117,10 @@ data class DefinesEvaluatedGroup(
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+
+    override fun copyWithoutMetadata(): DefinesGroup {
+        return copy(metaDataSection = null)
+    }
 }
 
 fun isDefinesEvaluatedGroup(node: Phase1Node) = sectionsMatchNames(node, "Defines", "evaluated")

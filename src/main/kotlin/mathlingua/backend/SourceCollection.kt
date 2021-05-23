@@ -899,7 +899,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     foundations = doExpand.thenUse { foundationGroups.map { it.value } },
                     mutuallyGroups = doExpand.thenUse { mutuallyGroups.map { it.value } })
             }
-        return node.toCode(false, 0, writer = writer).getCode()
+        return writer.generateCode(node)
     }
 
     override fun getSymbolErrors(): List<ValueSourceTracker<ParseError>> {

@@ -112,6 +112,10 @@ data class DefinesInstantiatedGroup(
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+
+    override fun copyWithoutMetadata(): DefinesGroup {
+        return copy(metaDataSection = null)
+    }
 }
 
 fun isDefinesInstantiatedGroup(node: Phase1Node) =

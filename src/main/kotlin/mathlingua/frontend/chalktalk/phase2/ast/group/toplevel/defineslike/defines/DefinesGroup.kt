@@ -47,6 +47,7 @@ abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     abstract val whenSection: WhenSection?
     abstract val viewingSection: ViewingSection?
     abstract val writtenSection: WrittenSection
+    abstract fun copyWithoutMetadata(): DefinesGroup
 }
 
 fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")

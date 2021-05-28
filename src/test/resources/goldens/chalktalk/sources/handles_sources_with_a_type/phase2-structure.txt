@@ -2,7 +2,7 @@ Document(
   groups = [
              ResourceGroup(
                id = "id"
-               sourceSection = ResourceSection(
+               resourceSection = ResourceSection(
                  items = [
                            StringSectionGroup(
                              section = StringSection(

@@ -150,11 +150,6 @@ private fun printExpanded(input: String, supplemental: String, html: Boolean): V
             is ValidationFailure -> emptyList()
             is ValidationSuccess -> totalTextValidation.value.foundations()
         }
-    val mutuallyGroups =
-        when (totalTextValidation) {
-            is ValidationFailure -> emptyList()
-            is ValidationSuccess -> totalTextValidation.value.mutually()
-        }
 
     val result = StringBuilder()
     val errors = mutableListOf<ParseError>()

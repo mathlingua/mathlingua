@@ -59,12 +59,6 @@ fun validateDefinesGroup(
         isDefinesCollectsGroup(node) -> {
             validateDefinesCollectsGroup(node, errors, tracker)
         }
-        isDefinesGeneratedGroup(node) -> {
-            validateDefinesGeneratedGroup(node, errors, tracker)
-        }
-        isDefinesInstantiatedGroup(node) -> {
-            validateDefinesInstantiatedGroup(node, errors, tracker)
-        }
         isDefinesMapsGroup(node) -> {
             validateDefinesMapsGroup(node, errors, tracker)
         }

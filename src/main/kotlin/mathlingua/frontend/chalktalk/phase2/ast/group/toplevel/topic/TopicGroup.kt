@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter

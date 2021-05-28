@@ -29,8 +29,7 @@ interface Phase2Node {
                 defines = emptyList(),
                 states = emptyList(),
                 axioms = emptyList(),
-                foundations = emptyList(),
-                mutuallyGroups = emptyList())
+                foundations = emptyList())
     ): CodeWriter
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
 }

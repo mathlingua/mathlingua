@@ -35,14 +35,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evalu
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.isMutuallyGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.validateMutuallyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.isTopicGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry.validateTopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.isBlockComment
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
@@ -56,6 +51,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.isTopicGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.validateTopicGroup
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
@@ -70,7 +67,6 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
     fun defines() = groups.filterIsInstance<DefinesGroup>()
     fun states() = groups.filterIsInstance<StatesGroup>()
     fun foundations() = groups.filterIsInstance<FoundationGroup>()
-    fun mutually() = groups.filterIsInstance<MutuallyGroup>()
     fun theorems() = groups.filterIsInstance<TheoremGroup>()
     fun axioms() = groups.filterIsInstance<AxiomGroup>()
     fun conjectures() = groups.filterIsInstance<ConjectureGroup>()
@@ -132,9 +128,6 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             }
             isFoundationGroup(group) -> {
                 allGroups.add(validateFoundationGroup(group, errors, tracker))
-            }
-            isMutuallyGroup(group) -> {
-                allGroups.add(validateMutuallyGroup(group, errors, tracker))
             }
             isTopicGroup(group) -> {
                 allGroups.add(validateTopicGroup(group, errors, tracker))

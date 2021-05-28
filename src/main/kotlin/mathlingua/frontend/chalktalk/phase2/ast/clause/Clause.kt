@@ -45,8 +45,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.validat
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.validateInductivelyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.isMappingGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.validateMappingGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.isMatchingGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.validateMatchingGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.isNotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.validateNotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.isOrGroup
@@ -146,7 +144,6 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isExpandsGroup, ::validateExpandsGroup),
         ValidationPair(::isMappingGroup, ::validateMappingGroup),
         ValidationPair(::isCollectionGroup, ::validateCollectionGroup),
-        ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
         ValidationPair(::isConstantGroup, ::validateConstantGroup),
         ValidationPair(::isConstructorGroup, ::validateConstructorGroup),
         ValidationPair(::isInductivelyGroup, ::validateInductivelyGroup),

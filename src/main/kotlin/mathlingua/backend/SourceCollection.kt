@@ -41,13 +41,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstantGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstructorGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.mutually.MutuallyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
@@ -131,7 +127,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
     private val axiomGroups = mutableListOf<ValueSourceTracker<AxiomGroup>>()
     private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
-    private val mutuallyGroups = mutableListOf<ValueSourceTracker<MutuallyGroup>>()
     private val patternsToWrittenAs: Map<OperatorTexTalkNode, String>
 
     init {
@@ -174,14 +169,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                             value = normalize(it, validation.value.tracker) as FoundationGroup)
                     })
 
-                mutuallyGroups.addAll(
-                    validation.value.document.mutually().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as MutuallyGroup)
-                    })
-
                 allGroups.addAll(
                     validation.value.document.groups.map {
                         ValueSourceTracker(
@@ -197,8 +184,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                 defines = definesGroups.map { it.value },
                 states = statesGroups.map { it.value },
                 axioms = axiomGroups.map { it.value },
-                foundations = foundationGroups.map { it.value },
-                mutuallyGroups = mutuallyGroups.map { it.value })
+                foundations = foundationGroups.map { it.value })
     }
 
     private fun getOperatorIdentifiers(node: Phase2Node): Set<String> {
@@ -496,48 +482,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     ValueSourceTracker(
                         source = pair.source, tracker = pair.tracker, value = signature)
                 result.add(Pair(vst, pair.value))
-
-                when (val defines = pair.value
-                ) {
-                    is DefinesGeneratedGroup -> {
-                        val from = defines.generatedSection.inductivelyGroup.fromSection
-                        for (clause in from.clauses.clauses) {
-                            if (clause is ConstantGroup) {
-                                for (nameClause in clause.constantSection.clauses.clauses) {
-                                    val name = nameClause.toCode(false, 0).getCode()
-                                    val nameVst =
-                                        ValueSourceTracker(
-                                            source = pair.source,
-                                            tracker = pair.tracker,
-                                            value =
-                                                Signature(
-                                                    form = "$signature.$name", location = location))
-                                    result.add(Pair(nameVst, pair.value))
-                                }
-                            } else if (clause is ConstructorGroup) {
-                                val targets = clause.constructorSection.targets
-                                for (target in targets) {
-                                    if (target is AbstractionNode) {
-                                        val tail =
-                                            target
-                                                .abstraction
-                                                .toCode()
-                                                .replace(Regex("\\(.*\\)"), "()")
-                                        val absVst =
-                                            ValueSourceTracker(
-                                                source = pair.source,
-                                                tracker = pair.tracker,
-                                                value =
-                                                    Signature(
-                                                        form = "$signature.$tail",
-                                                        location = location))
-                                        result.add(Pair(absVst, pair.value))
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
 
@@ -889,15 +833,13 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     defines = doExpand.thenUse { definesGroups.map { it.value } },
                     states = doExpand.thenUse { statesGroups.map { it.value } },
                     axioms = doExpand.thenUse { axiomGroups.map { it.value } },
-                    foundations = doExpand.thenUse { foundationGroups.map { it.value } },
-                    mutuallyGroups = doExpand.thenUse { mutuallyGroups.map { it.value } })
+                    foundations = doExpand.thenUse { foundationGroups.map { it.value } })
             } else {
                 MathLinguaCodeWriter(
                     defines = doExpand.thenUse { definesGroups.map { it.value } },
                     states = doExpand.thenUse { statesGroups.map { it.value } },
                     axioms = doExpand.thenUse { axiomGroups.map { it.value } },
-                    foundations = doExpand.thenUse { foundationGroups.map { it.value } },
-                    mutuallyGroups = doExpand.thenUse { mutuallyGroups.map { it.value } })
+                    foundations = doExpand.thenUse { foundationGroups.map { it.value } })
             }
         return writer.generateCode(node)
     }
@@ -918,8 +860,7 @@ fun getPatternsToWrittenAs(
     defines: List<DefinesGroup>,
     states: List<StatesGroup>,
     axioms: List<AxiomGroup>,
-    foundations: List<FoundationGroup>,
-    mutuallyGroups: List<MutuallyGroup>
+    foundations: List<FoundationGroup>
 ): Map<OperatorTexTalkNode, String> {
     val allDefines = mutableListOf<DefinesGroup>()
     allDefines.addAll(defines)
@@ -933,16 +874,6 @@ fun getPatternsToWrittenAs(
             allDefines.add(content)
         } else if (content is StatesGroup) {
             allStates.add(content)
-        }
-    }
-
-    for (m in mutuallyGroups) {
-        for (item in m.mutuallySection.items) {
-            if (item is DefinesGroup) {
-                allDefines.add(item)
-            } else if (item is StatesGroup) {
-                allStates.add(item)
-            }
         }
     }
 
@@ -996,59 +927,6 @@ fun getPatternsToWrittenAs(
             } else if (exp.children.size == 1 && exp.children[0] is Command) {
                 val cmd = exp.children[0] as Command
                 result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] = writtenAs
-            }
-        }
-
-        when (def) {
-            is DefinesGeneratedGroup -> {
-                val from = def.generatedSection.inductivelyGroup.fromSection
-                for (clause in from.clauses.clauses) {
-                    if (clause is ConstantGroup) {
-                        for (nameClause in clause.constantSection.clauses.clauses) {
-                            val name = nameClause.toCode(false, 0).getCode()
-                            // an example of name is `0` while `def.signature` could be `\natural`
-                            // Make the code `\natural.0` to be the command recognized
-                            // and be written as `0`
-                            val tail = nameClause.toCode(false, 0).getCode()
-                            val code = def.signature?.form + "." + tail
-                            val lexer = newTexTalkLexer(code)
-                            val parser = newTexTalkParser()
-                            val parse = parser.parse(lexer)
-                            if (parse.root.children.size == 1 &&
-                                parse.root.children[0] is Command) {
-                                result[
-                                    OperatorTexTalkNode(
-                                        lhs = null, command = parse.root.children[0], rhs = null)] =
-                                    code
-                            }
-                        }
-                    } else if (clause is ConstructorGroup) {
-                        val targets = clause.constructorSection.targets
-                        for (target in targets) {
-                            if (target is AbstractionNode) {
-                                // an example of the target could be `succ(x)` and
-                                // the Defines signature as `\natural`.
-                                // Make the code `\natural.succ(x)` and the written as
-                                // succ(x?)
-                                val tail = target.abstraction.toCode()
-                                val code = def.signature?.form + "." + tail
-                                val lexer = newTexTalkLexer(code)
-                                val parser = newTexTalkParser()
-                                val parse = parser.parse(lexer)
-                                if (parse.root.children.size == 1 &&
-                                    parse.root.children[0] is Command) {
-                                    result[
-                                        OperatorTexTalkNode(
-                                            lhs = null,
-                                            command = parse.root.children[0],
-                                            rhs = null)] =
-                                        tail.replace(",", "?,").replace(")", "?)")
-                                    // i.e. make f(x, y, z) into f(x?, y?, z?)
-                                }
-                            }
-                        }
-                    }
-                }
             }
         }
     }

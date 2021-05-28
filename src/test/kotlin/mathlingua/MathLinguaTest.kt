@@ -369,8 +369,7 @@ internal class MathLinguaTest {
         """.trimIndent())
         assertThat(validation is ValidationSuccess)
         val doc = (validation as ValidationSuccess).value
-        val map =
-            getPatternsToWrittenAs(emptyList(), doc.states(), emptyList(), emptyList(), emptyList())
+        val map = getPatternsToWrittenAs(emptyList(), doc.states(), emptyList(), emptyList())
         val expectedCommand =
             Command(
                 parts =

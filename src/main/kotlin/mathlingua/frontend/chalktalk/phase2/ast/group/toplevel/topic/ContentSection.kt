@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.entry
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic
 
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
@@ -22,29 +22,21 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
 import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ENTRY_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CONTENT_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class TopicSection(val names: List<String>) : Phase2Node {
+data class ContentSection(val text: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("Topic")
-        if (names.size == 1) {
-            writer.writeIndent(false, 1)
-            writer.writeText(names[0].removeSurrounding("\"", "\""))
-        } else if (names.isNotEmpty()) {
-            writer.writeNewline()
-            for (name in names) {
-                writer.writeIndent(true, indent + 2)
-                writer.writeText(name.removeSurrounding("\"", "\""))
-            }
-        }
+        writer.writeHeader("content")
+        writer.writeIndent(false, 1)
+        writer.writeText(text.removeSurrounding("\"", "\""))
         return writer
     }
 
@@ -52,24 +44,23 @@ data class TopicSection(val names: List<String>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validateTopicSection(
+fun validateContentSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "Topic", DEFAULT_ENTRY_SECTION) { section ->
-            if (section.args.isNotEmpty() &&
-                !section.args.all {
-                    it.chalkTalkTarget is Phase1Token &&
-                        it.chalkTalkTarget.type == ChalkTalkTokenType.String
-                }) {
+        validateSection(node.resolve(), errors, "content", DEFAULT_CONTENT_SECTION) { section ->
+            if (section.args.isEmpty() ||
+                section.args[0].chalkTalkTarget !is Phase1Token ||
+                (section.args[0].chalkTalkTarget as Phase1Token).type !=
+                    ChalkTalkTokenType.String) {
                 errors.add(
                     ParseError(
-                        message = "Expected a list of strings",
+                        message = "Expected a string",
                         row = getRow(section),
                         column = getColumn(section)))
-                DEFAULT_ENTRY_SECTION
+                DEFAULT_CONTENT_SECTION
             } else {
-                TopicSection(names = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
+                ContentSection(text = (section.args[0].chalkTalkTarget as Phase1Token).text)
             }
         }
     }

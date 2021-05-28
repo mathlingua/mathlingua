@@ -38,12 +38,12 @@ import mathlingua.frontend.support.validationFailure
 
 data class ResourceGroup(
     val id: String,
-    val sourceSection: ResourceSection,
+    val resourceSection: ResourceSection,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(sourceSection)
+        fn(resourceSection)
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -55,14 +55,14 @@ data class ResourceGroup(
             isArg,
             indent,
             IdStatement(id, validationFailure(emptyList())),
-            sourceSection,
+            resourceSection,
             metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             ResourceGroup(
                 id = id,
-                sourceSection = sourceSection.transform(chalkTransformer) as ResourceSection,
+                resourceSection = resourceSection.transform(chalkTransformer) as ResourceSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection))
 }
 
@@ -81,7 +81,7 @@ fun validateResourceGroup(
                 } else {
                     ResourceGroup(
                         id = group.id.text.removeSurrounding("[", "]"),
-                        sourceSection =
+                        resourceSection =
                             ensureNonNull(sections["Resource"], DEFAULT_RESOURCE_SECTION) {
                                 validateResourceSection(it, errors, tracker)
                             },

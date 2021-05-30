@@ -413,7 +413,7 @@ private fun getIndexFileText(
         }
     val homeHtml =
         sanitizeHtmlForJs(
-            "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\">$homeContent</div>")
+            "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\"><div class='mathlingua-top-level'>$homeContent</div></div>")
     return buildIndexHtml(
         fileListBuilder.toString(),
         homeHtml,
@@ -895,7 +895,6 @@ const val KATEX_RENDERING_JS =
 const val SHARED_CSS =
     """
     .content {
-        padding-top: 2.25em;
         padding-bottom: 1em;
         margin-top: 3%;
         margin-bottom: 1em;
@@ -904,12 +903,6 @@ const val SHARED_CSS =
         font-size: 1em;
         width: 80%;
         background-color: white;
-        border: solid;
-        border-width: 1px;
-        border-color: rgba(210, 210, 210);
-        border-radius: 2px;
-        box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
-                    inset 0  0 0 0 rgba(230, 230, 230, 0.25);
     }
 
     @media screen and (max-width: 400px) {
@@ -919,7 +912,7 @@ const val SHARED_CSS =
     }
 
     body {
-        background-color: #fafafa;
+        background-color: #ffffff;
         padding-bottom: 1em;
     }
 
@@ -1719,7 +1712,7 @@ fun buildIndexHtml(
         <div id="top-bar" class="topbar">
             <a id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2630;</a>
             <span class="search-area">
-                <input type="search" id="search-input" class="search" aria-label="search">
+                <input type="text" id="search-input" class="search" aria-label="search">
                 <button type="button" class="button" onclick="search()">Search</button>
             </span>
         </div>

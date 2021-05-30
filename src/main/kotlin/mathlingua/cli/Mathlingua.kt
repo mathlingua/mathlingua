@@ -266,7 +266,7 @@ private fun renderFile(
         } else {
             contentBuilder.append("<div class='mathlingua-top-level'>")
             contentBuilder.append(item)
-            contentBuilder.append("</div><br/><br/>")
+            contentBuilder.append("</div>")
         }
     }
 
@@ -413,7 +413,7 @@ private fun getIndexFileText(
         }
     val homeHtml =
         sanitizeHtmlForJs(
-            "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\"><div class='mathlingua-top-level'>$homeContent</div></div>")
+            "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\">$homeContent</div>")
     return buildIndexHtml(
         fileListBuilder.toString(),
         homeHtml,
@@ -895,12 +895,21 @@ const val KATEX_RENDERING_JS =
 const val SHARED_CSS =
     """
     .content {
-        margin-top: 1.5em;
+        padding-top: 2.25em;
+        padding-bottom: 1em;
+        margin-top: 3em;
         margin-bottom: 1em;
-        font-size: 1em;
-        width: 70%;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
+        font-size: 1em;
+        width: 80%;
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-color: rgba(210, 210, 210);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(230, 230, 230, 0.25);
     }
 
     @media screen and (max-width: 400px) {
@@ -923,15 +932,20 @@ const val SHARED_CSS =
         text-align: center;
     }
 
+    p {
+        text-align: left;
+        text-indent: 0;
+    }
+
     .mathlingua-top-level {
         overflow: auto;
         background-color: white;
         border: solid;
         border-width: 1px;
-        border-color: rgba(200, 200, 200);
+        border-color: rgba(210, 210, 210);
         border-radius: 2px;
-        box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
-                    inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+        box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(230, 230, 230, 0.25);
         padding-top: 1.25em;
         padding-bottom: 1em;
         padding-left: 1.1em;
@@ -940,14 +954,12 @@ const val SHARED_CSS =
         width: max-content;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
+        margin-top: 2.25em;
+        margin-bottom: 2.25em;
     }
 
     .mathlingua-block-comment {
         font-family: Georgia, 'Times New Roman', Times, serif;
-        padding-top: 1.1em;
-        padding-bottom: 1em;
-        padding-left: 1.1em;
-        padding-right: 1.1em;
     }
 
     .mathlingua-block-comment-top-level {
@@ -955,19 +967,11 @@ const val SHARED_CSS =
         font-size: 80%;
         line-height: 1.3;
         text-indent: -2.5ex !important;
-        padding-top: 1.5em;
-        padding-bottom: 1.5em;
-        padding-left: 1.5em;
-        padding-right: 1.5em;
         background-color: #ffffff;
         max-width: 90%;
         width: max-content;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
-        border: solid;
-        border-width: 1px;
-        border-color: rgba(230, 230, 230);
-        border-radius: 2px;
     }
 
     .end-mathlingua-top-level {
@@ -1408,8 +1412,6 @@ fun buildIndexHtml(
                             }
                             el.innerHTML = entityList[i];
                             content.appendChild(el);
-                            content.appendChild(document.createElement('br'));
-                            content.appendChild(document.createElement('br'));
                         }
                         render(content);
                     }

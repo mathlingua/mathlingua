@@ -1638,6 +1638,7 @@ fun buildIndexHtml(
 
             .search {
                 border: none;
+                border-radius: 0;
                 line-height: 1.75em;
                 background-color: #eeeeee;
             }

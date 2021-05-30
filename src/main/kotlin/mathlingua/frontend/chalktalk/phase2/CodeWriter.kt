@@ -368,7 +368,8 @@ open class HtmlCodeWriter(
     }
 
     private fun newlinesToHtml(text: String): String {
-        return text.split("\n")
+        return text
+            .split("\n")
             .joinToString("\n") {
                 it.replaceCommandWithHtml("textbf", "b")
                     .replaceCommandWithHtml("emph", "i")
@@ -378,7 +379,7 @@ open class HtmlCodeWriter(
                     .replaceCommandWithHtml("subsubsection", "h4")
             }
             .split("\n\n")
-            .joinToString("<br><br>")
+            .joinToString("\n") { "<p>$it</p>" }
     }
 
     private fun getUrlWithoutSpaces(url: String) = url.replace(Regex("[ \\r\\n\\t]+"), "")

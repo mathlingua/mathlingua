@@ -897,7 +897,7 @@ const val SHARED_CSS =
     .content {
         padding-top: 2.25em;
         padding-bottom: 1em;
-        margin-top: 3em;
+        margin-top: 3%;
         margin-bottom: 1em;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
@@ -950,7 +950,7 @@ const val SHARED_CSS =
         padding-bottom: 1em;
         padding-left: 1.1em;
         padding-right: 1.1em;
-        max-width: 90%;
+        max-width: 75%;
         width: max-content;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
@@ -1576,7 +1576,7 @@ fun buildIndexHtml(
 
             .topbar {
                 display: block;
-                height: 5%;
+                height: 4%;
                 background-color: #444444;
                 position: fixed;
                 z-index: 2;
@@ -1589,6 +1589,12 @@ fun buildIndexHtml(
                 box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
                             inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
                 padding-top: 0.5em;
+            }
+
+            @media screen and (max-width: 500px) {
+                .topbar {
+                    height: 2.5%;
+                }
             }
 
             .search-area {
@@ -1604,7 +1610,7 @@ fun buildIndexHtml(
                 width: 20%;
                 position: fixed;
                 z-index: 1;
-                top: 5%;
+                top: 4%;
                 left: 0;
                 background-color: #fefefe;
                 border-right: solid;
@@ -1613,13 +1619,14 @@ fun buildIndexHtml(
                 box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px,
                             inset 0  0 10px 0 rgba(200, 200, 200, 0);
                 overflow-x: scroll;
-                padding-top: 2%;
+                padding-top: 1.5em;
                 transition: 0.5s;
             }
 
             @media screen and (max-width: 500px) {
                 .sidebar {
                     width: 0%;
+                    top: 2.5%;
                 }
             }
 
@@ -1629,26 +1636,23 @@ fun buildIndexHtml(
                 display: block;
                 transition: 0.3s;
                 font-size: 80%;
-                padding-left: 15px;
-                padding-right: 0px;
-                padding-top: 5px;
-                padding-bottom: 5px;
-                margin: 0px;
+                padding-left: 1.25em;
+                padding-right: 0;
+                padding-top: 0.5em;
+                padding-bottom: 0.5em;
+                margin: 0;
             }
 
             .search {
-                border: solid;
-                border-width: 1px;
-                border-radius: 3px;
-                border-color: #303030;
-                line-height: 1.3em;
+                border: none;
+                line-height: 1.75em;
                 background-color: #eeeeee;
             }
 
             .button {
+                margin-left: -0.35em;
                 border: solid;
-                border-width: 1px;
-                border-radius: 3px;
+                border-width: 2px;
                 padding-left: 0.5em;
                 padding-right: 0.5em;
                 padding-top: 0.2em;
@@ -1716,7 +1720,6 @@ fun buildIndexHtml(
             <a id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2630;</a>
             <span class="search-area">
                 <input type="search" id="search-input" class="search" aria-label="search">
-                <button type="button" class="button" onclick="clearSearch()">Clear</button>
                 <button type="button" class="button" onclick="search()">Search</button>
             </span>
         </div>

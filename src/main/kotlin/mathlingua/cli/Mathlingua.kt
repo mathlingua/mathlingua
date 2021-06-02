@@ -442,12 +442,13 @@ private fun buildFileList(
     if ((file.isDirectory() && childBuilder.isNotEmpty()) || isMathFile) {
         val src =
             file.relativePathTo(fs.cwd()).joinToString(File.separator).replace(".math", ".html")
-        val cssBuilder = StringBuilder()
-        cssBuilder.append(
-            "padding-left: ${indent}px;font-family: Georgia, 'Times New Roman', Times, serif;")
-        if (file.isDirectory()) {
-            cssBuilder.append("font-weight: bold;")
-        }
+        val cssDesc = "style='padding-left: ${indent}px'"
+        val classDesc =
+            if (file.isDirectory()) {
+                "class='mathlingua-list-dir-item'"
+            } else {
+                "class='mathlingua-list-file-item'"
+            }
         val id = src.removeSuffix(".html")
         allFileIds.add(id)
         val onclick =
@@ -456,8 +457,14 @@ private fun buildFileList(
             } else {
                 "onclick=\"view('$src')\""
             }
+        val icon =
+            if (file.isDirectory()) {
+                "&#9656;&nbsp;"
+            } else {
+                "&#8728;&nbsp;"
+            }
         builder.append(
-            "<a id='$id' $onclick><span style=\"${cssBuilder}\">${file.absolutePath().last().removeSuffix(".math")}</span></a>")
+            "<span $classDesc><a id='$id' $onclick><span $cssDesc>$icon${file.absolutePath().last().removeSuffix(".math")}</span></a></span>")
         builder.append(childBuilder.toString())
     }
 }
@@ -935,6 +942,19 @@ const val SHARED_CSS =
     p {
         text-align: left;
         text-indent: 0;
+    }
+
+    .mathlingua-list-dir-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
+    }
+
+    .mathlingua-list-file-item {
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
     }
 
     .mathlingua-top-level {

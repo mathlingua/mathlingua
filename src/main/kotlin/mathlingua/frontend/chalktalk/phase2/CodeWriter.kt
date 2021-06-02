@@ -271,7 +271,7 @@ open class HtmlCodeWriter(
                     builder.append(")</span>")
                 }
                 builder.append("<span class='mathlingua-topic-content'>")
-                builder.append(node.contentSection.text)
+                builder.append(newlinesToHtml(node.contentSection.text))
                 builder.append("</span>")
                 builder.append("</span>")
                 builder.toString()
@@ -368,8 +368,7 @@ open class HtmlCodeWriter(
     }
 
     private fun newlinesToHtml(text: String): String {
-        return text
-            .split("\n")
+        return text.split("\n")
             .joinToString("\n") {
                 it.replaceCommandWithHtml("textbf", "b")
                     .replaceCommandWithHtml("emph", "i")
@@ -379,7 +378,7 @@ open class HtmlCodeWriter(
                     .replaceCommandWithHtml("subsubsection", "h4")
             }
             .split("\n\n")
-            .joinToString("\n") { "<p>$it</p>" }
+            .joinToString("<br/><br/>")
     }
 
     private fun getUrlWithoutSpaces(url: String) = url.replace(Regex("[ \\r\\n\\t]+"), "")

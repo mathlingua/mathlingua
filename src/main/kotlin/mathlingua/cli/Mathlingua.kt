@@ -967,7 +967,8 @@ const val SHARED_CSS =
         font-family: Georgia, 'Times New Roman', Times, serif;
         font-size: 80%;
         line-height: 1.3;
-        text-indent: -2.5ex !important;
+        text-align: left;
+        text-indent: 0;
         background-color: #ffffff;
         max-width: 90%;
         width: max-content;
@@ -1092,15 +1093,14 @@ const val SHARED_CSS =
     }
 
     .mathlingua-id {
+        font-size: 85%;
         color: #5500aa;
         overflow-x: scroll;
     }
 
     .mathlingua-text {
         color: #000000;
-        display: block;
-        margin: 0.2em 0 -1.2em 0;
-        padding: 0 0 0 2.5em;
+        display: inline-block;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         line-height: 1.3;
@@ -1108,9 +1108,7 @@ const val SHARED_CSS =
 
     .mathlingua-text-no-render {
         color: #000000;
-        display: block;
-        margin: 0.2em 0 -1.2em 0;
-        padding: 0 0 0 2.5em;
+        display: inline-block;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         line-height: 1.3;
@@ -1119,9 +1117,7 @@ const val SHARED_CSS =
     .mathlingua-url {
         color: #0000aa;
         text-decoration: none;
-        display: block;
-        margin: 0 0 -1em 0;
-        padding: 0 0 0 2.5em;
+        display: inline-block;
         font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
     }
@@ -1129,6 +1125,7 @@ const val SHARED_CSS =
     .mathlingua-link {
         color: #0000aa;
         text-decoration: none;
+        display: inline-block;
     }
 
     .mathlingua-statement-no-render {

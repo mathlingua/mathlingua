@@ -1650,7 +1650,7 @@ fun buildIndexHtml(
             }
 
             .sidebar {
-                height: 92%;
+                height: 95%;
                 width: 20%;
                 position: fixed;
                 z-index: 1;

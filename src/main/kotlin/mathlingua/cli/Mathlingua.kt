@@ -346,6 +346,25 @@ private fun findMathlinguaFiles(fileOrDir: VirtualFile, result: MutableList<Virt
     }
 }
 
+class LockedValue<T>() {
+    private var data: T? = null
+
+    fun setValue(value: T) {
+        if (data == null) {
+            data = value!!
+        }
+    }
+
+    fun getValue(): T = data!!
+
+    fun getValueOrDefault(default: T) =
+        if (data == null) {
+            default
+        } else {
+            getValue()
+        }
+}
+
 private fun getIndexFileText(
     fs: VirtualFileSystem, noexpand: Boolean, errors: MutableList<ValueSourceTracker<ParseError>>
 ): String {
@@ -354,10 +373,11 @@ private fun getIndexFileText(
     val fileListBuilder = StringBuilder()
     val counter = Counter(0)
     val contentDir = getContentDirectory(fs)
+    val firstFilePath = LockedValue<String>()
     if (contentDir.isDirectory()) {
         val children = contentDir.listFiles()
         for (child in children) {
-            buildFileList(fs, child, 0, fileListBuilder, allFileIds, counter)
+            buildFileList(fs, child, 0, fileListBuilder, allFileIds, firstFilePath, counter)
         }
     }
 
@@ -407,18 +427,21 @@ private fun getIndexFileText(
     pathToEntityBuilder.append("                return map;\n")
 
     val homeContentFile = fs.getFile(listOf("docs", "home.html"))
+    val showHome = homeContentFile.exists()
     val homeContent =
-        if (homeContentFile.exists()) {
+        if (showHome) {
             homeContentFile.readText()
         } else {
-            "<p>Create a file <code>docs/home.html</code> to describe this repository.</p>"
+            ""
         }
     val homeHtml =
         sanitizeHtmlForJs(
             "<div style=\"font-family: Georgia, 'Times New Roman', Times, serif;\">$homeContent</div>")
     return buildIndexHtml(
         fileListBuilder.toString(),
+        firstFilePath.getValueOrDefault(""),
         homeHtml,
+        showHome,
         searchIndexBuilder.toString(),
         allFileIds,
         sigToPathCode,
@@ -435,6 +458,7 @@ private fun buildFileList(
     indent: Int,
     builder: StringBuilder,
     allFileIds: MutableList<String>,
+    firstFilePath: LockedValue<String>,
     counter: Counter
 ) {
     val elementId = counter.next()
@@ -444,7 +468,7 @@ private fun buildFileList(
         val children = file.listFiles()
         childBuilder.append("<span id='$dirSpanId' class='mathlingua-dir-item-hidden'>")
         for (child in children) {
-            buildFileList(fs, child, indent + 12, childBuilder, allFileIds, counter)
+            buildFileList(fs, child, indent + 12, childBuilder, allFileIds, firstFilePath, counter)
         }
         childBuilder.append("</span>")
     }
@@ -475,6 +499,9 @@ private fun buildFileList(
             } else {
                 "&#10625;&nbsp;"
             }
+        if (!file.isDirectory()) {
+            firstFilePath.setValue(src)
+        }
         builder.append(
             "<span $classDesc><a id='$id' $onclick><span $cssDesc><span id='$iconId'>$icon</span>${file.absolutePath().last().removeSuffix(".math")}</span></a></span>")
         builder.append(childBuilder.toString())
@@ -1249,7 +1276,9 @@ fun buildStandaloneHtml(content: String) =
 
 fun buildIndexHtml(
     fileListHtml: String,
+    initialPath: String,
     homeHtml: String,
+    showHome: Boolean,
     searchIndexInitCode: String,
     allFileIds: List<String>,
     signatureToPathCode: String,
@@ -1408,6 +1437,15 @@ fun buildIndexHtml(
 
             function view(path) {
                 const content = document.getElementById('__main_content__');
+                if (!path) {
+                    path = '${
+                        if (showHome) {
+                            "home.html"
+                        } else {
+                            initialPath
+                        }
+                    }';
+                }
                 if (content) {
                     for (const path of ALL_FILE_IDS) {
                         if (!path) {
@@ -1494,7 +1532,7 @@ fun buildIndexHtml(
                         el.setAttribute('onclick', "view('" + id + ".html" + "')");
                     }
                 }
-                view(INITIAL_SRC);
+                view('');
                 const el = document.getElementById('search-input');
                 if (el) {
                     el.value = '';
@@ -1769,8 +1807,14 @@ fun buildIndexHtml(
         </div>
 
         <div id="sidebar" class="sidebar">
-            <a id='home' onclick="view('home.html')"><span class="mathlingua-home-item">Home</span></a>
-            <hr>
+            ${
+                if (showHome) {
+                    "<a id='home' onclick=\"view('home.html')\"><span class=\"mathlingua-home-item\">Home</span></a>\n" +
+                    "<hr>"
+                } else {
+                    ""
+                }
+            }
             $fileListHtml
         </div>
 

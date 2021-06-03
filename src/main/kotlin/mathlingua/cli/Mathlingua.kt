@@ -17,6 +17,7 @@
 package mathlingua.cli
 
 import java.io.File
+import java.lang.IllegalArgumentException
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
@@ -375,9 +376,11 @@ private fun getIndexFileText(
     val contentDir = getContentDirectory(fs)
     val firstFilePath = LockedValue<String>()
     if (contentDir.isDirectory()) {
-        val children = contentDir.listFiles()
+        val children = getChildren(fs, contentDir)
+        val hasDirSiblings = children.any { it.isDirectory() }
         for (child in children) {
-            buildFileList(fs, child, 0, fileListBuilder, allFileIds, firstFilePath, counter)
+            buildFileList(
+                fs, child, hasDirSiblings, 0, fileListBuilder, allFileIds, firstFilePath, counter)
         }
     }
 
@@ -452,9 +455,35 @@ data class Counter(var count: Int) {
     fun next() = count++
 }
 
+private fun getChildren(fs: VirtualFileSystem, file: VirtualFile): List<VirtualFile> {
+    if (!file.isDirectory()) {
+        throw IllegalArgumentException("Cannot get children on non-directory: $file")
+    }
+    val tocPath = file.relativePathTo(fs.cwd()).toMutableList().plus("toc")
+    val tocFile = fs.getFile(tocPath)
+    return if (tocFile.exists()) {
+        val relPath = file.relativePathTo(fs.cwd())
+        tocFile.readText().split("\n").filter { it.trim().isNotEmpty() }.map {
+            val path = mutableListOf<String>()
+            path.addAll(relPath)
+            path.add(it)
+            // TODO: Update this to only use fs
+            val tmpFile = File(fs.getFile(path).absolutePath().joinToString(File.separator))
+            if (tmpFile.isFile) {
+                fs.getFile(path)
+            } else {
+                fs.getDirectory(path)
+            }
+        }
+    } else {
+        file.listFiles()
+    }
+}
+
 private fun buildFileList(
     fs: VirtualFileSystem,
     file: VirtualFile,
+    hasDirSiblings: Boolean,
     indent: Int,
     builder: StringBuilder,
     allFileIds: MutableList<String>,
@@ -465,10 +494,19 @@ private fun buildFileList(
     val dirSpanId = "dir-$elementId"
     val childBuilder = StringBuilder()
     if (file.isDirectory()) {
-        val children = file.listFiles()
+        val children = getChildren(fs, file)
         childBuilder.append("<span id='$dirSpanId' class='mathlingua-dir-item-hidden'>")
+        val childrenContainsDir = children.any { it.isDirectory() }
         for (child in children) {
-            buildFileList(fs, child, indent + 12, childBuilder, allFileIds, firstFilePath, counter)
+            buildFileList(
+                fs,
+                child,
+                childrenContainsDir,
+                indent + 12,
+                childBuilder,
+                allFileIds,
+                firstFilePath,
+                counter)
         }
         childBuilder.append("</span>")
     }
@@ -494,10 +532,16 @@ private fun buildFileList(
                 "onclick=\"view('$src')\""
             }
         val icon =
-            if (file.isDirectory()) {
-                "&#9656;&nbsp;"
-            } else {
-                "&#10625;&nbsp;"
+            when {
+                file.isDirectory() -> {
+                    "&#9656;&nbsp;"
+                }
+                hasDirSiblings -> {
+                    "&nbsp;&nbsp;"
+                }
+                else -> {
+                    ""
+                }
             }
         if (!file.isDirectory()) {
             firstFilePath.setValue(src)

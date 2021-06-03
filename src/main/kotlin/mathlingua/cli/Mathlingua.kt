@@ -985,7 +985,7 @@ const val SHARED_CSS =
     }
 
     .mathlingua-top-level {
-        overflow-y: visible;
+        overflow-y: hidden;
         overflow-x: auto;
         background-color: white;
         border: solid;

@@ -985,7 +985,8 @@ const val SHARED_CSS =
     }
 
     .mathlingua-top-level {
-        overflow: visible;
+        overflow-y: visible;
+        overflow-x: auto;
         background-color: white;
         border: solid;
         border-width: 1px;
@@ -1203,7 +1204,7 @@ const val SHARED_CSS =
     }
 
     .katex {
-        font-size: 0.9em;
+        font-size: 1em;
     }
 
     .katex-display {

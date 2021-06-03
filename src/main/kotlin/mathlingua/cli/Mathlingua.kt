@@ -352,10 +352,12 @@ private fun getIndexFileText(
     val cwd = fs.cwd()
     val allFileIds = mutableListOf<String>()
     val fileListBuilder = StringBuilder()
-    if (cwd.isDirectory()) {
-        val children = cwd.listFiles()
+    val counter = Counter(0)
+    val contentDir = getContentDirectory(fs)
+    if (contentDir.isDirectory()) {
+        val children = contentDir.listFiles()
         for (child in children) {
-            buildFileList(fs, child, 0, fileListBuilder, allFileIds)
+            buildFileList(fs, child, 0, fileListBuilder, allFileIds, counter)
         }
     }
 
@@ -413,7 +415,7 @@ private fun getIndexFileText(
         }
     val homeHtml =
         sanitizeHtmlForJs(
-            "<div style=\"font-size: 80%;font-family: Georgia, 'Times New Roman', Times, serif;\">$homeContent</div>")
+            "<div style=\"font-family: Georgia, 'Times New Roman', Times, serif;\">$homeContent</div>")
     return buildIndexHtml(
         fileListBuilder.toString(),
         homeHtml,
@@ -423,19 +425,28 @@ private fun getIndexFileText(
         pathToEntityBuilder.toString())
 }
 
+data class Counter(var count: Int) {
+    fun next() = count++
+}
+
 private fun buildFileList(
     fs: VirtualFileSystem,
     file: VirtualFile,
     indent: Int,
     builder: StringBuilder,
-    allFileIds: MutableList<String>
+    allFileIds: MutableList<String>,
+    counter: Counter
 ) {
+    val elementId = counter.next()
+    val dirSpanId = "dir-$elementId"
     val childBuilder = StringBuilder()
     if (file.isDirectory()) {
         val children = file.listFiles()
+        childBuilder.append("<span id='$dirSpanId' class='mathlingua-dir-item-hidden'>")
         for (child in children) {
-            buildFileList(fs, child, indent + 12, childBuilder, allFileIds)
+            buildFileList(fs, child, indent + 12, childBuilder, allFileIds, counter)
         }
+        childBuilder.append("</span>")
     }
 
     val isMathFile = !file.isDirectory() && file.absolutePath().last().endsWith(".math")
@@ -451,9 +462,10 @@ private fun buildFileList(
             }
         val id = src.removeSuffix(".html")
         allFileIds.add(id)
+        val iconId = "icon-$elementId"
         val onclick =
             if (file.isDirectory()) {
-                ""
+                "onclick=\"mathlinguaToggleDirItem('$dirSpanId', '$iconId')\""
             } else {
                 "onclick=\"view('$src')\""
             }
@@ -461,10 +473,10 @@ private fun buildFileList(
             if (file.isDirectory()) {
                 "&#9656;&nbsp;"
             } else {
-                "&#8728;&nbsp;"
+                "&#10625;&nbsp;"
             }
         builder.append(
-            "<span $classDesc><a id='$id' $onclick><span $cssDesc>$icon${file.absolutePath().last().removeSuffix(".math")}</span></a></span>")
+            "<span $classDesc><a id='$id' $onclick><span $cssDesc><span id='$iconId'>$icon</span>${file.absolutePath().last().removeSuffix(".math")}</span></a></span>")
         builder.append(childBuilder.toString())
     }
 }
@@ -944,6 +956,21 @@ const val SHARED_CSS =
         text-indent: 0;
     }
 
+    .mathlingua-dir-item-hidden {
+        display: none;
+    }
+
+    .mathlingua-dir-item-shown {
+        display: block;
+    }
+
+    .mathlingua-home-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -1.25ex;
+        margin-bottom: -1ex;
+    }
+
     .mathlingua-list-dir-item {
         font-weight: bold;
         display: block;
@@ -958,7 +985,7 @@ const val SHARED_CSS =
     }
 
     .mathlingua-top-level {
-        overflow: auto;
+        overflow: visible;
         background-color: white;
         border: solid;
         border-width: 1px;
@@ -985,7 +1012,6 @@ const val SHARED_CSS =
 
     .mathlingua-block-comment-top-level {
         font-family: Georgia, 'Times New Roman', Times, serif;
-        font-size: 80%;
         line-height: 1.3;
         text-align: left;
         text-indent: 0;
@@ -1005,7 +1031,6 @@ const val SHARED_CSS =
         display: block;
         padding: 0 0 1em 0;
         font-family: monospace;
-        font-size: 80%;
         text-align: center;
         color: #5500aa;
     }
@@ -1024,7 +1049,6 @@ const val SHARED_CSS =
         padding: 0 0 1.2em 0;
         margin: 0.2em 0 -1.2em 0;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        font-size: 80%;
         line-height: 1.3;
         color: #000000;
     }
@@ -1033,7 +1057,6 @@ const val SHARED_CSS =
         display: block;
         padding: 0.5em 0 0.5em 0;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        font-size: 80%;
         line-height: 1.3;
         color: #000000;
     }
@@ -1042,14 +1065,12 @@ const val SHARED_CSS =
         display: block;
         color: #0055bb;
         text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         padding-top: 0.25em;
     }
 
     .mathlingua-resources-item {
         display: block;
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         padding: 0.1em 0 0.1em 0;
     }
@@ -1058,14 +1079,12 @@ const val SHARED_CSS =
         display: block;
         color: #0055bb;
         text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         padding-top: 0.5em;
     }
 
     .mathlingua-topic-item {
         display: block;
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         padding: 0.1em 0 0.1em 0;
     }
@@ -1074,21 +1093,18 @@ const val SHARED_CSS =
         display: block;
         color: #0055bb;
         text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         padding-top: 0.5em;
     }
 
     .mathlingua-related-item {
         display: block;
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         padding: 0.1em 0 0.1em 0;
     }
 
     .mathlingua-foundation-header {
         display: block;
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         text-align: center;
         font-weight: bold;
@@ -1102,7 +1118,6 @@ const val SHARED_CSS =
     .mathlingua-header {
         color: #0055bb;
         text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
     }
 
@@ -1113,7 +1128,6 @@ const val SHARED_CSS =
     }
 
     .mathlingua-id {
-        font-size: 85%;
         color: #5500aa;
         overflow-x: scroll;
     }
@@ -1121,7 +1135,6 @@ const val SHARED_CSS =
     .mathlingua-text {
         color: #000000;
         display: inline-block;
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         line-height: 1.3;
     }
@@ -1129,7 +1142,6 @@ const val SHARED_CSS =
     .mathlingua-text-no-render {
         color: #000000;
         display: inline-block;
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
         line-height: 1.3;
     }
@@ -1138,7 +1150,6 @@ const val SHARED_CSS =
         color: #0000aa;
         text-decoration: none;
         display: inline-block;
-        font-size: 80%;
         font-family: Georgia, 'Times New Roman', Times, serif;
     }
 
@@ -1265,6 +1276,20 @@ fun buildIndexHtml(
             })();
 
             const HOME_SRC = "$homeHtml";
+
+            function mathlinguaToggleDirItem(dirSpanId, dirIconId) {
+                const span = document.getElementById(dirSpanId);
+                const icon = document.getElementById(dirIconId);
+                if (span && icon) {
+                    if (span.className === 'mathlingua-dir-item-hidden') {
+                        span.className = 'mathlingua-dir-item-shown';
+                        icon.innerHTML = '&#9662;&nbsp;';
+                    } else {
+                        span.className = 'mathlingua-dir-item-hidden'
+                        icon.innerHTML = '&#9656;&nbsp;';
+                    }
+                }
+            }
 
             function mathlinguaToggleDropdown(id) {
                 const el = document.getElementById(id);
@@ -1653,7 +1678,6 @@ fun buildIndexHtml(
                 color: #000000;
                 display: block;
                 transition: 0.3s;
-                font-size: 80%;
                 padding-left: 1.25em;
                 padding-right: 0;
                 padding-top: 0.5em;
@@ -1744,7 +1768,7 @@ fun buildIndexHtml(
         </div>
 
         <div id="sidebar" class="sidebar">
-            <a id='home' onclick="view('home.html')" style="padding-top: 0;padding-bottom: 0;margin-top: 0;margin-bottom: 0;"><span style="padding-left: 0px;font-weight: bold;">Home</span></a>
+            <a id='home' onclick="view('home.html')"><span class="mathlingua-home-item">Home</span></a>
             <hr>
             $fileListHtml
         </div>

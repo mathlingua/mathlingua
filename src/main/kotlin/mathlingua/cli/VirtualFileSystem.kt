@@ -115,13 +115,15 @@ private class DiskFileSystem(private val cwd: List<String>) : VirtualFileSystem 
 
     override fun writeText(vf: VirtualFile, content: String) = vf.toFile().writeText(content)
 
-    override fun listFiles(vf: VirtualFile) =
-        (vf.toFile().listFiles() ?: arrayOf()).map {
+    override fun listFiles(vf: VirtualFile): List<VirtualFile> {
+        val children = vf.toFile().listFiles() ?: arrayOf()
+        return children.sortedBy { it.name }.map {
             VirtualFileImpl(
                 absolutePathParts = it.absolutePath.split(File.separator),
                 directory = it.isDirectory,
                 this)
         }
+    }
 
     override fun delete(vf: VirtualFile): Boolean {
         val file = vf.toFile()

@@ -19,5 +19,5 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.
 import mathlingua.frontend.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.StringSection
 
-class StringSectionGroup(val section: StringSection) :
+data class StringSectionGroup(val section: StringSection) :
     OnePartNode<StringSection>(section, ::StringSectionGroup), MetaDataItem

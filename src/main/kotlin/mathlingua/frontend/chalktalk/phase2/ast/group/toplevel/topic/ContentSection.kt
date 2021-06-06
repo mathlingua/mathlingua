@@ -36,7 +36,7 @@ data class ContentSection(val text: String) : Phase2Node {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("content")
         writer.writeIndent(false, 1)
-        writer.writeText(text.removeSurrounding("\"", "\""))
+        writer.writeText(text)
         return writer
     }
 

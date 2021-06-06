@@ -833,7 +833,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     defines = doExpand.thenUse { definesGroups.map { it.value } },
                     states = doExpand.thenUse { statesGroups.map { it.value } },
                     axioms = doExpand.thenUse { axiomGroups.map { it.value } },
-                    foundations = doExpand.thenUse { foundationGroups.map { it.value } })
+                    foundations = doExpand.thenUse { foundationGroups.map { it.value } },
+                    literal = false)
             } else {
                 MathLinguaCodeWriter(
                     defines = doExpand.thenUse { definesGroups.map { it.value } },

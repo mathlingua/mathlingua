@@ -26,7 +26,7 @@ internal fun indentedStringSection(
     writer.writeIndent(isArg, indent)
     writer.writeHeader(sectionName)
     writer.writeSpace()
-    writer.writeText(value.removeSurrounding("\"", "\""))
+    writer.writeText(value)
     return writer
 }
 

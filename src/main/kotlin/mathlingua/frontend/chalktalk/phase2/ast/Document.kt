@@ -77,7 +77,6 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        println("document toCode")
         for (i in groups.indices) {
             val grp = groups[i]
             if (grp is TopLevelBlockComment) {

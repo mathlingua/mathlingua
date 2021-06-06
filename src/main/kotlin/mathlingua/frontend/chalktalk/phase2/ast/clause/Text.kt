@@ -32,7 +32,7 @@ data class Text(val text: String) : Clause {
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeText(text.removeSurrounding("\"", "\""))
+        writer.writeText(text)
         return writer
     }
 

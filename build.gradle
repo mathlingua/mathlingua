@@ -55,6 +55,7 @@ dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile group: 'com.github.ajalt', name: 'clikt', version: '2.6.0'
     compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.4.2'
+    compile group: 'com.vladsch.flexmark', name: 'flexmark-all', version: '0.62.2'
     testImplementation 'com.willowtreeapps.assertk:assertk-jvm:0.19'
     testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.4.31'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.1'

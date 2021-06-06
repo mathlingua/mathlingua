@@ -37,12 +37,12 @@ data class TopicSection(val names: List<String>) : Phase2Node {
         writer.writeHeader("Topic")
         if (names.size == 1) {
             writer.writeIndent(false, 1)
-            writer.writeText(names[0].removeSurrounding("\"", "\""))
+            writer.writeText(names[0])
         } else if (names.isNotEmpty()) {
             writer.writeNewline()
             for (name in names) {
                 writer.writeIndent(true, indent + 2)
-                writer.writeText(name.removeSurrounding("\"", "\""))
+                writer.writeText(name)
             }
         }
         return writer

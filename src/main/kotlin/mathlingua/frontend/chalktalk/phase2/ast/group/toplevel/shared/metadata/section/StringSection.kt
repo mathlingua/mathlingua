@@ -29,7 +29,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-class StringSection(val name: String, val values: List<String>) : Phase2Node {
+data class StringSection(val name: String, val values: List<String>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -37,12 +37,12 @@ class StringSection(val name: String, val values: List<String>) : Phase2Node {
         writer.writeHeader(name)
         if (values.size == 1) {
             writer.writeSpace()
-            writer.writeText(values[0].removeSurrounding("\"", "\""))
+            writer.writeText(values[0])
         } else {
             for (value in values) {
                 writer.writeNewline()
                 writer.writeIndent(true, indent + 2)
-                writer.writeText(value.removeSurrounding("\"", "\""))
+                writer.writeText(value)
             }
         }
         return writer

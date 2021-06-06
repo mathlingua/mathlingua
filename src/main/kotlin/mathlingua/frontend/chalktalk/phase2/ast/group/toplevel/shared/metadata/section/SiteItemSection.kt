@@ -37,8 +37,7 @@ data class SiteItemSection(val url: String) : Phase2Node {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("site")
         writer.writeSpace()
-        val urlNoSpace = url.removeSurrounding("\"", "\"")
-        writer.writeUrl(urlNoSpace, null)
+        writer.writeUrl(url, null)
         return writer
     }
 

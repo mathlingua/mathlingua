@@ -61,7 +61,7 @@ class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
                 val values = item.section.values
                 if (values.size == 1) {
                     writer.writeSpace()
-                    writer.writeUrl(values[0].removeSurrounding("\"", "\""), null)
+                    writer.writeUrl(values[0], null)
                 } else {
                     for (j in values.indices) {
                         writer.writeNewline()
@@ -69,7 +69,7 @@ class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
                         writer.writeSpace()
                         writer.writeDot()
                         writer.writeSpace()
-                        writer.writeUrl(values[j].removeSurrounding("\"", "\""), null)
+                        writer.writeUrl(values[j], null)
                     }
                 }
             } else {

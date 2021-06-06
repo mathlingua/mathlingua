@@ -25,6 +25,7 @@ import mathlingua.backend.ValueSourceTracker
 import mathlingua.backend.isMathLinguaFile
 import mathlingua.backend.newSourceCollection
 import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.chalktalk.phase2.HtmlCodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
@@ -429,17 +430,24 @@ private fun getIndexFileText(
     }
     pathToEntityBuilder.append("                return map;\n")
 
-    val homeContentFile = fs.getFile(listOf("docs", "home.html"))
+    val homeContentFile = fs.getFile(listOf("docs", "home.md"))
     val showHome = homeContentFile.exists()
     val homeContent =
         if (showHome) {
-            homeContentFile.readText()
+            val writer =
+                HtmlCodeWriter(
+                    defines = emptyList(),
+                    states = emptyList(),
+                    axioms = emptyList(),
+                    foundations = emptyList(),
+                    literal = true)
+            val homeText = homeContentFile.readText()
+            writer.writeBlockComment("::$homeText::")
+            writer.getCode()
         } else {
             ""
         }
-    val homeHtml =
-        sanitizeHtmlForJs(
-            "<div style=\"font-family: Georgia, 'Times New Roman', Times, serif;\">$homeContent</div>")
+    val homeHtml = sanitizeHtmlForJs("<span class=\"mathlingua-home\">$homeContent</span>")
     return buildIndexHtml(
         fileListBuilder.toString(),
         firstFilePath.getValueOrDefault(""),
@@ -1027,6 +1035,13 @@ const val SHARED_CSS =
         text-indent: 0;
     }
 
+    .mathlingua-home {
+        width: 80%;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
     .mathlingua-dir-item-hidden {
         display: none;
     }
@@ -1088,8 +1103,8 @@ const val SHARED_CSS =
         text-align: left;
         text-indent: 0;
         background-color: #ffffff;
-        max-width: 90%;
-        width: max-content;
+        max-width: 80%;
+        width: 80%;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
     }
@@ -1208,13 +1223,20 @@ const val SHARED_CSS =
         color: #000000;
         display: inline-block;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        line-height: 1.3;
+        line-height: 0;
     }
 
     .mathlingua-text-no-render {
         color: #000000;
         display: inline-block;
         font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 0;
+    }
+
+    .literal-mathlingua-text {
+        color: #386930;
+        display: inline-block;
+        font-family: monospace;
         line-height: 1.3;
     }
 
@@ -1237,6 +1259,10 @@ const val SHARED_CSS =
 
     .mathlingua-statement-container {
         display: inline;
+    }
+
+    .literal-mathlingua-statement {
+        color: #007377;
     }
 
     .mathlingua-dropdown-menu-shown {
@@ -1510,6 +1536,7 @@ fun buildIndexHtml(
 
                     if (!path || path === 'home.html') {
                         content.innerHTML = HOME_SRC;
+                        render(content);
                         return;
                     }
 

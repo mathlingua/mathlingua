@@ -16,11 +16,17 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
+import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
+import com.vladsch.flexmark.ext.tables.TablesExtension
+import com.vladsch.flexmark.html.HtmlRenderer
+import com.vladsch.flexmark.parser.Parser
+import com.vladsch.flexmark.util.data.MutableDataSet
 import kotlin.random.Random
 import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
 import mathlingua.backend.transform.expandAsWritten
 import mathlingua.backend.transform.findAllStatementSignatures
+import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
@@ -79,11 +85,14 @@ const val IS = " is "
 
 const val IN = " in "
 
+data class BlockCommentSection(val text: String, val isMathlinguaCode: Boolean)
+
 open class HtmlCodeWriter(
     val defines: List<DefinesGroup>,
     val states: List<StatesGroup>,
     val axioms: List<AxiomGroup>,
-    val foundations: List<FoundationGroup>
+    val foundations: List<FoundationGroup>,
+    val literal: Boolean
 ) : CodeWriter {
     private var statementIndex = System.nanoTime() + Random.Default.nextLong()
     protected val builder = StringBuilder()
@@ -193,6 +202,10 @@ open class HtmlCodeWriter(
     }
 
     override fun generateCode(node: Phase2Node): String {
+        if (literal) {
+            return node.toCode(false, 0, this).getCode()
+        }
+
         return when (node) {
             is FoundationGroup -> {
                 val builder = StringBuilder()
@@ -271,7 +284,7 @@ open class HtmlCodeWriter(
                     builder.append(")</span>")
                 }
                 builder.append("<span class='mathlingua-topic-content'>")
-                builder.append(newlinesToHtml(node.contentSection.text))
+                builder.append(parseMarkdown(node.contentSection.text))
                 builder.append("</span>")
                 builder.append("</span>")
                 builder.toString()
@@ -283,6 +296,21 @@ open class HtmlCodeWriter(
     }
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
+        if (literal) {
+            builder.append(
+                node.toCode(
+                        hasDot,
+                        indent,
+                        HtmlCodeWriter(
+                            defines = emptyList(),
+                            states = emptyList(),
+                            axioms = emptyList(),
+                            foundations = emptyList(),
+                            literal = literal))
+                    .getCode())
+            return
+        }
+
         builder.append(
             node.toCode(hasDot, indent, newCodeWriter(defines, states, foundations)).getCode())
     }
@@ -367,20 +395,6 @@ open class HtmlCodeWriter(
         builder.append("</span>")
     }
 
-    private fun newlinesToHtml(text: String): String {
-        return text.split("\n")
-            .joinToString("\n") {
-                it.replaceCommandWithHtml("textbf", "b")
-                    .replaceCommandWithHtml("emph", "i")
-                    .replaceCommandWithHtml("title", "h1")
-                    .replaceCommandWithHtml("section", "h2")
-                    .replaceCommandWithHtml("subsection", "h3")
-                    .replaceCommandWithHtml("subsubsection", "h4")
-            }
-            .split("\n\n")
-            .joinToString("<br/><br/>")
-    }
-
     private fun getUrlWithoutSpaces(url: String) = url.replace(Regex("[ \\r\\n\\t]+"), "")
 
     private fun getUrlTitle(url: String, name: String?): String? {
@@ -420,22 +434,40 @@ open class HtmlCodeWriter(
     }
 
     override fun writeUrl(url: String, name: String?) {
-        val urlNoSpace = getUrlWithoutSpaces(url)
+        if (literal) {
+            builder.append("<span class=\"literal-mathlingua-text\">\"$url\"</span>")
+            return
+        }
+        val urlNoSpace = getUrlWithoutSpaces(url.removeSurrounding("\"", "\""))
         val title = getUrlTitle(url, name)
         builder.append(
             "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
     }
 
     override fun writeText(text: String) {
-        if (text.startsWith("@") && !text.contains(' ')) {
+        if (literal) {
+            val displayTextBuilder = StringBuilder()
+            if (!text.startsWith("\"")) {
+                displayTextBuilder.append("\"")
+            }
+            displayTextBuilder.append(text)
+            if (!text.endsWith("\"")) {
+                displayTextBuilder.append("\"")
+            }
+            builder.append("<span class=\"literal-mathlingua-text\"> $displayTextBuilder </span>")
+            return
+        }
+
+        val innerText = text.removeSurrounding("\"", "\"")
+        if (innerText.startsWith("@") && !innerText.contains(' ')) {
             builder.append("<span class='mathlingua-text-no-render'>")
             builder.append(
-                "<a class=\"mathlingua-link\" onclick=\"mathlinguaViewSignature('${text.removePrefix("@")}')\">$text</a>")
+                "<a class=\"mathlingua-link\" onclick=\"mathlinguaViewSignature('${innerText.removePrefix("@")}')\">$innerText</a>")
             builder.append("</span>")
             return
         }
 
-        val textWithBreaks = newlinesToHtml(text)
+        val textWithBreaks = parseMarkdown(innerText)
         if (shouldExpand()) {
             val expansion =
                 expandTextAsWritten(textWithBreaks, false, defines, states, axioms, foundations)
@@ -448,7 +480,7 @@ open class HtmlCodeWriter(
                         }
                         .removeSurrounding("\"", "\"")
             builder.append("<span class='mathlingua-text' title=\"${title.replace("\"", "")}\">")
-            builder.append(newlinesToHtml(expansion.text ?: textWithBreaks).replace("?", ""))
+            builder.append((expansion.text ?: textWithBreaks).replace("?", ""))
             builder.append("</span>")
         } else {
             builder.append("<span class='mathlingua-text-no-render'>")
@@ -480,6 +512,11 @@ open class HtmlCodeWriter(
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
+        if (literal) {
+            builder.append("<span class=\"literal-mathlingua-statement\">'$stmtText'</span>")
+            return
+        }
+
         val dropdownIndex = statementIndex++
         builder.append(
             "<div class='mathlingua-statement-container' onclick=\"mathlinguaToggleDropdown('statement-$dropdownIndex')\">")
@@ -580,11 +617,66 @@ open class HtmlCodeWriter(
     }
 
     override fun writeDirect(text: String) {
+        if (literal) {
+            writeText(text)
+            return
+        }
         builder.append(text)
     }
 
+    private fun processMathCodeBlocks(text: String): List<BlockCommentSection> {
+        val result = mutableListOf<BlockCommentSection>()
+
+        var remaining = text.removeSurrounding("::", "::")
+        while (true) {
+            val index = remaining.indexOf("```math")
+            if (index < 0) {
+                result.add(BlockCommentSection(text = remaining, isMathlinguaCode = false))
+                break
+            }
+            result.add(
+                BlockCommentSection(text = remaining.substring(0, index), isMathlinguaCode = false))
+            remaining = remaining.substring(index + 7)
+            var endIndex = remaining.indexOf("```")
+            if (endIndex < 0) {
+                endIndex = remaining.length
+            }
+            val mlgCode = remaining.substring(0, endIndex)
+            when (val validation = FrontEnd.parse(mlgCode)
+            ) {
+                is ValidationSuccess -> {
+                    val mlgHtml =
+                        HtmlCodeWriter(
+                                defines = listOf(),
+                                states = listOf(),
+                                axioms = listOf(),
+                                foundations = listOf(),
+                                literal = true)
+                            .generateCode(validation.value)
+                    val htmlWithoutBreaks = mlgHtml.replace(Regex("<br/><br/>(<br/>)*"), "")
+                    result.add(
+                        BlockCommentSection(text = htmlWithoutBreaks, isMathlinguaCode = true))
+                }
+                else -> {
+                    result.add(
+                        BlockCommentSection(text = "```$mlgCode```", isMathlinguaCode = false))
+                }
+            }
+            remaining = remaining.substring(endIndex + 3)
+        }
+
+        return result
+    }
+
     override fun writeBlockComment(text: String) {
-        val comment = newlinesToHtml(text.removeSurrounding("::", "::"))
+        val comment =
+            processMathCodeBlocks(text.replace("\\", "\\\\")).joinToString(" ") {
+                if (it.isMathlinguaCode) {
+                    it.text
+                } else {
+                    parseMarkdown(it.text)
+                }
+            }
         val res =
             expandTextAsWritten(comment, true, defines, states, axioms, foundations).text ?: comment
         builder.append("<span class='mathlingua-block-comment'>")
@@ -606,7 +698,7 @@ open class HtmlCodeWriter(
 
     override fun newCodeWriter(
         defines: List<DefinesGroup>, states: List<StatesGroup>, foundations: List<FoundationGroup>
-    ) = HtmlCodeWriter(defines, states, axioms, foundations)
+    ) = HtmlCodeWriter(defines, states, axioms, foundations, literal)
 
     override fun getCode(): String {
         val text =
@@ -618,6 +710,9 @@ open class HtmlCodeWriter(
     }
 
     override fun writeHorizontalLine() {
+        if (literal) {
+            return
+        }
         builder.append("<hr/>")
     }
 
@@ -694,10 +789,14 @@ class MathLinguaCodeWriter(
     }
 
     override fun writeText(text: String) {
-        builder.append('"')
+        if (!text.startsWith("\"")) {
+            builder.append('"')
+        }
         builder.append(
             expandTextAsWritten(text, true, defines, states, axioms, foundations).text ?: text)
-        builder.append('"')
+        if (!text.endsWith("\"")) {
+            builder.append('"')
+        }
     }
 
     override fun writeBlockComment(text: String) {
@@ -705,9 +804,13 @@ class MathLinguaCodeWriter(
     }
 
     override fun writeUrl(url: String, name: String?) {
-        builder.append('"')
+        if (!url.startsWith("\"")) {
+            builder.append('"')
+        }
         builder.append(url)
-        builder.append('"')
+        if (!url.endsWith("\"")) {
+            builder.append('"')
+        }
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
@@ -881,6 +984,21 @@ private fun splitByMathlingua(text: String): List<TextRange> {
     return result
 }
 
+private fun parseMarkdown(text: String): String {
+    val options = MutableDataSet()
+
+    options.set(
+        Parser.EXTENSIONS, listOf(TablesExtension.create(), StrikethroughExtension.create()))
+    options.set(HtmlRenderer.SOFT_BREAK, " ")
+    options.set(HtmlRenderer.HARD_BREAK, " ")
+
+    val parser = Parser.builder(options).build()
+    val renderer = HtmlRenderer.builder(options).build()
+
+    val document = parser.parse(text)
+    return renderer.render(document)
+}
+
 private fun expandTextAsWritten(
     text: String,
     addQuotes: Boolean,
@@ -895,7 +1013,7 @@ private fun expandTextAsWritten(
 
     val errors = mutableListOf<String>()
     val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms, foundations)
-    val parts = splitByMathlingua(text)
+    val parts = splitByMathlingua(parseMarkdown(text))
     val builder = StringBuilder()
     for (part in parts) {
         if (part.isMathlingua) {

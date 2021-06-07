@@ -1505,7 +1505,7 @@ fun buildIndexHtml(
                 open = !open;
             }
 
-            function view(path) {
+            function view(path, setHistory = true) {
                 const content = document.getElementById('__main_content__');
                 if (!path) {
                     path = '${
@@ -1515,6 +1515,9 @@ fun buildIndexHtml(
                             initialPath
                         }
                     }';
+                }
+                if (setHistory) {
+                    history.pushState({}, '', '?path=' + path);
                 }
                 if (content) {
                     for (const path of ALL_FILE_IDS) {
@@ -1711,6 +1714,24 @@ fun buildIndexHtml(
             }
 
             function initPage() {
+                window.onpopstate = function(event) {
+                    if (document.location && document.location.search) {
+                        const search = document.location.search.substring(1);
+                        if (search.startsWith('path=')) {
+                            const path = search.substring(5);
+                            view(path, false);
+                        }
+                    }
+                }
+
+                let path = '';
+                if (window.location && window.location.search) {
+                    const search = window.location.search.substring(1);
+                    if (search.indexOf('path=') === 0) {
+                        path = search.substring(5).trim();
+                    }
+                }
+
                 const el = document.getElementById('search-input');
                 if (el) {
                     el.addEventListener("keyup", function(event) {
@@ -1721,7 +1742,7 @@ fun buildIndexHtml(
                     });
                 }
                 setup();
-                view('');
+                view(path);
             }
         </script>
         <style>

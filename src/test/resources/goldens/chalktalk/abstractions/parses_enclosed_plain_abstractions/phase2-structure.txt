@@ -72,6 +72,7 @@ Document(
                )
                usingSection = null
                metaDataSection = null
+               proofSection = null
              )
            ]
 )

@@ -57,7 +57,8 @@ data class TheoremGroup(
     val ifOrIffSection: IfOrIffSection?,
     val thenSection: ThenSection,
     override val usingSection: UsingSection?,
-    override val metaDataSection: MetaDataSection?
+    override val metaDataSection: MetaDataSection?,
+    val proofSection: ProofSection?
 ) : TopLevelGroup(metaDataSection), HasUsingSection {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -81,6 +82,9 @@ data class TheoremGroup(
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
+        if (proofSection != null) {
+            fn(proofSection)
+        }
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
@@ -95,7 +99,8 @@ data class TheoremGroup(
             ifOrIffSection?.resolve(),
             thenSection,
             usingSection,
-            metaDataSection)
+            metaDataSection,
+            proofSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
@@ -108,7 +113,8 @@ data class TheoremGroup(
                 ifOrIffSection = ifOrIffSection?.transform(chalkTransformer),
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+                proofSection = proofSection?.transform(chalkTransformer) as ProofSection?))
 }
 
 fun isTheoremGroup(node: Phase1Node) = firstSectionMatchesName(node, "Theorem")
@@ -124,8 +130,15 @@ fun validateTheoremGroup(
                 errors,
                 DEFAULT_THEOREM_GROUP,
                 listOf(
-                    "Theorem", "given?", "where?", "if?", "iff?", "then", "using?", "Metadata?")) {
-            sections ->
+                    "Theorem",
+                    "given?",
+                    "where?",
+                    "if?",
+                    "iff?",
+                    "then",
+                    "using?",
+                    "Metadata?",
+                    "Proof?")) { sections ->
                 TheoremGroup(
                     signature = id?.signature(tracker),
                     id = id,
@@ -147,7 +160,9 @@ fun validateTheoremGroup(
                     metaDataSection =
                         ifNonNull(sections["Metadata"]) {
                             validateMetaDataSection(it, errors, tracker)
-                        })
+                        },
+                    proofSection =
+                        ifNonNull(sections["Proof"]) { validateProofSection(it, errors, tracker) })
             }
         }
     }

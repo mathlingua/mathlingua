@@ -21,6 +21,7 @@ import com.vladsch.flexmark.ext.tables.TablesExtension
 import com.vladsch.flexmark.html.HtmlRenderer
 import com.vladsch.flexmark.parser.Parser
 import com.vladsch.flexmark.util.data.MutableDataSet
+import java.util.UUID
 import kotlin.random.Random
 import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
@@ -235,10 +236,22 @@ open class HtmlCodeWriter(
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
                 builder.append(
-                    node.copy(metaDataSection = null)
+                    node.copy(metaDataSection = null, proofSection = null)
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
                         .getCode())
                 builder.append("</span>")
+                if (node.proofSection != null) {
+                    val id = UUID.randomUUID().toString()
+                    builder.append(
+                        "<hr/><div class='mathlingua-proof-header' onclick=\"toggleProof('$id')\">")
+                    builder.append(
+                        "Proof<span class='mathlingua-proof-icon' id=\"icon-$id\">&#9662;</span></div>")
+                    builder.append("<span class='mathlingua-proof-hidden' id=\"proof-$id\">")
+                    val writer = newCodeWriter(defines, states, foundations)
+                    writer.writeText(node.proofSection.text)
+                    builder.append(writer.getCode())
+                    builder.append("</span>")
+                }
                 if (node.metaDataSection != null) {
                     builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
                 }

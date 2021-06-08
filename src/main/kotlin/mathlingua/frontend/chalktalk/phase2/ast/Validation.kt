@@ -117,6 +117,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.newIfOrIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.ProofSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
@@ -504,6 +505,8 @@ val DEFAULT_CONJECTURE_SECTION = ConjectureSection(names = emptyList())
 
 val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
+val DEFAULT_PROOF_SECTION = ProofSection(text = "")
+
 val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
 
 val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
@@ -542,7 +545,8 @@ val DEFAULT_THEOREM_GROUP =
         ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,
-        metaDataSection = DEFAULT_META_DATA_SECTION)
+        metaDataSection = DEFAULT_META_DATA_SECTION,
+        proofSection = DEFAULT_PROOF_SECTION)
 
 val DEFAULT_RESOURCE_SECTION = ResourceSection(items = emptyList())
 

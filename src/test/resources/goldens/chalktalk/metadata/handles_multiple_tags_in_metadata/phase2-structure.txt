@@ -34,6 +34,7 @@ Document(
                            )
                          ]
                )
+               proofSection = null
              )
            ]
 )

@@ -1202,6 +1202,28 @@ const val SHARED_CSS =
         font-family: monospace;
     }
 
+    .mathlingua-proof-icon {
+        float:right;
+        color: #aaaaaa;
+    }
+
+    .mathlingua-proof-shown {
+        display: block;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-hidden {
+        display: none;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
     .mathlingua-header {
         color: #0055bb;
         text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
@@ -1296,8 +1318,8 @@ const val SHARED_CSS =
         margin-right: auto;
         width: max-content;
         display: block;
-        padding-top: 1ex;
-        padding-bottom: 1ex;
+        padding-top: 2ex;
+        padding-bottom: 3ex;
     }
 
     .katex {
@@ -1376,6 +1398,24 @@ fun buildIndexHtml(
             })();
 
             const HOME_SRC = "$homeHtml";
+
+            function toggleProof(id) {
+                const proofEl = document.getElementById('proof-' + id);
+                const iconEl = document.getElementById('icon-' + id);
+                if (proofEl) {
+                    if (proofEl.className === 'mathlingua-proof-hidden') {
+                        proofEl.className = 'mathlingua-proof-shown';
+                        if (iconEl) {
+                            iconEl.innerHTML = '&#9652;';
+                        }
+                    } else {
+                        proofEl.className = 'mathlingua-proof-hidden';
+                        if (iconEl) {
+                            iconEl.innerHTML = '&#9662;';
+                        }
+                    }
+                }
+            }
 
             function mathlinguaToggleDirItem(dirSpanId, dirIconId) {
                 const span = document.getElementById(dirSpanId);

@@ -94,13 +94,15 @@ interface SourceCollection {
     fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
     fun getSymbolErrors(): List<ValueSourceTracker<ParseError>>
     fun prettyPrint(
-        file: VirtualFile, html: Boolean, doExpand: Boolean
-    ): Pair<List<String>, List<ParseError>>
+        file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
+    ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
     fun prettyPrint(
-        input: String, html: Boolean, doExpand: Boolean
-    ): Pair<List<String>, List<ParseError>>
-    fun prettyPrint(doc: Document, html: Boolean, doExpand: Boolean): List<String>
-    fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String
+        input: String, html: Boolean, literal: Boolean, doExpand: Boolean
+    ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
+    fun prettyPrint(
+        doc: Document, html: Boolean, literal: Boolean, doExpand: Boolean
+    ): List<Pair<String, Phase2Node?>>
+    fun prettyPrint(node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean): String
 }
 
 fun newSourceCollection(filesOrDirs: List<VirtualFile>): SourceCollection {
@@ -769,52 +771,58 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     }
 
     override fun prettyPrint(
-        file: VirtualFile, html: Boolean, doExpand: Boolean
-    ): Pair<List<String>, List<ParseError>> {
+        file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
+    ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>> {
         val sourceFile = sourceFiles[file.absolutePath().joinToString("/")]
         return if (sourceFile != null) {
-            prettyPrint(sourceFile.validation, html, doExpand)
+            prettyPrint(sourceFile.validation, html, literal, doExpand)
         } else {
-            prettyPrint(file.readText(), html, doExpand)
+            prettyPrint(file.readText(), html, literal, doExpand)
         }
     }
 
     override fun prettyPrint(
-        input: String, html: Boolean, doExpand: Boolean
-    ): Pair<List<String>, List<ParseError>> {
-        return prettyPrint(FrontEnd.parseWithLocations(input), html, doExpand)
+        input: String, html: Boolean, literal: Boolean, doExpand: Boolean
+    ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>> {
+        return prettyPrint(FrontEnd.parseWithLocations(input), html, literal, doExpand)
     }
 
     private fun prettyPrint(
-        validation: Validation<Parse>, html: Boolean, doExpand: Boolean
-    ): Pair<List<String>, List<ParseError>> {
-        val content =
+        validation: Validation<Parse>, html: Boolean, literal: Boolean, doExpand: Boolean
+    ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>> {
+        val content: List<Pair<String, Phase2Node?>> =
             when (validation) {
                 is ValidationFailure -> {
                     listOf(
-                        if (html) {
-                            val builder = StringBuilder()
-                            builder.append(
-                                "<html><head><style>.content { font-size: 1em; }" +
-                                    "</style></head><body class='content'><ul>")
-                            for (err in validation.errors) {
+                        Pair(
+                            if (html) {
+                                val builder = StringBuilder()
                                 builder.append(
-                                    "<li><span style='color: #e61919;'>ERROR:</span> " +
-                                        "${err.message} (${err.row + 1}, ${err.column + 1})</li>")
-                            }
-                            builder.append("</ul></body></html>")
-                            builder.toString()
-                        } else {
-                            val builder = StringBuilder()
-                            for (err in validation.errors) {
-                                builder.append(
-                                    "ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})\n")
-                            }
-                            builder.toString()
-                        })
+                                    "<html><head><style>.content { font-size: 1em; }" +
+                                        "</style></head><body class='content'><ul>")
+                                for (err in validation.errors) {
+                                    builder.append(
+                                        "<li><span style='color: #e61919;'>ERROR:</span> " +
+                                            "${err.message} (${err.row + 1}, ${err.column + 1})</li>")
+                                }
+                                builder.append("</ul></body></html>")
+                                builder.toString()
+                            } else {
+                                val builder = StringBuilder()
+                                for (err in validation.errors) {
+                                    builder.append(
+                                        "ERROR: ${err.message} (${err.row + 1}, ${err.column + 1})\n")
+                                }
+                                builder.toString()
+                            },
+                            null))
                 }
                 is ValidationSuccess ->
-                    prettyPrint(doc = validation.value.document, html = html, doExpand = doExpand)
+                    prettyPrint(
+                        doc = validation.value.document,
+                        html = html,
+                        literal = literal,
+                        doExpand = doExpand)
             }
 
         return when (validation) {
@@ -823,10 +831,12 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         }
     }
 
-    override fun prettyPrint(doc: Document, html: Boolean, doExpand: Boolean) =
-        doc.groups.map { prettyPrint(it, html, doExpand) }
+    override fun prettyPrint(doc: Document, html: Boolean, literal: Boolean, doExpand: Boolean) =
+        doc.groups.map { Pair(prettyPrint(it, html, literal, doExpand), it) }
 
-    override fun prettyPrint(node: Phase2Node, html: Boolean, doExpand: Boolean): String {
+    override fun prettyPrint(
+        node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean
+    ): String {
         val writer =
             if (html) {
                 HtmlCodeWriter(
@@ -834,7 +844,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     states = doExpand.thenUse { statesGroups.map { it.value } },
                     axioms = doExpand.thenUse { axiomGroups.map { it.value } },
                     foundations = doExpand.thenUse { foundationGroups.map { it.value } },
-                    literal = false)
+                    literal = literal)
             } else {
                 MathLinguaCodeWriter(
                     defines = doExpand.thenUse { definesGroups.map { it.value } },

@@ -467,7 +467,8 @@ open class HtmlCodeWriter(
             if (!text.endsWith("\"")) {
                 displayTextBuilder.append("\"")
             }
-            builder.append("<span class=\"literal-mathlingua-text\"> $displayTextBuilder </span>")
+            builder.append(
+                "<span class=\"literal-mathlingua-text-no-render\"> $displayTextBuilder </span>")
             return
         }
 

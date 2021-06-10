@@ -162,7 +162,8 @@ private fun printExpanded(input: String, supplemental: String, html: Boolean): V
             is ValidationSuccess -> {
                 val collection = newSourceCollectionFromContent(input, supplemental)
                 result.append(
-                    collection.prettyPrint(node = validation.value, html = html, doExpand = true))
+                    collection.prettyPrint(
+                        node = validation.value, html = html, literal = false, doExpand = true))
             }
         }
     }

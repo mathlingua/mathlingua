@@ -18,6 +18,7 @@ package mathlingua.cli
 
 import java.io.File
 import java.lang.IllegalArgumentException
+import java.util.UUID
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
@@ -30,6 +31,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -246,7 +248,9 @@ private fun renderFile(
 
     val sourceCollection = newSourceCollection(listOf(fs.cwd()))
 
-    val pair = sourceCollection.prettyPrint(file = target, html = true, doExpand = !noExpand)
+    val pair =
+        sourceCollection.prettyPrint(
+            file = target, html = true, literal = false, doExpand = !noExpand)
 
     val fileContent = target.readText()
     val errors =
@@ -263,7 +267,7 @@ private fun renderFile(
 
     val contentBuilder = StringBuilder()
     for (item in pair.first) {
-        if (item.trim().startsWith("::")) {
+        if (item.first.trim().startsWith("::")) {
             contentBuilder.append(item)
         } else {
             contentBuilder.append("<div class='mathlingua-top-level'>")
@@ -425,7 +429,7 @@ private fun getIndexFileText(
     val keys = pathToEntityMap.keys.toList()
     for (path in keys) {
         val key = path.replace("\"", "\\\"")
-        val entities = pathToEntityMap[key]!!.map { sanitizeHtmlForJs(it) }.map { "\"$it\"" }
+        val entities = pathToEntityMap[key]!!.map { sanitizeHtmlForJs(it.first) }.map { "\"$it\"" }
         pathToEntityBuilder.append("                map.set(\"$key\", $entities);\n")
     }
     pathToEntityBuilder.append("                return map;\n")
@@ -690,13 +694,18 @@ private fun generatePathToEntityList(
     sourceCollection: SourceCollection,
     noexpand: Boolean,
     errors: MutableList<ValueSourceTracker<ParseError>>
-): Map<String, List<String>> {
-    val result = mutableMapOf<String, List<String>>()
+): Map<String, List<Pair<String, Phase2Node?>>> {
+    val result = mutableMapOf<String, List<Pair<String, Phase2Node?>>>()
     for (f in filesToProcess) {
         val path = f.relativePathTo(fs.cwd()).joinToString(File.separator)
-        val pair = sourceCollection.prettyPrint(file = f, html = true, doExpand = !noexpand)
+        val expandedPair =
+            sourceCollection.prettyPrint(
+                file = f, html = true, literal = false, doExpand = !noexpand)
+        val literalPair =
+            sourceCollection.prettyPrint(
+                file = f, html = true, literal = true, doExpand = !noexpand)
         errors.addAll(
-            pair.second.map {
+            expandedPair.second.map {
                 ValueSourceTracker(
                     value = it,
                     source =
@@ -704,7 +713,22 @@ private fun generatePathToEntityList(
                             file = f, content = "", validation = validationFailure(emptyList())),
                     tracker = null)
             })
-        result[path] = pair.first
+        val codeElements = mutableListOf<Pair<String, Phase2Node?>>()
+        for (i in 0 until expandedPair.first.size) {
+            val expanded = expandedPair.first[i]
+            if (expanded.second != null && expanded.second is TopLevelBlockComment) {
+                codeElements.add(expanded)
+            } else {
+                val literal = literalPair.first[i]
+                val id = UUID.randomUUID()
+                val html =
+                    "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">" +
+                        "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded.first}</div>" +
+                        "<div id='literal-$id' class='mathlingua-literal-hidden'>${literal.first}</div></div>"
+                codeElements.add(Pair(html, expanded.second))
+            }
+        }
+        result[path] = codeElements
     }
     return result
 }
@@ -1035,6 +1059,32 @@ const val SHARED_CSS =
         text-indent: 0;
     }
 
+    .mathlingua-flip-icon {
+        font-size: 125%;
+        padding: 0;
+        margin: 0;
+        float: right;
+        border: none;
+        color: #aaaaaa;
+        background: #ffffff;
+    }
+
+    .mathlingua-rendered-visible {
+        display: block;
+    }
+
+    .mathlingua-rendered-hidden {
+        display: none;
+    }
+
+    .mathlingua-literal-visible {
+        display: block;
+    }
+
+    .mathlingua-literal-hidden {
+        display: none;
+    }
+
     .mathlingua-home {
         width: 80%;
         display: block;
@@ -1205,6 +1255,7 @@ const val SHARED_CSS =
     .mathlingua-proof-icon {
         float:right;
         color: #aaaaaa;
+        cursor: default;
     }
 
     .mathlingua-proof-shown {
@@ -1257,7 +1308,14 @@ const val SHARED_CSS =
 
     .literal-mathlingua-text {
         color: #386930;
-        display: inline-block;
+        display: inline;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+
+    .literal-mathlingua-text-no-render {
+        color: #386930;
+        display: inline;
         font-family: monospace;
         line-height: 1.3;
     }
@@ -1398,6 +1456,20 @@ fun buildIndexHtml(
             })();
 
             const HOME_SRC = "$homeHtml";
+
+            function flipEntity(id) {
+                const renEl = document.getElementById('rendered-' + id);
+                const litEl = document.getElementById('literal-' + id);
+                if (renEl && litEl) {
+                    if (renEl.className === 'mathlingua-rendered-visible') {
+                        renEl.className = 'mathlingua-rendered-hidden';
+                        litEl.className = 'mathlingua-literal-visible';
+                    } else {
+                        renEl.className = 'mathlingua-rendered-visible';
+                        litEl.className = 'mathlingua-literal-hidden';
+                    }
+                }
+            }
 
             function toggleProof(id) {
                 const proofEl = document.getElementById('proof-' + id);
@@ -1623,7 +1695,8 @@ fun buildIndexHtml(
                         while (node && node.childElementCount > 0) {
                             node = node.lastChild;
                             if (node && (node.className === 'mathlingua-text' ||
-                                         node.className === 'mathlingua-text-no-render')) {
+                                         node.className === 'mathlingua-text-no-render' ||
+                                         node.className === 'literal-mathlingua-text')) {
                                 rightmost = node;
                                 break;
                             }

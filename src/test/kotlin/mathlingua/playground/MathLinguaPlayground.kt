@@ -109,7 +109,8 @@ fun main() {
             val expand = expandButton.isSelected
 
             val htmlPair =
-                collection.prettyPrint(input = inputArea.text, html = true, doExpand = expand)
+                collection.prettyPrint(
+                    input = inputArea.text, html = true, literal = false, doExpand = expand)
 
             val homeDir = File(System.getProperty("user.home"))
             val outputFile = File(homeDir, "mathlingua-playground.html")
@@ -121,8 +122,9 @@ fun main() {
             }
 
             val inputPair =
-                collection.prettyPrint(input = inputArea.text, html = false, doExpand = expand)
-            outputArea.text = inputPair.first.joinToString("\n\n\n")
+                collection.prettyPrint(
+                    input = inputArea.text, html = false, literal = false, doExpand = expand)
+            outputArea.text = inputPair.first.joinToString("\n\n\n") { it.first }
             for (err in inputPair.second) {
                 builder.append("${err.message} (${err.row+1}, ${err.column+1})\n")
             }

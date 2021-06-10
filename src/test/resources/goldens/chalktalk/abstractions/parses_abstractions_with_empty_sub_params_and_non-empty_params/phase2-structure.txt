@@ -85,8 +85,8 @@ Document(
                  )
                )
                usingSection = null
-               metaDataSection = null
                proofSection = null
+               metaDataSection = null
              )
            ]
 )

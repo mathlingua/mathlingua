@@ -1061,7 +1061,10 @@ const val SHARED_CSS =
 
     .mathlingua-flip-icon {
         font-size: 125%;
-        padding: 0;
+        padding-top: 0;
+        padding-bottom: 0;
+        padding-left: 0.75ex;
+        padding-right: 0;
         margin: 0;
         float: right;
         border: none;
@@ -1071,6 +1074,8 @@ const val SHARED_CSS =
 
     .mathlingua-rendered-visible {
         display: block;
+        overflow-x: auto;
+        width: max-content;
     }
 
     .mathlingua-rendered-hidden {

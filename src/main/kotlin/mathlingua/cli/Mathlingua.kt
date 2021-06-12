@@ -1060,22 +1060,19 @@ const val SHARED_CSS =
     }
 
     .mathlingua-flip-icon {
-        font-size: 125%;
-        padding-top: 0;
-        padding-bottom: 0;
-        padding-left: 0.75ex;
-        padding-right: 0;
-        margin: 0;
-        float: right;
+        position: relative;
+        top: 0;
+        left: 100%;
         border: none;
         color: #aaaaaa;
         background: #ffffff;
+        margin: 0;
+        padding: 0;
+        font-size: 110%;
     }
 
     .mathlingua-rendered-visible {
         display: block;
-        overflow-x: auto;
-        width: max-content;
     }
 
     .mathlingua-rendered-hidden {
@@ -1132,7 +1129,7 @@ const val SHARED_CSS =
         border: solid;
         border-width: 1px;
         border-radius: 2px;
-        padding-top: 1.25em;
+        padding-top: 0;
         padding-bottom: 1em;
         padding-left: 1.1em;
         padding-right: 1.1em;

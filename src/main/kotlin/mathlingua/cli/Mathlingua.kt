@@ -452,6 +452,24 @@ private fun getIndexFileText(
             ""
         }
     val homeHtml = sanitizeHtmlForJs("<span class=\"mathlingua-home\">$homeContent</span>")
+
+    var gitHubUrl: String? = null
+    try {
+        val url =
+            String(
+                    Runtime.getRuntime()
+                        .exec("git config --get remote.origin.url")
+                        .inputStream
+                        .readBytes())
+                .trim()
+        if (url.isNotEmpty()) {
+            gitHubUrl =
+                url.removeSuffix(".git").replaceFirst("git@github.com:", "https://github.com/")
+        }
+    } catch (e: Exception) {
+        gitHubUrl = null
+    }
+
     return buildIndexHtml(
         fileListBuilder.toString(),
         firstFilePath.getValueOrDefault(""),
@@ -460,7 +478,8 @@ private fun getIndexFileText(
         searchIndexBuilder.toString(),
         allFileIds,
         sigToPathCode,
-        pathToEntityBuilder.toString())
+        pathToEntityBuilder.toString(),
+        gitHubUrl)
 }
 
 data class Counter(var count: Int) {
@@ -1059,6 +1078,22 @@ const val SHARED_CSS =
         text-indent: 0;
     }
 
+    .github-icon-container {
+        float: right;
+        margin-top: -0.2em;
+        margin-right: 0.5em;
+    }
+
+    .github-icon {
+        background-image: url("data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjY2NjY2NjIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjogIzUwNTA1MDsiIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0aXRsZT5HaXRIdWI8L3RpdGxlPjxwYXRoIGQ9Ik0xMiAuMjk3Yy02LjYzIDAtMTIgNS4zNzMtMTIgMTIgMCA1LjMwMyAzLjQzOCA5LjggOC4yMDUgMTEuMzg1LjYuMTEzLjgyLS4yNTguODItLjU3NyAwLS4yODUtLjAxLTEuMDQtLjAxNS0yLjA0LTMuMzM4LjcyNC00LjA0Mi0xLjYxLTQuMDQyLTEuNjFDNC40MjIgMTguMDcgMy42MzMgMTcuNyAzLjYzMyAxNy43Yy0xLjA4Ny0uNzQ0LjA4NC0uNzI5LjA4NC0uNzI5IDEuMjA1LjA4NCAxLjgzOCAxLjIzNiAxLjgzOCAxLjIzNiAxLjA3IDEuODM1IDIuODA5IDEuMzA1IDMuNDk1Ljk5OC4xMDgtLjc3Ni40MTctMS4zMDUuNzYtMS42MDUtMi42NjUtLjMtNS40NjYtMS4zMzItNS40NjYtNS45MyAwLTEuMzEuNDY1LTIuMzggMS4yMzUtMy4yMi0uMTM1LS4zMDMtLjU0LTEuNTIzLjEwNS0zLjE3NiAwIDAgMS4wMDUtLjMyMiAzLjMgMS4yMy45Ni0uMjY3IDEuOTgtLjM5OSAzLS40MDUgMS4wMi4wMDYgMi4wNC4xMzggMyAuNDA1IDIuMjgtMS41NTIgMy4yODUtMS4yMyAzLjI4NS0xLjIzLjY0NSAxLjY1My4yNCAyLjg3My4xMiAzLjE3Ni43NjUuODQgMS4yMyAxLjkxIDEuMjMgMy4yMiAwIDQuNjEtMi44MDUgNS42MjUtNS40NzUgNS45Mi40Mi4zNi44MSAxLjA5Ni44MSAyLjIyIDAgMS42MDYtLjAxNSAyLjg5Ni0uMDE1IDMuMjg2IDAgLjMxNS4yMS42OS44MjUuNTdDMjAuNTY1IDIyLjA5MiAyNCAxNy41OTIgMjQgMTIuMjk3YzAtNi42MjctNS4zNzMtMTItMTItMTIiLz48L3N2Zz4K");
+        background-repeat: no-repeat;
+        background-color: #505050;
+        float: right;
+        width: 3.5vh;
+        height: 3.5vh;
+        border: none;
+    }
+
     .mathlingua-flip-icon {
         position: relative;
         top: 0;
@@ -1434,7 +1469,8 @@ fun buildIndexHtml(
     searchIndexInitCode: String,
     allFileIds: List<String>,
     signatureToPathCode: String,
-    pathToEntityList: String
+    pathToEntityList: String,
+    gitHubUrl: String?
 ) =
     """
 <!DOCTYPE html>
@@ -2011,6 +2047,17 @@ fun buildIndexHtml(
                 <input type="text" id="search-input" class="search" aria-label="search">
                 <button type="button" class="button" onclick="search()">Search</button>
             </span>
+            ${
+                if (gitHubUrl != null) {
+                    """
+                        <span class="github-icon-container">
+                            <a class="github-icon" href="$gitHubUrl"></a>
+                        </span>
+                    """
+                } else {
+                    ""
+                }
+            }
         </div>
 
         <div id="sidebar" class="sidebar">

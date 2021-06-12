@@ -983,7 +983,7 @@ const val KATEX_RENDERING_JS =
     }
 
     function render(node) {
-        if (node.className && node.className.indexOf('no-render') >= 0) {
+        if (node.className && node.className.indexOf && node.className.indexOf('no-render') >= 0) {
             return;
         }
 
@@ -1079,19 +1079,19 @@ const val SHARED_CSS =
     }
 
     .github-icon-container {
-        float: right;
-        margin-top: -0.2em;
-        margin-right: 0.5em;
+        position: absolute;
+        top: 18%;
+        right: 0%;
+        margin-right: 1ex;
     }
 
-    .github-icon {
-        background-image: url("data:image/svg+xml;base64,PHN2ZyBmaWxsPSIjY2NjY2NjIiBzdHlsZT0iYmFja2dyb3VuZC1jb2xvcjogIzUwNTA1MDsiIHJvbGU9ImltZyIgdmlld0JveD0iMCAwIDI0IDI0IiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjx0aXRsZT5HaXRIdWI8L3RpdGxlPjxwYXRoIGQ9Ik0xMiAuMjk3Yy02LjYzIDAtMTIgNS4zNzMtMTIgMTIgMCA1LjMwMyAzLjQzOCA5LjggOC4yMDUgMTEuMzg1LjYuMTEzLjgyLS4yNTguODItLjU3NyAwLS4yODUtLjAxLTEuMDQtLjAxNS0yLjA0LTMuMzM4LjcyNC00LjA0Mi0xLjYxLTQuMDQyLTEuNjFDNC40MjIgMTguMDcgMy42MzMgMTcuNyAzLjYzMyAxNy43Yy0xLjA4Ny0uNzQ0LjA4NC0uNzI5LjA4NC0uNzI5IDEuMjA1LjA4NCAxLjgzOCAxLjIzNiAxLjgzOCAxLjIzNiAxLjA3IDEuODM1IDIuODA5IDEuMzA1IDMuNDk1Ljk5OC4xMDgtLjc3Ni40MTctMS4zMDUuNzYtMS42MDUtMi42NjUtLjMtNS40NjYtMS4zMzItNS40NjYtNS45MyAwLTEuMzEuNDY1LTIuMzggMS4yMzUtMy4yMi0uMTM1LS4zMDMtLjU0LTEuNTIzLjEwNS0zLjE3NiAwIDAgMS4wMDUtLjMyMiAzLjMgMS4yMy45Ni0uMjY3IDEuOTgtLjM5OSAzLS40MDUgMS4wMi4wMDYgMi4wNC4xMzggMyAuNDA1IDIuMjgtMS41NTIgMy4yODUtMS4yMyAzLjI4NS0xLjIzLjY0NSAxLjY1My4yNCAyLjg3My4xMiAzLjE3Ni43NjUuODQgMS4yMyAxLjkxIDEuMjMgMy4yMiAwIDQuNjEtMi44MDUgNS42MjUtNS40NzUgNS45Mi40Mi4zNi44MSAxLjA5Ni44MSAyLjIyIDAgMS42MDYtLjAxNSAyLjg5Ni0uMDE1IDMuMjg2IDAgLjMxNS4yMS42OS44MjUuNTdDMjAuNTY1IDIyLjA5MiAyNCAxNy41OTIgMjQgMTIuMjk3YzAtNi42MjctNS4zNzMtMTItMTItMTIiLz48L3N2Zz4K");
-        background-repeat: no-repeat;
-        background-color: #505050;
-        float: right;
-        width: 3.5vh;
-        height: 3.5vh;
-        border: none;
+    @media screen and (max-width: 500px) {
+        .github-icon-container {
+            position: absolute;
+            top: 3%;
+            right: 0%;
+            margin-right: 1ex;
+        }
     }
 
     .mathlingua-flip-icon {
@@ -2050,9 +2050,21 @@ fun buildIndexHtml(
             ${
                 if (gitHubUrl != null) {
                     """
-                        <span class="github-icon-container">
-                            <a class="github-icon" href="$gitHubUrl"></a>
-                        </span>
+                        <div class="github-icon-container">
+                            <a href="$gitHubUrl">
+                                <svg fill="#cccccc" width="3vh" height="3vh" role="img" viewBox="0 0 24 24"
+                                     xmlns="http://www.w3.org/2000/svg"><title>GitHub</title><path d="M12
+                                     .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577
+                                     0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7
+                                     3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07
+                                     1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93
+                                     0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3
+                                     1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23
+                                     3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805
+                                     5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0
+                                     .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
+                            </a>
+                        </div>
                     """
                 } else {
                     ""

@@ -1318,6 +1318,12 @@ const val SHARED_CSS =
         font-family: Georgia, 'Times New Roman', Times, serif;
     }
 
+    .mathlingua-header-literal {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: monospace;
+    }
+
     .mathlingua-whitespace {
         padding: 0;
         margin: 0;

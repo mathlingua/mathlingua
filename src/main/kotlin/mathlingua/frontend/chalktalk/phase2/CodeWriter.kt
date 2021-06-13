@@ -329,7 +329,13 @@ open class HtmlCodeWriter(
     }
 
     override fun writeHeader(header: String) {
-        builder.append("<span class='mathlingua-header'>")
+        val className =
+            if (literal) {
+                "mathlingua-header-literal"
+            } else {
+                "mathlingua-header"
+            }
+        builder.append("<span class='$className'>")
         builder.append(header)
         builder.append(':')
         builder.append("</span>")

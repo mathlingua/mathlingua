@@ -953,8 +953,12 @@ private fun <T> Boolean.thenUse(value: () -> List<T>) =
     }
 
 fun isOperatorName(text: String): Boolean {
-    for (c in text) {
-        if (!isOpChar(c)) {
+    var index = text.indexOf('_')
+    if (index < 0) {
+        index = text.length
+    }
+    for (i in 0 until index) {
+        if (!isOpChar(text[i])) {
             return false
         }
     }

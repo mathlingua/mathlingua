@@ -38,19 +38,12 @@ Root(
                                                                        parts = [
                                                                                  AbstractionPart(
                                                                                    name = Phase1Token(
-                                                                                     text = "a"
+                                                                                     text = "a_i"
                                                                                      type = ChalkTalkTokenType.Name
                                                                                      row = 2
                                                                                      column = 11
                                                                                    )
-                                                                                   subParams = [
-                                                                                                 Phase1Token(
-                                                                                                   text = "i"
-                                                                                                   type = ChalkTalkTokenType.Name
-                                                                                                   row = 2
-                                                                                                   column = 13
-                                                                                                 )
-                                                                                               ]
+                                                                                   subParams = null
                                                                                    params = null
                                                                                    tail = null
                                                                                  )

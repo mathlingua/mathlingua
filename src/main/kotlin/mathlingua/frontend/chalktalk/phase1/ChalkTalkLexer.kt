@@ -171,6 +171,26 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                     name += text[i++]
                     column++
                 }
+                if (i < text.length &&
+                    text[i] == '_' &&
+                    i + 1 < text.length &&
+                    text[i + 1] != '{') {
+                    name += text[i++] // absorb the _
+                    column++
+
+                    if (i >= text.length || !isNameChar(text[i])) {
+                        errors.add(
+                            ParseError(
+                                message = "Expected a name or a { after an underscore",
+                                row = startLine,
+                                column = startColumn))
+                    } else {
+                        while (i < text.length && isNameChar(text[i])) {
+                            name += text[i++]
+                            column++
+                        }
+                    }
+                }
                 this.chalkTalkTokens.add(
                     Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
             } else if (isNameChar(c) || c == '?') {
@@ -190,6 +210,27 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 while (i < text.length && isNameChar(text[i])) {
                     name += text[i++]
                     column++
+                }
+
+                if (i < text.length &&
+                    text[i] == '_' &&
+                    i + 1 < text.length &&
+                    text[i + 1] != '{') {
+                    name += text[i++] // absorb the _
+                    column++
+
+                    if (i >= text.length || !isNameChar(text[i])) {
+                        errors.add(
+                            ParseError(
+                                message = "Expected a name or a { after an underscore",
+                                row = startLine,
+                                column = startColumn))
+                    } else {
+                        while (i < text.length && isNameChar(text[i])) {
+                            name += text[i++]
+                            column++
+                        }
+                    }
                 }
 
                 var hasQuestionMark = false

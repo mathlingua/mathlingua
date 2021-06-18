@@ -19,55 +19,46 @@ ExpressionTexTalkNode(
                    items = [
                              ExpressionTexTalkNode(
                                children = [
-                                            GroupTexTalkNode(
-                                              type = TexTalkNodeType.SyntheticGroup
-                                              parameters = ParametersTexTalkNode(
-                                                items = [
-                                                          ExpressionTexTalkNode(
-                                                            children = [
-                                                                         TextTexTalkNode(
-                                                                           type = TexTalkNodeType.Identifier
-                                                                           tokenType = TexTalkTokenType.Identifier
-                                                                           text = "f"
-                                                                           isVarArg = false
-                                                                         ),
-                                                                         GroupTexTalkNode(
-                                                                           type = TexTalkNodeType.ParenGroup
-                                                                           parameters = ParametersTexTalkNode(
-                                                                             items = [
-                                                                                       ExpressionTexTalkNode(
-                                                                                         children = [
-                                                                                                      OperatorTexTalkNode(
-                                                                                                        lhs = TextTexTalkNode(
-                                                                                                          type = TexTalkNodeType.Identifier
-                                                                                                          tokenType = TexTalkTokenType.Identifier
-                                                                                                          text = "abc"
-                                                                                                          isVarArg = false
-                                                                                                        )
-                                                                                                        command = TextTexTalkNode(
-                                                                                                          type = TexTalkNodeType.Operator
-                                                                                                          tokenType = TexTalkTokenType.Operator
-                                                                                                          text = "+"
-                                                                                                          isVarArg = false
-                                                                                                        )
-                                                                                                        rhs = TextTexTalkNode(
-                                                                                                          type = TexTalkNodeType.Identifier
-                                                                                                          tokenType = TexTalkTokenType.Identifier
-                                                                                                          text = "x"
-                                                                                                          isVarArg = false
-                                                                                                        )
-                                                                                                      )
-                                                                                                    ]
-                                                                                       )
-                                                                                     ]
-                                                                           )
-                                                                           isVarArg = false
-                                                                         )
-                                                                       ]
-                                                          )
-                                                        ]
+                                            MappingNode(
+                                              name = TextTexTalkNode(
+                                                type = TexTalkNodeType.Identifier
+                                                tokenType = TexTalkTokenType.Identifier
+                                                text = "f"
+                                                isVarArg = false
                                               )
-                                              isVarArg = false
+                                              subGroup = null
+                                              parenGroup = GroupTexTalkNode(
+                                                type = TexTalkNodeType.ParenGroup
+                                                parameters = ParametersTexTalkNode(
+                                                  items = [
+                                                            ExpressionTexTalkNode(
+                                                              children = [
+                                                                           OperatorTexTalkNode(
+                                                                             lhs = TextTexTalkNode(
+                                                                               type = TexTalkNodeType.Identifier
+                                                                               tokenType = TexTalkTokenType.Identifier
+                                                                               text = "abc"
+                                                                               isVarArg = false
+                                                                             )
+                                                                             command = TextTexTalkNode(
+                                                                               type = TexTalkNodeType.Operator
+                                                                               tokenType = TexTalkTokenType.Operator
+                                                                               text = "+"
+                                                                               isVarArg = false
+                                                                             )
+                                                                             rhs = TextTexTalkNode(
+                                                                               type = TexTalkNodeType.Identifier
+                                                                               tokenType = TexTalkTokenType.Identifier
+                                                                               text = "x"
+                                                                               isVarArg = false
+                                                                             )
+                                                                           )
+                                                                         ]
+                                                            )
+                                                          ]
+                                                )
+                                                isVarArg = false
+                                              )
                                             )
                                           ]
                              )

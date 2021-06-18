@@ -251,8 +251,8 @@ private class TexTalkParserImpl : TexTalkParser {
                 }
                 if (has(TexTalkTokenType.Period)) {
                     expect(TexTalkTokenType.Period) // move past the .
-                    if (has(TexTalkTokenType.Operator)) {
-                        val operator = expect(TexTalkTokenType.Operator)
+                    val operator = operator()
+                    if (operator != null) {
                         parts.add(
                             CommandPart(
                                 name =
@@ -578,11 +578,12 @@ private class TexTalkParserImpl : TexTalkParser {
                 (terminators == null || !terminators.contains(texTalkLexer.peek().tokenType))) {
                 val child =
                     command()
-                        ?: group(TexTalkNodeType.ParenGroup) ?: group(TexTalkNodeType.CurlyGroup)
+                        ?: mappingOrIdentifier() ?: group(TexTalkNodeType.ParenGroup)
+                            ?: group(TexTalkNodeType.CurlyGroup)
                             ?: text(TexTalkTokenType.Is, TexTalkNodeType.Is, false)
                             ?: text(TexTalkTokenType.In, TexTalkNodeType.In, false)
                             ?: text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, true)
-                            ?: text(TexTalkTokenType.Operator, TexTalkNodeType.Operator, false)
+                            ?: operator()
                             ?: text(TexTalkTokenType.Comma, TexTalkNodeType.Comma, false)
                             ?: text(TexTalkTokenType.Caret, TexTalkNodeType.Operator, false)
                             ?: text(TexTalkTokenType.Underscore, TexTalkNodeType.Operator, false)
@@ -606,6 +607,61 @@ private class TexTalkParserImpl : TexTalkParser {
             return if (nodes.isEmpty()) {
                 null
             } else ExpressionTexTalkNode(nodes)
+        }
+
+        private fun identifier(): TextTexTalkNode? {
+            val id =
+                text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, true) ?: return null
+            if (id.isVarArg) {
+                return id
+            }
+
+            return if (hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.Identifier)) {
+                next() // absorb the underscore
+                val subId = next() // get the sub-name
+                TextTexTalkNode(
+                    type = TexTalkNodeType.Identifier,
+                    tokenType = TexTalkTokenType.Identifier,
+                    text = "${id.text}_${subId.text}",
+                    isVarArg = false)
+            } else {
+                id
+            }
+        }
+
+        private fun operator(): TextTexTalkNode? {
+            val op = text(TexTalkTokenType.Operator, TexTalkNodeType.Operator, false) ?: return null
+            return if (hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.Identifier)) {
+                next() // absorb the underscore
+                val subId = next() // get the sub-name
+                TextTexTalkNode(
+                    type = TexTalkNodeType.Operator,
+                    tokenType = TexTalkTokenType.Operator,
+                    text = "${op.text}_${subId.text}",
+                    isVarArg = false)
+            } else {
+                op
+            }
+        }
+
+        private fun mappingOrIdentifier(): TexTalkNode? {
+            val name = identifier() ?: return null
+
+            var subGroup: GroupTexTalkNode? = null
+            if (hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
+                val underscore = next() // move past the underscore
+                subGroup = group(TexTalkNodeType.CurlyGroup)
+                if (subGroup == null) {
+                    addError("Expected a { to follow the _", underscore)
+                }
+            }
+
+            val parenGroup = group(TexTalkNodeType.ParenGroup)
+            if (subGroup == null && parenGroup == null) {
+                return name
+            }
+
+            return MappingNode(name = name, subGroup = subGroup, parenGroup = parenGroup)
         }
 
         private fun expect(tokenType: TexTalkTokenType): TexTalkToken {

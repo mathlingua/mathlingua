@@ -34,7 +34,8 @@ enum class TexTalkNodeType {
     Is,
     In,
     ColonColonEquals,
-    ColonEquals
+    ColonEquals,
+    Mapping
 }
 
 interface TexTalkNode {
@@ -341,6 +342,53 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
         transformer(
             ParametersTexTalkNode(
                 items = items.map { it.transform(transformer) as ExpressionTexTalkNode }))
+}
+
+data class MappingNode(
+    val name: TextTexTalkNode, val subGroup: GroupTexTalkNode?, val parenGroup: GroupTexTalkNode?
+) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Mapping
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val buffer = StringBuilder()
+
+        buffer.append(name.toCode(interceptor))
+
+        if (subGroup != null) {
+            buffer.append("_")
+            buffer.append(subGroup.toCode(interceptor))
+        }
+
+        if (parenGroup != null) {
+            buffer.append(parenGroup.toCode(interceptor))
+        }
+
+        return buffer.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(name)
+
+        if (subGroup != null) {
+            fn(subGroup)
+        }
+
+        if (parenGroup != null) {
+            fn(parenGroup)
+        }
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        MappingNode(
+            name = name.transform(transformer) as TextTexTalkNode,
+            subGroup = subGroup?.transform(transformer) as GroupTexTalkNode?,
+            parenGroup = parenGroup?.transform(transformer) as GroupTexTalkNode?)
 }
 
 data class GroupTexTalkNode(

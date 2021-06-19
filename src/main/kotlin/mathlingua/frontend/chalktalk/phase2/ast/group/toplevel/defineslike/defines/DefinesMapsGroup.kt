@@ -56,6 +56,7 @@ data class DefinesMapsGroup(
     override val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val mapsSection: MapsSection,
+    val satisfyingSection: SatisfyingSection?,
     override val viewingSection: ViewingSection?,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -75,6 +76,9 @@ data class DefinesMapsGroup(
             fn(meansSection)
         }
         fn(mapsSection)
+        if (satisfyingSection != null) {
+            fn(satisfyingSection)
+        }
         if (viewingSection != null) {
             fn(viewingSection)
         }
@@ -95,6 +99,7 @@ data class DefinesMapsGroup(
                 whenSection,
                 meansSection,
                 mapsSection,
+                satisfyingSection,
                 viewingSection,
                 usingSection,
                 writtenSection,
@@ -113,6 +118,8 @@ data class DefinesMapsGroup(
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 mapsSection = mapsSection.transform(chalkTransformer) as MapsSection,
+                satisfyingSection =
+                    satisfyingSection?.transform(chalkTransformer) as SatisfyingSection?,
                 viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -140,6 +147,7 @@ fun validateDefinesMapsGroup(
                     "when?",
                     "means?",
                     "maps",
+                    "satisfying?",
                     "viewing?",
                     "using?",
                     "written",
@@ -168,6 +176,10 @@ fun validateDefinesMapsGroup(
                         mapsSection =
                             ensureNonNull(sections["maps"], DEFAULT_MAPS_SECTION) {
                                 validateMapsSection(it, errors, tracker)
+                            },
+                        satisfyingSection =
+                            ifNonNull(sections["satisfying"]) {
+                                validateSatisfyingSection(it, errors, tracker)
                             },
                         viewingSection =
                             ifNonNull(sections["viewing"]) {

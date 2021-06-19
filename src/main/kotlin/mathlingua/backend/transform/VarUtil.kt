@@ -28,6 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.given.GivenGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
@@ -330,6 +331,21 @@ private fun checkVarsImpl(
         is ExistsGroup -> {
             val existsVars =
                 node.existsSection.identifiers.map { getVars(it, ignoreParen) }.flatten()
+            for (v in existsVars) {
+                if (vars.contains(v)) {
+                    errors.add(
+                        ParseError(
+                            message = "Duplicate defined symbol '$v'",
+                            row = location.row,
+                            column = location.column))
+                }
+                vars.add(v)
+            }
+            varsToRemove.addAll(existsVars)
+        }
+        is ExistsUniqueGroup -> {
+            val existsVars =
+                node.existsUniqueSection.identifiers.map { getVars(it, ignoreParen) }.flatten()
             for (v in existsVars) {
                 if (vars.contains(v)) {
                     errors.add(

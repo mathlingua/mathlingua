@@ -31,6 +31,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.isCollec
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.validateCollectionGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.isExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.validateExistsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.isExistsUniqueGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.validateExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.isExpandsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.validateExpandsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.isForGroup
@@ -136,6 +138,7 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isText, ::validateText),
         ValidationPair(::isForGroup, ::validateForGroup),
         ValidationPair(::isExistsGroup, ::validateExistsGroup),
+        ValidationPair(::isExistsUniqueGroup, ::validateExistsUniqueGroup),
         ValidationPair(::isNotGroup, ::validateNotGroup),
         ValidationPair(::isOrGroup, ::validateOrGroup),
         ValidationPair(::isAndGroup, ::validateAndGroup),

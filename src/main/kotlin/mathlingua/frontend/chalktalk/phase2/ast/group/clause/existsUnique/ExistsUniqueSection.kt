@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Google LLC
+ * Copyright 2021
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,47 +14,44 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines
+package mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SATISFYING_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
-import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXISTS_UNIQUE_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.frontend.chalktalk.phase2.ast.track
-import mathlingua.frontend.chalktalk.phase2.ast.validateSection
+import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class SatisfyingSection(val clauses: ClauseListNode) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
+data class ExistsUniqueSection(val identifiers: List<Target>) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) = identifiers.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("satisfying")
-        if (clauses.clauses.size == 1 && clauses.clauses[0] is Text) {
-            writer.append(clauses.clauses.first(), false, 1)
-        } else {
-            if (clauses.clauses.isNotEmpty()) {
-                writer.writeNewline()
-            }
-            writer.append(clauses, true, indent + 2)
-        }
+        writer.writeHeader("existsUnique")
+        appendTargetArgs(writer, identifiers, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            SatisfyingSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            ExistsUniqueSection(
+                identifiers = identifiers.map { it.transform(chalkTransformer) as Target }))
 }
 
-fun validateSatisfyingSection(
+fun validateExistsUniqueSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "satisfying", DEFAULT_SATISFYING_SECTION) {
-            SatisfyingSection(clauses = validateClauseListNode(it, errors, tracker))
-        }
+        validateTargetSection(
+            node.resolve(),
+            errors,
+            "existsUnique",
+            DEFAULT_EXISTS_UNIQUE_SECTION,
+            tracker,
+            ::ExistsUniqueSection)
     }

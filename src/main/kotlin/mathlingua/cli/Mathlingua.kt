@@ -701,7 +701,8 @@ private fun generateSignatureToPathJsCode(fs: VirtualFileSystem): String {
     val signatureToPathBuilder = StringBuilder()
     signatureToPathBuilder.append("const sigToPath = new Map();")
     for (entry in signatureToPath.entries) {
-        signatureToPathBuilder.append("sigToPath.set('${entry.key}', '${entry.value}');")
+        signatureToPathBuilder.append(
+            "sigToPath.set('${sanitizeHtmlForJs(entry.key)}', '${sanitizeHtmlForJs(entry.value)}');")
     }
     signatureToPathBuilder.append("return sigToPath;")
     return signatureToPathBuilder.toString()

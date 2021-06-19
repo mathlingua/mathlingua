@@ -168,7 +168,7 @@ fun validateDefinesMeansGroup(
                             },
                         satisfyingSection =
                             ifNonNull(sections["satisfying"]) {
-                                validateSpecifiesSection(it, errors, tracker)
+                                validateSatisfyingSection(it, errors, tracker)
                             },
                         viewingSection =
                             ifNonNull(sections["viewing"]) {

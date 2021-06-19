@@ -53,6 +53,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.OfSectio
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.AsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.ExpandsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.ExpandsSection
@@ -407,9 +409,17 @@ val DEFAULT_STATES_SECTION = StatesSection()
 
 val DEFAULT_EXISTS_SECTION = ExistsSection(identifiers = emptyList())
 
+val DEFAULT_EXISTS_UNIQUE_SECTION = ExistsUniqueSection(identifiers = emptyList())
+
 val DEFAULT_EXISTS_GROUP =
     ExistsGroup(
         existsSection = DEFAULT_EXISTS_SECTION,
+        whereSection = null,
+        suchThatSection = DEFAULT_SUCH_THAT_SECTION)
+
+val DEFAULT_EXISTS_UNIQUE_GROUP =
+    ExistsUniqueGroup(
+        existsUniqueSection = DEFAULT_EXISTS_UNIQUE_SECTION,
         whereSection = null,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION)
 
@@ -707,6 +717,7 @@ val DEFAULT_DEFINES_MAPS_GROUP =
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         mapsSection = DEFAULT_MAPS_SECTION,
+        satisfyingSection = DEFAULT_SATISFYING_SECTION,
         viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,

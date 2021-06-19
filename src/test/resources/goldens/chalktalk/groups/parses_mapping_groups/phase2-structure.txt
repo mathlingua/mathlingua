@@ -188,6 +188,7 @@ Document(
                    )
                  )
                )
+               satisfyingSection = null
                viewingSection = null
                usingSection = null
                writtenSection = WrittenSection(

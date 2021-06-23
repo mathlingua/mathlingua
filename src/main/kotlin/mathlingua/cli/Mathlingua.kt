@@ -411,7 +411,7 @@ private fun getIndexFileText(
                 }
             }
             searchIndexBuilder.append(
-                "                index.set('${word.replace("\\", "\\\\")}', map$i);\n")
+                "                index.set('${word.replace("\\", "\\\\").replace("'", "\\\\\\'")}', map$i);\n")
         }
     }
     searchIndexBuilder.append("                return index;")
@@ -1234,6 +1234,8 @@ const val SHARED_CSS =
         font-family: Georgia, 'Times New Roman', Times, serif;
         line-height: 1.3;
         color: #000000;
+        margin-top: -2ex;
+        margin-bottom: -2ex;
     }
 
     .mathlingua-resources-header {
@@ -1340,14 +1342,16 @@ const val SHARED_CSS =
         color: #000000;
         display: inline-block;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        line-height: 0;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
     }
 
     .mathlingua-text-no-render {
         color: #000000;
         display: inline-block;
         font-family: Georgia, 'Times New Roman', Times, serif;
-        line-height: 0;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
     }
 
     .literal-mathlingua-text {

@@ -110,9 +110,11 @@ open class HtmlCodeWriter(
             } as StringSectionGroup?
 
         if (overview != null && overview.section.values.isNotEmpty()) {
-            builder.append("<span class='mathlingua-overview'>")
-            builder.append(overview.section.values[0])
-            builder.append("</span>")
+            for (text in overview.section.values) {
+                builder.append("<span class='mathlingua-overview'>")
+                builder.append(getExpandedMarkdownedText(text))
+                builder.append("</span>")
+            }
         }
 
         // TODO: Support tags, authors, and contributors
@@ -487,8 +489,8 @@ open class HtmlCodeWriter(
             return
         }
 
-        val textWithBreaks = parseMarkdown(innerText)
         if (shouldExpand()) {
+            val textWithBreaks = parseMarkdown(innerText)
             val expansion =
                 expandTextAsWritten(textWithBreaks, false, defines, states, axioms, foundations)
             val title =
@@ -499,12 +501,14 @@ open class HtmlCodeWriter(
                             ""
                         }
                         .removeSurrounding("\"", "\"")
+
+            val expanded = getExpandedMarkdownedText(innerText)
             builder.append("<span class='mathlingua-text' title=\"${title.replace("\"", "")}\">")
-            builder.append((expansion.text ?: textWithBreaks).replace("?", ""))
+            builder.append(expanded)
             builder.append("</span>")
         } else {
             builder.append("<span class='mathlingua-text-no-render'>")
-            builder.append(textWithBreaks)
+            builder.append(parseMarkdown(innerText))
             builder.append("</span>")
         }
     }
@@ -685,10 +689,24 @@ open class HtmlCodeWriter(
             remaining = remaining.substring(endIndex + 3)
         }
 
-        return result
+        return result.map {
+            if (it.isMathlinguaCode) {
+                it
+            } else {
+                BlockCommentSection(
+                    text = it.text.split("\n").joinToString("\n") { line -> line.trimStart() },
+                    isMathlinguaCode = it.isMathlinguaCode)
+            }
+        }
     }
 
     override fun writeBlockComment(text: String) {
+        builder.append("<span class='mathlingua-block-comment'>")
+        builder.append(getExpandedMarkdownedText(text))
+        builder.append("</span>")
+    }
+
+    private fun getExpandedMarkdownedText(text: String): String {
         val comment =
             processMathCodeBlocks(text.replace("\\", "\\\\")).joinToString(" ") {
                 if (it.isMathlinguaCode) {
@@ -697,11 +715,8 @@ open class HtmlCodeWriter(
                     parseMarkdown(it.text)
                 }
             }
-        val res =
-            expandTextAsWritten(comment, true, defines, states, axioms, foundations).text ?: comment
-        builder.append("<span class='mathlingua-block-comment'>")
-        builder.append(res)
-        builder.append("</span>")
+        return expandTextAsWritten(comment, true, defines, states, axioms, foundations).text
+            ?: comment
     }
 
     override fun beginTopLevel(label: String) {

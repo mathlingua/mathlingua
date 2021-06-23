@@ -36,8 +36,8 @@ data class WrittenSection(val forms: List<String>) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("written")
-        writer.writeNewline()
         for (imp in forms) {
+            writer.writeNewline()
             writer.writeIndent(true, indent + 2)
             writer.writeDirect(imp)
         }

@@ -715,7 +715,7 @@ open class HtmlCodeWriter(
                     parseMarkdown(it.text)
                 }
             }
-        return expandTextAsWritten(comment, true, defines, states, axioms, foundations).text
+        return expandTextAsWritten(comment, false, defines, states, axioms, foundations).text
             ?: comment
     }
 
@@ -828,7 +828,7 @@ class MathLinguaCodeWriter(
             builder.append('"')
         }
         builder.append(
-            expandTextAsWritten(text, true, defines, states, axioms, foundations).text ?: text)
+            expandTextAsWritten(text, false, defines, states, axioms, foundations).text ?: text)
         if (!text.endsWith("\"")) {
             builder.append('"')
         }
@@ -983,7 +983,11 @@ private fun splitByMathlingua(text: String): List<TextRange> {
     var remaining = text.replace("\\'", ESCAPED_SINGLE_QUOTE)
     val result = mutableListOf<TextRange>()
     while (remaining.isNotEmpty()) {
-        val startIndex = remaining.indexOf("'")
+        // the following finds the first index of ' in `remaining` that does not come right
+        // after a backslash, and returns -1 if not found.  The code returns -1 if the only
+        // occurrences of ' are in the form \' and also works correctly if `remaining` starts
+        // with '
+        val startIndex = Regex("([^\\\\]|^)'").find(remaining)?.range?.endInclusive ?: -1
         if (startIndex < 0) {
             result.add(
                 TextRange(
@@ -1067,9 +1071,16 @@ private fun expandTextAsWritten(
                 }
             } else {
                 errors.addAll(result.errors.map { it.message })
+                if (addQuotes) {
+                    builder.append('\'')
+                }
+                builder.append(part.text)
+                if (addQuotes) {
+                    builder.append('\'')
+                }
             }
         } else {
-            builder.append(part.text)
+            builder.append(part.text.replace("\\'", "'"))
         }
     }
     return Expansion(text = builder.toString(), errors = errors)

@@ -129,7 +129,16 @@ internal fun checkVars(node: Phase2Node, tracker: LocationTracker): Set<ParseErr
 
 private fun getVarsImpl(node: Phase1Node, vars: MutableList<String>) {
     if (node is Phase1Token) {
-        vars.add(node.text.removeSuffix("..."))
+        val index = node.text.indexOf('_')
+        if (index >= 0) {
+            // If a Phase1Node is of the form `x_i` then record `x` as a variable name
+            // This will occur if a Defines: has a target of the form {x_i}_i
+            vars.add(node.text.substring(0, index))
+        } else {
+            // If the variable is variadic, store the non-variadic version of the name.
+            // That is if it is `x...` store `x`.
+            vars.add(node.text.removeSuffix("..."))
+        }
     } else {
         node.forEach { getVarsImpl(it, vars) }
     }

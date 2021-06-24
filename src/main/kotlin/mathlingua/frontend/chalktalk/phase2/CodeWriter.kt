@@ -622,7 +622,7 @@ open class HtmlCodeWriter(
                     "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex'>")
                 for (sig in signatures) {
                     builder.append(
-                        "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form}', 'statement-$dropdownIndex')\">")
+                        "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form.replace("\\", "\\\\")}', 'statement-$dropdownIndex')\">")
                     builder.append(sig.form)
                     builder.append("</a>")
                 }

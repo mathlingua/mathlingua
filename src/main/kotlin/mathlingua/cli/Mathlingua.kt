@@ -247,31 +247,18 @@ private fun renderFile(
     }
 
     val sourceCollection = newSourceCollection(listOf(fs.cwd()))
-
-    val pair =
-        sourceCollection.prettyPrint(
-            file = target, html = true, literal = false, doExpand = !noExpand)
-
-    val fileContent = target.readText()
-    val errors =
-        pair.second.map {
-            ValueSourceTracker(
-                value = it,
-                source =
-                    SourceFile(
-                        file = target,
-                        content = fileContent,
-                        validation = validationFailure(emptyList())),
-                tracker = null)
-        }
+    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+    val elements = getRenderedTopLevelElements(target, sourceCollection, noExpand, errors)
 
     val contentBuilder = StringBuilder()
-    for (item in pair.first) {
-        if (item.first.trim().startsWith("::")) {
-            contentBuilder.append(item)
+    for (element in elements) {
+        if (element.second != null && element.second is TopLevelBlockComment) {
+            contentBuilder.append("<div class='mathlingua-block-comment-top-level'>")
+            contentBuilder.append(element.first)
+            contentBuilder.append("</div>")
         } else {
             contentBuilder.append("<div class='mathlingua-top-level'>")
-            contentBuilder.append(item)
+            contentBuilder.append(element.first)
             contentBuilder.append("</div>")
         }
     }
@@ -718,39 +705,45 @@ private fun generatePathToEntityList(
     val result = mutableMapOf<String, List<Pair<String, Phase2Node?>>>()
     for (f in filesToProcess) {
         val path = f.relativePathTo(fs.cwd()).joinToString(File.separator)
-        val expandedPair =
-            sourceCollection.prettyPrint(
-                file = f, html = true, literal = false, doExpand = !noexpand)
-        val literalPair =
-            sourceCollection.prettyPrint(
-                file = f, html = true, literal = true, doExpand = !noexpand)
-        errors.addAll(
-            expandedPair.second.map {
-                ValueSourceTracker(
-                    value = it,
-                    source =
-                        SourceFile(
-                            file = f, content = "", validation = validationFailure(emptyList())),
-                    tracker = null)
-            })
-        val codeElements = mutableListOf<Pair<String, Phase2Node?>>()
-        for (i in 0 until expandedPair.first.size) {
-            val expanded = expandedPair.first[i]
-            if (expanded.second != null && expanded.second is TopLevelBlockComment) {
-                codeElements.add(expanded)
-            } else {
-                val literal = literalPair.first[i]
-                val id = UUID.randomUUID()
-                val html =
-                    "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">" +
-                        "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded.first}</div>" +
-                        "<div id='literal-$id' class='mathlingua-literal-hidden'>${literal.first}</div></div>"
-                codeElements.add(Pair(html, expanded.second))
-            }
-        }
-        result[path] = codeElements
+        result[path] = getRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
     }
     return result
+}
+
+private fun getRenderedTopLevelElements(
+    f: VirtualFile,
+    sourceCollection: SourceCollection,
+    noexpand: Boolean,
+    errors: MutableList<ValueSourceTracker<ParseError>>
+): List<Pair<String, Phase2Node?>> {
+    val codeElements = mutableListOf<Pair<String, Phase2Node?>>()
+    val expandedPair =
+        sourceCollection.prettyPrint(file = f, html = true, literal = false, doExpand = !noexpand)
+    val literalPair =
+        sourceCollection.prettyPrint(file = f, html = true, literal = true, doExpand = !noexpand)
+    errors.addAll(
+        expandedPair.second.map {
+            ValueSourceTracker(
+                value = it,
+                source =
+                    SourceFile(file = f, content = "", validation = validationFailure(emptyList())),
+                tracker = null)
+        })
+    for (i in 0 until expandedPair.first.size) {
+        val expanded = expandedPair.first[i]
+        if (expanded.second != null && expanded.second is TopLevelBlockComment) {
+            codeElements.add(expanded)
+        } else {
+            val literal = literalPair.first[i]
+            val id = UUID.randomUUID()
+            val html =
+                "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">" +
+                    "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded.first}</div>" +
+                    "<div id='literal-$id' class='mathlingua-literal-hidden'>${literal.first}</div></div>"
+            codeElements.add(Pair(html, expanded.second))
+        }
+    }
+    return codeElements
 }
 
 fun getAllWords(node: Phase2Node): Set<String> {
@@ -1029,6 +1022,41 @@ const val KATEX_RENDERING_JS =
                 }
             } else if (child.nodeType === 1) {
                 render(child);
+            }
+        }
+    }
+"""
+
+const val INTERACTIVE_JS_CODE =
+    """
+    function flipEntity(id) {
+        const renEl = document.getElementById('rendered-' + id);
+        const litEl = document.getElementById('literal-' + id);
+        if (renEl && litEl) {
+            if (renEl.className === 'mathlingua-rendered-visible') {
+                renEl.className = 'mathlingua-rendered-hidden';
+                litEl.className = 'mathlingua-literal-visible';
+            } else {
+                renEl.className = 'mathlingua-rendered-visible';
+                litEl.className = 'mathlingua-literal-hidden';
+            }
+        }
+    }
+
+    function toggleProof(id) {
+        const proofEl = document.getElementById('proof-' + id);
+        const iconEl = document.getElementById('icon-' + id);
+        if (proofEl) {
+            if (proofEl.className === 'mathlingua-proof-hidden') {
+                proofEl.className = 'mathlingua-proof-shown';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9652;';
+                }
+            } else {
+                proofEl.className = 'mathlingua-proof-hidden';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9662;';
+                }
             }
         }
     }
@@ -1454,6 +1482,8 @@ fun buildStandaloneHtml(content: String) =
         <script>
             $KATEX_RENDERING_JS
 
+            $INTERACTIVE_JS_CODE
+
             function initPage() {
                 const el = document.getElementById('__main_content__');
                 if (el) {
@@ -1506,37 +1536,7 @@ fun buildIndexHtml(
 
             const HOME_SRC = "$homeHtml";
 
-            function flipEntity(id) {
-                const renEl = document.getElementById('rendered-' + id);
-                const litEl = document.getElementById('literal-' + id);
-                if (renEl && litEl) {
-                    if (renEl.className === 'mathlingua-rendered-visible') {
-                        renEl.className = 'mathlingua-rendered-hidden';
-                        litEl.className = 'mathlingua-literal-visible';
-                    } else {
-                        renEl.className = 'mathlingua-rendered-visible';
-                        litEl.className = 'mathlingua-literal-hidden';
-                    }
-                }
-            }
-
-            function toggleProof(id) {
-                const proofEl = document.getElementById('proof-' + id);
-                const iconEl = document.getElementById('icon-' + id);
-                if (proofEl) {
-                    if (proofEl.className === 'mathlingua-proof-hidden') {
-                        proofEl.className = 'mathlingua-proof-shown';
-                        if (iconEl) {
-                            iconEl.innerHTML = '&#9652;';
-                        }
-                    } else {
-                        proofEl.className = 'mathlingua-proof-hidden';
-                        if (iconEl) {
-                            iconEl.innerHTML = '&#9662;';
-                        }
-                    }
-                }
-            }
+            $INTERACTIVE_JS_CODE
 
             function mathlinguaToggleDirItem(dirSpanId, dirIconId) {
                 const span = document.getElementById(dirSpanId);

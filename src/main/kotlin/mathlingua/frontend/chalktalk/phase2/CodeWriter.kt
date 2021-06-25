@@ -142,21 +142,22 @@ open class HtmlCodeWriter(
                             builder.append("<span class='mathlingua-resources-item'>")
 
                             val textBuilder = StringBuilder()
-                            textBuilder.append(res.sourceSection.sourceReference)
+                            textBuilder.append(
+                                res.sourceSection.sourceReference.removeSurrounding("\"", "\""))
                             val page = res.pageSection?.page
                             val offset = res.offsetSection?.offset
                             if (page != null || offset != null) {
                                 textBuilder.append(" (")
                                 if (page != null) {
                                     textBuilder.append("Page ")
-                                    textBuilder.append(page)
+                                    textBuilder.append(page.removeSurrounding("\"", "\""))
                                 }
                                 if (offset != null) {
                                     if (page != null) {
-                                        textBuilder.append(" ")
+                                        textBuilder.append(", ")
                                     }
                                     textBuilder.append("Offset ")
-                                    textBuilder.append(offset)
+                                    textBuilder.append(offset.removeSurrounding("\"", "\""))
                                 }
                                 textBuilder.append(")")
                             }

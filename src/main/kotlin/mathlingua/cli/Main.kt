@@ -22,8 +22,10 @@ import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
 import com.github.ajalt.clikt.parameters.arguments.optional
+import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.int
 import java.io.File
 import java.nio.file.FileSystems
 import java.nio.file.Paths
@@ -50,11 +52,11 @@ private class Mlg : CliktCommand() {
     override fun run() = Unit
 }
 
-private class Check : CliktCommand(help = "Check input files for errors.") {
+private class Check : CliktCommand(help = "Check input files for errors") {
     private val file: List<String> by argument(
             help = "The *.math files and/or directories to process")
         .multiple(required = false)
-    private val json: Boolean by option(help = "Output the results in JSON format.").flag()
+    private val json: Boolean by option(help = "Output the results in JSON format").flag()
 
     override fun run(): Unit =
         runBlocking {
@@ -68,7 +70,20 @@ private class Check : CliktCommand(help = "Check input files for errors.") {
         }
 }
 
-private class Version : CliktCommand(help = "Prints the tool and MathLingua language version.") {
+private class Serve :
+    CliktCommand(
+        help =
+            "Starts a server on the specified port (defaults to 8080) that " +
+                "rerenders the MathLingua code whenever visited") {
+    private val port: Int by option(help = "The port to listen on").int().default(8080)
+
+    override fun run() {
+        val fs = newDiskFileSystem(cwdParts())
+        Mathlingua.serve(fs = fs, logger = TermUiLogger(termUi = TermUi), port = port)
+    }
+}
+
+private class Version : CliktCommand(help = "Prints the tool and MathLingua language version") {
     override fun run() {
         exitProcess(Mathlingua.version(logger = TermUiLogger(termUi = TermUi)))
     }
@@ -157,7 +172,7 @@ private class Watch :
         }
 }
 
-private class Render : CliktCommand("Generates HTML code with definitions expanded.") {
+private class Render : CliktCommand(help = "Generates HTML code with definitions expanded") {
     private val file: String? by argument(
             help =
                 "If specified, the .math file to render as an HTML document.  Otherwise, all .math files " +
@@ -165,7 +180,7 @@ private class Render : CliktCommand("Generates HTML code with definitions expand
         .optional()
     private val noexpand: Boolean by option(
             help =
-                "Specifies to not expand the contents of entries using the 'written' form of definitions.")
+                "Specifies to not expand the contents of entries using the 'written' form of definitions")
         .flag()
     private val stdout: Boolean by option(
             help =
@@ -220,7 +235,7 @@ class Clean : CliktCommand(help = "Delete the docs directory") {
 }
 
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Watch(), Version())
+    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Watch(), Serve(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

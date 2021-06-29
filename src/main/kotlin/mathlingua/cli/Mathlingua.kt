@@ -1164,7 +1164,7 @@ const val SHARED_CSS =
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
         font-size: 1em;
-        width: 80%;
+        width: 90%;
         background-color: white;
         border: solid;
         border-width: 1px;
@@ -1174,9 +1174,11 @@ const val SHARED_CSS =
                     inset 0  0 0 0 rgba(240, 240, 240, 0.5);
     }
 
-    @media screen and (max-width: 400px) {
+    @media screen and (max-width: 500px) {
         .content {
-            width: 90%;
+            width: 99%;
+            margin-top: 2.5vh;
+            margin-bottom: 0;
         }
     }
 
@@ -2102,9 +2104,9 @@ fun buildIndexHtml(
 
             #main {
                 transition: margin-left .5s;
+                padding-left: 0;
                 padding-right: 0;
                 padding-bottom: 0;
-                padding-left: 1em;
                 padding-top: 1em;
                 margin-left: 20%;
                 margin-right: 0;
@@ -2113,7 +2115,8 @@ fun buildIndexHtml(
 
             @media screen and (max-width: 500px) {
                 #main {
-                    margin-left: 0;
+                    margin: 0;
+                    padding: 0;
                 }
             }
 

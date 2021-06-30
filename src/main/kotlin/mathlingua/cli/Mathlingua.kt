@@ -1205,7 +1205,7 @@ const val SHARED_CSS =
 
     .github-icon-container {
         position: absolute;
-        top: 18%;
+        top: 25%;
         right: 0%;
         margin-right: 1ex;
     }
@@ -2020,12 +2020,12 @@ fun buildIndexHtml(
                 border-bottom-style: solid;
                 box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
                             inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
-                padding-top: 0.5em;
+                padding-top: 0.75%;
             }
 
             @media screen and (max-width: 500px) {
                 .topbar {
-                    height: 2.5%;
+                    height: 3%;
                 }
             }
 
@@ -2082,13 +2082,12 @@ fun buildIndexHtml(
             }
 
             .button {
-                margin-left: -0.35em;
                 border: solid;
-                border-width: 2px;
+                border-width: 1px;
                 padding-left: 0.5em;
                 padding-right: 0.5em;
-                padding-top: 0.2em;
-                padding-bottom: 0.2em;
+                padding-top: 0.25em;
+                padding-bottom: 0.25em;
                 background-color: #333333;
                 border-color: #303030;
                 color: #cccccc;
@@ -2154,6 +2153,7 @@ fun buildIndexHtml(
             <span class="search-area">
                 <input type="text" id="search-input" class="search" aria-label="search">
                 <button type="button" class="button" onclick="search()">Search</button>
+                <button type="button" class="button" onclick="clearSearch()">Reset</button>
             </span>
             ${
                 if (gitHubUrl != null) {

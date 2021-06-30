@@ -657,7 +657,9 @@ private fun buildFileList(
             firstFilePath.setValue(src)
         }
         builder.append(
-            "<span $classDesc><a id='$id' $onclick><span $cssDesc><span id='$iconId'>$icon</span>${file.absolutePath().last().removeSuffix(".math")}</span></a></span>")
+            "<span $classDesc><a id='$id' $onclick><span $cssDesc><span id='$iconId'>$icon</span>${
+                file.absolutePath().last().removeSuffix(".math").replace('_', ' ')
+            }</span></a></span>")
         builder.append(childBuilder.toString())
     }
 }

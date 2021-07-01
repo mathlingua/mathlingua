@@ -1205,7 +1205,7 @@ const val SHARED_CSS =
 
     .github-icon-container {
         position: absolute;
-        top: 25%;
+        top: 18%;
         right: 0%;
         margin-right: 1ex;
     }
@@ -2020,13 +2020,13 @@ fun buildIndexHtml(
                 border-bottom-style: solid;
                 box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
                             inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
-                padding-top: 0.75%;
+                padding-top: 0.5em;
             }
 
             @media screen and (max-width: 500px) {
                 .topbar {
-                    height: 3%;
-                }
+                    height: 2.5%;
+                    }
             }
 
             .search-area {

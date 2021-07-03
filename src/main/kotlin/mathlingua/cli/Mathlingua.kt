@@ -1784,6 +1784,13 @@ fun buildIndexHtml(
             }
 
             function view(path, setHistory = true) {
+                viewImpl(path, setHistory);
+                if (forMobile()) {
+                    toggleSidePanel();
+                }
+            }
+
+            function viewImpl(path, setHistory) {
                 const content = document.getElementById('__main_content__');
                 if (!path) {
                     path = '${

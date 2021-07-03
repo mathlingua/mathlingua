@@ -1785,7 +1785,7 @@ fun buildIndexHtml(
 
             function view(path, setHistory = true) {
                 viewImpl(path, setHistory);
-                if (forMobile()) {
+                if (open && forMobile()) {
                     toggleSidePanel();
                 }
             }

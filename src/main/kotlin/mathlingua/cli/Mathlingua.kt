@@ -1198,7 +1198,7 @@ const val SHARED_CSS =
     .content {
         padding-top: 1.5em;
         padding-bottom: 1em;
-        margin-top: 3%;
+        margin-top: 2.5em;
         margin-bottom: 1em;
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
@@ -1238,22 +1238,6 @@ const val SHARED_CSS =
     p {
         text-align: left;
         text-indent: 0;
-    }
-
-    .github-icon-container {
-        position: absolute;
-        top: 18%;
-        right: 0%;
-        margin-right: 1ex;
-    }
-
-    @media screen and (max-width: 500px) {
-        .github-icon-container {
-            position: absolute;
-            top: 3%;
-            right: 0%;
-            margin-right: 1ex;
-        }
     }
 
     .mathlingua-flip-icon {
@@ -2044,8 +2028,10 @@ fun buildIndexHtml(
             $SHARED_CSS
 
             .topbar {
-                display: block;
-                height: 4%;
+                display: flex;
+                flex-direction: row;
+                align-content: space-between;
+                height: 2em;
                 background-color: #444444;
                 position: fixed;
                 z-index: 2;
@@ -2060,55 +2046,10 @@ fun buildIndexHtml(
                 padding-top: 0.5em;
             }
 
-            @media screen and (max-width: 500px) {
-                .topbar {
-                    height: 2.5%;
-                    }
-            }
-
             .search-area {
-                position: absolute;
-                left: 50%;
-                top: 50%;
-                transform: translate(-50%, -50%);
+                margin-left: auto;
+                margin-right: auto;
                 width: max-content;
-            }
-
-            .sidebar {
-                height: 95%;
-                width: 20%;
-                position: fixed;
-                z-index: 1;
-                top: 4%;
-                left: 0;
-                background-color: #fefefe;
-                border-right: solid;
-                border-width: 1px;
-                border-color: rgba(215, 215, 215);
-                box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px,
-                            inset 0  0 10px 0 rgba(200, 200, 200, 0);
-                overflow-x: scroll;
-                padding-top: 1.5em;
-                transition: 0.5s;
-            }
-
-            @media screen and (max-width: 500px) {
-                .sidebar {
-                    width: 0%;
-                    top: 2.5%;
-                }
-            }
-
-            .sidebar a {
-                text-decoration: none;
-                color: #000000;
-                display: block;
-                transition: 0.3s;
-                padding-left: 1.25em;
-                padding-right: 0;
-                padding-top: 0.5em;
-                padding-bottom: 0.5em;
-                margin: 0;
             }
 
             .search {
@@ -2131,17 +2072,69 @@ fun buildIndexHtml(
             }
 
             .closeButton {
-                text-decoration: none;
+                border: none;
                 color: #cccccc;
-                margin-left: 0.75em;
-                position: absolute;
+                margin-left: 0.5em;
+                margin-top: -0.5em;
+                padding: 0;
+                background-color: rgba(0, 0, 0, 0);
+                font-size: 1.2em;
+            }
+
+            .github-icon-container {
+                border: none;
+                margin-right: 0.5em;
+                margin-top: -0.2em;
+                padding: 0;
+                background-color: rgba(0, 0, 0, 0);
+                font-size: 1.2em;
+            }
+
+            @media screen and (max-width: 500px) {
+                .github-icon-container {
+                    margin-right: 0.5em;
+                }
+            }
+
+            .sidebar {
+                height: 95%;
+                width: 20%;
+                position: fixed;
+                z-index: 1;
+                top: 2em;
                 left: 0;
-                top: 50%;
-                transform: translate(0, -50%);
+                background-color: #fefefe;
+                border-right: solid;
+                border-width: 1px;
+                border-color: rgba(215, 215, 215);
+                box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0);
+                overflow-x: scroll;
+                padding-top: 1.5em;
+                transition: 0.4s;
+            }
+
+            @media screen and (max-width: 500px) {
+                .sidebar {
+                    width: 0;
+                    top: 2em;
+                }
+            }
+
+            .sidebar a {
+                text-decoration: none;
+                color: #000000;
+                display: block;
+                transition: 0.4s;
+                padding-left: 1.25em;
+                padding-right: 0;
+                padding-top: 0.5em;
+                padding-bottom: 0.5em;
+                margin: 0;
             }
 
             #main {
-                transition: margin-left .5s;
+                transition: margin-left 0.4s;
                 padding-left: 0;
                 padding-right: 0;
                 padding-bottom: 0;
@@ -2186,7 +2179,7 @@ fun buildIndexHtml(
     </head>
     <body id="main" onload="initPage()">
         <div id="top-bar" class="topbar">
-            <a id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2630;</a>
+            <button id="closeButton" class="closeButton" onclick="toggleSidePanel()">&#x2630;</button>
             <span class="search-area">
                 <input type="text" id="search-input" class="search" aria-label="search">
                 <button type="button" class="button" onclick="search()">Search</button>
@@ -2195,9 +2188,9 @@ fun buildIndexHtml(
             ${
                 if (gitHubUrl != null) {
                     """
-                        <div class="github-icon-container">
+                        <button class="github-icon-container">
                             <a href="$gitHubUrl">
-                                <svg fill="#cccccc" width="3vh" height="3vh" role="img" viewBox="0 0 24 24"
+                                <svg fill="#cccccc" width="1.2em" height="1.2em" role="img" viewBox="0 0 24 24"
                                      xmlns="http://www.w3.org/2000/svg"><title>GitHub</title><path d="M12
                                      .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577
                                      0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7
@@ -2209,7 +2202,7 @@ fun buildIndexHtml(
                                      5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0
                                      .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
                             </a>
-                        </div>
+                        </button>
                     """
                 } else {
                     ""

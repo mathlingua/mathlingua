@@ -328,7 +328,7 @@ private fun renderFile(
 
     val sourceCollection = newSourceCollection(listOf(fs.cwd()))
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-    val elements = getRenderedTopLevelElements(target, sourceCollection, noExpand, errors)
+    val elements = getUnifiedRenderedTopLevelElements(target, sourceCollection, noExpand, errors)
 
     val contentBuilder = StringBuilder()
     for (element in elements) {
@@ -799,18 +799,36 @@ private fun generatePathToEntityList(
     val result = mutableMapOf<String, List<Pair<String, Phase2Node?>>>()
     for (f in filesToProcess) {
         val path = f.relativePathTo(fs.cwd()).joinToString(File.separator)
-        result[path] = getRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
+        result[path] = getUnifiedRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
     }
     return result
 }
 
-private fun getRenderedTopLevelElements(
+private fun generatePathToCompleteEntityList(
+    fs: VirtualFileSystem,
+    filesToProcess: List<VirtualFile>,
+    sourceCollection: SourceCollection,
+    noexpand: Boolean,
+    errors: MutableList<ValueSourceTracker<ParseError>>
+): Map<String, List<RenderedTopLevelElement>> {
+    val result = mutableMapOf<String, List<RenderedTopLevelElement>>()
+    for (f in filesToProcess) {
+        val path = f.relativePathTo(fs.cwd()).joinToString(File.separator)
+        result[path] = getCompleteRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
+    }
+    return result
+}
+
+private data class RenderedTopLevelElement(
+    val renderedFormHtml: String, val rawFormHtml: String, val node: Phase2Node?)
+
+private fun getCompleteRenderedTopLevelElements(
     f: VirtualFile,
     sourceCollection: SourceCollection,
     noexpand: Boolean,
     errors: MutableList<ValueSourceTracker<ParseError>>
-): List<Pair<String, Phase2Node?>> {
-    val codeElements = mutableListOf<Pair<String, Phase2Node?>>()
+): List<RenderedTopLevelElement> {
+    val result = mutableListOf<RenderedTopLevelElement>()
     val expandedPair =
         sourceCollection.prettyPrint(file = f, html = true, literal = false, doExpand = !noexpand)
     val literalPair =
@@ -824,17 +842,36 @@ private fun getRenderedTopLevelElements(
                 tracker = null)
         })
     for (i in 0 until expandedPair.first.size) {
-        val expanded = expandedPair.first[i]
-        if (expanded.second != null && expanded.second is TopLevelBlockComment) {
-            codeElements.add(expanded)
+        result.add(
+            RenderedTopLevelElement(
+                renderedFormHtml = expandedPair.first[i].first,
+                rawFormHtml = literalPair.first[i].first,
+                node = expandedPair.first[i].second))
+    }
+    return result
+}
+
+private fun getUnifiedRenderedTopLevelElements(
+    f: VirtualFile,
+    sourceCollection: SourceCollection,
+    noexpand: Boolean,
+    errors: MutableList<ValueSourceTracker<ParseError>>
+): List<Pair<String, Phase2Node?>> {
+    val codeElements = mutableListOf<Pair<String, Phase2Node?>>()
+    val elements = getCompleteRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
+    for (element in elements) {
+        val expanded = element.renderedFormHtml
+        val node = element.node
+        if (node != null && node is TopLevelBlockComment) {
+            codeElements.add(Pair(expanded, node))
         } else {
-            val literal = literalPair.first[i]
+            val literal = element.rawFormHtml
             val id = UUID.randomUUID()
             val html =
                 "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">" +
-                    "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded.first}</div>" +
-                    "<div id='literal-$id' class='mathlingua-literal-hidden'>${literal.first}</div></div>"
-            codeElements.add(Pair(html, expanded.second))
+                    "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded}</div>" +
+                    "<div id='literal-$id' class='mathlingua-literal-hidden'>${literal}</div></div>"
+            codeElements.add(Pair(html, node))
         }
     }
     return codeElements

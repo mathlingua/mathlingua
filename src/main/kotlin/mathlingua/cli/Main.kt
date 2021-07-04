@@ -27,10 +27,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import java.io.File
-import java.nio.file.FileSystems
 import java.nio.file.Paths
-import java.nio.file.StandardWatchEventKinds
-import java.nio.file.WatchService
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
 
@@ -89,89 +86,6 @@ private class Version : CliktCommand(help = "Prints the tool and MathLingua lang
     }
 }
 
-private class Watch :
-    CliktCommand("Watches the working directory for changes and renders the code on file changes") {
-
-    private fun isHidden(file: File): Boolean {
-        if (file.name.startsWith(".")) {
-            return true
-        }
-
-        val parent = file.parentFile ?: return false
-        return isHidden(parent)
-    }
-
-    override fun run(): Unit =
-        runBlocking {
-            val fs = newDiskFileSystem(cwdParts())
-            val logger = TermUiLogger(termUi = TermUi)
-
-            fun registerAll(file: File, watchService: WatchService) {
-                if (file.isDirectory) {
-                    file.walk().forEach {
-                        val path = it.toPath()
-                        if (it.isDirectory && !isHidden(it)) {
-                            path.register(
-                                watchService,
-                                StandardWatchEventKinds.ENTRY_CREATE,
-                                StandardWatchEventKinds.ENTRY_DELETE,
-                                StandardWatchEventKinds.ENTRY_MODIFY)
-                        }
-                    }
-                }
-            }
-
-            var watchService = FileSystems.getDefault().newWatchService()
-            val cwd = Paths.get(".").toAbsolutePath().normalize().toFile()
-            registerAll(cwd, watchService)
-
-            // do an initial render to ensure the docs directory is up-to-date
-            // even before any changes occur
-            Mathlingua.render(
-                fs = fs,
-                logger = logger,
-                file = null,
-                noexpand = false,
-                stdout = false,
-                raw = false)
-            logger.log("")
-
-            logger.log("Waiting for changes...")
-            logger.log("")
-
-            while (true) {
-                var doRender = false
-                val watchKey = watchService.take()
-                for (event in watchKey.pollEvents()) {
-                    val filename = event.context().toString()
-                    if (!filename.endsWith(".html") || filename == "docs-home.html") {
-                        doRender = true
-                    }
-                    if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE ||
-                        event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
-                        watchService.close()
-                        watchService = FileSystems.getDefault().newWatchService()
-                        registerAll(cwd, watchService)
-                    }
-                }
-
-                if (doRender) {
-                    logger.log("Change detected...")
-                    Mathlingua.render(
-                        fs = fs,
-                        logger = logger,
-                        file = null,
-                        noexpand = false,
-                        stdout = false,
-                        raw = false)
-                    logger.log("")
-                }
-
-                watchKey.reset()
-            }
-        }
-}
-
 private class Render : CliktCommand(help = "Generates HTML code with definitions expanded") {
     private val file: String? by argument(
             help =
@@ -226,7 +140,7 @@ class Help : CliktCommand(help = "Show this message and exit") {
     }
 }
 
-class Clean : CliktCommand(help = "Delete the docs directory") {
+class Clean : CliktCommand(help = "Deletes generated HTML files") {
     override fun run() {
         val fs = newDiskFileSystem(cwdParts())
         val logger = TermUiLogger(termUi = TermUi)
@@ -235,7 +149,7 @@ class Clean : CliktCommand(help = "Delete the docs directory") {
 }
 
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Watch(), Serve(), Version())
+    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Serve(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

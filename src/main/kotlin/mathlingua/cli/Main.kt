@@ -110,7 +110,47 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
                     "file to render.")
         .flag()
 
-    override fun run(): Unit =
+    override fun run() {
+        if (file == "whte_rbt.obj") {
+            println("Jurassic Park, System Security Interface")
+            Thread.sleep(700)
+            println("Version 4.0.5, Alpha E")
+            Thread.sleep(700)
+            println("Ready...")
+            Thread.sleep(700)
+            print("> ")
+            "access security".forEach {
+                Thread.sleep(100)
+                print(it)
+            }
+            println()
+            Thread.sleep(700)
+            println("access: PERMISSION DENIED.")
+            print("> ")
+            "access security grid".forEach {
+                Thread.sleep(100)
+                print(it)
+            }
+            println()
+            Thread.sleep(700)
+            println("access: PERMISSION DENIED.")
+            print("> ")
+            "access main security grid".forEach {
+                Thread.sleep(100)
+                print(it)
+            }
+            println()
+            Thread.sleep(1000)
+            print("access: PERMISSION DENIED.")
+            Thread.sleep(700)
+            println("...and....")
+            Thread.sleep(1000)
+            while (true) {
+                println("YOU DIDN'T SAY THE MAGIC WORD!")
+                Thread.sleep(50)
+            }
+        }
+
         runBlocking {
             val fs = newDiskFileSystem(cwdParts())
             exitProcess(
@@ -127,6 +167,7 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
                     stdout = stdout,
                     raw = raw))
         }
+    }
 }
 
 // this value will be populated in main()

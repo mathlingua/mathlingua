@@ -1897,14 +1897,34 @@ fun buildIndexHtml(
                 if (el) {
                     el.value = '';
                 }
+                const searchStatus = document.getElementById('search-results');
+                if (searchStatus) {
+                    searchStatus.innerHTML = '';
+                    searchStatus.className = 'search-results-hidden';
+                }
             }
 
             function search() {
+                const count = searchImpl();
+                if (!open) {
+                    toggleSidePanel();
+                }
+                if (count >= 0) {
+                    const searchStatus = document.getElementById('search-results');
+                    if (searchStatus) {
+                        const pages = count === 1 ? 'page' : 'pages';
+                        searchStatus.innerHTML = 'Found results in ' + count + ' ' + pages;
+                        searchStatus.className = 'search-results-shown';
+                    }
+                }
+            }
+
+            function searchImpl() {
                 const el = document.getElementById('search-input');
                 if (el) {
                     if (!el.value || !el.value.trim()) {
                         clearSearch();
-                        return;
+                        return -1;
                     }
 
                     const terms = el.value.split(' ')
@@ -1912,7 +1932,7 @@ fun buildIndexHtml(
                                     .filter(it => it.length > 0);
                     if (terms.length == 0) {
                         clearSearch();
-                        return;
+                        return 0;
                     }
 
                     view('');
@@ -1947,11 +1967,6 @@ fun buildIndexHtml(
                         }
                     }
 
-                    if (pathsToIndices.size === 0) {
-                        alert('No results found');
-                        return;
-                    }
-
                     const pathToNewPath = new Map();
                     let firstPath = null;
                     for (const [path, ids] of pathsToIndices) {
@@ -1962,6 +1977,7 @@ fun buildIndexHtml(
                         pathToNewPath.set(path, newPath);
                     }
 
+                    let count = 0;
                     for (const id of ALL_FILE_IDS) {
                         if (!id) {
                             continue;
@@ -1971,6 +1987,7 @@ fun buildIndexHtml(
                             if (pathToNewPath.has(id)) {
                                 el.style.display = 'block';
                                 el.setAttribute('onclick', "view('" + pathToNewPath.get(id) + "')");
+                                count++;
                             } else if (id !== 'home') {
                                 el.style.display = 'none';
                             }
@@ -1996,6 +2013,8 @@ fun buildIndexHtml(
                     if (firstPath) {
                         view(firstPath);
                     }
+
+                    return count;
                 }
             }
 
@@ -2101,6 +2120,19 @@ fun buildIndexHtml(
                 .github-icon-container {
                     margin-right: 0.5em;
                 }
+            }
+
+            .search-results-shown {
+                display: block;
+                padding-top: 0.75em;
+                padding-bottom: 0.75em;
+                padding-left: 1.5em;
+                font-weight: bold;
+                font-size: 0.8em;
+            }
+
+            .search-results-hidden {
+                display: none;
             }
 
             .sidebar {
@@ -2226,6 +2258,7 @@ fun buildIndexHtml(
                     ""
                 }
             }
+            <span class='search-results-hidden' id='search-results'></span>
             $fileListHtml
         </div>
 

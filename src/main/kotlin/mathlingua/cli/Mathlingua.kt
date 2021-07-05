@@ -1203,7 +1203,7 @@ const val SHARED_CSS =
         margin-left: auto; /* for centering content */
         margin-right: auto; /* for centering content */
         font-size: 1em;
-        width: 90%;
+        width: 50em;
         background-color: white;
         border: solid;
         border-width: 1px;
@@ -1686,6 +1686,12 @@ fun buildIndexHtml(
                 if (path) {
                     const bottom = document.getElementById('__bottom_panel__');
                     if (bottom) {
+                        const sidebar = document.getElementById('sidebar');
+                        if (sidebar) {
+                            const defaultWidth = open ? '15em' : '0';
+                            bottom.style.left = sidebar.style.width || defaultWidth;
+                        }
+
                         const key = path.replace(/\?.*/g, '')
                                         .replace(/\.html/g, '.math')
                                         .replace(/\.\.\//g, '');
@@ -1762,22 +1768,17 @@ fun buildIndexHtml(
             let open = !forMobile();
 
             function toggleSidePanel() {
-                if (open) {
-                    document.getElementById('sidebar').style.width = '0';
-                    document.getElementById('main').style.marginLeft = '0';
-                    if (forMobile()) {
-                        document.getElementById('__bottom_panel__').style.width = '91.5%';
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    if (open) {
+                        sidebar.style.width = '0';
                     } else {
-                        document.getElementById('__bottom_panel__').style.width = '96.5%';
+                        const width = forMobile() ? '100%' : '15em';
+                        sidebar.style.width = width;
                     }
-                } else {
-                    let margin = forMobile() ? '50%' : '20%';
-                    document.getElementById('sidebar').style.width = margin;
-                    document.getElementById('main').style.marginLeft = margin;
-                    if (forMobile()) {
-                        document.getElementById('__bottom_panel__').style.width = '43.5%';
-                    } else {
-                        document.getElementById('__bottom_panel__').style.width = '76.5%';
+                    const bottom = document.getElementById('__bottom_panel__');
+                    if (bottom) {
+                        bottom.style.left = sidebar.style.width;
                     }
                 }
                 open = !open;
@@ -2060,7 +2061,7 @@ fun buildIndexHtml(
                 height: 2em;
                 background-color: #444444;
                 position: fixed;
-                z-index: 2;
+                z-index: 3;
                 top: 0;
                 left: 0;
                 width: 100%;
@@ -2137,9 +2138,10 @@ fun buildIndexHtml(
 
             .sidebar {
                 height: 95%;
-                width: 20%;
+                width: 15em;
+                max-width: 50%;
                 position: fixed;
-                z-index: 1;
+                z-index: 2;
                 top: 2em;
                 left: 0;
                 background-color: #fefefe;
@@ -2153,9 +2155,14 @@ fun buildIndexHtml(
                 transition: 0.4s;
             }
 
+            .sidebar-content {
+                padding-right: 1.5em;
+            }
+
             @media screen and (max-width: 500px) {
                 .sidebar {
                     width: 0;
+                    max-width: 100%;
                     top: 2em;
                 }
             }
@@ -2178,7 +2185,7 @@ fun buildIndexHtml(
                 padding-right: 0;
                 padding-bottom: 0;
                 padding-top: 1em;
-                margin-left: 20%;
+                margin-left: 0;
                 margin-right: 0;
                 margin-bottom: 0;
             }
@@ -2196,23 +2203,19 @@ fun buildIndexHtml(
                 overflow-x: scroll;
                 overflow-y: scroll;
                 white-space: nowrap;
-                width: 76.5%;
-                max-width: max-content;
+                max-width:  100%;
                 max-height: 50%;
+                border: solid;
                 border-width: 1px;
-                border-color: #555555;
-                border-bottom-style: solid;
-                box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
-                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+                border-radius: 2px;
+                border-color: #ccc;
+                box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(240, 240, 240, 0.5);
                 z-index: 1;
+                left: 0;
                 bottom: 0;
                 position: fixed;
-            }
-
-            @media screen and (max-width: 500px) {
-                .bottom-panel {
-                    width: 91.5%;
-                }
+                transition: 0.4s;
             }
         </style>
     </head>
@@ -2250,16 +2253,18 @@ fun buildIndexHtml(
         </div>
 
         <div id="sidebar" class="sidebar">
-            ${
-                if (showHome) {
-                    "<a id='home' onclick=\"view('home.html')\"><span class=\"mathlingua-home-item\">Home</span></a>\n" +
-                    "<hr>"
-                } else {
-                    ""
+            <div class="sidebar-content">
+                ${
+                    if (showHome) {
+                        "<a id='home' onclick=\"view('home.html')\"><span class=\"mathlingua-home-item\">Home</span></a>\n" +
+                        "<hr>"
+                    } else {
+                        ""
+                    }
                 }
-            }
-            <span class='search-results-hidden' id='search-results'></span>
-            $fileListHtml
+                <span class='search-results-hidden' id='search-results'></span>
+                $fileListHtml
+            </div>
         </div>
 
         <div class='bottom-panel' id='__bottom_panel__'></div>

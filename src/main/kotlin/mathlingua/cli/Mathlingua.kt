@@ -2224,7 +2224,8 @@ fun buildIndexHtml(
                     searchInput.addEventListener('keyup', e => {
                         const words = (searchInput.value || '').split(' ')
                             .filter(it => it.trim().length > 0);
-                        const lastWord = words[words.length - 1] || '';
+                        const lastWord =
+                            (words[words.length - 1] || '').toLowerCase();
 
                         if (e.key === 'Escape') {
                             dropdown.style.display = 'none';

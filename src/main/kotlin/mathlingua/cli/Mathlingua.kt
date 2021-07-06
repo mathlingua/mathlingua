@@ -1830,22 +1830,17 @@ fun buildIndexHtml(
             let open = !forMobile();
 
             function toggleSidePanel() {
-                if (open) {
-                    document.getElementById('sidebar').style.width = '0';
-                    document.getElementById('main').style.marginLeft = '0';
-                    if (forMobile()) {
-                        document.getElementById('__bottom_panel__').style.width = '91.5%';
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) {
+                    if (open) {
+                        sidebar.style.width = '0';
                     } else {
-                        document.getElementById('__bottom_panel__').style.width = '96.5%';
+                        const width = forMobile() ? '100%' : '15em';
+                        sidebar.style.width = width;
                     }
-                } else {
-                    let margin = forMobile() ? '50%' : '20%';
-                    document.getElementById('sidebar').style.width = margin;
-                    document.getElementById('main').style.marginLeft = margin;
-                    if (forMobile()) {
-                        document.getElementById('__bottom_panel__').style.width = '43.5%';
-                    } else {
-                        document.getElementById('__bottom_panel__').style.width = '76.5%';
+                    const bottom = document.getElementById('__bottom_panel__');
+                    if (bottom) {
+                        bottom.style.left = sidebar.style.width;
                     }
                 }
                 open = !open;

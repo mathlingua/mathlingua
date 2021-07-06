@@ -43,6 +43,14 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.found
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringItem
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ContentItemSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.NameItemSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.OffsetItemSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.PageItemSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SiteItemSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.StringSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
@@ -902,6 +910,30 @@ private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
                 }
             }
         }
+        is StringItem -> {
+            getAllWordsImpl(node.text, words)
+        }
+        is StringSection -> {
+            getAllWordsImpl(node.name, words)
+            for (value in node.values) {
+                getAllWordsImpl(value, words)
+            }
+        }
+        is ContentItemSection -> {
+            getAllWordsImpl(node.content, words)
+        }
+        is NameItemSection -> {
+            getAllWordsImpl(node.name, words)
+        }
+        is OffsetItemSection -> {
+            getAllWordsImpl(node.offset, words)
+        }
+        is PageItemSection -> {
+            getAllWordsImpl(node.page, words)
+        }
+        is SiteItemSection -> {
+            getAllWordsImpl(node.url, words)
+        }
         is Statement -> {
             val root = node.texTalkRoot
             if (root is ValidationSuccess) {
@@ -912,10 +944,19 @@ private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
             words.add(node.name.toLowerCase())
         }
         is Text -> {
-            words.addAll(
-                node.text.split(" ").map { it.trim() }.filter { it.isNotEmpty() }.map {
-                    it.toLowerCase()
-                })
+            getAllWordsImpl(node.text, words)
+        }
+        is TopLevelBlockComment -> {
+            getAllWordsImpl(node.blockComment.text.removeSurrounding("::", "::"), words)
+        }
+        is TopicGroup -> {
+            getAllWordsImpl(node.contentSection.text, words)
+            if (node.id != null) {
+                getAllWordsImpl(node.id, words)
+            }
+            for (name in node.topicSection.names) {
+                getAllWordsImpl(name, words)
+            }
         }
     }
 
@@ -925,11 +966,22 @@ private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
 private fun getAllWordsImpl(node: TexTalkNode, words: MutableSet<String>) {
     when (node) {
         is TextTexTalkNode -> {
-            words.add(node.text.toLowerCase())
+            getAllWordsImpl(node.text, words)
         }
     }
 
     node.forEach { getAllWordsImpl(it, words) }
+}
+
+private fun getAllWordsImpl(text: String, words: MutableSet<String>) {
+    words.addAll(
+        text
+            .replace("\r", " ")
+            .replace("\n", " ")
+            .split(" ")
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .map { sanitizeHtmlForJs(it.toLowerCase()) })
 }
 
 const val SHARED_HEADER =

@@ -26,7 +26,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.s
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
-class TopLevelBlockComment(private val blockComment: BlockComment) : TopLevelGroup(null) {
+class TopLevelBlockComment(val blockComment: BlockComment) : TopLevelGroup(null) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {

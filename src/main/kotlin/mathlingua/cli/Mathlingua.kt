@@ -974,8 +974,18 @@ private fun getAllWordsImpl(node: TexTalkNode, words: MutableSet<String>) {
 }
 
 private fun getAllWordsImpl(text: String, words: MutableSet<String>) {
+    val builder = StringBuilder()
+    for (c in text) {
+        if (c.isLetterOrDigit()) {
+            builder.append(c)
+        } else {
+            builder.append(' ')
+        }
+    }
+
     words.addAll(
-        text
+        builder
+            .toString()
             .replace("\r", " ")
             .replace("\n", " ")
             .split(" ")
@@ -1820,17 +1830,22 @@ fun buildIndexHtml(
             let open = !forMobile();
 
             function toggleSidePanel() {
-                const sidebar = document.getElementById('sidebar');
-                if (sidebar) {
-                    if (open) {
-                        sidebar.style.width = '0';
+                if (open) {
+                    document.getElementById('sidebar').style.width = '0';
+                    document.getElementById('main').style.marginLeft = '0';
+                    if (forMobile()) {
+                        document.getElementById('__bottom_panel__').style.width = '91.5%';
                     } else {
-                        const width = forMobile() ? '100%' : '15em';
-                        sidebar.style.width = width;
+                        document.getElementById('__bottom_panel__').style.width = '96.5%';
                     }
-                    const bottom = document.getElementById('__bottom_panel__');
-                    if (bottom) {
-                        bottom.style.left = sidebar.style.width;
+                } else {
+                    let margin = forMobile() ? '50%' : '20%';
+                    document.getElementById('sidebar').style.width = margin;
+                    document.getElementById('main').style.marginLeft = margin;
+                    if (forMobile()) {
+                        document.getElementById('__bottom_panel__').style.width = '43.5%';
+                    } else {
+                        document.getElementById('__bottom_panel__').style.width = '76.5%';
                     }
                 }
                 open = !open;
@@ -2071,6 +2086,100 @@ fun buildIndexHtml(
                 }
             }
 
+            function buildTrie(words) {
+                const trie = {
+                    isWord: false,
+                    children: new Map()
+                };
+                for (word of words) {
+                    addToTrie(trie, word, 0);
+                }
+                return trie;
+            }
+
+            function addToTrie(trieNode, word, index) {
+                if (index >= word.length) {
+                    return;
+                }
+
+                const c = word[index];
+                if (!trieNode.children.has(c)) {
+                    trieNode.children.set(c, {
+                        isWord: index === word.length - 1,
+                        children: new Map()
+                    });
+                }
+
+                const subNode = trieNode.children.get(c);
+                if (index === word.length - 1) {
+                    subNode.isWord = true;
+                }
+
+                addToTrie(subNode, word, index + 1);
+            }
+
+            function searchTrie(trieNode, word) {
+                const node = findTrieLeaf(trieNode, word, 0);
+                if (!node) {
+                    return [];
+                }
+                const result = new Set();
+                getWordsUnder('', '', node, result)
+                return Array.from(result);
+            }
+
+            function findTrieLeaf(trieNode, word, index) {
+                if (index >= word.length) {
+                    return trieNode;
+                }
+
+                const c = word[index];
+                if (trieNode.children.has(c)) {
+                    return findTrieLeaf(trieNode.children.get(c), word, index + 1);
+                }
+
+                return null;
+            }
+
+            function getWordsUnder(buffer, char, trieNode, result) {
+                if (!trieNode) {
+                    return;
+                }
+
+                buffer += char;
+                if (trieNode.isWord) {
+                    result.add(buffer);
+                }
+
+                for (c of trieNode.children.keys()) {
+                    getWordsUnder(buffer, c, trieNode.children.get(c), result);
+                }
+
+                buffer = buffer.substring(0, buffer.length - 1);
+            }
+
+            function toJSON(trie) {
+                const result = {
+                    isWord: trie.isWord,
+                    children: {}
+                };
+                for (key of trie.children.keys()) {
+                    result.children[key] = toJSON(trie.children.get(key));
+                }
+                return result;
+            }
+
+            function completeSearchInput(suffix) {
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    searchInput.value += suffix;
+                    const dropdown = document.getElementById('search-dropdown');
+                    if (dropdown) {
+                        dropdown.style.display = 'none';
+                    }
+                }
+            }
+
             function initPage() {
                 window.onpopstate = function(event) {
                     if (document.location && document.location.search) {
@@ -2101,6 +2210,106 @@ fun buildIndexHtml(
                 }
                 setup();
                 view(path);
+
+                const dropdown = document.getElementById('search-dropdown');
+                document.addEventListener('click', event => {
+                    if (!dropdown.contains(event.target)) {
+                        dropdown.style.display = 'none';
+                    }
+                });
+
+                const searchInput = document.getElementById('search-input');
+                if (searchInput) {
+                    const trie = buildTrie(Array.from(SEARCH_INDEX.keys()));
+                    searchInput.addEventListener('keyup', e => {
+                        const words = (searchInput.value || '').split(' ')
+                            .filter(it => it.trim().length > 0);
+                        const lastWord = words[words.length - 1] || '';
+
+                        if (e.key === 'Escape') {
+                            dropdown.style.display = 'none';
+                            return;
+                        } else if (e.key === 'Enter') {
+                            if (dropdown.style.display === 'none') {
+                                return;
+                            }
+                            e.preventDefault();
+                            const children = dropdown.childNodes;
+                            let i = 0;
+                            while (i < children.length) {
+                                const child = children[i];
+                                if (child.className === 'search-dropdown-item-selected') {
+                                    break;
+                                }
+                                i++;
+                            }
+                            const cur = children[i];
+                            if (cur) {
+                                completeSearchInput(cur.text.slice(lastWord.length));
+                            }
+                            dropdown.style.display = 'none';
+                            search();
+                            return;
+                        } else if (e.key === 'ArrowDown') {
+                            e.preventDefault();
+                            const children = dropdown.childNodes;
+                            let i = 0;
+                            while (i < children.length) {
+                                const child = children[i];
+                                if (child.className === 'search-dropdown-item-selected') {
+                                    break;
+                                }
+                                i++;
+                            }
+                            const cur = children[i];
+                            if (cur) {
+                                cur.className = 'search-dropdown-item';
+                            }
+                            const highlightIndex = i >= children.length - 1 ? 0 : i + 1;
+                            const toHighlight = children[highlightIndex];
+                            if (toHighlight) {
+                                toHighlight.className = 'search-dropdown-item-selected';
+                            }
+                            return;
+                        } else if (e.key === 'ArrowUp') {
+                            e.preventDefault();
+                            const children = dropdown.childNodes;
+                            let i = 0;
+                            while (i < children.length) {
+                                const child = children[i];
+                                if (child.className === 'search-dropdown-item-selected') {
+                                    break;
+                                }
+                                i++;
+                            }
+                            const cur = children[i];
+                            if (cur) {
+                                cur.className = 'search-dropdown-item';
+                            }
+                            const highlightIndex = (i >= children.length || i === 0) ? children.length - 1 : i - 1;
+                            const toHighlight = children[highlightIndex];
+                            if (toHighlight) {
+                                toHighlight.className = 'search-dropdown-item-selected';
+                            }
+                            return;
+                        }
+
+                        const suffixes = searchTrie(trie, lastWord).slice(0, 10);
+                        if (dropdown) {
+                            while (dropdown.firstChild) {
+                                dropdown.removeChild(dropdown.firstChild);
+                            }
+                            for (const suff of suffixes) {
+                                dropdown.style.display = 'block';
+                                const a = document.createElement('a');
+                                a.text = lastWord + suff;
+                                a.href = 'javascript:completeSearchInput("' + suff + '")';
+                                a.className = 'search-dropdown-item';
+                                dropdown.appendChild(a);
+                            }
+                        }
+                    });
+                }
             }
         </script>
         <style>
@@ -2135,6 +2344,40 @@ fun buildIndexHtml(
                 border: none;
                 border-radius: 0;
                 line-height: 1.75em;
+                background-color: #eeeeee;
+            }
+
+            .search-dropdown {
+                z-index: 4;
+                position: absolute;
+                background-color: #ffffff;
+                border-width: 1px;
+                border-color: #555555;
+                border-top: none;
+                box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
+                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+            }
+
+            .search-dropdown-item {
+                padding: 1ex;
+                display: block;
+                text-decoration: none;
+                color: black;
+            }
+
+            .search-dropdown-item-selected {
+                padding: 1ex;
+                display: block;
+                text-decoration: none;
+                color: black;
+                background-color: #eeeeee;
+            }
+
+            .search-dropdown-item:hover {
+                padding: 1ex;
+                display: block;
+                text-decoration: none;
+                color: black;
                 background-color: #eeeeee;
             }
 
@@ -2278,6 +2521,9 @@ fun buildIndexHtml(
                 <input type="text" id="search-input" class="search" aria-label="search">
                 <button type="button" class="button" onclick="search()">Search</button>
                 <button type="button" class="button" onclick="clearSearch()">Reset</button>
+                <div id='search-dropdown'
+                class='search-dropdown'>
+                </div>
             </span>
             ${
                 if (gitHubUrl != null) {

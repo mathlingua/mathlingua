@@ -999,6 +999,8 @@ const val SHARED_HEADER =
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
     <meta content="utf-8" http-equiv="encoding">
+    <meta name="description" content="A codex of mathematical knowledge">
+    <meta name="keywords" content="math, maths, mathematics, knowledge, database, repository, codex, encyclopedia">
     <link rel="stylesheet"
           href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
           integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
@@ -1007,6 +1009,9 @@ const val SHARED_HEADER =
             src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
             integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
             crossorigin="anonymous">
+    </script>
+    <script defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js">
     </script>
 """
 
@@ -1848,6 +1853,22 @@ fun buildIndexHtml(
 
             function view(path, setHistory = true) {
                 viewImpl(path, setHistory);
+                const inputElement = document.getElementById('search-input');
+                if (inputElement) {
+                    const search = inputElement.value;
+                    if (search) {
+                        const markInstance =
+                            new Mark(document.querySelector('.content'));
+                        markInstance.unmark({
+                            done: () => {
+                                markInstance.mark(search, {
+                                    caseSensitive: false,
+                                    separateWordSearch: true
+                                });
+                            }
+                        });
+                    }
+                }
                 if (open && forMobile()) {
                     toggleSidePanel();
                 }
@@ -2507,6 +2528,16 @@ fun buildIndexHtml(
                 bottom: 0;
                 position: fixed;
                 transition: 0.4s;
+            }
+
+            mark {
+                background-color: inherit;
+                color: inherit;
+                border: solid;
+                border-width: 1px;
+                border-radius: 3px;
+                border-color: #aaaaaa;
+                padding: 1px;
             }
         </style>
     </head>

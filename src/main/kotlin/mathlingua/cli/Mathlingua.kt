@@ -1861,10 +1861,12 @@ fun buildIndexHtml(
                             new Mark(document.querySelector('.content'));
                         markInstance.unmark({
                             done: () => {
-                                markInstance.mark(search, {
-                                    caseSensitive: false,
-                                    separateWordSearch: true
-                                });
+                                if (search.length > 0) {
+                                    markInstance.mark(search, {
+                                        caseSensitive: false,
+                                        separateWordSearch: true
+                                    });
+                                }
                             }
                         });
                     }

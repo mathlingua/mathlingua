@@ -1329,6 +1329,7 @@ const val SHARED_CSS =
 
     .mathlingua-literal-visible {
         display: block;
+        width: max-content;
     }
 
     .mathlingua-literal-hidden {

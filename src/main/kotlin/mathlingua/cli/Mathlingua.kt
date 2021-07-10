@@ -2311,7 +2311,8 @@ fun buildIndexHtml(
                             return;
                         }
 
-                        const suffixes = searchTrie(trie, lastWord).slice(0, 10);
+                        const suffixes = searchTrie(trie, lastWord).sort(
+                            (a, b) => b.length - a.length).slice(0, 10);
                         if (dropdown) {
                             while (dropdown.firstChild) {
                                 dropdown.removeChild(dropdown.firstChild);
@@ -2361,7 +2362,11 @@ fun buildIndexHtml(
                 border: none;
                 border-radius: 0;
                 line-height: 1.75em;
-                background-color: #eeeeee;
+                background-color: #ffffff;
+            }
+
+            .search:focus {
+                outline: none;
             }
 
             .search-dropdown {
@@ -2371,8 +2376,9 @@ fun buildIndexHtml(
                 border-width: 1px;
                 border-color: #555555;
                 border-top: none;
-                box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
-                            inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+                box-shadow: rgba(0, 0, 0, 1) 0px 0px 1px 0px;
+                min-width: 10.65em;
+                width: max-content;
             }
 
             .search-dropdown-item {

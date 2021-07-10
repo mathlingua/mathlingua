@@ -704,7 +704,10 @@ private fun expandAsWrittenImpl(
 
     return Expansion(
         text =
-            if (addParens && shouldHaveParen(node)) {
+            if (addParens &&
+                shouldHaveParen(node) &&
+                !code.startsWith("(") &&
+                !code.endsWith(")")) {
                 "\\left ( $code \\right )"
             } else {
                 code

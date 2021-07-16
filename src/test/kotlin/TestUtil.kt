@@ -69,7 +69,3 @@ fun serialize(obj: Any): String {
     pp(obj, writeTo = builder, indent = 2, wrappedLineWidth = Integer.MAX_VALUE)
     return builder.toString()
 }
-
-fun main() {
-    loadTestCases(GoldenType.Chalktalk)
-}

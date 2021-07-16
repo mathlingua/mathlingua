@@ -26,24 +26,12 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
-import java.io.File
-import java.nio.file.Paths
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
+import mathlingua.getCwd
+import mathlingua.getFileSeparator
 
-private fun getCwd() = Paths.get(".").toAbsolutePath().normalize().toFile()
-
-private fun cwdParts() = getCwd().absolutePath.split(File.separator)
-
-private fun toVirtualFile(fs: VirtualFileSystem, path: String): VirtualFile {
-    val file = File(path).normalize().absoluteFile
-    val relPath = file.toRelativeString(getCwd()).split(File.separator)
-    return if (file.isDirectory) {
-        fs.getDirectory(relPath)
-    } else {
-        fs.getFile(relPath)
-    }
-}
+private fun cwdParts() = getCwd().absolutePath.split(getFileSeparator())
 
 private class Mlg : CliktCommand() {
     override fun run() = Unit
@@ -62,7 +50,7 @@ private class Check : CliktCommand(help = "Check input files for errors") {
                 Mathlingua.check(
                     fs = fs,
                     logger = TermUiLogger(termUi = TermUi),
-                    files = file.toList().map { toVirtualFile(fs, it) },
+                    files = file.toList().map { fs.getFileOrDirectory(it) },
                     json = json))
         }
 }
@@ -161,7 +149,7 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
                         if (file == null) {
                             null
                         } else {
-                            toVirtualFile(fs, file!!)
+                            fs.getFileOrDirectory(file!!)
                         },
                     noexpand = noexpand,
                     stdout = stdout,

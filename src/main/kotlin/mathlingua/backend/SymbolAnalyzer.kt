@@ -16,7 +16,6 @@
 
 package mathlingua.backend
 
-import java.lang.StringBuilder
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature

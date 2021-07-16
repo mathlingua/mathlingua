@@ -16,12 +16,6 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
-import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension
-import com.vladsch.flexmark.ext.tables.TablesExtension
-import com.vladsch.flexmark.html.HtmlRenderer
-import com.vladsch.flexmark.parser.Parser
-import com.vladsch.flexmark.util.data.MutableDataSet
-import java.util.UUID
 import kotlin.random.Random
 import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
@@ -55,6 +49,10 @@ import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
+import mathlingua.getRandomUuid
+import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
+import org.intellij.markdown.html.HtmlGenerator
+import org.intellij.markdown.parser.MarkdownParser
 
 interface CodeWriter {
     fun generateCode(node: Phase2Node): String
@@ -244,7 +242,7 @@ open class HtmlCodeWriter(
                         .getCode())
                 builder.append("</span>")
                 if (node.proofSection != null) {
-                    val id = UUID.randomUUID().toString()
+                    val id = getRandomUuid()
                     builder.append(
                         "<hr/><div class='mathlingua-proof-header' onclick=\"toggleProof('$id')\">")
                     builder.append(
@@ -1025,18 +1023,9 @@ private fun splitByMathlingua(text: String): List<TextRange> {
 }
 
 private fun parseMarkdown(text: String): String {
-    val options = MutableDataSet()
-
-    options.set(
-        Parser.EXTENSIONS, listOf(TablesExtension.create(), StrikethroughExtension.create()))
-    options.set(HtmlRenderer.SOFT_BREAK, " ")
-    options.set(HtmlRenderer.HARD_BREAK, " ")
-
-    val parser = Parser.builder(options).build()
-    val renderer = HtmlRenderer.builder(options).build()
-
-    val document = parser.parse(text)
-    return renderer.render(document)
+    val flavor = CommonMarkFlavourDescriptor()
+    val tree = MarkdownParser(flavor).buildMarkdownTreeFromString(text)
+    return HtmlGenerator(text, tree, flavor).generateHtml()
 }
 
 private fun expandTextAsWritten(

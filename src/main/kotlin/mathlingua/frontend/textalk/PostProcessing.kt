@@ -16,7 +16,7 @@
 
 package mathlingua.frontend.textalk
 
-import java.util.Stack
+import mathlingua.Stack
 import mathlingua.frontend.support.ParseError
 
 /*

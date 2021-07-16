@@ -26,10 +26,9 @@ import java.nio.file.Paths
 import java.util.UUID
 import java.util.concurrent.Executors
 import mathlingua.cli.Logger
-
-fun getCwd() = Paths.get(".").toAbsolutePath().normalize().toFile()
-
-fun getFileSeparator() = File.separator
+import mathlingua.cli.VirtualFile
+import mathlingua.cli.VirtualFileImpl
+import mathlingua.cli.VirtualFileSystem
 
 fun getRandomUuid() = UUID.randomUUID().toString()
 
@@ -139,5 +138,80 @@ private fun handleServeRequest(
         // "Broken pipe (Write failed)" if a request comes in while another
         // is still being processed. Just absorb the exception and try to
         // reconnect.
+    }
+}
+
+fun newDiskFileSystem(): VirtualFileSystem {
+    return DiskFileSystem()
+}
+
+private class DiskFileSystem() : VirtualFileSystem {
+    private val cwd =
+        Paths.get(".").toAbsolutePath().normalize().toFile().absolutePath.split(getFileSeparator())
+    private val cwdFile = VirtualFileImpl(absolutePathParts = cwd, directory = true, this)
+
+    private fun getAbsolutePath(relativePath: List<String>): List<String> {
+        val absolutePath = mutableListOf<String>()
+        absolutePath.addAll(cwd)
+        absolutePath.addAll(relativePath)
+        return absolutePath
+    }
+
+    override fun getFileSeparator() = File.separator
+
+    override fun getFileOrDirectory(path: String): VirtualFile {
+        val file = File(path).normalize().absoluteFile
+        val cwdFile = File(cwd.joinToString(getFileSeparator()))
+        val relPath = file.toRelativeString(cwdFile).split(getFileSeparator())
+        return if (file.isDirectory) {
+            getDirectory(relPath)
+        } else {
+            getFile(relPath)
+        }
+    }
+
+    override fun getFile(relativePath: List<String>): VirtualFile {
+        return VirtualFileImpl(
+            absolutePathParts = getAbsolutePath(relativePath), directory = false, fs = this)
+    }
+
+    override fun getDirectory(relativePath: List<String>): VirtualFile {
+        return VirtualFileImpl(
+            absolutePathParts = getAbsolutePath(relativePath), directory = true, fs = this)
+    }
+
+    override fun cwd() = cwdFile
+
+    private fun VirtualFile.toFile() =
+        File(this.absolutePath().joinToString(File.separator)).normalize()
+
+    override fun relativePathTo(vf: VirtualFile, dir: VirtualFile) =
+        vf.toFile().toRelativeString(dir.toFile()).split(File.separator)
+
+    override fun exists(vf: VirtualFile) = vf.toFile().exists()
+
+    override fun mkdirs(vf: VirtualFile) = vf.toFile().mkdirs()
+
+    override fun readText(vf: VirtualFile) = vf.toFile().readText()
+
+    override fun writeText(vf: VirtualFile, content: String) = vf.toFile().writeText(content)
+
+    override fun listFiles(vf: VirtualFile): List<VirtualFile> {
+        val children = vf.toFile().listFiles() ?: arrayOf()
+        return children.sortedBy { it.name }.map {
+            VirtualFileImpl(
+                absolutePathParts = it.absolutePath.split(File.separator),
+                directory = it.isDirectory,
+                this)
+        }
+    }
+
+    override fun delete(vf: VirtualFile): Boolean {
+        val file = vf.toFile()
+        return if (file.isDirectory) {
+            file.deleteRecursively()
+        } else {
+            file.delete()
+        }
     }
 }

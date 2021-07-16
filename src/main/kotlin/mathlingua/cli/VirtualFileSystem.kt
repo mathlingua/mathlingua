@@ -16,9 +16,7 @@
 
 package mathlingua.cli
 
-import java.io.File
-import java.io.IOException
-import mathlingua.getFileSeparator
+class VirtualFileException(message: String) : Exception(message)
 
 interface VirtualFile {
     fun absolutePath(): List<String>
@@ -33,6 +31,7 @@ interface VirtualFile {
 }
 
 interface VirtualFileSystem {
+    fun getFileSeparator(): String
     fun getFileOrDirectory(path: String): VirtualFile
     fun getFile(relativePath: List<String>): VirtualFile
     fun getDirectory(relativePath: List<String>): VirtualFile
@@ -46,10 +45,6 @@ interface VirtualFileSystem {
     // deletes the virtual file if it is a file and recursively
     // if it is a directory
     fun delete(vf: VirtualFile): Boolean
-}
-
-fun newDiskFileSystem(cwd: List<String>): VirtualFileSystem {
-    return DiskFileSystem(cwd)
 }
 
 fun newMemoryFileSystem(cwd: List<String>): VirtualFileSystem {
@@ -79,74 +74,6 @@ data class VirtualFileImpl(
     override fun listFiles() = fs.listFiles(this)
 
     override fun delete() = fs.delete(this)
-}
-
-private class DiskFileSystem(private val cwd: List<String>) : VirtualFileSystem {
-    private val cwdFile = VirtualFileImpl(absolutePathParts = cwd, directory = true, this)
-
-    private fun getAbsolutePath(relativePath: List<String>): List<String> {
-        val absolutePath = mutableListOf<String>()
-        absolutePath.addAll(cwd)
-        absolutePath.addAll(relativePath)
-        return absolutePath
-    }
-
-    override fun getFileOrDirectory(path: String): VirtualFile {
-        val file = File(path).normalize().absoluteFile
-        val fileSep = getFileSeparator()
-        val cwdFile = File(cwd.joinToString(fileSep))
-        val relPath = file.toRelativeString(cwdFile).split(fileSep)
-        return if (file.isDirectory) {
-            getDirectory(relPath)
-        } else {
-            getFile(relPath)
-        }
-    }
-
-    override fun getFile(relativePath: List<String>): VirtualFile {
-        return VirtualFileImpl(
-            absolutePathParts = getAbsolutePath(relativePath), directory = false, fs = this)
-    }
-
-    override fun getDirectory(relativePath: List<String>): VirtualFile {
-        return VirtualFileImpl(
-            absolutePathParts = getAbsolutePath(relativePath), directory = true, fs = this)
-    }
-
-    override fun cwd() = cwdFile
-
-    private fun VirtualFile.toFile() =
-        File(this.absolutePath().joinToString(File.separator)).normalize()
-
-    override fun relativePathTo(vf: VirtualFile, dir: VirtualFile) =
-        vf.toFile().toRelativeString(dir.toFile()).split(File.separator)
-
-    override fun exists(vf: VirtualFile) = vf.toFile().exists()
-
-    override fun mkdirs(vf: VirtualFile) = vf.toFile().mkdirs()
-
-    override fun readText(vf: VirtualFile) = vf.toFile().readText()
-
-    override fun writeText(vf: VirtualFile, content: String) = vf.toFile().writeText(content)
-
-    override fun listFiles(vf: VirtualFile): List<VirtualFile> {
-        val children = vf.toFile().listFiles() ?: arrayOf()
-        return children.sortedBy { it.name }.map {
-            VirtualFileImpl(
-                absolutePathParts = it.absolutePath.split(File.separator),
-                directory = it.isDirectory,
-                this)
-        }
-    }
-
-    override fun delete(vf: VirtualFile): Boolean {
-        val file = vf.toFile()
-        return if (file.isDirectory) {
-            file.deleteRecursively()
-        } else {
-            file.delete()
-        }
-    }
 }
 
 private class MemoryFileNode(
@@ -179,6 +106,8 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
         absolutePath.addAll(relativePath)
         return absolutePath
     }
+
+    override fun getFileSeparator() = "/"
 
     override fun getFileOrDirectory(path: String) =
         if (path.endsWith(getFileSeparator())) {
@@ -257,8 +186,8 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
                     tail.children[part] = newFile
                     tail = newFile
                 } else {
-                    throw IOException(
-                        "File not found: ${absolutePath.joinToString(File.separator)}")
+                    throw VirtualFileException(
+                        "File not found: ${absolutePath.joinToString(getFileSeparator())}")
                 }
             } else {
                 tail = tail.children[part]!!

@@ -47,7 +47,6 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
-import mathlingua.getFileSeparator
 import mathlingua.getRandomUuid
 import mathlingua.startServer
 
@@ -129,11 +128,11 @@ object Mathlingua {
             0
         } else {
             if (indexFile.delete()) {
-                logger.log("Deleted docs${getFileSeparator()}index.html")
+                logger.log("Deleted docs${fs.getFileSeparator()}index.html")
                 0
             } else {
                 logger.log(
-                    "${bold(red("ERROR: "))} Failed to delete docs${getFileSeparator()}index.html")
+                    "${bold(red("ERROR: "))} Failed to delete docs${fs.getFileSeparator()}index.html")
                 1
             }
         }
@@ -193,7 +192,7 @@ private fun getErrorOutput(
         if (json) {
             builder.append("{")
             builder.append(
-                "  \"file\": \"${err.source.file.absolutePath().joinToString(getFileSeparator()).jsonSanitize() ?: "None"}\",")
+                "  \"file\": \"${err.source.file.absolutePath().joinToString(fs.getFileSeparator()).jsonSanitize() ?: "None"}\",")
             builder.append("  \"type\": \"ERROR\",")
             builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
             builder.append("  \"failedLine\": \"\",")
@@ -207,7 +206,7 @@ private fun getErrorOutput(
             builder.append(bold(red("ERROR: ")))
             builder.append(
                 bold(
-                    "${err.source.file.relativePathTo(cwd).joinToString(getFileSeparator()) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
+                    "${err.source.file.relativePathTo(cwd).joinToString(fs.getFileSeparator()) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
             builder.append(err.value.message.trim())
             builder.append("\n\n")
         }
@@ -239,7 +238,7 @@ private fun renderFile(
 ): List<ValueSourceTracker<ParseError>> {
     if (!target.exists()) {
         val message =
-            "ERROR: The file ${target.absolutePath().joinToString(getFileSeparator())} does not exist"
+            "ERROR: The file ${target.absolutePath().joinToString(fs.getFileSeparator())} does not exist"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -252,7 +251,7 @@ private fun renderFile(
 
     if (target.isDirectory() || !target.absolutePath().last().endsWith(".math")) {
         val message =
-            "ERROR: The path ${target.absolutePath().joinToString(getFileSeparator())} is not a .math file"
+            "ERROR: The path ${target.absolutePath().joinToString(fs.getFileSeparator())} is not a .math file"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -303,7 +302,7 @@ private fun renderFile(
             fs.getDirectory(htmlPath.filterIndexed { index, _ -> index < htmlPath.size - 1 })
         parentDir.mkdirs()
         outFile.writeText(text)
-        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(getFileSeparator())}")
+        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())}")
     }
 
     if (stdout) {
@@ -345,7 +344,8 @@ private fun renderAll(
     if (!stdout) {
         val indexFile = fs.getFile(listOf("docs", "index.html"))
         indexFile.writeText(indexFileText)
-        logger.log("Wrote ${indexFile.relativePathTo(fs.cwd()).joinToString(getFileSeparator())}")
+        logger.log(
+            "Wrote ${indexFile.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())}")
     }
 
     if (stdout) {
@@ -514,7 +514,8 @@ private fun getChildren(fs: VirtualFileSystem, file: VirtualFile): List<VirtualF
             val path = mutableListOf<String>()
             path.addAll(relPath)
             path.add(it)
-            fs.getFileOrDirectory(fs.getFile(path).absolutePath().joinToString(getFileSeparator()))
+            fs.getFileOrDirectory(
+                fs.getFile(path).absolutePath().joinToString(fs.getFileSeparator()))
         }
     } else {
         file.listFiles()
@@ -555,7 +556,9 @@ private fun buildFileList(
     val isMathFile = !file.isDirectory() && file.absolutePath().last().endsWith(".math")
     if ((file.isDirectory() && childBuilder.isNotEmpty()) || isMathFile) {
         val src =
-            file.relativePathTo(fs.cwd()).joinToString(getFileSeparator()).replace(".math", ".html")
+            file.relativePathTo(fs.cwd())
+                .joinToString(fs.getFileSeparator())
+                .replace(".math", ".html")
         val cssDesc = "style='padding-left: ${indent}px'"
         val classDesc =
             if (file.isDirectory()) {
@@ -615,7 +618,7 @@ private fun generateSearchIndexImpl(
 
     if (!file.isDirectory() && file.absolutePath().last().endsWith(".math")) {
         val path =
-            file.relativePathTo(fs.cwd()).joinToString(getFileSeparator()).removeSuffix(".math")
+            file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()).removeSuffix(".math")
         when (val validation = FrontEnd.parse(file.readText())
         ) {
             is ValidationSuccess -> {
@@ -654,7 +657,7 @@ private fun generateSignatureToPathImpl(
 
     if (!file.isDirectory() && file.absolutePath().last().endsWith(".math")) {
         val path =
-            file.relativePathTo(fs.cwd()).joinToString(getFileSeparator()).removeSuffix(".math")
+            file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()).removeSuffix(".math")
         when (val validation = FrontEnd.parse(file.readText())
         ) {
             is ValidationSuccess -> {
@@ -731,7 +734,7 @@ private fun generatePathToEntityList(
 ): Map<String, List<Pair<String, Phase2Node?>>> {
     val result = mutableMapOf<String, List<Pair<String, Phase2Node?>>>()
     for (f in filesToProcess) {
-        val path = f.relativePathTo(fs.cwd()).joinToString(getFileSeparator())
+        val path = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
         result[path] = getUnifiedRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
     }
     return result
@@ -746,7 +749,7 @@ private fun generatePathToCompleteEntityList(
 ): Map<String, List<RenderedTopLevelElement>> {
     val result = mutableMapOf<String, List<RenderedTopLevelElement>>()
     for (f in filesToProcess) {
-        val path = f.relativePathTo(fs.cwd()).joinToString(getFileSeparator())
+        val path = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
         result[path] = getCompleteRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
     }
     return result

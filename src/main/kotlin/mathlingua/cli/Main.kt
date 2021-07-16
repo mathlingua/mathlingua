@@ -28,10 +28,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import kotlin.system.exitProcess
 import kotlinx.coroutines.runBlocking
-import mathlingua.getCwd
-import mathlingua.getFileSeparator
-
-private fun cwdParts() = getCwd().absolutePath.split(getFileSeparator())
+import mathlingua.newDiskFileSystem
 
 private class Mlg : CliktCommand() {
     override fun run() = Unit
@@ -45,7 +42,7 @@ private class Check : CliktCommand(help = "Check input files for errors") {
 
     override fun run(): Unit =
         runBlocking {
-            val fs = newDiskFileSystem(cwdParts())
+            val fs = newDiskFileSystem()
             exitProcess(
                 Mathlingua.check(
                     fs = fs,
@@ -63,7 +60,7 @@ private class Serve :
     private val port: Int by option(help = "The port to listen on").int().default(8080)
 
     override fun run() {
-        val fs = newDiskFileSystem(cwdParts())
+        val fs = newDiskFileSystem()
         Mathlingua.serve(fs = fs, logger = TermUiLogger(termUi = TermUi), port = port)
     }
 }
@@ -140,7 +137,7 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
         }
 
         runBlocking {
-            val fs = newDiskFileSystem(cwdParts())
+            val fs = newDiskFileSystem()
             exitProcess(
                 Mathlingua.render(
                     fs = fs,
@@ -171,7 +168,7 @@ class Help : CliktCommand(help = "Show this message and exit") {
 
 class Clean : CliktCommand(help = "Deletes generated HTML files") {
     override fun run() {
-        val fs = newDiskFileSystem(cwdParts())
+        val fs = newDiskFileSystem()
         val logger = TermUiLogger(termUi = TermUi)
         exitProcess(Mathlingua.clean(fs, logger))
     }

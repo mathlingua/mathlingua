@@ -18,6 +18,7 @@ package mathlingua.cli
 
 import java.io.File
 import java.io.IOException
+import mathlingua.getFileSeparator
 
 interface VirtualFile {
     fun absolutePath(): List<String>
@@ -32,6 +33,7 @@ interface VirtualFile {
 }
 
 interface VirtualFileSystem {
+    fun getFileOrDirectory(path: String): VirtualFile
     fun getFile(relativePath: List<String>): VirtualFile
     fun getDirectory(relativePath: List<String>): VirtualFile
     fun cwd(): VirtualFile
@@ -87,6 +89,18 @@ private class DiskFileSystem(private val cwd: List<String>) : VirtualFileSystem 
         absolutePath.addAll(cwd)
         absolutePath.addAll(relativePath)
         return absolutePath
+    }
+
+    override fun getFileOrDirectory(path: String): VirtualFile {
+        val file = File(path).normalize().absoluteFile
+        val fileSep = getFileSeparator()
+        val cwdFile = File(cwd.joinToString(fileSep))
+        val relPath = file.toRelativeString(cwdFile).split(fileSep)
+        return if (file.isDirectory) {
+            getDirectory(relPath)
+        } else {
+            getFile(relPath)
+        }
     }
 
     override fun getFile(relativePath: List<String>): VirtualFile {
@@ -165,6 +179,13 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
         absolutePath.addAll(relativePath)
         return absolutePath
     }
+
+    override fun getFileOrDirectory(path: String) =
+        if (path.endsWith(getFileSeparator())) {
+            getDirectory(path.split(getFileSeparator()))
+        } else {
+            getFile(path.split(getFileSeparator()))
+        }
 
     override fun getFile(relativePath: List<String>): VirtualFile {
         return VirtualFileImpl(

@@ -16,15 +16,6 @@
 
 package mathlingua.cli
 
-import java.io.BufferedReader
-import java.io.File
-import java.io.InputStreamReader
-import java.lang.IllegalArgumentException
-import java.net.ServerSocket
-import java.net.Socket
-import java.net.SocketException
-import java.util.UUID
-import java.util.concurrent.Executors
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
@@ -56,6 +47,9 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
+import mathlingua.getFileSeparator
+import mathlingua.getRandomUuid
+import mathlingua.startServer
 
 const val TOOL_VERSION = "0.13"
 
@@ -135,11 +129,11 @@ object Mathlingua {
             0
         } else {
             if (indexFile.delete()) {
-                logger.log("Deleted docs${File.separator}index.html")
+                logger.log("Deleted docs${getFileSeparator()}index.html")
                 0
             } else {
                 logger.log(
-                    "${bold(red("ERROR: "))} Failed to delete docs${File.separator}index.html")
+                    "${bold(red("ERROR: "))} Failed to delete docs${getFileSeparator()}index.html")
                 1
             }
         }
@@ -151,77 +145,12 @@ object Mathlingua {
         return 0
     }
 
-    fun serve(fs: VirtualFileSystem, logger: Logger, port: Int): Int {
+    fun serve(fs: VirtualFileSystem, logger: Logger, port: Int) {
         logger.log("Visit localhost:$port to see your rendered MathLingua code.")
         logger.log("Every time you refresh the page, your MathLingua code will be rerendered.")
-        val serverSocket = ServerSocket(port)
-        val service = Executors.newCachedThreadPool()
-        Runtime.getRuntime().addShutdownHook(Thread { service.shutdown() })
-        while (true) {
-            val client = serverSocket.accept()
-            service.submit { handleServeRequest(fs, logger, client) }
-        }
-    }
-
-    private fun handleServeRequest(fs: VirtualFileSystem, logger: Logger, client: Socket) {
-        try {
-            val reader = BufferedReader(InputStreamReader(client.getInputStream()))
-            // The first line of the request is of the form
-            //   <method> <path> <http-version>
-            // for example.
-            //   GET / HTTP/1.1
-            val firstLine = reader.readLine() ?: ""
-            val parts = firstLine.split(" ")
-            val method =
-                if (parts.isEmpty()) {
-                    null
-                } else {
-                    parts[0]
-                }
-            val urlWithoutParams =
-                if (parts.size < 2) {
-                    null
-                } else {
-                    val url = parts[1]
-                    val index = url.indexOf("?")
-                    if (index < 0) {
-                        url
-                    } else {
-                        url.substring(0, index)
-                    }
-                }
-            if (method != "GET" || urlWithoutParams != "/") {
-                val output = client.getOutputStream()
-                output.write("HTTP/1.1 404 Not Found\r\n".toByteArray())
-                output.write("ContentType: text/html\r\n\r\n".toByteArray())
-                output.write("Not Found".toByteArray())
-                output.write("\r\n\r\n".toByteArray())
-                output.flush()
-                output.close()
-            } else {
-                logger.log("Rendering...")
-                val start = System.currentTimeMillis()
-                val triple = getRenderAllText(fs = fs, noExpand = false)
-                val end = System.currentTimeMillis()
-                try {
-                    val output = client.getOutputStream()
-                    output.write("HTTP/1.1 200 OK\r\n".toByteArray())
-                    output.write("ContentType: text/html\r\n\r\n".toByteArray())
-                    output.write(triple.first.toByteArray())
-                    output.write("\r\n\r\n".toByteArray())
-                    output.flush()
-                    output.close()
-                } finally {
-                    logger.log("Completed in ${end - start} ms")
-                    logger.log(triple.third)
-                    logger.log("")
-                }
-            }
-        } catch (e: SocketException) {
-            // It appears to be common for a SocketException with message
-            // "Broken pipe (Write failed)" if a request comes in while another
-            // is still being processed. Just absorb the exception and try to
-            // reconnect.
+        startServer(port, logger) {
+            val triple = getRenderAllText(fs = fs, noExpand = false)
+            Pair(triple.first, triple.third)
         }
     }
 }
@@ -264,7 +193,7 @@ private fun getErrorOutput(
         if (json) {
             builder.append("{")
             builder.append(
-                "  \"file\": \"${err.source.file.absolutePath().joinToString(File.separator).jsonSanitize() ?: "None"}\",")
+                "  \"file\": \"${err.source.file.absolutePath().joinToString(getFileSeparator()).jsonSanitize() ?: "None"}\",")
             builder.append("  \"type\": \"ERROR\",")
             builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
             builder.append("  \"failedLine\": \"\",")
@@ -278,7 +207,7 @@ private fun getErrorOutput(
             builder.append(bold(red("ERROR: ")))
             builder.append(
                 bold(
-                    "${err.source.file.relativePathTo(cwd).joinToString(File.separator) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
+                    "${err.source.file.relativePathTo(cwd).joinToString(getFileSeparator()) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
             builder.append(err.value.message.trim())
             builder.append("\n\n")
         }
@@ -310,7 +239,7 @@ private fun renderFile(
 ): List<ValueSourceTracker<ParseError>> {
     if (!target.exists()) {
         val message =
-            "ERROR: The file ${target.absolutePath().joinToString(File.separator)} does not exist"
+            "ERROR: The file ${target.absolutePath().joinToString(getFileSeparator())} does not exist"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -323,7 +252,7 @@ private fun renderFile(
 
     if (target.isDirectory() || !target.absolutePath().last().endsWith(".math")) {
         val message =
-            "ERROR: The path ${target.absolutePath().joinToString(File.separator)} is not a .math file"
+            "ERROR: The path ${target.absolutePath().joinToString(getFileSeparator())} is not a .math file"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -374,7 +303,7 @@ private fun renderFile(
             fs.getDirectory(htmlPath.filterIndexed { index, _ -> index < htmlPath.size - 1 })
         parentDir.mkdirs()
         outFile.writeText(text)
-        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(File.separator)}")
+        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(getFileSeparator())}")
     }
 
     if (stdout) {
@@ -416,7 +345,7 @@ private fun renderAll(
     if (!stdout) {
         val indexFile = fs.getFile(listOf("docs", "index.html"))
         indexFile.writeText(indexFileText)
-        logger.log("Wrote ${indexFile.relativePathTo(fs.cwd()).joinToString(File.separator)}")
+        logger.log("Wrote ${indexFile.relativePathTo(fs.cwd()).joinToString(getFileSeparator())}")
     }
 
     if (stdout) {
@@ -585,13 +514,7 @@ private fun getChildren(fs: VirtualFileSystem, file: VirtualFile): List<VirtualF
             val path = mutableListOf<String>()
             path.addAll(relPath)
             path.add(it)
-            // TODO: Update this to only use fs
-            val tmpFile = File(fs.getFile(path).absolutePath().joinToString(File.separator))
-            if (tmpFile.isFile) {
-                fs.getFile(path)
-            } else {
-                fs.getDirectory(path)
-            }
+            fs.getFileOrDirectory(fs.getFile(path).absolutePath().joinToString(getFileSeparator()))
         }
     } else {
         file.listFiles()
@@ -632,7 +555,7 @@ private fun buildFileList(
     val isMathFile = !file.isDirectory() && file.absolutePath().last().endsWith(".math")
     if ((file.isDirectory() && childBuilder.isNotEmpty()) || isMathFile) {
         val src =
-            file.relativePathTo(fs.cwd()).joinToString(File.separator).replace(".math", ".html")
+            file.relativePathTo(fs.cwd()).joinToString(getFileSeparator()).replace(".math", ".html")
         val cssDesc = "style='padding-left: ${indent}px'"
         val classDesc =
             if (file.isDirectory()) {
@@ -691,7 +614,8 @@ private fun generateSearchIndexImpl(
     }
 
     if (!file.isDirectory() && file.absolutePath().last().endsWith(".math")) {
-        val path = file.relativePathTo(fs.cwd()).joinToString(File.separator).removeSuffix(".math")
+        val path =
+            file.relativePathTo(fs.cwd()).joinToString(getFileSeparator()).removeSuffix(".math")
         when (val validation = FrontEnd.parse(file.readText())
         ) {
             is ValidationSuccess -> {
@@ -729,7 +653,8 @@ private fun generateSignatureToPathImpl(
     }
 
     if (!file.isDirectory() && file.absolutePath().last().endsWith(".math")) {
-        val path = file.relativePathTo(fs.cwd()).joinToString(File.separator).removeSuffix(".math")
+        val path =
+            file.relativePathTo(fs.cwd()).joinToString(getFileSeparator()).removeSuffix(".math")
         when (val validation = FrontEnd.parse(file.readText())
         ) {
             is ValidationSuccess -> {
@@ -806,7 +731,7 @@ private fun generatePathToEntityList(
 ): Map<String, List<Pair<String, Phase2Node?>>> {
     val result = mutableMapOf<String, List<Pair<String, Phase2Node?>>>()
     for (f in filesToProcess) {
-        val path = f.relativePathTo(fs.cwd()).joinToString(File.separator)
+        val path = f.relativePathTo(fs.cwd()).joinToString(getFileSeparator())
         result[path] = getUnifiedRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
     }
     return result
@@ -821,7 +746,7 @@ private fun generatePathToCompleteEntityList(
 ): Map<String, List<RenderedTopLevelElement>> {
     val result = mutableMapOf<String, List<RenderedTopLevelElement>>()
     for (f in filesToProcess) {
-        val path = f.relativePathTo(fs.cwd()).joinToString(File.separator)
+        val path = f.relativePathTo(fs.cwd()).joinToString(getFileSeparator())
         result[path] = getCompleteRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
     }
     return result
@@ -874,7 +799,7 @@ private fun getUnifiedRenderedTopLevelElements(
             codeElements.add(Pair(expanded, node))
         } else {
             val literal = element.rawFormHtml
-            val id = UUID.randomUUID()
+            val id = getRandomUuid()
             val html =
                 "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">" +
                     "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded}</div>" +

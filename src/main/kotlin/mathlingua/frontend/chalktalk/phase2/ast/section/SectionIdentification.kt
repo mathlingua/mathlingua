@@ -16,8 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.section
 
-import java.util.LinkedList
-import java.util.Queue
+import mathlingua.Queue
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
@@ -62,12 +61,12 @@ fun identifySections(sections: List<Section>, vararg expected: String): Map<Stri
     // the pattern is used for error messages
     val pattern = patternBuilder.toString()
 
-    val sectionQueue: Queue<Section> = LinkedList()
+    val sectionQueue = Queue<Section>()
     for (s in sections) {
         sectionQueue.offer(s)
     }
 
-    val expectedQueue: Queue<String> = LinkedList()
+    val expectedQueue = Queue<String>()
     for (e in expected) {
         expectedQueue.offer(e)
     }

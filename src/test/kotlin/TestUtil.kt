@@ -17,10 +17,9 @@
 package mathlingua
 
 import com.tylerthrailkill.helpers.prettyprint.pp
-import java.io.File
-import java.io.IOException
-import java.lang.StringBuilder
-import java.nio.file.Paths
+import mathlingua.cli.VirtualFile
+import mathlingua.cli.VirtualFileException
+import mathlingua.cli.VirtualFileSystem
 
 // Set to true to overwrite the golden files instead of checking against them.
 // This is useful if a change was made that impacts a lot of golden files, and
@@ -30,11 +29,11 @@ internal const val OVERWRITE_GOLDEN_FILES = false
 
 data class TestCase(
     val name: String,
-    val input: File,
-    val phase1Output: File,
-    val phase1Structure: File,
-    val phase2Output: File,
-    val phase2Structure: File)
+    val input: VirtualFile,
+    val phase1Output: VirtualFile,
+    val phase1Structure: VirtualFile,
+    val phase2Output: VirtualFile,
+    val phase2Structure: VirtualFile)
 
 enum class GoldenType {
     Chalktalk,
@@ -43,25 +42,51 @@ enum class GoldenType {
 
 fun loadTestCases(type: GoldenType): List<TestCase> {
     val result = mutableListOf<TestCase>()
-
-    val root = Paths.get("src", "test", "resources", "goldens", type.name.toLowerCase()).toFile()
+    val fs = newDiskFileSystem()
+    val root =
+        fs.getDirectory(listOf("src", "test", "resources", "goldens", type.name.toLowerCase()))
     if (!root.exists()) {
-        throw IOException("Golden root directory ${root.absolutePath} does not exist")
+        throw VirtualFileException(
+            "Golden root directory ${root.absolutePath().joinToString(fs.getFileSeparator())} does not exist")
+    }
+    loadTestCasesImpl(fs, root, result)
+    return result
+}
+
+private fun containsInputDotMath(dir: VirtualFile): Boolean {
+    if (!dir.isDirectory()) {
+        return false
     }
 
-    val caseDirs = root.walkTopDown().filter { File(it, "input.math").exists() }
-    for (caseDir in caseDirs) {
+    for (child in dir.listFiles()) {
+        if (child.absolutePath().lastOrNull() == "input.math") {
+            return true
+        }
+    }
+    return false
+}
+
+private fun loadTestCasesImpl(
+    fs: VirtualFileSystem, file: VirtualFile, result: MutableList<TestCase>
+) {
+    if (file.isDirectory() && containsInputDotMath(file)) {
+        val cwd = fs.cwd()
         result.add(
             TestCase(
-                name = caseDir.name,
-                input = File(caseDir, "input.math"),
-                phase1Output = File(caseDir, "phase1-output.math"),
-                phase1Structure = File(caseDir, "phase1-structure.txt"),
-                phase2Output = File(caseDir, "phase2-output.math"),
-                phase2Structure = File(caseDir, "phase2-structure.txt")))
+                name = file.absolutePath().last(),
+                input = fs.getFile(file.relativePathTo(cwd).plus("input.math")),
+                phase1Output = fs.getFile(file.relativePathTo(cwd).plus("phase1-output.math")),
+                phase1Structure = fs.getFile(file.relativePathTo(cwd).plus("phase1-structure.txt")),
+                phase2Output = fs.getFile(file.relativePathTo(cwd).plus("phase2-output.math")),
+                phase2Structure =
+                    fs.getFile(file.relativePathTo(cwd).plus("phase2-structure.txt"))))
     }
 
-    return result
+    if (file.isDirectory()) {
+        for (child in file.listFiles()) {
+            loadTestCasesImpl(fs, child, result)
+        }
+    }
 }
 
 fun serialize(obj: Any): String {

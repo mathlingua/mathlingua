@@ -16,11 +16,9 @@
 
 package mathlingua
 
-import java.io.File
-import java.io.IOException
-import java.lang.RuntimeException
-import java.lang.StringBuilder
-import java.nio.file.Paths
+import mathlingua.cli.VirtualFile
+import mathlingua.cli.VirtualFileException
+import mathlingua.cli.VirtualFileSystem
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationFailure
@@ -72,22 +70,34 @@ private fun loadExpectedErrors(input: String): List<ParseError> {
     return expectedErrors
 }
 
-fun loadMessageTestCases(): List<MessageTestCase> {
-    val result = mutableListOf<MessageTestCase>()
-
-    val root = Paths.get("src", "test", "resources", "goldens", "messages").toFile()
-    if (!root.exists()) {
-        throw IOException("Golden root directory ${root.absolutePath} does not exist")
+private fun containsInputDotMath(dir: VirtualFile): Boolean {
+    if (!dir.isDirectory()) {
+        return false
     }
 
-    val caseDirs = root.walkTopDown().filter { File(it, "input.math").exists() }
-    for (caseDir in caseDirs) {
-        if (caseDir.name == ".DS_Store") {
-            continue
+    for (child in dir.listFiles()) {
+        if (child.absolutePath().lastOrNull() == "input.math") {
+            return true
         }
+    }
+    return false
+}
 
-        val messageFile = File(caseDir, "messages.txt")
-        val input = File(caseDir, "input.math").readText()
+private fun loadMessageTestCaseImpl(
+    fs: VirtualFileSystem, file: VirtualFile, result: MutableList<MessageTestCase>
+) {
+    if (!file.isDirectory()) {
+        return
+    }
+
+    if (file.absolutePath().last() == ".DS_Store") {
+        return
+    }
+
+    if (containsInputDotMath(file)) {
+        val cwd = fs.cwd()
+        val messageFile = fs.getFile(file.relativePathTo(cwd).plus("messages.txt"))
+        val input = fs.getFile(file.relativePathTo(cwd).plus("input.math")).readText()
         val expectedErrors =
             if (OVERWRITE_GOLDEN_FILES) {
                 val validation = FrontEnd.parse(input)
@@ -119,8 +129,24 @@ fun loadMessageTestCases(): List<MessageTestCase> {
             }
 
         result.add(
-            MessageTestCase(name = caseDir.name, input = input, expectedErrors = expectedErrors))
+            MessageTestCase(
+                name = file.absolutePath().last(), input = input, expectedErrors = expectedErrors))
     }
 
+    for (child in file.listFiles()) {
+        loadMessageTestCaseImpl(fs, child, result)
+    }
+}
+
+fun loadMessageTestCases(): List<MessageTestCase> {
+    val fs = newDiskFileSystem()
+    val root = fs.getDirectory(listOf("src", "test", "resources", "goldens", "messages"))
+    if (!root.exists()) {
+        throw VirtualFileException(
+            "Golden root directory ${root.absolutePath().joinToString(fs.getFileSeparator())} does not exist")
+    }
+
+    val result = mutableListOf<MessageTestCase>()
+    loadMessageTestCaseImpl(fs, root, result)
     return result
 }

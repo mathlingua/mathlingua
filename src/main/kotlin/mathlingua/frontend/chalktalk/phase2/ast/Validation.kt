@@ -81,6 +81,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.CollectsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesCollectsGroup
@@ -435,6 +436,8 @@ val DEFAULT_EVALUATES_SECTION = EvaluatesSection()
 
 val DEFAULT_WRITTEN_SECTION = WrittenSection(forms = emptyList())
 
+val DEFAULT_CALLED_SECTION = CalledSection(forms = emptyList())
+
 val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList())
 
 val DEFAULT_COLLECTION_GROUP =
@@ -496,6 +499,7 @@ val DEFAULT_STATES_GROUP =
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
+        calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_ENTRY_SECTION = TopicSection(names = emptyList())
@@ -678,6 +682,7 @@ val DEFAULT_DEFINES_MEANS_GROUP =
         meansSection = DEFAULT_MEANS_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
+        calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_DEFINES_EVALUATED_GROUP =
@@ -692,6 +697,7 @@ val DEFAULT_DEFINES_EVALUATED_GROUP =
         viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
+        calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_DEFINES_COLLECTS_GROUP =
@@ -706,6 +712,7 @@ val DEFAULT_DEFINES_COLLECTS_GROUP =
         viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
+        calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_DEFINES_MAPS_GROUP =
@@ -721,6 +728,7 @@ val DEFAULT_DEFINES_MAPS_GROUP =
         viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
+        calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_FOUNDATION_SECTION = FoundationSection(content = DEFAULT_DEFINES_MEANS_GROUP)

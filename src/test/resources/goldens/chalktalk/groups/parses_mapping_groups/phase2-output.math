@@ -6,3 +6,5 @@ maps:
   to: 'A'
 written:
 . "f(x?)"
+called:
+. "f"

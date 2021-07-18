@@ -10,3 +10,5 @@ collects:
   . 'k > 10'
 written:
 . "\textrm{evens}"
+called:
+. "evens"

@@ -127,6 +127,24 @@ Root(
                                          )
                                        )
                                      ]
+                            ),
+                            Section(
+                              name = Phase1Token(
+                                text = "called"
+                                type = ChalkTalkTokenType.Name
+                                row = 7
+                                column = 0
+                              )
+                              args = [
+                                       Argument(
+                                         chalkTalkTarget = Phase1Token(
+                                           text = ""f""
+                                           type = ChalkTalkTokenType.String
+                                           row = 7
+                                           column = 8
+                                         )
+                                       )
+                                     ]
                             )
                           ]
                id = Phase1Token(

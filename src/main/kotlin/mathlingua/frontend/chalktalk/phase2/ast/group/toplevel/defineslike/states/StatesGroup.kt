@@ -20,20 +20,24 @@ import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CALLED_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THAT_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getId
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateRequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
@@ -58,7 +62,8 @@ data class StatesGroup(
     val whenSection: WhenSection?,
     val thatSection: ThatSection,
     override val usingSection: UsingSection?,
-    val writtenSection: WrittenSection?,
+    val writtenSection: WrittenSection,
+    val calledSection: CalledSection,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
 
@@ -75,9 +80,8 @@ data class StatesGroup(
         if (usingSection != null) {
             fn(usingSection)
         }
-        if (writtenSection != null) {
-            fn(writtenSection)
-        }
+        fn(writtenSection)
+        fn(calledSection)
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -88,6 +92,7 @@ data class StatesGroup(
         sections.add(thatSection)
         sections.add(usingSection)
         sections.add(writtenSection)
+        sections.add(calledSection)
         sections.add(metaDataSection)
         return topLevelToCode(writer, isArg, indent, id, *sections.toTypedArray())
     }
@@ -103,7 +108,8 @@ data class StatesGroup(
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 thatSection = chalkTransformer(thatSection) as ThatSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-                writtenSection = writtenSection?.transform(chalkTransformer) as WrittenSection?,
+                writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
+                calledSection = calledSection.transform(chalkTransformer) as CalledSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
@@ -119,8 +125,14 @@ fun validateStatesGroup(
                 errors,
                 DEFAULT_STATES_GROUP,
                 listOf(
-                    "States", "requiring?", "when?", "that", "using?", "written?", "Metadata?")) {
-            sections ->
+                    "States",
+                    "requiring?",
+                    "when?",
+                    "that",
+                    "using?",
+                    "written",
+                    "called",
+                    "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 StatesGroup(
                     signature = id.signature(tracker),
@@ -142,8 +154,12 @@ fun validateStatesGroup(
                     usingSection =
                         ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
                     writtenSection =
-                        ifNonNull(sections["written"]) {
+                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
                             validateWrittenSection(it, errors, tracker)
+                        },
+                    calledSection =
+                        ensureNonNull(sections["called"], DEFAULT_CALLED_SECTION) {
+                            validateCalledSection(it, errors, tracker)
                         },
                     metaDataSection =
                         ifNonNull(sections["Metadata"]) {

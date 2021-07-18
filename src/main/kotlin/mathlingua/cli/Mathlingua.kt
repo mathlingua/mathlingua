@@ -1559,6 +1559,15 @@ const val SHARED_CSS =
         font-style: italic;
     }
 
+    .mathlingua-called {
+        font-weight: bold;
+        display: table;
+        margin-top: -1em;
+        margin-left: auto;
+        margin-bottom: -1ex;
+        margin-right: auto;
+    }
+
     .display-mode {
         margin-left: auto;
         margin-right: auto;

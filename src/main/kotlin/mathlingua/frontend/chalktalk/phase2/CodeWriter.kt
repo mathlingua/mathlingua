@@ -203,6 +203,20 @@ open class HtmlCodeWriter(
         return builder.toString()
     }
 
+    private fun capitalizeWords(text: String): String {
+        val calledWords = mutableListOf<String>()
+        val words = text.split(" ")
+        for (i in words.indices) {
+            val word = words[i]
+            if (i > 0 && (word == "a" || word == "an" || word == "the")) {
+                calledWords.add(word)
+            } else {
+                calledWords.add(word.capitalize())
+            }
+        }
+        return calledWords.joinToString(" ")
+    }
+
     override fun generateCode(node: Phase2Node): String {
         if (literal) {
             return node.toCode(false, 0, this).getCode()
@@ -220,9 +234,32 @@ open class HtmlCodeWriter(
                 }
                 builder.toString()
             }
+            is StatesGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-data'>")
+                builder.append("<span class='mathlingua-called'>")
+                val called =
+                    capitalizeWords(node.calledSection.forms.first().removeSurrounding("\"", "\""))
+                builder.append(parseMarkdown(called))
+                builder.append("</span>")
+                builder.append(
+                    node.copy(metaDataSection = null)
+                        .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
+                        .getCode())
+                builder.append("</span>")
+                if (node.metaDataSection != null) {
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                }
+                builder.toString()
+            }
             is DefinesGroup -> {
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
+                builder.append("<span class='mathlingua-called'>")
+                val called =
+                    capitalizeWords(node.calledSection.forms.first().removeSurrounding("\"", "\""))
+                builder.append(parseMarkdown(called))
+                builder.append("</span>")
                 builder.append(
                     node.copyWithoutMetadata()
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))

@@ -7,3 +7,4 @@ collects:
   all: '2*k'
   suchThat: 'k > 10'
 written: "\textrm{evens}"
+called: "evens"

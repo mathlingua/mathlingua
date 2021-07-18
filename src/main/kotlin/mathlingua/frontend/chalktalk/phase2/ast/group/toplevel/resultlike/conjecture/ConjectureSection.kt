@@ -36,6 +36,7 @@ data class ConjectureSection(val names: List<String>) : Phase2Node {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("Conjecture")
         if (names.size == 1) {
+            writer.writeSpace()
             writer.writeText(names[0])
         } else if (names.size > 1) {
             writer.writeNewline()

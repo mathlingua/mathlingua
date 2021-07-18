@@ -128,6 +128,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     private val definesGroups = mutableListOf<ValueSourceTracker<DefinesGroup>>()
     private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
     private val axiomGroups = mutableListOf<ValueSourceTracker<AxiomGroup>>()
+    private val theoremGroups = mutableListOf<ValueSourceTracker<TheoremGroup>>()
+    private val conjectureGroups = mutableListOf<ValueSourceTracker<ConjectureGroup>>()
     private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
     private val patternsToWrittenAs: Map<OperatorTexTalkNode, String>
 
@@ -161,6 +163,22 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                             source = sf,
                             tracker = validation.value.tracker,
                             value = normalize(it, validation.value.tracker) as AxiomGroup)
+                    })
+
+                theoremGroups.addAll(
+                    validation.value.document.theorems().map {
+                        ValueSourceTracker(
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as TheoremGroup)
+                    })
+
+                conjectureGroups.addAll(
+                    validation.value.document.conjectures().map {
+                        ValueSourceTracker(
+                            source = sf,
+                            tracker = validation.value.tracker,
+                            value = normalize(it, validation.value.tracker) as ConjectureGroup)
                     })
 
                 foundationGroups.addAll(
@@ -507,6 +525,26 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         }
 
+        fun processTheorems(pair: ValueSourceTracker<TheoremGroup>) {
+            val signature = pair.value.signature
+            if (signature != null) {
+                val vst =
+                    ValueSourceTracker(
+                        source = pair.source, tracker = pair.tracker, value = signature)
+                result.add(Pair(vst, pair.value))
+            }
+        }
+
+        fun processConjectures(pair: ValueSourceTracker<ConjectureGroup>) {
+            val signature = pair.value.signature
+            if (signature != null) {
+                val vst =
+                    ValueSourceTracker(
+                        source = pair.source, tracker = pair.tracker, value = signature)
+                result.add(Pair(vst, pair.value))
+            }
+        }
+
         for (pair in foundationGroups) {
             when (val item = pair.value.foundationSection.content
             ) {
@@ -531,6 +569,14 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
 
         for (pair in axiomGroups) {
             processAxiom(pair)
+        }
+
+        for (pair in theoremGroups) {
+            processTheorems(pair)
+        }
+
+        for (pair in conjectureGroups) {
+            processConjectures(pair)
         }
 
         return result

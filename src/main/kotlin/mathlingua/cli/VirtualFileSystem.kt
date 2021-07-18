@@ -74,8 +74,6 @@ data class VirtualFileImpl(
     override fun listFiles() = fs.listFiles(this)
 
     override fun delete() = fs.delete(this)
-
-    override fun toString() = absolutePath().joinToString(fs.getFileSeparator())
 }
 
 private class MemoryFileNode(

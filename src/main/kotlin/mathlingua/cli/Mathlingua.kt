@@ -47,7 +47,7 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationFailure
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
-import mathlingua.getProcessWiseUniqueID
+import mathlingua.getRandomUuid
 import mathlingua.startServer
 
 const val TOOL_VERSION = "0.13"
@@ -510,12 +510,12 @@ private fun getChildren(fs: VirtualFileSystem, file: VirtualFile): List<VirtualF
     val tocFile = fs.getFile(tocPath)
     return if (tocFile.exists()) {
         val relPath = file.relativePathTo(fs.cwd())
-        val tocContent = tocFile.readText()
-        tocContent.split("\n").filter { it.trim().isNotEmpty() }.map {
+        tocFile.readText().split("\n").filter { it.trim().isNotEmpty() }.map {
             val path = mutableListOf<String>()
             path.addAll(relPath)
             path.add(it)
-            fs.getFileOrDirectory(path.joinToString(fs.getFileSeparator()))
+            fs.getFileOrDirectory(
+                fs.getFile(path).absolutePath().joinToString(fs.getFileSeparator()))
         }
     } else {
         file.listFiles()
@@ -802,7 +802,7 @@ private fun getUnifiedRenderedTopLevelElements(
             codeElements.add(Pair(expanded, node))
         } else {
             val literal = element.rawFormHtml
-            val id = getProcessWiseUniqueID()
+            val id = getRandomUuid()
             val html =
                 "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">" +
                     "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded}</div>" +

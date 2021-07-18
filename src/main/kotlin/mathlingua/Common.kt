@@ -16,29 +16,21 @@
 
 package mathlingua
 
-import com.soywiz.korio.file.baseName
-import com.soywiz.korio.file.folderWithSlash
-import com.soywiz.korio.file.fullPathNormalized
-import com.soywiz.korio.file.parts
-import com.soywiz.korio.file.std.localCurrentDirVfs
-import com.soywiz.korio.file.std.localVfs
-import io.ktor.application.call
-import io.ktor.http.ContentType
-import io.ktor.response.respondText
-import io.ktor.routing.get
-import io.ktor.routing.routing
-import io.ktor.server.engine.embeddedServer
-import io.ktor.server.netty.Netty
-import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
+import java.io.BufferedReader
+import java.io.File
+import java.io.InputStreamReader
+import java.net.ServerSocket
+import java.net.Socket
+import java.net.SocketException
+import java.nio.file.Paths
+import java.util.UUID
+import java.util.concurrent.Executors
 import mathlingua.cli.Logger
 import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileImpl
 import mathlingua.cli.VirtualFileSystem
 
-var value: Long = 0
-
-fun getProcessWiseUniqueID() = "PROCESSWISE_UNIQUE_ID_${value++}"
+fun getRandomUuid() = UUID.randomUUID().toString()
 
 class Stack<T> {
     private val data = mutableListOf<T>()
@@ -75,29 +67,87 @@ class Queue<T> : Iterable<T> {
 }
 
 fun startServer(port: Int, logger: Logger, processor: () -> Pair<String, String>) {
-    embeddedServer(Netty, port = port, host = "0.0.0.0") {
-            routing {
-                get("/") {
-                    logger.log("Rendering...")
-                    val start = System.currentTimeMillis()
-                    val pair = processor()
-                    val end = System.currentTimeMillis()
-                    logger.log("Completed in ${end - start} ms")
-                    call.respondText(text = pair.first, contentType = ContentType.Text.Html)
-                    logger.log(pair.second)
-                    logger.log("")
+    val serverSocket = ServerSocket(port)
+    val service = Executors.newCachedThreadPool()
+    Runtime.getRuntime().addShutdownHook(Thread { service.shutdown() })
+    while (true) {
+        val client = serverSocket.accept()
+        service.submit { handleServeRequest(logger, client, processor) }
+    }
+}
+
+// processor returns (HTML output, console output)
+private fun handleServeRequest(
+    logger: Logger, client: Socket, processor: () -> Pair<String, String>
+) {
+    try {
+        val reader = BufferedReader(InputStreamReader(client.getInputStream()))
+        // The first line of the request is of the form
+        //   <method> <path> <http-version>
+        // for example.
+        //   GET / HTTP/1.1
+        val firstLine = reader.readLine() ?: ""
+        val parts = firstLine.split(" ")
+        val method =
+            if (parts.isEmpty()) {
+                null
+            } else {
+                parts[0]
+            }
+        val urlWithoutParams =
+            if (parts.size < 2) {
+                null
+            } else {
+                val url = parts[1]
+                val index = url.indexOf("?")
+                if (index < 0) {
+                    url
+                } else {
+                    url.substring(0, index)
                 }
             }
+        if (method != "GET" || urlWithoutParams != "/") {
+            val output = client.getOutputStream()
+            output.write("HTTP/1.1 404 Not Found\r\n".toByteArray())
+            output.write("ContentType: text/html\r\n\r\n".toByteArray())
+            output.write("Not Found".toByteArray())
+            output.write("\r\n\r\n".toByteArray())
+            output.flush()
+            output.close()
+        } else {
+            logger.log("Rendering...")
+            val start = System.currentTimeMillis()
+            val pair = processor()
+            val end = System.currentTimeMillis()
+            try {
+                val output = client.getOutputStream()
+                output.write("HTTP/1.1 200 OK\r\n".toByteArray())
+                output.write("ContentType: text/html\r\n\r\n".toByteArray())
+                output.write(pair.first.toByteArray())
+                output.write("\r\n\r\n".toByteArray())
+                output.flush()
+                output.close()
+            } finally {
+                logger.log("Completed in ${end - start} ms")
+                logger.log(pair.second)
+                logger.log("")
+            }
         }
-        .start(wait = true)
+    } catch (e: SocketException) {
+        // It appears to be common for a SocketException with message
+        // "Broken pipe (Write failed)" if a request comes in while another
+        // is still being processed. Just absorb the exception and try to
+        // reconnect.
+    }
 }
 
 fun newDiskFileSystem(): VirtualFileSystem {
     return DiskFileSystem()
 }
 
-private class DiskFileSystem : VirtualFileSystem {
-    private val cwd = localCurrentDirVfs.fullPathNormalized.split(getFileSeparator())
+private class DiskFileSystem() : VirtualFileSystem {
+    private val cwd =
+        Paths.get(".").toAbsolutePath().normalize().toFile().absolutePath.split(getFileSeparator())
     private val cwdFile = VirtualFileImpl(absolutePathParts = cwd, directory = true, this)
 
     private fun getAbsolutePath(relativePath: List<String>): List<String> {
@@ -107,15 +157,13 @@ private class DiskFileSystem : VirtualFileSystem {
         return absolutePath
     }
 
-    override fun getFileSeparator() = localCurrentDirVfs.folderWithSlash.last().toString()
+    override fun getFileSeparator() = File.separator
 
     override fun getFileOrDirectory(path: String): VirtualFile {
-        val file = localVfs(cwd.plus(path).joinToString(getFileSeparator()))
-        val cwdFile = localVfs(cwd.joinToString(getFileSeparator()))
-        val relPath =
-            relativePathTo(file.absolutePathInfo.parts(), cwdFile.absolutePathInfo.parts())
-        val isDir = runBlocking { file.isDirectory() }
-        return if (isDir) {
+        val file = File(path).normalize().absoluteFile
+        val cwdFile = File(cwd.joinToString(getFileSeparator()))
+        val relPath = file.toRelativeString(cwdFile).split(getFileSeparator())
+        return if (file.isDirectory) {
             getDirectory(relPath)
         } else {
             getFile(relPath)
@@ -134,62 +182,36 @@ private class DiskFileSystem : VirtualFileSystem {
 
     override fun cwd() = cwdFile
 
-    private fun VirtualFile.toFile() = localVfs(absolutePath().joinToString(getFileSeparator()))
+    private fun VirtualFile.toFile() =
+        File(this.absolutePath().joinToString(File.separator)).normalize()
 
-    override fun relativePathTo(vf: VirtualFile, dir: VirtualFile): List<String> {
-        return relativePathTo(vf.absolutePath(), dir.absolutePath())
-    }
+    override fun relativePathTo(vf: VirtualFile, dir: VirtualFile) =
+        vf.toFile().toRelativeString(dir.toFile()).split(File.separator)
 
-    private fun relativePathTo(fileParts: List<String>, dirParts: List<String>): List<String> {
-        val fileStack = Stack<String>()
-        val dirStack = Stack<String>()
+    override fun exists(vf: VirtualFile) = vf.toFile().exists()
 
-        for (item in fileParts.reversed()) {
-            fileStack.push(item)
-        }
+    override fun mkdirs(vf: VirtualFile) = vf.toFile().mkdirs()
 
-        for (item in dirParts.reversed()) {
-            dirStack.push(item)
-        }
+    override fun readText(vf: VirtualFile) = vf.toFile().readText()
 
-        while (!fileStack.isEmpty() && !dirStack.isEmpty()) {
-            if (fileStack.peek() == dirStack.peek()) {
-                fileStack.pop()
-                dirStack.pop()
-            } else {
-                break
-            }
-        }
-
-        val relativePath = mutableListOf<String>()
-        while (!fileStack.isEmpty()) {
-            relativePath.add(fileStack.pop())
-        }
-
-        return relativePath
-    }
-
-    override fun exists(vf: VirtualFile) = runBlocking { vf.toFile().exists() }
-
-    override fun mkdirs(vf: VirtualFile) = runBlocking { vf.toFile().mkdir() }
-
-    override fun readText(vf: VirtualFile) = runBlocking { vf.toFile().readString() }
-
-    override fun writeText(vf: VirtualFile, content: String) =
-        runBlocking { vf.toFile().writeString(content) }
+    override fun writeText(vf: VirtualFile, content: String) = vf.toFile().writeText(content)
 
     override fun listFiles(vf: VirtualFile): List<VirtualFile> {
-        val children = runBlocking { vf.toFile().list().toList() }
-        return children.sortedBy { it.baseName }.map {
+        val children = vf.toFile().listFiles() ?: arrayOf()
+        return children.sortedBy { it.name }.map {
             VirtualFileImpl(
-                absolutePathParts = it.absolutePath.split(getFileSeparator()),
-                directory = runBlocking { it.isDirectory() },
+                absolutePathParts = it.absolutePath.split(File.separator),
+                directory = it.isDirectory,
                 this)
         }
     }
 
     override fun delete(vf: VirtualFile): Boolean {
         val file = vf.toFile()
-        return runBlocking { file.delete() }
+        return if (file.isDirectory) {
+            file.deleteRecursively()
+        } else {
+            file.delete()
+        }
     }
 }

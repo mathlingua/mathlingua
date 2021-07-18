@@ -49,7 +49,7 @@ import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
-import mathlingua.getProcessWiseUniqueID
+import mathlingua.getRandomUuid
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
@@ -242,7 +242,7 @@ open class HtmlCodeWriter(
                         .getCode())
                 builder.append("</span>")
                 if (node.proofSection != null) {
-                    val id = getProcessWiseUniqueID()
+                    val id = getRandomUuid()
                     builder.append(
                         "<hr/><div class='mathlingua-proof-header' onclick=\"toggleProof('$id')\">")
                     builder.append(

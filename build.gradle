@@ -51,26 +51,17 @@ repositories {
 }
 
 dependencies {
+    compile 'com.fifesoft:rsyntaxtextarea:3.0.3'
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
     compile group: 'com.github.ajalt', name: 'clikt', version: '2.6.0'
     compile group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.4.2'
     compile "org.jetbrains:markdown:0.2.4"
-    compile "com.soywiz.korlibs.korio:korio-jvm:2.2.1"
-    compile "io.ktor:ktor-server-core:1.6.1"
-    compile "io.ktor:ktor-server-netty:1.6.1"
-    compile "org.slf4j:slf4j-nop:1.7.31"
-
     testImplementation 'com.willowtreeapps.assertk:assertk-jvm:0.19'
     testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.4.31'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.1'
     testImplementation "com.tylerthrailkill.helpers:pretty-print:2.0.2"
+    testImplementation 'com.beust:klaxon:5.4'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.5.1'
-}
-
-compileKotlin {
-    kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_1_8
-    }
 }
 
 jar {

@@ -196,6 +196,11 @@ Document(
                            ""f(x?)""
                          ]
                )
+               calledSection = CalledSection(
+                 forms = [
+                           ""f""
+                         ]
+               )
                metaDataSection = null
              )
            ]

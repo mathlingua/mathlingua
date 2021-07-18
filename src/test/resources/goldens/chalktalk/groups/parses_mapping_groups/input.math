@@ -5,3 +5,4 @@ maps:
 . from: 'A'
   to: 'A'
 written: "f(x?)"
+called: "f"

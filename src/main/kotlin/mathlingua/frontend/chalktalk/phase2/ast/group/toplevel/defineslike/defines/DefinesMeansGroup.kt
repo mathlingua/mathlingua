@@ -20,6 +20,7 @@ import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CALLED_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_MEANS_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
@@ -29,7 +30,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.sectionsMatchNames
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getId
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateViewingSection
@@ -59,6 +62,7 @@ data class DefinesMeansGroup(
     override val viewingSection: ViewingSection?,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
+    override val calledSection: CalledSection,
     override val metaDataSection: MetaDataSection?
 ) : DefinesGroup(metaDataSection) {
 
@@ -82,6 +86,7 @@ data class DefinesMeansGroup(
             fn(usingSection)
         }
         fn(writtenSection)
+        fn(calledSection)
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -98,6 +103,7 @@ data class DefinesMeansGroup(
                 viewingSection,
                 usingSection,
                 writtenSection,
+                calledSection,
                 metaDataSection)
         return topLevelToCode(writer, isArg, indent, id, *sections.toTypedArray())
     }
@@ -117,6 +123,7 @@ data class DefinesMeansGroup(
                 viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
+                calledSection = calledSection.transform(chalkTransformer) as CalledSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 
     override fun copyWithoutMetadata(): DefinesGroup {
@@ -144,6 +151,7 @@ fun validateDefinesMeansGroup(
                     "viewing?",
                     "using?",
                     "written",
+                    "called",
                     "Metadata?")) { sections ->
                 val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
                 val def =
@@ -181,6 +189,10 @@ fun validateDefinesMeansGroup(
                         writtenSection =
                             ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
                                 validateWrittenSection(it, errors, tracker)
+                            },
+                        calledSection =
+                            ensureNonNull(sections["called"], DEFAULT_CALLED_SECTION) {
+                                validateCalledSection(it, errors, tracker)
                             },
                         metaDataSection =
                             ifNonNull(sections["Metadata"]) {

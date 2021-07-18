@@ -130,18 +130,23 @@ internal class MathLinguaTest {
             means: 'X is \something'
             satisfying: '\something'
             written: "something"
+            called: "finite set"
+
 
             [\infinite.set]
             Defines: X
             means: 'X is \something'
             satisfying: '\something.else'
             written: "something"
+            called: "infinite set"
+
 
             [\finite.set]
             Defines: Y
             means: 'X is \something'
             satisfying: '\yet.something.else'
             written: "something"
+            called: "finite set"
         """.trimIndent(),
                 """
             [\set]
@@ -151,6 +156,7 @@ internal class MathLinguaTest {
             . if: X
               then: '\something.else'
             written: "something"
+            called: "set"
         """.trimIndent(),
                 """
             Theorem:
@@ -162,7 +168,7 @@ internal class MathLinguaTest {
         val dups = sourceCollection.getDuplicateDefinedSignatures().map { it.value }
         assertThat(dups)
             .isEqualTo(
-                listOf(Signature(form = "\\finite.set", location = Location(row = 12, column = 0))))
+                listOf(Signature(form = "\\finite.set", location = Location(row = 16, column = 0))))
     }
 
     @Test
@@ -275,12 +281,15 @@ internal class MathLinguaTest {
             means: 'X is \something'
             satisfying: '\something'
             written: "something"
+            called: "finite set"
+
 
             [\infinite.set]
             Defines: X
             means: 'X is \something'
             satisfying: '\something.else'
             written: "something"
+            called: "infinite set"
         """.trimIndent(),
                 """
             [\set]
@@ -290,6 +299,8 @@ internal class MathLinguaTest {
             . if: X
               then: '\something.else'
             written: "something"
+            called: "set"
+
 
             Theorem:
             then:
@@ -323,12 +334,15 @@ internal class MathLinguaTest {
             means: 'X is \something'
             satisfying: '\something'
             written: "something"
+            called: "finite set"
+
 
             [\infinite.set]
             Defines: X
             means: 'X is \something'
             satisfying: '\something.else'
             written: "something"
+            called: "infinite set"
         """.trimIndent(),
                 """
             [\set]
@@ -338,6 +352,7 @@ internal class MathLinguaTest {
             . if: X
               then: '\something.else'
             written: "something"
+            called: "set"
         """.trimIndent(),
                 """
             Theorem:
@@ -349,6 +364,7 @@ internal class MathLinguaTest {
             means: 'X is \something'
             satisfying: '\yet.something.else'
             written: "something"
+            called: "set"
         """.trimIndent())
 
         val collection = newSourceCollectionFromContent(input)
@@ -366,6 +382,7 @@ internal class MathLinguaTest {
             States:
             that: "something"
             written: "a? \text{ or } b?"
+            called: "something"
         """.trimIndent())
         assertThat(validation is ValidationSuccess)
         val doc = (validation as ValidationSuccess).value

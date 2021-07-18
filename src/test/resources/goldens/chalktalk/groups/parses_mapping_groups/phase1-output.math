@@ -10,3 +10,5 @@ maps:
   . 'A'
 written:
 . "f(x?)"
+called:
+. "f"

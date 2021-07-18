@@ -23,6 +23,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
@@ -47,6 +48,7 @@ abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     abstract val whenSection: WhenSection?
     abstract val viewingSection: ViewingSection?
     abstract val writtenSection: WrittenSection
+    abstract val calledSection: CalledSection
     abstract fun copyWithoutMetadata(): DefinesGroup
 }
 

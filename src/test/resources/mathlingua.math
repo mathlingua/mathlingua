@@ -5,6 +5,7 @@ when: 'A is \something.else'
 means: 'X is \something.else'
 satisfying: 'X is \some.other.thing'
 written: "\textrm{something} A?"
+called: "something"
 
 
 [\something2{A}]
@@ -12,6 +13,7 @@ Defines: X
 when: 'A is \something.else'
 means: 'X is \some.other.thing'
 written: "\textrm{something} A?"
+called: "something2"
 
 
 [\some.function{A}(x)]
@@ -22,6 +24,7 @@ maps:
 . from: '\reals'
   to: '\reals'
 written: "\textrm{some.function}(x?)"
+called: "some function over $A?$"
 
 
 [\some.function2{A}(x)]
@@ -31,6 +34,7 @@ maps:
 . from: '\reals'
   to: '\reals'
 written: "\textrm{some.function}(x?)"
+called: "some function2 over $A?$"
 
 
 [\even.primes]
@@ -42,6 +46,7 @@ collects:
   all: 'p'
   suchThat: 'p is \even'
 written: "\textbf{even primes}"
+called: "even primes"
 
 
 [\even.primes2]
@@ -52,6 +57,7 @@ collects:
   all: 'p'
   suchThat: 'p is \even'
 written: "\textbf{even primes}"
+called: "even primes2"
 
 
 [\f1(x)]
@@ -59,12 +65,14 @@ Defines: f(x)
 means: 'f is \function'
 evaluated: 'f(x) := x + 1'
 written: "f1(x?)"
+called: "f1"
 
 
 [\f12(x)]
 Defines: f(x)
 evaluated: 'f(x) := x + 1'
 written: "f1(x?)"
+called: "f12"
 
 
 [\f3(x)]
@@ -78,6 +86,7 @@ evaluated:
   then: 'f(x) := -1'
   else: 'f(x) := 0'
 written: "f3(x?)"
+called: "f3"
 
 
 [\f32(x)]
@@ -90,6 +99,7 @@ evaluated:
   then: 'f(x) := -1'
   else: 'f(x) := 0'
 written: "f3(x?)"
+called: "f32"
 
 
 [\semigroup]
@@ -107,12 +117,15 @@ viewing:
 . membership:
   through: 'X'
 written: "\textrm{semigroup}"
+called: "semigroup"
 
 
 [\some.thing{A}:on{B}:to{C}]
 States:
 when: 'A, B, C is \something'
 that: 'A + B - C is \something'
+written: "something"
+called: "something"
 
 
 Foundation:
@@ -121,6 +134,7 @@ Foundation:
   means: 'X is \something'
   satisfying: 'X is \something.else'
   written: "X?"
+  called: "X?"
 
 
 Foundation:
@@ -133,6 +147,7 @@ Foundation:
     all: 'x'
     suchThat: 'x'
   written: "X"
+  called: "X?"
 
 
 [x + y]

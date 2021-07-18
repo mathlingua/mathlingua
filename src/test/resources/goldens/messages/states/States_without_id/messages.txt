@@ -1,5 +1,16 @@
-Row: 0
+Row: 3
 Column: 0
 Message:
-Expected an Id
+For pattern:
+
+States:
+requiring?:
+when?:
+that:
+using?:
+written:
+called:
+Metadata?:
+
+Expected 'called' but found 'states'
 EndMessage:

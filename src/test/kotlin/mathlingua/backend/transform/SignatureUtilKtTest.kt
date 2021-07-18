@@ -33,7 +33,7 @@ internal class SignatureUtilKtTest {
     fun findAllStatementSignaturesNonGluedTest() {
         val validation =
             FrontEnd.parse(
-                "[\\xyz{x}]\nDefines: y\nmeans: 'something'\nsatisfying: 'something'\nwritten: \"something\"")
+                "[\\xyz{x}]\nDefines: y\nmeans: 'something'\nsatisfying: 'something'\nwritten: \"something\"\ncalled: \"something\"")
         val doc = (validation as ValidationSuccess).value
         val defines = doc.defines()
         assertThat(defines.size).isEqualTo(1)
@@ -50,7 +50,7 @@ internal class SignatureUtilKtTest {
         val validation =
             FrontEnd.parse(
                 "[\\abc \\xyz{x}]\nDefines: y\nmeans: 'something'\nsatisfying: 'something'\n" +
-                    "written: \"something\"")
+                    "written: \"something\"\ncalled: \"something\"")
         assertThat(validation is ValidationFailure)
         assertThat((validation as ValidationFailure).errors)
             .isEqualTo(
@@ -66,7 +66,7 @@ internal class SignatureUtilKtTest {
         val validation =
             FrontEnd.parse(
                 "[x \\abc/ y]\nDefines: y\nmeans: 'something'\nsatisfying: 'something'\n" +
-                    "written: \"something\"")
+                    "written: \"something\"\ncalled: \"something\"")
         val doc = (validation as ValidationSuccess).value
         val defines = doc.defines()
         assertThat(defines.size).isEqualTo(1)

@@ -273,6 +273,13 @@ open class HtmlCodeWriter(
             is TheoremGroup -> {
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
+                val names = node.theoremSection.names
+                if (names.isNotEmpty()) {
+                    builder.append("<span class='mathlingua-called'>")
+                    val name = capitalizeWords(names.first().removeSurrounding("\"", "\""))
+                    builder.append(parseMarkdown(name))
+                    builder.append("</span>")
+                }
                 builder.append(
                     node.copy(metaDataSection = null, proofSection = null)
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
@@ -298,6 +305,13 @@ open class HtmlCodeWriter(
             is AxiomGroup -> {
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
+                val names = node.axiomSection.names
+                if (names.isNotEmpty()) {
+                    builder.append("<span class='mathlingua-called'>")
+                    val name = capitalizeWords(names.first().removeSurrounding("\"", "\""))
+                    builder.append(parseMarkdown(name))
+                    builder.append("</span>")
+                }
                 builder.append(
                     node.copy(metaDataSection = null)
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
@@ -311,6 +325,13 @@ open class HtmlCodeWriter(
             is ConjectureGroup -> {
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
+                val names = node.conjectureSection.names
+                if (names.isNotEmpty()) {
+                    builder.append("<span class='mathlingua-called'>")
+                    val name = capitalizeWords(names.first().removeSurrounding("\"", "\""))
+                    builder.append(parseMarkdown(name))
+                    builder.append("</span>")
+                }
                 builder.append(
                     node.copy(metaDataSection = null)
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))

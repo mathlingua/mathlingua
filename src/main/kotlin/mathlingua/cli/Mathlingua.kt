@@ -1424,8 +1424,9 @@ const val SHARED_CSS =
         display: block;
         font-family: Georgia, 'Times New Roman', Times, serif;
         text-align: center;
-        font-weight: bold;
-        padding-bottom: 0.25em;
+        font-weight: normal;
+        padding-bottom: 1ex;
+        color: #777777;
     }
 
     .mathlingua {

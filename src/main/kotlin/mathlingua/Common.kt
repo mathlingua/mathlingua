@@ -23,6 +23,8 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.nio.file.Paths
+import java.util.LinkedList
+import java.util.Stack
 import java.util.UUID
 import java.util.concurrent.Executors
 import mathlingua.cli.Logger
@@ -30,36 +32,46 @@ import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileImpl
 import mathlingua.cli.VirtualFileSystem
 
+/**
+ * Any code that use a class in a `java.*` package should be placed in this file. This is done to
+ * consolidate JVM specific code into a single place.
+ */
+
+/** Used to get a random UUID value. */
 fun getRandomUuid() = UUID.randomUUID().toString()
 
+/**
+ * The Stack<T> class, backed by a [java.util.Stack] hides the usage of the JVM specific Stack so
+ * that the rest of the code can utilize a Stack without directly using a java.util.Stack.
+ */
 class Stack<T> {
-    private val data = mutableListOf<T>()
+    private val data = Stack<T>()
 
-    fun push(value: T) = data.add(value)
-
-    fun peek(): T = data.last()
-
-    fun pop(): T {
-        val peek = peek()
-        data.removeLast()
-        return peek
+    fun push(value: T) {
+        data.push(value)
     }
+
+    fun peek(): T = data.peek()
+
+    fun pop(): T = data.pop()
 
     fun isEmpty() = data.isEmpty()
 }
 
+/**
+ * The Queue<T> class, backed by a [java.util.Queue] hides the usage of the JVM specific Queue so
+ * that the rest of the code can utilize a Queue without directly using a java.util.Queue.
+ */
 class Queue<T> : Iterable<T> {
-    private val data = mutableListOf<T>()
+    private val data = LinkedList<T>()
 
-    fun offer(value: T) = data.add(value)
-
-    fun peek(): T = data.first()
-
-    fun poll(): T {
-        val peek = peek()
-        data.removeFirst()
-        return peek
+    fun offer(value: T) {
+        data.offer(value)
     }
+
+    fun peek(): T = data.peek()
+
+    fun poll(): T = data.poll()
 
     fun isEmpty() = data.isEmpty()
 

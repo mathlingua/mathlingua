@@ -20,6 +20,7 @@ import kotlin.math.max
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
+import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
@@ -697,6 +698,12 @@ private fun expandAsWrittenImpl(
                     val result = expandAsWrittenImplImpl(it, sigToPatternExpansion)
                     errors.addAll(result.errors)
                     result.text
+                }
+                is ColonEqualsTexTalkNode -> {
+                    val lhsText = it.lhs.toCode()
+                    val rhsResult = expandAsWrittenImpl(it.rhs, sigToPatternExpansion, addParens)
+                    errors.addAll(rhsResult.errors)
+                    "$lhsText := ${rhsResult.text}"
                 }
                 else -> null
             }

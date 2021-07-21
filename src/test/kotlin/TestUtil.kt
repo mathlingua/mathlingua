@@ -43,8 +43,7 @@ enum class GoldenType {
 fun loadTestCases(type: GoldenType): List<TestCase> {
     val result = mutableListOf<TestCase>()
     val fs = newDiskFileSystem()
-    val root =
-        fs.getDirectory(listOf("src", "test", "resources", "goldens", type.name.toLowerCase()))
+    val root = fs.getDirectory(listOf("src", "test", "resources", "goldens", type.name.lowercase()))
     if (!root.exists()) {
         throw VirtualFileException(
             "Golden root directory ${root.absolutePath().joinToString(fs.getFileSeparator())} does not exist")

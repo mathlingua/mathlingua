@@ -21,7 +21,6 @@ import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CALLED_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THAT_SECTION
@@ -133,7 +132,7 @@ fun validateStatesGroup(
                     "written",
                     "called",
                     "Metadata?")) { sections ->
-                val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+                val id = getId(group, errors, tracker)
                 StatesGroup(
                     signature = id.signature(tracker),
                     id = id,

@@ -56,21 +56,18 @@ const val MATHLINGUA_VERSION = "0.8"
 
 private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
 
+@Suppress("SAME_PARAMETER_VALUE")
 private fun green(text: String) = "\u001B[32m$text\u001B[0m"
 
 private fun red(text: String) = "\u001B[31m$text\u001B[0m"
 
+@Suppress("UNUSED")
 private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {
         val sourceCollection =
-            newSourceCollection(
-                if (files.isEmpty()) {
-                    listOf(fs.getDirectory(listOf("content")))
-                } else {
-                    files
-                })
+            newSourceCollection(files.ifEmpty { listOf(fs.getDirectory(listOf("content"))) })
         val errors = BackEnd.check(sourceCollection)
         logger.log(getErrorOutput(fs, errors, sourceCollection.size(), json))
         return if (errors.isEmpty()) {
@@ -197,7 +194,7 @@ private fun getErrorOutput(
         if (json) {
             builder.append("{")
             builder.append(
-                "  \"file\": \"${err.source.file.absolutePath().joinToString(fs.getFileSeparator()).jsonSanitize() ?: "None"}\",")
+                "  \"file\": \"${err.source.file.absolutePath().joinToString(fs.getFileSeparator()).jsonSanitize()}\",")
             builder.append("  \"type\": \"ERROR\",")
             builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
             builder.append("  \"failedLine\": \"\",")
@@ -211,7 +208,7 @@ private fun getErrorOutput(
             builder.append(bold(red("ERROR: ")))
             builder.append(
                 bold(
-                    "${err.source.file.relativePathTo(cwd).joinToString(fs.getFileSeparator()) ?: "None"} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
+                    "${err.source.file.relativePathTo(cwd).joinToString(fs.getFileSeparator())} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
             builder.append(err.value.message.trim())
             builder.append("\n\n")
         }
@@ -373,7 +370,7 @@ private fun findMathlinguaFiles(fileOrDir: VirtualFile, result: MutableList<Virt
     }
 }
 
-class LockedValue<T>() {
+class LockedValue<T> {
     private var data: T? = null
 
     fun setValue(value: T) {
@@ -669,9 +666,9 @@ private fun generateSignatureToPathImpl(
                 val doc = validation.value
                 val groups = doc.groups
                 for (i in groups.indices) {
-                    val grp = groups[i]
                     val signature =
-                        when (grp) {
+                        when (val grp = groups[i]
+                        ) {
                             is AxiomGroup -> {
                                 grp.id?.text
                             }
@@ -741,21 +738,6 @@ private fun generatePathToEntityList(
     for (f in filesToProcess) {
         val path = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
         result[path] = getUnifiedRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
-    }
-    return result
-}
-
-private fun generatePathToCompleteEntityList(
-    fs: VirtualFileSystem,
-    filesToProcess: List<VirtualFile>,
-    sourceCollection: SourceCollection,
-    noexpand: Boolean,
-    errors: MutableList<ValueSourceTracker<ParseError>>
-): Map<String, List<RenderedTopLevelElement>> {
-    val result = mutableMapOf<String, List<RenderedTopLevelElement>>()
-    for (f in filesToProcess) {
-        val path = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
-        result[path] = getCompleteRenderedTopLevelElements(f, sourceCollection, noexpand, errors)
     }
     return result
 }
@@ -874,7 +856,7 @@ private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
             }
         }
         is Identifier -> {
-            words.add(node.name.toLowerCase())
+            words.add(node.name.lowercase())
         }
         is Text -> {
             getAllWordsImpl(node.text, words)
@@ -924,7 +906,7 @@ private fun getAllWordsImpl(text: String, words: MutableSet<String>) {
             .split(" ")
             .map { it.trim() }
             .filter { it.isNotEmpty() }
-            .map { sanitizeHtmlForJs(it.toLowerCase()) })
+            .map { sanitizeHtmlForJs(it.lowercase()) })
 }
 
 const val SHARED_HEADER =

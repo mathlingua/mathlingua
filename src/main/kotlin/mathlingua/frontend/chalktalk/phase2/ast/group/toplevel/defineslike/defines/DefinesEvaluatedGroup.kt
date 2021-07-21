@@ -24,7 +24,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CALLED_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_EVALUATED_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EVALUATED_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.sectionsMatchNames
@@ -152,7 +151,7 @@ fun validateDefinesEvaluatedGroup(
                     "written",
                     "called",
                     "Metadata?")) { sections ->
-                val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+                val id = getId(group, errors, tracker)
                 val def =
                     DefinesEvaluatedGroup(
                         signature = id.signature(tracker),

@@ -286,10 +286,7 @@ fun getOptionalId(
 }
 
 fun getId(
-    node: Phase1Node,
-    errors: MutableList<ParseError>,
-    default: IdStatement,
-    tracker: MutableLocationTracker
+    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): IdStatement {
     val id = getOptionalId(node, errors, tracker)
     return if (id != null) {

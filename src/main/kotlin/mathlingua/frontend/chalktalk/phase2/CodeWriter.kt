@@ -211,7 +211,7 @@ open class HtmlCodeWriter(
             if (i > 0 && (word == "a" || word == "an" || word == "the")) {
                 calledWords.add(word)
             } else {
-                calledWords.add(word.capitalize())
+                calledWords.add(word.replaceFirstChar { it.uppercase() })
             }
         }
         return calledWords.joinToString(" ")
@@ -248,7 +248,7 @@ open class HtmlCodeWriter(
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
-                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection))
                 }
                 builder.toString()
             }
@@ -298,7 +298,7 @@ open class HtmlCodeWriter(
                     builder.append("</span>")
                 }
                 if (node.metaDataSection != null) {
-                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection))
                 }
                 builder.toString()
             }
@@ -318,7 +318,7 @@ open class HtmlCodeWriter(
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
-                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection))
                 }
                 builder.toString()
             }
@@ -338,7 +338,7 @@ open class HtmlCodeWriter(
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
-                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection))
                 }
                 builder.toString()
             }
@@ -475,7 +475,7 @@ open class HtmlCodeWriter(
 
     private fun getUrlWithoutSpaces(url: String) = url.replace(Regex("[ \\r\\n\\t]+"), "")
 
-    private fun getUrlTitle(url: String, name: String?): String? {
+    private fun getUrlTitle(url: String, name: String?): String {
         return if (name != null) {
             name
         } else {
@@ -970,15 +970,6 @@ internal fun prettyPrintIdentifier(text: String): String {
 }
 
 // ------------------------------------------------------------------------------------------------------------------ //
-
-fun String.replaceCommandWithHtml(commandName: String, htmlName: String): String {
-    val regex = Regex("""\\$commandName\{(.*?)\}""")
-    val find = regex.find(this) ?: return this
-    if (find.groupValues.size < 2) {
-        return this
-    }
-    return """<$htmlName>${find.groupValues[1]}</$htmlName>"""
-}
 
 private fun isGreekLetter(letter: String) =
     mutableSetOf(

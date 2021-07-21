@@ -33,7 +33,7 @@ data class RelatedSection(val items: List<StringItem>) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("related")
-        if (items.size == 1 && items[0] is StringItem) {
+        if (items.size == 1) {
             writer.append(items[0], false, 1)
         } else {
             for (item in items) {

@@ -473,9 +473,9 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             result.addAll(getOperatorIdentifiersFromTargets(group.definesSection.targets, tracker))
         } else if (group is StatesGroup) {
             if (group.whenSection != null) {
-                val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
+                val location = tracker?.getLocationOf(group.whenSection) ?: Location(-1, -1)
                 result.addAll(
-                    getInnerDefinedSignatures(group.whenSection!!.clauses.clauses).map {
+                    getInnerDefinedSignatures(group.whenSection.clauses.clauses).map {
                         Signature(form = it, location = location)
                     })
             }
@@ -505,8 +505,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         fun processDefines(pair: ValueSourceTracker<DefinesGroup>) {
             val signature = pair.value.signature
             if (signature != null) {
-                val location =
-                    pair.tracker?.getLocationOf(pair.value) ?: Location(row = -1, column = -1)
                 val vst =
                     ValueSourceTracker(
                         source = pair.source, tracker = pair.tracker, value = signature)
@@ -1136,7 +1134,7 @@ fun getPatternsToWrittenAs(
     val result = mutableMapOf<OperatorTexTalkNode, String>()
     for (rep in allStates) {
         val writtenAs =
-            rep.writtenSection?.forms?.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
+            rep.writtenSection.forms.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
         val validation = rep.id.texTalkRoot
         if (validation is ValidationSuccess) {

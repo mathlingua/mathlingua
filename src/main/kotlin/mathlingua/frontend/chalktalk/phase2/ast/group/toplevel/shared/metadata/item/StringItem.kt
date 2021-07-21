@@ -40,5 +40,9 @@ data class StringItem(val text: String) : ResourceItem {
 fun isStringItem(node: Phase1Node) = node is Phase1Token && node.type == ChalkTalkTokenType.String
 
 fun validateStringItem(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+    node: Phase1Node,
+    @Suppress("UNUSED_PARAMETER")
+    errors: MutableList<ParseError>,
+    @Suppress("UNUSED_PARAMETER")
+    tracker: MutableLocationTracker
 ) = StringItem(text = (node.resolve() as Phase1Token).text)

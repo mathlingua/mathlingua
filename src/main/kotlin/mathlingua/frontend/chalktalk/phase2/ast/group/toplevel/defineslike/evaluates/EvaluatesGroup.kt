@@ -22,7 +22,6 @@ import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EVALUATES_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EVALUATES_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ID_STATEMENT
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -124,7 +123,7 @@ fun validateEvaluatesGroup(
 ) =
     track(node, tracker) {
         validateGroup(node, errors, "Evaluates", DEFAULT_EVALUATES_GROUP) { group ->
-            val id = getId(group, errors, DEFAULT_ID_STATEMENT, tracker)
+            val id = getId(group, errors, tracker)
             if (group.sections.isEmpty() || !isEvaluatesSection(group.sections.first())) {
                 errors.add(
                     ParseError(

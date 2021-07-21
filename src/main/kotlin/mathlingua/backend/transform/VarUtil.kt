@@ -248,8 +248,8 @@ private fun checkVarsImpl(
                     continue
                 }
 
-                val op = root.children[0] as ColonEqualsTexTalkNode
-                val params = op.lhs
+                val colonEquals = root.children[0] as ColonEqualsTexTalkNode
+                val params = colonEquals.lhs
                 if (params.items.size != 1) {
                     errors.add(
                         ParseError(
@@ -393,6 +393,29 @@ private fun checkVarsImpl(
         // statements in the `using:` section after `x := y`
         // can reference the symbol `x`.
         val usingVars = MultiSet<String>()
+        for (clause in node.clauses.clauses) {
+            if (clause is Statement &&
+                clause.texTalkRoot is ValidationSuccess &&
+                clause.texTalkRoot.value.children.size == 1 &&
+                clause.texTalkRoot.value.children[0] is ColonEqualsTexTalkNode) {
+                val colonEquals = clause.texTalkRoot.value.children[0] as ColonEqualsTexTalkNode
+                val thisValidVars = MultiSet.copy(usingVars)
+                for (v in getVars(colonEquals.lhs, false)) {
+                    thisValidVars.add(v)
+                }
+                val clauseLocation = tracker.getLocationOf(clause) ?: Location(-1, -1)
+                for (v in
+                    checkVarsImpl(
+                        colonEquals.rhs, clauseLocation, thisValidVars, errors, ignoreParen)) {
+                    usingVars.add(v)
+                }
+            } else {
+                for (v in checkVarsImpl(clause, usingVars, tracker, errors, ignoreParen)) {
+                    usingVars.add(v)
+                }
+            }
+        }
+
         node.forEach {
             for (v in checkVarsImpl(it, usingVars, tracker, errors, ignoreParen)) {
                 usingVars.add(v)
@@ -601,6 +624,9 @@ private fun checkVarsImpl(
                     names.addAll(getVars(child.parameters, ignoreParen))
                 } else if (child is TextTexTalkNode) {
                     names.add(child.text)
+                } else {
+                    // handle cases like `x \op/ y` and `\f(x)`
+                    names.addAll(getVars(child, ignoreParen))
                 }
             }
 
@@ -767,4 +793,6 @@ class MultiSet<T> {
             return copy
         }
     }
+
+    override fun toString() = data.toString()
 }

@@ -19,8 +19,10 @@ package mathlingua.backend
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.checkVars
 import mathlingua.backend.transform.expandAsWritten
+import mathlingua.backend.transform.getVars
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
+import mathlingua.backend.transform.signature
 import mathlingua.cli.VirtualFile
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.Parse
@@ -37,17 +39,27 @@ import mathlingua.frontend.chalktalk.phase2.ast.Document
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
+import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
@@ -56,6 +68,7 @@ import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.newLocationTracker
+import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ColonColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
@@ -63,6 +76,7 @@ import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.GroupTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.isOpChar
@@ -96,13 +110,6 @@ interface SourceCollection {
     fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
-    fun prettyPrint(
-        input: String, html: Boolean, literal: Boolean, doExpand: Boolean
-    ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
-    fun prettyPrint(
-        doc: Document, html: Boolean, literal: Boolean, doExpand: Boolean
-    ): List<Pair<String, Phase2Node?>>
-    fun prettyPrint(node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean): String
 }
 
 fun newSourceCollection(filesOrDirs: List<VirtualFile>): SourceCollection {
@@ -131,7 +138,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     private val theoremGroups = mutableListOf<ValueSourceTracker<TheoremGroup>>()
     private val conjectureGroups = mutableListOf<ValueSourceTracker<ConjectureGroup>>()
     private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
-    private val patternsToWrittenAs: Map<OperatorTexTalkNode, String>
 
     init {
         for (sf in sources) {
@@ -198,13 +204,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                     })
             }
         }
-
-        patternsToWrittenAs =
-            getPatternsToWrittenAs(
-                defines = definesGroups.map { it.value },
-                states = statesGroups.map { it.value },
-                axioms = axiomGroups.map { it.value },
-                foundations = foundationGroups.map { it.value })
     }
 
     private fun getOperatorIdentifiers(node: Phase2Node): Set<String> {
@@ -386,6 +385,16 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                         0] as OperatorTexTalkNode)
                     .command as TextTexTalkNode)
                 .text
+        } else if (node.children.size == 1 && node.children[0] is ColonEqualsTexTalkNode) {
+            val colonEquals = node.children[0] as ColonEqualsTexTalkNode
+            val lhs = colonEquals.lhs.items.firstOrNull()
+            if (lhs != null) {
+                IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+                    .signature(newLocationTracker())
+                    ?.form
+            } else {
+                null
+            }
         } else {
             null
         }
@@ -686,10 +695,19 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                             })
                     }
 
-                    for (stmt in findAllStatements(doc)) {
+                    for (pair in findAllStatements(doc)) {
+                        val stmt = pair.first
+                        val aliasDefines = pair.second
                         val location = tracker.getLocationOf(stmt) ?: Location(row = 0, column = 0)
                         for (node in findAllTexTalkNodes(stmt)) {
-                            val expansion = expandAsWritten(node, patternsToWrittenAs)
+                            val expansion =
+                                expandAsWritten(
+                                    node,
+                                    getPatternsToWrittenAs(
+                                        defines = definesGroups.map { it.value }.plus(aliasDefines),
+                                        states = statesGroups.map { it.value },
+                                        axioms = axiomGroups.map { it.value },
+                                        foundations = foundationGroups.map { it.value }))
                             result.addAll(
                                 expansion.errors.map {
                                     ValueSourceTracker(
@@ -722,17 +740,87 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         node.forEach { findAllPhase1StatementsImpl(it, result) }
     }
 
-    private fun findAllStatements(node: Phase2Node): List<Statement> {
-        val result = mutableListOf<Statement>()
-        findAllStatementsImpl(node, result)
-        return result
+    private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<DefinesGroup>>> {
+        val pairs = mutableListOf<Pair<Statement, HasUsingSection?>>()
+        findAllStatementsImpl(
+            node,
+            if (node is HasUsingSection) {
+                node
+            } else {
+                null
+            },
+            pairs)
+        return pairs.map {
+            val aliases = mutableListOf<DefinesGroup>()
+            val usingSection = it.second?.usingSection
+            if (usingSection != null) {
+                for (clause in usingSection.clauses.clauses) {
+                    if (clause is Statement &&
+                        clause.texTalkRoot is ValidationSuccess &&
+                        clause.texTalkRoot.value.children.firstOrNull() is ColonEqualsTexTalkNode) {
+
+                        val colonEquals =
+                            clause.texTalkRoot.value.children.first() as ColonEqualsTexTalkNode
+                        val lhsItems = colonEquals.lhs.items
+                        val rhsItems = colonEquals.rhs.items
+                        if (lhsItems.size != rhsItems.size) {
+                            throw RuntimeException(
+                                "The left-hand-side and right-hand-side of a := must have the same number of " +
+                                    "comma separated expressions")
+                        }
+                        for (i in lhsItems.indices) {
+                            val lhs = lhsItems[i]
+                            val rhs = rhsItems[i]
+                            val id =
+                                IdStatement(
+                                    text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+                            val syntheticDefines =
+                                DefinesMeansGroup(
+                                    signature = id.signature(newLocationTracker()),
+                                    id = id,
+                                    definesSection = DefinesSection(targets = emptyList()),
+                                    requiringSection = null,
+                                    whenSection = null,
+                                    meansSection =
+                                        MeansSection(
+                                            clauses = ClauseListNode(clauses = emptyList())),
+                                    satisfyingSection = null,
+                                    viewingSection = null,
+                                    usingSection = null,
+                                    writtenSection = WrittenSection(forms = listOf(rhs.toCode())),
+                                    calledSection = CalledSection(forms = emptyList()),
+                                    metaDataSection = null)
+                            aliases.add(syntheticDefines)
+                        }
+                    }
+                }
+            }
+            Pair(first = it.first, second = aliases)
+        }
     }
 
-    private fun findAllStatementsImpl(node: Phase2Node, result: MutableList<Statement>) {
+    private fun findAllStatementsImpl(
+        node: Phase2Node,
+        hasUsingNode: HasUsingSection?,
+        result: MutableList<Pair<Statement, HasUsingSection?>>
+    ) {
         if (node is Statement) {
-            result.add(node)
+            result.add(Pair(node, hasUsingNode))
         }
-        node.forEach { findAllStatementsImpl(it, result) }
+        node.forEach {
+            findAllStatementsImpl(
+                it,
+                if (hasUsingNode != null) {
+                    hasUsingNode
+                } else {
+                    if (node is HasUsingSection) {
+                        node
+                    } else {
+                        null
+                    }
+                },
+                result)
+        }
     }
 
     private fun findAllTexTalkNodes(node: Phase2Node): List<TexTalkNode> {
@@ -827,7 +915,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         }
     }
 
-    override fun prettyPrint(
+    private fun prettyPrint(
         input: String, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>> {
         return prettyPrint(FrontEnd.parseWithLocations(input), html, literal, doExpand)
@@ -877,28 +965,139 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         }
     }
 
-    override fun prettyPrint(doc: Document, html: Boolean, literal: Boolean, doExpand: Boolean) =
+    private fun prettyPrint(doc: Document, html: Boolean, literal: Boolean, doExpand: Boolean) =
         doc.groups.map { Pair(prettyPrint(it, html, literal, doExpand), it) }
 
-    override fun prettyPrint(
+    private fun getWriter(
+        html: Boolean, literal: Boolean, doExpand: Boolean, aliasDefines: List<DefinesGroup>
+    ) =
+        if (html) {
+            HtmlCodeWriter(
+                defines = doExpand.thenUse { definesGroups.map { it.value }.plus(aliasDefines) },
+                states = doExpand.thenUse { statesGroups.map { it.value } },
+                axioms = doExpand.thenUse { axiomGroups.map { it.value } },
+                foundations = doExpand.thenUse { foundationGroups.map { it.value } },
+                literal = literal)
+        } else {
+            MathLinguaCodeWriter(
+                defines = doExpand.thenUse { definesGroups.map { it.value }.plus(aliasDefines) },
+                states = doExpand.thenUse { statesGroups.map { it.value } },
+                axioms = doExpand.thenUse { axiomGroups.map { it.value } },
+                foundations = doExpand.thenUse { foundationGroups.map { it.value } })
+        }
+
+    private fun prettyPrint(
         node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean
     ): String {
-        val writer =
-            if (html) {
-                HtmlCodeWriter(
-                    defines = doExpand.thenUse { definesGroups.map { it.value } },
-                    states = doExpand.thenUse { statesGroups.map { it.value } },
-                    axioms = doExpand.thenUse { axiomGroups.map { it.value } },
-                    foundations = doExpand.thenUse { foundationGroups.map { it.value } },
-                    literal = literal)
-            } else {
-                MathLinguaCodeWriter(
-                    defines = doExpand.thenUse { definesGroups.map { it.value } },
-                    states = doExpand.thenUse { statesGroups.map { it.value } },
-                    axioms = doExpand.thenUse { axiomGroups.map { it.value } },
-                    foundations = doExpand.thenUse { foundationGroups.map { it.value } })
+        val aliasDefines = mutableListOf<DefinesGroup>()
+        // any alias such as `x \op/ y := ...` or `\f(x) := ...`
+        // needs to be handled so that when being pretty-printed, the pretty printer
+        // acts as if there is a signature `x \op/ y` (for example) with a written as
+        // section that is the expanded version of the right-hand-side of the :=
+        // This allows alias in `using:` sections to have their usages expanded correctly
+        if (node is HasUsingSection) {
+            val usingSection = node.usingSection
+            if (usingSection != null) {
+                for (clause in usingSection.clauses.clauses) {
+                    if (clause is Statement &&
+                        clause.texTalkRoot is ValidationSuccess &&
+                        clause.texTalkRoot.value.children.firstOrNull() is ColonEqualsTexTalkNode) {
+
+                        val colonEquals =
+                            clause.texTalkRoot.value.children.first() as ColonEqualsTexTalkNode
+                        val lhsItems = colonEquals.lhs.items
+                        val rhsItems = colonEquals.rhs.items
+                        if (lhsItems.size != 1 || rhsItems.size != 1) {
+                            throw RuntimeException(
+                                "The left-hand-side and right-hand-side of a := must have exactly one expression")
+                        }
+
+                        // Given the statment: '\f(x) := \g(x)'
+                        // then lhs is `\f(x)`
+                        // and lhsVars is the set containing only `x`
+                        val lhs = lhsItems[0]
+                        val lhsVars = getVars(texTalkNode = lhs, ignoreParens = false).toSet()
+
+                        // convert the right hand side from `\g(x)` to `\g(x?)`
+                        // to conform to the way "writtenAs" sections are written
+                        val rhs =
+                            rhsItems[0].transform {
+                                if (it is TextTexTalkNode &&
+                                    it.type == TexTalkNodeType.Identifier &&
+                                    it.tokenType == TexTalkTokenType.Identifier &&
+                                    lhsVars.contains(it.text)) {
+                                    it.copy(
+                                        // use toCode() so ... is printed if the identifier is
+                                        // vararg
+                                        text = "${it.toCode()}?")
+                                } else {
+                                    it
+                                }
+                            } as ExpressionTexTalkNode
+
+                        val writer =
+                            getWriter(
+                                html = false,
+                                literal = false,
+                                doExpand = true,
+                                aliasDefines = aliasDefines)
+                        val tmpTheorem =
+                            TheoremGroup(
+                                signature = null,
+                                id = null,
+                                theoremSection = TheoremSection(names = emptyList()),
+                                givenSection = null,
+                                givenWhereSection = null,
+                                ifOrIffSection = null,
+                                thenSection =
+                                    ThenSection(
+                                        clauses =
+                                            ClauseListNode(
+                                                clauses =
+                                                    listOf(
+                                                        Statement(
+                                                            text = rhs.toCode(),
+                                                            texTalkRoot =
+                                                                validationSuccess(rhs))))),
+                                proofSection = null,
+                                usingSection = null,
+                                metaDataSection = null)
+                        val expanded = tmpTheorem.toCode(false, 0, writer).getCode()
+                        when (val validation = FrontEnd.parse(expanded)
+                        ) {
+                            is ValidationSuccess -> {
+                                val doc = validation.value
+                                val stmt =
+                                    doc.theorems()[0].thenSection.clauses.clauses[0] as Statement
+                                val id =
+                                    IdStatement(
+                                        text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+                                val syntheticDefines =
+                                    DefinesMeansGroup(
+                                        signature = id.signature(newLocationTracker()),
+                                        id = id,
+                                        definesSection = DefinesSection(targets = emptyList()),
+                                        requiringSection = null,
+                                        whenSection = null,
+                                        meansSection =
+                                            MeansSection(
+                                                clauses = ClauseListNode(clauses = emptyList())),
+                                        satisfyingSection = null,
+                                        viewingSection = null,
+                                        usingSection = null,
+                                        writtenSection =
+                                            WrittenSection(forms = listOf("\"${stmt.text}\"")),
+                                        calledSection = CalledSection(forms = emptyList()),
+                                        metaDataSection = null)
+                                aliasDefines.add(syntheticDefines)
+                            }
+                        }
+                    }
+                }
             }
-        return writer.generateCode(node)
+        }
+
+        return getWriter(html, literal, doExpand, aliasDefines).generateCode(node)
     }
 
     override fun getSymbolErrors(): List<ValueSourceTracker<ParseError>> {

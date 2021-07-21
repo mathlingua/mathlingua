@@ -148,8 +148,13 @@ object Mathlingua {
         logger.log("Visit localhost:$port to see your rendered MathLingua code.")
         logger.log("Every time you refresh the page, your MathLingua code will be rerendered.")
         startServer(port, logger) {
+            logger.log("Rendering...")
             val triple = getRenderAllText(fs = fs, noExpand = false)
-            Pair(triple.first, triple.third)
+            logger.log(triple.third)
+            logger.log("\nChecking...")
+            check(fs = fs, logger = logger, files = listOf(), json = false)
+            logger.log("")
+            Pair(triple.first, "")
         }
     }
 }

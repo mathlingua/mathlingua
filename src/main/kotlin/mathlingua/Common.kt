@@ -127,7 +127,6 @@ private fun handleServeRequest(
             output.flush()
             output.close()
         } else {
-            logger.log("Rendering...")
             val start = System.currentTimeMillis()
             val pair = processor()
             val end = System.currentTimeMillis()
@@ -142,7 +141,6 @@ private fun handleServeRequest(
             } finally {
                 logger.log("Completed in ${end - start} ms")
                 logger.log(pair.second)
-                logger.log("")
             }
         }
     } catch (e: SocketException) {

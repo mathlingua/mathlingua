@@ -14,37 +14,28 @@
  * limitations under the License.
  */
 
-buildscript {
-    ext.kotlin_version = '1.5.21'
-    repositories {
-        mavenCentral()
-    }
-    dependencies {
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
-}
-
 plugins {
     // for improved test output
-    id "com.adarshr.test-logger" version "1.7.0"
-    id "com.diffplug.spotless" version "5.7.0"
-    id 'com.github.johnrengelman.shadow' version '7.0.0'
+    id("com.adarshr.test-logger") version "1.7.0"
+    id("com.diffplug.spotless") version "5.7.0"
+    id("com.github.johnrengelman.shadow") version "7.0.0"
+    id("org.jetbrains.kotlin.jvm") version "1.5.21"
+    id("application")
+    id("jacoco")
 }
 
-apply plugin: 'kotlin'
-apply plugin: 'application'
-apply plugin: 'jacoco'
+group = "mathlingua"
+version = "0.13"
+sourceCompatibility = "1.8"
 
-group = 'mathlingua'
-version = '0.13'
-sourceCompatibility = '1.8'
-
-mainClassName = 'mathlingua.cli.MainKt'
+application {
+    mainClassName = "mathlingua.cli.MainKt"
+}
 
 repositories {
     mavenCentral()
     maven {
-        url "https://oss.sonatype.org/content/repositories/snapshots"
+        url("https://oss.sonatype.org/content/repositories/snapshots")
         mavenContent {
             snapshotsOnly()
         }
@@ -52,22 +43,23 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.fifesoft:rsyntaxtextarea:3.0.3'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
-    implementation group: 'com.github.ajalt', name: 'clikt', version: '2.6.0'
-    implementation group: 'org.jetbrains.kotlinx', name: 'kotlinx-coroutines-core', version: '1.4.2'
-    implementation "org.jetbrains:markdown:0.2.4"
-    testImplementation 'com.willowtreeapps.assertk:assertk-jvm:0.19'
-    testImplementation 'org.jetbrains.kotlin:kotlin-reflect:1.5.0'
-    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.1'
-    testImplementation "com.tylerthrailkill.helpers:pretty-print:2.0.2"
-    testImplementation 'com.beust:klaxon:5.4'
-    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.5.1'
+    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.21")
+    implementation("com.fifesoft:rsyntaxtextarea:3.0.3")
+    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.5.21")
+    implementation(group: "com.github.ajalt", name: "clikt", version: "2.6.0")
+    implementation(group: "org.jetbrains.kotlinx", name: "kotlinx-coroutines-core", version: "1.4.2")
+    implementation("org.jetbrains:markdown:0.2.4")
+    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
+    testImplementation("org.jetbrains.kotlin:kotlin-reflect:1.5.0")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.5.1")
+    testImplementation("com.tylerthrailkill.helpers:pretty-print:2.0.2")
+    testImplementation("com.beust:klaxon:5.4")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.5.1")
 }
 
 jar {
     manifest {
-        attributes 'Main-Class': mainClassName
+        attributes "Main-Class": mainClassName
     }
 }
 
@@ -75,20 +67,24 @@ test {
     useJUnitPlatform()
 }
 
-// test output configuration
 testlogger {
-    theme 'mocha'
+    theme("mocha")
 }
 
 jacoco {
-    toolVersion = '0.8.7'
+    toolVersion = "0.8.7"
 }
 
 spotless {
     kotlin {
-        ktfmt('0.18').dropboxStyle()
+        ktfmt("0.18").dropboxStyle()
     }
 }
 
-test.finalizedBy jacocoTestReport
-check.dependsOn jacocoTestCoverageVerification
+test.finalizedBy {
+    jacocoTestReport
+}
+
+check.dependsOn {
+    jacocoTestCoverageVerification
+}

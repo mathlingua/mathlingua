@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
+import org.jetbrains.kotlin.config.KotlinCompilerVersion
+import com.adarshr.gradle.testlogger.theme.ThemeType
+
 plugins {
     // for improved test output
     id("com.adarshr.test-logger") version "1.7.0"
@@ -26,16 +29,19 @@ plugins {
 
 group = "mathlingua"
 version = "0.13"
-sourceCompatibility = "1.8"
 
 application {
-    mainClassName = "mathlingua.cli.MainKt"
+    mainClass.set("mathlingua.cli.MainKt")
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_1_8
 }
 
 repositories {
     mavenCentral()
     maven {
-        url("https://oss.sonatype.org/content/repositories/snapshots")
+        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
         mavenContent {
             snapshotsOnly()
         }
@@ -43,32 +49,39 @@ repositories {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-gradle-plugin:1.5.21")
+    implementation(kotlin("gradle-plugin", version = "1.5.21"))
     implementation("com.fifesoft:rsyntaxtextarea:3.0.3")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.5.21")
-    implementation(group: "com.github.ajalt", name: "clikt", version: "2.6.0")
-    implementation(group: "org.jetbrains.kotlinx", name: "kotlinx-coroutines-core", version: "1.4.2")
+    implementation(kotlin("stdlib", KotlinCompilerVersion.VERSION))
+    implementation("com.github.ajalt:clikt:2.6.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
     implementation("org.jetbrains:markdown:0.2.4")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
-    testImplementation("org.jetbrains.kotlin:kotlin-reflect:1.5.0")
+    testImplementation(kotlin("reflect", version = "1.5.0"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.5.1")
     testImplementation("com.tylerthrailkill.helpers:pretty-print:2.0.2")
     testImplementation("com.beust:klaxon:5.4")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.5.1")
 }
 
-jar {
-    manifest {
-        attributes "Main-Class": mainClassName
+tasks {
+    test {
+        useJUnitPlatform()
+        finalizedBy(jacocoTestReport)
+    }
+
+    jar {
+        manifest {
+            attributes["Main-Class"] = application.mainClass
+        }
+    }
+
+    check {
+        dependsOn(jacocoTestCoverageVerification)
     }
 }
 
-test {
-    useJUnitPlatform()
-}
-
 testlogger {
-    theme("mocha")
+    theme = ThemeType.MOCHA
 }
 
 jacoco {
@@ -79,12 +92,4 @@ spotless {
     kotlin {
         ktfmt("0.18").dropboxStyle()
     }
-}
-
-test.finalizedBy {
-    jacocoTestReport
-}
-
-check.dependsOn {
-    jacocoTestCoverageVerification
 }

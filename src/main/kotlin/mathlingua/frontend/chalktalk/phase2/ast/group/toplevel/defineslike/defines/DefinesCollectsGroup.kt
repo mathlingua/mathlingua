@@ -124,9 +124,9 @@ data class DefinesCollectsGroup(
                 calledSection = calledSection.transform(chalkTransformer) as CalledSection,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 
-    override fun copyWithoutMetadata(): DefinesGroup {
-        return copy(metaDataSection = null)
-    }
+    override fun copyWithoutMetadata() = copy(metaDataSection = null)
+
+    override fun copyWithEmptyCalled() = copy(calledSection = CalledSection(forms = emptyList()))
 }
 
 fun isDefinesCollectsGroup(node: Phase1Node) = sectionsMatchNames(node, "Defines", "collects")

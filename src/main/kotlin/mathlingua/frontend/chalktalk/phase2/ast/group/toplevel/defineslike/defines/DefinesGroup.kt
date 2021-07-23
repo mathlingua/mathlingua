@@ -50,6 +50,7 @@ abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     abstract val writtenSection: WrittenSection
     abstract val calledSection: CalledSection
     abstract fun copyWithoutMetadata(): DefinesGroup
+    abstract fun copyWithEmptyCalled(): DefinesGroup
 }
 
 fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")

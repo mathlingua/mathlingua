@@ -34,12 +34,18 @@ data class CalledSection(val forms: List<String>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        writer.writeIndent(isArg, indent)
-        writer.writeHeader("called")
-        for (imp in forms) {
-            writer.writeNewline()
-            writer.writeIndent(true, indent + 2)
-            writer.writeText(imp)
+        // the validator requires the user to specify at least one called form, but
+        // internally a CalledSection with zero forms is used to specify that the
+        // CalledSection should not be rendered (so the HtmlCodeWriter can use the
+        // called section form as the title)
+        if (forms.isNotEmpty()) {
+            writer.writeIndent(isArg, indent)
+            writer.writeHeader("called")
+            for (imp in forms) {
+                writer.writeNewline()
+                writer.writeIndent(true, indent + 2)
+                writer.writeText(imp)
+            }
         }
         return writer
     }

@@ -26,12 +26,16 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.RelatedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ResourcesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SiteGroup
@@ -243,7 +247,19 @@ open class HtmlCodeWriter(
                 builder.append(parseMarkdown(called))
                 builder.append("</span>")
                 builder.append(
-                    node.copy(metaDataSection = null)
+                    node.copy(
+                            metaDataSection = null,
+                            calledSection =
+                                if (node.calledSection.forms.size == 1) {
+                                    // use an empty list to specify that the called: section should
+                                    // not
+                                    // be rendered since the single form that the item is called is
+                                    // used
+                                    // as the title
+                                    CalledSection(forms = emptyList())
+                                } else {
+                                    node.calledSection
+                                })
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
                         .getCode())
                 builder.append("</span>")
@@ -262,6 +278,17 @@ open class HtmlCodeWriter(
                 builder.append("</span>")
                 builder.append(
                     node.copyWithoutMetadata()
+                        .let {
+                            // if there is only one "called" form then use an empty list of called
+                            // forms to signal that the "called:" section shouldn't be rendered
+                            // since
+                            // the called form is used as the title
+                            if (it.calledSection.forms.size == 1) {
+                                it.copyWithEmptyCalled()
+                            } else {
+                                it
+                            }
+                        }
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
                         .getCode())
                 builder.append("</span>")
@@ -281,7 +308,16 @@ open class HtmlCodeWriter(
                     builder.append("</span>")
                 }
                 builder.append(
-                    node.copy(metaDataSection = null, proofSection = null)
+                    node.copy(
+                            metaDataSection = null,
+                            proofSection = null,
+                            theoremSection =
+                                if (node.theoremSection.names.size == 1) {
+                                    // the single name is already listed as the title
+                                    TheoremSection(names = emptyList())
+                                } else {
+                                    node.theoremSection
+                                })
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
                         .getCode())
                 builder.append("</span>")
@@ -313,7 +349,15 @@ open class HtmlCodeWriter(
                     builder.append("</span>")
                 }
                 builder.append(
-                    node.copy(metaDataSection = null)
+                    node.copy(
+                            metaDataSection = null,
+                            axiomSection =
+                                if (node.axiomSection.names.size == 1) {
+                                    // the single name is already listed as the title
+                                    AxiomSection(names = emptyList())
+                                } else {
+                                    node.axiomSection
+                                })
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
                         .getCode())
                 builder.append("</span>")
@@ -333,7 +377,15 @@ open class HtmlCodeWriter(
                     builder.append("</span>")
                 }
                 builder.append(
-                    node.copy(metaDataSection = null)
+                    node.copy(
+                            metaDataSection = null,
+                            conjectureSection =
+                                if (node.conjectureSection.names.size == 1) {
+                                    // the single name is already listed as the title
+                                    ConjectureSection(names = emptyList())
+                                } else {
+                                    node.conjectureSection
+                                })
                         .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
                         .getCode())
                 builder.append("</span>")

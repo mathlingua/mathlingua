@@ -50,9 +50,7 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.getRandomUuid
 import mathlingua.startServer
 
-const val TOOL_VERSION = "0.13"
-
-const val MATHLINGUA_VERSION = "0.8"
+const val MATHLINGUA_VERSION = "0.8.0"
 
 private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
 
@@ -136,8 +134,7 @@ object Mathlingua {
     }
 
     fun version(logger: Logger): Int {
-        logger.log("MathLingua CLI Version:      $TOOL_VERSION")
-        logger.log("MathLingua Language Version: $MATHLINGUA_VERSION")
+        logger.log("MathLingua $MATHLINGUA_VERSION")
         return 0
     }
 

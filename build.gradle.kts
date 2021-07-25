@@ -28,7 +28,7 @@ plugins {
 }
 
 group = "mathlingua"
-version = "0.13"
+version = "0.8.0"
 
 application {
     mainClass.set("mathlingua.cli.MainKt")
@@ -77,6 +77,11 @@ tasks {
 
     check {
         dependsOn(jacocoTestCoverageVerification)
+    }
+
+    shadowJar {
+        destinationDirectory.set(File("build", "releases"))
+        archiveClassifier.set("")
     }
 }
 

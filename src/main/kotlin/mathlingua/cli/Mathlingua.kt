@@ -151,6 +151,10 @@ object Mathlingua {
             Pair(triple.first, "")
         }
     }
+
+    fun decompose(fs: VirtualFileSystem, logger: Logger) {
+        logger.log(decompose(fs).toJson())
+    }
 }
 
 private fun String.jsonSanitize() =
@@ -769,6 +773,116 @@ private fun getCompleteRenderedTopLevelElements(
                 node = expandedPair.first[i].second))
     }
     return result
+}
+
+interface Jsonable {
+    fun toJson(): String
+}
+
+data class EntityResult(val rawHtml: String, val renderedHtml: String) : Jsonable {
+    override fun toJson(): String {
+        val builder = StringBuilder()
+        builder.append("{\n")
+        builder.append("  \"rawHtml\": \"")
+        builder.append(sanitizeHtmlForJs(rawHtml))
+        builder.append("\",\n")
+        builder.append("  \"renderedHtml\": \"")
+        builder.append(sanitizeHtmlForJs(renderedHtml))
+        builder.append("\"\n}\n")
+        return builder.toString()
+    }
+}
+
+data class FileResult(val relativePath: String, val entities: List<EntityResult>) : Jsonable {
+    override fun toJson(): String {
+        val builder = StringBuilder()
+        builder.append("{\n")
+        builder.append("  \"relativePath\": \"")
+        builder.append(sanitizeHtmlForJs(relativePath))
+        builder.append("\",\n  \"entities\":  [\n")
+        for (i in entities.indices) {
+            if (i > 0) {
+                builder.append(",\n")
+            }
+            builder.append(entities[i].toJson())
+        }
+        builder.append("]\n}\n")
+        return builder.toString()
+    }
+}
+
+data class ErrorResult(
+    val relativePath: String, val message: String, val row: Int, val column: Int
+) : Jsonable {
+    override fun toJson(): String {
+        val builder = StringBuilder()
+        builder.append("{\n")
+        builder.append("  \"relativePath\": \"")
+        builder.append(sanitizeHtmlForJs(relativePath))
+        builder.append("\",\n  \"message\": \"")
+        builder.append(sanitizeHtmlForJs(message))
+        builder.append("\",\n  \"row\": ")
+        builder.append(row)
+        builder.append(",\n  \"column\": ")
+        builder.append(column)
+        builder.append("\n}\n")
+        return builder.toString()
+    }
+}
+
+data class CollectionResult(val fileResults: List<FileResult>, val errors: List<ErrorResult>) :
+    Jsonable {
+    override fun toJson(): String {
+        val builder = StringBuilder()
+        builder.append("{\n")
+        builder.append("  \"fileResults\": [\n")
+        for (i in fileResults.indices) {
+            if (i > 0) {
+                builder.append(",\n")
+            }
+            builder.append(fileResults[i].toJson())
+        }
+        builder.append("],\n  \"errors\":  [\n")
+        for (i in errors.indices) {
+            if (i > 0) {
+                builder.append(",\n")
+            }
+            builder.append(errors[i].toJson())
+        }
+        builder.append("]\n}")
+        return builder.toString()
+    }
+}
+
+private fun decompose(fs: VirtualFileSystem): CollectionResult {
+    val fileResults = mutableListOf<FileResult>()
+    val mlgFiles = mutableListOf<VirtualFile>()
+    findMathlinguaFiles(fileOrDir = fs.cwd(), result = mlgFiles)
+    val sourceCollection = newSourceCollection(listOf(fs.cwd()))
+    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+    for (f in mlgFiles) {
+        val elements =
+            getCompleteRenderedTopLevelElements(
+                f = f, sourceCollection = sourceCollection, noexpand = false, errors = errors)
+        fileResults.add(
+            FileResult(
+                relativePath = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()),
+                entities =
+                    elements.map {
+                        EntityResult(rawHtml = it.rawFormHtml, renderedHtml = it.renderedFormHtml)
+                    }))
+    }
+    return CollectionResult(
+        fileResults = fileResults,
+        errors =
+            errors.map {
+                ErrorResult(
+                    relativePath =
+                        it.source.file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()),
+                    message = it.value.message,
+                    row = it.value.row,
+                    column = it.value.column)
+            })
 }
 
 private fun getUnifiedRenderedTopLevelElements(

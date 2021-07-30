@@ -34,6 +34,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.found
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringItem
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.ContentItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.NameItemSection
@@ -48,6 +50,7 @@ import mathlingua.frontend.support.validationFailure
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.getRandomUuid
+import mathlingua.md5Hash
 import mathlingua.startServer
 
 const val MATHLINGUA_VERSION = "0.8.0"
@@ -390,6 +393,27 @@ class LockedValue<T> {
         }
 }
 
+private fun getHomeContentFile(fs: VirtualFileSystem) = fs.getFile(listOf("docs", "home.md"))
+
+private fun getHomeContent(fs: VirtualFileSystem): String {
+    val homeContentFile = getHomeContentFile(fs)
+    val showHome = homeContentFile.exists()
+    return if (showHome) {
+        val writer =
+            HtmlCodeWriter(
+                defines = emptyList(),
+                states = emptyList(),
+                axioms = emptyList(),
+                foundations = emptyList(),
+                literal = true)
+        val homeText = homeContentFile.readText()
+        writer.writeBlockComment("::$homeText::")
+        writer.getCode()
+    } else {
+        ""
+    }
+}
+
 private fun getIndexFileText(
     fs: VirtualFileSystem, noexpand: Boolean, errors: MutableList<ValueSourceTracker<ParseError>>
 ): String {
@@ -453,23 +477,7 @@ private fun getIndexFileText(
     }
     pathToEntityBuilder.append("                return map;\n")
 
-    val homeContentFile = fs.getFile(listOf("docs", "home.md"))
-    val showHome = homeContentFile.exists()
-    val homeContent =
-        if (showHome) {
-            val writer =
-                HtmlCodeWriter(
-                    defines = emptyList(),
-                    states = emptyList(),
-                    axioms = emptyList(),
-                    foundations = emptyList(),
-                    literal = true)
-            val homeText = homeContentFile.readText()
-            writer.writeBlockComment("::$homeText::")
-            writer.getCode()
-        } else {
-            ""
-        }
+    val homeContent = getHomeContent(fs)
     val homeHtml = sanitizeHtmlForJs("<span class=\"mathlingua-home\">$homeContent</span>")
 
     var gitHubUrl: String? = null
@@ -489,6 +497,7 @@ private fun getIndexFileText(
         gitHubUrl = null
     }
 
+    val showHome = getHomeContentFile(fs).exists()
     return buildIndexHtml(
         fileListBuilder.toString(),
         firstFilePath.getValueOrDefault(""),
@@ -779,26 +788,52 @@ interface Jsonable {
     fun toJson(): String
 }
 
-data class EntityResult(val rawHtml: String, val renderedHtml: String) : Jsonable {
+data class EntityResult(
+    val id: String,
+    val type: String,
+    val signature: String?,
+    val rawHtml: String,
+    val renderedHtml: String,
+    val words: List<String>
+) : Jsonable {
     override fun toJson(): String {
         val builder = StringBuilder()
         builder.append("{\n")
-        builder.append("  \"rawHtml\": \"")
+        builder.append("  \"id\": \"")
+        builder.append(id)
+        builder.append("\",\n  \"type\": \"")
+        builder.append(type)
+        builder.append("\",\n \"signature\": \"")
+        builder.append(sanitizeHtmlForJs(signature ?: ""))
+        builder.append("\",\n  \"rawHtml\": \"")
         builder.append(sanitizeHtmlForJs(rawHtml))
         builder.append("\",\n")
         builder.append("  \"renderedHtml\": \"")
         builder.append(sanitizeHtmlForJs(renderedHtml))
-        builder.append("\"\n}\n")
+        builder.append("\",\n  \"words\": [")
+        for (i in words.indices) {
+            if (i > 0) {
+                builder.append(", ")
+            }
+            builder.append("\"")
+            builder.append(sanitizeHtmlForJs(words[i]))
+            builder.append("\"")
+        }
+        builder.append("]\n}\n")
         return builder.toString()
     }
 }
 
-data class FileResult(val relativePath: String, val entities: List<EntityResult>) : Jsonable {
+data class FileResult(
+    val relativePath: String, val content: String, val entities: List<EntityResult>
+) : Jsonable {
     override fun toJson(): String {
         val builder = StringBuilder()
         builder.append("{\n")
         builder.append("  \"relativePath\": \"")
         builder.append(sanitizeHtmlForJs(relativePath))
+        builder.append("\",\n  \"content\": \"")
+        builder.append(sanitizeHtmlForJs(content))
         builder.append("\",\n  \"entities\":  [\n")
         for (i in entities.indices) {
             if (i > 0) {
@@ -854,7 +889,47 @@ data class CollectionResult(val fileResults: List<FileResult>, val errors: List<
     }
 }
 
-private fun decompose(fs: VirtualFileSystem): CollectionResult {
+data class DecompositionResult(val homeHtml: String, val collectionResult: CollectionResult) :
+    Jsonable {
+    override fun toJson(): String {
+        val builder = StringBuilder()
+        builder.append("{\n")
+        builder.append("  \"homeHtml\": \"")
+        builder.append(homeHtml)
+        builder.append("\",\n  \"collectionResult\": ")
+        builder.append(collectionResult.toJson())
+        builder.append("\n}")
+        return builder.toString()
+    }
+}
+
+private fun getSignature(node: Phase2Node?): String? {
+    return when (node) {
+        null -> {
+            null
+        }
+        is DefinesGroup -> {
+            node.signature?.form
+        }
+        is TheoremGroup -> {
+            node.signature?.form
+        }
+        is AxiomGroup -> {
+            node.signature?.form
+        }
+        is ConjectureGroup -> {
+            node.signature?.form
+        }
+        is FoundationGroup -> {
+            getSignature(node.foundationSection.content)
+        }
+        else -> {
+            null
+        }
+    }
+}
+
+private fun decompose(fs: VirtualFileSystem): DecompositionResult {
     val fileResults = mutableListOf<FileResult>()
     val mlgFiles = mutableListOf<VirtualFile>()
     findMathlinguaFiles(fileOrDir = fs.cwd(), result = mlgFiles)
@@ -867,22 +942,40 @@ private fun decompose(fs: VirtualFileSystem): CollectionResult {
         fileResults.add(
             FileResult(
                 relativePath = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()),
+                content = sanitizeHtmlForJs(f.readText()),
                 entities =
                     elements.map {
-                        EntityResult(rawHtml = it.rawFormHtml, renderedHtml = it.renderedFormHtml)
+                        EntityResult(
+                            id = md5Hash(it.rawFormHtml),
+                            type = it.node?.javaClass?.simpleName ?: "",
+                            signature = getSignature(it.node),
+                            rawHtml = it.rawFormHtml,
+                            renderedHtml = it.renderedFormHtml,
+                            words =
+                                if (it.node != null) {
+                                    getAllWords(it.node).toList()
+                                } else {
+                                    emptyList()
+                                })
                     }))
     }
-    return CollectionResult(
-        fileResults = fileResults,
-        errors =
-            errors.map {
-                ErrorResult(
-                    relativePath =
-                        it.source.file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()),
-                    message = it.value.message,
-                    row = it.value.row,
-                    column = it.value.column)
-            })
+    return DecompositionResult(
+        homeHtml = sanitizeHtmlForJs(getHomeContent(fs)),
+        collectionResult =
+            CollectionResult(
+                fileResults = fileResults,
+                errors =
+                    errors.map {
+                        ErrorResult(
+                            relativePath =
+                                it.source
+                                    .file
+                                    .relativePathTo(fs.cwd())
+                                    .joinToString(fs.getFileSeparator()),
+                            message = it.value.message,
+                            row = it.value.row,
+                            column = it.value.column)
+                    }))
 }
 
 private fun getUnifiedRenderedTopLevelElements(
@@ -1044,7 +1137,7 @@ const val SHARED_HEADER =
 const val KATEX_RENDERING_JS =
     """
     function buildMathFragment(rawText) {
-        var text = rawText;
+        let text = rawText;
         if (text[0] === '"') {
             text = text.substring(1);
         }
@@ -1053,8 +1146,8 @@ const val KATEX_RENDERING_JS =
         }
         text = text.replace(/([a-zA-Z0-9])\?\??/g, '${'$'}1');
         const fragment = document.createDocumentFragment();
-        var buffer = '';
-        var i = 0;
+        let buffer = '';
+        let i = 0;
         while (i < text.length) {
             if (text[i] === '${'$'}' && text[i+1] === '${'$'}' && text[i+2] === '${'$'}') {
                 i += 3; // skip over the ${'$'}s
@@ -1062,7 +1155,7 @@ const val KATEX_RENDERING_JS =
                 buffer = '';
 
                 const span = document.createElement('span');
-                var math = '';
+                let math = '';
                 while (i < text.length &&
                     !(text[i] === '${'$'}' && text[i+1] === '${'$'}' && text[i+2] === '${'$'}')) {
                     math += text[i++];
@@ -1092,7 +1185,7 @@ const val KATEX_RENDERING_JS =
 
                 const span = document.createElement('span');
                 span.className = 'display-mode';
-                var math = '';
+                let math = '';
                 while (i < text.length &&
                     !(text[i] === '\\' && text[i+1] === ']')) {
                     math += text[i++];
@@ -1118,7 +1211,7 @@ const val KATEX_RENDERING_JS =
                 buffer = '';
 
                 const span = document.createElement('span');
-                var math = '';
+                let math = '';
                 while (i < text.length &&
                     !(text[i] === '\\' && text[i+1] === ')')) {
                     math += text[i++];
@@ -1145,7 +1238,7 @@ const val KATEX_RENDERING_JS =
 
                 const span = document.createElement('span');
                 span.className = 'display-mode';
-                var math = '';
+                let math = '';
                 while (i < text.length &&
                     !(text[i] === '${'$'}' && text[i+1] === '${'$'}')) {
                     math += text[i++];
@@ -1171,7 +1264,7 @@ const val KATEX_RENDERING_JS =
                 buffer = '';
 
                 const span = document.createElement('span');
-                var math = '';
+                let math = '';
                 while (i < text.length &&
                      text[i] !== '${'$'}') {
                     math += text[i++];

@@ -23,6 +23,7 @@ import java.net.ServerSocket
 import java.net.Socket
 import java.net.SocketException
 import java.nio.file.Paths
+import java.security.MessageDigest
 import java.util.LinkedList
 import java.util.Stack
 import java.util.UUID
@@ -39,6 +40,11 @@ import mathlingua.cli.VirtualFileSystem
 
 /** Used to get a random UUID value. */
 fun getRandomUuid() = UUID.randomUUID().toString()
+
+fun md5Hash(input: String) =
+    MessageDigest.getInstance("MD5").digest(input.toByteArray()).joinToString("") {
+        Integer.toHexString(it.toInt().and(0xFF)).uppercase()
+    }
 
 /**
  * The Stack<T> class, backed by a [java.util.Stack] hides the usage of the JVM specific Stack so

@@ -25,6 +25,7 @@ plugins {
     id("org.jetbrains.kotlin.jvm") version "1.5.21"
     id("application")
     id("jacoco")
+    kotlin("plugin.serialization") version "1.5.20"
 }
 
 group = "mathlingua"
@@ -55,6 +56,10 @@ dependencies {
     implementation("com.github.ajalt:clikt:2.6.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
     implementation("org.jetbrains:markdown:0.2.4")
+    implementation("io.javalin:javalin:3.13.10")
+    implementation("org.slf4j:slf4j-nop:1.7.32")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.5")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
     testImplementation(kotlin("reflect", version = "1.5.0"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.5.1")

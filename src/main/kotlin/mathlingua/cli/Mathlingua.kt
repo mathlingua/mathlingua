@@ -16,6 +16,11 @@
 
 package mathlingua.cli
 
+import io.javalin.Javalin
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
@@ -51,7 +56,6 @@ import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.getRandomUuid
 import mathlingua.md5Hash
-import mathlingua.startServer
 
 const val MATHLINGUA_VERSION = "0.8.0"
 
@@ -144,21 +148,76 @@ object Mathlingua {
     fun serve(fs: VirtualFileSystem, logger: Logger, port: Int) {
         logger.log("Visit localhost:$port to see your rendered MathLingua code.")
         logger.log("Every time you refresh the page, your MathLingua code will be rerendered.")
-        startServer(port, logger) {
-            logger.log("Rendering...")
-            val triple = getRenderAllText(fs = fs, noExpand = false)
-            logger.log(triple.third)
-            logger.log("\nChecking...")
-            check(fs = fs, logger = logger, files = listOf(), json = false)
-            logger.log("")
-            Pair(triple.first, "")
-        }
+        Javalin.create()
+            .start(port)
+            .routes {}
+            .get("/") { ctx ->
+                logger.log("Rendering...")
+                val triple = getRenderAllText(fs = fs, noExpand = false)
+                logger.log(triple.third)
+                logger.log("\nChecking...")
+                check(fs = fs, logger = logger, files = listOf(), json = false)
+                logger.log("")
+                ctx.html(triple.first)
+            }
+            .put("/api/writePage") { ctx ->
+                val pathAndContent = Json.decodeFromString<PathAndContent>(ctx.body())
+                logger.log("Writing page ${pathAndContent.path}")
+                val file = fs.getFileOrDirectory(pathAndContent.path)
+                file.writeText(pathAndContent.content)
+                ctx.status(200)
+            }
+            .post("/api/readPage") { ctx ->
+                val path = Json.decodeFromString<Path>(ctx.body())
+                logger.log("Reading page ${path.path}")
+                val file = fs.getFileOrDirectory(path.path)
+                val content = file.readText()
+                ctx.json(Json.encodeToString(PathAndContent(path = path.path, content = content)))
+            }
+            .get("/api/check") { ctx ->
+                logger.log("Checking")
+                val sourceCollection =
+                    newSourceCollection(listOf(fs.getDirectory(listOf("content"))))
+                ctx.json(
+                    Json.encodeToString(
+                        CheckErrorList(
+                            errors =
+                                BackEnd.check(sourceCollection).map {
+                                    CheckError(
+                                        path =
+                                            it.source
+                                                .file
+                                                .relativePathTo(fs.cwd())
+                                                .joinToString(fs.getFileSeparator()),
+                                        message = it.value.message,
+                                        row = it.value.row,
+                                        column = it.value.column)
+                                })))
+            }
+            .get("/api/decompose") { ctx ->
+                logger.log("Decomposing")
+                ctx.json(Json.encodeToString(decompose(fs)))
+            }
+            .get("/api/render") { ctx ->
+                logger.log("Rendering")
+                renderAll(fs = fs, logger = logger, stdout = false, noExpand = false)
+                ctx.status(400)
+            }
     }
 
     fun decompose(fs: VirtualFileSystem, logger: Logger) {
-        logger.log(decompose(fs).toJson())
+        logger.log(Json.encodeToString(decompose(fs)))
     }
 }
+
+@Serializable data class Path(val path: String)
+
+@Serializable data class PathAndContent(val path: String, val content: String)
+
+@Serializable data class CheckErrorList(val errors: List<CheckError>)
+
+@Serializable
+data class CheckError(val path: String, val message: String, val row: Int, val column: Int)
 
 private fun String.jsonSanitize() =
     this.replace("\\", "\\\\")
@@ -784,124 +843,28 @@ private fun getCompleteRenderedTopLevelElements(
     return result
 }
 
-interface Jsonable {
-    fun toJson(): String
-}
-
+@Serializable
 data class EntityResult(
     val id: String,
     val type: String,
     val signature: String?,
     val rawHtml: String,
     val renderedHtml: String,
-    val words: List<String>
-) : Jsonable {
-    override fun toJson(): String {
-        val builder = StringBuilder()
-        builder.append("{\n")
-        builder.append("  \"id\": \"")
-        builder.append(id)
-        builder.append("\",\n  \"type\": \"")
-        builder.append(type)
-        builder.append("\",\n \"signature\": \"")
-        builder.append(sanitizeHtmlForJs(signature ?: ""))
-        builder.append("\",\n  \"rawHtml\": \"")
-        builder.append(sanitizeHtmlForJs(rawHtml))
-        builder.append("\",\n")
-        builder.append("  \"renderedHtml\": \"")
-        builder.append(sanitizeHtmlForJs(renderedHtml))
-        builder.append("\",\n  \"words\": [")
-        for (i in words.indices) {
-            if (i > 0) {
-                builder.append(", ")
-            }
-            builder.append("\"")
-            builder.append(sanitizeHtmlForJs(words[i]))
-            builder.append("\"")
-        }
-        builder.append("]\n}\n")
-        return builder.toString()
-    }
-}
+    val words: List<String>)
 
+@Serializable
 data class FileResult(
-    val relativePath: String, val content: String, val entities: List<EntityResult>
-) : Jsonable {
-    override fun toJson(): String {
-        val builder = StringBuilder()
-        builder.append("{\n")
-        builder.append("  \"relativePath\": \"")
-        builder.append(sanitizeHtmlForJs(relativePath))
-        builder.append("\",\n  \"content\": \"")
-        builder.append(sanitizeHtmlForJs(content))
-        builder.append("\",\n  \"entities\":  [\n")
-        for (i in entities.indices) {
-            if (i > 0) {
-                builder.append(",\n")
-            }
-            builder.append(entities[i].toJson())
-        }
-        builder.append("]\n}\n")
-        return builder.toString()
-    }
-}
+    val relativePath: String, val content: String, val entities: List<EntityResult>)
 
+@Serializable
 data class ErrorResult(
-    val relativePath: String, val message: String, val row: Int, val column: Int
-) : Jsonable {
-    override fun toJson(): String {
-        val builder = StringBuilder()
-        builder.append("{\n")
-        builder.append("  \"relativePath\": \"")
-        builder.append(sanitizeHtmlForJs(relativePath))
-        builder.append("\",\n  \"message\": \"")
-        builder.append(sanitizeHtmlForJs(message))
-        builder.append("\",\n  \"row\": ")
-        builder.append(row)
-        builder.append(",\n  \"column\": ")
-        builder.append(column)
-        builder.append("\n}\n")
-        return builder.toString()
-    }
-}
+    val relativePath: String, val message: String, val row: Int, val column: Int)
 
-data class CollectionResult(val fileResults: List<FileResult>, val errors: List<ErrorResult>) :
-    Jsonable {
-    override fun toJson(): String {
-        val builder = StringBuilder()
-        builder.append("{\n")
-        builder.append("  \"fileResults\": [\n")
-        for (i in fileResults.indices) {
-            if (i > 0) {
-                builder.append(",\n")
-            }
-            builder.append(fileResults[i].toJson())
-        }
-        builder.append("],\n  \"errors\":  [\n")
-        for (i in errors.indices) {
-            if (i > 0) {
-                builder.append(",\n")
-            }
-            builder.append(errors[i].toJson())
-        }
-        builder.append("]\n}")
-        return builder.toString()
-    }
-}
+@Serializable
+data class CollectionResult(val fileResults: List<FileResult>, val errors: List<ErrorResult>)
 
-data class DecompositionResult(val homeHtml: String, val collectionResult: CollectionResult) :
-    Jsonable {
-    override fun toJson(): String {
-        val builder = StringBuilder()
-        builder.append("{\n")
-        builder.append("  \"homeHtml\": \"")
-        builder.append(homeHtml)
-        builder.append("\",\n  \"collectionResult\": ")
-        builder.append(collectionResult.toJson())
-        builder.append("\n}")
-        return builder.toString()
-    }
-}
+@Serializable
+data class DecompositionResult(val homeHtml: String, val collectionResult: CollectionResult)
 
 private fun getSignature(node: Phase2Node?): String? {
     return when (node) {

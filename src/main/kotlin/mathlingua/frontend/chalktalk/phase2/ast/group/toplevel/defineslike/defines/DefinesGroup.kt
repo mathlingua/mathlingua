@@ -21,6 +21,7 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
@@ -40,9 +41,9 @@ import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
 abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
-    TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
+    TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
     abstract val id: IdStatement
-    abstract val signature: Signature?
+    abstract override val signature: Signature?
     abstract val definesSection: DefinesSection
     abstract val requiringSection: RequiringSection?
     abstract val whenSection: WhenSection?

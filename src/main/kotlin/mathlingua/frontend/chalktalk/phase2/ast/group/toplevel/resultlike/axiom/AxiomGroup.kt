@@ -29,6 +29,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getOptionalId
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateThenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.IfOrIffSection
@@ -51,7 +52,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 data class AxiomGroup(
-    val signature: Signature?,
+    override val signature: Signature?,
     val id: IdStatement?,
     val axiomSection: AxiomSection,
     val givenSection: GivenSection?,
@@ -60,7 +61,7 @@ data class AxiomGroup(
     val thenSection: ThenSection,
     override val usingSection: UsingSection?,
     override val metaDataSection: MetaDataSection?
-) : TopLevelGroup(metaDataSection), HasUsingSection {
+) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         if (id != null) {

@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel
 
+import mathlingua.backend.transform.Signature
 import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
@@ -66,4 +67,8 @@ fun topLevelToCode(
 
 internal interface HasUsingSection {
     val usingSection: UsingSection?
+}
+
+internal interface HasSignature {
+    val signature: Signature?
 }

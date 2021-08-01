@@ -23,7 +23,11 @@ import mathlingua.backend.transform.getVars
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
+import mathlingua.cli.AutoComplete
+import mathlingua.cli.SearchIndex
 import mathlingua.cli.VirtualFile
+import mathlingua.cli.VirtualFileSystem
+import mathlingua.cli.getAllWords
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.Parse
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
@@ -46,6 +50,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
@@ -89,7 +94,7 @@ data class SourceFile(
 fun isMathLinguaFile(file: VirtualFile) =
     !file.isDirectory() && file.absolutePath().last().endsWith(".math")
 
-private fun buildSourceFile(file: VirtualFile): SourceFile {
+fun buildSourceFile(file: VirtualFile): SourceFile {
     val content = file.readText()
     return SourceFile(
         file = file, content = content, validation = FrontEnd.parseWithLocations(content))
@@ -110,14 +115,22 @@ interface SourceCollection {
     fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
+    fun prettyPrint(node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean): String
+    fun getAllPaths(): List<String>
+    fun getSourceFile(path: String): SourceFile?
+    fun getWithSignature(signature: String): TopLevelGroup?
+    fun addSource(sf: SourceFile)
+    fun removeSource(sf: SourceFile)
+    fun findSuffixesFor(word: String): List<String>
+    fun search(query: String): List<SourceFile>
 }
 
-fun newSourceCollection(filesOrDirs: List<VirtualFile>): SourceCollection {
+fun newSourceCollection(fs: VirtualFileSystem, filesOrDirs: List<VirtualFile>): SourceCollection {
     val sources = mutableListOf<SourceFile>()
     for (file in filesOrDirs) {
         findVirtualFiles(file, sources)
     }
-    return SourceCollectionImpl(sources)
+    return SourceCollectionImpl(fs, sources)
 }
 
 private fun findVirtualFiles(file: VirtualFile, result: MutableList<SourceFile>) {
@@ -129,80 +142,205 @@ private fun findVirtualFiles(file: VirtualFile, result: MutableList<SourceFile>)
     }
 }
 
-class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
+data class Normalized<T>(val original: T, val normalized: T)
+
+class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>) :
+    SourceCollection {
     private val sourceFiles = mutableMapOf<String, SourceFile>()
-    private val allGroups = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
-    private val definesGroups = mutableListOf<ValueSourceTracker<DefinesGroup>>()
-    private val statesGroups = mutableListOf<ValueSourceTracker<StatesGroup>>()
-    private val axiomGroups = mutableListOf<ValueSourceTracker<AxiomGroup>>()
-    private val theoremGroups = mutableListOf<ValueSourceTracker<TheoremGroup>>()
-    private val conjectureGroups = mutableListOf<ValueSourceTracker<ConjectureGroup>>()
-    private val foundationGroups = mutableListOf<ValueSourceTracker<FoundationGroup>>()
+
+    private val autoComplete = AutoComplete()
+
+    private val searchIndex = SearchIndex(fs)
+
+    private val signatureToTopLevel = mutableMapOf<String, TopLevelGroup>()
+
+    private val allGroups = mutableListOf<ValueSourceTracker<Normalized<TopLevelGroup>>>()
+    private val definesGroups = mutableListOf<ValueSourceTracker<Normalized<DefinesGroup>>>()
+    private val statesGroups = mutableListOf<ValueSourceTracker<Normalized<StatesGroup>>>()
+    private val axiomGroups = mutableListOf<ValueSourceTracker<Normalized<AxiomGroup>>>()
+    private val theoremGroups = mutableListOf<ValueSourceTracker<Normalized<TheoremGroup>>>()
+    private val conjectureGroups = mutableListOf<ValueSourceTracker<Normalized<ConjectureGroup>>>()
+    private val foundationGroups = mutableListOf<ValueSourceTracker<Normalized<FoundationGroup>>>()
 
     init {
         for (sf in sources) {
-            sourceFiles[sf.file.absolutePath().joinToString("/")] = sf
+            addSource(sf)
         }
+    }
 
-        for (sf in sources) {
-            val validation = sf.validation
-            if (validation is ValidationSuccess) {
-                definesGroups.addAll(
-                    validation.value.document.defines().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as DefinesGroup)
-                    })
+    override fun search(query: String): List<SourceFile> {
+        return searchIndex.search(query).mapNotNull {
+            val path = it.joinToString("/")
+            getSourceFile(path)
+        }
+    }
 
-                statesGroups.addAll(
-                    validation.value.document.states().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as StatesGroup)
-                    })
+    override fun findSuffixesFor(word: String): List<String> {
+        return autoComplete.findSuffixes(word)
+    }
 
-                axiomGroups.addAll(
-                    validation.value.document.axioms().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as AxiomGroup)
-                    })
+    override fun getAllPaths(): List<String> {
+        return sourceFiles.keys.toList()
+    }
 
-                theoremGroups.addAll(
-                    validation.value.document.theorems().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as TheoremGroup)
-                    })
+    override fun getSourceFile(path: String): SourceFile? {
+        return sourceFiles[path]
+    }
 
-                conjectureGroups.addAll(
-                    validation.value.document.conjectures().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as ConjectureGroup)
-                    })
+    override fun getWithSignature(signature: String): TopLevelGroup? {
+        return signatureToTopLevel[signature]
+    }
 
-                foundationGroups.addAll(
-                    validation.value.document.foundations().map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as FoundationGroup)
-                    })
+    override fun removeSource(sf: SourceFile) {
+        searchIndex.remove(sf.file.relativePathTo(fs.cwd()))
+        when (val validation = sf.validation
+        ) {
+            is ValidationSuccess -> {
+                val doc = validation.value.document
+                val docDefines = doc.defines().toSet()
+                val docStates = doc.states().toSet()
+                val docAxioms = doc.axioms().toSet()
+                val docTheorems = doc.theorems().toSet()
+                val docConjectures = doc.conjectures().toSet()
+                val docFoundations = doc.foundations().toSet()
+                val docAll = doc.groups.toSet()
 
-                allGroups.addAll(
-                    validation.value.document.groups.map {
-                        ValueSourceTracker(
-                            source = sf,
-                            tracker = validation.value.tracker,
-                            value = normalize(it, validation.value.tracker) as TopLevelGroup)
-                    })
+                for (grp in docAll) {
+                    if (grp is HasSignature && grp.signature != null) {
+                        signatureToTopLevel.remove(grp.signature!!.form)
+                    } else if (grp is FoundationGroup &&
+                        grp.foundationSection.content is HasSignature &&
+                        grp.foundationSection.content.signature != null) {
+                        signatureToTopLevel.remove(grp.foundationSection.content.signature!!.form)
+                    }
+                }
+
+                for (grp in validation.value.document.groups) {
+                    for (word in getAllWords(grp)) {
+                        autoComplete.remove(word)
+                    }
+                }
+
+                definesGroups.removeAll { docDefines.contains(it.value.original) }
+
+                statesGroups.removeAll { docStates.contains(it.value.original) }
+
+                axiomGroups.removeAll { docAxioms.contains(it.value.original) }
+
+                theoremGroups.removeAll { docTheorems.contains(it.value.original) }
+
+                conjectureGroups.removeAll { docConjectures.contains(it.value.original) }
+
+                foundationGroups.removeAll { docFoundations.contains(it.value.original) }
+
+                allGroups.removeAll { docAll.contains(it.value.original) }
             }
+        }
+    }
+
+    override fun addSource(sf: SourceFile) {
+        sourceFiles[sf.file.relativePathTo(fs.cwd()).joinToString("/")] = sf
+        searchIndex.add(sf)
+        val validation = sf.validation
+        if (validation is ValidationSuccess) {
+            for (grp in validation.value.document.groups) {
+                for (word in getAllWords(grp)) {
+                    autoComplete.add(word)
+                }
+            }
+
+            for (grp in validation.value.document.groups) {
+                if (grp is HasSignature && grp.signature != null) {
+                    signatureToTopLevel[grp.signature!!.form] = grp
+                } else if (grp is FoundationGroup &&
+                    grp.foundationSection.content is HasSignature &&
+                    grp.foundationSection.content.signature != null) {
+                    signatureToTopLevel[grp.foundationSection.content.signature!!.form] = grp
+                }
+            }
+
+            definesGroups.addAll(
+                validation.value.document.defines().map {
+                    ValueSourceTracker(
+                        source = sf,
+                        tracker = validation.value.tracker,
+                        value =
+                            Normalized(
+                                original = it,
+                                normalized =
+                                    normalize(it, validation.value.tracker) as DefinesGroup))
+                })
+
+            statesGroups.addAll(
+                validation.value.document.states().map {
+                    ValueSourceTracker(
+                        source = sf,
+                        tracker = validation.value.tracker,
+                        value =
+                            Normalized(
+                                original = it,
+                                normalized =
+                                    normalize(it, validation.value.tracker) as StatesGroup))
+                })
+
+            axiomGroups.addAll(
+                validation.value.document.axioms().map {
+                    ValueSourceTracker(
+                        source = sf,
+                        tracker = validation.value.tracker,
+                        value =
+                            Normalized(
+                                original = it,
+                                normalized = normalize(it, validation.value.tracker) as AxiomGroup))
+                })
+
+            theoremGroups.addAll(
+                validation.value.document.theorems().map {
+                    ValueSourceTracker(
+                        source = sf,
+                        tracker = validation.value.tracker,
+                        value =
+                            Normalized(
+                                original = it,
+                                normalized =
+                                    normalize(it, validation.value.tracker) as TheoremGroup))
+                })
+
+            conjectureGroups.addAll(
+                validation.value.document.conjectures().map {
+                    ValueSourceTracker(
+                        source = sf,
+                        tracker = validation.value.tracker,
+                        value =
+                            Normalized(
+                                original = it,
+                                normalized =
+                                    normalize(it, validation.value.tracker) as ConjectureGroup))
+                })
+
+            foundationGroups.addAll(
+                validation.value.document.foundations().map {
+                    ValueSourceTracker(
+                        source = sf,
+                        tracker = validation.value.tracker,
+                        value =
+                            Normalized(
+                                original = it,
+                                normalized =
+                                    normalize(it, validation.value.tracker) as FoundationGroup))
+                })
+
+            allGroups.addAll(
+                validation.value.document.groups.map {
+                    ValueSourceTracker(
+                        source = sf,
+                        tracker = validation.value.tracker,
+                        value =
+                            Normalized(
+                                original = it,
+                                normalized =
+                                    normalize(it, validation.value.tracker) as TopLevelGroup))
+                })
         }
     }
 
@@ -280,51 +418,6 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             result.add(node.text)
         }
         node.forEach { getInnerDefinedSignaturesImpl(it, isInColonEquals || isColonEquals, result) }
-    }
-
-    private fun getUsingDefinedName(node: ExpressionTexTalkNode): String? {
-        return if (node.children.size == 1 &&
-            node.children[0] is ColonEqualsTexTalkNode &&
-            (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
-            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.size == 1 &&
-            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                0] is GroupTexTalkNode &&
-            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                    0] as GroupTexTalkNode)
-                .parameters
-                .items
-                .size == 1 &&
-            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                        0] as GroupTexTalkNode)
-                    .parameters
-                    .items[0]
-                .children
-                .size == 1 &&
-            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                        0] as GroupTexTalkNode)
-                    .parameters
-                    .items[0]
-                .children[0] is TextTexTalkNode) {
-            // match f(x) := ...
-            (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                            0] as GroupTexTalkNode)
-                        .parameters
-                        .items[0]
-                    .children[0] as TextTexTalkNode)
-                .text
-        } else if (node.children.size == 1 &&
-            node.children[0] is ColonEqualsTexTalkNode &&
-            (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
-            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.size == 1 &&
-            (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                0] is TextTexTalkNode) {
-            // match f := ...
-            ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                    0] as TextTexTalkNode)
-                .text
-        } else {
-            null
-        }
     }
 
     private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {
@@ -500,10 +593,11 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
 
     private fun getAllDefinedSignatures():
         List<Pair<ValueSourceTracker<Signature>, TopLevelGroup>> {
-        val result = mutableListOf<Pair<ValueSourceTracker<Signature>, TopLevelGroup>>()
+        val result =
+            mutableListOf<Pair<ValueSourceTracker<Signature>, Normalized<out TopLevelGroup>>>()
 
-        fun processDefines(pair: ValueSourceTracker<DefinesGroup>) {
-            val signature = pair.value.signature
+        fun processDefines(pair: ValueSourceTracker<Normalized<DefinesGroup>>) {
+            val signature = pair.value.normalized.signature
             if (signature != null) {
                 val vst =
                     ValueSourceTracker(
@@ -512,8 +606,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         }
 
-        fun processStates(pair: ValueSourceTracker<StatesGroup>) {
-            val signature = pair.value.signature
+        fun processStates(pair: ValueSourceTracker<Normalized<StatesGroup>>) {
+            val signature = pair.value.normalized.signature
             if (signature != null) {
                 val vst =
                     ValueSourceTracker(
@@ -522,8 +616,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         }
 
-        fun processAxiom(pair: ValueSourceTracker<AxiomGroup>) {
-            val signature = pair.value.signature
+        fun processAxiom(pair: ValueSourceTracker<Normalized<AxiomGroup>>) {
+            val signature = pair.value.normalized.signature
             if (signature != null) {
                 val vst =
                     ValueSourceTracker(
@@ -532,8 +626,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         }
 
-        fun processTheorems(pair: ValueSourceTracker<TheoremGroup>) {
-            val signature = pair.value.signature
+        fun processTheorems(pair: ValueSourceTracker<Normalized<TheoremGroup>>) {
+            val signature = pair.value.normalized.signature
             if (signature != null) {
                 val vst =
                     ValueSourceTracker(
@@ -542,8 +636,8 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             }
         }
 
-        fun processConjectures(pair: ValueSourceTracker<ConjectureGroup>) {
-            val signature = pair.value.signature
+        fun processConjectures(pair: ValueSourceTracker<Normalized<ConjectureGroup>>) {
+            val signature = pair.value.normalized.signature
             if (signature != null) {
                 val vst =
                     ValueSourceTracker(
@@ -553,16 +647,27 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         }
 
         for (pair in foundationGroups) {
-            when (val item = pair.value.foundationSection.content
-            ) {
-                is DefinesGroup ->
-                    processDefines(
-                        ValueSourceTracker(
-                            value = item, source = pair.source, tracker = pair.tracker))
-                is StatesGroup ->
-                    processStates(
-                        ValueSourceTracker(
-                            value = item, source = pair.source, tracker = pair.tracker))
+            // val item = pair.value.normalized.foundationSection.content
+            if (pair.value.normalized.foundationSection.content is DefinesGroup) {
+                processDefines(
+                    ValueSourceTracker(
+                        value =
+                            Normalized(
+                                original =
+                                    pair.value.original.foundationSection.content as DefinesGroup,
+                                normalized = pair.value.normalized.foundationSection.content),
+                        source = pair.source,
+                        tracker = pair.tracker))
+            } else if (pair.value.normalized.foundationSection.content is StatesGroup) {
+                processStates(
+                    ValueSourceTracker(
+                        value =
+                            Normalized(
+                                original =
+                                    pair.value.original.foundationSection.content as StatesGroup,
+                                normalized = pair.value.normalized.foundationSection.content),
+                        source = pair.source,
+                        tracker = pair.tracker))
             }
         }
 
@@ -586,7 +691,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
             processConjectures(pair)
         }
 
-        return result
+        return result.map { Pair(first = it.first, second = it.second.normalized) }
     }
 
     override fun size() = sourceFiles.size
@@ -614,10 +719,12 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         val globalDefinedSigs = getDefinedSignatures().map { it.value.form }.toSet()
         for (vst in allGroups) {
             val innerSigs =
-                getInnerDefinedSignatures(vst.value, vst.tracker).map { it.form }.toSet()
+                getInnerDefinedSignatures(vst.value.normalized, vst.tracker).map { it.form }.toSet()
             val usedSigs =
                 locateAllSignatures(
-                    vst.value, ignoreLhsEqual = true, vst.tracker ?: newLocationTracker())
+                    vst.value.normalized,
+                    ignoreLhsEqual = true,
+                    vst.tracker ?: newLocationTracker())
             for (sig in usedSigs) {
                 if (!globalDefinedSigs.contains(sig.form) && !innerSigs.contains(sig.form)) {
                     result.add(
@@ -702,10 +809,13 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
                                 expandAsWritten(
                                     node,
                                     getPatternsToWrittenAs(
-                                        defines = definesGroups.map { it.value }.plus(aliasDefines),
-                                        states = statesGroups.map { it.value },
-                                        axioms = axiomGroups.map { it.value },
-                                        foundations = foundationGroups.map { it.value }))
+                                        defines =
+                                            definesGroups
+                                                .map { it.value.normalized }
+                                                .plus(aliasDefines),
+                                        states = statesGroups.map { it.value.normalized },
+                                        axioms = axiomGroups.map { it.value.normalized },
+                                        foundations = foundationGroups.map { it.value.normalized }))
                             result.addAll(
                                 expansion.errors.map {
                                     ValueSourceTracker(
@@ -891,11 +1001,13 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         val result = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
         val allContent = mutableSetOf<String>()
         for (group in allGroups) {
-            val content = group.value.toCode(false, 0).getCode().trim()
+            val content = group.value.normalized.toCode(false, 0).getCode().trim()
             if (allContent.contains(content)) {
                 result.add(
                     ValueSourceTracker(
-                        source = group.source, tracker = group.tracker, value = group.value))
+                        source = group.source,
+                        tracker = group.tracker,
+                        value = group.value.normalized))
             }
             allContent.add(content)
         }
@@ -971,20 +1083,26 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
     ) =
         if (html) {
             HtmlCodeWriter(
-                defines = doExpand.thenUse { definesGroups.map { it.value }.plus(aliasDefines) },
-                states = doExpand.thenUse { statesGroups.map { it.value } },
-                axioms = doExpand.thenUse { axiomGroups.map { it.value } },
-                foundations = doExpand.thenUse { foundationGroups.map { it.value } },
+                defines =
+                    doExpand.thenUse {
+                        definesGroups.map { it.value.normalized }.plus(aliasDefines)
+                    },
+                states = doExpand.thenUse { statesGroups.map { it.value.normalized } },
+                axioms = doExpand.thenUse { axiomGroups.map { it.value.normalized } },
+                foundations = doExpand.thenUse { foundationGroups.map { it.value.normalized } },
                 literal = literal)
         } else {
             MathLinguaCodeWriter(
-                defines = doExpand.thenUse { definesGroups.map { it.value }.plus(aliasDefines) },
-                states = doExpand.thenUse { statesGroups.map { it.value } },
-                axioms = doExpand.thenUse { axiomGroups.map { it.value } },
-                foundations = doExpand.thenUse { foundationGroups.map { it.value } })
+                defines =
+                    doExpand.thenUse {
+                        definesGroups.map { it.value.normalized }.plus(aliasDefines)
+                    },
+                states = doExpand.thenUse { statesGroups.map { it.value.normalized } },
+                axioms = doExpand.thenUse { axiomGroups.map { it.value.normalized } },
+                foundations = doExpand.thenUse { foundationGroups.map { it.value.normalized } })
         }
 
-    private fun prettyPrint(
+    override fun prettyPrint(
         node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean
     ): String {
         val aliasDefines = mutableListOf<DefinesGroup>()
@@ -1102,7 +1220,7 @@ class SourceCollectionImpl(sources: List<SourceFile>) : SourceCollection {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
         for (grp in allGroups) {
             val tracker = grp.tracker ?: newLocationTracker()
-            val errs = checkVars(grp.value, tracker)
+            val errs = checkVars(grp.value.normalized, tracker)
             result.addAll(
                 errs.map { ValueSourceTracker(value = it, source = grp.source, tracker = tracker) })
         }

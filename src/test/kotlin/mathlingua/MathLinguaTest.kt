@@ -32,7 +32,7 @@ internal class MathLinguaTest {
                 file.writeText(inputs[it])
                 file
             }
-        return newSourceCollection(filesOrDirs = files)
+        return newSourceCollection(fs, filesOrDirs = files)
     }
 
     @Test

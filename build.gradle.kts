@@ -59,7 +59,7 @@ dependencies {
     implementation("io.javalin:javalin:3.13.10")
     implementation("org.slf4j:slf4j-nop:1.7.32")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.10.5")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.4")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
     testImplementation(kotlin("reflect", version = "1.5.0"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.5.1")

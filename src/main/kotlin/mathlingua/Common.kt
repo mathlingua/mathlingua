@@ -231,3 +231,47 @@ private class DiskFileSystem() : VirtualFileSystem {
         }
     }
 }
+
+class MutableMultiSet<T> {
+    private val data = mutableMapOf<T, Int>()
+
+    fun add(value: T) {
+        data[value] = 1 + data.getOrDefault(value, 0)
+    }
+
+    fun addAll(values: Collection<T>) {
+        for (v in values) {
+            add(v)
+        }
+    }
+
+    fun remove(value: T) {
+        if (data.containsKey(value)) {
+            val newCount = data[value]!! - 1
+            data[value] = newCount
+            if (newCount <= 0) {
+                data.remove(value)
+            }
+        }
+    }
+
+    fun contains(key: T) = data.getOrDefault(key, 0) > 0
+
+    fun toList() = data.keys.toList()
+
+    fun isEmpty() = data.isEmpty()
+
+    fun toSet() = data.keys.toSet()
+
+    companion object {
+        fun <T> copy(set: MutableMultiSet<T>): MutableMultiSet<T> {
+            val copy = MutableMultiSet<T>()
+            for (entry in set.data.entries) {
+                copy.data[entry.key] = entry.value
+            }
+            return copy
+        }
+    }
+
+    override fun toString() = data.toString()
+}

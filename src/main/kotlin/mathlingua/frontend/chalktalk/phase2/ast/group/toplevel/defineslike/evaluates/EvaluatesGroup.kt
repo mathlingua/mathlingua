@@ -33,6 +33,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.isThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateElseSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.WhenThenPair
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
@@ -56,7 +57,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 data class EvaluatesGroup(
-    val signature: Signature?,
+    override val signature: Signature?,
     val id: IdStatement,
     val evaluatesSection: EvaluatesSection,
     val whenThen: List<WhenThenPair>,
@@ -64,7 +65,7 @@ data class EvaluatesGroup(
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection?,
     override val metaDataSection: MetaDataSection?
-) : TopLevelGroup(metaDataSection), HasUsingSection, DefinesStatesOrViews {
+) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)

@@ -18,13 +18,13 @@ package mathlingua.cli
 
 import io.javalin.Javalin
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
+import mathlingua.backend.buildSourceFile
 import mathlingua.backend.isMathLinguaFile
 import mathlingua.backend.newSourceCollection
 import mathlingua.frontend.FrontEnd
@@ -33,7 +33,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -72,7 +74,7 @@ private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {
         val sourceCollection =
-            newSourceCollection(files.ifEmpty { listOf(fs.getDirectory(listOf("content"))) })
+            newSourceCollection(fs, files.ifEmpty { listOf(fs.getDirectory(listOf("content"))) })
         val errors = BackEnd.check(sourceCollection)
         logger.log(getErrorOutput(fs, errors, sourceCollection.size(), json))
         return if (errors.isEmpty()) {
@@ -148,6 +150,7 @@ object Mathlingua {
     fun serve(fs: VirtualFileSystem, logger: Logger, port: Int) {
         logger.log("Visit localhost:$port to see your rendered MathLingua code.")
         logger.log("Every time you refresh the page, your MathLingua code will be rerendered.")
+        val sourceCollection = buildSourceCollection(fs = fs)
         Javalin.create()
             .start(port)
             .routes {}
@@ -161,63 +164,170 @@ object Mathlingua {
                 ctx.html(triple.first)
             }
             .put("/api/writePage") { ctx ->
-                val pathAndContent = Json.decodeFromString<PathAndContent>(ctx.body())
+                val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
                 logger.log("Writing page ${pathAndContent.path}")
                 val file = fs.getFileOrDirectory(pathAndContent.path)
                 file.writeText(pathAndContent.content)
+                val newSource = buildSourceFile(file)
+                val sf = sourceCollection.getSourceFile(pathAndContent.path)
+                if (sf != null) {
+                    sourceCollection.removeSource(sf)
+                }
+                sourceCollection.addSource(newSource)
                 ctx.status(200)
             }
             .post("/api/readPage") { ctx ->
-                val path = Json.decodeFromString<Path>(ctx.body())
+                val path = ctx.bodyAsClass(ReadPageRequest::class.java)
                 logger.log("Reading page ${path.path}")
                 val file = fs.getFileOrDirectory(path.path)
                 val content = file.readText()
-                ctx.json(Json.encodeToString(PathAndContent(path = path.path, content = content)))
+                ctx.json(ReadPageResponse(content = content))
+            }
+            .post("/api/fileResult") { ctx ->
+                val path = ctx.bodyAsClass(FileResultRequest::class.java)
+                logger.log("Getting file result for ${path.path}")
+                val sf = sourceCollection.getSourceFile(path.path)
+                if (sf == null) {
+                    ctx.status(404)
+                } else {
+                    ctx.json(sf.toFileResult(fs, sourceCollection))
+                }
             }
             .get("/api/check") { ctx ->
                 logger.log("Checking")
-                val sourceCollection =
-                    newSourceCollection(listOf(fs.getDirectory(listOf("content"))))
                 ctx.json(
-                    Json.encodeToString(
-                        CheckErrorList(
-                            errors =
-                                BackEnd.check(sourceCollection).map {
-                                    CheckError(
-                                        path =
-                                            it.source
-                                                .file
-                                                .relativePathTo(fs.cwd())
-                                                .joinToString(fs.getFileSeparator()),
-                                        message = it.value.message,
-                                        row = it.value.row,
-                                        column = it.value.column)
-                                })))
+                    CheckResponse(
+                        errors =
+                            BackEnd.check(sourceCollection).map {
+                                CheckError(
+                                    path =
+                                        it.source
+                                            .file
+                                            .relativePathTo(fs.cwd())
+                                            .joinToString(fs.getFileSeparator()),
+                                    message = it.value.message,
+                                    row = it.value.row,
+                                    column = it.value.column)
+                            }))
             }
             .get("/api/decompose") { ctx ->
                 logger.log("Decomposing")
-                ctx.json(Json.encodeToString(decompose(fs)))
+                val start = System.currentTimeMillis()
+                val result =
+                    decompose(fs = fs, sourceCollection = sourceCollection, mlgFiles = null)
+                val end = System.currentTimeMillis()
+                println("Decomposed in " + (end - start) + "ms")
+                ctx.json(result)
             }
             .get("/api/render") { ctx ->
                 logger.log("Rendering")
                 renderAll(fs = fs, logger = logger, stdout = false, noExpand = false)
                 ctx.status(400)
             }
+            .get("/api/allPaths") { ctx ->
+                logger.log("Getting all paths")
+                ctx.json(AllPathsResponse(paths = sourceCollection.getAllPaths()))
+            }
+            .get("/api/home") { ctx ->
+                logger.log("Getting home content")
+                ctx.json(HomeResponse(homeHtml = getHomeContent(fs)))
+            }
+            .post("/api/withSignature") { ctx ->
+                val request = ctx.bodyAsClass(WithSignatureRequest::class.java)
+                logger.log("Getting entity with signature '${request.signature}'")
+                val entity = sourceCollection.getWithSignature(request.signature)
+                if (entity == null) {
+                    ctx.status(404)
+                } else {
+                    ctx.json(entity.toEntityResult(sourceCollection))
+                }
+            }
+            .post("/api/search") { ctx ->
+                val request = ctx.bodyAsClass(SearchRequest::class.java)
+                logger.log("Searching with query '${request.query}'")
+                ctx.json(
+                    SearchResponse(
+                        paths =
+                            sourceCollection.search(request.query).map {
+                                it.file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
+                            }))
+            }
+            .post("/api/completeWord") { ctx ->
+                val request = ctx.bodyAsClass(CompleteWordRequest::class.java)
+                logger.log("Getting completions for word '${request.word}'")
+                val suffixes = sourceCollection.findSuffixesFor(request.word)
+                ctx.json(CompleteWordResponse(suffixes = suffixes))
+            }
     }
 
     fun decompose(fs: VirtualFileSystem, logger: Logger) {
-        logger.log(Json.encodeToString(decompose(fs)))
+        logger.log(
+            Json.encodeToString(
+                decompose(fs = fs, sourceCollection = buildSourceCollection(fs), mlgFiles = null)))
     }
 }
 
-@Serializable data class Path(val path: String)
+fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResult {
+    val renderedHtml =
+        sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
+    val rawHtml =
+        sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = true)
+    return EntityResult(
+        id = md5Hash(rawHtml),
+        type = this.javaClass.simpleName,
+        signature =
+            if (this is HasSignature) {
+                this.signature?.form
+            } else {
+                null
+            },
+        rawHtml = rawHtml,
+        renderedHtml = renderedHtml,
+        words = getAllWords(this).toList())
+}
 
-@Serializable data class PathAndContent(val path: String, val content: String)
+fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceCollection) =
+    FileResult(
+        relativePath = this.file.relativePathTo(fs.cwd()).joinToString("/"),
+        content = this.content,
+        entities =
+            when (val validation = this.validation
+            ) {
+                is ValidationSuccess -> {
+                    val doc = validation.value.document
+                    doc.groups.map { it.toEntityResult(sourceCollection) }
+                }
+                else -> {
+                    emptyList()
+                }
+            })
 
-@Serializable data class CheckErrorList(val errors: List<CheckError>)
+@Serializable data class ReadPageRequest(val path: String)
+
+@Serializable data class ReadPageResponse(val content: String)
+
+@Serializable data class FileResultRequest(val path: String)
+
+@Serializable data class WritePageRequest(val path: String, val content: String)
+
+@Serializable data class CheckResponse(val errors: List<CheckError>)
 
 @Serializable
 data class CheckError(val path: String, val message: String, val row: Int, val column: Int)
+
+@Serializable data class AllPathsResponse(val paths: List<String>)
+
+@Serializable data class HomeResponse(val homeHtml: String)
+
+@Serializable data class WithSignatureRequest(val signature: String)
+
+@Serializable data class SearchRequest(val query: String)
+
+@Serializable data class SearchResponse(val paths: List<String>)
+
+@Serializable data class CompleteWordRequest(val word: String)
+
+@Serializable data class CompleteWordResponse(val suffixes: List<String>)
 
 private fun String.jsonSanitize() =
     this.replace("\\", "\\\\")
@@ -327,7 +437,7 @@ private fun renderFile(
                 tracker = null))
     }
 
-    val sourceCollection = newSourceCollection(listOf(fs.cwd()))
+    val sourceCollection = newSourceCollection(fs, listOf(fs.cwd()))
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
     val elements = getUnifiedRenderedTopLevelElements(target, sourceCollection, noExpand, errors)
 
@@ -392,7 +502,7 @@ private fun getRenderAllText(
 
     val indexTest = getIndexFileText(fs, noExpand, errors)
 
-    val sourceCollection = newSourceCollection(listOf(fs.cwd()))
+    val sourceCollection = newSourceCollection(fs, listOf(fs.cwd()))
     val errorOutput = getErrorOutput(fs, errors, sourceCollection.size(), false)
 
     return Triple(indexTest, errors, errorOutput)
@@ -520,7 +630,7 @@ private fun getIndexFileText(
 
     val sigToPathCode = generateSignatureToPathJsCode(fs)
 
-    val sourceCollection = newSourceCollection(listOf(cwd))
+    val sourceCollection = newSourceCollection(fs, listOf(cwd))
     val filesToProcess = mutableListOf<VirtualFile>()
     findMathlinguaFiles(cwd, filesToProcess)
 
@@ -892,13 +1002,22 @@ private fun getSignature(node: Phase2Node?): String? {
     }
 }
 
-private fun decompose(fs: VirtualFileSystem): DecompositionResult {
+private fun buildSourceCollection(fs: VirtualFileSystem) = newSourceCollection(fs, listOf(fs.cwd()))
+
+private fun decompose(
+    fs: VirtualFileSystem, sourceCollection: SourceCollection, mlgFiles: List<VirtualFile>?
+): DecompositionResult {
+    val resolvedMlgFiles =
+        if (mlgFiles == null) {
+            val files = mutableListOf<VirtualFile>()
+            findMathlinguaFiles(fileOrDir = fs.cwd(), result = files)
+            files
+        } else {
+            mlgFiles
+        }
     val fileResults = mutableListOf<FileResult>()
-    val mlgFiles = mutableListOf<VirtualFile>()
-    findMathlinguaFiles(fileOrDir = fs.cwd(), result = mlgFiles)
-    val sourceCollection = newSourceCollection(listOf(fs.cwd()))
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-    for (f in mlgFiles) {
+    for (f in resolvedMlgFiles) {
         val elements =
             getCompleteRenderedTopLevelElements(
                 f = f, sourceCollection = sourceCollection, noexpand = false, errors = errors)

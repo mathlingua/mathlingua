@@ -15,9 +15,10 @@ data class SearchIndex(val fs: VirtualFileSystem) {
                 val doc = validation.value.document
                 for (grp in doc.groups) {
                     for (word in getAllWords(grp)) {
-                        val pathSet = searchIndex[word] ?: MutableMultiSet()
+                        val key = word.lowercase()
+                        val pathSet = searchIndex[key] ?: MutableMultiSet()
                         pathSet.add(relPath)
-                        searchIndex[word] = pathSet
+                        searchIndex[key] = pathSet
                     }
                 }
             }
@@ -26,18 +27,20 @@ data class SearchIndex(val fs: VirtualFileSystem) {
 
     fun remove(path: List<String>) {
         for (word in searchIndex.keys) {
-            val pathSet = searchIndex[word]
+            val key = word.lowercase()
+            val pathSet = searchIndex[key]
             if (pathSet != null) {
                 pathSet.remove(path)
                 if (pathSet.isEmpty()) {
-                    searchIndex.remove(word)
+                    searchIndex.remove(key)
                 }
             }
         }
     }
 
     fun search(query: String): List<List<String>> {
-        val terms = query.split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
+        val terms =
+            query.lowercase().split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
 
         if (terms.isEmpty()) {
             return emptyList()

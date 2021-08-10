@@ -4,7 +4,7 @@ class AutoComplete {
     private val root = TrieNode(count = 1, isWord = false, children = mutableMapOf())
 
     fun add(word: String) {
-        addImpl(root, word, 0)
+        addImpl(root, word.lowercase(), 0)
     }
 
     private fun addImpl(trieNode: TrieNode, word: String, index: Int) {
@@ -29,7 +29,7 @@ class AutoComplete {
     }
 
     fun remove(word: String) {
-        removeImpl(root, word, 0)
+        removeImpl(root, word.lowercase(), 0)
     }
 
     private fun removeImpl(trieNode: TrieNode, word: String, index: Int) {
@@ -50,7 +50,7 @@ class AutoComplete {
     }
 
     fun findSuffixes(word: String): List<String> {
-        val node = findTrieLeaf(root, word, 0) ?: return emptyList()
+        val node = findTrieLeaf(root, word.lowercase(), 0) ?: return emptyList()
         val result = mutableSetOf<String>()
         getWordsUnder(StringBuilder(), node, result)
         return result.toList()

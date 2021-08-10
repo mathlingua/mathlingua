@@ -205,7 +205,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
     private val searchIndex = SearchIndex(fs)
 
-    private val signatureToEntity = mutableMapOf<String, EntityResult>()
+    private val signatureToTopLevelGroup = mutableMapOf<String, TopLevelGroup>()
 
     private val allGroups = mutableListOf<ValueSourceTracker<Normalized<TopLevelGroup>>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<Normalized<DefinesGroup>>>()
@@ -254,7 +254,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     }
 
     override fun getWithSignature(signature: String): EntityResult? {
-        return signatureToEntity[signature]
+        return signatureToTopLevelGroup[signature]?.toEntityResult(this)
     }
 
     override fun removeSource(sf: SourceFile) {
@@ -274,11 +274,12 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
                 for (grp in docAll) {
                     if (grp is HasSignature && grp.signature != null) {
-                        signatureToEntity.remove(grp.signature!!.form)
+                        signatureToTopLevelGroup.remove(grp.signature!!.form)
                     } else if (grp is FoundationGroup &&
                         grp.foundationSection.content is HasSignature &&
                         grp.foundationSection.content.signature != null) {
-                        signatureToEntity.remove(grp.foundationSection.content.signature!!.form)
+                        signatureToTopLevelGroup.remove(
+                            grp.foundationSection.content.signature!!.form)
                     }
                 }
 
@@ -319,12 +320,11 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
             for (grp in validation.value.document.groups) {
                 if (grp is HasSignature && grp.signature != null) {
-                    signatureToEntity[grp.signature!!.form] = grp.toEntityResult(this)
+                    signatureToTopLevelGroup[grp.signature!!.form] = grp
                 } else if (grp is FoundationGroup &&
                     grp.foundationSection.content is HasSignature &&
                     grp.foundationSection.content.signature != null) {
-                    signatureToEntity[grp.foundationSection.content.signature!!.form] =
-                        grp.toEntityResult(this)
+                    signatureToTopLevelGroup[grp.foundationSection.content.signature!!.form] = grp
                 }
             }
 

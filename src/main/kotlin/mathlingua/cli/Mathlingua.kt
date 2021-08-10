@@ -21,6 +21,8 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mathlingua.backend.BackEnd
+import mathlingua.backend.EntityResult
+import mathlingua.backend.FileResult
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
@@ -33,9 +35,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -169,9 +169,9 @@ object Mathlingua {
                 val file = fs.getFileOrDirectory(pathAndContent.path)
                 file.writeText(pathAndContent.content)
                 val newSource = buildSourceFile(file)
-                val sf = sourceCollection.getSourceFile(pathAndContent.path)
-                if (sf != null) {
-                    sourceCollection.removeSource(sf)
+                val page = sourceCollection.getPage(pathAndContent.path)
+                if (page != null) {
+                    sourceCollection.removeSource(page.sourceFile)
                 }
                 sourceCollection.addSource(newSource)
                 ctx.status(200)
@@ -186,11 +186,11 @@ object Mathlingua {
             .post("/api/fileResult") { ctx ->
                 val path = ctx.bodyAsClass(FileResultRequest::class.java)
                 logger.log("Getting file result for ${path.path}")
-                val sf = sourceCollection.getSourceFile(path.path)
-                if (sf == null) {
+                val page = sourceCollection.getPage(path.path)
+                if (page == null) {
                     ctx.status(404)
                 } else {
-                    ctx.json(sf.toFileResult(fs, sourceCollection))
+                    ctx.json(page.fileResult)
                 }
             }
             .get("/api/check") { ctx ->
@@ -235,11 +235,11 @@ object Mathlingua {
             .post("/api/withSignature") { ctx ->
                 val request = ctx.bodyAsClass(WithSignatureRequest::class.java)
                 logger.log("Getting entity with signature '${request.signature}'")
-                val entity = sourceCollection.getWithSignature(request.signature)
-                if (entity == null) {
+                val entityResult = sourceCollection.getWithSignature(request.signature)
+                if (entityResult == null) {
                     ctx.status(404)
                 } else {
-                    ctx.json(entity.toEntityResult(sourceCollection))
+                    ctx.json(entityResult)
                 }
             }
             .post("/api/search") { ctx ->
@@ -266,41 +266,6 @@ object Mathlingua {
                 decompose(fs = fs, sourceCollection = buildSourceCollection(fs), mlgFiles = null)))
     }
 }
-
-fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResult {
-    val renderedHtml =
-        sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
-    val rawHtml =
-        sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = true)
-    return EntityResult(
-        id = md5Hash(rawHtml),
-        type = this.javaClass.simpleName,
-        signature =
-            if (this is HasSignature) {
-                this.signature?.form
-            } else {
-                null
-            },
-        rawHtml = rawHtml,
-        renderedHtml = renderedHtml,
-        words = getAllWords(this).toList())
-}
-
-fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceCollection) =
-    FileResult(
-        relativePath = this.file.relativePathTo(fs.cwd()).joinToString("/"),
-        content = this.content,
-        entities =
-            when (val validation = this.validation
-            ) {
-                is ValidationSuccess -> {
-                    val doc = validation.value.document
-                    doc.groups.map { it.toEntityResult(sourceCollection) }
-                }
-                else -> {
-                    emptyList()
-                }
-            })
 
 @Serializable data class ReadPageRequest(val path: String)
 
@@ -952,19 +917,6 @@ private fun getCompleteRenderedTopLevelElements(
     }
     return result
 }
-
-@Serializable
-data class EntityResult(
-    val id: String,
-    val type: String,
-    val signature: String?,
-    val rawHtml: String,
-    val renderedHtml: String,
-    val words: List<String>)
-
-@Serializable
-data class FileResult(
-    val relativePath: String, val content: String, val entities: List<EntityResult>)
 
 @Serializable
 data class ErrorResult(

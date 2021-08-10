@@ -137,7 +137,7 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
         }
         val relParts = mutableListOf<String>()
         while (i < vfParts.size) {
-            relParts.add(vfParts[i])
+            relParts.add(vfParts[i++])
         }
         return relParts
     }

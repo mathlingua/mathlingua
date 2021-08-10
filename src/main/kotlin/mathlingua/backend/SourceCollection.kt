@@ -16,6 +16,7 @@
 
 package mathlingua.backend
 
+import kotlinx.serialization.Serializable
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.checkVars
 import mathlingua.backend.transform.expandAsWritten
@@ -87,6 +88,7 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.isOpChar
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
+import mathlingua.md5Hash
 
 data class SourceFile(
     val file: VirtualFile, val content: String, val validation: Validation<Parse>)
@@ -103,6 +105,8 @@ fun buildSourceFile(file: VirtualFile): SourceFile {
 data class ValueSourceTracker<T>(
     val value: T, val source: SourceFile, val tracker: MutableLocationTracker?)
 
+data class Page(val sourceFile: SourceFile, val fileResult: FileResult)
+
 interface SourceCollection {
     fun size(): Int
     fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>>
@@ -117,8 +121,8 @@ interface SourceCollection {
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
     fun prettyPrint(node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean): String
     fun getAllPaths(): List<String>
-    fun getSourceFile(path: String): SourceFile?
-    fun getWithSignature(signature: String): TopLevelGroup?
+    fun getPage(path: String): Page?
+    fun getWithSignature(signature: String): EntityResult?
     fun addSource(sf: SourceFile)
     fun removeSource(sf: SourceFile)
     fun findSuffixesFor(word: String): List<String>
@@ -142,17 +146,66 @@ private fun findVirtualFiles(file: VirtualFile, result: MutableList<SourceFile>)
     }
 }
 
+@Serializable
+data class EntityResult(
+    val id: String,
+    val type: String,
+    val signature: String?,
+    val rawHtml: String,
+    val renderedHtml: String,
+    val words: List<String>)
+
+@Serializable
+data class FileResult(
+    val relativePath: String, val content: String, val entities: List<EntityResult>)
+
+fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResult {
+    val renderedHtml =
+        sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
+    val rawHtml =
+        sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = true)
+    return EntityResult(
+        id = md5Hash(rawHtml),
+        type = this.javaClass.simpleName,
+        signature =
+            if (this is HasSignature) {
+                this.signature?.form
+            } else {
+                null
+            },
+        rawHtml = rawHtml,
+        renderedHtml = renderedHtml,
+        words = getAllWords(this).toList())
+}
+
+fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceCollection) =
+    FileResult(
+        relativePath = this.file.relativePathTo(fs.cwd()).joinToString("/"),
+        content = this.content,
+        entities =
+            when (val validation = this.validation
+            ) {
+                is ValidationSuccess -> {
+                    val doc = validation.value.document
+                    doc.groups.map { it.toEntityResult(sourceCollection) }
+                }
+                else -> {
+                    emptyList()
+                }
+            })
+
 data class Normalized<T>(val original: T, val normalized: T)
 
 class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>) :
     SourceCollection {
     private val sourceFiles = mutableMapOf<String, SourceFile>()
+    private val sourceFileToFileResult = mutableMapOf<SourceFile, FileResult>()
 
     private val autoComplete = AutoComplete()
 
     private val searchIndex = SearchIndex(fs)
 
-    private val signatureToTopLevel = mutableMapOf<String, TopLevelGroup>()
+    private val signatureToEntity = mutableMapOf<String, EntityResult>()
 
     private val allGroups = mutableListOf<ValueSourceTracker<Normalized<TopLevelGroup>>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<Normalized<DefinesGroup>>>()
@@ -163,15 +216,21 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     private val foundationGroups = mutableListOf<ValueSourceTracker<Normalized<FoundationGroup>>>()
 
     init {
+        // add all the sources
         for (sf in sources) {
             addSource(sf)
+        }
+
+        // pre-calculate the rendering of each page to speed up access later on
+        for (path in getAllPaths()) {
+            getPage(path)
         }
     }
 
     override fun search(query: String): List<SourceFile> {
         return searchIndex.search(query).mapNotNull {
             val path = it.joinToString("/")
-            getSourceFile(path)
+            sourceFiles[path]
         }
     }
 
@@ -183,15 +242,23 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
         return sourceFiles.keys.toList()
     }
 
-    override fun getSourceFile(path: String): SourceFile? {
-        return sourceFiles[path]
+    override fun getPage(path: String): Page? {
+        val sourceFile = sourceFiles[path] ?: return null
+        val fileResult = sourceFileToFileResult[sourceFile]
+        if (fileResult != null) {
+            return Page(sourceFile = sourceFile, fileResult = fileResult)
+        }
+        val evalFileResult = sourceFile.toFileResult(fs, this)
+        sourceFileToFileResult[sourceFile] = evalFileResult
+        return Page(sourceFile = sourceFile, fileResult = evalFileResult)
     }
 
-    override fun getWithSignature(signature: String): TopLevelGroup? {
-        return signatureToTopLevel[signature]
+    override fun getWithSignature(signature: String): EntityResult? {
+        return signatureToEntity[signature]
     }
 
     override fun removeSource(sf: SourceFile) {
+        sourceFileToFileResult.clear()
         searchIndex.remove(sf.file.relativePathTo(fs.cwd()))
         when (val validation = sf.validation
         ) {
@@ -207,11 +274,11 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
                 for (grp in docAll) {
                     if (grp is HasSignature && grp.signature != null) {
-                        signatureToTopLevel.remove(grp.signature!!.form)
+                        signatureToEntity.remove(grp.signature!!.form)
                     } else if (grp is FoundationGroup &&
                         grp.foundationSection.content is HasSignature &&
                         grp.foundationSection.content.signature != null) {
-                        signatureToTopLevel.remove(grp.foundationSection.content.signature!!.form)
+                        signatureToEntity.remove(grp.foundationSection.content.signature!!.form)
                     }
                 }
 
@@ -239,6 +306,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     }
 
     override fun addSource(sf: SourceFile) {
+        sourceFileToFileResult.clear()
         sourceFiles[sf.file.relativePathTo(fs.cwd()).joinToString("/")] = sf
         searchIndex.add(sf)
         val validation = sf.validation
@@ -251,11 +319,12 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
             for (grp in validation.value.document.groups) {
                 if (grp is HasSignature && grp.signature != null) {
-                    signatureToTopLevel[grp.signature!!.form] = grp
+                    signatureToEntity[grp.signature!!.form] = grp.toEntityResult(this)
                 } else if (grp is FoundationGroup &&
                     grp.foundationSection.content is HasSignature &&
                     grp.foundationSection.content.signature != null) {
-                    signatureToTopLevel[grp.foundationSection.content.signature!!.form] = grp
+                    signatureToEntity[grp.foundationSection.content.signature!!.form] =
+                        grp.toEntityResult(this)
                 }
             }
 

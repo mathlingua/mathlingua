@@ -138,7 +138,7 @@ open class HtmlCodeWriter(
                             val title =
                                 getUrlTitle(res.siteItemSection.url, res.nameItemSection?.name)
                             builder.append(
-                                "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
+                                "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"${urlNoSpace.removeSurrounding("\"", "\"")}\">$title</a></span>")
                         }
                         is SourceItemGroup -> {
                             builder.append("<span class='mathlingua-resources-item'>")
@@ -571,7 +571,7 @@ open class HtmlCodeWriter(
         val urlNoSpace = getUrlWithoutSpaces(url.removeSurrounding("\"", "\""))
         val title = getUrlTitle(url, name)
         builder.append(
-            "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"$urlNoSpace\">$title</a></span>")
+            "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"${urlNoSpace.removeSurrounding("\"", "\"")}\">$title</a></span>")
     }
 
     override fun writeText(text: String) {

@@ -176,21 +176,29 @@ object Mathlingua {
                 sourceCollection.addSource(newSource)
                 ctx.status(200)
             }
-            .post("/api/readPage") { ctx ->
-                val path = ctx.bodyAsClass(ReadPageRequest::class.java)
-                logger.log("Reading page ${path.path}")
-                val file = fs.getFileOrDirectory(path.path)
-                val content = file.readText()
-                ctx.json(ReadPageResponse(content = content))
-            }
-            .post("/api/fileResult") { ctx ->
-                val path = ctx.bodyAsClass(FileResultRequest::class.java)
-                logger.log("Getting file result for ${path.path}")
-                val page = sourceCollection.getPage(path.path)
-                if (page == null) {
-                    ctx.status(404)
+            .get("/api/readPage") { ctx ->
+                val path = ctx.queryParam("path", null)
+                logger.log("Reading page $path")
+                if (path == null) {
+                    ctx.status(400)
                 } else {
-                    ctx.json(page.fileResult)
+                    val file = fs.getFileOrDirectory(path)
+                    val content = file.readText()
+                    ctx.json(ReadPageResponse(content = content))
+                }
+            }
+            .get("/api/fileResult") { ctx ->
+                val path = ctx.queryParam("path", null)
+                logger.log("Getting file result for $path")
+                if (path == null) {
+                    ctx.status(400)
+                } else {
+                    val page = sourceCollection.getPage(path)
+                    if (page == null) {
+                        ctx.status(404)
+                    } else {
+                        ctx.json(page.fileResult)
+                    }
                 }
             }
             .get("/api/check") { ctx ->
@@ -232,30 +240,34 @@ object Mathlingua {
                 logger.log("Getting home content")
                 ctx.json(HomeResponse(homeHtml = getHomeContent(fs)))
             }
-            .post("/api/withSignature") { ctx ->
-                val request = ctx.bodyAsClass(WithSignatureRequest::class.java)
-                logger.log("Getting entity with signature '${request.signature}'")
-                val entityResult = sourceCollection.getWithSignature(request.signature)
-                if (entityResult == null) {
-                    ctx.status(404)
+            .get("/api/withSignature") { ctx ->
+                val signature = ctx.queryParam("signature", null)
+                logger.log("Getting entity with signature '${signature}'")
+                if (signature == null) {
+                    ctx.status(400)
                 } else {
-                    ctx.json(entityResult)
+                    val entityResult = sourceCollection.getWithSignature(signature)
+                    if (entityResult == null) {
+                        ctx.status(404)
+                    } else {
+                        ctx.json(entityResult)
+                    }
                 }
             }
-            .post("/api/search") { ctx ->
-                val request = ctx.bodyAsClass(SearchRequest::class.java)
-                logger.log("Searching with query '${request.query}'")
+            .get("/api/search") { ctx ->
+                val query = ctx.queryParam("query") ?: ""
+                logger.log("Searching with query '$query'")
                 ctx.json(
                     SearchResponse(
                         paths =
-                            sourceCollection.search(request.query).map {
+                            sourceCollection.search(query).map {
                                 it.file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
                             }))
             }
-            .post("/api/completeWord") { ctx ->
-                val request = ctx.bodyAsClass(CompleteWordRequest::class.java)
-                logger.log("Getting completions for word '${request.word}'")
-                val suffixes = sourceCollection.findSuffixesFor(request.word)
+            .get("/api/completeWord") { ctx ->
+                val word = ctx.queryParam("word") ?: ""
+                logger.log("Getting completions for word '$word'")
+                val suffixes = sourceCollection.findSuffixesFor(word)
                 ctx.json(CompleteWordResponse(suffixes = suffixes))
             }
     }
@@ -271,8 +283,6 @@ object Mathlingua {
 
 @Serializable data class ReadPageResponse(val content: String)
 
-@Serializable data class FileResultRequest(val path: String)
-
 @Serializable data class WritePageRequest(val path: String, val content: String)
 
 @Serializable data class CheckResponse(val errors: List<CheckError>)
@@ -284,13 +294,7 @@ data class CheckError(val path: String, val message: String, val row: Int, val c
 
 @Serializable data class HomeResponse(val homeHtml: String)
 
-@Serializable data class WithSignatureRequest(val signature: String)
-
-@Serializable data class SearchRequest(val query: String)
-
 @Serializable data class SearchResponse(val paths: List<String>)
-
-@Serializable data class CompleteWordRequest(val word: String)
 
 @Serializable data class CompleteWordResponse(val suffixes: List<String>)
 

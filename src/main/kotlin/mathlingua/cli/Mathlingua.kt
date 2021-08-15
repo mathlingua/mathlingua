@@ -149,31 +149,39 @@ object Mathlingua {
 
     fun serve(fs: VirtualFileSystem, logger: Logger, port: Int) {
         logger.log("Visit localhost:$port to see your rendered MathLingua code.")
-        logger.log("Every time you refresh the page, your MathLingua code will be rerendered.")
-        val sourceCollection = buildSourceCollection(fs = fs)
-        Javalin.create()
-            .start(port)
-            .routes {}
-            .get("/") { ctx ->
-                logger.log("Rendering...")
-                val triple = getRenderAllText(fs = fs, noExpand = false)
-                logger.log(triple.third)
-                logger.log("\nChecking...")
-                check(fs = fs, logger = logger, files = listOf(), json = false)
-                logger.log("")
-                ctx.html(triple.first)
+        logger.log("Every time you refresh the page, your MathLingua code will be re-analyzed.")
+
+        var sourceCollection: SourceCollection? = null
+        fun getSourceCollection(): SourceCollection {
+            if (sourceCollection == null) {
+                sourceCollection = buildSourceCollection(fs = fs)
             }
+            return sourceCollection!!
+        }
+
+        val app = Javalin.create().start(port)
+        app.config.addStaticFiles("/assets")
+        // redirect 404s to / to allow client side routing
+        app.error(404) { ctx -> ctx.redirect(ctx.path()) }
+        app.before("/") {
+            logger.log("Re-analyzing the MathLingua code.")
+            // invalidate the source collection and regenerate it
+            sourceCollection = null
+            getSourceCollection()
+        }
+        app
+            .routes {}
             .put("/api/writePage") { ctx ->
                 val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
                 logger.log("Writing page ${pathAndContent.path}")
                 val file = fs.getFileOrDirectory(pathAndContent.path)
                 file.writeText(pathAndContent.content)
                 val newSource = buildSourceFile(file)
-                val page = sourceCollection.getPage(pathAndContent.path)
+                val page = getSourceCollection().getPage(pathAndContent.path)
                 if (page != null) {
-                    sourceCollection.removeSource(page.sourceFile)
+                    getSourceCollection().removeSource(page.sourceFile)
                 }
-                sourceCollection.addSource(newSource)
+                getSourceCollection().addSource(newSource)
                 ctx.status(200)
             }
             .get("/api/readPage") { ctx ->
@@ -193,7 +201,7 @@ object Mathlingua {
                 if (path == null) {
                     ctx.status(400)
                 } else {
-                    val page = sourceCollection.getPage(path)
+                    val page = getSourceCollection().getPage(path)
                     if (page == null) {
                         ctx.status(404)
                     } else {
@@ -206,7 +214,7 @@ object Mathlingua {
                 ctx.json(
                     CheckResponse(
                         errors =
-                            BackEnd.check(sourceCollection).map {
+                            BackEnd.check(getSourceCollection()).map {
                                 CheckError(
                                     path =
                                         it.source
@@ -222,7 +230,7 @@ object Mathlingua {
                 logger.log("Decomposing")
                 val start = System.currentTimeMillis()
                 val result =
-                    decompose(fs = fs, sourceCollection = sourceCollection, mlgFiles = null)
+                    decompose(fs = fs, sourceCollection = getSourceCollection(), mlgFiles = null)
                 val end = System.currentTimeMillis()
                 println("Decomposed in " + (end - start) + "ms")
                 ctx.json(result)
@@ -234,7 +242,7 @@ object Mathlingua {
             }
             .get("/api/allPaths") { ctx ->
                 logger.log("Getting all paths")
-                ctx.json(AllPathsResponse(paths = sourceCollection.getAllPaths()))
+                ctx.json(AllPathsResponse(paths = getSourceCollection().getAllPaths()))
             }
             .get("/api/home") { ctx ->
                 logger.log("Getting home content")
@@ -246,7 +254,7 @@ object Mathlingua {
                 if (signature == null) {
                     ctx.status(400)
                 } else {
-                    val entityResult = sourceCollection.getWithSignature(signature)
+                    val entityResult = getSourceCollection().getWithSignature(signature)
                     if (entityResult == null) {
                         ctx.status(404)
                     } else {
@@ -260,16 +268,17 @@ object Mathlingua {
                 ctx.json(
                     SearchResponse(
                         paths =
-                            sourceCollection.search(query).map {
+                            getSourceCollection().search(query).map {
                                 it.file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
                             }))
             }
             .get("/api/completeWord") { ctx ->
                 val word = ctx.queryParam("word") ?: ""
                 logger.log("Getting completions for word '$word'")
-                val suffixes = sourceCollection.findSuffixesFor(word)
+                val suffixes = getSourceCollection().findSuffixesFor(word)
                 ctx.json(CompleteWordResponse(suffixes = suffixes))
             }
+            .get("/api/*") { ctx -> ctx.status(400) }
     }
 
     fun decompose(fs: VirtualFileSystem, logger: Logger) {

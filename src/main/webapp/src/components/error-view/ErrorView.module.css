@@ -1,0 +1,9 @@
+.errorLabel {
+  padding-left: 1.25em;
+  color: darkred;
+  font-weight: bold;
+}
+
+.errorMessage {
+  color: darkred;
+}

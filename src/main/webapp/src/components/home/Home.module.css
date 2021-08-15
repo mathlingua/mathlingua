@@ -1,0 +1,28 @@
+.mathlinguaHome {
+  display: block;
+  padding-top: 1.5em;
+  padding-bottom: 1em;
+  padding-left: 5em;
+  padding-right: 5em;
+  margin-top: 2.5em;
+  margin-bottom: 1em;
+  margin-left: auto; /* for centering content */
+  margin-right: auto; /* for centering content */
+  font-size: 1em;
+  width: 45%;
+  background-color: white;
+  border: solid;
+  border-width: 1px;
+  border-color: rgba(210, 210, 210);
+  border-radius: 2px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+    inset 0 0 0 0 rgba(240, 240, 240, 0.5);
+}
+
+@media screen and (max-width: 500px) {
+  .mathlinguaHome {
+    width: 58%;
+    margin-top: 3vh;
+    margin-bottom: 0;
+  }
+}

@@ -1,0 +1,47 @@
+ul {
+  padding-left: 1em;
+  margin: 0;
+}
+
+li {
+  padding-left: 1em;
+}
+
+.triangle {
+  background: unset;
+  border: none;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 1ex;
+}
+
+.link {
+  text-decoration: none;
+  color: black;
+}
+
+.sidePanelItem {
+  font-family: Georgia, 'Times New Roman', Times, serif;
+  text-decoration: none;
+  color: #000000;
+  display: block;
+  transition: 0.4s;
+  padding-left: 1.25em;
+  padding-right: 0;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  margin: 0;
+}
+
+.mathlinguaListDirItem {
+  font-weight: bold;
+  display: block;
+  margin-top: -0.5ex;
+  margin-bottom: -0.5ex;
+}
+
+.mathlinguaListFileItem {
+  display: block;
+  margin-top: -0.5ex;
+  margin-bottom: -0.5ex;
+}

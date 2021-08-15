@@ -17,3 +17,28 @@ out
 
 mathlingua.js
 releases
+
+# webapp content
+
+src/main/resources/assets
+
+# dependencies
+src/main/webapp/node_modules
+src/main/webapp/.pnp
+src/main/webapp/.pnp.js
+
+# testing
+src/main/webapp/coverage
+
+src/main/webapp/build
+
+# misc
+src/main/webapp/.env.local
+src/main/webapp/.env.development.local
+src/main/webapp/.env.test.local
+src/main/webapp/.env.production.local
+
+src/main/webapp/npm-debug.log*
+src/main/webapp/yarn-debug.log*
+src/main/webapp/yarn-error.log*
+

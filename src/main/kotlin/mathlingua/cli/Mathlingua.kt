@@ -964,7 +964,7 @@ private fun decompose(
                     }))
     }
     return DecompositionResult(
-        homeHtml = sanitizeHtmlForJs(getHomeContent(fs)),
+        homeHtml = getHomeContent(fs),
         collectionResult =
             CollectionResult(
                 fileResults = fileResults,

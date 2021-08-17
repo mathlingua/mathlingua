@@ -3,8 +3,12 @@ import { Link } from 'react-router-dom';
 import styles from './PathTreeItem.module.css';
 
 import { sidePanelVisibilityChanged } from '../../store/sidePanelVisibleSlice';
-import { useAppDispatch } from '../../support/hooks';
+import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { isOnMobile } from '../../support/util';
+import {
+  selectViewedPath,
+  viewedPathUpdated,
+} from '../../store/viewedPathSlice';
 
 export interface PathTreeNode {
   name: string;
@@ -20,6 +24,7 @@ export interface PathTreeItemProps {
 export const PathTreeItem = (props: PathTreeItemProps) => {
   const dispatch = useAppDispatch();
   const [isExpanded, setIsExpanded] = useState(false);
+  const viewedPath = useAppSelector(selectViewedPath) || '';
 
   if (props.node.isDir) {
     return (
@@ -51,11 +56,16 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
       <Link
         to={`/${props.node.path}`}
         key={props.node.name}
-        className={styles.link}
+        className={
+          viewedPath === props.node.path
+            ? `${styles.link} ${styles.selected}`
+            : styles.link
+        }
         onClick={() => {
           if (isOnMobile()) {
             dispatch(sidePanelVisibilityChanged(false));
           }
+          dispatch(viewedPathUpdated(props.node.path));
         }}
       >
         {props.node.name.replace('.math', '').replace('_', ' ')}

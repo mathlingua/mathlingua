@@ -45,3 +45,7 @@ li {
   margin-top: -0.5ex;
   margin-bottom: -0.5ex;
 }
+
+.selected {
+  font-style: italic;
+}

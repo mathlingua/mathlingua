@@ -5,7 +5,6 @@ import { Page } from './components/page/Page';
 import { SidePanel } from './components/side-panel/SidePanel';
 import { TopBar } from './components/topbar/TopBar';
 
-import { Home } from './components/home/Home';
 import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
 
 export const App = () => {
@@ -16,7 +15,6 @@ export const App = () => {
         <SidePanel />
         <div className={styles.contentPanel}>
           <Switch>
-            <Route exact path="/" children={<Home />} />
             <Route path="/*" children={<Page />} />
           </Switch>
         </div>

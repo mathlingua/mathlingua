@@ -9,12 +9,11 @@ import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGro
 import { useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
 
-import { useParams } from 'react-router-dom';
+import { selectViewedPath } from '../../store/viewedPathSlice';
+import { Home } from '../home/Home';
 
 export const Page = () => {
-  const params = (useParams() as { 0: string })[0];
-  const relativePath = params;
-
+  const relativePath = useAppSelector(selectViewedPath) || '';
   const [fileResult, setFileResult] = useState(
     undefined as api.FileResult | undefined
   );
@@ -24,11 +23,13 @@ export const Page = () => {
   const ref = useRef(null);
 
   useEffect(() => {
-    api
-      .getFileResult(relativePath)
-      .then((fileResult) => setFileResult(fileResult))
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
+    if (relativePath !== '') {
+      api
+        .getFileResult(relativePath)
+        .then((fileResult) => setFileResult(fileResult))
+        .catch((err) => setError(err.message))
+        .finally(() => setIsLoading(false));
+    }
   }, [relativePath]);
 
   useEffect(() => {
@@ -46,6 +47,10 @@ export const Page = () => {
       });
     }
   }, [relativePath, fileResult, query]);
+
+  if (relativePath === '') {
+    return <Home />;
+  }
 
   const errorView = (
     <div className={styles.mathlinguaPage}>

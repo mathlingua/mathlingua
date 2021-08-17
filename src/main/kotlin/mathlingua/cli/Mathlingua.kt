@@ -17,6 +17,8 @@
 package mathlingua.cli
 
 import io.javalin.Javalin
+import java.io.File
+import java.util.jar.JarFile
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -85,22 +87,11 @@ object Mathlingua {
     }
 
     fun render(
-        fs: VirtualFileSystem,
-        logger: Logger,
-        file: VirtualFile?,
-        noexpand: Boolean,
-        stdout: Boolean,
-        raw: Boolean
+        fs: VirtualFileSystem, logger: Logger, file: VirtualFile?, noexpand: Boolean, raw: Boolean
     ): Int {
         val errors =
             if (file != null) {
-                renderFile(
-                    fs = fs,
-                    logger = logger,
-                    target = file,
-                    stdout = stdout,
-                    noExpand = noexpand,
-                    raw = raw)
+                renderFile(fs = fs, logger = logger, target = file, noExpand = noexpand, raw = raw)
             } else {
                 if (raw) {
                     val message = "ERROR: A file must be provided if --raw is used."
@@ -115,7 +106,7 @@ object Mathlingua {
                                     validation = validationFailure(emptyList())),
                             tracker = null))
                 } else {
-                    renderAll(fs = fs, logger = logger, stdout = stdout, noExpand = noexpand)
+                    renderAll(fs = fs, logger = logger)
                 }
             }
         return if (errors.isEmpty()) {
@@ -225,20 +216,6 @@ object Mathlingua {
                                     row = it.value.row,
                                     column = it.value.column)
                             }))
-            }
-            .get("/api/decompose") { ctx ->
-                logger.log("Decomposing")
-                val start = System.currentTimeMillis()
-                val result =
-                    decompose(fs = fs, sourceCollection = getSourceCollection(), mlgFiles = null)
-                val end = System.currentTimeMillis()
-                println("Decomposed in " + (end - start) + "ms")
-                ctx.json(result)
-            }
-            .get("/api/render") { ctx ->
-                logger.log("Rendering")
-                renderAll(fs = fs, logger = logger, stdout = false, noExpand = false)
-                ctx.status(400)
             }
             .get("/api/allPaths") { ctx ->
                 logger.log("Getting all paths")
@@ -382,12 +359,7 @@ private fun getErrorOutput(
 }
 
 private fun renderFile(
-    fs: VirtualFileSystem,
-    logger: Logger,
-    target: VirtualFile,
-    stdout: Boolean,
-    noExpand: Boolean,
-    raw: Boolean
+    fs: VirtualFileSystem, logger: Logger, target: VirtualFile, noExpand: Boolean, raw: Boolean
 ): List<ValueSourceTracker<ParseError>> {
     if (!target.exists()) {
         val message =
@@ -438,76 +410,61 @@ private fun renderFile(
         } else {
             buildStandaloneHtml(content = contentBuilder.toString())
         }
+    logger.log(getErrorOutput(fs, errors, sourceCollection.size(), false))
+    return errors
+}
 
-    if (!stdout) {
-        // get the path relative to the current working directory with
-        // the file extension replaced with ".html"
-        val relHtmlPath = target.relativePathTo(fs.cwd()).toMutableList()
-        if (relHtmlPath.size > 0) {
-            relHtmlPath[relHtmlPath.size - 1] =
-                relHtmlPath[relHtmlPath.size - 1].replace(".math", ".html")
+private fun renderAll(fs: VirtualFileSystem, logger: Logger): List<ErrorResult> {
+    val uri =
+        Mathlingua.javaClass.getResource("/assets")?.toURI()?.toString()?.trim()
+            ?: throw Exception("Failed to load assets directory")
+    val index = uri.indexOf('!')
+    val uriPrefix =
+        if (index < 0) {
+            uri
+        } else {
+            uri.substring(0, index)
         }
-        val htmlPath = mutableListOf<String>()
-        htmlPath.add("docs")
-        htmlPath.addAll(relHtmlPath)
-        val outFile = fs.getFile(htmlPath)
-        val parentDir =
-            fs.getDirectory(htmlPath.filterIndexed { index, _ -> index < htmlPath.size - 1 })
-        parentDir.mkdirs()
-        outFile.writeText(text)
-        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())}")
+    val jarPath = uriPrefix.replace("jar:file:", "")
+
+    val docDir = File(getDocsDirectory(fs).absolutePath().joinToString(fs.getFileSeparator()))
+    docDir.mkdirs()
+
+    val jarTimestamp = File(jarPath).lastModified().toString()
+    val timestampFile = File(docDir, jarTimestamp)
+    if (!timestampFile.exists() || timestampFile.readText() != jarTimestamp) {
+        logger.log("Initial run detected. Saving webapp files to speed up future runs.")
+        timestampFile.writeText(jarTimestamp)
+
+        val jar = JarFile(jarPath)
+        for (entry in jar.entries()) {
+            if (!entry.toString().startsWith("assets/") || entry.toString() == "assets/") {
+                continue
+            }
+
+            val outFile = File(docDir, entry.name.replace("assets/", ""))
+            if (entry.isDirectory) {
+                outFile.mkdirs()
+            } else {
+                outFile.writeBytes(jar.getInputStream(entry).readAllBytes())
+            }
+        }
+        jar.close()
+
+        val indexFile = File(docDir, "index.html")
+        val indexText =
+            indexFile.readText().replace("<head>", "<head><script src=\"./data.js\"></script>")
+        indexFile.writeText(indexText)
     }
 
-    if (stdout) {
-        logger.log(text)
-    } else {
-        logger.log(getErrorOutput(fs, errors, sourceCollection.size(), false))
-    }
+    val decomp =
+        decompose(fs = fs, sourceCollection = buildSourceCollection(fs = fs), mlgFiles = null)
+    val data = Json.encodeToString(decomp)
 
-    return errors
-}
+    val dataFile = File(docDir, "data.js")
+    dataFile.writeText("window.MATHLINGUA_DATA = $data")
 
-private fun getRenderAllText(
-    fs: VirtualFileSystem, noExpand: Boolean
-): Triple<String, List<ValueSourceTracker<ParseError>>, String> {
-    val docsDir = getDocsDirectory(fs)
-    docsDir.mkdirs()
-
-    val contentDir = getContentDirectory(fs)
-    contentDir.mkdirs()
-
-    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-
-    val indexTest = getIndexFileText(fs, noExpand, errors)
-
-    val sourceCollection = newSourceCollection(fs, listOf(fs.cwd()))
-    val errorOutput = getErrorOutput(fs, errors, sourceCollection.size(), false)
-
-    return Triple(indexTest, errors, errorOutput)
-}
-
-private fun renderAll(
-    fs: VirtualFileSystem, logger: Logger, stdout: Boolean, noExpand: Boolean
-): List<ValueSourceTracker<ParseError>> {
-    val triple = getRenderAllText(fs, noExpand)
-    val indexFileText = triple.first
-    val errors = triple.second
-    val errorText = triple.third
-
-    if (!stdout) {
-        val indexFile = fs.getFile(listOf("docs", "index.html"))
-        indexFile.writeText(indexFileText)
-        logger.log(
-            "Wrote ${indexFile.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())}")
-    }
-
-    if (stdout) {
-        logger.log(indexFileText)
-    } else {
-        logger.log(errorText)
-    }
-
-    return errors
+    return decomp.collectionResult.errors
 }
 
 private fun findMathlinguaFiles(fileOrDir: VirtualFile, result: MutableList<VirtualFile>) {

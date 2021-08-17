@@ -1,12 +1,22 @@
+class TrieNode {
+  isWord: boolean;
+  readonly children: Map<string, TrieNode>;
+
+  constructor(isWord: boolean) {
+    this.isWord = isWord;
+    this.children = new Map();
+  }
+}
+
 export class AutoComplete {
   private root = new TrieNode(false);
 
   add(word: string) {
-    this.addToTrie(this.root, word, 0);
+    this.addToTrie(this.root, word.toLowerCase(), 0);
   }
 
   getSuffixes(prefix: string) {
-    return this.searchTrie(this.root, prefix);
+    return this.searchTrie(this.root, prefix.toLowerCase());
   }
 
   private addToTrie(trieNode: TrieNode, word: string, index: number) {
@@ -30,7 +40,7 @@ export class AutoComplete {
     this.addToTrie(subNode, word, index + 1);
   }
 
-  searchTrie(trieNode: TrieNode, word: string) {
+  private searchTrie(trieNode: TrieNode, word: string) {
     const node = this.findTrieLeaf(trieNode, word, 0);
     if (!node) {
       return [];
@@ -40,7 +50,7 @@ export class AutoComplete {
     return Array.from(result);
   }
 
-  findTrieLeaf(
+  private findTrieLeaf(
     trieNode: TrieNode,
     word: string,
     index: number
@@ -57,7 +67,7 @@ export class AutoComplete {
     return null;
   }
 
-  getWordsUnder(
+  private getWordsUnder(
     buffer: string,
     char: string,
     trieNode: TrieNode,
@@ -77,15 +87,5 @@ export class AutoComplete {
     }
 
     buffer = buffer.substring(0, buffer.length - 1);
-  }
-}
-
-class TrieNode {
-  isWord: boolean;
-  readonly children: Map<string, TrieNode>;
-
-  constructor(isWord: boolean) {
-    this.isWord = isWord;
-    this.children = new Map();
   }
 }

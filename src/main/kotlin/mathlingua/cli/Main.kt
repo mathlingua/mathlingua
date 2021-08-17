@@ -81,13 +81,6 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
             help =
                 "Specifies to not expand the contents of entries using the 'written' form of definitions")
         .flag()
-    private val stdout: Boolean by option(
-            help =
-                "If specified, the rendered content will be printed to standard " +
-                    "out.  Otherwise, it is written to a file in the `docs` directory with the same path as the " +
-                    "input file except for a '.html' extension if the FILE argument is specified.  Otherwise, the " +
-                    "content is written to an `index.html` file in the `docs` directory.")
-        .flag()
     private val raw: Boolean by option(
             help =
                 "If specified with a single file, the raw HTML will be rendered excluding any " +
@@ -149,7 +142,6 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
                             fs.getFileOrDirectory(file!!)
                         },
                     noexpand = noexpand,
-                    stdout = stdout,
                     raw = raw))
         }
     }

@@ -8,16 +8,17 @@ import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
 import { ErrorView } from '../error-view/ErrorView';
 import { isOnMobile } from '../../support/util';
 import { Link } from 'react-router-dom';
-import { useLocation } from 'react-router-dom';
 import { PathTreeItem, PathTreeNode } from '../path-tree-item/PathTreeItem';
+import {
+  selectViewedPath,
+  viewedPathUpdated,
+} from '../../store/viewedPathSlice';
 
 export const SidePanel = () => {
   const dispatch = useAppDispatch();
   const visible = useAppSelector(selectSidePanelVisible);
   const paths = useAppSelector(selectPaths);
-
-  const location = useLocation();
-  const viewedPath = location.pathname.substring(1);
+  const viewedPath = useAppSelector(selectViewedPath) || '';
 
   const [allPaths, setAllPaths] = useState([] as string[]);
   const [error, setError] = useState('');
@@ -72,6 +73,9 @@ export const SidePanel = () => {
               ? `${styles.sidePanelItem} ${styles.mathlinguaHomeItem} ${styles.mathlinguaListFileItem} ${styles.selected}`
               : `${styles.sidePanelItem} ${styles.mathlinguaHomeItem} ${styles.mathlinguaListFileItem}`
           }
+          onClick={() => {
+            dispatch(viewedPathUpdated(''));
+          }}
         >
           <div>Home</div>
         </Link>

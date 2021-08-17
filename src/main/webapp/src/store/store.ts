@@ -4,12 +4,14 @@ import thunkMiddleware from 'redux-thunk';
 
 import pathsReducer from './pathsSlice';
 import sidePanelVisibleReducer from './sidePanelVisibleSlice';
+import viewedPathReducer from './viewedPathSlice';
 import queryReducer from './querySlice';
 
 export const store = configureStore({
   reducer: {
     sidePanelVisible: sidePanelVisibleReducer,
     paths: pathsReducer,
+    viewedPath: viewedPathReducer,
     query: queryReducer,
   },
   middleware: [thunkMiddleware],

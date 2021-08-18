@@ -430,8 +430,14 @@ private fun renderAll(fs: VirtualFileSystem, logger: Logger): List<ErrorResult> 
     val docDir = File(getDocsDirectory(fs).absolutePath().joinToString(fs.getFileSeparator()))
     docDir.mkdirs()
 
+    val cnameFile = File("CNAME")
+    if (cnameFile.exists()) {
+        val docsCnameFile = File(docDir, "CNAME")
+        cnameFile.copyTo(target = docsCnameFile, overwrite = true)
+    }
+
     val jarTimestamp = File(jarPath).lastModified().toString()
-    val timestampFile = File(docDir, jarTimestamp)
+    val timestampFile = File(docDir, "timestamp")
     if (!timestampFile.exists() || timestampFile.readText() != jarTimestamp) {
         logger.log("Initial run detected. Saving webapp files to speed up future runs.")
         timestampFile.writeText(jarTimestamp)
@@ -497,7 +503,7 @@ class LockedValue<T> {
         }
 }
 
-private fun getHomeContentFile(fs: VirtualFileSystem) = fs.getFile(listOf("docs", "home.md"))
+private fun getHomeContentFile(fs: VirtualFileSystem) = fs.getFile(listOf("home.md"))
 
 private fun getHomeContent(fs: VirtualFileSystem): String {
     val homeContentFile = getHomeContentFile(fs)

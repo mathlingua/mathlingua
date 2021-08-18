@@ -5,11 +5,28 @@ import { Page } from './components/page/Page';
 import { SidePanel } from './components/side-panel/SidePanel';
 import { TopBar } from './components/topbar/TopBar';
 
-import { BrowserRouter as Router, Switch, Route } from 'react-router-dom';
+import { BrowserRouter, StaticRouter, Switch, Route } from 'react-router-dom';
+import { isStatic } from './services/api';
 
 export const App = () => {
+  if (isStatic()) {
+    return (
+      <StaticRouter>
+        <ErrorBoundary>
+          <TopBar />
+          <SidePanel />
+          <div className={styles.contentPanel}>
+            <Switch>
+              <Route path="/*" children={<Page />} />
+            </Switch>
+          </div>
+        </ErrorBoundary>
+      </StaticRouter>
+    );
+  }
+
   return (
-    <Router>
+    <BrowserRouter>
       <ErrorBoundary>
         <TopBar />
         <SidePanel />
@@ -19,7 +36,7 @@ export const App = () => {
           </Switch>
         </div>
       </ErrorBoundary>
-    </Router>
+    </BrowserRouter>
   );
 };
 

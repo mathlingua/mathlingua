@@ -159,6 +159,10 @@ function getClient(): ApiClient {
   return client;
 }
 
+export function isStatic() {
+  return !!(window as any).MATHLINGUA_DATA;
+}
+
 export async function getAllPaths(): Promise<string[]> {
   return getClient().getAllPaths();
 }

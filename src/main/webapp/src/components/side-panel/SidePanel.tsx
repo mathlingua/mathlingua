@@ -4,7 +4,10 @@ import { useEffect, useState } from 'react';
 import { pathsUpdated, selectPaths } from '../../store/pathsSlice';
 import * as api from '../../services/api';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
-import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
+import {
+  selectSidePanelVisible,
+  sidePanelVisibilityChanged,
+} from '../../store/sidePanelVisibleSlice';
 import { ErrorView } from '../error-view/ErrorView';
 import { isOnMobile } from '../../support/util';
 import { Link } from 'react-router-dom';
@@ -74,6 +77,9 @@ export const SidePanel = () => {
               : `${styles.sidePanelItem} ${styles.mathlinguaHomeItem} ${styles.mathlinguaListFileItem}`
           }
           onClick={() => {
+            if (isOnMobile()) {
+              dispatch(sidePanelVisibilityChanged(false));
+            }
             dispatch(viewedPathUpdated(''));
           }}
         >

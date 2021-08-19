@@ -9,6 +9,7 @@ import {
   selectViewedPath,
   viewedPathUpdated,
 } from '../../store/viewedPathSlice';
+import { selectIsEditMode } from '../../store/isEditModeSlice';
 
 export interface PathTreeNode {
   name: string;
@@ -25,6 +26,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
   const dispatch = useAppDispatch();
   const [isExpanded, setIsExpanded] = useState(false);
   const viewedPath = useAppSelector(selectViewedPath) || '';
+  const isEditMode = useAppSelector(selectIsEditMode);
 
   if (props.node.isDir) {
     return (
@@ -62,7 +64,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             : styles.link
         }
         onClick={() => {
-          if (isOnMobile()) {
+          if (isEditMode || isOnMobile()) {
             dispatch(sidePanelVisibilityChanged(false));
           }
           dispatch(viewedPathUpdated(props.node.path));

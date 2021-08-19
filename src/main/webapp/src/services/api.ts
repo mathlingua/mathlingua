@@ -15,6 +15,7 @@ export interface FileResult {
   relativePath: string;
   content: string;
   entities: EntityResult[];
+  errors: ErrorResult[];
 }
 
 export interface ErrorResult {
@@ -32,6 +33,17 @@ export interface CollectionResult {
 export interface DecompositionResult {
   homeHtml: string;
   collectionResult: CollectionResult;
+}
+
+export interface CheckResponse {
+  errors: CheckError[];
+}
+
+export interface CheckError {
+  path: string;
+  message: string;
+  row: number;
+  column: number;
 }
 
 interface ApiClient {
@@ -189,4 +201,16 @@ export async function getEntityWithSignature(
   signature: string
 ): Promise<EntityResult | undefined> {
   return getClient().getEntityWithSignature(signature);
+}
+
+export async function writeFileResult(path: string, content: string) {
+  await axios.put('/api/writePage', {
+    path,
+    content,
+  });
+}
+
+export async function check(): Promise<CheckResponse> {
+  const res = await axios.get('/api/check');
+  return res.data;
 }

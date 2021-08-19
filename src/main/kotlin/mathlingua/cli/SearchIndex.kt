@@ -26,15 +26,20 @@ data class SearchIndex(val fs: VirtualFileSystem) {
     }
 
     fun remove(path: List<String>) {
+        val keysToRemove = mutableListOf<String>()
         for (word in searchIndex.keys) {
             val key = word.lowercase()
             val pathSet = searchIndex[key]
             if (pathSet != null) {
                 pathSet.remove(path)
                 if (pathSet.isEmpty()) {
-                    searchIndex.remove(key)
+                    keysToRemove.add(key)
                 }
             }
+        }
+
+        for (key in keysToRemove) {
+            searchIndex.remove(key)
         }
     }
 

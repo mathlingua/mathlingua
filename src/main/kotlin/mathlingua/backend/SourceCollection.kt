@@ -25,6 +25,7 @@ import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
 import mathlingua.cli.AutoComplete
+import mathlingua.cli.ErrorResult
 import mathlingua.cli.SearchIndex
 import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileSystem
@@ -157,7 +158,10 @@ data class EntityResult(
 
 @Serializable
 data class FileResult(
-    val relativePath: String, val content: String, val entities: List<EntityResult>)
+    val relativePath: String,
+    val content: String,
+    val entities: List<EntityResult>,
+    val errors: List<ErrorResult>)
 
 fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResult {
     val renderedHtml =
@@ -178,9 +182,10 @@ fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResu
         words = getAllWords(this).toList())
 }
 
-fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceCollection) =
-    FileResult(
-        relativePath = this.file.relativePathTo(fs.cwd()).joinToString("/"),
+fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceCollection): FileResult {
+    val relativePath = this.file.relativePathTo(fs.cwd()).joinToString("/")
+    return FileResult(
+        relativePath = relativePath,
         content = this.content,
         entities =
             when (val validation = this.validation
@@ -192,7 +197,24 @@ fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceColle
                 else -> {
                     emptyList()
                 }
+            },
+        errors =
+            when (val validation = this.validation
+            ) {
+                is ValidationFailure -> {
+                    validation.errors.map {
+                        ErrorResult(
+                            relativePath = relativePath,
+                            message = it.message,
+                            row = it.row,
+                            column = it.column)
+                    }
+                }
+                else -> {
+                    emptyList()
+                }
             })
+}
 
 data class Normalized<T>(val original: T, val normalized: T)
 

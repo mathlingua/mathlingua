@@ -16,12 +16,14 @@ import {
   selectViewedPath,
   viewedPathUpdated,
 } from '../../store/viewedPathSlice';
+import { selectIsEditMode } from '../../store/isEditModeSlice';
 
 export const SidePanel = () => {
   const dispatch = useAppDispatch();
   const visible = useAppSelector(selectSidePanelVisible);
   const paths = useAppSelector(selectPaths);
   const viewedPath = useAppSelector(selectViewedPath) || '';
+  const isEditMode = useAppSelector(selectIsEditMode);
 
   const [allPaths, setAllPaths] = useState([] as string[]);
   const [error, setError] = useState('');
@@ -77,7 +79,7 @@ export const SidePanel = () => {
               : `${styles.sidePanelItem} ${styles.mathlinguaHomeItem} ${styles.mathlinguaListFileItem}`
           }
           onClick={() => {
-            if (isOnMobile()) {
+            if (isEditMode || isOnMobile()) {
               dispatch(sidePanelVisibilityChanged(false));
             }
             dispatch(viewedPathUpdated(''));

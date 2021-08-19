@@ -154,106 +154,158 @@ object Mathlingua {
         app.config.addStaticFiles("/assets")
         // redirect 404s to / to allow client side routing
         app.error(404) { ctx -> ctx.redirect(ctx.path()) }
-        app.before("/") {
-            logger.log("Re-analyzing the MathLingua code.")
-            // invalidate the source collection and regenerate it
-            sourceCollection = null
-            getSourceCollection()
+        app.before("/") { ctx ->
+            try {
+                logger.log("Re-analyzing the MathLingua code.")
+                // invalidate the source collection and regenerate it
+                sourceCollection = null
+                getSourceCollection()
+            } catch (err: Exception) {
+                err.printStackTrace()
+                ctx.status(500)
+            }
         }
         app
             .routes {}
             .put("/api/writePage") { ctx ->
-                val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
-                logger.log("Writing page ${pathAndContent.path}")
-                val file = fs.getFileOrDirectory(pathAndContent.path)
-                file.writeText(pathAndContent.content)
-                val newSource = buildSourceFile(file)
-                val page = getSourceCollection().getPage(pathAndContent.path)
-                if (page != null) {
-                    getSourceCollection().removeSource(page.sourceFile)
+                try {
+                    val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
+                    logger.log("Writing page ${pathAndContent.path}")
+                    val file = fs.getFileOrDirectory(pathAndContent.path)
+                    file.writeText(pathAndContent.content)
+                    val newSource = buildSourceFile(file)
+                    val page = getSourceCollection().getPage(pathAndContent.path)
+                    if (page != null) {
+                        getSourceCollection().removeSource(page.sourceFile)
+                    }
+                    getSourceCollection().addSource(newSource)
+                    ctx.status(200)
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
                 }
-                getSourceCollection().addSource(newSource)
-                ctx.status(200)
             }
             .get("/api/readPage") { ctx ->
-                val path = ctx.queryParam("path", null)
-                logger.log("Reading page $path")
-                if (path == null) {
-                    ctx.status(400)
-                } else {
-                    val file = fs.getFileOrDirectory(path)
-                    val content = file.readText()
-                    ctx.json(ReadPageResponse(content = content))
+                try {
+                    val path = ctx.queryParam("path", null)
+                    logger.log("Reading page $path")
+                    if (path == null) {
+                        ctx.status(400)
+                    } else {
+                        val file = fs.getFileOrDirectory(path)
+                        val content = file.readText()
+                        ctx.json(ReadPageResponse(content = content))
+                    }
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
                 }
             }
             .get("/api/fileResult") { ctx ->
-                val path = ctx.queryParam("path", null)
-                logger.log("Getting file result for $path")
-                if (path == null) {
-                    ctx.status(400)
-                } else {
-                    val page = getSourceCollection().getPage(path)
-                    if (page == null) {
-                        ctx.status(404)
+                try {
+                    val path = ctx.queryParam("path", null)
+                    logger.log("Getting file result for $path")
+                    if (path == null) {
+                        ctx.status(400)
                     } else {
-                        ctx.json(page.fileResult)
+                        val page = getSourceCollection().getPage(path)
+                        if (page == null) {
+                            ctx.status(404)
+                        } else {
+                            ctx.json(page.fileResult)
+                        }
                     }
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
                 }
             }
             .get("/api/check") { ctx ->
-                logger.log("Checking")
-                ctx.json(
-                    CheckResponse(
-                        errors =
-                            BackEnd.check(getSourceCollection()).map {
-                                CheckError(
-                                    path =
-                                        it.source
-                                            .file
-                                            .relativePathTo(fs.cwd())
-                                            .joinToString(fs.getFileSeparator()),
-                                    message = it.value.message,
-                                    row = it.value.row,
-                                    column = it.value.column)
-                            }))
+                try {
+                    logger.log("Checking")
+                    ctx.json(
+                        CheckResponse(
+                            errors =
+                                BackEnd.check(getSourceCollection()).map {
+                                    CheckError(
+                                        path =
+                                            it.source
+                                                .file
+                                                .relativePathTo(fs.cwd())
+                                                .joinToString(fs.getFileSeparator()),
+                                        message = it.value.message,
+                                        row = it.value.row,
+                                        column = it.value.column)
+                                }))
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
             }
             .get("/api/allPaths") { ctx ->
-                logger.log("Getting all paths")
-                ctx.json(AllPathsResponse(paths = getSourceCollection().getAllPaths()))
+                try {
+                    logger.log("Getting all paths")
+                    ctx.json(AllPathsResponse(paths = getSourceCollection().getAllPaths()))
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
             }
             .get("/api/home") { ctx ->
-                logger.log("Getting home content")
-                ctx.json(HomeResponse(homeHtml = getHomeContent(fs)))
+                try {
+                    logger.log("Getting home content")
+                    ctx.json(HomeResponse(homeHtml = getHomeContent(fs)))
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
             }
             .get("/api/withSignature") { ctx ->
-                val signature = ctx.queryParam("signature", null)
-                logger.log("Getting entity with signature '${signature}'")
-                if (signature == null) {
-                    ctx.status(400)
-                } else {
-                    val entityResult = getSourceCollection().getWithSignature(signature)
-                    if (entityResult == null) {
-                        ctx.status(404)
+                try {
+                    val signature = ctx.queryParam("signature", null)
+                    logger.log("Getting entity with signature '${signature}'")
+                    if (signature == null) {
+                        ctx.status(400)
                     } else {
-                        ctx.json(entityResult)
+                        val entityResult = getSourceCollection().getWithSignature(signature)
+                        if (entityResult == null) {
+                            ctx.status(404)
+                        } else {
+                            ctx.json(entityResult)
+                        }
                     }
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
                 }
             }
             .get("/api/search") { ctx ->
-                val query = ctx.queryParam("query") ?: ""
-                logger.log("Searching with query '$query'")
-                ctx.json(
-                    SearchResponse(
-                        paths =
-                            getSourceCollection().search(query).map {
-                                it.file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
-                            }))
+                try {
+                    val query = ctx.queryParam("query") ?: ""
+                    logger.log("Searching with query '$query'")
+                    ctx.json(
+                        SearchResponse(
+                            paths =
+                                getSourceCollection().search(query).map {
+                                    it.file
+                                        .relativePathTo(fs.cwd())
+                                        .joinToString(fs.getFileSeparator())
+                                }))
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
             }
             .get("/api/completeWord") { ctx ->
-                val word = ctx.queryParam("word") ?: ""
-                logger.log("Getting completions for word '$word'")
-                val suffixes = getSourceCollection().findSuffixesFor(word)
-                ctx.json(CompleteWordResponse(suffixes = suffixes))
+                try {
+                    val word = ctx.queryParam("word") ?: ""
+                    logger.log("Getting completions for word '$word'")
+                    val suffixes = getSourceCollection().findSuffixesFor(word)
+                    ctx.json(CompleteWordResponse(suffixes = suffixes))
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
             }
             .get("/api/*") { ctx -> ctx.status(400) }
     }
@@ -946,12 +998,15 @@ private fun decompose(
     val fileResults = mutableListOf<FileResult>()
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
     for (f in resolvedMlgFiles) {
+        val fErrors = mutableListOf<ValueSourceTracker<ParseError>>()
         val elements =
             getCompleteRenderedTopLevelElements(
-                f = f, sourceCollection = sourceCollection, noexpand = false, errors = errors)
+                f = f, sourceCollection = sourceCollection, noexpand = false, errors = fErrors)
+        errors.addAll(fErrors)
+        val relativePath = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
         fileResults.add(
             FileResult(
-                relativePath = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()),
+                relativePath = relativePath,
                 content = sanitizeHtmlForJs(f.readText()),
                 entities =
                     elements.map {
@@ -967,6 +1022,14 @@ private fun decompose(
                                 } else {
                                     emptyList()
                                 })
+                    },
+                errors =
+                    fErrors.filter { it.source.file == f }.map {
+                        ErrorResult(
+                            relativePath = relativePath,
+                            message = it.value.message,
+                            row = it.value.row,
+                            column = it.value.column)
                     }))
     }
     return DecompositionResult(

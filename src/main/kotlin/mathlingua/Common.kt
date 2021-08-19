@@ -247,7 +247,7 @@ class MutableMultiSet<T> {
 
     fun remove(value: T) {
         if (data.containsKey(value)) {
-            val newCount = data[value]!! - 1
+            val newCount = data.getOrDefault(value, 1) - 1
             data[value] = newCount
             if (newCount <= 0) {
                 data.remove(value)

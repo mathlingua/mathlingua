@@ -122,9 +122,9 @@ export const Page = () => {
 
   const renderedContent = (
     <div>
-      <div style={{ paddingLeft: '1.25em', fontSize: '120%' }}>
+      <div className={styles.errorView}>
         {fileResult?.errors.map((error) => (
-          <div style={{ color: 'darkred' }}>
+          <div className={styles.errorItem}>
             {`ERROR (${error.row + 1}, ${error.column + 1}):`}
             <pre>{error.message}</pre>
           </div>
@@ -183,32 +183,10 @@ export const Page = () => {
   );
 
   const sideBySideView = (
-    <div className={styles.mathlinguaPage} style={{ width: '95%', padding: 0 }}>
-      <div
-        style={{
-          display: 'flex',
-        }}
-      >
-        <div
-          style={{
-            flex: '1 1 0px',
-          }}
-        >
-          {editorView}
-        </div>
-        <div
-          style={{
-            flex: '1 1 0px',
-            maxHeight: '90vh',
-            overflow: 'auto',
-            borderLeft: 'solid',
-            borderColor: '#eeeeee',
-            borderWidth: '1px',
-            paddingTop: '1.5em',
-          }}
-        >
-          {renderedContent}
-        </div>
+    <div className={styles.mathlinguaPage + ' ' + styles.sideBySideView}>
+      <div className={styles.splitViewContainer}>
+        <div className={styles.splitViewEditor}>{editorView}</div>
+        <div className={styles.splitViewRendered}>{renderedContent}</div>
       </div>
     </div>
   );

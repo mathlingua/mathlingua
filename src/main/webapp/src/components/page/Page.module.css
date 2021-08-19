@@ -24,6 +24,38 @@
   }
 }
 
+.sideBySideView {
+  width: 95%;
+  padding: 0;
+}
+
+.splitViewContainer {
+  display: flex;
+}
+
+.splitViewEditor {
+  flex: 1 1 0px;
+}
+
+.splitViewRendered {
+  flex: 1 1 0px;
+  max-height: 90vh;
+  overflow: auto;
+  border-left: solid;
+  border-color: #eeeeee;
+  border-width: 1px;
+  padding-top: 1.5em;
+}
+
+.errorView {
+  padding-left: 1.25em;
+  font-size: 120%;
+}
+
+.errorItem {
+  color: darkred;
+}
+
 mark {
   background-color: inherit;
   color: inherit;

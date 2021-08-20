@@ -30,7 +30,7 @@ export const SidePanel = () => {
   const [pathData, setPathData] = useState({
     name: '',
     isDir: true,
-    path: undefined,
+    path: '',
     children: [],
   } as PathTreeNode);
 
@@ -67,6 +67,9 @@ export const SidePanel = () => {
         width: '0',
       };
 
+  // if in editing mode show the 'content' directory
+  const start = isEditMode ? pathData : pathData.children[0];
+
   const sidePanel = (
     <div style={style} className={styles.sidePanel}>
       <div className={styles.sidePanelContent}>
@@ -88,7 +91,7 @@ export const SidePanel = () => {
           <div>Home</div>
         </Link>
         <hr />
-        {pathData.children[0]?.children?.map((node) => (
+        {start?.children?.map((node) => (
           <PathTreeItem key={node.name} node={node} />
         ))}
       </div>
@@ -102,7 +105,7 @@ function allPathsToTreeNode(allPaths: string[]): PathTreeNode {
   const root: PathTreeNode = {
     name: '',
     isDir: true,
-    path: undefined,
+    path: '',
     children: [],
   };
   for (const path of allPaths) {
@@ -124,7 +127,7 @@ function populateTreeNode(root: PathTreeNode, path: string) {
       const newChild: PathTreeNode = {
         name: p,
         isDir,
-        path: isDir ? undefined : path,
+        path: parts.slice(0, i + 1).join('/'),
         children: [],
       };
       cur.children.push(newChild);

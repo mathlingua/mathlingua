@@ -18,6 +18,8 @@ package mathlingua.cli
 
 import io.javalin.Javalin
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.util.jar.JarFile
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
@@ -72,6 +74,24 @@ private fun red(text: String) = "\u001B[31m$text\u001B[0m"
 
 @Suppress("UNUSED")
 private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
+
+private fun findSourcesUnder(dir: VirtualFile): List<VirtualFile> {
+    val result = mutableListOf<VirtualFile>()
+    findSourcesUnderImpl(dir, result)
+    return result
+}
+
+private fun findSourcesUnderImpl(dir: VirtualFile, result: MutableList<VirtualFile>) {
+    if (dir.isDirectory()) {
+        for (child in dir.listFiles()) {
+            if (child.isDirectory()) {
+                findSourcesUnderImpl(child, result)
+            } else {
+                result.add(child)
+            }
+        }
+    }
+}
 
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {
@@ -174,10 +194,7 @@ object Mathlingua {
                     val file = fs.getFileOrDirectory(pathAndContent.path)
                     file.writeText(pathAndContent.content)
                     val newSource = buildSourceFile(file)
-                    val page = getSourceCollection().getPage(pathAndContent.path)
-                    if (page != null) {
-                        getSourceCollection().removeSource(page.sourceFile)
-                    }
+                    getSourceCollection().removeSource(pathAndContent.path)
                     getSourceCollection().addSource(newSource)
                     ctx.status(200)
                 } catch (err: Exception) {
@@ -215,6 +232,91 @@ object Mathlingua {
                             ctx.json(page.fileResult)
                         }
                     }
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
+            .post("/api/deleteDir") { ctx ->
+                try {
+                    val data = ctx.bodyAsClass(DeleteDirRequest::class.java)
+                    logger.log("Deleting directory ${data.path}")
+                    Paths.get(data.path).toFile().deleteRecursively()
+                    sourceCollection = null
+                    getSourceCollection()
+                    ctx.status(200)
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
+            .post("/api/deleteFile") { ctx ->
+                try {
+                    val data = ctx.bodyAsClass(DeleteFileRequest::class.java)
+                    logger.log("Deleting file ${data.path}")
+                    Paths.get(data.path).toFile().delete()
+                    sourceCollection = null
+                    getSourceCollection()
+                    ctx.status(200)
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
+            .post("/api/renameDir") { ctx ->
+                try {
+                    val data = ctx.bodyAsClass(RenameDirRequest::class.java)
+                    logger.log("Renaming directory ${data.fromPath} to ${data.toPath}")
+                    val from = Paths.get(data.fromPath)
+                    val to = Paths.get(data.toPath)
+                    Files.move(from, to)
+                    sourceCollection = null
+                    getSourceCollection()
+                    ctx.status(200)
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
+            .post("/api/renameFile") { ctx ->
+                try {
+                    val data = ctx.bodyAsClass(RenameFileRequest::class.java)
+                    logger.log("Renaming file ${data.fromPath} to ${data.toPath}")
+                    val from = Paths.get(data.fromPath)
+                    val to = Paths.get(data.toPath)
+                    Files.move(from, to)
+                    sourceCollection = null
+                    getSourceCollection()
+                    ctx.status(200)
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
+            .post("/api/newDir") { ctx ->
+                try {
+                    val data = ctx.bodyAsClass(NewDirRequest::class.java)
+                    logger.log("Creating new directory ${data.path}")
+                    val dir = Paths.get(data.path).toFile()
+                    dir.mkdirs()
+                    val newFile = File(dir, "Untitled.math")
+                    newFile.writeText("::\n::")
+                    sourceCollection = null
+                    getSourceCollection()
+                    ctx.status(200)
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
+            .post("/api/newFile") { ctx ->
+                try {
+                    val data = ctx.bodyAsClass(NewFileRequest::class.java)
+                    logger.log("Creating new file ${data.path}")
+                    Paths.get(data.path).toFile().writeText("::\n::")
+                    sourceCollection = null
+                    getSourceCollection()
+                    ctx.status(200)
                 } catch (err: Exception) {
                     err.printStackTrace()
                     ctx.status(500)
@@ -316,6 +418,18 @@ object Mathlingua {
                 decompose(fs = fs, sourceCollection = buildSourceCollection(fs), mlgFiles = null)))
     }
 }
+
+@Serializable data class DeleteDirRequest(val path: String)
+
+@Serializable data class DeleteFileRequest(val path: String)
+
+@Serializable data class RenameDirRequest(val fromPath: String, val toPath: String)
+
+@Serializable data class RenameFileRequest(val fromPath: String, val toPath: String)
+
+@Serializable data class NewDirRequest(val path: String)
+
+@Serializable data class NewFileRequest(val path: String)
 
 @Serializable data class ReadPageRequest(val path: String)
 

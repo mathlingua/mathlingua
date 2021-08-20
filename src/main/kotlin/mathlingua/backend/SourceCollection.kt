@@ -125,7 +125,7 @@ interface SourceCollection {
     fun getPage(path: String): Page?
     fun getWithSignature(signature: String): EntityResult?
     fun addSource(sf: SourceFile)
-    fun removeSource(sf: SourceFile)
+    fun removeSource(path: String)
     fun findSuffixesFor(word: String): List<String>
     fun search(query: String): List<SourceFile>
 }
@@ -279,9 +279,11 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
         return signatureToTopLevelGroup[signature]?.toEntityResult(this)
     }
 
-    override fun removeSource(sf: SourceFile) {
+    override fun removeSource(path: String) {
         sourceFileToFileResult.clear()
-        searchIndex.remove(sf.file.relativePathTo(fs.cwd()))
+        val relPath = path.split(fs.getFileSeparator())
+        searchIndex.remove(relPath)
+        val sf = buildSourceFile(fs.getFile(relPath))
         when (val validation = sf.validation
         ) {
             is ValidationSuccess -> {

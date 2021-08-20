@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './PathTreeItem.module.css';
 
@@ -10,13 +10,17 @@ import {
   viewedPathUpdated,
 } from '../../store/viewedPathSlice';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
-import { selectErrorResults } from '../../store/errorResultsSlice';
-import { ErrorResult } from '../../services/api';
+import {
+  errorResultsUpdated,
+  selectErrorResults,
+} from '../../store/errorResultsSlice';
+import * as api from '../../services/api';
+import { pathsUpdated } from '../../store/pathsSlice';
 
 export interface PathTreeNode {
   name: string;
   isDir: boolean;
-  path?: string;
+  path: string;
   children: PathTreeNode[];
 }
 
@@ -30,10 +34,32 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
   const viewedPath = useAppSelector(selectViewedPath) || '';
   const isEditMode = useAppSelector(selectIsEditMode);
   const allErrorResults = useAppSelector(selectErrorResults);
+  const [inputName, setInputName] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
-  const getAllErrorsFor = (node: PathTreeNode, allErrors: ErrorResult[]) => {
+  const reloadAllPaths = async () => {
+    const allPaths = await api.getAllPaths();
+    dispatch(pathsUpdated(allPaths));
+    const res = await api.check();
+    dispatch(
+      errorResultsUpdated(
+        res.errors.map((err) => ({
+          row: err.row,
+          column: err.column,
+          message: err.message,
+          relativePath: err.path,
+        }))
+      )
+    );
+  };
+
+  const getAllErrorsFor = (
+    node: PathTreeNode,
+    allErrors: api.ErrorResult[]
+  ) => {
     if (node.isDir) {
-      let result: ErrorResult[] = [];
+      let result: api.ErrorResult[] = [];
       for (const child of node.children) {
         result = result.concat(getAllErrorsFor(child, allErrors));
       }
@@ -43,7 +69,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
     return allErrorResults.filter((err) => err.relativePath === node.path);
   };
 
-  const getErrorStats = (allErrorResults: ErrorResult[]) => {
+  const getErrorStats = (allErrorResults: api.ErrorResult[]) => {
     const thisErrorResults = getAllErrorsFor(props.node, allErrorResults);
     if (!isEditMode || thisErrorResults.length === 0) {
       return null;
@@ -55,6 +81,133 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
         ({thisErrorResults.length} {title})
       </span>
     );
+  };
+
+  const name = props.node.name.replace('.math', '').replace('_', ' ');
+
+  const updateInputName = async () => {
+    if (!inputName || (!props.node.isDir && !inputName.endsWith('.math'))) {
+      alert(
+        `The new filename must be non-empty and end in .math but found '${inputName}'`
+      );
+      return;
+    }
+    const newPathParts = props.node.path.split('/');
+    newPathParts.pop(); // pop the end
+    newPathParts.push(inputName); // append the new name
+    const newPath = newPathParts.join('/');
+    if (props.node.isDir) {
+      await api.renameDir(props.node.path, newPath);
+      await reloadAllPaths();
+    } else {
+      await api.renameFile(props.node.path, newPath);
+      await reloadAllPaths();
+    }
+  };
+
+  const onSubmit = (event: any) => {
+    event.preventDefault();
+    updateInputName();
+  };
+
+  const getEditButtons = () => {
+    return isEditMode ? (
+      <span>
+        <button
+          className={styles.button}
+          style={{
+            display:
+              props.node.path !== 'content' && !isEditing && !isDeleting
+                ? 'inline'
+                : 'none',
+          }}
+          onClick={() => {
+            setIsEditing(true);
+            setIsDeleting(false);
+          }}
+        >
+          Edit
+        </button>
+        {props.node.isDir && !isEditing && !isDeleting ? (
+          <button
+            className={styles.button}
+            onClick={async () => {
+              const newPath = props.node.path
+                .split('/')
+                .concat('Untitled.math')
+                .join('/');
+              await api.newFile(newPath);
+              setIsExpanded(true);
+              await reloadAllPaths();
+            }}
+          >
+            New File
+          </button>
+        ) : null}
+        {props.node.isDir && !isEditing && !isDeleting ? (
+          <button
+            className={styles.button}
+            onClick={async () => {
+              const newPath = props.node.path
+                .split('/')
+                .concat('Untitled')
+                .join('/');
+              await api.newDir(newPath);
+              setIsExpanded(true);
+              await reloadAllPaths();
+            }}
+          >
+            New Dir
+          </button>
+        ) : null}
+        <button
+          className={styles.button}
+          style={{ display: isEditing || isDeleting ? 'inline' : 'none' }}
+          onClick={async () => {
+            if (isEditing) {
+              await updateInputName();
+            } else {
+              if (props.node.isDir) {
+                await api.deleteDir(props.node.path);
+                await reloadAllPaths();
+              } else {
+                await api.deleteFile(props.node.path);
+                await reloadAllPaths();
+              }
+            }
+            setIsEditing(false);
+            setIsDeleting(false);
+          }}
+        >
+          {isDeleting ? 'Confirm' : 'Accept'}
+        </button>
+        <button
+          className={styles.button}
+          style={{ display: isEditing || isDeleting ? 'inline' : 'none' }}
+          onClick={() => {
+            setIsEditing(false);
+            setIsDeleting(false);
+          }}
+        >
+          Cancel
+        </button>
+        <button
+          className={styles.button}
+          style={{
+            display:
+              props.node.path !== 'content' && !isEditing && !isDeleting
+                ? 'inline'
+                : 'none',
+          }}
+          onClick={() => {
+            setIsDeleting(true);
+            setIsEditing(false);
+          }}
+        >
+          Delete
+        </button>
+      </span>
+    ) : null;
   };
 
   if (props.node.isDir) {
@@ -69,8 +222,22 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
           ) : (
             <button className={styles.triangle}>&#9656;</button>
           )}
-          {props.node.name.replace('_', ' ')}
-          {getErrorStats(allErrorResults)}
+          {isEditing ? (
+            <form onSubmit={onSubmit}>
+              <input
+                className={styles.input}
+                type="text"
+                placeholder={props.node.name}
+                onChange={(event) => setInputName(event.target.value)}
+              ></input>
+            </form>
+          ) : (
+            <span>
+              {name}
+              {getErrorStats(allErrorResults)}
+            </span>
+          )}
+          {getEditButtons()}
         </li>
         {isExpanded ? (
           <ul>
@@ -85,24 +252,36 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
 
   return (
     <li className={styles.mathlinguaListFileItem + ' ' + styles.sidePanelItem}>
-      <Link
-        to={`/${props.node.path}`}
-        key={props.node.name}
-        className={
-          viewedPath === props.node.path
-            ? `${styles.link} ${styles.selected}`
-            : styles.link
-        }
-        onClick={() => {
-          if (isOnMobile()) {
-            dispatch(sidePanelVisibilityChanged(false));
+      {isEditing ? (
+        <form onSubmit={onSubmit}>
+          <input
+            className={styles.input}
+            type="text"
+            placeholder={props.node.name}
+            onChange={(event) => setInputName(event.target.value)}
+          ></input>
+        </form>
+      ) : (
+        <Link
+          to={`/${props.node.path}`}
+          key={props.node.name}
+          className={
+            viewedPath === props.node.path
+              ? `${styles.link} ${styles.selected}`
+              : styles.link
           }
-          dispatch(viewedPathUpdated(props.node.path));
-        }}
-      >
-        {props.node.name.replace('.math', '').replace('_', ' ')}
-        {getErrorStats(allErrorResults)}
-      </Link>
+          onClick={() => {
+            if (isOnMobile()) {
+              dispatch(sidePanelVisibilityChanged(false));
+            }
+            dispatch(viewedPathUpdated(props.node.path));
+          }}
+        >
+          {name}
+          {getErrorStats(allErrorResults)}
+        </Link>
+      )}
+      {getEditButtons()}
     </li>
   );
 };

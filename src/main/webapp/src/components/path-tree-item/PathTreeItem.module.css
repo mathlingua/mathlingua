@@ -53,3 +53,18 @@ li {
 .errorStats {
   color: darkred;
 }
+
+.button {
+  border: solid;
+  border-width: 1px;
+  border-color: #cccccc;
+  background: none;
+  margin-left: 1ex;
+  font-family: Georgia, 'Times New Roman', Times, serif;
+}
+
+.input {
+  border: solid;
+  border-width: 1px;
+  border-color: #cccccc;
+}

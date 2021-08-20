@@ -214,3 +214,47 @@ export async function check(): Promise<CheckResponse> {
   const res = await axios.get('/api/check');
   return res.data;
 }
+
+export async function deleteDir(path: string): Promise<void> {
+  await axios.post('/api/deleteDir', {
+    path,
+  });
+}
+
+export async function deleteFile(path: string): Promise<void> {
+  await axios.post('/api/deleteFile', {
+    path,
+  });
+}
+
+export async function renameDir(
+  fromPath: string,
+  toPath: string
+): Promise<void> {
+  await axios.post('/api/renameDir', {
+    fromPath,
+    toPath,
+  });
+}
+
+export async function renameFile(
+  fromPath: string,
+  toPath: string
+): Promise<void> {
+  await axios.post('/api/renameFile', {
+    fromPath,
+    toPath,
+  });
+}
+
+export async function newDir(path: string): Promise<void> {
+  await axios.post('/api/newDir', {
+    path,
+  });
+}
+
+export async function newFile(path: string): Promise<void> {
+  await axios.post('/api/newFile', {
+    path,
+  });
+}

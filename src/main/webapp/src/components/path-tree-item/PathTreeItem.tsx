@@ -94,7 +94,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             : styles.link
         }
         onClick={() => {
-          if (isEditMode || isOnMobile()) {
+          if (isOnMobile()) {
             dispatch(sidePanelVisibilityChanged(false));
           }
           dispatch(viewedPathUpdated(props.node.path));

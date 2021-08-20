@@ -23,6 +23,8 @@ import {
   errorResultsUpdated,
   selectErrorResults,
 } from '../../store/errorResultsSlice';
+import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
+import { isOnMobile } from '../../support/util';
 
 interface Annotation {
   row: number;
@@ -49,6 +51,8 @@ export const Page = () => {
   const [editorContent, setEditorContent] = useState('');
 
   const isEditMode = useAppSelector(selectIsEditMode);
+
+  const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
 
   const checkForErrors = async () => {
     const res = await api.check();
@@ -208,5 +212,16 @@ export const Page = () => {
   );
 
   const contentView = isEditMode ? sideBySideView : pageView;
-  return <div ref={ref}>{error ? errorView : contentView}</div>;
+  return (
+    <div
+      ref={ref}
+      style={{
+        transition: '0.2s',
+        paddingLeft:
+          isEditMode && !isOnMobile() && isSidePanelVisible ? '15em' : '0',
+      }}
+    >
+      {error ? errorView : contentView}
+    </div>
+  );
 };

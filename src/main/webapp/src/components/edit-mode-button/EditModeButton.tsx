@@ -18,9 +18,6 @@ export const EditModeButton = () => {
       onClick={async () => {
         const newEditMode = !isEditMode;
         dispatch(isEditModeUpdated(newEditMode));
-        if (newEditMode) {
-          dispatch(sidePanelVisibilityChanged(false));
-        }
         const res = await check();
         dispatch(
           errorResultsUpdated(

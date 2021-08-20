@@ -79,7 +79,7 @@ export const SidePanel = () => {
               : `${styles.sidePanelItem} ${styles.mathlinguaHomeItem} ${styles.mathlinguaListFileItem}`
           }
           onClick={() => {
-            if (isEditMode || isOnMobile()) {
+            if (isOnMobile()) {
               dispatch(sidePanelVisibilityChanged(false));
             }
             dispatch(viewedPathUpdated(''));

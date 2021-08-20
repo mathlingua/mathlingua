@@ -2,6 +2,9 @@ import { EntityResult } from '../../services/api';
 import { TopLevelEntry } from '../top-level-entry/TopLevelEntry';
 import styles from './EntitiesPanel.module.css';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+
 export interface EntitiesPanelProps {
   entities: EntityResult[];
   onViewEntity?: (entity: EntityResult) => void;
@@ -26,7 +29,7 @@ export const EntitiesPanel = (props: EntitiesPanelProps) => {
             }
           }}
         >
-          &#x2715;
+          <FontAwesomeIcon icon={faTimes} />
         </button>
         {props.entities.map((entityResult) => (
           <span key={entityResult.id} className={styles.entitiesPanelItem}>

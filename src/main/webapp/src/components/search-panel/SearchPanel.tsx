@@ -8,6 +8,9 @@ import { useDispatch } from 'react-redux';
 import { queryUpdated } from '../../store/querySlice';
 import { sidePanelVisibilityChanged } from '../../store/sidePanelVisibleSlice';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch, faTimes } from '@fortawesome/free-solid-svg-icons';
+
 interface Suggestion {
   complete: string;
   suffix: string;
@@ -129,13 +132,17 @@ export const SearchPanel = () => {
       />
       <button
         type="button"
-        className={styles.button}
+        className={styles.searchButton}
         onClick={() => search(query)}
       >
-        Search
+        <FontAwesomeIcon icon={faSearch} />
       </button>
-      <button type="button" className={styles.button} onClick={clearSearch}>
-        Reset
+      <button
+        type="button"
+        className={styles.clearButton}
+        onClick={clearSearch}
+      >
+        <FontAwesomeIcon icon={faTimes} />
       </button>
       <div
         ref={ref}

@@ -7,7 +7,12 @@
 .search {
   border: none;
   border-radius: 0;
-  line-height: 1.75em;
+  height: 75%;
+  width: 15em;
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-top: 0;
+  padding-bottom: 0;
   background-color: #ffffff;
 }
 
@@ -51,14 +56,27 @@
   background-color: #eeeeee;
 }
 
-.button {
-  border: solid;
-  border-width: 1px;
-  margin-left: 0.25em;
-  margin-right: 0;
-  padding-top: 0.25em;
-  padding-bottom: 0.25em;
-  background-color: #333333;
-  border-color: #303030;
-  color: #cccccc;
+.searchButton {
+  border: none;
+  color: #222222;
+  background-color: #ffffff;
+  height: 75%;
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 1.5ex;
+  padding-right: 1ex;
+}
+
+.clearButton {
+  border: none;
+  background: none;
+  color: #222222;
+  background-color: #ffffff;
+  height: 75%;
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  padding-left: 1ex;
+  padding-right: 1.5ex;
 }

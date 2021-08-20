@@ -6,6 +6,9 @@ import {
 } from '../../store/sidePanelVisibleSlice';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars } from '@fortawesome/free-solid-svg-icons';
+
 export const SidePanelButton = () => {
   const visible = useAppSelector(selectSidePanelVisible);
   const dispatch = useAppDispatch();
@@ -17,7 +20,7 @@ export const SidePanelButton = () => {
         dispatch(sidePanelVisibilityChanged(!visible));
       }}
     >
-      &#x2630;
+      <FontAwesomeIcon icon={faBars} />
     </button>
   );
 };

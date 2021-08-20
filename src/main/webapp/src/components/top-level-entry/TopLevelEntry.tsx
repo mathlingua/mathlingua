@@ -4,6 +4,9 @@ import styles from './TopLevelEntry.module.css';
 
 import { EntityResult } from '../../services/api';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+
 export interface TopLevelEntryProps {
   id: string;
   showCloseButton: boolean;
@@ -27,7 +30,7 @@ export const TopLevelEntry = (props: TopLevelEntryProps) => {
             }
           }}
         >
-          &#x2715;
+          <FontAwesomeIcon icon={faTimes} />
         </button>
       ) : null}
       <button

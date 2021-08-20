@@ -4,9 +4,11 @@ import {
   isEditModeUpdated,
   selectIsEditMode,
 } from '../../store/isEditModeSlice';
-import { sidePanelVisibilityChanged } from '../../store/sidePanelVisibleSlice';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import styles from './EditModeButton.module.css';
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEdit, faEye } from '@fortawesome/free-solid-svg-icons';
 
 export const EditModeButton = () => {
   const dispatch = useAppDispatch();
@@ -31,7 +33,11 @@ export const EditModeButton = () => {
         );
       }}
     >
-      {isEditMode ? 'View' : 'Edit'}
+      {isEditMode ? (
+        <FontAwesomeIcon icon={faEye} />
+      ) : (
+        <FontAwesomeIcon icon={faEdit} />
+      )}
     </button>
   );
 };

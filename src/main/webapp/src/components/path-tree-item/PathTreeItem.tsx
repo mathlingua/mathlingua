@@ -17,6 +17,18 @@ import {
 import * as api from '../../services/api';
 import { pathsUpdated } from '../../store/pathsSlice';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faPencilAlt,
+  faTrashAlt,
+  faCheck,
+  faTimes,
+  faFolderPlus,
+  faFileMedical,
+  faCaretRight,
+  faCaretDown,
+} from '@fortawesome/free-solid-svg-icons';
+
 export interface PathTreeNode {
   name: string;
   isDir: boolean;
@@ -30,7 +42,9 @@ export interface PathTreeItemProps {
 
 export const PathTreeItem = (props: PathTreeItemProps) => {
   const dispatch = useAppDispatch();
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(
+    props.node.isDir && props.node.name === 'content'
+  );
   const viewedPath = useAppSelector(selectViewedPath) || '';
   const isEditMode = useAppSelector(selectIsEditMode);
   const allErrorResults = useAppSelector(selectErrorResults);
@@ -126,7 +140,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsDeleting(false);
           }}
         >
-          Edit
+          <FontAwesomeIcon icon={faPencilAlt} />
         </button>
         {props.node.isDir && !isEditing && !isDeleting ? (
           <button
@@ -141,7 +155,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
               await reloadAllPaths();
             }}
           >
-            New File
+            <FontAwesomeIcon icon={faFileMedical} />
           </button>
         ) : null}
         {props.node.isDir && !isEditing && !isDeleting ? (
@@ -157,7 +171,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
               await reloadAllPaths();
             }}
           >
-            New Dir
+            <FontAwesomeIcon icon={faFolderPlus} />
           </button>
         ) : null}
         <button
@@ -179,7 +193,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsDeleting(false);
           }}
         >
-          {isDeleting ? 'Confirm' : 'Accept'}
+          <FontAwesomeIcon icon={faCheck} />
         </button>
         <button
           className={styles.button}
@@ -189,7 +203,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsDeleting(false);
           }}
         >
-          Cancel
+          <FontAwesomeIcon icon={faTimes} />
         </button>
         <button
           className={styles.button}
@@ -204,7 +218,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsEditing(false);
           }}
         >
-          Delete
+          <FontAwesomeIcon icon={faTrashAlt} />
         </button>
       </span>
     ) : null;
@@ -218,9 +232,13 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? (
-            <button className={styles.triangle}>&#9662;</button>
+            <button className={styles.triangle}>
+              <FontAwesomeIcon icon={faCaretDown} />
+            </button>
           ) : (
-            <button className={styles.triangle}>&#9656;</button>
+            <button className={styles.triangle}>
+              <FontAwesomeIcon icon={faCaretRight} />
+            </button>
           )}
           {isEditing ? (
             <form onSubmit={onSubmit}>
@@ -230,6 +248,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
                 placeholder={props.node.name}
                 onChange={(event) => setInputName(event.target.value)}
               ></input>
+              {getEditButtons()}
             </form>
           ) : (
             <span>
@@ -237,7 +256,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
               {getErrorStats(allErrorResults)}
             </span>
           )}
-          {getEditButtons()}
+          {!isEditing ? getEditButtons() : null}
         </li>
         {isExpanded ? (
           <ul>
@@ -260,6 +279,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             placeholder={props.node.name}
             onChange={(event) => setInputName(event.target.value)}
           ></input>
+          {getEditButtons()}
         </form>
       ) : (
         <Link
@@ -281,7 +301,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
           {getErrorStats(allErrorResults)}
         </Link>
       )}
-      {getEditButtons()}
+      {!isEditing ? getEditButtons() : null}
     </li>
   );
 };

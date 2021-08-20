@@ -55,16 +55,19 @@ li {
 }
 
 .button {
-  border: solid;
-  border-width: 1px;
-  border-color: #cccccc;
+  border: none;
   background: none;
-  margin-left: 1ex;
-  font-family: Georgia, 'Times New Roman', Times, serif;
+  margin-left: 0;
+  color: #222222;
 }
 
 .input {
   border: solid;
   border-width: 1px;
   border-color: #cccccc;
+  border-radius: 0;
+}
+
+.input:focus {
+  outline: none;
 }

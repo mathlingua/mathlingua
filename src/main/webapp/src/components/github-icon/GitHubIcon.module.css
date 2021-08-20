@@ -1,8 +1,9 @@
-.githubIconContainer {
-  border: none;
+.githubIcon {
+  color: #cccccc;
   margin-right: 0.5em;
-  margin-top: -0.2em;
+  margin-top: 0.05em;
   padding: 0;
-  background: rgb(0, 0, 0, 0);
-  font-size: 1.2em;
+  background: none;
+  border: none;
+  font-size: 130%;
 }

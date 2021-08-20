@@ -1,3 +1,5 @@
+import { check } from '../../services/api';
+import { errorResultsUpdated } from '../../store/errorResultsSlice';
 import {
   isEditModeUpdated,
   selectIsEditMode,
@@ -13,12 +15,23 @@ export const EditModeButton = () => {
   return (
     <button
       className={styles.editModeButton}
-      onClick={() => {
+      onClick={async () => {
         const newEditMode = !isEditMode;
         dispatch(isEditModeUpdated(newEditMode));
         if (newEditMode) {
           dispatch(sidePanelVisibilityChanged(false));
         }
+        const res = await check();
+        dispatch(
+          errorResultsUpdated(
+            res.errors.map((err) => ({
+              row: err.row,
+              column: err.column,
+              message: err.message,
+              relativePath: err.path,
+            }))
+          )
+        );
       }}
     >
       {isEditMode ? 'View' : 'Edit'}

@@ -49,3 +49,7 @@ li {
 .selected {
   font-style: italic;
 }
+
+.errorStats {
+  color: darkred;
+}

@@ -6,7 +6,7 @@ import * as api from '../../services/api';
 import { useEffect, useRef, useState } from 'react';
 import { ErrorView } from '../error-view/ErrorView';
 import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGroup';
-import { useAppSelector } from '../../support/hooks';
+import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
 
 import { selectViewedPath } from '../../store/viewedPathSlice';
@@ -19,6 +19,10 @@ import AceEditor from 'react-ace';
 import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-eclipse';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
+import {
+  errorResultsUpdated,
+  selectErrorResults,
+} from '../../store/errorResultsSlice';
 
 interface Annotation {
   row: number;
@@ -30,6 +34,7 @@ interface Annotation {
 let scheduledFunction: { (): void; cancel(): void } | null = null;
 
 export const Page = () => {
+  const dispatch = useAppDispatch();
   const relativePath = useAppSelector(selectViewedPath) || '';
   const [fileResult, setFileResult] = useState(
     undefined as api.FileResult | undefined
@@ -40,44 +45,51 @@ export const Page = () => {
   const ref = useRef(null);
 
   const [annotations, setAnnotations] = useState([] as Annotation[]);
+  const errorResults = useAppSelector(selectErrorResults);
   const [editorContent, setEditorContent] = useState('');
 
   const isEditMode = useAppSelector(selectIsEditMode);
 
-  const checkForErrors = async (relativePath: string) => {
+  const checkForErrors = async () => {
     const res = await api.check();
-    const errors = res.errors.filter((err) => err.path === relativePath);
-    if (errors.length === 0) {
-      setAnnotations([]);
-    } else {
-      setAnnotations(
-        errors.map((err) => {
-          return {
-            row: err.row,
-            column: err.column,
-            text: err.message,
-            type: 'error',
-          };
-        })
-      );
-    }
+    dispatch(
+      errorResultsUpdated(
+        res.errors.map((err) => ({
+          row: err.row,
+          column: err.column,
+          message: err.message,
+          relativePath: err.path,
+        }))
+      )
+    );
   };
 
   useEffect(() => {
     if (relativePath !== '') {
       api
         .getFileResult(relativePath)
-        .then((fileResult) => {
+        .then(async (fileResult) => {
           setFileResult(fileResult);
           setEditorContent(fileResult?.content ?? '');
-          if (fileResult) {
-            checkForErrors(fileResult.relativePath);
-          }
+          await checkForErrors();
         })
         .catch((err) => setError(err.message))
         .finally(() => setIsLoading(false));
     }
   }, [relativePath]);
+
+  useEffect(() => {
+    setAnnotations(
+      errorResults
+        .filter((err) => err.relativePath === relativePath)
+        .map((err) => ({
+          row: err.row,
+          column: err.column,
+          text: err.message,
+          type: 'error',
+        }))
+    );
+  }, [errorResults]);
 
   useEffect(() => {
     if (ref.current) {
@@ -155,7 +167,7 @@ export const Page = () => {
     }
     scheduledFunction = debounce(async () => {
       await api.writeFileResult(fileResult.relativePath, newValue);
-      await checkForErrors(fileResult?.relativePath);
+      await checkForErrors();
       const fileRes = await api.getFileResult(fileResult.relativePath);
       setFileResult(fileRes);
     }, 500);

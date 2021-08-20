@@ -10,6 +10,7 @@ import {
   viewedPathUpdated,
 } from '../../store/viewedPathSlice';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
+import { selectErrorResults } from '../../store/errorResultsSlice';
 
 export interface PathTreeNode {
   name: string;
@@ -27,6 +28,23 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const viewedPath = useAppSelector(selectViewedPath) || '';
   const isEditMode = useAppSelector(selectIsEditMode);
+  const allErrorResults = useAppSelector(selectErrorResults);
+  const thisErrorResults = props.node.isDir
+    ? []
+    : allErrorResults.filter((err) => err.relativePath === props.node.path);
+
+  const getErrorStats = () => {
+    if (!isEditMode || thisErrorResults.length === 0) {
+      return null;
+    }
+    const title = thisErrorResults.length === 1 ? ' error' : ' errors';
+    return (
+      <span className={styles.errorStats}>
+        {' '}
+        ({thisErrorResults.length} {title})
+      </span>
+    );
+  };
 
   if (props.node.isDir) {
     return (
@@ -41,6 +59,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             <button className={styles.triangle}>&#9656;</button>
           )}
           {props.node.name.replace('_', ' ')}
+          {getErrorStats()}
         </li>
         {isExpanded ? (
           <ul>
@@ -71,6 +90,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
         }}
       >
         {props.node.name.replace('.math', '').replace('_', ' ')}
+        {getErrorStats()}
       </Link>
     </li>
   );

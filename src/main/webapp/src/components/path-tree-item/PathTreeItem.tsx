@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import styles from './PathTreeItem.module.css';
 
@@ -11,6 +11,7 @@ import {
 } from '../../store/viewedPathSlice';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
 import { selectErrorResults } from '../../store/errorResultsSlice';
+import { ErrorResult } from '../../services/api';
 
 export interface PathTreeNode {
   name: string;
@@ -29,11 +30,21 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
   const viewedPath = useAppSelector(selectViewedPath) || '';
   const isEditMode = useAppSelector(selectIsEditMode);
   const allErrorResults = useAppSelector(selectErrorResults);
-  const thisErrorResults = props.node.isDir
-    ? []
-    : allErrorResults.filter((err) => err.relativePath === props.node.path);
 
-  const getErrorStats = () => {
+  const getAllErrorsFor = (node: PathTreeNode, allErrors: ErrorResult[]) => {
+    if (node.isDir) {
+      let result: ErrorResult[] = [];
+      for (const child of node.children) {
+        result = result.concat(getAllErrorsFor(child, allErrors));
+      }
+      return result;
+    }
+
+    return allErrorResults.filter((err) => err.relativePath === node.path);
+  };
+
+  const getErrorStats = (allErrorResults: ErrorResult[]) => {
+    const thisErrorResults = getAllErrorsFor(props.node, allErrorResults);
     if (!isEditMode || thisErrorResults.length === 0) {
       return null;
     }
@@ -59,7 +70,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             <button className={styles.triangle}>&#9656;</button>
           )}
           {props.node.name.replace('_', ' ')}
-          {getErrorStats()}
+          {getErrorStats(allErrorResults)}
         </li>
         {isExpanded ? (
           <ul>
@@ -90,7 +101,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
         }}
       >
         {props.node.name.replace('.math', '').replace('_', ' ')}
-        {getErrorStats()}
+        {getErrorStats(allErrorResults)}
       </Link>
     </li>
   );

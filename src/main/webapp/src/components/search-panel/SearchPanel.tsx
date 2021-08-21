@@ -152,7 +152,10 @@ export const SearchPanel = () => {
         {suggestions.map((suggestion, index) => (
           <div
             key={suggestion.complete.toLowerCase()}
-            onClick={() => appendSuggestionSuffix(suggestion.suffix)}
+            onClick={() => {
+              const newQuery = appendSuggestionSuffix(suggestion.suffix);
+              return search(newQuery);
+            }}
             className={
               index === selectedIndex
                 ? styles.searchDropdownItemSelected

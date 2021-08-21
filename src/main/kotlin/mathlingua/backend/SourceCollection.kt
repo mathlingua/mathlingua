@@ -283,7 +283,8 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
         sourceFileToFileResult.clear()
         val relPath = path.split(fs.getFileSeparator())
         searchIndex.remove(relPath)
-        val sf = buildSourceFile(fs.getFile(relPath))
+        val sf = sourceFiles[path] ?: return
+        sourceFiles.remove(path)
         when (val validation = sf.validation
         ) {
             is ValidationSuccess -> {

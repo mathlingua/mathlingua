@@ -402,8 +402,19 @@ object Mathlingua {
                 try {
                     val word = ctx.queryParam("word") ?: ""
                     logger.log("Getting completions for word '$word'")
-                    val suffixes = getSourceCollection().findSuffixesFor(word)
+                    val suffixes = getSourceCollection().findWordSuffixesFor(word)
                     ctx.json(CompleteWordResponse(suffixes = suffixes))
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
+            .get("/api/completeSignature") { ctx ->
+                try {
+                    val prefix = ctx.queryParam("prefix") ?: ""
+                    logger.log("Getting signature completions for prefix '$prefix'")
+                    val suffixes = getSourceCollection().findSignaturesSuffixesFor(prefix)
+                    ctx.json(CompleteSignatureResponse(suffixes = suffixes))
                 } catch (err: Exception) {
                     err.printStackTrace()
                     ctx.status(500)
@@ -449,6 +460,8 @@ data class CheckError(val path: String, val message: String, val row: Int, val c
 @Serializable data class SearchResponse(val paths: List<String>)
 
 @Serializable data class CompleteWordResponse(val suffixes: List<String>)
+
+@Serializable data class CompleteSignatureResponse(val suffixes: List<String>)
 
 private fun String.jsonSanitize() =
     this.replace("\\", "\\\\")

@@ -277,3 +277,8 @@ export async function newFile(path: string): Promise<void> {
     path,
   });
 }
+
+export async function getSignatureSuffixes(prefix: string): Promise<string[]> {
+  const res = await axios.get('/api/completeSignature', { params: { prefix } });
+  return res.data.suffixes;
+}

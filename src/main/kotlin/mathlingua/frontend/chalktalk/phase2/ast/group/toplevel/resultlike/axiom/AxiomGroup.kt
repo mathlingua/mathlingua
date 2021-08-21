@@ -53,7 +53,7 @@ import mathlingua.frontend.support.ParseError
 
 data class AxiomGroup(
     override val signature: Signature?,
-    val id: IdStatement?,
+    override val id: IdStatement?,
     val axiomSection: AxiomSection,
     val givenSection: GivenSection?,
     val whereSection: WhereSection?,

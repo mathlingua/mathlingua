@@ -53,7 +53,7 @@ import mathlingua.frontend.support.ParseError
 
 data class ConjectureGroup(
     override val signature: Signature?,
-    val id: IdStatement?,
+    override val id: IdStatement?,
     val conjectureSection: ConjectureSection,
     val givenSection: GivenSection?,
     val ifOrIffSection: IfOrIffSection?,

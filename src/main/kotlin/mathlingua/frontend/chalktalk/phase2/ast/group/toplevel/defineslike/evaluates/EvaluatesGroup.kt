@@ -58,7 +58,7 @@ import mathlingua.frontend.support.ParseError
 
 data class EvaluatesGroup(
     override val signature: Signature?,
-    val id: IdStatement,
+    override val id: IdStatement,
     val evaluatesSection: EvaluatesSection,
     val whenThen: List<WhenThenPair>,
     val elseSection: ElseSection,

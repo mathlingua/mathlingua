@@ -126,7 +126,8 @@ interface SourceCollection {
     fun getWithSignature(signature: String): EntityResult?
     fun addSource(sf: SourceFile)
     fun removeSource(path: String)
-    fun findSuffixesFor(word: String): List<String>
+    fun findWordSuffixesFor(word: String): List<String>
+    fun findSignaturesSuffixesFor(prefix: String): List<String>
     fun search(query: String): List<SourceFile>
 }
 
@@ -223,7 +224,8 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     private val sourceFiles = mutableMapOf<String, SourceFile>()
     private val sourceFileToFileResult = mutableMapOf<SourceFile, FileResult>()
 
-    private val autoComplete = AutoComplete()
+    private val wordAutoComplete = AutoComplete(preserveCase = false)
+    private val signatureAutoComplete = AutoComplete(preserveCase = true)
 
     private val searchIndex = SearchIndex(fs)
 
@@ -256,8 +258,12 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
         }
     }
 
-    override fun findSuffixesFor(word: String): List<String> {
-        return autoComplete.findSuffixes(word)
+    override fun findWordSuffixesFor(word: String): List<String> {
+        return wordAutoComplete.findSuffixes(word)
+    }
+
+    override fun findSignaturesSuffixesFor(prefix: String): List<String> {
+        return signatureAutoComplete.findSuffixes(prefix).map { it }
     }
 
     override fun getAllPaths(): List<String> {
@@ -300,17 +306,23 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                 for (grp in docAll) {
                     if (grp is HasSignature && grp.signature != null) {
                         signatureToTopLevelGroup.remove(grp.signature!!.form)
+                        if (grp.id != null) {
+                            signatureAutoComplete.remove(grp.id!!.text)
+                        }
                     } else if (grp is FoundationGroup &&
                         grp.foundationSection.content is HasSignature &&
                         grp.foundationSection.content.signature != null) {
                         signatureToTopLevelGroup.remove(
                             grp.foundationSection.content.signature!!.form)
+                        if (grp.foundationSection.content.id != null) {
+                            signatureAutoComplete.remove(grp.foundationSection.content.id!!.text)
+                        }
                     }
                 }
 
                 for (grp in validation.value.document.groups) {
                     for (word in getAllWords(grp)) {
-                        autoComplete.remove(word)
+                        wordAutoComplete.remove(word)
                     }
                 }
 
@@ -339,17 +351,23 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
         if (validation is ValidationSuccess) {
             for (grp in validation.value.document.groups) {
                 for (word in getAllWords(grp)) {
-                    autoComplete.add(word)
+                    wordAutoComplete.add(word)
                 }
             }
 
             for (grp in validation.value.document.groups) {
                 if (grp is HasSignature && grp.signature != null) {
                     signatureToTopLevelGroup[grp.signature!!.form] = grp
+                    if (grp.id != null) {
+                        signatureAutoComplete.add(grp.id!!.text)
+                    }
                 } else if (grp is FoundationGroup &&
                     grp.foundationSection.content is HasSignature &&
                     grp.foundationSection.content.signature != null) {
                     signatureToTopLevelGroup[grp.foundationSection.content.signature!!.form] = grp
+                    if (grp.foundationSection.content.id != null) {
+                        signatureAutoComplete.add(grp.foundationSection.content.id!!.text)
+                    }
                 }
             }
 

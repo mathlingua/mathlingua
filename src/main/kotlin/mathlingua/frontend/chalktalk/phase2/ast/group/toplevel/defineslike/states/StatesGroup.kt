@@ -56,7 +56,7 @@ import mathlingua.frontend.support.ParseError
 
 data class StatesGroup(
     override val signature: Signature?,
-    val id: IdStatement,
+    override val id: IdStatement,
     val statesSection: StatesSection,
     val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,

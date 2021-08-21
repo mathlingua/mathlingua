@@ -51,7 +51,7 @@ import mathlingua.frontend.support.ParseError
 
 data class TheoremGroup(
     override val signature: Signature?,
-    val id: IdStatement?,
+    override val id: IdStatement?,
     val theoremSection: TheoremSection,
     val givenSection: GivenSection?,
     val givenWhereSection: WhereSection?,

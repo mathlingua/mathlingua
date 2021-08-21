@@ -16,6 +16,7 @@ import debounce from 'lodash.debounce';
 
 import AceEditor from 'react-ace';
 
+import * as langTools from 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-eclipse';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
@@ -32,6 +33,81 @@ interface Annotation {
   text: string;
   type: 'error';
 }
+
+interface Completion {
+  name: string;
+  value: string;
+}
+
+const BASE_COMPLETIONS: Completion[] = [
+  { name: 'and', value: 'and:' },
+  { name: 'collection', value: 'collection:\nof:\nin?:\nforall:\nwhere:' },
+  { name: 'exists', value: 'exists:\nwhere?:\nsuchThat:' },
+  { name: 'existsUnique', value: 'existsUnique:\nwhere?:\nsuchThat:' },
+  { name: 'expands', value: 'expands:\nas:' },
+  { name: 'forAll', value: 'forAll:\nwhere?:\nsuchThat?:\nthen:' },
+  { name: 'from', value: 'from:\nto:' },
+  { name: 'given', value: 'given:\nwhere:\nall:\nsuchThat?:' },
+  { name: 'if', value: 'if:\nthen:' },
+  { name: 'iff', value: 'iff:\nthen:' },
+  { name: 'constant', value: 'constant:' },
+  { name: 'constructor', value: 'constructor:\nfrom:' },
+  { name: 'inductively', value: 'inductively:\nfrom:' },
+  { name: 'mapping', value: 'mapping:\nfrom:\nto:\nas:' },
+  { name: 'not', value: 'not:' },
+  { name: 'or', value: 'or:' },
+  { name: 'piecewise', value: 'piecewise:' },
+  {
+    name: 'Defines:collects',
+    value:
+      'Defines:\nrequiring?:\nwhen?:\nmeans?:\ncollects:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+  },
+  {
+    name: 'Defines:evaluated',
+    value:
+      'Defines:\nrequiring?:\nwhen?:\nmeans?:\nevaluated:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+  },
+  {
+    name: 'Defines:maps',
+    value:
+      'Defines:\nrequiring?:\nwhen?:\nmeans?:\nmaps:\nsatisfying?:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+  },
+  {
+    name: 'Defines:satisfying',
+    value:
+      'Defines:\nrequiring?:\nwhen?:\nmeans:\nsatisfying?:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+  },
+  { name: 'Evaluates', value: 'Evaluates:' },
+  { name: 'Foundation', value: 'Foundation:\nMetadata?:' },
+  {
+    name: 'States',
+    value:
+      'States:\nrequiring?:\nwhen?:\nthat:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+  },
+  { name: 'equality', value: 'equality:\nbetween:\nprovided:' },
+  { name: 'membership', value: 'membership:\nthrough:' },
+  { name: 'as', value: 'as:\nvia:' },
+  {
+    name: 'Resource',
+    value:
+      'Resource:\n. type?: ""\n. name?: ""\n. author?: ""\n. homepage?: ""\n. url?: ""\n. offset?: ""\nMetadata?:',
+  },
+  {
+    name: 'Axiom',
+    value: 'Axiom:\ngiven?:\nwhere?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
+  },
+  {
+    name: 'Conjecture',
+    value:
+      'Conjecture:\ngiven?:\nwhere?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
+  },
+  {
+    name: 'Theorem',
+    value:
+      'Theorem:\ngiven?:\nwhere?:\nif?:\niff?:\nthen:\nusing?:\nProof?:\nMetadata?:',
+  },
+  { name: 'Topic', value: 'Topic:\ncontent:\nMetadata?:' },
+];
 
 let scheduledFunction: { (): void; cancel(): void } | null = null;
 
@@ -111,6 +187,43 @@ export const Page = () => {
     }
   }, [relativePath, fileResult, query]);
 
+  useEffect(() => {
+    langTools.setCompleters();
+    langTools.addCompleter({
+      getCompletions: async (
+        editor: any,
+        session: {},
+        pos: { column: number },
+        prefix: string,
+        callback: (n: null, arr: any[]) => void
+      ) => {
+        if (prefix.length === 0) {
+          return callback(null, []);
+        }
+        const column = pos.column;
+        let indent = '\n';
+        for (let i = 0; i < column - prefix.length; i++) {
+          indent += ' ';
+        }
+        const remoteCompletions = (
+          await api.getSignatureSuffixes(`\\${prefix}`)
+        ).map((suffix) => ({
+          name: prefix + suffix,
+          value: prefix + suffix,
+        }));
+        callback(
+          null,
+          BASE_COMPLETIONS.concat(remoteCompletions).map((item) => {
+            return {
+              name: item.name.replace(/\\/, ''),
+              value: item.value.replace(/\\/, '').replace(/\n/g, indent),
+            };
+          })
+        );
+      },
+    });
+  }, []);
+
   if (relativePath === '') {
     return <Home />;
   }
@@ -188,6 +301,8 @@ export const Page = () => {
       value={editorContent}
       highlightActiveLine={false}
       showPrintMargin={false}
+      enableBasicAutocompletion={true}
+      enableLiveAutocompletion={true}
       fontSize="90%"
       style={{
         width: '100%',

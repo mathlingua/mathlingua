@@ -42,7 +42,7 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 
 abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
     TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
-    abstract val id: IdStatement
+    abstract override val id: IdStatement
     abstract override val signature: Signature?
     abstract val definesSection: DefinesSection
     abstract val requiringSection: RequiringSection?

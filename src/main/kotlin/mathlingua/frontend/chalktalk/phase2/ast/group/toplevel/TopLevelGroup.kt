@@ -71,4 +71,5 @@ internal interface HasUsingSection {
 
 internal interface HasSignature {
     val signature: Signature?
+    val id: IdStatement?
 }

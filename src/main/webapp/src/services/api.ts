@@ -53,6 +53,7 @@ interface ApiClient {
   search(query: string): Promise<string[]>;
   getAutocompleteSuffixes(word: string): Promise<string[]>;
   getEntityWithSignature(signature: string): Promise<EntityResult | undefined>;
+  check(): Promise<CheckResponse>;
 }
 
 class NetworkApiClient implements ApiClient {
@@ -91,6 +92,11 @@ class NetworkApiClient implements ApiClient {
     });
     return res.data;
   }
+
+  async check(): Promise<CheckResponse> {
+    const res = await axios.get('/api/check');
+    return res.data;
+  }
 }
 
 class StaticApiClient implements ApiClient {
@@ -100,6 +106,7 @@ class StaticApiClient implements ApiClient {
   private signatureToEntity: Map<string, EntityResult>;
   private homeHtml: string;
   private pathToFileResult: Map<string, FileResult>;
+  private checkResponse: CheckResponse;
 
   constructor(data: DecompositionResult) {
     this.searchClient = new Search(data);
@@ -129,6 +136,15 @@ class StaticApiClient implements ApiClient {
     for (const fileResult of data.collectionResult.fileResults) {
       this.pathToFileResult.set(fileResult.relativePath, fileResult);
     }
+
+    this.checkResponse = {
+      errors: data.collectionResult.errors.map((err) => ({
+        column: err.column,
+        row: err.row,
+        path: err.relativePath,
+        message: err.message,
+      })),
+    };
   }
 
   async getAllPaths(): Promise<string[]> {
@@ -155,6 +171,10 @@ class StaticApiClient implements ApiClient {
     signature: string
   ): Promise<EntityResult | undefined> {
     return this.signatureToEntity.get(signature);
+  }
+
+  async check(): Promise<CheckResponse> {
+    return this.checkResponse;
   }
 }
 
@@ -203,16 +223,15 @@ export async function getEntityWithSignature(
   return getClient().getEntityWithSignature(signature);
 }
 
+export async function check(): Promise<CheckResponse> {
+  return getClient().check();
+}
+
 export async function writeFileResult(path: string, content: string) {
   await axios.put('/api/writePage', {
     path,
     content,
   });
-}
-
-export async function check(): Promise<CheckResponse> {
-  const res = await axios.get('/api/check');
-  return res.data;
 }
 
 export async function deleteDir(path: string): Promise<void> {

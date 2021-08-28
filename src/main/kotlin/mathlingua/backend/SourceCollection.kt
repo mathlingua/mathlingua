@@ -58,7 +58,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -1040,7 +1039,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                 IdStatement(
                                     text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
                             val syntheticDefines =
-                                DefinesMeansGroup(
+                                DefinesGroup(
                                     signature = id.signature(newLocationTracker()),
                                     id = id,
                                     definesSection = DefinesSection(targets = emptyList()),
@@ -1049,6 +1048,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                     meansSection =
                                         MeansSection(
                                             clauses = ClauseListNode(clauses = emptyList())),
+                                    evaluatedSection = null,
                                     viewingSection = null,
                                     usingSection = null,
                                     writtenSection = WrittenSection(forms = listOf(rhs.toCode())),
@@ -1333,7 +1333,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                     IdStatement(
                                         text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
                                 val syntheticDefines =
-                                    DefinesMeansGroup(
+                                    DefinesGroup(
                                         signature = id.signature(newLocationTracker()),
                                         id = id,
                                         definesSection = DefinesSection(targets = emptyList()),
@@ -1342,6 +1342,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                         meansSection =
                                             MeansSection(
                                                 clauses = ClauseListNode(clauses = emptyList())),
+                                        evaluatedSection = null,
                                         viewingSection = null,
                                         usingSection = null,
                                         writtenSection =

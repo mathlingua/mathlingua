@@ -1,6 +1,6 @@
 Document(
   groups = [
-             DefinesMeansGroup(
+             DefinesGroup(
                signature = Signature(
                  form = "\f"
                  location = Location(
@@ -143,6 +143,7 @@ Document(
                              ]
                  )
                )
+               evaluatedSection = null
                viewingSection = null
                usingSection = null
                writtenSection = WrittenSection(

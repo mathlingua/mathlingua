@@ -63,8 +63,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.Piecewise
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesEvaluatedGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.EvaluatedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
@@ -541,22 +540,8 @@ val DEFAULT_EQUALITY_GROUP =
         betweenSection = DEFAULT_BETWEEN_SECTION,
         providedSection = DEFAULT_PROVIDED_SECTION)
 
-val DEFAULT_DEFINES_MEANS_GROUP =
-    DefinesMeansGroup(
-        signature = null,
-        id = DEFAULT_ID_STATEMENT,
-        definesSection = DEFAULT_DEFINES_SECTION,
-        requiringSection = DEFAULT_REQUIRING_SECTION,
-        whenSection = DEFAULT_WHEN_SECTION,
-        viewingSection = DEFAULT_VIEWING_SECTION,
-        meansSection = DEFAULT_MEANS_SECTION,
-        usingSection = DEFAULT_USING_SECTION,
-        writtenSection = DEFAULT_WRITTEN_SECTION,
-        calledSection = DEFAULT_CALLED_SECTION,
-        metaDataSection = DEFAULT_META_DATA_SECTION)
-
-val DEFAULT_DEFINES_EVALUATED_GROUP =
-    DefinesEvaluatedGroup(
+val DEFAULT_DEFINES_GROUP =
+    DefinesGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,

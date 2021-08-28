@@ -6,7 +6,8 @@ For pattern:
 Defines:
 requiring?:
 when?:
-means:
+means?:
+evaluated?:
 viewing?:
 using?:
 written:
@@ -25,7 +26,8 @@ For pattern:
 Defines:
 requiring?:
 when?:
-means:
+means?:
+evaluated?:
 viewing?:
 using?:
 written:
@@ -44,7 +46,8 @@ For pattern:
 Defines:
 requiring?:
 when?:
-means:
+means?:
+evaluated?:
 viewing?:
 using?:
 written:
@@ -63,7 +66,8 @@ For pattern:
 Defines:
 requiring?:
 when?:
-means:
+means?:
+evaluated?:
 viewing?:
 using?:
 written:
@@ -82,7 +86,8 @@ For pattern:
 Defines:
 requiring?:
 when?:
-means:
+means?:
+evaluated?:
 viewing?:
 using?:
 written:
@@ -101,7 +106,8 @@ For pattern:
 Defines:
 requiring?:
 when?:
-means:
+means?:
+evaluated?:
 viewing?:
 using?:
 written:

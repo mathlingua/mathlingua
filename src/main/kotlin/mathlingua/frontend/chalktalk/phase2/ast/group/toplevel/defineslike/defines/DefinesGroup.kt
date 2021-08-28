@@ -17,19 +17,40 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines
 
 import mathlingua.backend.transform.Signature
+import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase2.CodeWriter
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CALLED_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_GROUP
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
+import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.getId
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateViewingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
+import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
+import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
+import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
+import mathlingua.frontend.chalktalk.phase2.ast.track
+import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
@@ -40,31 +61,160 @@ import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-abstract class DefinesGroup(override val metaDataSection: MetaDataSection?) :
-    TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
-    abstract override val id: IdStatement
-    abstract override val signature: Signature?
-    abstract val definesSection: DefinesSection
-    abstract val requiringSection: RequiringSection?
-    abstract val whenSection: WhenSection?
-    abstract val viewingSection: ViewingSection?
-    abstract val writtenSection: WrittenSection
-    abstract val calledSection: CalledSection
-    abstract fun copyWithoutMetadata(): DefinesGroup
-    abstract fun copyWithEmptyCalled(): DefinesGroup
+data class DefinesGroup(
+    override val signature: Signature?,
+    override val id: IdStatement,
+    val definesSection: DefinesSection,
+    val requiringSection: RequiringSection?,
+    val whenSection: WhenSection?,
+    val meansSection: MeansSection?,
+    val evaluatedSection: EvaluatedSection?,
+    val viewingSection: ViewingSection?,
+    override val usingSection: UsingSection?,
+    val writtenSection: WrittenSection,
+    val calledSection: CalledSection,
+    override val metaDataSection: MetaDataSection?
+) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
+
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(id)
+        fn(definesSection)
+        if (requiringSection != null) {
+            fn(requiringSection)
+        }
+        if (whenSection != null) {
+            fn(whenSection)
+        }
+        if (meansSection != null) {
+            fn(meansSection)
+        }
+        if (evaluatedSection != null) {
+            fn(evaluatedSection)
+        }
+        if (viewingSection != null) {
+            fn(viewingSection)
+        }
+        if (usingSection != null) {
+            fn(usingSection)
+        }
+        fn(writtenSection)
+        fn(calledSection)
+        if (metaDataSection != null) {
+            fn(metaDataSection)
+        }
+    }
+
+    override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
+        val sections =
+            mutableListOf(
+                definesSection,
+                requiringSection,
+                whenSection,
+                meansSection,
+                evaluatedSection,
+                viewingSection,
+                usingSection,
+                writtenSection,
+                calledSection,
+                metaDataSection)
+        return topLevelToCode(writer, isArg, indent, id, *sections.toTypedArray())
+    }
+
+    override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
+        chalkTransformer(
+            DefinesGroup(
+                signature = signature,
+                id = id.transform(chalkTransformer) as IdStatement,
+                definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
+                requiringSection =
+                    requiringSection?.transform(chalkTransformer) as RequiringSection?,
+                whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
+                evaluatedSection =
+                    evaluatedSection?.transform(chalkTransformer) as EvaluatedSection?,
+                viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
+                usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+                writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
+                calledSection = calledSection.transform(chalkTransformer) as CalledSection,
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
 fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
 
 fun validateDefinesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-): DefinesGroup =
-    when {
-        isDefinesEvaluatedGroup(node) -> {
-            validateDefinesEvaluatedGroup(node, errors, tracker)
-        }
-        else -> {
-            validateDefinesMeansGroup(node, errors, tracker)
+) =
+    track(node, tracker) {
+        validateGroup(node.resolve(), errors, "Defines", DEFAULT_DEFINES_GROUP) { group ->
+            identifySections(
+                group,
+                errors,
+                DEFAULT_DEFINES_GROUP,
+                listOf(
+                    "Defines",
+                    "requiring?",
+                    "when?",
+                    "means?",
+                    "evaluated?",
+                    "viewing?",
+                    "using?",
+                    "written",
+                    "called",
+                    "Metadata?")) { sections ->
+                val id = getId(group, errors, tracker)
+                val def =
+                    DefinesGroup(
+                        signature = id.signature(tracker),
+                        id = id,
+                        definesSection =
+                            ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
+                                validateDefinesSection(it, errors, tracker)
+                            },
+                        requiringSection =
+                            ifNonNull(sections["requiring"]) {
+                                validateRequiringSection(it, errors, tracker)
+                            },
+                        whenSection =
+                            ifNonNull(sections["when"]) {
+                                validateWhenSection(it, errors, tracker)
+                            },
+                        meansSection =
+                            ifNonNull(sections["means"]) {
+                                validateMeansSection(it, errors, tracker)
+                            },
+                        evaluatedSection =
+                            ifNonNull(sections["evaluated"]) {
+                                validateEvaluatedSection(it, errors, tracker)
+                            },
+                        viewingSection =
+                            ifNonNull(sections["viewing"]) {
+                                validateViewingSection(it, errors, tracker)
+                            },
+                        usingSection =
+                            ifNonNull(sections["using"]) {
+                                validateUsingSection(it, errors, tracker)
+                            },
+                        writtenSection =
+                            ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                                validateWrittenSection(it, errors, tracker)
+                            },
+                        calledSection =
+                            ensureNonNull(sections["called"], DEFAULT_CALLED_SECTION) {
+                                validateCalledSection(it, errors, tracker)
+                            },
+                        metaDataSection =
+                            ifNonNull(sections["Metadata"]) {
+                                validateMetaDataSection(it, errors, tracker)
+                            })
+
+                val funcArgsError = checkIfFunctionSignatureMatchDefines(def, tracker)
+                if (funcArgsError != null) {
+                    errors.add(funcArgsError)
+                    DEFAULT_DEFINES_GROUP
+                } else {
+                    def
+                }
+            }
         }
     }
 

@@ -6,12 +6,13 @@ For pattern:
 Defines:
 requiring?:
 when?:
-means:
+means?:
+evaluated?:
 viewing?:
 using?:
 written:
 called:
 Metadata?:
 
-Expected 'means' but found 'assumes'
+Expected 'written' but found 'assumes'
 EndMessage:

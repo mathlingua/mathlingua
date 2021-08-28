@@ -262,14 +262,14 @@ open class HtmlCodeWriter(
                 builder.append(parseMarkdown(called))
                 builder.append("</span>")
                 builder.append(
-                    node.copyWithoutMetadata()
+                    node.copy(metaDataSection = null)
                         .let {
                             // if there is only one "called" form then use an empty list of called
                             // forms to signal that the "called:" section shouldn't be rendered
                             // since
                             // the called form is used as the title
                             if (it.calledSection.forms.size == 1) {
-                                it.copyWithEmptyCalled()
+                                it.copy(calledSection = CalledSection(forms = emptyList()))
                             } else {
                                 it
                             }

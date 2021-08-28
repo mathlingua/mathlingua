@@ -1,6 +1,6 @@
 Document(
   groups = [
-             DefinesMeansGroup(
+             DefinesGroup(
                signature = null
                id = IdStatement(
                  text = "A"
@@ -105,6 +105,7 @@ Document(
                              ]
                  )
                )
+               evaluatedSection = null
                viewingSection = null
                usingSection = null
                writtenSection = WrittenSection(

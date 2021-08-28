@@ -29,6 +29,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.note.NoteGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
@@ -393,6 +394,21 @@ open class HtmlCodeWriter(
                     builder.append(")</span>")
                 }
                 builder.append("<span class='mathlingua-topic-content'>")
+                builder.append(parseMarkdown(node.contentSection.text))
+                builder.append("</span>")
+                builder.append("</span>")
+                builder.toString()
+            }
+            is NoteGroup -> {
+                val builder = StringBuilder()
+                builder.append("<span class='mathlingua-note-group'>")
+                builder.append("<span class='mathlingua-note-title'>Note</span>")
+                if (node.id != null) {
+                    builder.append("<span class='mathlingua-note-group-id'>(")
+                    builder.append(node.id)
+                    builder.append(")</span>")
+                }
+                builder.append("<span class='mathlingua-note-content'>")
                 builder.append(parseMarkdown(node.contentSection.text))
                 builder.append("</span>")
                 builder.append("</span>")

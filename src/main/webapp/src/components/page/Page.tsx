@@ -43,44 +43,19 @@ interface Completion {
 
 const BASE_COMPLETIONS: Completion[] = [
   { name: 'and', value: 'and:' },
-  { name: 'collection', value: 'collection:\nof:\nin?:\nforall:\nwhere:' },
-  { name: 'exists', value: 'exists:\nwhere?:\nsuchThat:' },
-  { name: 'existsUnique', value: 'existsUnique:\nwhere?:\nsuchThat:' },
-  { name: 'expands', value: 'expands:\nas:' },
-  { name: 'forAll', value: 'forAll:\nwhere?:\nsuchThat?:\nthen:' },
-  { name: 'from', value: 'from:\nto:' },
-  { name: 'given', value: 'given:\nwhere:\nall:\nsuchThat?:' },
+  { name: 'exists', value: 'exists:\nsuchThat:' },
+  { name: 'existsUnique', value: 'existsUnique:\nsuchThat:' },
+  { name: 'forAll', value: 'forAll:\nsuchThat?:\nthen:' },
   { name: 'if', value: 'if:\nthen:' },
   { name: 'iff', value: 'iff:\nthen:' },
-  { name: 'constant', value: 'constant:' },
-  { name: 'constructor', value: 'constructor:\nfrom:' },
-  { name: 'inductively', value: 'inductively:\nfrom:' },
-  { name: 'mapping', value: 'mapping:\nfrom:\nto:\nas:' },
   { name: 'not', value: 'not:' },
   { name: 'or', value: 'or:' },
   { name: 'piecewise', value: 'piecewise:' },
   {
-    name: 'Defines:collects',
+    name: 'Defines:',
     value:
-      'Defines:\nrequiring?:\nwhen?:\nmeans?:\ncollects:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+      'Defines:\nrequiring?:\nwhen?:\nmeans:\nevaluated?:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
   },
-  {
-    name: 'Defines:evaluated',
-    value:
-      'Defines:\nrequiring?:\nwhen?:\nmeans?:\nevaluated:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
-  },
-  {
-    name: 'Defines:maps',
-    value:
-      'Defines:\nrequiring?:\nwhen?:\nmeans?:\nmaps:\nsatisfying?:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
-  },
-  {
-    name: 'Defines:satisfying',
-    value:
-      'Defines:\nrequiring?:\nwhen?:\nmeans:\nsatisfying?:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
-  },
-  { name: 'Evaluates', value: 'Evaluates:' },
-  { name: 'Foundation', value: 'Foundation:\nMetadata?:' },
   {
     name: 'States',
     value:
@@ -109,6 +84,7 @@ const BASE_COMPLETIONS: Completion[] = [
       'Theorem:\ngiven?:\nwhere?:\nif?:\niff?:\nthen:\nusing?:\nProof?:\nMetadata?:',
   },
   { name: 'Topic', value: 'Topic:\ncontent:\nMetadata?:' },
+  { name: 'Note', value: 'Note:\ncontent:\nMetadata?:' },
 ];
 
 let scheduledFunction: { (): void; cancel(): void } | null = null;

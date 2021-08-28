@@ -103,29 +103,48 @@ object Mathlingua {
         }
     }
 
-    fun render(
-        fs: VirtualFileSystem, logger: Logger, file: VirtualFile?, noexpand: Boolean, raw: Boolean
+    fun export(
+        fs: VirtualFileSystem,
+        logger: Logger,
+        file: VirtualFile?,
+        stdout: Boolean,
+        noExpand: Boolean,
+        raw: Boolean
     ): Int {
-        val errors =
+        val files =
             if (file != null) {
-                renderFile(fs = fs, logger = logger, target = file, noExpand = noexpand, raw = raw)
+                listOf(file)
             } else {
-                if (raw) {
-                    val message = "ERROR: A file must be provided if --raw is used."
-                    logger.log(message)
-                    listOf(
-                        ValueSourceTracker(
-                            value = ParseError(message = message, row = -1, column = -1),
-                            source =
-                                SourceFile(
-                                    file = fs.getFile(listOf("")),
-                                    content = "",
-                                    validation = validationFailure(emptyList())),
-                            tracker = null))
-                } else {
-                    renderAll(fs = fs, logger = logger)
-                }
+                val result = mutableListOf<VirtualFile>()
+                findMathlinguaFiles(getContentDirectory(fs), result)
+                result
             }
+
+        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+        for (target in files) {
+            errors.addAll(
+                exportFile(
+                    fs = fs,
+                    logger = logger,
+                    target = target,
+                    stdout = stdout,
+                    noExpand = noExpand,
+                    raw = raw))
+        }
+
+        if (!stdout) {
+            logger.log(getErrorOutput(fs, errors, files.size, false))
+        }
+
+        return if (errors.isEmpty()) {
+            0
+        } else {
+            1
+        }
+    }
+
+    fun render(fs: VirtualFileSystem, logger: Logger): Int {
+        val errors = renderAll(fs = fs, logger = logger)
         return if (errors.isEmpty()) {
             0
         } else {
@@ -134,20 +153,22 @@ object Mathlingua {
     }
 
     fun clean(fs: VirtualFileSystem, logger: Logger): Int {
-        val indexFile = fs.getFile(listOf("docs", "index.html"))
-        return if (!indexFile.exists()) {
-            logger.log("Nothing to clean")
-            0
-        } else {
-            if (indexFile.delete()) {
-                logger.log("Deleted docs${fs.getFileSeparator()}index.html")
+        val docsDir = getDocsDirectory(fs)
+        val result =
+            if (!docsDir.exists()) {
+                logger.log("Nothing to clean")
                 0
             } else {
-                logger.log(
-                    "${bold(red("ERROR: "))} Failed to delete docs${fs.getFileSeparator()}index.html")
-                1
+                if (docsDir.delete()) {
+                    logger.log("Cleaned docs directory")
+                    0
+                } else {
+                    logger.log("${bold(red("ERROR: "))} Failed to clean the docs directory")
+                    1
+                }
             }
-        }
+        docsDir.mkdirs()
+        return result
     }
 
     fun version(logger: Logger): Int {
@@ -525,8 +546,13 @@ private fun getErrorOutput(
     return builder.toString()
 }
 
-private fun renderFile(
-    fs: VirtualFileSystem, logger: Logger, target: VirtualFile, noExpand: Boolean, raw: Boolean
+private fun exportFile(
+    fs: VirtualFileSystem,
+    logger: Logger,
+    target: VirtualFile,
+    stdout: Boolean,
+    noExpand: Boolean,
+    raw: Boolean
 ): List<ValueSourceTracker<ParseError>> {
     if (!target.exists()) {
         val message =
@@ -577,7 +603,28 @@ private fun renderFile(
         } else {
             buildStandaloneHtml(content = contentBuilder.toString())
         }
-    logger.log(getErrorOutput(fs, errors, sourceCollection.size(), false))
+
+    if (stdout) {
+        logger.log(text)
+    } else {
+        // get the path relative to the current working directory with
+        // the file extension replaced with ".html"
+        val relHtmlPath = target.relativePathTo(fs.cwd()).toMutableList()
+        if (relHtmlPath.size > 0) {
+            relHtmlPath[relHtmlPath.size - 1] =
+                relHtmlPath[relHtmlPath.size - 1].replace(".math", ".html")
+        }
+        val htmlPath = mutableListOf<String>()
+        htmlPath.add("exported")
+        htmlPath.addAll(relHtmlPath)
+        val outFile = fs.getFile(htmlPath)
+        val parentDir =
+            fs.getDirectory(htmlPath.filterIndexed { index, _ -> index < htmlPath.size - 1 })
+        parentDir.mkdirs()
+        outFile.writeText(text)
+        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())}")
+    }
+
     return errors
 }
 

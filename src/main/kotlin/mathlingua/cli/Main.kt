@@ -71,7 +71,7 @@ private class Version : CliktCommand(help = "Prints the tool and MathLingua lang
     }
 }
 
-private class Render : CliktCommand(help = "Generates HTML code with definitions expanded") {
+private class Export : CliktCommand(help = "Exports MathLingua files to static HTML files") {
     private val file: String? by argument(
             help =
                 "If specified, the .math file to render as an HTML document.  Otherwise, all .math files " +
@@ -86,6 +86,11 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
                 "If specified with a single file, the raw HTML will be rendered excluding any " +
                     "script or style tages.  It is an error to specify this flag without specify a specific " +
                     "file to render.")
+        .flag()
+    private val stdout: Boolean by option(
+            help =
+                "If specified, the HTML contents will be written to standard output instead of" +
+                    "to files in the 'exported' directory")
         .flag()
 
     override fun run() {
@@ -132,7 +137,7 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
         runBlocking {
             val fs = newDiskFileSystem()
             exitProcess(
-                Mathlingua.render(
+                Mathlingua.export(
                     fs = fs,
                     logger = TermUiLogger(termUi = TermUi),
                     file =
@@ -141,8 +146,19 @@ private class Render : CliktCommand(help = "Generates HTML code with definitions
                         } else {
                             fs.getFileOrDirectory(file!!)
                         },
-                    noexpand = noexpand,
+                    stdout = stdout,
+                    noExpand = noexpand,
                     raw = raw))
+        }
+    }
+}
+
+private class Render :
+    CliktCommand(help = "Generates a static website for exploring the MathLingua content") {
+    override fun run() {
+        runBlocking {
+            val fs = newDiskFileSystem()
+            exitProcess(Mathlingua.render(fs = fs, logger = TermUiLogger(termUi = TermUi)))
         }
     }
 }
@@ -177,7 +193,10 @@ class Clean : CliktCommand(help = "Deletes generated HTML files") {
 }
 
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Serve(), Decompose(), Version())
+    val mlg =
+        Mlg()
+            .subcommands(
+                Help(), Check(), Clean(), Render(), Export(), Serve(), Decompose(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

@@ -71,11 +71,6 @@ data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
                 buffer.append(chalkTalkTarget.toCode())
                 buffer.append("\n")
             }
-            is Mapping -> {
-                buffer.append(buildIndent(level, true))
-                buffer.append(chalkTalkTarget.toCode())
-                buffer.append("\n")
-            }
             is Tuple -> {
                 buffer.append(buildIndent(level, true))
                 buffer.append(chalkTalkTarget.toCode())

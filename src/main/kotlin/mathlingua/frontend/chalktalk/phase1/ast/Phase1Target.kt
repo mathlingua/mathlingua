@@ -43,24 +43,6 @@ sealed class Phase1Target : Phase1Node
 
 interface GroupOrBlockComment : Phase1Node
 
-data class Mapping(val lhs: Phase1Token, val rhs: Phase1Token) : Phase1Target() {
-
-    override fun forEach(fn: (node: Phase1Node) -> Unit) {
-        fn(lhs)
-        fn(rhs)
-    }
-
-    override fun toCode() = lhs.toCode() + " = " + rhs.toCode()
-
-    override fun resolve() = this
-
-    override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
-        transformer(
-            Mapping(
-                lhs = lhs.transform(transformer) as Phase1Token,
-                rhs = rhs.transform(transformer) as Phase1Token))
-}
-
 data class BlockComment(val text: String) : GroupOrBlockComment {
     override fun forEach(fn: (node: Phase1Node) -> Unit) {}
 

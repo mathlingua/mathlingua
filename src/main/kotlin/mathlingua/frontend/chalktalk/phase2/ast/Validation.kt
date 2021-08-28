@@ -20,7 +20,6 @@ import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
 import mathlingua.frontend.chalktalk.phase1.ast.Assignment
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Group
-import mathlingua.frontend.chalktalk.phase1.ast.Mapping
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.Section
@@ -32,7 +31,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
-import mathlingua.frontend.chalktalk.phase2.ast.clause.MappingNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
@@ -307,8 +305,6 @@ val DEFAULT_ID_STATEMENT =
     IdStatement(text = "INVALID", texTalkRoot = validationFailure(emptyList()))
 
 val DEFAULT_STATEMENT = Statement(text = "INVALID", texTalkRoot = validationFailure(emptyList()))
-
-val DEFAULT_MAPPING_NODE = MappingNode(mapping = Mapping(lhs = DEFAULT_TOKEN, rhs = DEFAULT_TOKEN))
 
 val DEFAULT_TEXT = Text(text = "INVALID")
 

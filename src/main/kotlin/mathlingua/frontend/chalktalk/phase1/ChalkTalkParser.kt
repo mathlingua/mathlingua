@@ -25,7 +25,6 @@ import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.GroupOrBlockComment
-import mathlingua.frontend.chalktalk.phase1.ast.Mapping
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.Root
 import mathlingua.frontend.chalktalk.phase1.ast.Section
@@ -192,40 +191,12 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
             return Argument(literal)
         }
 
-        val mapping = mapping()
-        if (mapping != null) {
-            return Argument(mapping)
-        }
-
         val target = tupleItem()
         if (target == null) {
             addError("Expected a name, abstraction, tuple, aggregate, or assignment")
             return Argument(INVALID)
         }
         return Argument(target)
-    }
-
-    private fun mapping(): Mapping? {
-        if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Equals)) {
-            return null
-        }
-
-        val name = next()
-        val equals = next()
-        val rhs =
-            if (!hasNext()) {
-                addError("A = must be followed by an argument", equals)
-                INVALID
-            } else {
-                val maybeRhs = next()
-                if (maybeRhs.type == ChalkTalkTokenType.String) {
-                    maybeRhs
-                } else {
-                    addError("The right hand side of a = must be a string", equals)
-                    INVALID
-                }
-            }
-        return Mapping(name, rhs)
     }
 
     private fun assignment(): Assignment? {

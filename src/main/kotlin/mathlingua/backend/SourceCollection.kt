@@ -1049,7 +1049,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                     meansSection =
                                         MeansSection(
                                             clauses = ClauseListNode(clauses = emptyList())),
-                                    satisfyingSection = null,
                                     viewingSection = null,
                                     usingSection = null,
                                     writtenSection = WrittenSection(forms = listOf(rhs.toCode())),
@@ -1343,7 +1342,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                         meansSection =
                                             MeansSection(
                                                 clauses = ClauseListNode(clauses = emptyList())),
-                                        satisfyingSection = null,
                                         viewingSection = null,
                                         usingSection = null,
                                         writtenSection =

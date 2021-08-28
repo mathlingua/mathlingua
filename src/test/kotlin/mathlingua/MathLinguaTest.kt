@@ -128,7 +128,6 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: X
             means: 'X is \something'
-            satisfying: '\something'
             written: "something"
             called: "finite set"
 
@@ -136,7 +135,6 @@ internal class MathLinguaTest {
             [\infinite.set]
             Defines: X
             means: 'X is \something'
-            satisfying: '\something.else'
             written: "something"
             called: "infinite set"
 
@@ -144,15 +142,14 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: Y
             means: 'X is \something'
-            satisfying: '\yet.something.else'
             written: "something"
             called: "finite set"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            means: 'X is \something'
-            satisfying:
+            means:
+            . 'X is \something'
             . if: X
               then: '\something.else'
             written: "something"
@@ -168,7 +165,7 @@ internal class MathLinguaTest {
         val dups = sourceCollection.getDuplicateDefinedSignatures().map { it.value }
         assertThat(dups)
             .isEqualTo(
-                listOf(Signature(form = "\\finite.set", location = Location(row = 16, column = 0))))
+                listOf(Signature(form = "\\finite.set", location = Location(row = 14, column = 0))))
     }
 
     @Test
@@ -279,7 +276,6 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: X
             means: 'X is \something'
-            satisfying: '\something'
             written: "something"
             called: "finite set"
 
@@ -287,15 +283,14 @@ internal class MathLinguaTest {
             [\infinite.set]
             Defines: X
             means: 'X is \something'
-            satisfying: '\something.else'
             written: "something"
             called: "infinite set"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            means: 'X is \something'
-            satisfying:
+            means:
+            . 'X is \something'
             . if: X
               then: '\something.else'
             written: "something"
@@ -332,7 +327,6 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: X
             means: 'X is \something'
-            satisfying: '\something'
             written: "something"
             called: "finite set"
 
@@ -340,15 +334,14 @@ internal class MathLinguaTest {
             [\infinite.set]
             Defines: X
             means: 'X is \something'
-            satisfying: '\something.else'
             written: "something"
             called: "infinite set"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            means: 'X is \something'
-            satisfying:
+            means:
+            . 'X is \something'
             . if: X
               then: '\something.else'
             written: "something"
@@ -362,7 +355,6 @@ internal class MathLinguaTest {
             [\set]
             Defines: Y
             means: 'X is \something'
-            satisfying: '\yet.something.else'
             written: "something"
             called: "set"
         """.trimIndent())

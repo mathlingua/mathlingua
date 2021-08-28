@@ -7,7 +7,6 @@ Defines:
 requiring?:
 when?:
 means:
-satisfying?:
 viewing?:
 using?:
 written:

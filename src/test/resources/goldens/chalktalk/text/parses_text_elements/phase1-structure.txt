@@ -44,26 +44,16 @@ Root(
                                          chalkTalkTarget = Phase1Token(
                                            text = "'B is \something'"
                                            type = ChalkTalkTokenType.Statement
-                                           row = 2
-                                           column = 7
+                                           row = 3
+                                           column = 2
                                          )
-                                       )
-                                     ]
-                            ),
-                            Section(
-                              name = Phase1Token(
-                                text = "satisfying"
-                                type = ChalkTalkTokenType.Name
-                                row = 3
-                                column = 0
-                              )
-                              args = [
+                                       ),
                                        Argument(
                                          chalkTalkTarget = Phase1Token(
                                            text = ""C""
                                            type = ChalkTalkTokenType.String
-                                           row = 3
-                                           column = 12
+                                           row = 4
+                                           column = 2
                                          )
                                        )
                                      ]
@@ -72,7 +62,7 @@ Root(
                               name = Phase1Token(
                                 text = "written"
                                 type = ChalkTalkTokenType.Name
-                                row = 4
+                                row = 5
                                 column = 0
                               )
                               args = [
@@ -80,7 +70,7 @@ Root(
                                          chalkTalkTarget = Phase1Token(
                                            text = ""something""
                                            type = ChalkTalkTokenType.String
-                                           row = 4
+                                           row = 5
                                            column = 9
                                          )
                                        )
@@ -90,7 +80,7 @@ Root(
                               name = Phase1Token(
                                 text = "called"
                                 type = ChalkTalkTokenType.Name
-                                row = 5
+                                row = 6
                                 column = 0
                               )
                               args = [
@@ -98,7 +88,7 @@ Root(
                                          chalkTalkTarget = Phase1Token(
                                            text = ""A?""
                                            type = ChalkTalkTokenType.String
-                                           row = 5
+                                           row = 6
                                            column = 8
                                          )
                                        )

@@ -98,13 +98,7 @@ Document(
                                                 ]
                                    )
                                  )
-                               )
-                             ]
-                 )
-               )
-               satisfyingSection = SatisfyingSection(
-                 clauses = ClauseListNode(
-                   clauses = [
+                               ),
                                Text(
                                  text = ""C""
                                )

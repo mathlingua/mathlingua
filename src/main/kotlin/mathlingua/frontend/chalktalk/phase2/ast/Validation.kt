@@ -70,7 +70,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.ThatSection
@@ -346,8 +345,6 @@ val DEFAULT_USING_SECTION = UsingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_SATISFYING_SECTION = SatisfyingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
-
 val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_STATES_SECTION = StatesSection()
@@ -551,7 +548,6 @@ val DEFAULT_DEFINES_MEANS_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        satisfyingSection = DEFAULT_SATISFYING_SECTION,
         viewingSection = DEFAULT_VIEWING_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         usingSection = DEFAULT_USING_SECTION,

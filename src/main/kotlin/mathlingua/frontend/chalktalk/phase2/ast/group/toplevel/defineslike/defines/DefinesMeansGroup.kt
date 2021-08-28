@@ -57,7 +57,6 @@ data class DefinesMeansGroup(
     override val requiringSection: RequiringSection?,
     override val whenSection: WhenSection?,
     val meansSection: MeansSection,
-    val satisfyingSection: SatisfyingSection?,
     override val viewingSection: ViewingSection?,
     override val usingSection: UsingSection?,
     override val writtenSection: WrittenSection,
@@ -75,9 +74,6 @@ data class DefinesMeansGroup(
             fn(whenSection)
         }
         fn(meansSection)
-        if (satisfyingSection != null) {
-            fn(satisfyingSection)
-        }
         if (viewingSection != null) {
             fn(viewingSection)
         }
@@ -98,7 +94,6 @@ data class DefinesMeansGroup(
                 requiringSection,
                 whenSection,
                 meansSection,
-                satisfyingSection,
                 viewingSection,
                 usingSection,
                 writtenSection,
@@ -117,8 +112,6 @@ data class DefinesMeansGroup(
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection.transform(chalkTransformer) as MeansSection,
-                satisfyingSection =
-                    satisfyingSection?.transform(chalkTransformer) as SatisfyingSection?,
                 viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -146,7 +139,6 @@ fun validateDefinesMeansGroup(
                     "requiring?",
                     "when?",
                     "means",
-                    "satisfying?",
                     "viewing?",
                     "using?",
                     "written",
@@ -172,10 +164,6 @@ fun validateDefinesMeansGroup(
                         meansSection =
                             ensureNonNull(sections["means"], DEFAULT_MEANS_SECTION) {
                                 validateMeansSection(it, errors, tracker)
-                            },
-                        satisfyingSection =
-                            ifNonNull(sections["satisfying"]) {
-                                validateSatisfyingSection(it, errors, tracker)
                             },
                         viewingSection =
                             ifNonNull(sections["viewing"]) {

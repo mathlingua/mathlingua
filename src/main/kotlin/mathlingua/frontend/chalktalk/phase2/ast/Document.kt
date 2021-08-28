@@ -34,6 +34,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.state
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.isBlockComment
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.note.NoteGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.note.isNoteGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.note.validateNoteGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.isResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.validateResourceGroup
@@ -46,6 +49,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.isTopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.validateTopicGroup
 import mathlingua.frontend.support.Location
@@ -65,6 +69,9 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
     fun axioms() = groups.filterIsInstance<AxiomGroup>()
     fun conjectures() = groups.filterIsInstance<ConjectureGroup>()
     fun resources() = groups.filterIsInstance<ResourceGroup>()
+    fun topics() = groups.filterIsInstance<TopicGroup>()
+    fun notes() = groups.filterIsInstance<NoteGroup>()
+    fun blockComments() = groups.filterIsInstance<TopLevelBlockComment>()
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         groups.forEach(fn)
@@ -121,6 +128,9 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             }
             isTopicGroup(group) -> {
                 allGroups.add(validateTopicGroup(group, errors, tracker))
+            }
+            isNoteGroup(group) -> {
+                allGroups.add(validateNoteGroup(group, errors, tracker))
             }
             isResourceGroup(group) -> {
                 allGroups.add(validateResourceGroup(group, errors, tracker))

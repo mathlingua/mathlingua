@@ -82,6 +82,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViaSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.note.NoteGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.note.NoteSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
@@ -334,6 +336,8 @@ val DEFAULT_AND_GROUP = AndGroup(andSection = DEFAULT_AND_SECTION)
 
 val DEFAULT_PIECEWISE_SECTION = PiecewiseSection()
 
+val DEFAULT_NOTE_SECTION = NoteSection()
+
 val DEFAULT_EVALUATED_SECTION = EvaluatedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_PROVIDED_SECTION = ProvidedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
@@ -408,6 +412,13 @@ val DEFAULT_TOPIC_GROUP =
     TopicGroup(
         id = DEFAULT_ID_STATEMENT.text,
         topicSection = DEFAULT_ENTRY_SECTION,
+        contentSection = DEFAULT_CONTENT_SECTION,
+        metaDataSection = DEFAULT_META_DATA_SECTION)
+
+val DEFAULT_NOTE_GROUP =
+    NoteGroup(
+        id = DEFAULT_ID_STATEMENT.text,
+        noteSection = DEFAULT_NOTE_SECTION,
         contentSection = DEFAULT_CONTENT_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 

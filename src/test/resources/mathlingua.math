@@ -184,6 +184,12 @@ Topic: "some name"
 content: "some content"
 
 
+[!some.note]
+Note:
+content: "some content"
+
+
+[\some.theorem]
 Theorem:
 then:
 . forAll: x

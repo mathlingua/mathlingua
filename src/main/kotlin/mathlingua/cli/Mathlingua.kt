@@ -154,16 +154,20 @@ object Mathlingua {
 
     fun clean(fs: VirtualFileSystem, logger: Logger): Int {
         val docsDir = getDocsDirectory(fs)
+        val exportedDir = getExportedDirectory(fs)
         val result =
-            if (!docsDir.exists()) {
+            if (!docsDir.exists() && !exportedDir.exists()) {
                 logger.log("Nothing to clean")
                 0
             } else {
-                if (docsDir.delete()) {
-                    logger.log("Cleaned docs directory")
+                val deletedDocs = docsDir.delete()
+                val deletedExported = exportedDir.delete()
+                if (deletedDocs && deletedExported) {
+                    logger.log("Cleaned the 'docs' and 'exported' directories")
                     0
                 } else {
-                    logger.log("${bold(red("ERROR: "))} Failed to clean the docs directory")
+                    logger.log(
+                        "${bold(red("ERROR: "))} Failed to clean the 'docs' or 'exported' directory")
                     1
                 }
             }
@@ -491,6 +495,8 @@ private fun maybePlural(text: String, count: Int) =
     }
 
 private fun getDocsDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("docs"))
+
+private fun getExportedDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("exported"))
 
 private fun getContentDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("content"))
 

@@ -97,7 +97,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theore
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.RelatedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ResourcesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.SiteGroup
@@ -347,8 +346,6 @@ val DEFAULT_USING_SECTION = UsingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_WHERE_SECTION = WhereSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
-
 val DEFAULT_SATISFYING_SECTION = SatisfyingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
@@ -360,15 +357,11 @@ val DEFAULT_EXISTS_SECTION = ExistsSection(identifiers = emptyList())
 val DEFAULT_EXISTS_UNIQUE_SECTION = ExistsUniqueSection(identifiers = emptyList())
 
 val DEFAULT_EXISTS_GROUP =
-    ExistsGroup(
-        existsSection = DEFAULT_EXISTS_SECTION,
-        whereSection = null,
-        suchThatSection = DEFAULT_SUCH_THAT_SECTION)
+    ExistsGroup(existsSection = DEFAULT_EXISTS_SECTION, suchThatSection = DEFAULT_SUCH_THAT_SECTION)
 
 val DEFAULT_EXISTS_UNIQUE_GROUP =
     ExistsUniqueGroup(
         existsUniqueSection = DEFAULT_EXISTS_UNIQUE_SECTION,
-        whereSection = null,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION)
 
 val DEFAULT_FOR_ALL_SECTION = ForAllSection(targets = emptyList())
@@ -384,7 +377,6 @@ val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList())
 val DEFAULT_FOR_ALL_GROUP =
     ForAllGroup(
         forAllSection = DEFAULT_FOR_ALL_SECTION,
-        whereSection = DEFAULT_WHERE_SECTION,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION,
         thenSection = DEFAULT_THEN_SECTION)
 
@@ -441,7 +433,6 @@ val DEFAULT_AXIOM_GROUP =
         id = DEFAULT_ID_STATEMENT,
         axiomSection = DEFAULT_AXIOM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
-        whereSection = DEFAULT_WHERE_SECTION,
         ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,
@@ -453,7 +444,6 @@ val DEFAULT_CONJECTURE_GROUP =
         id = DEFAULT_ID_STATEMENT,
         conjectureSection = DEFAULT_CONJECTURE_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
-        whereSection = DEFAULT_WHERE_SECTION,
         ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,
@@ -465,7 +455,6 @@ val DEFAULT_THEOREM_GROUP =
         id = DEFAULT_ID_STATEMENT,
         theoremSection = DEFAULT_THEOREM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
-        givenWhereSection = DEFAULT_WHERE_SECTION,
         ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         usingSection = DEFAULT_USING_SECTION,

@@ -8,7 +8,6 @@ Document(
                          ]
                )
                givenSection = null
-               givenWhereSection = null
                ifOrIffSection = null
                thenSection = ThenSection(
                  clauses = ClauseListNode(

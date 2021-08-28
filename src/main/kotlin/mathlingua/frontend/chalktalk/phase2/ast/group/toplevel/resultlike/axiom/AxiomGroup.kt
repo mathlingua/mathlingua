@@ -37,11 +37,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theore
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.validateIfOrIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
@@ -56,7 +54,6 @@ data class AxiomGroup(
     override val id: IdStatement?,
     val axiomSection: AxiomSection,
     val givenSection: GivenSection?,
-    val whereSection: WhereSection?,
     val ifOrIffSection: IfOrIffSection?,
     val thenSection: ThenSection,
     override val usingSection: UsingSection?,
@@ -73,9 +70,6 @@ data class AxiomGroup(
         }
         if (givenSection != null) {
             fn(givenSection)
-        }
-        if (whereSection != null) {
-            fn(whereSection)
         }
         if (ifOrIffSection != null) {
             fn(ifOrIffSection.resolve())
@@ -94,7 +88,6 @@ data class AxiomGroup(
             id,
             axiomSection,
             givenSection,
-            whereSection,
             ifOrIffSection?.resolve(),
             thenSection,
             usingSection,
@@ -107,7 +100,6 @@ data class AxiomGroup(
                 id = id?.transform(chalkTransformer) as IdStatement?,
                 axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
-                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
                 ifOrIffSection = ifOrIffSection?.transform(chalkTransformer),
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -126,8 +118,7 @@ fun validateAxiomGroup(
                 group,
                 errors,
                 DEFAULT_AXIOM_GROUP,
-                listOf(
-                    "Axiom", "given?", "where?", "if?", "iff?", "then", "using?", "Metadata?")) {
+                listOf("Axiom", "given?", "if?", "iff?", "then", "using?", "Metadata?")) {
             sections ->
                 AxiomGroup(
                     signature = id?.signature(tracker),
@@ -138,8 +129,6 @@ fun validateAxiomGroup(
                         },
                     givenSection =
                         ifNonNull(sections["given"]) { validateGivenSection(it, errors, tracker) },
-                    whereSection =
-                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) },
                     ifOrIffSection = validateIfOrIffSection(node, sections, errors, tracker),
                     thenSection =
                         ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {

@@ -22,13 +22,11 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_FOR_ALL_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.frontend.chalktalk.phase2.ast.common.FourPartNode
+import mathlingua.frontend.chalktalk.phase2.ast.common.ThreePartNode
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.validateSuchThatSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhereSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
@@ -39,12 +37,11 @@ import mathlingua.frontend.support.ParseError
 
 data class ForAllGroup(
     val forAllSection: ForAllSection,
-    val whereSection: WhereSection?,
     val suchThatSection: SuchThatSection?,
     val thenSection: ThenSection
 ) :
-    FourPartNode<ForAllSection, WhereSection?, SuchThatSection?, ThenSection>(
-        forAllSection, whereSection, suchThatSection, thenSection, ::ForAllGroup),
+    ThreePartNode<ForAllSection, SuchThatSection?, ThenSection>(
+        forAllSection, suchThatSection, thenSection, ::ForAllGroup),
     Clause
 
 fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "forAll")
@@ -55,17 +52,13 @@ fun validateForGroup(
     track(node, tracker) {
         validateGroup(node.resolve(), errors, "forAll", DEFAULT_FOR_ALL_GROUP) { group ->
             identifySections(
-                group,
-                errors,
-                DEFAULT_FOR_ALL_GROUP,
-                listOf("forAll", "where?", "suchThat?", "then")) { sections ->
+                group, errors, DEFAULT_FOR_ALL_GROUP, listOf("forAll", "suchThat?", "then")) {
+            sections ->
                 ForAllGroup(
                     forAllSection =
                         ensureNonNull(sections["forAll"], DEFAULT_FOR_ALL_SECTION) {
                             validateForSection(it, errors, tracker)
                         },
-                    whereSection =
-                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) },
                     suchThatSection =
                         ifNonNull(sections["suchThat"]) {
                             validateSuchThatSection(it, errors, tracker)

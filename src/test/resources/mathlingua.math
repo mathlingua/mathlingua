@@ -100,7 +100,7 @@ means:
 . '* is \binary.operation:on{X}'
 satisfying:
 . forAll: x, y, z
-  where: 'x, y, z in X'
+  suchThat: 'x, y, z in X'
   then: '(x*y)*z = x*(y*z)'
 viewing:
 . as: '\set'
@@ -121,7 +121,7 @@ called: "something"
 
 Theorem: "some name"
 given: x, y
-where: 'x, y is \something'
+if: 'x, y is \something'
 then: 'x + y is \something'
 
 
@@ -137,7 +137,7 @@ then: 'y'
 
 Axiom: "some name"
 given: x, y
-where: 'x, y is \something'
+if: 'x, y is \something'
 then: 'x + y is \something'
 
 
@@ -153,7 +153,7 @@ then: 'y'
 
 Conjecture: "some name"
 given: x, y
-where: 'x, y is \something'
+if: 'x, y is \something'
 then: 'x + y is \something'
 
 
@@ -187,15 +187,16 @@ content: "some content"
 Theorem:
 then:
 . forAll: x
-  where: 'x is \something'
+  suchThat: 'x is \something'
   then: 'something'
 
 
 Theorem:
 then:
 . exists: x
-  where: 'x is \something'
-  suchThat: 'x + 1 is \even'
+  suchThat:
+  . 'x is \something'
+  . 'x + 1 is \even'
 
 
 Theorem:

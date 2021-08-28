@@ -1309,7 +1309,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                 id = null,
                                 theoremSection = TheoremSection(names = emptyList()),
                                 givenSection = null,
-                                givenWhereSection = null,
                                 ifOrIffSection = null,
                                 thenSection =
                                     ThenSection(

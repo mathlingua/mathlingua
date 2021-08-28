@@ -34,7 +34,7 @@ private class Mlg : CliktCommand() {
     override fun run() = Unit
 }
 
-private class Check : CliktCommand(help = "Check input files for errors") {
+private class Check : CliktCommand(help = "Check the MathLingua files for errors") {
     private val file: List<String> by argument(
             help = "The *.math files and/or directories to process")
         .multiple(required = false)
@@ -55,8 +55,8 @@ private class Check : CliktCommand(help = "Check input files for errors") {
 private class Edit :
     CliktCommand(
         help =
-            "Starts a web app on the specified port (defaults to 8080) that " +
-                "allows the MathLingua files to be viewed and edited.  Open " +
+            "Start a web app on the specified port (defaults to 8080) that " +
+                "allows the MathLingua files to be viewed as well as edited.  Open " +
                 "localhost:<port> (i.e. localhost:8080) in your web browser to " +
                 "access the app.") {
     private val port: Int by option(help = "The port to listen on").int().default(8080)
@@ -67,13 +67,13 @@ private class Edit :
     }
 }
 
-private class Version : CliktCommand(help = "Prints the tool and MathLingua language version") {
+private class Version : CliktCommand(help = "Print the MathLingua version") {
     override fun run() {
         exitProcess(Mathlingua.version(logger = TermUiLogger(termUi = TermUi)))
     }
 }
 
-private class Export : CliktCommand(help = "Exports MathLingua files to static HTML files") {
+private class Export : CliktCommand(help = "Export MathLingua files to static HTML files") {
     private val file: String? by argument(
             help =
                 "If specified, the .math file to render as an HTML document.  Otherwise, all .math files " +
@@ -156,7 +156,7 @@ private class Export : CliktCommand(help = "Exports MathLingua files to static H
 }
 
 private class Render :
-    CliktCommand(help = "Generates a static website for exploring the MathLingua content") {
+    CliktCommand(help = "Generate a read-only web app for exploring the MathLingua content") {
     override fun run() {
         runBlocking {
             val fs = newDiskFileSystem()
@@ -176,7 +176,7 @@ class Help : CliktCommand(help = "Show this message and exit") {
     }
 }
 
-class Clean : CliktCommand(help = "Deletes generated HTML files") {
+class Clean : CliktCommand(help = "Delete generated HTML files") {
     override fun run() {
         val fs = newDiskFileSystem()
         val logger = TermUiLogger(termUi = TermUi)

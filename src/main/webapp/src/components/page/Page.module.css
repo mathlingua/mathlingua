@@ -6,7 +6,8 @@
   margin-left: auto; /* for centering content */
   margin-right: auto; /* for centering content */
   font-size: 1em;
-  width: 55%;
+  width: 85em;
+  max-width: 100%;
   background-color: white;
   border: solid;
   border-width: 1px;

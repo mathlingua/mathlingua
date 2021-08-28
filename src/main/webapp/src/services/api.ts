@@ -98,8 +98,8 @@ class StaticApiClient implements ApiClient {
   private autoCompleteClient: AutoComplete;
   private allPaths: string[];
   private signatureToEntity: Map<string, EntityResult>;
-  private homeHtml: string;
   private pathToFileResult: Map<string, FileResult>;
+  private firstFileResult: FileResult | undefined;
   private checkResponse: CheckResponse;
 
   constructor(data: DecompositionResult) {
@@ -124,7 +124,7 @@ class StaticApiClient implements ApiClient {
       }
     }
 
-    this.homeHtml = data.homeHtml;
+    this.firstFileResult = data.collectionResult.fileResults[0];
 
     this.pathToFileResult = new Map();
     for (const fileResult of data.collectionResult.fileResults) {
@@ -146,6 +146,10 @@ class StaticApiClient implements ApiClient {
   }
 
   async getFileResult(path: string): Promise<FileResult | undefined> {
+    if (path === '') {
+      return this.firstFileResult;
+    }
+
     return this.pathToFileResult.get(path);
   }
 

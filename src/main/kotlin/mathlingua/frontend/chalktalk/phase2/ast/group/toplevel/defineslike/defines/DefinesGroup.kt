@@ -19,6 +19,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 import mathlingua.backend.transform.Signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
@@ -26,7 +27,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection

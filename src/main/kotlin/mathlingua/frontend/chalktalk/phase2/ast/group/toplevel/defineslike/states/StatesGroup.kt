@@ -25,6 +25,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THAT_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WRITTEN_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.clause.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -36,7 +37,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Calle
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateRequiringSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.DefinesStatesOrViews
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection

@@ -55,8 +55,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.isPiecewi
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.validatePiecewiseGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.isEqualityGroup
@@ -71,6 +69,8 @@ import mathlingua.frontend.support.ParseError
 interface Clause : Phase2Node
 
 interface Target : Clause
+
+interface DefinesStatesOrViews : Clause
 
 fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     if (node !is Group) {
@@ -151,7 +151,6 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isConstructorGroup, ::validateConstructorGroup),
         ValidationPair(::isInductivelyGroup, ::validateInductivelyGroup),
         ValidationPair(::isPiecewiseGroup, ::validatePiecewiseGroup),
-        ValidationPair(::isEvaluatesGroup, ::validateEvaluatesGroup),
         ValidationPair(::isDefinesGroup, ::validateDefinesGroup),
         ValidationPair(::isStatesGroup, ::validateStatesGroup),
         ValidationPair(::isMembershipGroup, ::validateMembershipGroup),

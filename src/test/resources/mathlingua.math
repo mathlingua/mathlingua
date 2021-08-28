@@ -128,37 +128,6 @@ written: "something"
 called: "something"
 
 
-Foundation:
-. [\X]
-  Defines: X
-  means: 'X is \something'
-  satisfying: 'X is \something.else'
-  written: "X?"
-  called: "X?"
-
-
-Foundation:
-. [\X]
-  Defines: X
-  means: 'X is \set'
-  collects:
-  . given: x
-    where: 'x'
-    all: 'x'
-    suchThat: 'x'
-  written: "X"
-  called: "X?"
-
-
-[x + y]
-Evaluates:
-when: 'x, y is \natural'
-then: 'x + y := x \natural.+/ y'
-when: 'x, y is \real'
-then: 'x + y := x \real.+/ y'
-else: 'x + y := x \complex.+/ y'
-
-
 Theorem: "some name"
 given: x, y
 where: 'x, y is \something'

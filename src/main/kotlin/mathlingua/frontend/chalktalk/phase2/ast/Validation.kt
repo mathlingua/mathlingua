@@ -95,10 +95,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.EvaluatesSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.ThatSection
@@ -429,8 +425,6 @@ val DEFAULT_CONSTRUCTOR_SECTION = ConstructorSection(targets = emptyList())
 
 val DEFAULT_DEFINES_SECTION = DefinesSection(targets = emptyList())
 
-val DEFAULT_EVALUATES_SECTION = EvaluatesSection()
-
 val DEFAULT_WRITTEN_SECTION = WrittenSection(forms = emptyList())
 
 val DEFAULT_CALLED_SECTION = CalledSection(forms = emptyList())
@@ -572,17 +566,6 @@ val DEFAULT_PIECEWISE_GROUP =
         piecewiseSection = DEFAULT_PIECEWISE_SECTION,
         whenThen = emptyList(),
         elseSection = DEFAULT_ELSE_SECTION)
-
-val DEFAULT_EVALUATES_GROUP =
-    EvaluatesGroup(
-        signature = null,
-        id = DEFAULT_ID_STATEMENT,
-        evaluatesSection = DEFAULT_EVALUATES_SECTION,
-        whenThen = emptyList(),
-        elseSection = DEFAULT_ELSE_SECTION,
-        usingSection = DEFAULT_USING_SECTION,
-        writtenSection = DEFAULT_WRITTEN_SECTION,
-        metaDataSection = DEFAULT_META_DATA_SECTION)
 
 val DEFAULT_SOURCE_ITEM_SECTION = SourceItemSection(sourceReference = "")
 
@@ -727,9 +710,3 @@ val DEFAULT_DEFINES_MAPS_GROUP =
         writtenSection = DEFAULT_WRITTEN_SECTION,
         calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
-
-val DEFAULT_FOUNDATION_SECTION = FoundationSection(content = DEFAULT_DEFINES_MEANS_GROUP)
-
-val DEFAULT_FOUNDATION_GROUP =
-    FoundationGroup(
-        foundationSection = DEFAULT_FOUNDATION_SECTION, metaDataSection = DEFAULT_META_DATA_SECTION)

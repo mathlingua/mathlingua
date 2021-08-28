@@ -61,7 +61,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
@@ -326,7 +325,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     private val axiomGroups = mutableListOf<ValueSourceTracker<Normalized<AxiomGroup>>>()
     private val theoremGroups = mutableListOf<ValueSourceTracker<Normalized<TheoremGroup>>>()
     private val conjectureGroups = mutableListOf<ValueSourceTracker<Normalized<ConjectureGroup>>>()
-    private val foundationGroups = mutableListOf<ValueSourceTracker<Normalized<FoundationGroup>>>()
 
     init {
         // add all the sources
@@ -403,7 +401,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                 val docAxioms = doc.axioms().toSet()
                 val docTheorems = doc.theorems().toSet()
                 val docConjectures = doc.conjectures().toSet()
-                val docFoundations = doc.foundations().toSet()
                 val docAll = doc.groups.toSet()
 
                 for (grp in docAll) {
@@ -411,14 +408,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                         signatureToTopLevelGroup.remove(grp.signature!!.form)
                         if (grp.id != null) {
                             signatureAutoComplete.remove(grp.id!!.text)
-                        }
-                    } else if (grp is FoundationGroup &&
-                        grp.foundationSection.content is HasSignature &&
-                        grp.foundationSection.content.signature != null) {
-                        signatureToTopLevelGroup.remove(
-                            grp.foundationSection.content.signature!!.form)
-                        if (grp.foundationSection.content.id != null) {
-                            signatureAutoComplete.remove(grp.foundationSection.content.id!!.text)
                         }
                     }
                 }
@@ -438,8 +427,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                 theoremGroups.removeAll { docTheorems.contains(it.value.original) }
 
                 conjectureGroups.removeAll { docConjectures.contains(it.value.original) }
-
-                foundationGroups.removeAll { docFoundations.contains(it.value.original) }
 
                 allGroups.removeAll { docAll.contains(it.value.original) }
             }
@@ -463,13 +450,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                     signatureToTopLevelGroup[grp.signature!!.form] = grp
                     if (grp.id != null) {
                         signatureAutoComplete.add(grp.id!!.text)
-                    }
-                } else if (grp is FoundationGroup &&
-                    grp.foundationSection.content is HasSignature &&
-                    grp.foundationSection.content.signature != null) {
-                    signatureToTopLevelGroup[grp.foundationSection.content.signature!!.form] = grp
-                    if (grp.foundationSection.content.id != null) {
-                        signatureAutoComplete.add(grp.foundationSection.content.id!!.text)
                     }
                 }
             }
@@ -531,18 +511,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                 original = it,
                                 normalized =
                                     normalize(it, validation.value.tracker) as ConjectureGroup))
-                })
-
-            foundationGroups.addAll(
-                validation.value.document.foundations().map {
-                    ValueSourceTracker(
-                        source = sf,
-                        tracker = validation.value.tracker,
-                        value =
-                            Normalized(
-                                original = it,
-                                normalized =
-                                    normalize(it, validation.value.tracker) as FoundationGroup))
                 })
 
             allGroups.addAll(
@@ -861,31 +829,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
             }
         }
 
-        for (pair in foundationGroups) {
-            // val item = pair.value.normalized.foundationSection.content
-            if (pair.value.normalized.foundationSection.content is DefinesGroup) {
-                processDefines(
-                    ValueSourceTracker(
-                        value =
-                            Normalized(
-                                original =
-                                    pair.value.original.foundationSection.content as DefinesGroup,
-                                normalized = pair.value.normalized.foundationSection.content),
-                        source = pair.source,
-                        tracker = pair.tracker))
-            } else if (pair.value.normalized.foundationSection.content is StatesGroup) {
-                processStates(
-                    ValueSourceTracker(
-                        value =
-                            Normalized(
-                                original =
-                                    pair.value.original.foundationSection.content as StatesGroup,
-                                normalized = pair.value.normalized.foundationSection.content),
-                        source = pair.source,
-                        tracker = pair.tracker))
-            }
-        }
-
         for (pair in definesGroups) {
             processDefines(pair)
         }
@@ -1029,8 +972,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                                                 .map { it.value.normalized }
                                                 .plus(aliasDefines),
                                         states = statesGroups.map { it.value.normalized },
-                                        axioms = axiomGroups.map { it.value.normalized },
-                                        foundations = foundationGroups.map { it.value.normalized }))
+                                        axioms = axiomGroups.map { it.value.normalized }))
                             result.addAll(
                                 expansion.errors.map {
                                     ValueSourceTracker(
@@ -1177,21 +1119,12 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                 }
                 is ValidationSuccess -> {
                     val doc = validation.value.document
-                    val foundations = doc.foundations()
 
                     val allDefines = mutableListOf<DefinesGroup>()
                     allDefines.addAll(doc.defines())
-                    allDefines.addAll(
-                        foundations
-                            .map { it.foundationSection.content }
-                            .filterIsInstance<DefinesGroup>())
 
                     val allStates = mutableListOf<StatesGroup>()
                     allStates.addAll(doc.states())
-                    allStates.addAll(
-                        foundations
-                            .map { it.foundationSection.content }
-                            .filterIsInstance<StatesGroup>())
 
                     val allSigRoot = mutableListOf<Validation<TexTalkNode>>()
                     allSigRoot.addAll(allDefines.map { it.id.texTalkRoot })
@@ -1304,7 +1237,6 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                     },
                 states = doExpand.thenUse { statesGroups.map { it.value.normalized } },
                 axioms = doExpand.thenUse { axiomGroups.map { it.value.normalized } },
-                foundations = doExpand.thenUse { foundationGroups.map { it.value.normalized } },
                 literal = literal)
         } else {
             MathLinguaCodeWriter(
@@ -1313,8 +1245,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                         definesGroups.map { it.value.normalized }.plus(aliasDefines)
                     },
                 states = doExpand.thenUse { statesGroups.map { it.value.normalized } },
-                axioms = doExpand.thenUse { axiomGroups.map { it.value.normalized } },
-                foundations = doExpand.thenUse { foundationGroups.map { it.value.normalized } })
+                axioms = doExpand.thenUse { axiomGroups.map { it.value.normalized } })
         }
 
     override fun prettyPrint(
@@ -1444,25 +1375,13 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 }
 
 fun getPatternsToWrittenAs(
-    defines: List<DefinesGroup>,
-    states: List<StatesGroup>,
-    axioms: List<AxiomGroup>,
-    foundations: List<FoundationGroup>
+    defines: List<DefinesGroup>, states: List<StatesGroup>, axioms: List<AxiomGroup>
 ): Map<OperatorTexTalkNode, String> {
     val allDefines = mutableListOf<DefinesGroup>()
     allDefines.addAll(defines)
 
     val allStates = mutableListOf<StatesGroup>()
     allStates.addAll(states)
-
-    for (f in foundations) {
-        val content = f.foundationSection.content
-        if (content is DefinesGroup) {
-            allDefines.add(content)
-        } else if (content is StatesGroup) {
-            allStates.add(content)
-        }
-    }
 
     val result = mutableMapOf<OperatorTexTalkNode, String>()
     for (rep in allStates) {

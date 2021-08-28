@@ -28,7 +28,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomSection
@@ -78,9 +77,7 @@ interface CodeWriter {
     fun writeHorizontalLine()
     fun beginTopLevel(label: String)
     fun endTopLevel(numNewlines: Int)
-    fun newCodeWriter(
-        defines: List<DefinesGroup>, states: List<StatesGroup>, foundations: List<FoundationGroup>
-    ): CodeWriter
+    fun newCodeWriter(defines: List<DefinesGroup>, states: List<StatesGroup>): CodeWriter
     fun getCode(): String
 }
 
@@ -94,7 +91,6 @@ open class HtmlCodeWriter(
     val defines: List<DefinesGroup>,
     val states: List<StatesGroup>,
     val axioms: List<AxiomGroup>,
-    val foundations: List<FoundationGroup>,
     val literal: Boolean
 ) : CodeWriter {
     private var statementIndex = System.nanoTime() + Random.Default.nextLong()
@@ -227,17 +223,6 @@ open class HtmlCodeWriter(
         }
 
         return when (node) {
-            is FoundationGroup -> {
-                val builder = StringBuilder()
-                builder.append("<span class='mathlingua-foundation'>")
-                builder.append("<span class='mathlingua-foundation-header'>Foundation</span>")
-                builder.append(generateCode(node.foundationSection.content))
-                builder.append("</span>")
-                if (node.metaDataSection != null) {
-                    builder.append(generateMetaDataSectionCode(node.metaDataSection))
-                }
-                builder.toString()
-            }
             is StatesGroup -> {
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
@@ -260,7 +245,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.calledSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -289,7 +274,7 @@ open class HtmlCodeWriter(
                                 it
                             }
                         }
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -318,7 +303,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.theoremSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states))
                         .getCode())
                 builder.append("</span>")
                 if (node.proofSection != null) {
@@ -328,7 +313,7 @@ open class HtmlCodeWriter(
                     builder.append(
                         "Proof<span class='mathlingua-proof-icon' id=\"icon-$id\">&#9662;</span></div>")
                     builder.append("<span class='mathlingua-proof-hidden' id=\"proof-$id\">")
-                    val writer = newCodeWriter(defines, states, foundations)
+                    val writer = newCodeWriter(defines, states)
                     writer.writeText(node.proofSection.text)
                     builder.append(writer.getCode())
                     builder.append("</span>")
@@ -358,7 +343,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.axiomSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -386,7 +371,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.conjectureSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, foundations))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -429,14 +414,12 @@ open class HtmlCodeWriter(
                             defines = emptyList(),
                             states = emptyList(),
                             axioms = emptyList(),
-                            foundations = emptyList(),
                             literal = literal))
                     .getCode())
             return
         }
 
-        builder.append(
-            node.toCode(hasDot, indent, newCodeWriter(defines, states, foundations)).getCode())
+        builder.append(node.toCode(hasDot, indent, newCodeWriter(defines, states)).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -515,10 +498,7 @@ open class HtmlCodeWriter(
         builder.append('[')
         val stmt =
             id.toStatement()
-                .toCode(
-                    false,
-                    0,
-                    MathLinguaCodeWriter(emptyList(), emptyList(), emptyList(), emptyList()))
+                .toCode(false, 0, MathLinguaCodeWriter(emptyList(), emptyList(), emptyList()))
                 .getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
@@ -600,8 +580,7 @@ open class HtmlCodeWriter(
 
         if (shouldExpand()) {
             val textWithBreaks = parseMarkdown(innerText)
-            val expansion =
-                expandTextAsWritten(textWithBreaks, false, defines, states, axioms, foundations)
+            val expansion = expandTextAsWritten(textWithBreaks, false, defines, states, axioms)
             val title =
                 textWithBreaks +
                     if (expansion.errors.isNotEmpty()) {
@@ -626,8 +605,7 @@ open class HtmlCodeWriter(
         val newText = "{${text}}"
         val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(newText))
         return if (lhsParsed.errors.isEmpty()) {
-                val patternsToWrittenAs =
-                    getPatternsToWrittenAs(defines, states, axioms, foundations)
+                val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
                 expandAsWritten(
                         lhsParsed.root.transform {
                             when (it) {
@@ -659,10 +637,8 @@ open class HtmlCodeWriter(
                 expansionErrors.addAll(root.errors.map { it.message })
             }
             val fullExpansion =
-                if (root is ValidationSuccess &&
-                    (defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty())) {
-                    val patternsToWrittenAs =
-                        getPatternsToWrittenAs(defines, states, axioms, foundations)
+                if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
+                    val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
                     val result =
                         expandAsWritten(
                             root.value.transform {
@@ -708,8 +684,7 @@ open class HtmlCodeWriter(
                 builder.append(prettyPrintTexTalk(rhs))
                 builder.append("$$$")
             } else {
-                if (root is ValidationSuccess &&
-                    (defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty())) {
+                if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
                     builder.append("$$$$fullExpansion$$$")
                 } else {
                     builder.append("$$$$stmtText$$$")
@@ -783,7 +758,6 @@ open class HtmlCodeWriter(
                                 defines = listOf(),
                                 states = listOf(),
                                 axioms = listOf(),
-                                foundations = listOf(),
                                 literal = true)
                             .generateCode(validation.value)
                     val htmlWithoutBreaks = mlgHtml.replace(Regex("<br/><br/>(<br/>)*"), "")
@@ -824,8 +798,7 @@ open class HtmlCodeWriter(
                     parseMarkdown(it.text)
                 }
             }
-        return expandTextAsWritten(comment, false, defines, states, axioms, foundations).text
-            ?: comment
+        return expandTextAsWritten(comment, false, defines, states, axioms).text ?: comment
     }
 
     override fun beginTopLevel(label: String) {
@@ -840,9 +813,8 @@ open class HtmlCodeWriter(
         builder.append("</div>")
     }
 
-    override fun newCodeWriter(
-        defines: List<DefinesGroup>, states: List<StatesGroup>, foundations: List<FoundationGroup>
-    ) = HtmlCodeWriter(defines, states, axioms, foundations, literal)
+    override fun newCodeWriter(defines: List<DefinesGroup>, states: List<StatesGroup>) =
+        HtmlCodeWriter(defines, states, axioms, literal)
 
     override fun getCode(): String {
         val text =
@@ -860,23 +832,18 @@ open class HtmlCodeWriter(
         builder.append("<hr/>")
     }
 
-    private fun shouldExpand() =
-        defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty()
+    private fun shouldExpand() = defines.isNotEmpty() || states.isNotEmpty()
 }
 
 class MathLinguaCodeWriter(
-    val defines: List<DefinesGroup>,
-    val states: List<StatesGroup>,
-    val axioms: List<AxiomGroup>,
-    val foundations: List<FoundationGroup>
+    val defines: List<DefinesGroup>, val states: List<StatesGroup>, val axioms: List<AxiomGroup>
 ) : CodeWriter {
     private val builder = StringBuilder()
 
     override fun generateCode(node: Phase2Node) = node.toCode(false, 0, writer = this).getCode()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(
-            node.toCode(hasDot, indent, newCodeWriter(defines, states, foundations)).getCode())
+        builder.append(node.toCode(hasDot, indent, newCodeWriter(defines, states)).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -925,9 +892,7 @@ class MathLinguaCodeWriter(
     override fun writeId(id: IdStatement) {
         builder.append('[')
         val stmt =
-            id.toStatement()
-                .toCode(false, 0, newCodeWriter(emptyList(), emptyList(), emptyList()))
-                .getCode()
+            id.toStatement().toCode(false, 0, newCodeWriter(emptyList(), emptyList())).getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
     }
@@ -936,8 +901,7 @@ class MathLinguaCodeWriter(
         if (!text.startsWith("\"")) {
             builder.append('"')
         }
-        builder.append(
-            expandTextAsWritten(text, false, defines, states, axioms, foundations).text ?: text)
+        builder.append(expandTextAsWritten(text, false, defines, states, axioms).text ?: text)
         if (!text.endsWith("\"")) {
             builder.append('"')
         }
@@ -958,9 +922,8 @@ class MathLinguaCodeWriter(
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        if (root is ValidationSuccess &&
-            (defines.isNotEmpty() || states.isNotEmpty() || foundations.isNotEmpty())) {
-            val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms, foundations)
+        if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
+            val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
             val expansion = expandAsWritten(root.value, patternsToWrittenAs)
             builder.append(
                 if (expansion.text != null) {
@@ -992,9 +955,8 @@ class MathLinguaCodeWriter(
 
     override fun writeHorizontalLine() {}
 
-    override fun newCodeWriter(
-        defines: List<DefinesGroup>, states: List<StatesGroup>, foundations: List<FoundationGroup>
-    ) = MathLinguaCodeWriter(defines, states, axioms, foundations)
+    override fun newCodeWriter(defines: List<DefinesGroup>, states: List<StatesGroup>) =
+        MathLinguaCodeWriter(defines, states, axioms)
 
     override fun getCode() = builder.toString()
 }
@@ -1134,15 +1096,14 @@ private fun expandTextAsWritten(
     addQuotes: Boolean,
     defines: List<DefinesGroup>,
     states: List<StatesGroup>,
-    axioms: List<AxiomGroup>,
-    foundations: List<FoundationGroup>
+    axioms: List<AxiomGroup>
 ): Expansion {
     if (defines.isEmpty() && states.isEmpty()) {
         return Expansion(text = text, errors = emptyList())
     }
 
     val errors = mutableListOf<String>()
-    val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms, foundations)
+    val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
     val parts = splitByMathlingua(parseMarkdown(text))
     val builder = StringBuilder()
     for (part in parts) {

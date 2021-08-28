@@ -30,11 +30,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.isEvaluatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.evaluates.validateEvaluatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.FoundationGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.isFoundationGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.foundation.validateFoundationGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
@@ -66,7 +61,6 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
 
     fun defines() = groups.filterIsInstance<DefinesGroup>()
     fun states() = groups.filterIsInstance<StatesGroup>()
-    fun foundations() = groups.filterIsInstance<FoundationGroup>()
     fun theorems() = groups.filterIsInstance<TheoremGroup>()
     fun axioms() = groups.filterIsInstance<AxiomGroup>()
     fun conjectures() = groups.filterIsInstance<ConjectureGroup>()
@@ -125,17 +119,11 @@ fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Vali
             isStatesGroup(group) -> {
                 allGroups.add(validateStatesGroup(group, errors, tracker))
             }
-            isFoundationGroup(group) -> {
-                allGroups.add(validateFoundationGroup(group, errors, tracker))
-            }
             isTopicGroup(group) -> {
                 allGroups.add(validateTopicGroup(group, errors, tracker))
             }
             isResourceGroup(group) -> {
                 allGroups.add(validateResourceGroup(group, errors, tracker))
-            }
-            isEvaluatesGroup(group) -> {
-                allGroups.add(validateEvaluatesGroup(group, errors, tracker))
             }
             isBlockComment(group) -> {
                 allGroups.add(TopLevelBlockComment(group as BlockComment))

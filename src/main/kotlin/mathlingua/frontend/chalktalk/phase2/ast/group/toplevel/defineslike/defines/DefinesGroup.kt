@@ -60,12 +60,6 @@ fun validateDefinesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): DefinesGroup =
     when {
-        isDefinesCollectsGroup(node) -> {
-            validateDefinesCollectsGroup(node, errors, tracker)
-        }
-        isDefinesMapsGroup(node) -> {
-            validateDefinesMapsGroup(node, errors, tracker)
-        }
         isDefinesEvaluatedGroup(node) -> {
             validateDefinesEvaluatedGroup(node, errors, tracker)
         }

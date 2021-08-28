@@ -20,42 +20,33 @@ called: "something2"
 Defines: f(x)
 when: 'A is \something'
 means: 'f is \function'
-maps:
-. from: '\reals'
-  to: '\reals'
 written: "\textrm{some.function}(x?)"
 called: "some function over $A?$"
 
 
 [\some.function2{A}(x)]
 Defines: f(x)
-means: 'A is \something'
-maps:
-. from: '\reals'
-  to: '\reals'
+means: 'A is \function:on{\reals}:to{\reals}'
 written: "\textrm{some.function}(x?)"
 called: "some function2 over $A?$"
 
 
 [\even.primes]
-Defines: X
+Defines: X := {x}
 means: 'X is \set'
-collects:
-. given: p
-  where: 'p is \prime'
-  all: 'p'
-  suchThat: 'p is \even'
+satisfying:
+. 'x is \prime'
+. 'x is \even'
 written: "\textbf{even primes}"
 called: "even primes"
 
 
 [\even.primes2]
-Defines: X
-collects:
-. given: p
-  where: 'p is \prime'
-  all: 'p'
-  suchThat: 'p is \even'
+Defines: X := {x}
+means: 'X is \set'
+satisfying:
+. 'x is \prime'
+. 'x is \even'
 written: "\textbf{even primes}"
 called: "even primes2"
 

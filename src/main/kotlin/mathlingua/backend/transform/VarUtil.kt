@@ -31,7 +31,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.given.GivenGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
@@ -363,20 +362,6 @@ private fun checkVarsImpl(
                 vars.add(v)
             }
             varsToRemove.addAll(existsVars)
-        }
-        is GivenGroup -> {
-            val givenVars = node.givenSection.targets.map { getVars(it, ignoreParen) }.flatten()
-            for (v in givenVars) {
-                if (vars.contains(v)) {
-                    errors.add(
-                        ParseError(
-                            message = "Duplicate defined symbol '$v'",
-                            row = location.row,
-                            column = location.column))
-                }
-                vars.add(v)
-            }
-            varsToRemove.addAll(givenVars)
         }
         is Statement -> {
             varsToRemove.addAll(checkVarsImpl(node, vars, tracker, errors, ignoreParen))

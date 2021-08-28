@@ -27,26 +27,14 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.isIfGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateIfGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.and.isAndGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.and.validateAndGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.isCollectionGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.validateCollectionGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.isExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.validateExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.isExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.validateExistsUniqueGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.isExpandsGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.validateExpandsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.isForGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.validateForGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.isIffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.validateIffGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.isConstantGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.isConstructorGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.isInductivelyGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.validateConstantGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.validateConstructorGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.validateInductivelyGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.isMappingGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.validateMappingGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.isNotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.validateNotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.isOrGroup
@@ -144,12 +132,6 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isAndGroup, ::validateAndGroup),
         ValidationPair(::isIfGroup, ::validateIfGroup),
         ValidationPair(::isIffGroup, ::validateIffGroup),
-        ValidationPair(::isExpandsGroup, ::validateExpandsGroup),
-        ValidationPair(::isMappingGroup, ::validateMappingGroup),
-        ValidationPair(::isCollectionGroup, ::validateCollectionGroup),
-        ValidationPair(::isConstantGroup, ::validateConstantGroup),
-        ValidationPair(::isConstructorGroup, ::validateConstructorGroup),
-        ValidationPair(::isInductivelyGroup, ::validateInductivelyGroup),
         ValidationPair(::isPiecewiseGroup, ::validatePiecewiseGroup),
         ValidationPair(::isDefinesGroup, ::validateDefinesGroup),
         ValidationPair(::isStatesGroup, ::validateStatesGroup),

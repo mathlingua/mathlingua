@@ -46,35 +46,15 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.IfSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.and.AndGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.and.AndSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.CollectionGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.CollectionSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.InSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.collection.OfSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.AsSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.ExpandsGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.expands.ExpandsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.from.FromGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.given.AllSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.given.GivenGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstantGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstantSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstructorGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.ConstructorSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.InductivelyFromSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.InductivelyGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.inductively.InductivelySection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.FromSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.MappingGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.MappingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrGroup
@@ -83,14 +63,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.Piecewise
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.CollectsSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesCollectsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesEvaluatedGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMapsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesMeansGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.EvaluatedSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MapsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
@@ -349,19 +325,7 @@ val DEFAULT_IF_SECTION = IfSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_THEN_SECTION = ThenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_AS_SECTION = AsSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
-
 val DEFAULT_IFF_SECTION = IffSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
-
-val DEFAULT_CONSTANT_SECTION = ConstantSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
-
-val DEFAULT_COLLECTION_SECTION = CollectionSection()
-
-val DEFAULT_INDUCTIVELY_FROM_SECTION = InductivelyFromSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
-
-val DEFAULT_INDUCTIVELY_SECTION = InductivelySection()
-
-val DEFAULT_MAPPING_SECTION = MappingSection()
 
 val DEFAULT_NOT_SECTION = NotSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
@@ -387,16 +351,6 @@ val DEFAULT_WHERE_SECTION = WhereSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_SATISFYING_SECTION = SatisfyingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_ALL_SECTION = AllSection(statement = DEFAULT_STATEMENT)
-
-val DEFAULT_OF_SECTION = OfSection(statement = DEFAULT_STATEMENT)
-
-val DEFAULT_FROM_SECTION = FromSection(statements = emptyList())
-
-val DEFAULT_TO_SECTION =
-    mathlingua.frontend.chalktalk.phase2.ast.group.clause.mapping.ToSection(
-        statements = emptyList())
-
 val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_STATES_SECTION = StatesSection()
@@ -417,11 +371,7 @@ val DEFAULT_EXISTS_UNIQUE_GROUP =
         whereSection = null,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION)
 
-val DEFAULT_IN_SECTION = InSection(statement = DEFAULT_STATEMENT)
-
 val DEFAULT_FOR_ALL_SECTION = ForAllSection(targets = emptyList())
-
-val DEFAULT_CONSTRUCTOR_SECTION = ConstructorSection(targets = emptyList())
 
 val DEFAULT_DEFINES_SECTION = DefinesSection(targets = emptyList())
 
@@ -430,19 +380,6 @@ val DEFAULT_WRITTEN_SECTION = WrittenSection(forms = emptyList())
 val DEFAULT_CALLED_SECTION = CalledSection(forms = emptyList())
 
 val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList())
-
-val DEFAULT_COLLECTION_GROUP =
-    CollectionGroup(
-        collectionSection = DEFAULT_COLLECTION_SECTION,
-        ofSection = DEFAULT_OF_SECTION,
-        inSection = DEFAULT_IN_SECTION,
-        forAllSection = DEFAULT_FOR_ALL_SECTION,
-        whereSection = DEFAULT_WHERE_SECTION)
-
-val DEFAULT_EXPANDS_SECTION = ExpandsSection(targets = emptyList())
-
-val DEFAULT_EXPANDS_GROUP =
-    ExpandsGroup(expandsSection = DEFAULT_EXPANDS_SECTION, asSection = DEFAULT_AS_SECTION)
 
 val DEFAULT_FOR_ALL_GROUP =
     ForAllGroup(
@@ -455,24 +392,6 @@ val DEFAULT_IF_GROUP = IfGroup(ifSection = DEFAULT_IF_SECTION, thenSection = DEF
 
 val DEFAULT_IFF_GROUP =
     IffGroup(iffSection = DEFAULT_IFF_SECTION, thenSection = DEFAULT_THEN_SECTION)
-
-val DEFAULT_CONSTANT_GROUP = ConstantGroup(constantSection = DEFAULT_CONSTANT_SECTION)
-
-val DEFAULT_CONSTRUCTOR_GROUP =
-    ConstructorGroup(
-        constructorSection = DEFAULT_CONSTRUCTOR_SECTION, fromSection = DEFAULT_FROM_SECTION)
-
-val DEFAULT_INDUCTIVELY_GROUP =
-    InductivelyGroup(
-        inductivelySection = DEFAULT_INDUCTIVELY_SECTION,
-        fromSection = DEFAULT_INDUCTIVELY_FROM_SECTION)
-
-val DEFAULT_MAPPING_GROUP =
-    MappingGroup(
-        mappingSection = DEFAULT_MAPPING_SECTION,
-        fromSection = DEFAULT_FROM_SECTION,
-        thenSection = DEFAULT_TO_SECTION,
-        asSection = DEFAULT_AS_SECTION)
 
 val DEFAULT_NOT_GROUP = NotGroup(notSection = DEFAULT_NOT_SECTION)
 
@@ -609,20 +528,6 @@ val DEFAULT_SOURCE_ITEM_GROUP =
 val DEFAULT_META_DATA_ITEM =
     StringSectionGroup(section = StringSection(name = "", values = emptyList()))
 
-val DEFAULT_GIVEN_GROUP =
-    GivenGroup(
-        givenSection = DEFAULT_GIVEN_SECTION,
-        whereSection = DEFAULT_WHERE_SECTION,
-        allSection = DEFAULT_ALL_SECTION,
-        suchThatSection = DEFAULT_SUCH_THAT_SECTION)
-
-val DEFAULT_FROM_GROUP =
-    FromGroup(fromSection = DEFAULT_FROM_SECTION, toSection = DEFAULT_TO_SECTION)
-
-val DEFAULT_COLLECTS_SECTION = CollectsSection(givenGroup = DEFAULT_GIVEN_GROUP)
-
-val DEFAULT_MAPS_SECTION = MapsSection(fromGroup = DEFAULT_FROM_GROUP)
-
 val DEFAULT_VIEWED_AS_SECTION = ViewingAsSection(statement = DEFAULT_STATEMENT)
 
 val DEFAULT_VIA_SECTION = ViaSection(statement = DEFAULT_STATEMENT)
@@ -674,37 +579,6 @@ val DEFAULT_DEFINES_EVALUATED_GROUP =
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         evaluatedSection = DEFAULT_EVALUATED_SECTION,
-        viewingSection = DEFAULT_VIEWING_SECTION,
-        usingSection = DEFAULT_USING_SECTION,
-        writtenSection = DEFAULT_WRITTEN_SECTION,
-        calledSection = DEFAULT_CALLED_SECTION,
-        metaDataSection = DEFAULT_META_DATA_SECTION)
-
-val DEFAULT_DEFINES_COLLECTS_GROUP =
-    DefinesCollectsGroup(
-        signature = null,
-        id = DEFAULT_ID_STATEMENT,
-        definesSection = DEFAULT_DEFINES_SECTION,
-        requiringSection = DEFAULT_REQUIRING_SECTION,
-        whenSection = DEFAULT_WHEN_SECTION,
-        meansSection = DEFAULT_MEANS_SECTION,
-        collectsSection = DEFAULT_COLLECTS_SECTION,
-        viewingSection = DEFAULT_VIEWING_SECTION,
-        usingSection = DEFAULT_USING_SECTION,
-        writtenSection = DEFAULT_WRITTEN_SECTION,
-        calledSection = DEFAULT_CALLED_SECTION,
-        metaDataSection = DEFAULT_META_DATA_SECTION)
-
-val DEFAULT_DEFINES_MAPS_GROUP =
-    DefinesMapsGroup(
-        signature = null,
-        id = DEFAULT_ID_STATEMENT,
-        definesSection = DEFAULT_DEFINES_SECTION,
-        requiringSection = DEFAULT_REQUIRING_SECTION,
-        whenSection = DEFAULT_WHEN_SECTION,
-        meansSection = DEFAULT_MEANS_SECTION,
-        mapsSection = DEFAULT_MAPS_SECTION,
-        satisfyingSection = DEFAULT_SATISFYING_SECTION,
         viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,

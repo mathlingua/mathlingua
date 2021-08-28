@@ -52,11 +52,13 @@ private class Check : CliktCommand(help = "Check input files for errors") {
         }
 }
 
-private class Serve :
+private class Edit :
     CliktCommand(
         help =
-            "Starts a server on the specified port (defaults to 8080) that " +
-                "rerenders the MathLingua code whenever visited") {
+            "Starts a web app on the specified port (defaults to 8080) that " +
+                "allows the MathLingua files to be viewed and edited.  Open " +
+                "localhost:<port> (i.e. localhost:8080) in your web browser to " +
+                "access the app.") {
     private val port: Int by option(help = "The port to listen on").int().default(8080)
 
     override fun run() {
@@ -183,7 +185,7 @@ class Clean : CliktCommand(help = "Deletes generated HTML files") {
 }
 
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Export(), Serve(), Version())
+    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Export(), Edit(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

@@ -97,7 +97,17 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
     );
   };
 
-  const name = props.node.name.replace('.math', '').replace('_', ' ');
+  let name = props.node.name;
+  const index = name.indexOf('_');
+  if (index >= 0) {
+    const prefix = name.substring(0, index);
+    if (prefix.length > 0 && !isNaN(+prefix)) {
+      // the prefix is a number so trim it
+      name = name.substring(index + 1);
+    }
+  }
+  // remove the .math extension and replace underscores with spaces
+  name = name.replace('.math', '').replace('_', ' ');
 
   const updateInputName = async () => {
     if (!inputName || (!props.node.isDir && !inputName.endsWith('.math'))) {

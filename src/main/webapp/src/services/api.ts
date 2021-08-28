@@ -48,7 +48,6 @@ export interface CheckError {
 
 interface ApiClient {
   getAllPaths(): Promise<string[]>;
-  getHomeHtml(): Promise<string>;
   getFileResult(path: string): Promise<FileResult | undefined>;
   search(query: string): Promise<string[]>;
   getAutocompleteSuffixes(word: string): Promise<string[]>;
@@ -60,11 +59,6 @@ class NetworkApiClient implements ApiClient {
   async getAllPaths(): Promise<string[]> {
     const res = await axios.get('/api/allPaths');
     return res.data.paths;
-  }
-
-  async getHomeHtml(): Promise<string> {
-    const res = await axios.get('/api/home');
-    return res.data.homeHtml;
   }
 
   async getFileResult(path: string): Promise<FileResult | undefined> {
@@ -151,10 +145,6 @@ class StaticApiClient implements ApiClient {
     return this.allPaths;
   }
 
-  async getHomeHtml(): Promise<string> {
-    return this.homeHtml;
-  }
-
   async getFileResult(path: string): Promise<FileResult | undefined> {
     return this.pathToFileResult.get(path);
   }
@@ -197,10 +187,6 @@ export function isStatic() {
 
 export async function getAllPaths(): Promise<string[]> {
   return getClient().getAllPaths();
-}
-
-export async function getHomeHtml(): Promise<string> {
-  return getClient().getHomeHtml();
 }
 
 export async function getFileResult(

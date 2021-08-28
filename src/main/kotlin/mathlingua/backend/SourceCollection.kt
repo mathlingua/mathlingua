@@ -131,6 +131,95 @@ interface SourceCollection {
     fun search(query: String): List<SourceFile>
 }
 
+private class StringPartsComparator : Comparator<List<String>> {
+    override fun compare(list1: List<String>?, list2: List<String>?): Int {
+        if (list1 == null && list2 != null) {
+            return -1
+        }
+
+        if (list1 != null && list2 == null) {
+            return 1
+        }
+
+        if (list1 == null && list2 == null) {
+            return 0
+        }
+
+        return compare(list1!!, 0, list2!!, 0)
+    }
+
+    private fun getNumberPrefix(part: String): Double? {
+        val index = part.indexOf('_')
+        if (index < 0) {
+            return null
+        }
+        return part.substring(0, index).toDoubleOrNull()
+    }
+
+    private fun compare(parts1: List<String>, index1: Int, parts2: List<String>, index2: Int): Int {
+        if (index1 >= parts1.size && index2 >= parts2.size) {
+            return 0
+        }
+
+        if (index1 >= parts1.size && index2 < parts2.size) {
+            return -1
+        }
+
+        if (index1 < parts1.size && index2 >= parts2.size) {
+            return 1
+        }
+
+        val p1 = parts1[index1]
+        val p2 = parts2[index2]
+
+        val num1 = getNumberPrefix(p1)
+        val num2 = getNumberPrefix(p2)
+
+        if (num1 != null && num2 == null) {
+            return -1
+        }
+
+        if (num1 == null && num2 != null) {
+            return 1
+        }
+
+        val comp =
+            if (num1 == null && num2 == null) {
+                p1.compareTo(p2)
+            } else {
+                num1!!.compareTo(num2!!)
+            }
+
+        return if (comp == 0) {
+            compare(parts1, index1 + 1, parts2, index2 + 1)
+        } else {
+            comp
+        }
+    }
+}
+
+private val STRING_PARTS_COMPARATOR = StringPartsComparator()
+
+private class SourcePathComparator : Comparator<VirtualFile> {
+    override fun compare(file1: VirtualFile?, file2: VirtualFile?): Int {
+        if (file1 == null && file2 != null) {
+            return -1
+        }
+
+        if (file1 != null && file2 == null) {
+            return 1
+        }
+
+        if (file1 == null && file2 == null) {
+            return 0
+        }
+
+        return STRING_PARTS_COMPARATOR.compare(file1!!.absolutePath(), file2!!.absolutePath())
+    }
+}
+
+private val SOURCE_PATH_COMPARATOR = SourcePathComparator()
+
 fun newSourceCollection(fs: VirtualFileSystem, filesOrDirs: List<VirtualFile>): SourceCollection {
     val sources = mutableListOf<SourceFile>()
     for (file in filesOrDirs) {
@@ -143,7 +232,7 @@ private fun findVirtualFiles(file: VirtualFile, result: MutableList<SourceFile>)
     if (isMathLinguaFile(file)) {
         result.add(buildSourceFile(file))
     }
-    for (child in file.listFiles()) {
+    for (child in file.listFiles().sortedWith(SOURCE_PATH_COMPARATOR)) {
         findVirtualFiles(child, result)
     }
 }
@@ -267,10 +356,24 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     }
 
     override fun getAllPaths(): List<String> {
-        return sourceFiles.keys.toList()
+        return sourceFiles
+            .keys
+            .toList()
+            .map { it.split(fs.getFileSeparator()) }
+            .sortedWith(STRING_PARTS_COMPARATOR)
+            .map { it.joinToString(fs.getFileSeparator()) }
     }
 
     override fun getPage(path: String): Page? {
+        if (path == "") {
+            val paths = getAllPaths()
+            return if (paths.isEmpty()) {
+                null
+            } else {
+                getPage(paths[0])
+            }
+        }
+
         val sourceFile = sourceFiles[path] ?: return null
         val fileResult = sourceFileToFileResult[sourceFile]
         if (fileResult != null) {

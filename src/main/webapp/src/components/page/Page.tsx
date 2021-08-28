@@ -9,8 +9,10 @@ import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGro
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
 
-import { selectViewedPath } from '../../store/viewedPathSlice';
-import { Home } from '../home/Home';
+import {
+  selectViewedPath,
+  viewedPathUpdated,
+} from '../../store/viewedPathSlice';
 
 import debounce from 'lodash.debounce';
 
@@ -145,17 +147,19 @@ export const Page = () => {
   };
 
   useEffect(() => {
-    if (relativePath !== '') {
-      api
-        .getFileResult(relativePath)
-        .then(async (fileResult) => {
-          setFileResult(fileResult);
-          setEditorContent(fileResult?.content ?? '');
-          await checkForErrors();
-        })
-        .catch((err) => setError(err.message))
-        .finally(() => setIsLoading(false));
-    }
+    const isEmptyPath = relativePath === '';
+    api
+      .getFileResult(relativePath)
+      .then(async (fileResult) => {
+        if (isEmptyPath) {
+          dispatch(viewedPathUpdated(fileResult?.relativePath));
+        }
+        setFileResult(fileResult);
+        setEditorContent(fileResult?.content ?? '');
+        await checkForErrors();
+      })
+      .catch((err) => setError(err.message))
+      .finally(() => setIsLoading(false));
   }, [relativePath]);
 
   useEffect(() => {
@@ -223,10 +227,6 @@ export const Page = () => {
       },
     });
   }, []);
-
-  if (relativePath === '') {
-    return <Home />;
-  }
 
   const errorView = (
     <div className={styles.mathlinguaPage}>

@@ -4,25 +4,17 @@ import { useEffect, useState } from 'react';
 import { pathsUpdated, selectPaths } from '../../store/pathsSlice';
 import * as api from '../../services/api';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
-import {
-  selectSidePanelVisible,
-  sidePanelVisibilityChanged,
-} from '../../store/sidePanelVisibleSlice';
+import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
 import { ErrorView } from '../error-view/ErrorView';
 import { isOnMobile } from '../../support/util';
-import { Link } from 'react-router-dom';
 import { PathTreeItem, PathTreeNode } from '../path-tree-item/PathTreeItem';
-import {
-  selectViewedPath,
-  viewedPathUpdated,
-} from '../../store/viewedPathSlice';
+import { selectViewedPath } from '../../store/viewedPathSlice';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
 
 export const SidePanel = () => {
   const dispatch = useAppDispatch();
   const visible = useAppSelector(selectSidePanelVisible);
   const paths = useAppSelector(selectPaths);
-  const viewedPath = useAppSelector(selectViewedPath) || '';
   const isEditMode = useAppSelector(selectIsEditMode);
 
   const [allPaths, setAllPaths] = useState([] as string[]);
@@ -73,24 +65,6 @@ export const SidePanel = () => {
   const sidePanel = (
     <div style={style} className={styles.sidePanel}>
       <div className={styles.sidePanelContent}>
-        <Link
-          to="/"
-          key="home"
-          className={
-            !viewedPath
-              ? `${styles.sidePanelItem} ${styles.mathlinguaHomeItem} ${styles.mathlinguaListFileItem} ${styles.selected}`
-              : `${styles.sidePanelItem} ${styles.mathlinguaHomeItem} ${styles.mathlinguaListFileItem}`
-          }
-          onClick={() => {
-            if (isOnMobile()) {
-              dispatch(sidePanelVisibilityChanged(false));
-            }
-            dispatch(viewedPathUpdated(''));
-          }}
-        >
-          <div>Home</div>
-        </Link>
-        <hr />
         {start?.children?.map((node) => (
           <PathTreeItem key={node.name} node={node} />
         ))}

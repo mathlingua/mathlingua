@@ -144,7 +144,21 @@ object Mathlingua {
     }
 
     fun render(fs: VirtualFileSystem, logger: Logger): Int {
-        val errors = renderAll(fs = fs, logger = logger)
+        val result = renderAll(fs = fs, logger = logger)
+        val files = result.first
+        val errors = result.second
+        logger.log(
+            getErrorOutput(
+                fs,
+                errors.map {
+                    ValueSourceTracker(
+                        value = ParseError(message = it.message, row = it.row, column = it.column),
+                        source = buildSourceFile(fs.getFileOrDirectory(it.relativePath)),
+                        tracker = null,
+                    )
+                },
+                files.size,
+                false))
         return if (errors.isEmpty()) {
             0
         } else {
@@ -634,7 +648,9 @@ private fun exportFile(
     return errors
 }
 
-private fun renderAll(fs: VirtualFileSystem, logger: Logger): List<ErrorResult> {
+private fun renderAll(
+    fs: VirtualFileSystem, logger: Logger
+): Pair<List<String>, List<ErrorResult>> {
     val uri =
         Mathlingua.javaClass.getResource("/assets")?.toURI()?.toString()?.trim()
             ?: throw Exception("Failed to load assets directory")
@@ -690,7 +706,8 @@ private fun renderAll(fs: VirtualFileSystem, logger: Logger): List<ErrorResult> 
     val dataFile = File(docDir, "data.js")
     dataFile.writeText("window.MATHLINGUA_DATA = $data")
 
-    return decomp.collectionResult.errors
+    return Pair(
+        decomp.collectionResult.fileResults.map { it.relativePath }, decomp.collectionResult.errors)
 }
 
 private fun findMathlinguaFiles(fileOrDir: VirtualFile, result: MutableList<VirtualFile>) {

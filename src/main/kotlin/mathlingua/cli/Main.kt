@@ -163,16 +163,6 @@ private class Render :
     }
 }
 
-class Decompose :
-    CliktCommand(help = "Decompose all input files into rendered forms in JSON format") {
-    override fun run() {
-        val logger = TermUiLogger(termUi = TermUi)
-        val fs = newDiskFileSystem()
-        Mathlingua.decompose(fs, logger)
-        exitProcess(0)
-    }
-}
-
 // this value will be populated in main()
 var helpText = ""
 
@@ -193,10 +183,7 @@ class Clean : CliktCommand(help = "Deletes generated HTML files") {
 }
 
 fun main(args: Array<String>) {
-    val mlg =
-        Mlg()
-            .subcommands(
-                Help(), Check(), Clean(), Render(), Export(), Serve(), Decompose(), Version())
+    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Export(), Serve(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

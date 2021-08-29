@@ -1,0 +1,32 @@
+\cos
+\some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}             :OUTPUT:     \some[x]_a^b{x}.compound.name(x).function[x]{a, b}
+\some[x]_a^b{x}.compound.name(x).function[x]{a, b}
+\some[x]_{a}^{b}{x}:name{A}.compound.name(x).function[x]{a, b}     :OUTPUT:     \some[x]_a^b{x}:name{A}.compound.name(x).function[x]{a, b}
+\some[x]_a^b{x}:name{A}.compound.name(x).function[x]{a, b}
+\some:name{x}.compound.name:anotherName{x}.another
+\topological:over{T}.continuous.function:on{A}:to{B}
+\function{someName}:on{A}:to{B}
+abc
+\some.compound.name
+a ** b
+a \integer.+/ bx in Xa is b
+x is \set
+a, b, c is x, y, z
+x is \compact \convex \set
+f(x + 2*(x + y)^2) + (a + b)/2                                      :OUTPUT:     f(x + 2 * (x + y) ^ 2) + (a + b) / 2
+a + b^2 + \sin(x) - \frac{x}{y}                                     :OUTPUT:     a + b ^ 2 + \sin(x) - \frac{x}{y}
+\cos[x, y, z]_{a}^{b}                                               :OUTPUT:     \cos[x, y, z]_a^b
+\some[x]_a
+\cos{x}
+\some[x]_a^b
+\cos[x]{a}
+\cos[x, y, z]_{a}^{b}(x)                                            :OUTPUT:     \cos[x, y, z]_a^b(x)
+\some[x]^a
+\cos[x, y, z]{a, b, c}
+\cos[x, y, z]
+\cos[x, y, z]_{a}^{b}(x, y, z)                                      :OUTPUT:     \cos[x, y, z]_a^b(x, y, z)
+\cos{x, y, z}
+\cos[x]
+\cos[x, y, z]_{a}^{b}{x}                                            :OUTPUT:     \cos[x, y, z]_a^b{x}
+xyz... := f(abc + x)
+\f{x}{y}...

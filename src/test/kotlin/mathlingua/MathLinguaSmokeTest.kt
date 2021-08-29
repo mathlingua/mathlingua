@@ -19,12 +19,14 @@ import assertk.assertions.isEqualTo
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.textalk.newTexTalkLexer
+import mathlingua.frontend.textalk.newTexTalkParser
 import mathlingua.newDiskFileSystem
 import org.junit.jupiter.api.Test
 
 internal class MathLinguaDataTest {
     @Test
-    fun `input MathLingua input file is valid`() {
+    fun `input MathLingua file is valid`() {
         val fs = newDiskFileSystem()
         val mathlinguaSourceFile = fs.getFile(listOf("src", "test", "resources", "mathlingua.math"))
         val input = mathlinguaSourceFile.readText()
@@ -40,5 +42,44 @@ internal class MathLinguaDataTest {
         // errors are printed to the console.
         assertThat(builder.toString()).isEqualTo("")
         assert(result is ValidationSuccess)
+    }
+
+    @Test
+    fun `input TexTalk file is valid`() {
+        val fs = newDiskFileSystem()
+        val sourceFile = fs.getFile(listOf("src", "test", "resources", "textalk.txt"))
+        val lines = sourceFile.readText().lines()
+        val builder = StringBuilder()
+        val parser = newTexTalkParser()
+        val token = ":OUTPUT:"
+        for (lineIndex in lines.indices) {
+            val line = lines[lineIndex]
+            val index = line.indexOf(token)
+            val prefix =
+                if (index < 0) {
+                        line
+                    } else {
+                        line.substring(0, index)
+                    }
+                    .trim()
+            val expectedOutput =
+                if (index < 0) {
+                        line
+                    } else {
+                        line.substring(index + token.length).trim()
+                    }
+                    .trim()
+            val lexer = newTexTalkLexer(prefix)
+            val result = parser.parse(lexer)
+            for (err in result.errors) {
+                builder.append("ERROR: (${err.row + 1}, ${err.column + 1}) ${err.message}\n")
+            }
+            assertThat("Line ${lineIndex + 1}: ${result.root.toCode()}")
+                .isEqualTo("Line ${lineIndex + 1}: $expectedOutput")
+        }
+        // The test should fail if there any errors.
+        // This assertThat() is used so that the parse
+        // errors are printed to the console.
+        assertThat(builder.toString()).isEqualTo("")
     }
 }

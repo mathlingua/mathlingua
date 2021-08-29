@@ -29,7 +29,7 @@ plugins {
 }
 
 group = "mathlingua"
-version = "0.8.0"
+version = "0.9.0"
 
 application {
     mainClass.set("mathlingua.cli.MainKt")

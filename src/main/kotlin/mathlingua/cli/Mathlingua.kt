@@ -59,7 +59,7 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.getRandomUuid
 import mathlingua.md5Hash
 
-const val MATHLINGUA_VERSION = "0.8.0"
+const val MATHLINGUA_VERSION = "0.9.0"
 
 private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
 

@@ -31,6 +31,26 @@ p {
   margin-right: auto; /* for centering content */
 }
 
+.mathlingua-top-level-comment-block {
+  overflow-y: hidden;
+  overflow-x: auto;
+  background-color: white;
+  border: solid;
+  border-width: 1px;
+  padding-top: 1em;
+  padding-bottom: 1em;
+  padding-left: 1.1em;
+  padding-right: 1.1em;
+  max-width: 75%;
+  width: max-content;
+  margin-left: auto; /* for centering content */
+  margin-right: auto; /* for centering content */
+  margin-top: 2.25em;
+  margin-bottom: 2.25em;
+  border-color: rgba(230, 230, 230);
+  border-radius: 2px;
+}
+
 .end-mathlingua-top-level {
   padding-top: 0.5em;
   margin: 0;

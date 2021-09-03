@@ -809,7 +809,7 @@ open class HtmlCodeWriter(
         val comment =
             processMathCodeBlocks(text).joinToString(" ") {
                 if (it.isMathlinguaCode) {
-                    it.text
+                    "<div class='mathlingua-top-level-comment-block'>${it.text}</div>"
                 } else {
                     parseMarkdown(it.text)
                 }

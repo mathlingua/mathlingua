@@ -251,6 +251,25 @@ data class FileResult(
     val entities: List<EntityResult>,
     val errors: List<ErrorResult>)
 
+/*
+ * Class names generation has a bug where the class description looks like
+ *    class=mathlingua - top - level
+ * instead of the correct
+ *    class="mathlingua-top-level"
+ * The following function finds the incorrect class names and converts them
+ * to their correct form.
+ */
+fun fixClassNameBug(html: String) =
+    html
+        .replace(Regex("class[ ]*=[ ]*([ \\-_a-zA-Z0-9]+)")) {
+            // for each `class=..`. found replace ` - ` with `-`
+            val next = it.groups[0]?.value?.replace(" - ", "-") ?: it.value
+            // then replace `class=...` with `class="..."`
+            "class=\"${next.replaceFirst(Regex("class[ ]*=[ ]*"), "")}\""
+        }
+        .replace("<body>", " ")
+        .replace("</body>", " ")
+
 fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResult {
     val renderedHtml =
         sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
@@ -265,8 +284,8 @@ fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResu
             } else {
                 null
             },
-        rawHtml = rawHtml,
-        renderedHtml = renderedHtml,
+        rawHtml = fixClassNameBug(rawHtml),
+        renderedHtml = fixClassNameBug(renderedHtml),
         words = getAllWords(this).toList())
 }
 

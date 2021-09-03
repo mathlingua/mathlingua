@@ -807,7 +807,7 @@ open class HtmlCodeWriter(
 
     private fun getExpandedMarkdownedText(text: String): String {
         val comment =
-            processMathCodeBlocks(text.replace("\\", "\\\\")).joinToString(" ") {
+            processMathCodeBlocks(text).joinToString(" ") {
                 if (it.isMathlinguaCode) {
                     it.text
                 } else {

@@ -31,6 +31,7 @@ import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
 import mathlingua.backend.buildSourceFile
+import mathlingua.backend.fixClassNameBug
 import mathlingua.backend.isMathLinguaFile
 import mathlingua.backend.newSourceCollection
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
@@ -764,8 +765,8 @@ private fun getCompleteRenderedTopLevelElements(
     for (i in 0 until expandedPair.first.size) {
         result.add(
             RenderedTopLevelElement(
-                renderedFormHtml = expandedPair.first[i].first,
-                rawFormHtml = literalPair.first[i].first,
+                renderedFormHtml = fixClassNameBug(expandedPair.first[i].first),
+                rawFormHtml = fixClassNameBug(literalPair.first[i].first),
                 node = expandedPair.first[i].second))
     }
     return result

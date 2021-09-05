@@ -11,7 +11,7 @@ export const BlockComment = (props: BlockCommentProps) => {
     <div
       className={styles.mathlinguaBlockCommentTopLevel}
       dangerouslySetInnerHTML={{
-        __html: props.renderedHtml,
+        __html: props.rawHtml,
       }}
     ></div>
   );

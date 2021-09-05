@@ -274,7 +274,7 @@ fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResu
     val renderedHtml =
         sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
     val rawHtml =
-        sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = true)
+        sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = false)
     return EntityResult(
         id = md5Hash(rawHtml),
         type = this.javaClass.simpleName,

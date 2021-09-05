@@ -753,7 +753,7 @@ private fun getCompleteRenderedTopLevelElements(
     val expandedPair =
         sourceCollection.prettyPrint(file = f, html = true, literal = false, doExpand = !noexpand)
     val literalPair =
-        sourceCollection.prettyPrint(file = f, html = true, literal = true, doExpand = !noexpand)
+        sourceCollection.prettyPrint(file = f, html = true, literal = true, doExpand = false)
     errors.addAll(
         expandedPair.second.map {
             ValueSourceTracker(

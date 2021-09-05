@@ -49,6 +49,7 @@ import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.newLocationTracker
+import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
@@ -650,7 +651,27 @@ open class HtmlCodeWriter(
         writeStatement(stmtText, root, direct = false)
     }
 
+    private fun appendDropdownForStatement(stmt: Statement, dropdownIndex: Long) {
+        val signatures =
+            findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
+        if (signatures.isNotEmpty()) {
+            builder.append(
+                "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex'>")
+            for (sig in signatures) {
+                builder.append(
+                    "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form.replace("\\", "\\\\")}', 'statement-$dropdownIndex')\">")
+                builder.append(sig.form)
+                builder.append("</a>")
+            }
+            builder.append("</div>")
+        }
+    }
+
     fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>, direct: Boolean) {
+        val dropdownIndex = statementIndex++
+        builder.append(
+            "<div class='mathlingua-statement-container' onclick=\"mathlinguaToggleDropdown('statement-$dropdownIndex')\">")
+
         if (literal || direct) {
             val text =
                 if (literal) {
@@ -665,12 +686,13 @@ open class HtmlCodeWriter(
                     "mathlingua-statement"
                 }
             builder.append("<span class=\"$className\">$text</span>")
+            if (root is ValidationSuccess) {
+                appendDropdownForStatement(
+                    Statement(stmtText, validationSuccess(root.value)), dropdownIndex)
+            }
             return
         }
 
-        val dropdownIndex = statementIndex++
-        builder.append(
-            "<div class='mathlingua-statement-container' onclick=\"mathlinguaToggleDropdown('statement-$dropdownIndex')\">")
         if (shouldExpand()) {
             val expansionErrors = mutableListOf<String>()
             if (root is ValidationFailure) {
@@ -739,19 +761,7 @@ open class HtmlCodeWriter(
         builder.append("</div>")
         if (root is ValidationSuccess) {
             val stmt = Statement(text = stmtText, texTalkRoot = root)
-            val signatures =
-                findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
-            if (signatures.isNotEmpty()) {
-                builder.append(
-                    "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex'>")
-                for (sig in signatures) {
-                    builder.append(
-                        "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form.replace("\\", "\\\\")}', 'statement-$dropdownIndex')\">")
-                    builder.append(sig.form)
-                    builder.append("</a>")
-                }
-                builder.append("</div>")
-            }
+            appendDropdownForStatement(stmt, dropdownIndex)
         }
     }
 

@@ -21,6 +21,7 @@ import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_USING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.track
@@ -34,10 +35,15 @@ data class UsingSection(val clauses: ClauseListNode) : Phase2Node {
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("using")
-        if (clauses.clauses.isNotEmpty()) {
+        for (clause in clauses.clauses) {
             writer.writeNewline()
+            if (clause is Statement) {
+                writer.writeIndent(true, indent + 2)
+                writer.writeDirectStatement(clause.text, clause.texTalkRoot)
+            } else {
+                writer.append(clause, true, indent + 2)
+            }
         }
-        writer.append(clauses, true, indent + 2)
         return writer
     }
 

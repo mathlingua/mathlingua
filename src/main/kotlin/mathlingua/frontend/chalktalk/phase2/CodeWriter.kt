@@ -70,6 +70,7 @@ interface CodeWriter {
     fun writePhase1Node(phase1Node: Phase1Node)
     fun writeId(id: IdStatement)
     fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>)
+    fun writeDirectStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>)
     fun writeIdentifier(name: String, isVarArgs: Boolean)
     fun writeText(text: String)
     fun writeUrl(url: String, name: String?)
@@ -641,9 +642,29 @@ open class HtmlCodeWriter(
             .removeSurrounding("{", "}")
     }
 
+    override fun writeDirectStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
+        writeStatement(stmtText, root, direct = true)
+    }
+
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        if (literal) {
-            builder.append("<span class=\"mathlingua-statement-no-render\">'$stmtText'</span>")
+        writeStatement(stmtText, root, direct = false)
+    }
+
+    fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>, direct: Boolean) {
+        if (literal || direct) {
+            val text =
+                if (literal) {
+                    "'$stmtText'"
+                } else {
+                    stmtText
+                }
+            val className =
+                if (literal) {
+                    "mathlingua-statement-no-render"
+                } else {
+                    "mathlingua-statement"
+                }
+            builder.append("<span class=\"$className\">$text</span>")
             return
         }
 
@@ -941,6 +962,12 @@ class MathLinguaCodeWriter(
         if (!url.endsWith("\"")) {
             builder.append('"')
         }
+    }
+
+    override fun writeDirectStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
+        // this code writer only supports writing results literally and so this method does the
+        // same thing as writeStatement
+        writeStatement(stmtText, root)
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {

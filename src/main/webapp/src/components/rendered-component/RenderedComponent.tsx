@@ -14,17 +14,6 @@ export interface RenderedComponentProps {
   onViewEntity?: (entity: api.EntityResult) => void;
 }
 
-function mathlinguaToggleDropdown(id: string) {
-  const el = document.getElementById(id);
-  if (el) {
-    if (el.className === 'mathlingua-dropdown-menu-hidden') {
-      el.className = 'mathlingua-dropdown-menu-shown';
-    } else {
-      el.className = 'mathlingua-dropdown-menu-hidden';
-    }
-  }
-}
-
 class RenderedComponent extends React.Component<RenderedComponentProps> {
   private ref: any;
 
@@ -42,14 +31,24 @@ class RenderedComponent extends React.Component<RenderedComponentProps> {
   }
 
   render() {
-    const that = this;
-    async function viewSignature(signature: string, id: string) {
+    const mathlinguaToggleDropdown = (id: string) => {
+      const el = document.getElementById(id);
+      if (el) {
+        if (el.className === 'mathlingua-dropdown-menu-hidden') {
+          el.className = 'mathlingua-dropdown-menu-shown';
+        } else {
+          el.className = 'mathlingua-dropdown-menu-hidden';
+        }
+      }
+    };
+
+    const viewSignature = async (signature: string, id: string) => {
       mathlinguaToggleDropdown(id);
       const entityResult = await api.getEntityWithSignature(signature);
-      if (entityResult && that.props.onViewEntity) {
-        that.props.onViewEntity(entityResult);
+      if (entityResult && this.props.onViewEntity) {
+        this.props.onViewEntity(entityResult);
       }
-    }
+    };
 
     async function processInnerClick(fnName: string, fnArgs: string[]) {
       if (fnName === 'mathlinguaToggleDropdown') {

@@ -686,12 +686,12 @@ open class HtmlCodeWriter(
                     "mathlingua-statement"
                 }
             builder.append("<span class=\"$className\">$text</span>")
+            // make sure to close out the mathlingua-statement-container div
+            builder.append("</div>")
             if (root is ValidationSuccess) {
                 appendDropdownForStatement(
                     Statement(stmtText, validationSuccess(root.value)), dropdownIndex)
             }
-            // make sure to close out the mathlingua-statement-container div
-            builder.append("</div>")
             return
         }
 

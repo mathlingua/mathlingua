@@ -103,22 +103,11 @@ object Mathlingua {
         }
     }
 
-    fun export(
-        fs: VirtualFileSystem,
-        logger: Logger,
-        file: VirtualFile?,
-        stdout: Boolean,
-        noExpand: Boolean,
-        raw: Boolean
-    ): Int {
-        val files =
-            if (file != null) {
-                listOf(file)
-            } else {
-                val result = mutableListOf<VirtualFile>()
-                findMathlinguaFiles(getContentDirectory(fs), result)
-                result
-            }
+    private fun export(
+        fs: VirtualFileSystem, logger: Logger
+    ): List<ValueSourceTracker<ParseError>> {
+        val files = mutableListOf<VirtualFile>()
+        findMathlinguaFiles(getContentDirectory(fs), files)
 
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         for (target in files) {
@@ -127,26 +116,29 @@ object Mathlingua {
                     fs = fs,
                     logger = logger,
                     target = target,
-                    stdout = stdout,
-                    noExpand = noExpand,
-                    raw = raw))
+                    stdout = false,
+                    noExpand = false,
+                    raw = false))
         }
 
-        if (!stdout) {
-            logger.log(getErrorOutput(fs, errors, files.size, false))
-        }
-
-        return if (errors.isEmpty()) {
-            0
-        } else {
-            1
-        }
+        return errors
     }
 
     fun render(fs: VirtualFileSystem, logger: Logger): Int {
         val result = renderAll(fs = fs, logger = logger)
         val files = result.first
-        val errors = result.second
+        val errors = mutableListOf<ErrorResult>()
+        errors.addAll(result.second)
+        val cwd = fs.cwd()
+        val sep = fs.getFileSeparator()
+        errors.addAll(
+            export(fs = fs, logger = logger).map {
+                ErrorResult(
+                    relativePath = it.source.file.relativePathTo(cwd).joinToString(sep),
+                    message = it.value.message,
+                    row = it.value.row,
+                    column = it.value.column)
+            })
         logger.log(
             getErrorOutput(
                 fs,
@@ -168,20 +160,17 @@ object Mathlingua {
 
     fun clean(fs: VirtualFileSystem, logger: Logger): Int {
         val docsDir = getDocsDirectory(fs)
-        val exportedDir = getExportedDirectory(fs)
         val result =
-            if (!docsDir.exists() && !exportedDir.exists()) {
+            if (!docsDir.exists()) {
                 logger.log("Nothing to clean")
                 0
             } else {
                 val deletedDocs = docsDir.delete()
-                val deletedExported = exportedDir.delete()
-                if (deletedDocs && deletedExported) {
-                    logger.log("Cleaned the 'docs' and 'exported' directories")
+                if (deletedDocs) {
+                    logger.log("Cleaned the 'docs' directory")
                     0
                 } else {
-                    logger.log(
-                        "${bold(red("ERROR: "))} Failed to clean the 'docs' or 'exported' directory")
+                    logger.log("${bold(red("ERROR: "))} Failed to clean the 'docs' directory")
                     1
                 }
             }
@@ -635,7 +624,7 @@ private fun exportFile(
                 relHtmlPath[relHtmlPath.size - 1].replace(".math", ".html")
         }
         val htmlPath = mutableListOf<String>()
-        htmlPath.add("exported")
+        htmlPath.add("docs")
         htmlPath.addAll(relHtmlPath)
         val outFile = fs.getFile(htmlPath)
         val parentDir =
@@ -697,6 +686,7 @@ private fun renderAll(
         val indexText =
             indexFile.readText().replace("<head>", "<head><script src=\"./data.js\"></script>")
         indexFile.writeText(indexText)
+        logger.log("Wrote docs/index.html")
     }
 
     val decomp =
@@ -705,6 +695,7 @@ private fun renderAll(
 
     val dataFile = File(docDir, "data.js")
     dataFile.writeText("window.MATHLINGUA_DATA = $data")
+    logger.log("Wrote docs/data.js")
 
     return Pair(
         decomp.collectionResult.fileResults.map { it.relativePath }, decomp.collectionResult.errors)

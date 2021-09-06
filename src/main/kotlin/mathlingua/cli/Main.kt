@@ -21,7 +21,6 @@ import com.github.ajalt.clikt.core.subcommands
 import com.github.ajalt.clikt.output.TermUi
 import com.github.ajalt.clikt.parameters.arguments.argument
 import com.github.ajalt.clikt.parameters.arguments.multiple
-import com.github.ajalt.clikt.parameters.arguments.optional
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
@@ -42,6 +41,11 @@ private class Check : CliktCommand(help = "Check the MathLingua files for errors
 
     override fun run(): Unit =
         runBlocking {
+            if (file.size == 1 && file[0] == "whte_rbt.obj") {
+                whteRbtObj()
+                exitProcess(0)
+            }
+
             val fs = newDiskFileSystem()
             exitProcess(
                 Mathlingua.check(
@@ -73,90 +77,10 @@ private class Version : CliktCommand(help = "Print the MathLingua version") {
     }
 }
 
-private class Export : CliktCommand(help = "Export MathLingua files to static HTML files") {
-    private val file: String? by argument(
-            help =
-                "If specified, the .math file to render as an HTML document.  Otherwise, all .math files " +
-                    "in the 'contents' directory will be rendered into a single dynamic HTML document.")
-        .optional()
-    private val noexpand: Boolean by option(
-            help =
-                "Specifies to not expand the contents of entries using the 'written' form of definitions")
-        .flag()
-    private val raw: Boolean by option(
-            help =
-                "If specified with a single file, the raw HTML will be rendered excluding any " +
-                    "script or style tages.  It is an error to specify this flag without specify a specific " +
-                    "file to render.")
-        .flag()
-    private val stdout: Boolean by option(
-            help =
-                "If specified, the HTML contents will be written to standard output instead of" +
-                    "to files in the 'exported' directory")
-        .flag()
-
-    override fun run() {
-        if (file == "whte_rbt.obj") {
-            println("Jurassic Park, System Security Interface")
-            Thread.sleep(700)
-            println("Version 4.0.5, Alpha E")
-            Thread.sleep(700)
-            println("Ready...")
-            Thread.sleep(700)
-            print("> ")
-            "access security".forEach {
-                Thread.sleep(100)
-                print(it)
-            }
-            println()
-            Thread.sleep(700)
-            println("access: PERMISSION DENIED.")
-            print("> ")
-            "access security grid".forEach {
-                Thread.sleep(100)
-                print(it)
-            }
-            println()
-            Thread.sleep(700)
-            println("access: PERMISSION DENIED.")
-            print("> ")
-            "access main security grid".forEach {
-                Thread.sleep(100)
-                print(it)
-            }
-            println()
-            Thread.sleep(1000)
-            print("access: PERMISSION DENIED.")
-            Thread.sleep(700)
-            println("...and....")
-            Thread.sleep(1000)
-            while (true) {
-                println("YOU DIDN'T SAY THE MAGIC WORD!")
-                Thread.sleep(50)
-            }
-        }
-
-        runBlocking {
-            val fs = newDiskFileSystem()
-            exitProcess(
-                Mathlingua.export(
-                    fs = fs,
-                    logger = TermUiLogger(termUi = TermUi),
-                    file =
-                        if (file == null) {
-                            null
-                        } else {
-                            fs.getFileOrDirectory(file!!)
-                        },
-                    stdout = stdout,
-                    noExpand = noexpand,
-                    raw = raw))
-        }
-    }
-}
-
-private class Render :
-    CliktCommand(help = "Generate a read-only web app for exploring the MathLingua content") {
+private class Document :
+    CliktCommand(
+        help =
+            "Generate a read-only web app in the 'docs' directory for exploring the MathLingua content") {
     override fun run() {
         runBlocking {
             val fs = newDiskFileSystem()
@@ -184,8 +108,48 @@ class Clean : CliktCommand(help = "Delete generated HTML files") {
     }
 }
 
+private fun whteRbtObj() {
+    println("Jurassic Park, System Security Interface")
+    Thread.sleep(700)
+    println("Version 4.0.5, Alpha E")
+    Thread.sleep(700)
+    println("Ready...")
+    Thread.sleep(700)
+    print("> ")
+    "access security".forEach {
+        Thread.sleep(100)
+        print(it)
+    }
+    println()
+    Thread.sleep(700)
+    println("access: PERMISSION DENIED.")
+    print("> ")
+    "access security grid".forEach {
+        Thread.sleep(100)
+        print(it)
+    }
+    println()
+    Thread.sleep(700)
+    println("access: PERMISSION DENIED.")
+    print("> ")
+    "access main security grid".forEach {
+        Thread.sleep(100)
+        print(it)
+    }
+    println()
+    Thread.sleep(1000)
+    print("access: PERMISSION DENIED.")
+    Thread.sleep(700)
+    println("...and....")
+    Thread.sleep(1000)
+    while (true) {
+        println("YOU DIDN'T SAY THE MAGIC WORD!")
+        Thread.sleep(50)
+    }
+}
+
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Help(), Check(), Clean(), Render(), Export(), Edit(), Version())
+    val mlg = Mlg().subcommands(Check(), Clean(), Document(), Edit(), Help(), Version())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

@@ -317,7 +317,8 @@ open class HtmlCodeWriter(
                         "<hr/><div class='mathlingua-proof-header' onclick=\"toggleProof('$id')\">")
                     builder.append(
                         "Proof<span class='mathlingua-proof-icon' id=\"icon-$id-CUSTOM_SUFFIX\">&#9662;</span></div>")
-                    builder.append("<span class='mathlingua-proof-hidden' id=\"proof-$id-CUSTOM_SUFFIX\">")
+                    builder.append(
+                        "<span class='mathlingua-proof-hidden' id=\"proof-$id-CUSTOM_SUFFIX\">")
                     val writer = newCodeWriter(defines, states, literal)
                     writer.writeText(node.proofSection.text)
                     builder.append(writer.getCode())

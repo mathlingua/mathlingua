@@ -690,6 +690,8 @@ open class HtmlCodeWriter(
                 appendDropdownForStatement(
                     Statement(stmtText, validationSuccess(root.value)), dropdownIndex)
             }
+            // make sure to close out the mathlingua-statement-container div
+            builder.append("</div>")
             return
         }
 

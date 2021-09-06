@@ -316,8 +316,8 @@ open class HtmlCodeWriter(
                     builder.append(
                         "<hr/><div class='mathlingua-proof-header' onclick=\"toggleProof('$id')\">")
                     builder.append(
-                        "Proof<span class='mathlingua-proof-icon' id=\"icon-$id\">&#9662;</span></div>")
-                    builder.append("<span class='mathlingua-proof-hidden' id=\"proof-$id\">")
+                        "Proof<span class='mathlingua-proof-icon' id=\"icon-$id-CUSTOM_SUFFIX\">&#9662;</span></div>")
+                    builder.append("<span class='mathlingua-proof-hidden' id=\"proof-$id-CUSTOM_SUFFIX\">")
                     val writer = newCodeWriter(defines, states, literal)
                     writer.writeText(node.proofSection.text)
                     builder.append(writer.getCode())
@@ -656,10 +656,10 @@ open class HtmlCodeWriter(
             findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
         if (signatures.isNotEmpty()) {
             builder.append(
-                "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex'>")
+                "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex-CUSTOM_SUFFIX'>")
             for (sig in signatures) {
                 builder.append(
-                    "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form.replace("\\", "\\\\")}', 'statement-$dropdownIndex')\">")
+                    "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form.replace("\\", "\\\\")}', 'statement-$dropdownIndex-CUSTOM_SUFFIX')\">")
                 builder.append(sig.form)
                 builder.append("</a>")
             }
@@ -670,7 +670,7 @@ open class HtmlCodeWriter(
     fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>, direct: Boolean) {
         val dropdownIndex = statementIndex++
         builder.append(
-            "<div class='mathlingua-statement-container' onclick=\"mathlinguaToggleDropdown('statement-$dropdownIndex')\">")
+            "<div class='mathlingua-statement-container' onclick=\"mathlinguaToggleDropdown('statement-$dropdownIndex-CUSTOM_SUFFIX')\">")
 
         if (literal || direct) {
             val text =
@@ -854,7 +854,7 @@ open class HtmlCodeWriter(
     }
 
     override fun beginTopLevel(label: String) {
-        builder.append("<div id='$label'>")
+        builder.append("<div id='$label-CUSTOM_SUFFIX'>")
         builder.append("<div class='mathlingua-top-level'>")
     }
 

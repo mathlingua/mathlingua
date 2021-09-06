@@ -5,6 +5,7 @@ import React from 'react';
 import './RenderedComponent.css';
 import * as api from '../../services/api';
 import { connect } from 'react-redux';
+import * as uuid from 'uuid';
 
 declare const katex: any;
 
@@ -106,7 +107,11 @@ class RenderedComponent extends React.Component<RenderedComponentProps> {
         }
       },
     };
-    return <div ref={this.ref}>{parse(this.props.html, options)}</div>;
+    return (
+      <div ref={this.ref}>
+        {parse(this.props.html.replace(/CUSTOM_SUFFIX/g, uuid.v4()), options)}
+      </div>
+    );
   }
 }
 

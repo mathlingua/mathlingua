@@ -62,7 +62,7 @@ data class PiecewiseGroup(
             sections.add(wt.thenSection)
         }
         sections.add(elseSection)
-        return topLevelToCode(writer, isArg, indent, null, *sections.toTypedArray())
+        return topLevelToCode(null, writer, isArg, indent, null, *sections.toTypedArray())
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =

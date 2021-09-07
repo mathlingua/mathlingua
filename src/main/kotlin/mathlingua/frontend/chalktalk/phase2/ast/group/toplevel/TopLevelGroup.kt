@@ -24,6 +24,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.getRandomUuid
+import mathlingua.md5Hash
 
 abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
@@ -42,8 +44,11 @@ class TopLevelBlockComment(val blockComment: BlockComment) : TopLevelGroup(null)
 fun isBlockComment(node: Phase1Node) = node is BlockComment
 
 fun topLevelToCode(
-    writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?
+    topLevelGroup: TopLevelGroup?, writer: CodeWriter, isArg: Boolean, indent: Int, id: IdStatement?, vararg sections: Phase2Node?
 ): CodeWriter {
+    if (topLevelGroup != null) {
+        writer.beginTopLevel(topLevelGroup, getRandomUuid())
+    }
     var useAsArg = isArg
     if (id != null) {
         writer.writeIndent(isArg, indent)
@@ -61,7 +66,9 @@ fun topLevelToCode(
             writer.writeNewline()
         }
     }
-
+    if (topLevelGroup != null) {
+        writer.endTopLevel(0)
+    }
     return writer
 }
 

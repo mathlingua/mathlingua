@@ -82,6 +82,7 @@ data class ConjectureGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
         topLevelToCode(
+            this,
             writer,
             isArg,
             indent,

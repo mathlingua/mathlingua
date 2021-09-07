@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
+import mathlingua.backend.getInnerDefinedSignatures
 import kotlin.random.Random
 import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
@@ -26,6 +27,7 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -78,7 +80,7 @@ interface CodeWriter {
     fun writeDirect(text: String)
     fun writeBlockComment(text: String)
     fun writeHorizontalLine()
-    fun beginTopLevel(label: String)
+    fun beginTopLevel(topLevelGroup: TopLevelGroup, label: String)
     fun endTopLevel(numNewlines: Int)
     fun newCodeWriter(
         defines: List<DefinesGroup>, states: List<StatesGroup>, literal: Boolean
@@ -98,6 +100,7 @@ open class HtmlCodeWriter(
     val axioms: List<AxiomGroup>,
     val literal: Boolean
 ) : CodeWriter {
+    private val innerDefinedSignatures = mutableSetOf<String>()
     private var statementIndex = System.nanoTime() + Random.Default.nextLong()
     protected val builder = StringBuilder()
 
@@ -659,10 +662,19 @@ open class HtmlCodeWriter(
             builder.append(
                 "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex-CUSTOM_SUFFIX'>")
             for (sig in signatures) {
-                builder.append(
-                    "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${sig.form.replace("\\", "\\\\")}', 'statement-$dropdownIndex-CUSTOM_SUFFIX')\">")
-                builder.append(sig.form)
-                builder.append("</a>")
+                // only include signatures from external Defines: or States: groups
+                if (!innerDefinedSignatures.contains(sig.form)) {
+                    builder.append(
+                        "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${
+                            sig.form.replace(
+                                "\\",
+                                "\\\\"
+                            )
+                        }', 'statement-$dropdownIndex-CUSTOM_SUFFIX')\">"
+                    )
+                    builder.append(sig.form)
+                    builder.append("</a>")
+                }
             }
             builder.append("</div>")
         }
@@ -854,12 +866,14 @@ open class HtmlCodeWriter(
         return expandTextAsWritten(comment, false, defines, states, axioms).text ?: comment
     }
 
-    override fun beginTopLevel(label: String) {
+    override fun beginTopLevel(topLevelGroup: TopLevelGroup, label: String) {
+        innerDefinedSignatures.addAll(getInnerDefinedSignatures(topLevelGroup, null).map { it.form })
         builder.append("<div id='$label-CUSTOM_SUFFIX'>")
         builder.append("<div class='mathlingua-top-level'>")
     }
 
     override fun endTopLevel(numNewlines: Int) {
+        innerDefinedSignatures.clear()
         builder.append("<div class='end-mathlingua-top-level'></div>")
         builder.append("</div>")
         writeNewline(numNewlines)
@@ -868,7 +882,11 @@ open class HtmlCodeWriter(
 
     override fun newCodeWriter(
         defines: List<DefinesGroup>, states: List<StatesGroup>, literal: Boolean
-    ) = HtmlCodeWriter(defines, states, axioms, literal)
+    ): CodeWriter {
+        val writer = HtmlCodeWriter(defines, states, axioms, literal)
+        writer.innerDefinedSignatures.addAll(innerDefinedSignatures)
+        return writer
+    }
 
     override fun getCode(): String {
         val text =
@@ -1009,7 +1027,7 @@ class MathLinguaCodeWriter(
         builder.append(text)
     }
 
-    override fun beginTopLevel(label: String) {}
+    override fun beginTopLevel(topLevelGroup: TopLevelGroup, label: String) {}
 
     override fun endTopLevel(numNewlines: Int) {
         writeNewline(numNewlines)

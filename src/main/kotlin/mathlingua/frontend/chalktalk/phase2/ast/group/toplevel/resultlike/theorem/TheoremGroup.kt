@@ -84,6 +84,7 @@ data class TheoremGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
         topLevelToCode(
+            this,
             writer,
             isArg,
             indent,

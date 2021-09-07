@@ -117,7 +117,7 @@ data class DefinesGroup(
                 writtenSection,
                 calledSection,
                 metaDataSection)
-        return topLevelToCode(writer, isArg, indent, id, *sections.toTypedArray())
+        return topLevelToCode(this, writer, isArg, indent, id, *sections.toTypedArray())
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =

@@ -62,7 +62,7 @@ data class SourceItemGroup(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
         topLevelToCode(
-            writer, isArg, indent, null, sourceSection, pageSection, offsetSection, contentSection)
+            null, writer, isArg, indent, null, sourceSection, pageSection, offsetSection, contentSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(

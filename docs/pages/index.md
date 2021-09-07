@@ -15,14 +15,14 @@ have deep knowledge of their underlying frameworks (such as the Calculus of
 Constructions) to express mathematical statements directly in those frameworks.
 
 The goal of MathLingua, on the other hand, is to allow one to express
-mathematical concepts in a higher level language that focuses on *what* a
-statement means instead of *how* it is represented in a logical framework.
+mathematical concepts in a higher level language that focuses on _what_ a
+statement means instead of _how_ it is represented in a logical framework.
 
 MathLingua then handles the details of how to express a statement in an
 underlying logical framework.
 
 This is similar to how mathematics is expressed in literature, where theorems
-and definitions are described in a higher level natural language.  For example,
+and definitions are described in a higher level natural language. For example,
 the following illustrates how a Monoid is defined in MathLingua:
 
 ```python
@@ -46,7 +46,7 @@ means:
 ```
 
 Notice how the syntax of MathLingua allows one to think of a Monoid as a tuple
-of objects with certain properties.  Contrast this with how a Monoid could be
+of objects with certain properties. Contrast this with how a Monoid could be
 described in the Calculus of Constructions as a type consisting of fields of
 different types (corresponding to the components of the Monoid) and proofs of
 the various properties of those fields.
@@ -60,10 +60,10 @@ development.
 
 ## Relationship to Existing Languages
 
-Simply put, MathLingua is not designed to replace existing languages.  Instead,
+Simply put, MathLingua is not designed to replace existing languages. Instead,
 MathLingua is a way to more easily express mathematical knowledge that
-transpiles down to existing languages such as Lean.  Mathematicians can then
-focus on *what* a mathematical statement means instead of *how* it is encoded
+transpiles down to existing languages such as Lean. Mathematicians can then
+focus on _what_ a mathematical statement means instead of _how_ it is encoded
 in a logical framework.
 
 Compared to existing languages such that Lean, Coq, and others, MathLingua can
@@ -76,10 +76,10 @@ language language such as C, C++, or Java.
 
 Then, just as in computer science as one can express an algorithm in both
 assembly language and C, the meaning of the algorithm can be easier to
-understand when written in C, whereas *how* the algorithm is implemented in
+understand when written in C, whereas _how_ the algorithm is implemented in
 particular hardware is more clear in assembly language.
 
-Similarly, lower level languages such as Lean allow one to express *how* a
+Similarly, lower level languages such as Lean allow one to express _how_ a
 mathematical concept is expressed in the Calculus of Constructions, MathLingua,
 like C, helps makes the meaning of the concept more clear.
 
@@ -92,19 +92,19 @@ used by mathematicians.
 
 MathLingua is being created with the following principles in mind:
 
-* MathLingua provides a way to express Mathematical concepts in a way that is
+- MathLingua provides a way to express Mathematical concepts in a way that is
   familiar to mathematicians without having to know advanced type theory.
-* It is designed to have a gradual learning curve.
-* It is focused on being easy to read and understand rather than expressing
+- It is designed to have a gradual learning curve.
+- It is focused on being easy to read and understand rather than expressing
   concepts with a small number of characters.
-* Metadata is a core feature.  All concepts can have descriptions of the
+- Metadata is a core feature. All concepts can have descriptions of the
   importance of the concept and how it relates to other concepts as well as
   links to related books, articles, and other documents.
-* Concepts are designed to be able to be read independently.  You do not need
+- Concepts are designed to be able to be read independently. You do not need
   to know what file a concept is defined in to understand it.
-* One does not need to express mathematical knowledge directly in an framework
+- One does not need to express mathematical knowledge directly in an framework
   such as the calculus of constructions.
-* All types of concepts such as functions, sets, spaces, and others are
+- All types of concepts such as functions, sets, spaces, and others are
   represented consistently.
 
 Note that these principles directly address some of the issues with existing
@@ -116,12 +116,13 @@ expressed in those frameworks.
 ## Non Goals
 
 MathLingua is not intended to replace existing languages such as Lean, Coq,
-Metamath, or others.  Instead, it is meant to be used with those languages by
+Metamath, or others. Instead, it is meant to be used with those languages by
 transpiling to them and using them as the underlying formal framework.
 
 ## Examples
 
 The following shows how to describe an even integer:
+
 ```python
 [\even.integer]
 Defines: n
@@ -133,6 +134,7 @@ means:
 ```
 
 A mathematical structure such as a group can be described as:
+
 ```python
 [\group]
 Defines: G := (X, *, e)
@@ -160,6 +162,7 @@ means:
 ```
 
 The following shows how to express Fermat's Last Theorem:
+
 ```yaml
 [\fermats.last.theorem]
 Theorem:
@@ -180,6 +183,7 @@ then:
 
 A piecewise defined function, such as the Heaviside function can be described
 as:
+
 ```python
 [\heaviside(x)]
 Defines: f(x)
@@ -194,6 +198,7 @@ evaludated:
 ```
 
 The set of even integers can be expressed as:
+
 ```python
 [\even.integers]
 Defines: X
@@ -204,7 +209,6 @@ collects:
   all: 'x'
   suchThat: 'x is \even'
 ```
-
 
 ## Roadmap
 
@@ -217,12 +221,12 @@ a high level language to help formally define a collection of mathematical
 knowledge.
 
 Currently, the MathLingua parser has been implemented in Kotlin, has unit and
-smoke tests, and does some AST validation.  However, more validation work needs
-to be done.  That is, parsing MathLingua source code into an AST for further
+smoke tests, and does some AST validation. However, more validation work needs
+to be done. That is, parsing MathLingua source code into an AST for further
 processing is in good shape.
 
 However, work has just started on taking that AST and transpiling it to lower
-level languages.  The first target for such a transpilation is Lean.
+level languages. The first target for such a transpilation is Lean.
 
 Furthermore, since MathLingua initially started as a language for only
 describing the structure of mathematical statements, much work is still needed
@@ -231,16 +235,16 @@ be encoded in MathLingua.
 
 The rough project roadmap is as follows:
 
-* Developing the infrastructure for transpiling MathLingua statements to Lean.
+- Developing the infrastructure for transpiling MathLingua statements to Lean.
   This approach will use `sorry` for all proofs.
-* Allowing proofs for theorems to be directly encoded in an underlying language
+- Allowing proofs for theorems to be directly encoded in an underlying language
   while the statement of the theorem is in MathLingua.
-* Developing the proof aspects of the MathLingua so that proves can be directly
+- Developing the proof aspects of the MathLingua so that proves can be directly
   expressed in MathLingua.
-* Translating existing theorems encoded in the underlying language into
+- Translating existing theorems encoded in the underlying language into
   MathLingua and ensuring the proves remain valid.
 
-*Note:* MathLingua is a personal project that is being worked on in the author's
+_Note:_ MathLingua is a personal project that is being worked on in the author's
 spare time.
 
 ## Helping Out
@@ -257,7 +261,7 @@ help, but any feedback or help is greatly appreciated.
 ## About the Author
 
 MathLingua is being developed by Dr. Dominic Kramer a mathematician, computer
-scientist, and Google software engineer.  Dominic received his PhD in pure
+scientist, and senior software engineer. Dominic received his PhD in pure
 mathematics from Iowa State University and his research interests include the
 intersection of mathematics and computer science, in particular the foundations
 of mathematics, type theory, and language design.
@@ -272,6 +276,3 @@ others learn explore and discover mathematics.
 
 He hopes MathLingua will help many more people learn and discover this beauty
 of mathematics.
-
-*Note:*  MathLingua is the personal work of Dominic Kramer and is *not* a
-Google product.

@@ -16,8 +16,8 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
-import mathlingua.backend.getInnerDefinedSignatures
 import kotlin.random.Random
+import mathlingua.backend.getInnerDefinedSignatures
 import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
 import mathlingua.backend.transform.expandAsWritten
@@ -670,8 +670,7 @@ open class HtmlCodeWriter(
                                 "\\",
                                 "\\\\"
                             )
-                        }', 'statement-$dropdownIndex-CUSTOM_SUFFIX')\">"
-                    )
+                        }', 'statement-$dropdownIndex-CUSTOM_SUFFIX')\">")
                     builder.append(sig.form)
                     builder.append("</a>")
                 }
@@ -867,7 +866,8 @@ open class HtmlCodeWriter(
     }
 
     override fun beginTopLevel(topLevelGroup: TopLevelGroup, label: String) {
-        innerDefinedSignatures.addAll(getInnerDefinedSignatures(topLevelGroup, null).map { it.form })
+        innerDefinedSignatures.addAll(
+            getInnerDefinedSignatures(topLevelGroup, null).map { it.form })
         builder.append("<div id='$label-CUSTOM_SUFFIX'>")
         builder.append("<div class='mathlingua-top-level'>")
     }

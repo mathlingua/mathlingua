@@ -1122,9 +1122,7 @@ private fun getOperatorIdentifiers(node: Phase2Node): Set<String> {
     return result
 }
 
-private fun maybeAddAbstractionAsOperatorIdentifier(
-    abs: Abstraction, result: MutableSet<String>
-) {
+private fun maybeAddAbstractionAsOperatorIdentifier(abs: Abstraction, result: MutableSet<String>) {
     if (!abs.isEnclosed &&
         !abs.isVarArgs &&
         abs.subParams == null &&
@@ -1197,44 +1195,39 @@ private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {
         node.children[0] is ColonEqualsTexTalkNode &&
         (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
         (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.size == 1 &&
-        (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] is GroupTexTalkNode &&
-        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as GroupTexTalkNode)
+        (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] is GroupTexTalkNode &&
+        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
             .parameters
             .items
             .size == 1 &&
-        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as GroupTexTalkNode)
-            .parameters
-            .items[0]
+        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
+                .parameters
+                .items[0]
             .children
             .size == 1 &&
-        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as GroupTexTalkNode)
-            .parameters
-            .items[0]
+        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
+                .parameters
+                .items[0]
             .children[0] is OperatorTexTalkNode &&
-        (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as GroupTexTalkNode)
-            .parameters
-            .items[0]
-            .children[0] as OperatorTexTalkNode)
+        (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
+                    .parameters
+                    .items[0]
+                .children[0] as OperatorTexTalkNode)
             .command is TextTexTalkNode &&
         ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as GroupTexTalkNode)
-            .parameters
-            .items[0]
-            .children[0] as OperatorTexTalkNode)
-            .command as TextTexTalkNode)
+                            0] as GroupTexTalkNode)
+                        .parameters
+                        .items[0]
+                    .children[0] as OperatorTexTalkNode)
+                .command as TextTexTalkNode)
             .tokenType == TexTalkTokenType.Operator) {
         // match -f := ...
         ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as GroupTexTalkNode)
-            .parameters
-            .items[0]
-            .children[0] as OperatorTexTalkNode)
-            .command as TextTexTalkNode)
+                            0] as GroupTexTalkNode)
+                        .parameters
+                        .items[0]
+                    .children[0] as OperatorTexTalkNode)
+                .command as TextTexTalkNode)
             .text
     } else if (node.children.isNotEmpty() &&
         node.children[0] is ColonEqualsTexTalkNode &&
@@ -1243,12 +1236,12 @@ private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {
         (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
             0] is OperatorTexTalkNode &&
         ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as OperatorTexTalkNode)
+                0] as OperatorTexTalkNode)
             .command is TextTexTalkNode) {
         // match `a + b := ...`
         (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] as OperatorTexTalkNode)
-            .command as TextTexTalkNode)
+                    0] as OperatorTexTalkNode)
+                .command as TextTexTalkNode)
             .text
     } else if (node.children.size == 1 && node.children[0] is ColonEqualsTexTalkNode) {
         val colonEquals = node.children[0] as ColonEqualsTexTalkNode
@@ -1274,17 +1267,14 @@ private fun getOperatorIdentifiersFromTargets(
             result.add(
                 Signature(
                     form = op,
-                    location = tracker?.getLocationOf(target)
-                        ?: Location(row = -1, column = -1)))
+                    location = tracker?.getLocationOf(target) ?: Location(row = -1, column = -1)))
         }
     }
     return result
 }
 
 // an 'inner' signature is a signature that is only within scope of the given top level group
-fun getInnerDefinedSignatures(
-    group: TopLevelGroup, tracker: LocationTracker?
-): Set<Signature> {
+fun getInnerDefinedSignatures(group: TopLevelGroup, tracker: LocationTracker?): Set<Signature> {
     val result = mutableSetOf<Signature>()
 
     val usingSection =
@@ -1346,18 +1336,15 @@ fun getInnerDefinedSignatures(
         }
     } else if (group is TheoremGroup) {
         if (group.givenSection != null) {
-            result.addAll(
-                getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
         }
     } else if (group is AxiomGroup) {
         if (group.givenSection != null) {
-            result.addAll(
-                getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
         }
     } else if (group is ConjectureGroup) {
         if (group.givenSection != null) {
-            result.addAll(
-                getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
         }
     }
     return result
@@ -1408,8 +1395,7 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                         val lhs = lhsItems[i]
                         val rhs = rhsItems[i]
                         val id =
-                            IdStatement(
-                                text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+                            IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
                         val syntheticDefines =
                             DefinesGroup(
                                 signature = id.signature(newLocationTracker()),
@@ -1418,8 +1404,7 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                                 requiringSection = null,
                                 whenSection = null,
                                 meansSection =
-                                MeansSection(
-                                    clauses = ClauseListNode(clauses = emptyList())),
+                                    MeansSection(clauses = ClauseListNode(clauses = emptyList())),
                                 evaluatedSection = null,
                                 viewingSection = null,
                                 usingSection = null,

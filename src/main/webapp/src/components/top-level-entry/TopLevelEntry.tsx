@@ -20,7 +20,7 @@ export const TopLevelEntry = (props: TopLevelEntryProps) => {
   const [showRendered, setShowRendered] = useState(true);
 
   return (
-    <div className={styles.mathlinguaTopLevel}>
+    <div id={props.id} className={styles.mathlinguaTopLevel}>
       {props.showCloseButton ? (
         <button
           className={styles.mathlinguaCloseButton}

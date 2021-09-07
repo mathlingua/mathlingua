@@ -3,20 +3,35 @@ import { EntityResult } from '../../services/api';
 import { EntitiesPanel } from '../entities-panel/EntitiesPanel';
 import { TopLevelEntry } from '../top-level-entry/TopLevelEntry';
 import styles from './TopLevelEntityGroup.module.css';
+import * as uuid from 'uuid';
 
 export interface TopLevelEntityGroupProps {
   entity: EntityResult;
 }
 
+interface EntityResultWithId {
+  id: string;
+  entityResult: EntityResult;
+}
+
 export const TopLevelEntityGroup = (props: TopLevelEntityGroupProps) => {
-  const [entities, setEntities] = useState([] as EntityResult[]);
+  const [entitiesWithIds, setEntitiesWithIds] = useState(
+    [] as EntityResultWithId[]
+  );
 
   const onViewEntity = (entity: EntityResult) => {
-    setEntities(entities.concat(entity));
+    setEntitiesWithIds(
+      entitiesWithIds.concat({
+        id: uuid.v4(),
+        entityResult: entity,
+      })
+    );
   };
 
   const onEntityClosed = (id: string) => {
-    setEntities(entities.filter((entity) => entity.id !== id));
+    setEntitiesWithIds(
+      entitiesWithIds.filter((container) => container.id !== id)
+    );
   };
 
   return (
@@ -29,16 +44,28 @@ export const TopLevelEntityGroup = (props: TopLevelEntityGroupProps) => {
         onViewEntity={onViewEntity}
         onEntityClosed={onEntityClosed}
       />
-      {entities.length > 0 ? (
+      {entitiesWithIds.length > 0 ? (
         <div className={styles.triangleBorder}>
           <div className={styles.triangle}></div>
         </div>
       ) : null}
       <EntitiesPanel
-        onViewEntity={onViewEntity}
-        onEntityClosed={onEntityClosed}
-        entities={entities}
-        onCloseAll={() => setEntities([])}
+        entityPanes={entitiesWithIds.map((container) => {
+          return {
+            id: container.id,
+            topLevelEntry: (
+              <TopLevelEntry
+                id={container.id}
+                showCloseButton={true}
+                rawHtml={container.entityResult.rawHtml}
+                renderedHtml={container.entityResult.renderedHtml}
+                onViewEntity={onViewEntity}
+                onEntityClosed={onEntityClosed}
+              ></TopLevelEntry>
+            ),
+          };
+        })}
+        onCloseAll={() => setEntitiesWithIds([])}
       />
     </div>
   );

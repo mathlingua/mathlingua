@@ -933,4 +933,87 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check reports errors if a function-like definition with (x) doesn't define a function`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                        [\some.function(x)]
+                        Defines: f
+                        means: "something"
+                        written: "something"
+                        called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 2, Column: 1)
+                Expected a definition of a function with arguments 'x'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors if a function-like definition with (x) defines a function`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                        [\some.function(x)]
+                        Defines: f(x)
+                        means: "something"
+                        written: "something"
+                        called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors if the variable in a function definition is duplicated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                        [\some.function(x)]
+                        Defines: f(x)
+                        means:
+                        . forAll: x
+                          then: x
+                        written: "something"
+                        called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 0, Column: 0)
+                Duplicate defined symbol 'x'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
 }

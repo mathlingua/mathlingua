@@ -64,6 +64,7 @@
     "@types/mark.js": "^8.11.6",
     "@types/react-router-dom": "^5.1.8",
     "@types/uuid": "^8.3.1",
+    "cypress": "^8.3.1",
     "msw": "^0.34.0",
     "prettier": "2.3.2",
     "typescript-plugin-css-modules": "^3.4.0"

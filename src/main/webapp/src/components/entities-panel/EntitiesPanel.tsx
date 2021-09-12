@@ -32,6 +32,7 @@ export const EntitiesPanel = (props: EntitiesPanelProps) => {
               props.onCloseAll();
             }
           }}
+          data-test-id="close-all-entities"
         >
           <FontAwesomeIcon icon={faTimes} />
         </button>

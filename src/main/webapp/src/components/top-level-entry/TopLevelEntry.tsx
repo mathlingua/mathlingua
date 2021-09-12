@@ -29,6 +29,7 @@ export const TopLevelEntry = (props: TopLevelEntryProps) => {
               props.onEntityClosed(props.id);
             }
           }}
+          data-test-id="close-single-top-level-entry"
         >
           <FontAwesomeIcon icon={faTimes} />
         </button>

@@ -106,6 +106,8 @@ data class ValueSourceTracker<T>(
 
 data class Page(val sourceFile: SourceFile, val fileResult: FileResult)
 
+data class WrittenAsForm(val target: String?, val form: String)
+
 interface SourceCollection {
     fun size(): Int
     fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>>
@@ -658,14 +660,16 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
                         for (node in findAllTexTalkNodes(stmt)) {
                             val expansion =
                                 expandAsWritten(
-                                    node,
-                                    getPatternsToWrittenAs(
-                                        defines =
-                                            definesGroups
-                                                .map { it.value.normalized }
-                                                .plus(aliasDefines),
-                                        states = statesGroups.map { it.value.normalized },
-                                        axioms = axiomGroups.map { it.value.normalized }))
+                                    target = null,
+                                    node = node,
+                                    operatorPatternToExpansion =
+                                        getPatternsToWrittenAs(
+                                            defines =
+                                                definesGroups
+                                                    .map { it.value.normalized }
+                                                    .plus(aliasDefines),
+                                            states = statesGroups.map { it.value.normalized },
+                                            axioms = axiomGroups.map { it.value.normalized }))
                             result.addAll(
                                 expansion.errors.map {
                                     ValueSourceTracker(
@@ -1032,14 +1036,14 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
 fun getPatternsToWrittenAs(
     defines: List<DefinesGroup>, states: List<StatesGroup>, axioms: List<AxiomGroup>
-): Map<OperatorTexTalkNode, String> {
+): Map<OperatorTexTalkNode, WrittenAsForm> {
     val allDefines = mutableListOf<DefinesGroup>()
     allDefines.addAll(defines)
 
     val allStates = mutableListOf<StatesGroup>()
     allStates.addAll(states)
 
-    val result = mutableMapOf<OperatorTexTalkNode, String>()
+    val result = mutableMapOf<OperatorTexTalkNode, WrittenAsForm>()
     for (rep in allStates) {
         val writtenAs =
             rep.writtenSection.forms.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
@@ -1048,11 +1052,13 @@ fun getPatternsToWrittenAs(
         if (validation is ValidationSuccess) {
             val exp = validation.value
             if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
-                result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+                result[exp.children[0] as OperatorTexTalkNode] =
+                    WrittenAsForm(target = null, form = writtenAs)
             } else if (exp.children.size == 1 && exp.children[0] is Command) {
                 result[
                     OperatorTexTalkNode(
-                        lhs = null, command = exp.children[0] as Command, rhs = null)] = writtenAs
+                        lhs = null, command = exp.children[0] as Command, rhs = null)] =
+                    WrittenAsForm(target = null, form = writtenAs)
             }
         }
     }
@@ -1069,10 +1075,12 @@ fun getPatternsToWrittenAs(
                     exp.toCode()
                 }
             if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
-                result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+                result[exp.children[0] as OperatorTexTalkNode] =
+                    WrittenAsForm(target = null, form = writtenAs)
             } else if (exp.children.size == 1 && exp.children[0] is Command) {
                 val cmd = exp.children[0] as Command
-                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] = writtenAs
+                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] =
+                    WrittenAsForm(target = null, form = writtenAs)
             }
         }
     }
@@ -1082,13 +1090,21 @@ fun getPatternsToWrittenAs(
             def.writtenSection.forms.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
 
         val validation = def.id.texTalkRoot
+        val target =
+            if (def.definesSection.targets.isNotEmpty()) {
+                def.definesSection.targets[0].toCode(false, 0).getCode()
+            } else {
+                null
+            }
         if (validation is ValidationSuccess) {
             val exp = validation.value
             if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
-                result[exp.children[0] as OperatorTexTalkNode] = writtenAs
+                result[exp.children[0] as OperatorTexTalkNode] =
+                    WrittenAsForm(target = target, form = writtenAs)
             } else if (exp.children.size == 1 && exp.children[0] is Command) {
                 val cmd = exp.children[0] as Command
-                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] = writtenAs
+                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] =
+                    WrittenAsForm(target = target, form = writtenAs)
             }
         }
     }

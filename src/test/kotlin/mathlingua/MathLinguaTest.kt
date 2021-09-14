@@ -4,6 +4,7 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import mathlingua.backend.SourceCollection
+import mathlingua.backend.WrittenAsForm
 import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.newSourceCollection
 import mathlingua.backend.transform.Signature
@@ -438,7 +439,7 @@ internal class MathLinguaTest {
         val expected =
             mapOf(
                 OperatorTexTalkNode(lhs = null, command = expectedCommand, rhs = null) to
-                    "a? \\text{ or } b?")
+                    WrittenAsForm(target = null, form = "a? \\text{ or } b?"))
         assertThat(map).isEqualTo(expected)
     }
 }

@@ -626,25 +626,34 @@ open class HtmlCodeWriter(
         }
     }
 
-    private fun prettyPrintTexTalk(text: String): String {
+    private data class PrettyPrintResult(val text: String, val matchedTarget: Boolean)
+
+    private fun prettyPrintTexTalk(target: String?, text: String): PrettyPrintResult {
         val newText = "{${text}}"
         val lhsParsed = newTexTalkParser().parse(newTexTalkLexer(newText))
-        return if (lhsParsed.errors.isEmpty()) {
-                val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
-                expandAsWritten(
-                        lhsParsed.root.transform {
-                            when (it) {
-                                is TextTexTalkNode -> it.copy(text = prettyPrintIdentifier(it.text))
-                                else -> it
-                            }
-                        },
-                        patternsToWrittenAs)
-                    .text
-                    ?: lhsParsed.root.toCode()
-            } else {
-                newText
-            }
-            .removeSurrounding("{", "}")
+        var matchedTarget = false
+        val resultText =
+            if (lhsParsed.errors.isEmpty()) {
+                    val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
+                    val exp =
+                        expandAsWritten(
+                            target = target,
+                            node =
+                                lhsParsed.root.transform {
+                                    when (it) {
+                                        is TextTexTalkNode ->
+                                            it.copy(text = prettyPrintIdentifier(it.text))
+                                        else -> it
+                                    }
+                                },
+                            operatorPatternToExpansion = patternsToWrittenAs)
+                    matchedTarget = matchedTarget || exp.matchedTarget
+                    exp.text ?: lhsParsed.root.toCode()
+                } else {
+                    newText
+                }
+                .removeSurrounding("{", "}")
+        return PrettyPrintResult(text = resultText, matchedTarget = matchedTarget)
     }
 
     override fun writeDirectStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
@@ -717,14 +726,16 @@ open class HtmlCodeWriter(
                     val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
                     val result =
                         expandAsWritten(
-                            root.value.transform {
-                                when (it) {
-                                    is TextTexTalkNode ->
-                                        it.copy(text = prettyPrintIdentifier(it.text))
-                                    else -> it
-                                }
-                            },
-                            patternsToWrittenAs)
+                            target = null,
+                            node =
+                                root.value.transform {
+                                    when (it) {
+                                        is TextTexTalkNode ->
+                                            it.copy(text = prettyPrintIdentifier(it.text))
+                                        else -> it
+                                    }
+                                },
+                            operatorPatternToExpansion = patternsToWrittenAs)
                     expansionErrors.addAll(result.errors)
                     result.text
                 } else {
@@ -744,21 +755,33 @@ open class HtmlCodeWriter(
             if (stmtText.contains(IS)) {
                 val index = stmtText.indexOf(IS)
                 val lhs = stmtText.substring(0, index)
-                builder.append("$$$${prettyPrintTexTalk(lhs)}$$$")
-                writeSpace()
-                writeDirect("<span class='mathlingua-is'>is</span>")
-                writeSpace()
                 val rhs = stmtText.substring(index + IS.length).trim()
-                builder.append("$$$${prettyPrintTexTalk(rhs)}$$$")
+                val rhsResult = prettyPrintTexTalk(lhs, rhs)
+                if (rhsResult.matchedTarget) {
+                    builder.append("$$$${rhsResult.text}$$$")
+                } else {
+                    val lhsResult = prettyPrintTexTalk(lhs, lhs)
+                    builder.append("$$$${lhsResult.text}$$$")
+                    writeSpace()
+                    writeDirect("<span class='mathlingua-is'>is</span>")
+                    writeSpace()
+                    builder.append("$$$${rhsResult.text}$$$")
+                }
             } else if (stmtText.contains(IN)) {
                 val index = stmtText.indexOf(IN)
                 val lhs = stmtText.substring(0, index)
-                builder.append("$$$")
-                builder.append(prettyPrintTexTalk(lhs))
-                writeDirect(" \\in ")
                 val rhs = stmtText.substring(index + IN.length).trim()
-                builder.append(prettyPrintTexTalk(rhs))
-                builder.append("$$$")
+                val rhsResult = prettyPrintTexTalk(lhs, rhs)
+                if (rhsResult.matchedTarget) {
+                    builder.append("$$$${rhsResult.text}$$$")
+                } else {
+                    val lhsResult = prettyPrintTexTalk(lhs, lhs)
+                    builder.append("$$$")
+                    builder.append(lhsResult.text)
+                    writeDirect(" \\in ")
+                    builder.append(rhsResult.text)
+                    builder.append("$$$")
+                }
             } else {
                 if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
                     builder.append("$$$$fullExpansion$$$")
@@ -1004,7 +1027,7 @@ class MathLinguaCodeWriter(
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
         if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
             val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
-            val expansion = expandAsWritten(root.value, patternsToWrittenAs)
+            val expansion = expandAsWritten(null, root.value, patternsToWrittenAs)
             builder.append(
                 if (expansion.text != null) {
                     "'${expansion.text}'"
@@ -1180,10 +1203,11 @@ private fun expandTextAsWritten(
     axioms: List<AxiomGroup>
 ): Expansion {
     if (defines.isEmpty() && states.isEmpty()) {
-        return Expansion(text = text, errors = emptyList())
+        return Expansion(text = text, errors = emptyList(), matchedTarget = false)
     }
 
     val errors = mutableListOf<String>()
+    var matchedTarget = false
     val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
     val parts = splitByMathlingua(parseMarkdown(text))
     val builder = StringBuilder()
@@ -1196,9 +1220,14 @@ private fun expandTextAsWritten(
                 if (addQuotes) {
                     builder.append('\'')
                 }
-                val expansion = expandAsWritten(result.root, patternsToWrittenAs)
+                val expansion =
+                    expandAsWritten(
+                        target = null,
+                        node = result.root,
+                        operatorPatternToExpansion = patternsToWrittenAs)
                 builder.append(expansion.text)
                 errors.addAll(expansion.errors)
+                matchedTarget = matchedTarget || expansion.matchedTarget
                 if (addQuotes) {
                     builder.append('\'')
                 }
@@ -1216,5 +1245,5 @@ private fun expandTextAsWritten(
             builder.append(part.text.replace("\\'", "'"))
         }
     }
-    return Expansion(text = builder.toString(), errors = errors)
+    return Expansion(text = builder.toString(), errors = errors, matchedTarget = matchedTarget)
 }

@@ -22,6 +22,14 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MEANS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.IfGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.and.AndGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseGroup
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
@@ -39,7 +47,15 @@ data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
         //   means:
         //   . '...'
         //
-        if (clauses.clauses.size == 1) {
+        if (clauses.clauses.size == 1 &&
+            clauses.clauses[0] !is ForAllGroup &&
+            clauses.clauses[0] !is ExistsGroup &&
+            clauses.clauses[0] !is ExistsUniqueGroup &&
+            clauses.clauses[0] !is IfGroup &&
+            clauses.clauses[0] !is IffGroup &&
+            clauses.clauses[0] !is AndGroup &&
+            clauses.clauses[0] !is OrGroup &&
+            clauses.clauses[0] !is PiecewiseGroup) {
             writer.append(clauses.clauses[0], false, 1)
         } else {
             if (clauses.clauses.isNotEmpty()) {

@@ -1,4 +1,3 @@
-import RenderedComponent from '../rendered-component/RenderedComponent';
 import styles from './BlockComment.module.css';
 
 export interface BlockCommentProps {

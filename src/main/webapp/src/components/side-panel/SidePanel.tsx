@@ -8,10 +8,13 @@ import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
 import { ErrorView } from '../error-view/ErrorView';
 import { isOnMobile } from '../../support/util';
 import { PathTreeItem, PathTreeNode } from '../path-tree-item/PathTreeItem';
-import { selectViewedPath } from '../../store/viewedPathSlice';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
 
-export const SidePanel = () => {
+export interface SidePanelProps {
+  viewedPath: string;
+}
+
+export const SidePanel = (props: SidePanelProps) => {
   const dispatch = useAppDispatch();
   const visible = useAppSelector(selectSidePanelVisible);
   const paths = useAppSelector(selectPaths);
@@ -66,7 +69,11 @@ export const SidePanel = () => {
     <div style={style} className={styles.sidePanel}>
       <div className={styles.sidePanelContent}>
         {start?.children?.map((node) => (
-          <PathTreeItem key={node.name} node={node} />
+          <PathTreeItem
+            key={node.name}
+            node={node}
+            viewedPath={props.viewedPath}
+          />
         ))}
       </div>
     </div>

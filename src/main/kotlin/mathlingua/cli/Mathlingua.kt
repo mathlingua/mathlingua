@@ -197,8 +197,6 @@ object Mathlingua {
 
         val app = Javalin.create().start(port)
         app.config.addStaticFiles("/assets")
-        // redirect 404s to / to allow client side routing
-        app.error(404) { ctx -> ctx.redirect(ctx.path()) }
         app.before("/") { ctx ->
             try {
                 logger.log("Re-analyzing the MathLingua code.")

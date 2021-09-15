@@ -9,11 +9,6 @@ import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGro
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
 
-import {
-  selectViewedPath,
-  viewedPathUpdated,
-} from '../../store/viewedPathSlice';
-
 import debounce from 'lodash.debounce';
 
 import AceEditor from 'react-ace';
@@ -89,9 +84,12 @@ const BASE_COMPLETIONS: Completion[] = [
 
 let scheduledFunction: { (): void; cancel(): void } | null = null;
 
-export const Page = () => {
+export interface PageProps {
+  viewedPath: string;
+}
+
+export const Page = (props: PageProps) => {
   const dispatch = useAppDispatch();
-  const relativePath = useAppSelector(selectViewedPath) || '';
   const [fileResult, setFileResult] = useState(
     undefined as api.FileResult | undefined
   );
@@ -123,25 +121,22 @@ export const Page = () => {
   };
 
   useEffect(() => {
-    const isEmptyPath = relativePath === '';
     api
-      .getFileResult(relativePath)
+      .getFileResult(props.viewedPath)
       .then(async (fileResult) => {
-        if (isEmptyPath) {
-          dispatch(viewedPathUpdated(fileResult?.relativePath));
-        }
         setFileResult(fileResult);
         setEditorContent(fileResult?.content ?? '');
+        setError('');
         await checkForErrors();
       })
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
-  }, [relativePath]);
+  }, [props.viewedPath]);
 
   useEffect(() => {
     setAnnotations(
       errorResults
-        .filter((err) => err.relativePath === relativePath)
+        .filter((err) => err.relativePath === props.viewedPath)
         .map((err) => ({
           row: err.row,
           column: err.column,
@@ -165,7 +160,7 @@ export const Page = () => {
         },
       });
     }
-  }, [relativePath, fileResult, query]);
+  }, [props.viewedPath, fileResult, query]);
 
   useEffect(() => {
     langTools.setCompleters();

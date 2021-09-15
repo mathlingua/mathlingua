@@ -5,10 +5,6 @@ import styles from './PathTreeItem.module.css';
 import { sidePanelVisibilityChanged } from '../../store/sidePanelVisibleSlice';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { isOnMobile } from '../../support/util';
-import {
-  selectViewedPath,
-  viewedPathUpdated,
-} from '../../store/viewedPathSlice';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
 import {
   errorResultsUpdated,
@@ -38,6 +34,7 @@ export interface PathTreeNode {
 
 export interface PathTreeItemProps {
   node: PathTreeNode;
+  viewedPath: string;
 }
 
 export const PathTreeItem = (props: PathTreeItemProps) => {
@@ -45,7 +42,6 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
   const [isExpanded, setIsExpanded] = useState(
     props.node.isDir && props.node.name === 'content'
   );
-  const viewedPath = useAppSelector(selectViewedPath) || '';
   const isEditMode = useAppSelector(selectIsEditMode);
   const allErrorResults = useAppSelector(selectErrorResults);
   const [inputName, setInputName] = useState('');
@@ -271,7 +267,11 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
         {isExpanded ? (
           <ul>
             {props.node.children.map((child) => (
-              <PathTreeItem key={child.name} node={child} />
+              <PathTreeItem
+                key={child.name}
+                node={child}
+                viewedPath={props.viewedPath}
+              />
             ))}
           </ul>
         ) : null}
@@ -296,7 +296,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
           to={`/${props.node.path}`}
           key={props.node.name}
           className={
-            viewedPath === props.node.path
+            props.viewedPath === props.node.path
               ? `${styles.link} ${styles.selected}`
               : styles.link
           }
@@ -304,7 +304,6 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             if (isOnMobile()) {
               dispatch(sidePanelVisibilityChanged(false));
             }
-            dispatch(viewedPathUpdated(props.node.path));
           }}
         >
           {name}

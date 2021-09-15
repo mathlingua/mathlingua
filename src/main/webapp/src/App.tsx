@@ -1,42 +1,23 @@
 import styles from './App.module.css';
 
 import React from 'react';
-import { Page } from './components/page/Page';
-import { SidePanel } from './components/side-panel/SidePanel';
 import { TopBar } from './components/topbar/TopBar';
 
-import { BrowserRouter, StaticRouter, Switch, Route } from 'react-router-dom';
-import { isStatic } from './services/api';
+import { HashRouter, Switch, Route } from 'react-router-dom';
+import { ContentPanel } from './components/content-panel/ContentPanel';
 
 export const App = () => {
-  if (isStatic()) {
-    return (
-      <StaticRouter>
-        <ErrorBoundary>
-          <TopBar />
-          <SidePanel />
-          <div className={styles.contentPanel}>
-            <Switch>
-              <Route path="/*" children={<Page />} />
-            </Switch>
-          </div>
-        </ErrorBoundary>
-      </StaticRouter>
-    );
-  }
-
   return (
-    <BrowserRouter>
+    <HashRouter hashType="slash">
       <ErrorBoundary>
         <TopBar />
-        <SidePanel />
         <div className={styles.contentPanel}>
           <Switch>
-            <Route path="/*" children={<Page />} />
+            <Route path="/:relativePath(.*)" children={<ContentPanel />} />
           </Switch>
         </div>
       </ErrorBoundary>
-    </BrowserRouter>
+    </HashRouter>
   );
 };
 

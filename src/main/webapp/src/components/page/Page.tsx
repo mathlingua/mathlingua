@@ -86,6 +86,7 @@ let scheduledFunction: { (): void; cancel(): void } | null = null;
 
 export interface PageProps {
   viewedPath: string;
+  targetId: string;
 }
 
 export const Page = (props: PageProps) => {
@@ -159,6 +160,20 @@ export const Page = (props: PageProps) => {
           }
         },
       });
+    }
+  }, [props.viewedPath, fileResult, query]);
+
+  useEffect(() => {
+    if (ref.current) {
+      window.scroll({
+        top: 0,
+        left: 0,
+        behavior: 'auto',
+      });
+      const el = document.getElementById(props.targetId);
+      if (el) {
+        el.scrollIntoView();
+      }
     }
   }, [props.viewedPath, fileResult, query]);
 

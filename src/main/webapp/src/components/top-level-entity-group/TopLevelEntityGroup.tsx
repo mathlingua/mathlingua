@@ -7,6 +7,7 @@ import * as uuid from 'uuid';
 
 export interface TopLevelEntityGroupProps {
   entity: EntityResult;
+  relativePath: string;
 }
 
 interface EntityResultWithId {
@@ -38,8 +39,10 @@ export const TopLevelEntityGroup = (props: TopLevelEntityGroupProps) => {
     <div className={styles.topLevelEntityGroup}>
       <TopLevelEntry
         id={props.entity.id}
+        relativePath={props.entity.relativePath}
         rawHtml={props.entity.rawHtml}
         renderedHtml={props.entity.renderedHtml}
+        showOpenButton={false}
         showCloseButton={false}
         onViewEntity={onViewEntity}
         onEntityClosed={onEntityClosed}
@@ -54,14 +57,18 @@ export const TopLevelEntityGroup = (props: TopLevelEntityGroupProps) => {
           return {
             id: container.id,
             topLevelEntry: (
-              <TopLevelEntry
-                id={container.id}
-                showCloseButton={true}
-                rawHtml={container.entityResult.rawHtml}
-                renderedHtml={container.entityResult.renderedHtml}
-                onViewEntity={onViewEntity}
-                onEntityClosed={onEntityClosed}
-              ></TopLevelEntry>
+              <div>
+                <TopLevelEntry
+                  id={container.entityResult.id}
+                  relativePath={container.entityResult.relativePath}
+                  showOpenButton={true}
+                  showCloseButton={true}
+                  rawHtml={container.entityResult.rawHtml}
+                  renderedHtml={container.entityResult.renderedHtml}
+                  onViewEntity={onViewEntity}
+                  onEntityClosed={onEntityClosed}
+                ></TopLevelEntry>
+              </div>
             ),
           };
         })}

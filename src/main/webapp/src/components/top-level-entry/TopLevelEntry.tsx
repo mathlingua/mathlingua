@@ -5,10 +5,13 @@ import styles from './TopLevelEntry.module.css';
 import { EntityResult } from '../../services/api';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { faTimes, faShare } from '@fortawesome/free-solid-svg-icons';
+import { Link } from 'react-router-dom';
 
 export interface TopLevelEntryProps {
   id: string;
+  relativePath: string;
+  showOpenButton: boolean;
   showCloseButton: boolean;
   rawHtml: string;
   renderedHtml: string;
@@ -34,14 +37,24 @@ export const TopLevelEntry = (props: TopLevelEntryProps) => {
           <FontAwesomeIcon icon={faTimes} />
         </button>
       ) : null}
-      <button
-        className={styles.mathlinguaFlipIcon}
-        onClick={() => {
-          setShowRendered(!showRendered);
-        }}
-      >
-        •
-      </button>
+      <span className={styles.mathlinguaIconPane}>
+        {props.showOpenButton ? (
+          <Link
+            to={`/${props.relativePath}#${props.id}`}
+            className={styles.mathlinguaOpenIcon}
+          >
+            <FontAwesomeIcon icon={faShare} />
+          </Link>
+        ) : null}
+        <button
+          className={styles.mathlinguaFlipIcon}
+          onClick={() => {
+            setShowRendered(!showRendered);
+          }}
+        >
+          •
+        </button>
+      </span>
       {showRendered ? (
         <RenderedComponent
           onViewEntity={props.onViewEntity}

@@ -822,7 +822,8 @@ private fun decompose(
                 entities =
                     elements.map {
                         EntityResult(
-                            id = md5Hash(it.rawFormHtml),
+                            id = md5Hash(it.node?.toCode(false, 0)?.getCode() ?: ""),
+                            relativePath = relativePath,
                             type = it.node?.javaClass?.simpleName ?: "",
                             signature = getSignature(it.node),
                             rawHtml = it.rawFormHtml,

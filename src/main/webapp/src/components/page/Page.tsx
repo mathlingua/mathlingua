@@ -132,7 +132,7 @@ export const Page = (props: PageProps) => {
       })
       .catch((err) => setError(err.message))
       .finally(() => setIsLoading(false));
-  }, [props.viewedPath]);
+  }, [props.viewedPath, props.targetId]);
 
   useEffect(() => {
     setAnnotations(
@@ -247,14 +247,19 @@ export const Page = (props: PageProps) => {
       </div>
       {fileResult?.entities.map((entityResult) => (
         <span key={entityResult.id}>
-          {entityResult.type === 'TopLevelBlockComment' ? (
-            <BlockComment
-              renderedHtml={entityResult.renderedHtml}
-              rawHtml={entityResult.rawHtml}
-            />
-          ) : (
-            <TopLevelEntityGroup entity={entityResult} />
-          )}
+          <div>
+            {entityResult.type === 'TopLevelBlockComment' ? (
+              <BlockComment
+                renderedHtml={entityResult.renderedHtml}
+                rawHtml={entityResult.rawHtml}
+              />
+            ) : (
+              <TopLevelEntityGroup
+                entity={entityResult}
+                relativePath={props.viewedPath}
+              />
+            )}
+          </div>
         </span>
       ))}
     </div>

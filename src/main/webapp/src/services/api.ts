@@ -4,6 +4,7 @@ import { Search } from './Search';
 
 export interface EntityResult {
   id: string;
+  relativePath: string;
   type: string;
   signature: string;
   rawHtml: string;

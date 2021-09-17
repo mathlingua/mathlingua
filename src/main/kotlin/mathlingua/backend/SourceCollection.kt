@@ -240,6 +240,7 @@ private fun findVirtualFiles(file: VirtualFile, result: MutableList<SourceFile>)
 @Serializable
 data class EntityResult(
     val id: String,
+    val relativePath: String,
     val type: String,
     val signature: String?,
     val rawHtml: String,
@@ -272,13 +273,15 @@ fun fixClassNameBug(html: String) =
         .replace("<body>", " ")
         .replace("</body>", " ")
 
-fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResult {
+fun TopLevelGroup.toEntityResult(
+    relativePath: String, sourceCollection: SourceCollection
+): EntityResult {
     val renderedHtml =
         sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
     val rawHtml =
         sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = false)
     return EntityResult(
-        id = md5Hash(rawHtml),
+        id = md5Hash(this.toCode(false, 0).getCode()),
         type = this.javaClass.simpleName,
         signature =
             if (this is HasSignature) {
@@ -288,7 +291,8 @@ fun TopLevelGroup.toEntityResult(sourceCollection: SourceCollection): EntityResu
             },
         rawHtml = fixClassNameBug(rawHtml),
         renderedHtml = fixClassNameBug(renderedHtml),
-        words = getAllWords(this).toList())
+        words = getAllWords(this).toList(),
+        relativePath = relativePath)
 }
 
 fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceCollection): FileResult {
@@ -301,7 +305,7 @@ fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceColle
             ) {
                 is ValidationSuccess -> {
                     val doc = validation.value.document
-                    doc.groups.map { it.toEntityResult(sourceCollection) }
+                    doc.groups.map { it.toEntityResult(relativePath, sourceCollection) }
                 }
                 else -> {
                     emptyList()
@@ -338,6 +342,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     private val searchIndex = SearchIndex(fs)
 
     private val signatureToTopLevelGroup = mutableMapOf<String, TopLevelGroup>()
+    private val signatureToRelativePath = mutableMapOf<String, String>()
 
     private val allGroups = mutableListOf<ValueSourceTracker<Normalized<TopLevelGroup>>>()
     private val definesGroups = mutableListOf<ValueSourceTracker<Normalized<DefinesGroup>>>()
@@ -403,7 +408,8 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
     }
 
     override fun getWithSignature(signature: String): EntityResult? {
-        return signatureToTopLevelGroup[signature]?.toEntityResult(this)
+        val relativePath = signatureToRelativePath[signature] ?: return null
+        return signatureToTopLevelGroup[signature]?.toEntityResult(relativePath, this)
     }
 
     override fun removeSource(path: String) {
@@ -425,7 +431,9 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
                 for (grp in docAll) {
                     if (grp is HasSignature && grp.signature != null) {
-                        signatureToTopLevelGroup.remove(grp.signature!!.form)
+                        val key = grp.signature!!.form
+                        signatureToTopLevelGroup.remove(key)
+                        signatureToRelativePath.remove(key)
                         if (grp.id != null) {
                             signatureAutoComplete.remove(grp.id!!.text)
                         }
@@ -455,7 +463,8 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
     override fun addSource(sf: SourceFile) {
         sourceFileToFileResult.clear()
-        sourceFiles[sf.file.relativePathTo(fs.cwd()).joinToString("/")] = sf
+        val relativePath = sf.file.relativePathTo(fs.cwd()).joinToString("/")
+        sourceFiles[relativePath] = sf
         searchIndex.add(sf)
         val validation = sf.validation
         if (validation is ValidationSuccess) {
@@ -467,7 +476,9 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
 
             for (grp in validation.value.document.groups) {
                 if (grp is HasSignature && grp.signature != null) {
-                    signatureToTopLevelGroup[grp.signature!!.form] = grp
+                    val key = grp.signature!!.form
+                    signatureToTopLevelGroup[key] = grp
+                    signatureToRelativePath[key] = relativePath
                     if (grp.id != null) {
                         signatureAutoComplete.add(grp.id!!.text)
                     }

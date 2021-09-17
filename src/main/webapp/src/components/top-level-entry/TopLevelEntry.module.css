@@ -20,15 +20,32 @@
     inset 0 0 0 0 rgba(240, 240, 240, 0.5);
 }
 
+.mathlinguaIconPane {
+  float: right;
+  border: none;
+  color: #aaaaaa;
+  background: #ffffff;
+  padding: 0;
+  font-size: 100%;
+}
+
 .mathlinguaFlipIcon {
-  position: relative;
-  top: 0;
-  left: 97%;
   border: none;
   color: #aaaaaa;
   background: #ffffff;
   padding: 0;
   font-size: 110%;
+}
+
+.mathlinguaOpenIcon {
+  border: none;
+  color: #aaaaaa;
+  background: #ffffff;
+  padding-right: 1ex;
+  padding-left: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 80%;
 }
 
 .mathlinguaCloseButton {

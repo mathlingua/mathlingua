@@ -144,12 +144,63 @@ open class HtmlCodeWriter(
                             builder.append(
                                 "<span class=\"mathlingua-url\"><a class=\"mathlingua-link\" target=\"_blank\" href=\"${urlNoSpace.removeSurrounding("\"", "\"")}\">$title</a></span>")
                         }
+                        is StringItem -> {
+                            builder.append("<span class='mathlingua-resources-item'>")
+
+                            val text = res.text.removeSurrounding("\"", "\"")
+                            val groups =
+                                Regex(
+                                        "@([a-zA-Z0-9]+)(:page\\{[ ]*([0-9]+)[ ]*\\})?(:offset\\{[ ]*([0-9]+)[ ]*\\})?")
+                                    .find(text)
+                                    ?.groups
+                            val name =
+                                if (groups != null) {
+                                    groups[1]?.value?.trim()
+                                } else {
+                                    null
+                                }
+                            val page =
+                                if (groups != null) {
+                                    groups[3]?.value?.trim()
+                                } else {
+                                    null
+                                }
+                            val offset =
+                                if (groups != null) {
+                                    groups[5]?.value?.trim()
+                                } else {
+                                    null
+                                }
+                            val textBuilder = StringBuilder()
+                            textBuilder.append(name)
+                            if (page != null || offset != null) {
+                                textBuilder.append(" (")
+                                if (page != null) {
+                                    textBuilder.append("Page ")
+                                    textBuilder.append(page.removeSurrounding("\"", "\""))
+                                }
+                                if (offset != null) {
+                                    if (page != null) {
+                                        textBuilder.append(", ")
+                                    }
+                                    textBuilder.append("Offset ")
+                                    textBuilder.append(offset.removeSurrounding("\"", "\""))
+                                }
+                                textBuilder.append(")")
+                            }
+
+                            builder.append(textBuilder.toString())
+                            builder.append("</span>")
+                        }
                         is SourceItemGroup -> {
                             builder.append("<span class='mathlingua-resources-item'>")
 
                             val textBuilder = StringBuilder()
                             textBuilder.append(
-                                res.sourceSection.sourceReference.removeSurrounding("\"", "\""))
+                                res.sourceSection
+                                    .sourceReference
+                                    .removeSurrounding("\"", "\"")
+                                    .removePrefix("@"))
                             val page = res.pageSection?.page
                             val offset = res.offsetSection?.offset
                             if (page != null || offset != null) {

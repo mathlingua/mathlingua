@@ -1,3 +1,4 @@
+import RenderedComponent from '../rendered-component/RenderedComponent';
 import styles from './BlockComment.module.css';
 
 export interface BlockCommentProps {
@@ -7,11 +8,8 @@ export interface BlockCommentProps {
 
 export const BlockComment = (props: BlockCommentProps) => {
   return (
-    <div
-      className={styles.mathlinguaBlockCommentTopLevel}
-      dangerouslySetInnerHTML={{
-        __html: props.rawHtml,
-      }}
-    ></div>
+    <div className={styles.mathlinguaBlockCommentTopLevel}>
+      <RenderedComponent html={props.renderedHtml}></RenderedComponent>
+    </div>
   );
 };

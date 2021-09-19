@@ -9,3 +9,21 @@
   margin-left: auto; /* for centering content */
   margin-right: auto; /* for centering content */
 }
+
+pre {
+  font-family: monospace;
+  background-color: white;
+  border: solid;
+  border-width: 1px;
+  padding-top: 1em;
+  padding-bottom: 1em;
+  padding-left: 1.1em;
+  padding-right: 1.1em;
+  width: max-content;
+  margin-left: auto; /* for centering content */
+  margin-right: auto; /* for centering content */
+  margin-top: 2.25em;
+  margin-bottom: 2.25em;
+  border-color: rgba(230, 230, 230);
+  border-radius: 2px;
+}

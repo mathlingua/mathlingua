@@ -19,6 +19,19 @@ export const EditModeButton = () => {
       className={styles.editModeButton}
       onClick={async () => {
         const newEditMode = !isEditMode;
+        if (newEditMode) {
+          document.body.style.position = 'fixed';
+          document.body.style.padding = '0';
+          document.body.style.margin = '0';
+          document.body.style.height = '100%';
+          document.body.style.width = '100%';
+        } else {
+          document.body.style.position = 'unset';
+          document.body.style.padding = 'unset';
+          document.body.style.margin = 'unset';
+          document.body.style.height = 'unset';
+          document.body.style.width = 'unset';
+        }
         dispatch(isEditModeUpdated(newEditMode));
         const res = await check();
         dispatch(

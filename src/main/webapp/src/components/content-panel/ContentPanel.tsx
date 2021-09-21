@@ -21,7 +21,7 @@ function getHashLocation(location: {
 export const ContentPanel = () => {
   const hashLocation = getHashLocation(useLocation());
   return (
-    <div className={styles.contentPane}>
+    <div className={styles.content}>
       <SidePanel viewedPath={hashLocation.viewedPath} />
       <Page
         viewedPath={hashLocation.viewedPath}

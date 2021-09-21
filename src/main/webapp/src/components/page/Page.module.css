@@ -1,7 +1,7 @@
 .mathlinguaPage {
-  padding-top: 1.5em;
+  padding-top: 0;
   padding-bottom: 1em;
-  margin-top: 2.5em;
+  margin-top: 0;
   margin-bottom: 1em;
   margin-left: auto; /* for centering content */
   margin-right: auto; /* for centering content */
@@ -15,6 +15,7 @@
   border-radius: 2px;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
     inset 0 0 0 0 rgba(240, 240, 240, 0.5);
+  height: max-content;
 }
 
 @media screen and (max-width: 500px) {
@@ -27,8 +28,21 @@
 
 .sideBySideView {
   width: 100%;
-  margin-top: 1.5em;
-  padding: 0;
+  height: max-content;
+  padding-top: 0;
+  padding-bottom: 1em;
+  margin-top: 0;
+  margin-bottom: 1em;
+  margin-left: auto; /* for centering content */
+  margin-right: auto; /* for centering content */
+  font-size: 1em;
+  background-color: white;
+  border: solid;
+  border-width: 1px;
+  border-color: rgba(210, 210, 210);
+  border-radius: 2px;
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+    inset 0 0 0 0 rgba(240, 240, 240, 0.5);
 }
 
 .splitViewContainer {
@@ -41,7 +55,7 @@
 
 .splitViewRendered {
   flex: 1 1 0px;
-  max-height: 100vh;
+  max-height: 95vh;
   overflow: auto;
   border-left: solid;
   border-color: #eeeeee;

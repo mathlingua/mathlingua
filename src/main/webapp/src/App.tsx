@@ -9,14 +9,12 @@ import { ContentPanel } from './components/content-panel/ContentPanel';
 export const App = () => {
   return (
     <HashRouter hashType="slash">
-      <ErrorBoundary>
-        <TopBar />
-        <div className={styles.contentPanel}>
-          <Switch>
-            <Route path="/:relativePath(.*)" children={<ContentPanel />} />
-          </Switch>
-        </div>
-      </ErrorBoundary>
+      <TopBar />
+      <div className={styles.contentPanel}>
+        <Switch>
+          <Route path="/:relativePath(.*)" children={<ContentPanel />} />
+        </Switch>
+      </div>
     </HashRouter>
   );
 };

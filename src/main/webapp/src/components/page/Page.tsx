@@ -295,20 +295,19 @@ export const Page = (props: PageProps) => {
       enableBasicAutocompletion={true}
       enableLiveAutocompletion={true}
       fontSize="90%"
-      style={{
-        width: '100%',
-        height: '100%',
-        minHeight: '100vh',
-      }}
+      height="89vh"
+      width="100%"
       annotations={annotations}
     ></AceEditor>
   );
 
   const sideBySideView = (
-    <div className={styles.mathlinguaPage + ' ' + styles.sideBySideView}>
-      <div className={styles.splitViewContainer}>
-        <div className={styles.splitViewEditor}>{editorView}</div>
-        <div className={styles.splitViewRendered}>{renderedContent}</div>
+    <div style={{ overflowY: 'scroll', height: '100%' }}>
+      <div className={styles.sideBySideView}>
+        <div className={styles.splitViewContainer}>
+          <div className={styles.splitViewEditor}>{editorView}</div>
+          <div className={styles.splitViewRendered}>{renderedContent}</div>
+        </div>
       </div>
     </div>
   );
@@ -323,6 +322,10 @@ export const Page = (props: PageProps) => {
       ref={ref}
       style={{
         transition: '0.2s',
+        margin: 0,
+        paddingTop: 0,
+        paddingBottom: 0,
+        paddingRight: 0,
         paddingLeft:
           isEditMode && !isOnMobile() && isSidePanelVisible ? '15em' : '0',
       }}

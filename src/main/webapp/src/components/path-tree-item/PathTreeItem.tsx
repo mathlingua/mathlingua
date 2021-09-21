@@ -103,7 +103,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
     }
   }
   // remove the .math extension and replace underscores with spaces
-  name = name.replace('.math', '').replace('_', ' ');
+  name = name.replace('.math', '').replace(/_/g, ' ');
 
   const updateInputName = async () => {
     if (!inputName || (!props.node.isDir && !inputName.endsWith('.math'))) {

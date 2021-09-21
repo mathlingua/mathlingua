@@ -295,19 +295,20 @@ export const Page = (props: PageProps) => {
       enableBasicAutocompletion={true}
       enableLiveAutocompletion={true}
       fontSize="90%"
-      height="89vh"
-      width="100%"
+      style={{
+        height: '100%',
+        width: '100%',
+        position: 'relative',
+      }}
       annotations={annotations}
     ></AceEditor>
   );
 
   const sideBySideView = (
-    <div style={{ overflowY: 'scroll', height: '100%' }}>
-      <div className={styles.sideBySideView}>
-        <div className={styles.splitViewContainer}>
-          <div className={styles.splitViewEditor}>{editorView}</div>
-          <div className={styles.splitViewRendered}>{renderedContent}</div>
-        </div>
+    <div className={styles.sideBySideView}>
+      <div className={styles.splitViewContainer}>
+        <div className={styles.splitViewEditor}>{editorView}</div>
+        <div className={styles.splitViewRendered}>{renderedContent}</div>
       </div>
     </div>
   );

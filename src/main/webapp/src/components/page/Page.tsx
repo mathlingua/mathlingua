@@ -296,16 +296,16 @@ export const Page = (props: PageProps) => {
       enableLiveAutocompletion={true}
       fontSize="90%"
       style={{
-        height: '100%',
         width: '100%',
-        position: 'relative',
+        height: '100%',
+        minHeight: '100vh',
       }}
       annotations={annotations}
     ></AceEditor>
   );
 
   const sideBySideView = (
-    <div className={styles.sideBySideView}>
+    <div className={styles.mathlinguaPage + ' ' + styles.sideBySideView}>
       <div className={styles.splitViewContainer}>
         <div className={styles.splitViewEditor}>{editorView}</div>
         <div className={styles.splitViewRendered}>{renderedContent}</div>
@@ -323,10 +323,6 @@ export const Page = (props: PageProps) => {
       ref={ref}
       style={{
         transition: '0.2s',
-        margin: 0,
-        paddingTop: 0,
-        paddingBottom: 0,
-        paddingRight: 0,
         paddingLeft:
           isEditMode && !isOnMobile() && isSidePanelVisible ? '15em' : '0',
       }}

@@ -1,10 +1,9 @@
 .sidePanel {
-  height: 93vh;
+  height: 95%;
   width: 15em;
   position: fixed;
   z-index: 5;
-  margin: 0;
-  top: 4vh;
+  top: 2em;
   left: 0;
   background-color: #fefefe;
   border-right: solid;

@@ -1,18 +1,4 @@
-#root {
-  padding: 0;
-  margin: 0;
-}
-
 body {
   background-color: #dddddd;
   font-family: Georgia, 'Times New Roman', Times, serif;
-  padding: 0;
-  margin: 0;
-  height: 99vh;
-  width: 100vw;
-}
-
-html {
-  padding: 0;
-  margin: 0;
 }

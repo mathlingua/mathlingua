@@ -84,6 +84,13 @@ const BASE_COMPLETIONS: Completion[] = [
 
 let scheduledFunction: { (): void; cancel(): void } | null = null;
 
+window.addEventListener('resize', () => {
+  document.body.style.setProperty(
+    '--inner-height',
+    `${window.innerHeight - 5}px`
+  );
+});
+
 export interface PageProps {
   viewedPath: string;
   targetId: string;

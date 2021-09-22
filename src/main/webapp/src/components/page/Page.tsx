@@ -145,7 +145,7 @@ export const Page = (props: PageProps) => {
           type: 'error',
         }))
     );
-  }, [errorResults]);
+  }, [errorResults, props.viewedPath]);
 
   useEffect(() => {
     if (ref.current) {
@@ -175,7 +175,7 @@ export const Page = (props: PageProps) => {
         el.scrollIntoView();
       }
     }
-  }, [props.viewedPath, fileResult, query]);
+  }, [props.viewedPath, props.targetId, fileResult, query]);
 
   useEffect(() => {
     langTools.setCompleters();

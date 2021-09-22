@@ -29,7 +29,7 @@
   width: 100%;
   height: calc(var(--inner-height) - 2.1em);
   overflow-y: scroll;
-  margin-top: 1.5em;
+  margin-top: 1.6em;
   padding: 0;
   background-color: white;
 }

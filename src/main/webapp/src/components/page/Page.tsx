@@ -214,6 +214,13 @@ export const Page = (props: PageProps) => {
     });
   }, []);
 
+  useEffect(() => {
+    document.body.style.setProperty(
+      '--inner-height',
+      `${window.innerHeight - 5}px`
+    );
+  }, []);
+
   const errorView = (
     <div className={styles.mathlinguaPage}>
       <ErrorView message={error} />
@@ -296,16 +303,16 @@ export const Page = (props: PageProps) => {
       enableLiveAutocompletion={true}
       fontSize="90%"
       style={{
+        position: 'relative',
         width: '100%',
         height: '100%',
-        minHeight: '100vh',
       }}
       annotations={annotations}
     ></AceEditor>
   );
 
   const sideBySideView = (
-    <div className={styles.mathlinguaPage + ' ' + styles.sideBySideView}>
+    <div className={styles.sideBySideView}>
       <div className={styles.splitViewContainer}>
         <div className={styles.splitViewEditor}>{editorView}</div>
         <div className={styles.splitViewRendered}>{renderedContent}</div>

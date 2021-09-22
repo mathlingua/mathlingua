@@ -27,8 +27,11 @@
 
 .sideBySideView {
   width: 100%;
+  height: calc(var(--inner-height) - 2.1em);
+  overflow-y: scroll;
   margin-top: 1.5em;
   padding: 0;
+  background-color: white;
 }
 
 .splitViewContainer {

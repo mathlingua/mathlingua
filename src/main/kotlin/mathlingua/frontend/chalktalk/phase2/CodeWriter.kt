@@ -83,7 +83,10 @@ interface CodeWriter {
     fun beginTopLevel(topLevelGroup: TopLevelGroup, label: String)
     fun endTopLevel(numNewlines: Int)
     fun newCodeWriter(
-        defines: List<DefinesGroup>, states: List<StatesGroup>, literal: Boolean
+        defines: List<DefinesGroup>,
+        states: List<StatesGroup>,
+        axioms: List<AxiomGroup>,
+        literal: Boolean
     ): CodeWriter
     fun getCode(): String
 }
@@ -304,7 +307,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.calledSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, literal))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states, axioms, literal))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -333,7 +336,7 @@ open class HtmlCodeWriter(
                                 it
                             }
                         }
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, literal))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states, axioms, literal))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -362,7 +365,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.theoremSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, literal))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states, axioms, literal))
                         .getCode())
                 builder.append("</span>")
                 if (node.proofSection != null) {
@@ -373,7 +376,7 @@ open class HtmlCodeWriter(
                         "Proof<span class='mathlingua-proof-icon' id=\"icon-$id-CUSTOM_SUFFIX\">&#9662;</span></div>")
                     builder.append(
                         "<span class='mathlingua-proof-hidden' id=\"proof-$id-CUSTOM_SUFFIX\">")
-                    val writer = newCodeWriter(defines, states, literal)
+                    val writer = newCodeWriter(defines, states, axioms, literal)
                     writer.writeText(node.proofSection.text)
                     builder.append(writer.getCode())
                     builder.append("</span>")
@@ -403,7 +406,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.axiomSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, literal))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states, axioms, literal))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -431,7 +434,7 @@ open class HtmlCodeWriter(
                                 } else {
                                     node.conjectureSection
                                 })
-                        .toCode(false, 0, writer = newCodeWriter(defines, states, literal))
+                        .toCode(false, 0, writer = newCodeWriter(defines, states, axioms, literal))
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
@@ -495,7 +498,7 @@ open class HtmlCodeWriter(
         }
 
         builder.append(
-            node.toCode(hasDot, indent, newCodeWriter(defines, states, literal)).getCode())
+            node.toCode(hasDot, indent, newCodeWriter(defines, states, axioms, literal)).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -773,7 +776,8 @@ open class HtmlCodeWriter(
                 expansionErrors.addAll(root.errors.map { it.message })
             }
             val fullExpansion =
-                if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
+                if (root is ValidationSuccess &&
+                    (defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty())) {
                     val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
                     val result =
                         expandAsWritten(
@@ -834,7 +838,8 @@ open class HtmlCodeWriter(
                     builder.append("$$$")
                 }
             } else {
-                if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
+                if (root is ValidationSuccess &&
+                    (defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty())) {
                     builder.append("$$$$fullExpansion$$$")
                 } else {
                     builder.append("$$$$stmtText$$$")
@@ -928,15 +933,14 @@ open class HtmlCodeWriter(
     }
 
     private fun getExpandedMarkdownedText(text: String): String {
-        val comment =
-            processMathCodeBlocks(text).joinToString(" ") {
-                if (it.isMathlinguaCode) {
-                    "<div class='mathlingua-top-level-comment-block'>${it.text}</div>"
-                } else {
-                    parseMarkdown(it.text)
-                }
+        return processMathCodeBlocks(text).joinToString(" ") {
+            if (it.isMathlinguaCode) {
+                "<div class='mathlingua-top-level-comment-block'>${it.text}</div>"
+            } else {
+                parseMarkdown(
+                    expandTextAsWritten(it.text, false, defines, states, axioms).text ?: it.text)
             }
-        return expandTextAsWritten(comment, false, defines, states, axioms).text ?: comment
+        }
     }
 
     override fun beginTopLevel(topLevelGroup: TopLevelGroup, label: String) {
@@ -955,7 +959,10 @@ open class HtmlCodeWriter(
     }
 
     override fun newCodeWriter(
-        defines: List<DefinesGroup>, states: List<StatesGroup>, literal: Boolean
+        defines: List<DefinesGroup>,
+        states: List<StatesGroup>,
+        axioms: List<AxiomGroup>,
+        literal: Boolean
     ): CodeWriter {
         val writer = HtmlCodeWriter(defines, states, axioms, literal)
         writer.innerDefinedSignatures.addAll(innerDefinedSignatures)
@@ -978,7 +985,7 @@ open class HtmlCodeWriter(
         builder.append("<hr/>")
     }
 
-    private fun shouldExpand() = defines.isNotEmpty() || states.isNotEmpty()
+    private fun shouldExpand() = defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty()
 }
 
 class MathLinguaCodeWriter(
@@ -989,7 +996,8 @@ class MathLinguaCodeWriter(
     override fun generateCode(node: Phase2Node) = node.toCode(false, 0, writer = this).getCode()
 
     override fun append(node: Phase2Node, hasDot: Boolean, indent: Int) {
-        builder.append(node.toCode(hasDot, indent, newCodeWriter(defines, states, true)).getCode())
+        builder.append(
+            node.toCode(hasDot, indent, newCodeWriter(defines, states, axioms, true)).getCode())
     }
 
     override fun writeHeader(header: String) {
@@ -1039,7 +1047,7 @@ class MathLinguaCodeWriter(
         builder.append('[')
         val stmt =
             id.toStatement()
-                .toCode(false, 0, newCodeWriter(emptyList(), emptyList(), true))
+                .toCode(false, 0, newCodeWriter(emptyList(), emptyList(), emptyList(), true))
                 .getCode()
         builder.append(stmt.removeSurrounding("'", "'"))
         builder.append(']')
@@ -1076,7 +1084,8 @@ class MathLinguaCodeWriter(
     }
 
     override fun writeStatement(stmtText: String, root: Validation<ExpressionTexTalkNode>) {
-        if (root is ValidationSuccess && (defines.isNotEmpty() || states.isNotEmpty())) {
+        if (root is ValidationSuccess &&
+            (defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty())) {
             val patternsToWrittenAs = getPatternsToWrittenAs(defines, states, axioms)
             val expansion = expandAsWritten(null, root.value, patternsToWrittenAs)
             builder.append(
@@ -1110,7 +1119,10 @@ class MathLinguaCodeWriter(
     override fun writeHorizontalLine() {}
 
     override fun newCodeWriter(
-        defines: List<DefinesGroup>, states: List<StatesGroup>, literal: Boolean
+        defines: List<DefinesGroup>,
+        states: List<StatesGroup>,
+        axioms: List<AxiomGroup>,
+        literal: Boolean
     ) = MathLinguaCodeWriter(defines, states, axioms)
 
     override fun getCode() = builder.toString()

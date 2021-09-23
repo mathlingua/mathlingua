@@ -255,6 +255,8 @@ data class EntityResult(
 @Serializable
 data class FileResult(
     val relativePath: String,
+    val nextRelativePath: String?,
+    val previousRelativePath: String?,
     val content: String,
     val entities: List<EntityResult>,
     val errors: List<ErrorResult>)
@@ -300,10 +302,17 @@ fun TopLevelGroup.toEntityResult(
         relativePath = relativePath)
 }
 
-fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceCollection): FileResult {
+fun SourceFile.toFileResult(
+    fs: VirtualFileSystem,
+    nextRelativePath: String?,
+    previousRelativePath: String?,
+    sourceCollection: SourceCollection
+): FileResult {
     val relativePath = this.file.relativePathTo(fs.cwd()).joinToString("/")
     return FileResult(
         relativePath = relativePath,
+        nextRelativePath = nextRelativePath,
+        previousRelativePath = previousRelativePath,
         content = this.content,
         entities =
             when (val validation = this.validation
@@ -336,7 +345,7 @@ fun SourceFile.toFileResult(fs: VirtualFileSystem, sourceCollection: SourceColle
 
 data class Normalized<T>(val original: T, val normalized: T)
 
-class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>) :
+class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFile>) :
     SourceCollection {
     private val sourceFiles = mutableMapOf<String, SourceFile>()
     private val sourceFileToFileResult = mutableMapOf<SourceFile, FileResult>()
@@ -407,7 +416,26 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, sources: List<SourceFile>)
         if (fileResult != null) {
             return Page(sourceFile = sourceFile, fileResult = fileResult)
         }
-        val evalFileResult = sourceFile.toFileResult(fs, this)
+
+        var prev: SourceFile? = null
+        var next: SourceFile? = null
+        for (i in sources.indices) {
+            if (sources[i].file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()) ==
+                path) {
+                prev = sources.getOrNull(i - 1)
+                next = sources.getOrNull(i + 1)
+                break
+            }
+        }
+
+        val evalFileResult =
+            sourceFile.toFileResult(
+                fs = fs,
+                previousRelativePath =
+                    prev?.file?.relativePathTo(fs.cwd())?.joinToString(fs.getFileSeparator()),
+                nextRelativePath =
+                    next?.file?.relativePathTo(fs.cwd())?.joinToString(fs.getFileSeparator()),
+                sourceCollection = this)
         sourceFileToFileResult[sourceFile] = evalFileResult
         return Page(sourceFile = sourceFile, fileResult = evalFileResult)
     }

@@ -70,3 +70,21 @@ mark {
   border-color: #aaaaaa;
   padding: 1px;
 }
+
+.linkPanel {
+  margin: 0;
+  padding-top: 0.75em;
+  padding-bottom: 2em;
+  padding-left: 2.5em;
+  padding-right: 2.5em;
+}
+
+.previousLink {
+  float: left;
+  color: #aaaaaa;
+}
+
+.nextLink {
+  float: right;
+  color: #aaaaaa;
+}

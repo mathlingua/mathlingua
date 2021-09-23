@@ -24,6 +24,9 @@ import {
 import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
 import { isOnMobile } from '../../support/util';
 
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faAngleRight, faAngleLeft } from '@fortawesome/free-solid-svg-icons';
+
 interface Annotation {
   row: number;
   column: number;
@@ -329,7 +332,27 @@ export const Page = (props: PageProps) => {
   );
 
   const pageView = (
-    <div className={styles.mathlinguaPage}>{renderedContent}</div>
+    <div className={styles.mathlinguaPage}>
+      {renderedContent}
+      <div className={styles.linkPanel}>
+        {fileResult.previousRelativePath ? (
+          <a
+            className={styles.previousLink}
+            href={`#/${fileResult.previousRelativePath}`}
+          >
+            <FontAwesomeIcon icon={faAngleLeft} />
+          </a>
+        ) : null}
+        {fileResult.nextRelativePath ? (
+          <a
+            className={styles.nextLink}
+            href={`#/${fileResult.nextRelativePath}`}
+          >
+            <FontAwesomeIcon icon={faAngleRight} />
+          </a>
+        ) : null}
+      </div>
+    </div>
   );
 
   const contentView = isEditMode ? sideBySideView : pageView;

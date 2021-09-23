@@ -771,7 +771,8 @@ private fun decompose(
     val resolvedMlgFiles = mlgFiles ?: findMathLinguaFiles(listOf(fs.cwd()))
     val fileResults = mutableListOf<FileResult>()
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-    for (f in resolvedMlgFiles) {
+    for (i in resolvedMlgFiles.indices) {
+        val f = resolvedMlgFiles[i]
         val fErrors = mutableListOf<ValueSourceTracker<ParseError>>()
         val elements =
             getCompleteRenderedTopLevelElements(
@@ -781,6 +782,16 @@ private fun decompose(
         fileResults.add(
             FileResult(
                 relativePath = relativePath,
+                previousRelativePath =
+                    resolvedMlgFiles
+                        .getOrNull(i - 1)
+                        ?.relativePathTo(fs.cwd())
+                        ?.joinToString(fs.getFileSeparator()),
+                nextRelativePath =
+                    resolvedMlgFiles
+                        .getOrNull(i + 1)
+                        ?.relativePathTo(fs.cwd())
+                        ?.joinToString(fs.getFileSeparator()),
                 content = sanitizeHtmlForJs(f.readText()),
                 entities =
                     elements.map {

@@ -47,7 +47,7 @@ export const SearchPanel = () => {
           suffix,
         }))
       );
-    } catch (err) {
+    } catch (err: any) {
       const message = `ERROR: ${err.message}`;
       setSuggestions([
         {

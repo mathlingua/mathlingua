@@ -14,6 +14,8 @@ export interface EntityResult {
 
 export interface FileResult {
   relativePath: string;
+  nextRelativePath?: string;
+  previousRelativePath?: string;
   content: string;
   entities: EntityResult[];
   errors: ErrorResult[];

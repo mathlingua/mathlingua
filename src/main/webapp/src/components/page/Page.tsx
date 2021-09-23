@@ -108,6 +108,7 @@ export const Page = (props: PageProps) => {
   const query = useAppSelector(selectQuery);
   const [isLoading, setIsLoading] = useState(true);
   const ref = useRef(null);
+  const aceEditorRef = useRef(null);
 
   const [annotations, setAnnotations] = useState([] as Annotation[]);
   const errorResults = useAppSelector(selectErrorResults);
@@ -231,6 +232,14 @@ export const Page = (props: PageProps) => {
     );
   }, []);
 
+  useEffect(() => {
+    const editorRefVal = aceEditorRef.current as any;
+    if (editorRefVal) {
+      editorRefVal.editor.setValue(editorContent);
+      editorRefVal.editor.clearSelection();
+    }
+  }, [isEditMode, editorContent]);
+
   const errorView = (
     <div className={styles.mathlinguaPage}>
       <ErrorView message={error} />
@@ -282,31 +291,40 @@ export const Page = (props: PageProps) => {
     </div>
   );
 
-  const onChange = async (newValue: string) => {
-    // update the editor content immediately
-    setEditorContent(newValue);
-    // but only do a save/check after short pause after the user
-    // has paused typing
+  async function saveContent(relativePath: string): Promise<boolean> {
+    const content = (aceEditorRef.current as any)?.editor?.getValue();
+    if (content) {
+      await api.writeFileResult(relativePath, content);
+      return true;
+    }
+    return false;
+  }
+
+  const onChange = async () => {
+    // only do a save/check after a short pause after the user
+    // has stopped typing
     if (scheduledFunction) {
       scheduledFunction.cancel();
     }
     scheduledFunction = debounce(async () => {
-      await api.writeFileResult(fileResult.relativePath, newValue);
-      await checkForErrors();
-      const fileRes = await api.getFileResult(fileResult.relativePath);
-      setFileResult(fileRes);
+      const saved = await saveContent(fileResult.relativePath);
+      if (saved) {
+        await checkForErrors();
+        const fileRes = await api.getFileResult(fileResult.relativePath);
+        setFileResult(fileRes);
+      }
     }, 500);
     scheduledFunction();
   };
 
   const editorView = (
     <AceEditor
+      ref={aceEditorRef}
       mode="yaml"
       theme="eclipse"
       onChange={onChange}
       name="ace-editor"
       editorProps={{ $blockScrolling: true }}
-      value={editorContent}
       highlightActiveLine={false}
       showPrintMargin={false}
       enableBasicAutocompletion={true}

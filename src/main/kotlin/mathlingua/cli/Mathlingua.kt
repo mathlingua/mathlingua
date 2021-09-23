@@ -31,8 +31,8 @@ import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
 import mathlingua.backend.buildSourceFile
+import mathlingua.backend.findMathLinguaFiles
 import mathlingua.backend.fixClassNameBug
-import mathlingua.backend.isMathLinguaFile
 import mathlingua.backend.newSourceCollection
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
@@ -72,24 +72,6 @@ private fun red(text: String) = "\u001B[31m$text\u001B[0m"
 @Suppress("UNUSED")
 private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
 
-private fun findSourcesUnder(dir: VirtualFile): List<VirtualFile> {
-    val result = mutableListOf<VirtualFile>()
-    findSourcesUnderImpl(dir, result)
-    return result
-}
-
-private fun findSourcesUnderImpl(dir: VirtualFile, result: MutableList<VirtualFile>) {
-    if (dir.isDirectory()) {
-        for (child in dir.listFiles()) {
-            if (child.isDirectory()) {
-                findSourcesUnderImpl(child, result)
-            } else {
-                result.add(child)
-            }
-        }
-    }
-}
-
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {
         val sourceCollection =
@@ -106,8 +88,7 @@ object Mathlingua {
     private fun export(
         fs: VirtualFileSystem, logger: Logger
     ): List<ValueSourceTracker<ParseError>> {
-        val files = mutableListOf<VirtualFile>()
-        findMathlinguaFiles(getContentDirectory(fs), files)
+        val files = findMathLinguaFiles(listOf(getContentDirectory(fs)))
 
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         for (target in files) {
@@ -699,17 +680,6 @@ private fun renderAll(
         decomp.collectionResult.fileResults.map { it.relativePath }, decomp.collectionResult.errors)
 }
 
-private fun findMathlinguaFiles(fileOrDir: VirtualFile, result: MutableList<VirtualFile>) {
-    if (isMathLinguaFile(fileOrDir)) {
-        result.add(fileOrDir)
-    }
-    if (fileOrDir.isDirectory()) {
-        for (f in fileOrDir.listFiles()) {
-            findMathlinguaFiles(f, result)
-        }
-    }
-}
-
 class LockedValue<T> {
     private var data: T? = null
 
@@ -798,14 +768,7 @@ private fun buildSourceCollection(fs: VirtualFileSystem) = newSourceCollection(f
 private fun decompose(
     fs: VirtualFileSystem, sourceCollection: SourceCollection, mlgFiles: List<VirtualFile>?
 ): DecompositionResult {
-    val resolvedMlgFiles =
-        if (mlgFiles == null) {
-            val files = mutableListOf<VirtualFile>()
-            findMathlinguaFiles(fileOrDir = fs.cwd(), result = files)
-            files
-        } else {
-            mlgFiles
-        }
+    val resolvedMlgFiles = mlgFiles ?: findMathLinguaFiles(listOf(fs.cwd()))
     val fileResults = mutableListOf<FileResult>()
     val errors = mutableListOf<ValueSourceTracker<ParseError>>()
     for (f in resolvedMlgFiles) {

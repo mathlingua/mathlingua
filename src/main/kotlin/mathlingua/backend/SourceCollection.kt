@@ -221,19 +221,24 @@ private class SourcePathComparator : Comparator<VirtualFile> {
 private val SOURCE_PATH_COMPARATOR = SourcePathComparator()
 
 fun newSourceCollection(fs: VirtualFileSystem, filesOrDirs: List<VirtualFile>): SourceCollection {
-    val sources = mutableListOf<SourceFile>()
-    for (file in filesOrDirs) {
-        findVirtualFiles(file, sources)
-    }
+    val sources = findMathLinguaFiles(filesOrDirs).map { buildSourceFile(it) }
     return SourceCollectionImpl(fs, sources)
 }
 
-private fun findVirtualFiles(file: VirtualFile, result: MutableList<SourceFile>) {
+fun findMathLinguaFiles(files: List<VirtualFile>): List<VirtualFile> {
+    val result = mutableListOf<VirtualFile>()
+    for (file in files) {
+        findMathLinguaFilesImpl(file, result)
+    }
+    return result
+}
+
+private fun findMathLinguaFilesImpl(file: VirtualFile, result: MutableList<VirtualFile>) {
     if (isMathLinguaFile(file)) {
-        result.add(buildSourceFile(file))
+        result.add(file)
     }
     for (child in file.listFiles().sortedWith(SOURCE_PATH_COMPARATOR)) {
-        findVirtualFiles(child, result)
+        findMathLinguaFilesImpl(child, result)
     }
 }
 

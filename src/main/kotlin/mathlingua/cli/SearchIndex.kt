@@ -3,6 +3,7 @@ package mathlingua.cli
 import mathlingua.MutableMultiSet
 import mathlingua.backend.SourceFile
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.newMutableMultiSet
 
 data class SearchIndex(val fs: VirtualFileSystem) {
     private val searchIndex = mutableMapOf<String, MutableMultiSet<List<String>>>()
@@ -16,7 +17,7 @@ data class SearchIndex(val fs: VirtualFileSystem) {
                 for (grp in doc.groups) {
                     for (word in getAllWords(grp)) {
                         val key = word.lowercase()
-                        val pathSet = searchIndex[key] ?: MutableMultiSet()
+                        val pathSet = searchIndex[key] ?: newMutableMultiSet()
                         pathSet.add(relPath)
                         searchIndex[key] = pathSet
                     }

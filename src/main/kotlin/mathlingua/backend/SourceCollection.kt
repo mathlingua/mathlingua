@@ -17,10 +17,11 @@
 package mathlingua.backend
 
 import kotlinx.serialization.Serializable
+import mathlingua.backend.transform.GroupScope
 import mathlingua.backend.transform.Signature
-import mathlingua.backend.transform.checkVars
+import mathlingua.backend.transform.checkVarsPhase2Node
 import mathlingua.backend.transform.expandAsWritten
-import mathlingua.backend.transform.getVars
+import mathlingua.backend.transform.getVarsTexTalkNode
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
@@ -905,7 +906,14 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                         // then lhs is `\f(x)`
                         // and lhsVars is the set containing only `x`
                         val lhs = lhsItems[0]
-                        val lhsVars = getVars(texTalkNode = lhs, ignoreParens = false).toSet()
+                        val lhsVars =
+                            getVarsTexTalkNode(
+                                texTalkNode = lhs,
+                                isInLhsColonEquals = true,
+                                groupScope = GroupScope.InNone,
+                                isInIdStatement = false)
+                                .toSet()
+                                .map { it.name }
 
                         // convert the right hand side from `\g(x)` to `\g(x?)`
                         // to conform to the way "writtenAs" sections are written
@@ -992,7 +1000,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
         for (grp in allGroups) {
             val tracker = grp.tracker ?: newLocationTracker()
-            val errs = checkVars(grp.value.normalized, tracker)
+            val errs = checkVarsPhase2Node(grp.value.normalized, tracker)
             result.addAll(
                 errs.map { ValueSourceTracker(value = it, source = grp.source, tracker = tracker) })
         }

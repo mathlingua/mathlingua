@@ -150,8 +150,8 @@ export const Page = (props: PageProps) => {
       errorResults
         .filter((err) => err.relativePath === props.viewedPath)
         .map((err) => ({
-          row: err.row,
-          column: err.column,
+          row: Math.max(0, err.row),
+          column: Math.max(0, err.column),
           text: err.message,
           type: 'error',
         }))
@@ -237,6 +237,7 @@ export const Page = (props: PageProps) => {
     if (editorRefVal) {
       editorRefVal.editor.setValue(editorContent);
       editorRefVal.editor.clearSelection();
+      editorRefVal.editor.getSession().setAnnotations(annotations);
     }
   }, [isEditMode, editorContent]);
 
@@ -264,7 +265,7 @@ export const Page = (props: PageProps) => {
   const renderedContent = (
     <div>
       <div className={styles.errorView}>
-        {fileResult?.errors.map((error) => (
+        {errorResults.map((error) => (
           <div className={styles.errorItem}>
             {`ERROR (${error.row + 1}, ${error.column + 1}):`}
             <pre>{error.message}</pre>

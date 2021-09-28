@@ -1016,4 +1016,58 @@ internal class EndToEndCheckTest {
             expectedExitCode = 1,
             expectedNumErrors = 1)
     }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    Theorem:
+                    given: f(x), g(x)
+                    then:
+                    . "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are used in square brackets`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then:
+                    . '\something[t]{f(t)}'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

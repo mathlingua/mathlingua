@@ -232,20 +232,36 @@ private class DiskFileSystem() : VirtualFileSystem {
     }
 }
 
-class MutableMultiSet<T> {
+interface MutableMultiSet<T> {
+    fun add(value: T)
+    fun addAll(values: Collection<T>)
+    fun remove(value: T)
+    fun contains(key: T): Boolean
+    fun toList(): List<T>
+    fun isEmpty(): Boolean
+    fun toSet(): Set<T>
+    fun copy(): MutableMultiSet<T>
+    override fun toString(): String
+}
+
+fun <T> newMutableMultiSet(): MutableMultiSet<T> {
+    return MutableMultiSetImpl()
+}
+
+private class MutableMultiSetImpl<T> : MutableMultiSet<T> {
     private val data = mutableMapOf<T, Int>()
 
-    fun add(value: T) {
+    override fun add(value: T) {
         data[value] = 1 + data.getOrDefault(value, 0)
     }
 
-    fun addAll(values: Collection<T>) {
+    override fun addAll(values: Collection<T>) {
         for (v in values) {
             add(v)
         }
     }
 
-    fun remove(value: T) {
+    override fun remove(value: T) {
         if (data.containsKey(value)) {
             val newCount = data.getOrDefault(value, 1) - 1
             data[value] = newCount
@@ -255,22 +271,20 @@ class MutableMultiSet<T> {
         }
     }
 
-    fun contains(key: T) = data.getOrDefault(key, 0) > 0
+    override fun contains(key: T) = data.getOrDefault(key, 0) > 0
 
-    fun toList() = data.keys.toList()
+    override fun toList() = data.keys.toList()
 
-    fun isEmpty() = data.isEmpty()
+    override fun isEmpty() = data.isEmpty()
 
-    fun toSet() = data.keys.toSet()
+    override fun toSet() = data.keys.toSet()
 
-    companion object {
-        fun <T> copy(set: MutableMultiSet<T>): MutableMultiSet<T> {
-            val copy = MutableMultiSet<T>()
-            for (entry in set.data.entries) {
-                copy.data[entry.key] = entry.value
-            }
-            return copy
+    override fun copy(): MutableMultiSet<T> {
+        val copy = MutableMultiSetImpl<T>()
+        for (entry in data.entries) {
+            copy.data[entry.key] = entry.value
         }
+        return copy
     }
 
     override fun toString() = data.toString()

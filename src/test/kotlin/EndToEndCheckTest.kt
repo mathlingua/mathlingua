@@ -1052,14 +1052,79 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    means:
+                    . 'x'
+                    . 'X'
+                    . 'f'
                     written: "something"
                     called: "something"
 
                     Theorem:
                     given: f(x)
                     then:
+                    . 'x'
                     . '\something[t]{f(t)}'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means:
+                    . 'x'
+                    . 'X'
+                    . 'f'
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then:
+                    . 'x'
+                    . '\something[x]{f(x)}'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when defining X colon equals`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\f]
+                    Defines: X := (a, b)
+                    means:
+                    . 'X = a'
+                    . 'X = b'
+                    written: "something"
+                    called: "something"
                 """.trimIndent())),
             expectedOutput =
                 """

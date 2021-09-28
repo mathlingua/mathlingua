@@ -19,6 +19,7 @@ package mathlingua.backend.transform
 import mathlingua.MutableMultiSet
 import mathlingua.backend.isOperatorName
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
+import mathlingua.frontend.chalktalk.phase1.ast.AbstractionPart
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
@@ -66,9 +67,9 @@ internal data class Var(val name: String, val isPlaceholder: Boolean) {
     }
 }
 
-internal fun getVarsPhase2Node(node: Phase2Node, isInPlaceholderScope: Boolean): List<Var> {
+internal fun getVarsPhase2Node(node: Phase2Node): List<Var> {
     val vars = mutableListOf<Var>()
-    getVarsImplPhase2Node(node, vars, isInPlaceholderScope)
+    getVarsImplPhase2Node(node, vars)
     return vars
 }
 
@@ -116,45 +117,46 @@ private fun getVarsImplPhase1Node(
             vars.add(
                 Var(name = node.text.removeSuffix("..."), isPlaceholder = isInPlaceholderScope))
         }
+    } else if (node is AbstractionPart) {
+        getVarsImplPhase1Node(node.name, vars, isInPlaceholderScope = false)
+        if (node.params != null) {
+            for (param in node.params) {
+                getVarsImplPhase1Node(param, vars, isInPlaceholderScope = true)
+            }
+        }
+
+        if (node.subParams != null) {
+            for (param in node.subParams) {
+                getVarsImplPhase1Node(param, vars, isInPlaceholderScope = true)
+            }
+        }
+
+        if (node.tail != null) {
+            getVarsImplPhase1Node(node.tail, vars, isInPlaceholderScope = false)
+        }
     } else if (node is Abstraction) {
         if (node.subParams != null) {
             for (token in node.subParams) {
-                getVarsImplPhase1Node(token, vars, true)
+                getVarsImplPhase1Node(token, vars, isInPlaceholderScope = true)
             }
         }
         for (part in node.parts) {
-            getVarsImplPhase1Node(part.name, vars, false)
-            if (part.params != null) {
-                for (param in part.params) {
-                    getVarsImplPhase1Node(param, vars, true)
-                }
-            }
-            if (part.tail != null) {
-                getVarsImplPhase1Node(part.tail, vars, isInPlaceholderScope)
-            }
-            if (part.subParams != null) {
-                for (param in part.subParams) {
-                    getVarsImplPhase1Node(param, vars, true)
-                }
-            }
+            getVarsImplPhase1Node(part, vars, isInPlaceholderScope = false)
         }
     } else {
         node.forEach { getVarsImplPhase1Node(it, vars, isInPlaceholderScope) }
     }
 }
 
-private fun getVarsImplPhase2Node(
-    node: Phase2Node, vars: MutableList<Var>, isInPlaceholderScope: Boolean
-) {
+private fun getVarsImplPhase2Node(node: Phase2Node, vars: MutableList<Var>) {
     if (node is Identifier) {
-        vars.add(Var(name = node.name.removeSuffix("..."), isPlaceholder = isInPlaceholderScope))
+        vars.add(Var(name = node.name.removeSuffix("..."), isPlaceholder = false))
     } else if (node is TupleNode) {
-        getVarsImplPhase1Node(node.tuple, vars, isInPlaceholderScope)
+        getVarsImplPhase1Node(node.tuple, vars, isInPlaceholderScope = false)
     } else if (node is AbstractionNode) {
-        getVarsImplPhase1Node(node.abstraction, vars, isInPlaceholderScope)
+        getVarsImplPhase1Node(node.abstraction, vars, isInPlaceholderScope = false)
     } else if (node is AssignmentNode) {
-        getVarsImplPhase1Node(node.assignment.rhs, vars, isInPlaceholderScope = true)
-        getVarsImplPhase1Node(node.assignment.rhs, vars, isInPlaceholderScope = false)
+        getVarsImplPhase1Node(node.assignment, vars, isInPlaceholderScope = false)
     } else if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
@@ -167,7 +169,7 @@ private fun getVarsImplPhase2Node(
             }
         }
     } else {
-        node.forEach { getVarsImplPhase2Node(it, vars, isInPlaceholderScope) }
+        node.forEach { getVarsImplPhase2Node(it, vars) }
     }
 }
 
@@ -397,10 +399,7 @@ private fun checkVarsImplPhase2Node(
         }
         is ForAllGroup -> {
             val forAllVars =
-                node.forAllSection
-                    .targets
-                    .map { getVarsPhase2Node(node = it, isInPlaceholderScope = false) }
-                    .flatten()
+                node.forAllSection.targets.map { getVarsPhase2Node(node = it) }.flatten()
             for (v in forAllVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -415,10 +414,7 @@ private fun checkVarsImplPhase2Node(
         }
         is EqualityGroup -> {
             val betweenVars =
-                node.betweenSection
-                    .targets
-                    .map { getVarsPhase2Node(node = it, isInPlaceholderScope = false) }
-                    .flatten()
+                node.betweenSection.targets.map { getVarsPhase2Node(node = it) }.flatten()
             for (v in betweenVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -433,10 +429,7 @@ private fun checkVarsImplPhase2Node(
         }
         is ExistsGroup -> {
             val existsVars =
-                node.existsSection
-                    .identifiers
-                    .map { getVarsPhase2Node(node = it, isInPlaceholderScope = false) }
-                    .flatten()
+                node.existsSection.identifiers.map { getVarsPhase2Node(node = it) }.flatten()
             for (v in existsVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -451,10 +444,7 @@ private fun checkVarsImplPhase2Node(
         }
         is ExistsUniqueGroup -> {
             val existsVars =
-                node.existsUniqueSection
-                    .identifiers
-                    .map { getVarsPhase2Node(node = it, isInPlaceholderScope = false) }
-                    .flatten()
+                node.existsUniqueSection.identifiers.map { getVarsPhase2Node(node = it) }.flatten()
             for (v in existsVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -611,8 +601,7 @@ private fun checkDefineSectionVars(
     errors: MutableList<ParseError>
 ): List<Var> {
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
-    val givenVars =
-        node.targets.map { getVarsPhase2Node(node = it, isInPlaceholderScope = false) }.flatten()
+    val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(
@@ -633,8 +622,7 @@ private fun checkRequiringSectionVars(
     errors: MutableList<ParseError>
 ): List<Var> {
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
-    val givenVars =
-        node.targets.map { getVarsPhase2Node(node = it, isInPlaceholderScope = false) }.flatten()
+    val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(
@@ -652,8 +640,7 @@ private fun checkGivenSectionVars(
     node: GivenSection, vars: VarMultiSet, tracker: LocationTracker, errors: MutableList<ParseError>
 ): List<Var> {
     val location = tracker.getLocationOf(node) ?: Location(-1, -1)
-    val givenVars =
-        node.targets.map { getVarsPhase2Node(node = it, isInPlaceholderScope = false) }.flatten()
+    val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(

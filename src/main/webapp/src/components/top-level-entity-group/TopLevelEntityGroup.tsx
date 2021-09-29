@@ -59,7 +59,7 @@ export const TopLevelEntityGroup = (props: TopLevelEntityGroupProps) => {
             topLevelEntry: (
               <div>
                 <TopLevelEntry
-                  id={container.entityResult.id}
+                  id={container.id}
                   relativePath={container.entityResult.relativePath}
                   showOpenButton={true}
                   showCloseButton={true}

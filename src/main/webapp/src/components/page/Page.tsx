@@ -69,17 +69,16 @@ const BASE_COMPLETIONS: Completion[] = [
   },
   {
     name: 'Axiom',
-    value: 'Axiom:\ngiven?:\nwhere?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
+    value: 'Axiom:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
   },
   {
     name: 'Conjecture',
-    value:
-      'Conjecture:\ngiven?:\nwhere?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
+    value: 'Conjecture:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
   },
   {
     name: 'Theorem',
     value:
-      'Theorem:\ngiven?:\nwhere?:\nif?:\niff?:\nthen:\nusing?:\nProof?:\nMetadata?:',
+      'Theorem:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nProof?:\nMetadata?:',
   },
   { name: 'Topic', value: 'Topic:\ncontent:\nMetadata?:' },
   { name: 'Note', value: 'Note:\ncontent:\nMetadata?:' },

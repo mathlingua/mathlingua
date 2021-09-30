@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useLocation } from 'react-router';
 import { Page } from '../page/Page';
 import { SidePanel } from '../side-panel/SidePanel';
@@ -20,12 +21,19 @@ function getHashLocation(location: {
 
 export const ContentPanel = () => {
   const hashLocation = getHashLocation(useLocation());
+  const [sidePanelWidth, setSidePanelWidth] = useState(0);
   return (
     <div className={styles.contentPane}>
-      <SidePanel viewedPath={hashLocation.viewedPath} />
+      <SidePanel
+        viewedPath={hashLocation.viewedPath}
+        onWidthChange={(width) => {
+          setSidePanelWidth(width);
+        }}
+      />
       <Page
         viewedPath={hashLocation.viewedPath}
         targetId={hashLocation.targetId}
+        sidePanelWidth={sidePanelWidth}
       />
     </div>
   );

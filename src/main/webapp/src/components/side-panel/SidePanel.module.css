@@ -1,6 +1,7 @@
 .sidePanel {
   height: 95%;
-  width: 15em;
+  width: max-content;
+  min-width: 15em;
   position: fixed;
   z-index: 5;
   top: 2em;

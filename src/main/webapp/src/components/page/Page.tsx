@@ -96,6 +96,7 @@ window.addEventListener('resize', () => {
 export interface PageProps {
   viewedPath: string;
   targetId: string;
+  sidePanelWidth: number;
 }
 
 export const Page = (props: PageProps) => {
@@ -380,7 +381,9 @@ export const Page = (props: PageProps) => {
       style={{
         transition: '0.2s',
         paddingLeft:
-          isEditMode && !isOnMobile() && isSidePanelVisible ? '15em' : '0',
+          isEditMode && !isOnMobile() && isSidePanelVisible
+            ? props.sidePanelWidth
+            : 0,
       }}
     >
       {error ? errorView : contentView}

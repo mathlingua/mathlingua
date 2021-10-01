@@ -227,6 +227,13 @@ export async function writeFileResult(path: string, content: string) {
   });
 }
 
+export async function readPage(path: string): Promise<string> {
+  const result = await axios.get('/api/readPage', {
+    params: { path },
+  });
+  return result.data.content;
+}
+
 export async function deleteDir(path: string): Promise<void> {
   await axios.post('/api/deleteDir', {
     path,

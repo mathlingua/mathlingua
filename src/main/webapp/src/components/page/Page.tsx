@@ -3,10 +3,10 @@ import { BlockComment } from '../block-comment/BlockComment';
 import styles from './Page.module.css';
 
 import * as api from '../../services/api';
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { ErrorView } from '../error-view/ErrorView';
 import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGroup';
-import { useAppDispatch, useAppSelector } from '../../support/hooks';
+import { useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
 
 import debounce from 'lodash.debounce';
@@ -17,10 +17,6 @@ import * as langTools from 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-eclipse';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
-import {
-  errorResultsUpdated,
-  selectErrorResults,
-} from '../../store/errorResultsSlice';
 import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
 import { isOnMobile } from '../../support/util';
 
@@ -100,146 +96,24 @@ export interface PageProps {
 }
 
 export const Page = (props: PageProps) => {
-  const dispatch = useAppDispatch();
   const [fileResult, setFileResult] = useState(
     undefined as api.FileResult | undefined
   );
   const [error, setError] = useState('');
-  const query = useAppSelector(selectQuery);
   const [isLoading, setIsLoading] = useState(true);
-  const ref = useRef(null);
-  const aceEditorRef = useRef(null);
-
-  const [annotations, setAnnotations] = useState([] as Annotation[]);
-  const errorResults = useAppSelector(selectErrorResults);
-  const [editorContent, setEditorContent] = useState('');
-
   const isEditMode = useAppSelector(selectIsEditMode);
-
   const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
 
-  const checkForErrors = async () => {
-    const res = await api.check();
-    dispatch(
-      errorResultsUpdated(
-        res.errors.map((err) => ({
-          row: err.row,
-          column: err.column,
-          message: err.message,
-          relativePath: err.path,
-        }))
-      )
-    );
-  };
-
   useEffect(() => {
-    api
-      .getFileResult(props.viewedPath)
-      .then(async (fileResult) => {
+    api.getFileResult(props.viewedPath).then((fileResult) => {
+      if (fileResult) {
         setFileResult(fileResult);
-        setEditorContent(fileResult?.content ?? '');
-        setError('');
-        await checkForErrors();
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setIsLoading(false));
-  }, [props.viewedPath, props.targetId]);
-
-  useEffect(() => {
-    setAnnotations(
-      errorResults
-        .filter((err) => err.relativePath === props.viewedPath)
-        .map((err) => ({
-          row: Math.max(0, err.row),
-          column: Math.max(0, err.column),
-          text: err.message,
-          type: 'error',
-        }))
-    );
-  }, [errorResults, props.viewedPath]);
-
-  useEffect(() => {
-    if (ref.current) {
-      const markInstance = new Mark(ref.current!);
-      markInstance.unmark({
-        done: () => {
-          if (query.length > 0) {
-            markInstance.mark(query, {
-              caseSensitive: false,
-              separateWordSearch: true,
-            });
-          }
-        },
-      });
-    }
-  }, [props.viewedPath, fileResult, query]);
-
-  useEffect(() => {
-    if (ref.current) {
-      window.scroll({
-        top: 0,
-        left: 0,
-        behavior: 'auto',
-      });
-      const el = document.getElementById(props.targetId);
-      if (el) {
-        el.scrollIntoView();
+      } else {
+        setError('Page Not Found');
       }
-    }
-  }, [props.viewedPath, props.targetId, fileResult, query]);
-
-  useEffect(() => {
-    langTools.setCompleters();
-    langTools.addCompleter({
-      getCompletions: async (
-        editor: any,
-        session: {},
-        pos: { column: number },
-        prefix: string,
-        callback: (n: null, arr: any[]) => void
-      ) => {
-        if (prefix.length === 0) {
-          return callback(null, []);
-        }
-        const column = pos.column;
-        let indent = '\n';
-        for (let i = 0; i < column - prefix.length; i++) {
-          indent += ' ';
-        }
-        const remoteCompletions = (
-          await api.getSignatureSuffixes(`\\${prefix}`)
-        ).map((suffix) => ({
-          name: prefix + suffix,
-          value: prefix + suffix,
-        }));
-        callback(
-          null,
-          BASE_COMPLETIONS.concat(remoteCompletions).map((item) => {
-            return {
-              name: item.name.replace(/\\/, ''),
-              value: item.value.replace(/\\/, '').replace(/\n/g, indent),
-            };
-          })
-        );
-      },
+      setIsLoading(false);
     });
-  }, []);
-
-  useEffect(() => {
-    document.body.style.setProperty(
-      '--inner-height',
-      `${window.innerHeight - 5}px`
-    );
-  }, []);
-
-  useEffect(() => {
-    const editorRefVal = aceEditorRef.current as any;
-    if (editorRefVal) {
-      editorRefVal.editor.setValue(editorContent);
-      editorRefVal.editor.clearSelection();
-      editorRefVal.editor.getSession().setAnnotations(annotations);
-    }
-  }, [isEditMode, editorContent]);
+  }, [isEditMode, props.viewedPath]);
 
   const errorView = (
     <div className={styles.mathlinguaPage}>
@@ -262,17 +136,116 @@ export const Page = (props: PageProps) => {
     return null;
   }
 
-  const renderedContent = (
-    <div>
+  const contentView = isEditMode ? (
+    <SideBySideView
+      relativePath={props.viewedPath}
+      errors={fileResult.errors}
+      entities={fileResult.entities}
+      targetId={props.targetId}
+    ></SideBySideView>
+  ) : (
+    <PageWithNavigationView
+      fileResult={fileResult}
+      targetId={props.targetId}
+    ></PageWithNavigationView>
+  );
+  return (
+    <div
+      style={{
+        transition: '0.2s',
+        paddingLeft:
+          isEditMode && !isOnMobile() && isSidePanelVisible
+            ? props.sidePanelWidth
+            : 0,
+      }}
+    >
+      {error ? errorView : contentView}
+    </div>
+  );
+};
+
+const PageWithNavigationView = (props: {
+  fileResult: api.FileResult;
+  targetId: string;
+}) => (
+  <div className={styles.mathlinguaPage}>
+    <RenderedContent
+      relativePath={props.fileResult.relativePath}
+      errors={props.fileResult.errors}
+      entities={props.fileResult.entities}
+      targetId={props.targetId}
+    />
+    <div className={styles.linkPanel}>
+      {props.fileResult.previousRelativePath ? (
+        <a
+          className={styles.previousLink}
+          href={`#/${props.fileResult.previousRelativePath}`}
+        >
+          <FontAwesomeIcon icon={faAngleLeft} />
+        </a>
+      ) : null}
+      {props.fileResult.nextRelativePath ? (
+        <a
+          className={styles.nextLink}
+          href={`#/${props.fileResult.nextRelativePath}`}
+        >
+          <FontAwesomeIcon icon={faAngleRight} />
+        </a>
+      ) : null}
+    </div>
+  </div>
+);
+
+const RenderedContent = (props: {
+  relativePath: string;
+  errors: api.ErrorResult[];
+  entities: api.EntityResult[];
+  targetId: string;
+}) => {
+  const query = useAppSelector(selectQuery);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (ref.current) {
+      const markInstance = new Mark(ref.current!);
+      markInstance.unmark({
+        done: () => {
+          if (query.length > 0) {
+            markInstance.mark(query, {
+              caseSensitive: false,
+              separateWordSearch: true,
+            });
+          }
+        },
+      });
+    }
+  }, [props.relativePath, props.entities, query]);
+
+  useEffect(() => {
+    if (ref.current) {
+      window.scroll({
+        top: 0,
+        left: 0,
+        behavior: 'auto',
+      });
+      const el = document.getElementById(props.targetId);
+      if (el) {
+        el.scrollIntoView();
+      }
+    }
+  }, [props.targetId, props.relativePath, query]);
+
+  return (
+    <div ref={ref}>
       <div className={styles.errorView}>
-        {errorResults.map((error) => (
+        {(props.errors || []).map((error) => (
           <div className={styles.errorItem}>
             {`ERROR (${error.row + 1}, ${error.column + 1}):`}
             <pre>{error.message}</pre>
           </div>
         ))}
       </div>
-      {fileResult?.entities.map((entityResult) => (
+      {props.entities.map((entityResult) => (
         <span key={entityResult.id}>
           <div>
             {entityResult.type === 'TopLevelBlockComment' ? (
@@ -283,7 +256,7 @@ export const Page = (props: PageProps) => {
             ) : (
               <TopLevelEntityGroup
                 entity={entityResult}
-                relativePath={props.viewedPath}
+                relativePath={props.relativePath}
               />
             )}
           </div>
@@ -291,102 +264,178 @@ export const Page = (props: PageProps) => {
       ))}
     </div>
   );
+};
 
-  async function saveContent(relativePath: string): Promise<boolean> {
-    const content = (aceEditorRef.current as any)?.editor?.getValue();
-    if (content) {
-      await api.writeFileResult(relativePath, content);
-      return true;
-    }
-    return false;
-  }
+const EditorView = memo(
+  (props: {
+    viewedPath: string;
+    onFileResultChanged(fileResult: api.FileResult | undefined): void;
+  }) => {
+    const aceEditorRef = useRef(null);
+    const [annotations, setAnnotations] = useState([] as Annotation[]);
 
-  const onChange = async () => {
-    // only do a save/check after a short pause after the user
-    // has stopped typing
-    if (scheduledFunction) {
-      scheduledFunction.cancel();
-    }
-    scheduledFunction = debounce(async () => {
-      const saved = await saveContent(fileResult.relativePath);
-      if (saved) {
-        await checkForErrors();
-        const fileRes = await api.getFileResult(fileResult.relativePath);
-        setFileResult(fileRes);
+    useEffect(() => {
+      langTools.setCompleters();
+      langTools.addCompleter({
+        getCompletions: async (
+          editor: any,
+          session: {},
+          pos: { column: number },
+          prefix: string,
+          callback: (n: null, arr: any[]) => void
+        ) => {
+          if (prefix.length === 0) {
+            return callback(null, []);
+          }
+          const column = pos.column;
+          let indent = '\n';
+          for (let i = 0; i < column - prefix.length; i++) {
+            indent += ' ';
+          }
+          const remoteCompletions = (
+            await api.getSignatureSuffixes(`\\${prefix}`)
+          ).map((suffix) => ({
+            name: prefix + suffix,
+            value: prefix + suffix,
+          }));
+          callback(
+            null,
+            BASE_COMPLETIONS.concat(remoteCompletions).map((item) => {
+              return {
+                name: item.name.replace(/\\/, ''),
+                value: item.value.replace(/\\/, '').replace(/\n/g, indent),
+              };
+            })
+          );
+        },
+      });
+    }, []);
+
+    useEffect(() => {
+      const editorRefVal = aceEditorRef.current as any;
+      if (editorRefVal) {
+        props.onFileResultChanged({
+          content: '',
+          entities: [],
+          errors: [],
+          relativePath: '',
+        });
+        api.readPage(props.viewedPath).then((content) => {
+          editorRefVal.editor.setValue(content);
+          editorRefVal.editor.clearSelection();
+          editorRefVal.editor.getSession().setAnnotations(annotations);
+        });
       }
-    }, 500);
-    scheduledFunction();
+    }, [props.viewedPath]);
+
+    const saveContent = async (relativePath: string) => {
+      const content = (aceEditorRef.current as any)?.editor?.getValue();
+      if (content) {
+        await api.writeFileResult(relativePath, content);
+        return true;
+      }
+      return false;
+    };
+
+    const onChange = async () => {
+      // only do a save/check after a short pause after the user
+      // has stopped typing
+      if (scheduledFunction) {
+        scheduledFunction.cancel();
+      }
+      scheduledFunction = debounce(async () => {
+        const saved = await saveContent(props.viewedPath);
+        if (saved) {
+          await Promise.all([
+            api.check().then((resp) => {
+              setAnnotations(
+                resp.errors
+                  .filter((err) => err.path === props.viewedPath)
+                  .map((err) => ({
+                    row: Math.max(0, err.row),
+                    column: Math.max(0, err.column),
+                    text: err.message,
+                    type: 'error',
+                  }))
+              );
+            }),
+            api
+              .getFileResult(props.viewedPath)
+              .then((fileResult) => props.onFileResultChanged(fileResult)),
+          ]);
+        }
+      }, 500);
+      scheduledFunction();
+    };
+
+    return (
+      <AceEditor
+        ref={aceEditorRef}
+        mode="yaml"
+        theme="eclipse"
+        onChange={onChange}
+        name="ace-editor"
+        editorProps={{ $blockScrolling: true }}
+        highlightActiveLine={false}
+        showPrintMargin={false}
+        enableBasicAutocompletion={true}
+        enableLiveAutocompletion={false}
+        fontSize="90%"
+        style={{
+          position: 'relative',
+          width: '100%',
+          height: '100%',
+          minHeight: '100vh',
+        }}
+        annotations={annotations}
+      ></AceEditor>
+    );
+  }
+);
+
+const SideBySideView = (props: {
+  relativePath: string;
+  errors: api.ErrorResult[];
+  entities: api.EntityResult[];
+  targetId: string;
+}) => {
+  const [relativePath, setRelativePath] = useState(props.relativePath);
+  const [errors, setErrors] = useState(props.errors);
+  const [entities, setEntities] = useState(props.entities);
+
+  useEffect(() => {
+    document.body.style.setProperty(
+      '--inner-height',
+      `${window.innerHeight - 5}px`
+    );
+  }, []);
+
+  const onFileResultChanged = (result: api.FileResult) => {
+    if (result) {
+      setRelativePath(result.relativePath);
+      setErrors(result.errors);
+      setEntities(result.entities);
+    }
   };
 
-  const editorView = (
-    <AceEditor
-      ref={aceEditorRef}
-      mode="yaml"
-      theme="eclipse"
-      onChange={onChange}
-      name="ace-editor"
-      editorProps={{ $blockScrolling: true }}
-      highlightActiveLine={false}
-      showPrintMargin={false}
-      enableBasicAutocompletion={true}
-      enableLiveAutocompletion={true}
-      fontSize="90%"
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: '100%',
-        minHeight: '100vh',
-      }}
-      annotations={annotations}
-    ></AceEditor>
-  );
-
-  const sideBySideView = (
+  return (
     <div className={styles.sideBySideView}>
       <div className={styles.splitViewContainer}>
-        <div className={styles.splitViewEditor}>{editorView}</div>
-        <div className={styles.splitViewRendered}>{renderedContent}</div>
+        <div className={styles.splitViewEditor}>
+          <EditorView
+            viewedPath={props.relativePath}
+            onFileResultChanged={onFileResultChanged}
+          />
+        </div>
+        <div className={styles.splitViewRendered}>
+          <RenderedContent
+            relativePath={relativePath}
+            errors={errors}
+            entities={entities}
+            targetId={props.targetId}
+          />
+        </div>
       </div>
-    </div>
-  );
-
-  const pageView = (
-    <div className={styles.mathlinguaPage}>
-      {renderedContent}
-      <div className={styles.linkPanel}>
-        {fileResult.previousRelativePath ? (
-          <a
-            className={styles.previousLink}
-            href={`#/${fileResult.previousRelativePath}`}
-          >
-            <FontAwesomeIcon icon={faAngleLeft} />
-          </a>
-        ) : null}
-        {fileResult.nextRelativePath ? (
-          <a
-            className={styles.nextLink}
-            href={`#/${fileResult.nextRelativePath}`}
-          >
-            <FontAwesomeIcon icon={faAngleRight} />
-          </a>
-        ) : null}
-      </div>
-    </div>
-  );
-
-  const contentView = isEditMode ? sideBySideView : pageView;
-  return (
-    <div
-      ref={ref}
-      style={{
-        transition: '0.2s',
-        paddingLeft:
-          isEditMode && !isOnMobile() && isSidePanelVisible
-            ? props.sidePanelWidth
-            : 0,
-      }}
-    >
-      {error ? errorView : contentView}
     </div>
   );
 };

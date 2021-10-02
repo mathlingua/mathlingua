@@ -58,41 +58,75 @@ interface ApiClient {
   check(): Promise<CheckResponse>;
 }
 
+function notifyOfError(error: string) {
+  console.error(error);
+}
+
 class NetworkApiClient implements ApiClient {
   async getAllPaths(): Promise<string[]> {
-    const res = await axios.get('/api/allPaths');
-    return res.data.paths;
+    try {
+      const res = await axios.get('/api/allPaths');
+      return res.data.paths;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return [];
+    }
   }
 
   async getFileResult(path: string): Promise<FileResult | undefined> {
-    const res = await axios.get('/api/fileResult', {
-      params: { path },
-    });
-    return res.data;
+    try {
+      const res = await axios.get('/api/fileResult', {
+        params: { path },
+      });
+      return res.data;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return undefined;
+    }
   }
 
   async search(query: string): Promise<string[]> {
-    const res = await axios.get('/api/search', { params: { query } });
-    return res.data.paths;
+    try {
+      const res = await axios.get('/api/search', { params: { query } });
+      return res.data.paths;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return [];
+    }
   }
 
   async getAutocompleteSuffixes(word: string): Promise<string[]> {
-    const res = await axios.get('/api/completeWord', { params: { word } });
-    return res.data.suffixes;
+    try {
+      const res = await axios.get('/api/completeWord', { params: { word } });
+      return res.data.suffixes;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return [];
+    }
   }
 
   async getEntityWithSignature(
     signature: string
   ): Promise<EntityResult | undefined> {
-    const res = await axios.get('/api/withSignature', {
-      params: { signature },
-    });
-    return res.data;
+    try {
+      const res = await axios.get('/api/withSignature', {
+        params: { signature },
+      });
+      return res.data;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return undefined;
+    }
   }
 
   async check(): Promise<CheckResponse> {
-    const res = await axios.get('/api/check');
-    return res.data;
+    try {
+      const res = await axios.get('/api/check');
+      return res.data;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return { errors: [] };
+    }
   }
 }
 
@@ -221,64 +255,105 @@ export async function check(): Promise<CheckResponse> {
 }
 
 export async function writeFileResult(path: string, content: string) {
-  await axios.put('/api/writePage', {
-    path,
-    content,
-  });
+  try {
+    await axios.put('/api/writePage', {
+      path,
+      content,
+    });
+  } catch (error: any) {
+    notifyOfError(error.message);
+  }
 }
 
 export async function readPage(path: string): Promise<string> {
-  const result = await axios.get('/api/readPage', {
-    params: { path },
-  });
-  return result.data.content;
+  try {
+    const result = await axios.get('/api/readPage', {
+      params: { path },
+    });
+    return result.data.content;
+  } catch (error: any) {
+    notifyOfError(error.message);
+    return '';
+  }
 }
 
 export async function deleteDir(path: string): Promise<void> {
-  await axios.post('/api/deleteDir', {
-    path,
-  });
+  try {
+    await axios.post('/api/deleteDir', {
+      path,
+    });
+  } catch (error: any) {
+    notifyOfError(error.message);
+  }
 }
 
 export async function deleteFile(path: string): Promise<void> {
-  await axios.post('/api/deleteFile', {
-    path,
-  });
+  try {
+    await axios.post('/api/deleteFile', {
+      path,
+    });
+  } catch (error: any) {
+    notifyOfError(error.message);
+  }
 }
 
 export async function renameDir(
   fromPath: string,
   toPath: string
 ): Promise<void> {
-  await axios.post('/api/renameDir', {
-    fromPath,
-    toPath,
-  });
+  try {
+    await axios.post('/api/renameDir', {
+      fromPath,
+      toPath,
+    });
+  } catch (error: any) {
+    notifyOfError(error.message);
+    return;
+  }
 }
 
 export async function renameFile(
   fromPath: string,
   toPath: string
 ): Promise<void> {
-  await axios.post('/api/renameFile', {
-    fromPath,
-    toPath,
-  });
+  try {
+    await axios.post('/api/renameFile', {
+      fromPath,
+      toPath,
+    });
+  } catch (error: any) {
+    notifyOfError(error.message);
+  }
 }
 
 export async function newDir(path: string): Promise<void> {
-  await axios.post('/api/newDir', {
-    path,
-  });
+  try {
+    await axios.post('/api/newDir', {
+      path,
+    });
+  } catch (error: any) {
+    notifyOfError(error.message);
+  }
 }
 
 export async function newFile(path: string): Promise<void> {
-  await axios.post('/api/newFile', {
-    path,
-  });
+  try {
+    await axios.post('/api/newFile', {
+      path,
+    });
+  } catch (error: any) {
+    notifyOfError(error.message);
+  }
 }
 
 export async function getSignatureSuffixes(prefix: string): Promise<string[]> {
-  const res = await axios.get('/api/completeSignature', { params: { prefix } });
-  return res.data.suffixes;
+  try {
+    const res = await axios.get('/api/completeSignature', {
+      params: { prefix },
+    });
+    return res.data.suffixes;
+  } catch (error: any) {
+    notifyOfError(error.message);
+    return [];
+  }
 }

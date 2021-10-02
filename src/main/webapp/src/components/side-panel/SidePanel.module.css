@@ -26,6 +26,7 @@
 .sidePanelContent {
   padding-right: 1.5em;
   width: max-content;
+  margin-bottom: 3em;
 }
 
 .sidePanelItem {

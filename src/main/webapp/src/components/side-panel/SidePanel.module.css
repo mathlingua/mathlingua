@@ -26,7 +26,6 @@
 .sidePanelContent {
   padding-right: 0;
   width: max-content;
-  margin-bottom: 3em;
 }
 
 .sidePanelItem {
@@ -40,6 +39,10 @@
   padding-top: 0.5em;
   padding-bottom: 0.5em;
   margin: 0;
+}
+
+.sidePanelBottom {
+  margin-bottom: 3em;
 }
 
 .selected {

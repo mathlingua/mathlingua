@@ -94,6 +94,7 @@ export const SidePanel = (props: SidePanelProps) => {
           />
         ))}
       </div>
+      <div className={styles.sidePanelBottom}></div>
     </div>
   );
 

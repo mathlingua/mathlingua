@@ -18,6 +18,7 @@ package mathlingua.cli
 
 import io.javalin.Javalin
 import java.io.File
+import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.jar.JarFile
@@ -619,6 +620,21 @@ private fun exportFile(
     return errors
 }
 
+private fun readAllBytes(stream: InputStream): ByteArray {
+    val result = mutableListOf<Byte>()
+    val tempArray = ByteArray(1024)
+    while (true) {
+        val numRead = stream.read(tempArray, 0, tempArray.size)
+        if (numRead < 0) {
+            break
+        }
+        for (i in 0 until numRead) {
+            result.add(tempArray[i])
+        }
+    }
+    return result.toByteArray()
+}
+
 private fun renderAll(
     fs: VirtualFileSystem, logger: Logger
 ): Pair<List<String>, List<ErrorResult>> {
@@ -659,7 +675,7 @@ private fun renderAll(
             if (entry.isDirectory) {
                 outFile.mkdirs()
             } else {
-                outFile.writeBytes(jar.getInputStream(entry).readAllBytes())
+                outFile.writeBytes(readAllBytes(jar.getInputStream(entry)))
             }
         }
         jar.close()

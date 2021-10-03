@@ -251,4 +251,76 @@ internal class ChalkTalkLexerTest {
         assertThat(actual).isEqualTo(expected)
         assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
     }
+
+    @Test
+    fun `correctly handles comment blocks without colon inside`() {
+        val text = "  ::this is some text:: "
+        val lexer = newChalkTalkLexer(text)
+        val actual = mutableListOf<Phase1Token>()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected =
+            listOf(
+                Phase1Token(
+                    text = "::this is some text::",
+                    type = ChalkTalkTokenType.BlockComment,
+                    row = 0,
+                    column = 2),
+                Phase1Token(
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
+                Phase1Token(
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 1, column = 0))
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
+    }
+
+    @Test
+    fun `correctly handles comment blocks with colon inside`() {
+        val text = "  ::this is some text with a := and some more text:: "
+        val lexer = newChalkTalkLexer(text)
+        val actual = mutableListOf<Phase1Token>()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected =
+            listOf(
+                Phase1Token(
+                    text = "::this is some text with a := and some more text::",
+                    type = ChalkTalkTokenType.BlockComment,
+                    row = 0,
+                    column = 2),
+                Phase1Token(
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
+                Phase1Token(
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 1, column = 0))
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
+    }
+
+    @Test
+    fun `correctly handles comment blocks with escaped double colon inside`() {
+        val text = "  ::this is some text with a {::} and some more text:: "
+        val lexer = newChalkTalkLexer(text)
+        val actual = mutableListOf<Phase1Token>()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected =
+            listOf(
+                Phase1Token(
+                    text = "::this is some text with a :: and some more text::",
+                    type = ChalkTalkTokenType.BlockComment,
+                    row = 0,
+                    column = 2),
+                Phase1Token(
+                    text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
+                Phase1Token(
+                    text = "<Unindent>", type = ChalkTalkTokenType.End, row = 1, column = 0))
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors()).isEqualTo(emptyList<ParseError>())
+    }
 }

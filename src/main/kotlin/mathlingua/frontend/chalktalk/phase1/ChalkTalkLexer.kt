@@ -400,8 +400,25 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 i++
                 column++
                 val builder = StringBuilder("::")
-                while (i < text.length &&
-                    !(text[i] == ':' && i + 1 < text.length && text[i + 1] == ':')) {
+                while (i < text.length) {
+                    // Replace {::} with ::
+                    // This allows users to write {::} to have :: in their comment blocks
+                    if (text[i] == '{' &&
+                        i + 1 < text.length &&
+                        text[i + 1] == ':' &&
+                        i + 2 < text.length &&
+                        text[i + 2] == ':' &&
+                        i + 3 < text.length &&
+                        text[i + 3] == '}') {
+                        builder.append("::")
+                        i += 4
+                        column += 4
+                    }
+
+                    if (i >= text.length ||
+                        (text[i] == ':' && i + 1 < text.length && text[i + 1] == ':')) {
+                        break
+                    }
                     val tmp = text[i++]
                     builder.append(tmp)
                     if (tmp == '\n' || tmp == '\r') {

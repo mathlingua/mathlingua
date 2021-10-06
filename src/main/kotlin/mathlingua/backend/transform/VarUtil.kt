@@ -42,7 +42,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
@@ -462,14 +461,57 @@ private fun checkVarsImplPhase2Node(
         }
     }
 
-    if (node is UsingSection) {
+    if (node is HasUsingSection && node.usingSection != null) {
         // a `using:` section cannot reference other symbols
         // defined in a group.  However, if `x := y`, for
         // example, is defined in a statement, then the
         // statements in the `using:` section after `x := y`
         // can reference the symbol `x`.
         val usingVars = VarMultiSet()
-        for (clause in node.clauses.clauses) {
+        if (node is DefinesGroup) {
+            usingVars.addAll(getVarsPhase2Node(node.id))
+            for (target in node.definesSection.targets) {
+                usingVars.addAll(getVarsPhase2Node(target))
+            }
+            if (node.requiringSection != null) {
+                for (target in node.requiringSection.targets) {
+                    usingVars.addAll(getVarsPhase2Node(target))
+                }
+            }
+            if (node.whenSection != null) {
+                usingVars.addAll(getVarsIntroducedInWhenSection(node.whenSection))
+            }
+        } else if (node is StatesGroup) {
+            usingVars.addAll(getVarsPhase2Node(node.id))
+            if (node.requiringSection != null) {
+                for (target in node.requiringSection.targets) {
+                    usingVars.addAll(getVarsPhase2Node(target))
+                }
+            }
+            if (node.whenSection != null) {
+                usingVars.addAll(getVarsIntroducedInWhenSection(node.whenSection))
+            }
+        } else if (node is TheoremGroup) {
+            if (node.givenSection != null) {
+                for (target in node.givenSection.targets) {
+                    usingVars.addAll(getVarsPhase2Node(target))
+                }
+            }
+        } else if (node is ConjectureGroup) {
+            if (node.givenSection != null) {
+                for (target in node.givenSection.targets) {
+                    usingVars.addAll(getVarsPhase2Node(target))
+                }
+            }
+        } else if (node is AxiomGroup) {
+            if (node.givenSection != null) {
+                for (target in node.givenSection.targets) {
+                    usingVars.addAll(getVarsPhase2Node(target))
+                }
+            }
+        }
+
+        for (clause in node.usingSection!!.clauses.clauses) {
             if (clause is Statement &&
                 clause.texTalkRoot is ValidationSuccess &&
                 clause.texTalkRoot.value.children.size == 1 &&
@@ -515,6 +557,33 @@ private fun checkVarsImplPhase2Node(
     }
 
     return varsToRemove.toList()
+}
+
+private fun getVarsIntroducedInWhenSection(whenSection: WhenSection): List<Var> {
+    val result = mutableListOf<Var>()
+    for (clause in whenSection.clauses.clauses) {
+        if (clause is Statement) {
+            result.addAll(getLeftHandSideVars(clause))
+        }
+    }
+    return result
+}
+
+private fun getLeftHandSideVars(statement: Statement): List<Var> {
+    val result = mutableListOf<Var>()
+    if (statement.texTalkRoot is ValidationSuccess) {
+        val exp = statement.texTalkRoot.value
+        if (exp.children.size == 1 && exp.children[0] is ColonEqualsTexTalkNode) {
+            val colonEquals = exp.children[0] as ColonEqualsTexTalkNode
+            result.addAll(
+                getVarsTexTalkNode(
+                    texTalkNode = colonEquals.lhs,
+                    isInLhsColonEquals = true,
+                    groupScope = GroupScope.InNone,
+                    isInIdStatement = false))
+        }
+    }
+    return result
 }
 
 private fun checkWhenSectionVars(

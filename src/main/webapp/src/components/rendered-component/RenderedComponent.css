@@ -272,6 +272,11 @@ p {
   color: #007377;
 }
 
+.mathlingua-direct-statement {
+  font-family: monospace;
+  font-size: 95%;
+}
+
 .mathlingua-statement-container {
   display: inline;
 }

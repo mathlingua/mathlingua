@@ -117,22 +117,6 @@ class RenderedComponent extends React.Component<RenderedComponentProps> {
 export default connect()(RenderedComponent);
 
 function buildMathFragment(rawText: string) {
-  let rhsToAdd: string | undefined;
-  if (
-    !rawText.startsWith('$') &&
-    !rawText.startsWith('\\(') &&
-    !rawText.startsWith('\\[') &&
-    rawText.indexOf(':=') >= 0
-  ) {
-    // Items in 'using:' sections are printed directly and are of the form
-    //   lhs := rhs
-    // Process them so that the lhs is rendered by the rhs is not
-    const index = rawText.indexOf(':=');
-    const lhs = rawText.substring(0, index);
-    rhsToAdd = rawText.substring(index + 2 /* don't include the : or = */);
-    rawText = `\$\$\$${lhs} :=\$\$\$`;
-  }
-
   let text = rawText;
   if (text[0] === '"') {
     text = text.substring(1);
@@ -172,14 +156,6 @@ function buildMathFragment(rawText: string) {
           throwOnError: true,
           displayMode: false,
         });
-        // if rhsToAdd is not undefined, then the text being processed
-        // is text in a using: section of the form
-        //    lhs := rhs
-        // and rhsToAdd is the right-hand-side of the :=.
-        // So add the rhs as a text node so that rhs is not rendered.
-        if (rhsToAdd) {
-          span.appendChild(document.createTextNode(rhsToAdd));
-        }
       } catch (e) {
         span.appendChild(document.createTextNode(math));
       }

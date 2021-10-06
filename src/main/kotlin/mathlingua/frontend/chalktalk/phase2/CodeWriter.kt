@@ -758,7 +758,7 @@ open class HtmlCodeWriter(
                 if (literal) {
                     "mathlingua-statement-no-render"
                 } else {
-                    "mathlingua-statement"
+                    "mathlingua-direct-statement"
                 }
             builder.append("<span class=\"$className\">$text</span>")
             // make sure to close out the mathlingua-statement-container div

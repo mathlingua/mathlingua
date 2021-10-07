@@ -639,8 +639,21 @@ open class HtmlCodeWriter(
             if (!text.endsWith("\"")) {
                 displayTextBuilder.append("\"")
             }
+            val text = displayTextBuilder.toString()
+                .split("\n").joinToString("<br/>") {
+                    val builder = StringBuilder()
+                    for (i in it.indices) {
+                        if (it[i] == ' ') {
+                            builder.append("&nbsp;")
+                        } else {
+                            break
+                        }
+                    }
+                    builder.append(it.trimIndent())
+                    builder.toString().replace("\t", "&nbsp;&nbsp;")
+                }
             builder.append(
-                "<span class=\"literal-mathlingua-text-no-render\"> ${displayTextBuilder.toString().replace("\n", "<br/>")} </span>")
+                "<span class=\"literal-mathlingua-text-no-render\"> $text </span>")
             return
         }
 

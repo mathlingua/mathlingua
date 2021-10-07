@@ -671,15 +671,7 @@ open class HtmlCodeWriter(
             builder.append("</span>")
         } else {
             builder.append("<span class='mathlingua-text'>")
-            // a backlash needs to be handled speciallly, since if `\( x \)` is given to
-            // parseMarkdown() then the result returns `( x )`.  That is, the backslashes
-            // are removed.  To fix this, we replace bashslash with a special token and
-            // then change the special tokens back to backslashes in the string returned
-            // by parseMarkdown().
-            val text =
-                parseMarkdown(innerText.replace("\\", "MATHLINGUA-BACKSLASH"))
-                    .replace("MATHLINGUA-BACKSLASH", "\\")
-            builder.append(text)
+            builder.append(parseMarkdown(innerText))
             builder.append("</span>")
         }
     }
@@ -1257,9 +1249,23 @@ private fun splitByMathlingua(text: String): List<TextRange> {
 }
 
 private fun parseMarkdown(text: String): String {
+    // a backlash needs to be handled speciallly, since if `\( x \)` is given to
+    // parseMarkdown() then the result returns `( x )`.  That is, the backslashes
+    // are removed.  To fix this, we replace bashslash with a special token and
+    // then change the special tokens back to backslashes in the string returned
+    // by parseMarkdown().
     val flavor = CommonMarkFlavourDescriptor()
-    val tree = MarkdownParser(flavor).buildMarkdownTreeFromString(text)
-    return HtmlGenerator(text, tree, flavor).generateHtml()
+    val processedText =
+        text.replace("\\(", "MATHLINGUA-BACKSLASH-LEFT-PAREN")
+            .replace("\\)", "MATHLINGUA-BACKSLASH-RIGHT-PAREN")
+            .replace("\\[", "MATHLINGUA-BACKSLASH-LEFT-SQUARE")
+            .replace("\\]", "MATHLINGUA-BACKSLASH-RIGHT-SQUARE")
+    val tree = MarkdownParser(flavor).buildMarkdownTreeFromString(processedText)
+    val html = HtmlGenerator(processedText, tree, flavor).generateHtml()
+    return html.replace("MATHLINGUA-BACKSLASH-LEFT-PAREN", "\\(")
+        .replace("MATHLINGUA-BACKSLASH-RIGHT-PAREN", "\\)")
+        .replace("MATHLINGUA-BACKSLASH-LEFT-SQUARE", "\\[")
+        .replace("MATHLINGUA-BACKSLASH-RIGHT-SQUARE", "\\]")
 }
 
 private fun expandTextAsWritten(

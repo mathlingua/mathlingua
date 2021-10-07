@@ -640,7 +640,7 @@ open class HtmlCodeWriter(
                 displayTextBuilder.append("\"")
             }
             builder.append(
-                "<span class=\"literal-mathlingua-text-no-render\"> $displayTextBuilder </span>")
+                "<span class=\"literal-mathlingua-text-no-render\"> ${displayTextBuilder.toString().replace("\n", "<br/>")} </span>")
             return
         }
 
@@ -670,7 +670,7 @@ open class HtmlCodeWriter(
             builder.append(expanded)
             builder.append("</span>")
         } else {
-            builder.append("<span class='mathlingua-text-no-render'>")
+            builder.append("<span class='mathlingua-text'>")
             builder.append(parseMarkdown(innerText))
             builder.append("</span>")
         }

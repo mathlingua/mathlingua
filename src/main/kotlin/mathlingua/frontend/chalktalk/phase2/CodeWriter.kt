@@ -1260,12 +1260,14 @@ private fun parseMarkdown(text: String): String {
             .replace("\\)", "MATHLINGUA-BACKSLASH-RIGHT-PAREN")
             .replace("\\[", "MATHLINGUA-BACKSLASH-LEFT-SQUARE")
             .replace("\\]", "MATHLINGUA-BACKSLASH-RIGHT-SQUARE")
+            .replace("\\\\", "MATHLINGUA-DOUBLE-BACKSLASH")
     val tree = MarkdownParser(flavor).buildMarkdownTreeFromString(processedText)
     val html = HtmlGenerator(processedText, tree, flavor).generateHtml()
     return html.replace("MATHLINGUA-BACKSLASH-LEFT-PAREN", "\\(")
         .replace("MATHLINGUA-BACKSLASH-RIGHT-PAREN", "\\)")
         .replace("MATHLINGUA-BACKSLASH-LEFT-SQUARE", "\\[")
         .replace("MATHLINGUA-BACKSLASH-RIGHT-SQUARE", "\\]")
+        .replace("MATHLINGUA-DOUBLE-BACKSLASH", "\\\\")
 }
 
 private fun expandTextAsWritten(

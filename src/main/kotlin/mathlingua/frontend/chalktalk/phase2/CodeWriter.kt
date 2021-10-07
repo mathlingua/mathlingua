@@ -370,12 +370,8 @@ open class HtmlCodeWriter(
                 builder.append("</span>")
                 if (node.proofSection != null) {
                     val id = getRandomUuid()
-                    builder.append(
-                        "<hr/><div class='mathlingua-proof-header' onclick=\"toggleProof('$id')\">")
-                    builder.append(
-                        "Proof<span class='mathlingua-proof-icon' id=\"icon-$id-CUSTOM_SUFFIX\">&#9662;</span></div>")
-                    builder.append(
-                        "<span class='mathlingua-proof-hidden' id=\"proof-$id-CUSTOM_SUFFIX\">")
+                    builder.append("<hr/><div class='mathlingua-proof-header'>Proof</div>")
+                    builder.append("<span class='mathlingua-proof-shown'>")
                     val writer = newCodeWriter(defines, states, axioms, literal)
                     writer.writeText(node.proofSection.text)
                     builder.append(writer.getCode())

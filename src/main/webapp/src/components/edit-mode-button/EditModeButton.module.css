@@ -6,3 +6,9 @@
   border: none;
   font-size: 115%;
 }
+
+@media screen and (max-width: 500px) {
+  .editModeButton {
+    position: absolute;
+  }
+}

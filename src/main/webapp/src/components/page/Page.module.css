@@ -18,7 +18,7 @@
 @media screen and (max-width: 500px) {
   .mathlinguaPage {
     width: 99%;
-    margin-top: 3vh;
+    margin-top: -1ex;
     margin-bottom: 0;
   }
 }

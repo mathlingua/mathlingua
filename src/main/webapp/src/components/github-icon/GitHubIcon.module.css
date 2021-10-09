@@ -9,3 +9,9 @@
   border: none;
   font-size: 130%;
 }
+
+@media screen and (max-width: 500px) {
+  .githubIcon {
+    position: absolute;
+  }
+}

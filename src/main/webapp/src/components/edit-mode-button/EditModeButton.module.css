@@ -1,7 +1,6 @@
 .editModeButton {
-  color: #333333;
-  margin-right: 0.6em;
-  margin-top: -0.5em;
+  position: fixed;
+  right: 2.5em;
   padding: 0;
   background: none;
   border: none;

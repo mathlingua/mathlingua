@@ -172,16 +172,45 @@ const PageWithNavigationView = (props: {
   targetId: string;
 }) => {
   const ref = useRef(null);
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
+  const updateDim = () => {
+    setWindowWidth(window.innerWidth);
+  };
+  useEffect(() => {
+    window.addEventListener('resize', updateDim);
+    return () => window.removeEventListener('resize', updateDim);
+  }, []);
   let marginLeft: string | number = props.isOnMobile ? 0 : 'auto';
+  let marginRight: string | number = props.isOnMobile ? 0 : 'auto';
+  let width;
   if (ref.current && !props.isOnMobile) {
     const sideWidth = props.isSidePanelVisible ? props.sidePanelWidth : 0;
-    const windowWidth = window.innerWidth;
     const thisWidth = (ref.current as any).clientWidth;
     const amountPerSide = (windowWidth - thisWidth) / 2;
-    marginLeft = amountPerSide - sideWidth;
+    if (amountPerSide > 0) {
+      marginRight = amountPerSide;
+      const tmp = amountPerSide - sideWidth;
+      if (tmp > 0) {
+        marginLeft = tmp;
+      }
+    }
+
+    if (thisWidth + sideWidth > windowWidth) {
+      width = windowWidth - sideWidth;
+    }
   }
+  const widthCss = !!width ? `calc(${width}px - 2em)` : undefined;
   return (
-    <div ref={ref} className={styles.mathlinguaPage} style={{ marginLeft }}>
+    <div
+      ref={ref}
+      className={styles.mathlinguaPage}
+      style={{
+        marginLeft,
+        marginRight,
+        width: widthCss,
+        maxWidth: widthCss,
+      }}
+    >
       <RenderedContent
         relativePath={props.fileResult.relativePath}
         errors={props.fileResult.errors}

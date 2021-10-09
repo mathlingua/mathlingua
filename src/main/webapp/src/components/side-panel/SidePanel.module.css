@@ -4,14 +4,14 @@
   min-width: 15em;
   position: fixed;
   z-index: 5;
-  top: 2em;
+  top: 2.5em;
   left: 0;
   background-color: #f0f0f0;
   border-right: solid;
   border-width: 1px;
   border-color: #cfcfcf;
   overflow: auto;
-  padding-top: 1.5em;
+  padding-top: 1em;
   border-right: none;
 }
 

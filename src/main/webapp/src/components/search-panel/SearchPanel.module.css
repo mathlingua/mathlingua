@@ -5,8 +5,10 @@
 }
 
 .search {
-  border: none;
-  border-radius: 0;
+  border: solid;
+  border-color: #cccccc;
+  border-radius: 2px;
+  border-width: 1px;
   height: 75%;
   width: 15em;
   margin-top: 0;
@@ -58,8 +60,8 @@
 
 .searchButton {
   border: none;
-  color: #222222;
-  background-color: #ffffff;
+  color: #333333;
+  background-color: #f0f0f0;
   height: 75%;
   margin: 0;
   padding-top: 0;
@@ -71,8 +73,8 @@
 .clearButton {
   border: none;
   background: none;
-  color: #222222;
-  background-color: #ffffff;
+  color: #333333;
+  background-color: #f0f0f0;
   height: 75%;
   margin: 0;
   padding-top: 0;

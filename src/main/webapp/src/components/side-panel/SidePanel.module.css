@@ -6,15 +6,13 @@
   z-index: 5;
   top: 2em;
   left: 0;
-  background-color: #fefefe;
+  background-color: #f0f0f0;
   border-right: solid;
   border-width: 1px;
-  border-color: rgba(215, 215, 215);
-  box-shadow: rgba(0, 0, 0, 0.2) 0px 3px 10px,
-    inset 0 0 10px 0 rgba(200, 200, 200, 0);
+  border-color: #cfcfcf;
   overflow: auto;
   padding-top: 1.5em;
-  transition: 0.2s;
+  border-right: none;
 }
 
 @media screen and (max-width: 500px) {
@@ -33,7 +31,6 @@
   text-decoration: none;
   color: #000000;
   display: block;
-  transition: 0.4s;
   padding-left: 1.25em;
   padding-right: 0;
   padding-top: 0.5em;

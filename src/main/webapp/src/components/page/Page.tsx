@@ -103,6 +103,7 @@ export const Page = (props: PageProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const isEditMode = useAppSelector(selectIsEditMode);
   const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
+  const ref = useRef(null);
 
   useEffect(() => {
     api.getFileResult(props.viewedPath).then((fileResult) => {
@@ -145,6 +146,9 @@ export const Page = (props: PageProps) => {
     ></SideBySideView>
   ) : (
     <PageWithNavigationView
+      isOnMobile={isOnMobile()}
+      sidePanelWidth={props.sidePanelWidth}
+      isSidePanelVisible={isSidePanelVisible}
       fileResult={fileResult}
       targetId={props.targetId}
     ></PageWithNavigationView>
@@ -152,11 +156,7 @@ export const Page = (props: PageProps) => {
   return (
     <div
       style={{
-        transition: '0.2s',
-        paddingLeft:
-          isEditMode && !isOnMobile() && isSidePanelVisible
-            ? props.sidePanelWidth
-            : 0,
+        paddingLeft: !isOnMobile() ? props.sidePanelWidth : 0,
       }}
     >
       {error ? errorView : contentView}
@@ -165,36 +165,50 @@ export const Page = (props: PageProps) => {
 };
 
 const PageWithNavigationView = (props: {
+  isOnMobile: boolean;
+  sidePanelWidth: number;
+  isSidePanelVisible: boolean;
   fileResult: api.FileResult;
   targetId: string;
-}) => (
-  <div className={styles.mathlinguaPage}>
-    <RenderedContent
-      relativePath={props.fileResult.relativePath}
-      errors={props.fileResult.errors}
-      entities={props.fileResult.entities}
-      targetId={props.targetId}
-    />
-    <div className={styles.linkPanel}>
-      {props.fileResult.previousRelativePath ? (
-        <a
-          className={styles.previousLink}
-          href={`#/${props.fileResult.previousRelativePath}`}
-        >
-          <FontAwesomeIcon icon={faAngleLeft} />
-        </a>
-      ) : null}
-      {props.fileResult.nextRelativePath ? (
-        <a
-          className={styles.nextLink}
-          href={`#/${props.fileResult.nextRelativePath}`}
-        >
-          <FontAwesomeIcon icon={faAngleRight} />
-        </a>
-      ) : null}
+}) => {
+  const ref = useRef(null);
+  let marginLeft: string | number = props.isOnMobile ? 0 : 'auto';
+  if (ref.current && !props.isOnMobile) {
+    const sideWidth = props.isSidePanelVisible ? props.sidePanelWidth : 0;
+    const windowWidth = window.innerWidth;
+    const thisWidth = (ref.current as any).clientWidth;
+    const amountPerSide = (windowWidth - thisWidth) / 2;
+    marginLeft = amountPerSide - sideWidth;
+  }
+  return (
+    <div ref={ref} className={styles.mathlinguaPage} style={{ marginLeft }}>
+      <RenderedContent
+        relativePath={props.fileResult.relativePath}
+        errors={props.fileResult.errors}
+        entities={props.fileResult.entities}
+        targetId={props.targetId}
+      />
+      <div className={styles.linkPanel}>
+        {props.fileResult.previousRelativePath ? (
+          <a
+            className={styles.previousLink}
+            href={`#/${props.fileResult.previousRelativePath}`}
+          >
+            <FontAwesomeIcon icon={faAngleLeft} />
+          </a>
+        ) : null}
+        {props.fileResult.nextRelativePath ? (
+          <a
+            className={styles.nextLink}
+            href={`#/${props.fileResult.nextRelativePath}`}
+          >
+            <FontAwesomeIcon icon={faAngleRight} />
+          </a>
+        ) : null}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 const RenderedContent = (props: {
   relativePath: string;

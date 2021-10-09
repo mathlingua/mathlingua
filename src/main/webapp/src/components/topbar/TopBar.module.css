@@ -3,16 +3,13 @@
   flex-direction: row;
   align-content: space-between;
   height: 2em;
-  background-color: #444444;
+  background-color: #f0f0f0;
   position: fixed;
   z-index: 7;
   top: 0;
   left: 0;
   width: 100%;
-  border-width: 1px;
-  border-color: #555555;
-  border-bottom-style: solid;
-  box-shadow: rgba(0, 0, 0, 0.3) 0px 3px 10px,
-    inset 0 0 10px 0 rgba(200, 200, 200, 0.25);
+  border: none;
   padding-top: 0.5em;
+  border-top: none;
 }

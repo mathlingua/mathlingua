@@ -1,8 +1,10 @@
-import { useState } from 'react';
 import { useLocation } from 'react-router';
 import { Page } from '../page/Page';
 import { SidePanel } from '../side-panel/SidePanel';
-import styles from './ContentPanel.module.css';
+import { selectIsEditMode } from '../../store/isEditModeSlice';
+import { useAppSelector } from '../../support/hooks';
+import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
+import { isOnMobile } from '../../support/util';
 
 export interface HashLocation {
   viewedPath: string;
@@ -21,20 +23,108 @@ function getHashLocation(location: {
 
 export const ContentPanel = () => {
   const hashLocation = getHashLocation(useLocation());
-  const [sidePanelWidth, setSidePanelWidth] = useState(0);
+  const isEditMode = useAppSelector(selectIsEditMode);
+  const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
+  const isMobile = isOnMobile();
+
+  return isEditMode ? (
+    <TwoColumnContent
+      hashLocation={hashLocation}
+      isSidePanelVisible={isSidePanelVisible}
+    ></TwoColumnContent>
+  ) : (
+    <ThreeColumnContent
+      isMobile={isMobile}
+      hashLocation={hashLocation}
+      isSidePanelVisible={isSidePanelVisible}
+    ></ThreeColumnContent>
+  );
+};
+
+const ThreeColumnContent = (props: {
+  isMobile: boolean;
+  hashLocation: HashLocation;
+  isSidePanelVisible: boolean;
+}) => {
   return (
-    <div className={styles.contentPane}>
-      <SidePanel
-        viewedPath={hashLocation.viewedPath}
-        onWidthChange={(width) => {
-          setSidePanelWidth(width);
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        padding: 0,
+        margin: 0,
+      }}
+    >
+      <div
+        style={{
+          display:
+            !props.isMobile || props.isSidePanelVisible ? 'block' : 'none',
+          width: props.isMobile ? '100%' : '20%',
+          padding: 0,
+          margin: 0,
         }}
-      />
-      <Page
-        viewedPath={hashLocation.viewedPath}
-        targetId={hashLocation.targetId}
-        sidePanelWidth={sidePanelWidth}
-      />
+      >
+        {props.isSidePanelVisible ? (
+          <SidePanel viewedPath={props.hashLocation.viewedPath} />
+        ) : null}
+      </div>
+      <div
+        style={{
+          width: props.isMobile
+            ? props.isSidePanelVisible
+              ? '0%'
+              : '95%'
+            : '60%',
+          marginTop: '1em',
+        }}
+      >
+        <Page
+          viewedPath={props.hashLocation.viewedPath}
+          targetId={props.hashLocation.targetId}
+        />
+      </div>
+      <div
+        style={{
+          width: props.isMobile ? '0%' : '20%',
+          display: props.isMobile ? 'none' : 'block',
+        }}
+      ></div>
+    </div>
+  );
+};
+
+const TwoColumnContent = (props: {
+  hashLocation: HashLocation;
+  isSidePanelVisible: boolean;
+}) => {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        padding: '0',
+        margin: '0',
+      }}
+    >
+      <div style={{ width: props.isSidePanelVisible ? '20%' : '0' }}>
+        {props.isSidePanelVisible ? (
+          <SidePanel viewedPath={props.hashLocation.viewedPath} />
+        ) : null}
+      </div>
+      <div
+        style={{
+          width: props.isSidePanelVisible ? '80%' : '100%',
+          border: 'solid',
+          borderColor: '#cccccc',
+          borderWidth: '1px',
+          marginTop: '0.5em',
+        }}
+      >
+        <Page
+          viewedPath={props.hashLocation.viewedPath}
+          targetId={props.hashLocation.targetId}
+        />
+      </div>
     </div>
   );
 };

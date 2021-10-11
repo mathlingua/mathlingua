@@ -17,7 +17,6 @@ import * as langTools from 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/mode-yaml';
 import 'ace-builds/src-noconflict/theme-eclipse';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
-import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
 import { isOnMobile } from '../../support/util';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -82,17 +81,9 @@ const BASE_COMPLETIONS: Completion[] = [
 
 let scheduledFunction: { (): void; cancel(): void } | null = null;
 
-window.addEventListener('resize', () => {
-  document.body.style.setProperty(
-    '--inner-height',
-    `${window.innerHeight - 5}px`
-  );
-});
-
 export interface PageProps {
   viewedPath: string;
   targetId: string;
-  sidePanelWidth: number;
 }
 
 export const Page = (props: PageProps) => {
@@ -102,8 +93,6 @@ export const Page = (props: PageProps) => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const isEditMode = useAppSelector(selectIsEditMode);
-  const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
-  const ref = useRef(null);
 
   useEffect(() => {
     api.getFileResult(props.viewedPath).then((fileResult) => {
@@ -116,15 +105,17 @@ export const Page = (props: PageProps) => {
     });
   }, [isEditMode, props.viewedPath]);
 
-  const errorView = (
-    <div className={styles.mathlinguaPage}>
-      <ErrorView message={error} />
-    </div>
-  );
+  if (error) {
+    return (
+      <div className={styles.mathlinguaPage}>
+        <ErrorView message={error} />
+      </div>
+    );
+  }
 
   if (!fileResult && !isLoading) {
     return (
-      <div className={styles.mathlinguaPage}>
+      <div>
         <ErrorView message="Page Not Found" />
       </div>
     );
@@ -137,7 +128,7 @@ export const Page = (props: PageProps) => {
     return null;
   }
 
-  const contentView = isEditMode ? (
+  return isEditMode ? (
     <SideBySideView
       relativePath={props.viewedPath}
       errors={fileResult.errors}
@@ -147,70 +138,19 @@ export const Page = (props: PageProps) => {
   ) : (
     <PageWithNavigationView
       isOnMobile={isOnMobile()}
-      sidePanelWidth={props.sidePanelWidth}
-      isSidePanelVisible={isSidePanelVisible}
       fileResult={fileResult}
       targetId={props.targetId}
     ></PageWithNavigationView>
-  );
-  return (
-    <div
-      style={{
-        paddingLeft: !isOnMobile() ? props.sidePanelWidth : 0,
-      }}
-    >
-      {error ? errorView : contentView}
-    </div>
   );
 };
 
 const PageWithNavigationView = (props: {
   isOnMobile: boolean;
-  sidePanelWidth: number;
-  isSidePanelVisible: boolean;
   fileResult: api.FileResult;
   targetId: string;
 }) => {
-  const ref = useRef(null);
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  const updateDim = () => {
-    setWindowWidth(window.innerWidth);
-  };
-  useEffect(() => {
-    window.addEventListener('resize', updateDim);
-    return () => window.removeEventListener('resize', updateDim);
-  }, []);
-  let marginLeft: string | number = props.isOnMobile ? 0 : 'auto';
-  let marginRight: string | number = props.isOnMobile ? 0 : 'auto';
-  let width;
-  if (ref.current && !props.isOnMobile) {
-    const sideWidth = props.isSidePanelVisible ? props.sidePanelWidth : 0;
-    const thisWidth = (ref.current as any).clientWidth;
-    const amountPerSide = (windowWidth - thisWidth) / 2;
-    if (amountPerSide > 0) {
-      marginRight = amountPerSide;
-      const tmp = amountPerSide - sideWidth;
-      if (tmp > 0) {
-        marginLeft = tmp;
-      }
-    }
-
-    if (thisWidth + sideWidth > windowWidth) {
-      width = windowWidth - sideWidth;
-    }
-  }
-  const widthCss = !!width ? `calc(${width}px - 2em)` : undefined;
   return (
-    <div
-      ref={ref}
-      className={styles.mathlinguaPage}
-      style={{
-        marginLeft,
-        marginRight,
-        width: widthCss,
-        maxWidth: widthCss,
-      }}
-    >
+    <div className={styles.mathlinguaPage}>
       <RenderedContent
         relativePath={props.fileResult.relativePath}
         errors={props.fileResult.errors}
@@ -289,21 +229,19 @@ const RenderedContent = (props: {
         ))}
       </div>
       {props.entities.map((entityResult) => (
-        <span key={entityResult.id}>
-          <div>
-            {entityResult.type === 'TopLevelBlockComment' ? (
-              <BlockComment
-                renderedHtml={entityResult.renderedHtml}
-                rawHtml={entityResult.rawHtml}
-              />
-            ) : (
-              <TopLevelEntityGroup
-                entity={entityResult}
-                relativePath={props.relativePath}
-              />
-            )}
-          </div>
-        </span>
+        <div key={entityResult.id}>
+          {entityResult.type === 'TopLevelBlockComment' ? (
+            <BlockComment
+              renderedHtml={entityResult.renderedHtml}
+              rawHtml={entityResult.rawHtml}
+            />
+          ) : (
+            <TopLevelEntityGroup
+              entity={entityResult}
+              relativePath={props.relativePath}
+            />
+          )}
+        </div>
       ))}
     </div>
   );
@@ -427,8 +365,8 @@ const EditorView = memo(
         style={{
           position: 'relative',
           width: '100%',
-          height: '100%',
-          minHeight: '100vh',
+          height: 'calc(100vh - 1.75em)',
+          minHeight: 'calc(100vh - 1.75em)',
         }}
         annotations={annotations}
       ></AceEditor>
@@ -446,13 +384,6 @@ const SideBySideView = (props: {
   const [errors, setErrors] = useState(props.errors);
   const [entities, setEntities] = useState(props.entities);
 
-  useEffect(() => {
-    document.body.style.setProperty(
-      '--inner-height',
-      `${window.innerHeight - 5}px`
-    );
-  }, []);
-
   const onFileResultChanged = (result: api.FileResult) => {
     if (result) {
       setRelativePath(result.relativePath);
@@ -462,22 +393,31 @@ const SideBySideView = (props: {
   };
 
   return (
-    <div className={styles.sideBySideView}>
-      <div className={styles.splitViewContainer}>
-        <div className={styles.splitViewEditor}>
-          <EditorView
-            viewedPath={props.relativePath}
-            onFileResultChanged={onFileResultChanged}
-          />
-        </div>
-        <div className={styles.splitViewRendered}>
-          <RenderedContent
-            relativePath={relativePath}
-            errors={errors}
-            entities={entities}
-            targetId={props.targetId}
-          />
-        </div>
+    <div style={{ display: 'flex', flexDirection: 'row' }}>
+      <div style={{ width: '50%' }}>
+        <EditorView
+          viewedPath={props.relativePath}
+          onFileResultChanged={onFileResultChanged}
+        />
+      </div>
+      <div
+        style={{
+          width: '50%',
+          maxHeight: 'calc(100vh - 1.75em)',
+          height: 'max-content',
+          overflow: 'scroll',
+          borderLeft: 'solid',
+          borderLeftWidth: '1px',
+          borderLeftColor: '#dddddd',
+          background: '#ffffff',
+        }}
+      >
+        <RenderedContent
+          relativePath={relativePath}
+          errors={errors}
+          entities={entities}
+          targetId={props.targetId}
+        />
       </div>
     </div>
   );

@@ -9,7 +9,7 @@
   border-color: #cccccc;
   border-radius: 2px;
   border-width: 1px;
-  height: 75%;
+  height: 90%;
   width: 15em;
   margin-top: 0;
   margin-bottom: 0;
@@ -62,12 +62,13 @@
   border: none;
   color: #333333;
   background-color: #f0f0f0;
-  height: 75%;
+  height: 100%;
   margin: 0;
   padding-top: 0;
   padding-bottom: 0;
-  padding-left: 1.5ex;
+  padding-left: 1ex;
   padding-right: 1ex;
+  font-size: 100%;
 }
 
 .clearButton {
@@ -75,10 +76,11 @@
   background: none;
   color: #333333;
   background-color: #f0f0f0;
-  height: 75%;
+  height: 100%;
   margin: 0;
   padding-top: 0;
   padding-bottom: 0;
-  padding-left: 1ex;
+  padding-left: 0.5ex;
   padding-right: 1.5ex;
+  font-size: 100%;
 }

@@ -1,28 +1,21 @@
 import styles from './SidePanel.module.css';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { pathsUpdated, selectPaths } from '../../store/pathsSlice';
 import * as api from '../../services/api';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
-import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
 import { ErrorView } from '../error-view/ErrorView';
-import { isOnMobile } from '../../support/util';
 import { PathTreeItem, PathTreeNode } from '../path-tree-item/PathTreeItem';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
 
-import ResizeObserver from 'resize-observer-polyfill';
-
 export interface SidePanelProps {
   viewedPath: string;
-  onWidthChange(width: number): void;
 }
 
 export const SidePanel = (props: SidePanelProps) => {
   const dispatch = useAppDispatch();
-  const visible = useAppSelector(selectSidePanelVisible);
   const paths = useAppSelector(selectPaths);
   const isEditMode = useAppSelector(selectIsEditMode);
-  const divRef = useRef(null);
 
   const [allPaths, setAllPaths] = useState([] as string[]);
   const [error, setError] = useState('');
@@ -48,53 +41,34 @@ export const SidePanel = (props: SidePanelProps) => {
     setPathData(allPathsToTreeNode(pathsToView));
   }, [allPaths, paths]);
 
-  useEffect(() => {
-    if (divRef != null && divRef.current != null) {
-      const observer = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          props.onWidthChange(entry.contentRect.width);
-        }
-      });
-      observer.observe(divRef.current!);
-    }
-  }, [divRef]);
-
   const errorView = (
-    <div ref={divRef} className={styles.sidePanel}>
+    <div className={styles.sidePanel}>
       <ErrorView message={error} />
     </div>
   );
-
-  const style = visible
-    ? isOnMobile()
-      ? {
-          width: '100%',
-          minWidth: '100%',
-        }
-      : {
-          width: 'max-content',
-          minWidth: '15em',
-        }
-    : {
-        width: '0',
-        minWidth: '0',
-      };
 
   // if in editing mode show the 'content' directory
   const start = isEditMode ? pathData : pathData.children[0];
 
   const sidePanel = (
-    <div ref={divRef} style={style} className={styles.sidePanel}>
-      <div className={styles.sidePanelContent}>
-        {start?.children?.map((node) => (
-          <PathTreeItem
-            key={node.name}
-            node={node}
-            viewedPath={props.viewedPath}
-          />
-        ))}
-      </div>
-      <div className={styles.sidePanelBottom}></div>
+    <div
+      className={styles.sidePanel}
+      style={
+        isEditMode
+          ? {
+              height: 'calc(100vh - 1.75em)',
+              overflow: 'scroll',
+            }
+          : {}
+      }
+    >
+      {start?.children?.map((node) => (
+        <PathTreeItem
+          key={node.name}
+          node={node}
+          viewedPath={props.viewedPath}
+        />
+      ))}
     </div>
   );
 

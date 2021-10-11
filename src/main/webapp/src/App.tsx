@@ -10,8 +10,8 @@ export const App = () => {
   return (
     <HashRouter hashType="slash">
       <ErrorBoundary>
-        <TopBar />
         <div className={styles.contentPanel}>
+          <TopBar />
           <Switch>
             <Route path="/:relativePath(.*)" children={<ContentPanel />} />
           </Switch>

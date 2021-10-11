@@ -1,17 +1,8 @@
 .githubIcon {
-  position: fixed;
   right: 0.5ex;
   color: #333333;
   margin-right: 0.5em;
-  margin-top: 0.05em;
-  padding: 0;
   background: none;
   border: none;
   font-size: 130%;
-}
-
-@media screen and (max-width: 500px) {
-  .githubIcon {
-    position: absolute;
-  }
 }

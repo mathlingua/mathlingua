@@ -232,9 +232,15 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
 
   if (props.node.isDir) {
     return (
-      <span>
+      <span
+        className={styles.sidePanelItem}
+        style={{
+          width: isEditMode ? 'max-content' : '100%',
+          maxWidth: isEditMode ? 'max-content' : '100%',
+        }}
+      >
         <li
-          className={styles.mathlinguaListDirItem + ' ' + styles.sidePanelItem}
+          className={styles.mathlinguaListDirItem}
           onClick={() => setIsExpanded(!isExpanded)}
         >
           {isExpanded ? (
@@ -280,37 +286,45 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
   }
 
   return (
-    <li className={styles.mathlinguaListFileItem + ' ' + styles.sidePanelItem}>
-      {isEditing ? (
-        <form onSubmit={onSubmit}>
-          <input
-            className={styles.input}
-            type="text"
-            placeholder={props.node.name}
-            onChange={(event) => setInputName(event.target.value)}
-          ></input>
-          {getEditButtons()}
-        </form>
-      ) : (
-        <Link
-          to={`/${props.node.path}`}
-          key={props.node.name}
-          className={
-            props.viewedPath === props.node.path
-              ? `${styles.link} ${styles.selected}`
-              : styles.link
-          }
-          onClick={() => {
-            if (isOnMobile()) {
-              dispatch(sidePanelVisibilityChanged(false));
+    <span
+      className={styles.sidePanelItem}
+      style={{
+        width: isEditMode ? 'max-content' : '100%',
+        maxWidth: isEditMode ? 'max-content' : '100%',
+      }}
+    >
+      <li className={styles.mathlinguaListFileItem}>
+        {isEditing ? (
+          <form onSubmit={onSubmit}>
+            <input
+              className={styles.input}
+              type="text"
+              placeholder={props.node.name}
+              onChange={(event) => setInputName(event.target.value)}
+            ></input>
+            {getEditButtons()}
+          </form>
+        ) : (
+          <Link
+            to={`/${props.node.path}`}
+            key={props.node.name}
+            className={
+              props.viewedPath === props.node.path
+                ? `${styles.link} ${styles.selected}`
+                : styles.link
             }
-          }}
-        >
-          {name}
-          {getErrorStats(allErrorResults)}
-        </Link>
-      )}
-      {!isEditing ? getEditButtons() : null}
-    </li>
+            onClick={() => {
+              if (isOnMobile()) {
+                dispatch(sidePanelVisibilityChanged(false));
+              }
+            }}
+          >
+            {name}
+            {getErrorStats(allErrorResults)}
+          </Link>
+        )}
+        {!isEditing ? getEditButtons() : null}
+      </li>
+    </span>
   );
 };

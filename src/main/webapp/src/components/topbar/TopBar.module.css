@@ -4,9 +4,7 @@
   align-content: space-between;
   height: 2em;
   background-color: #f0f0f0;
-  z-index: 7;
-  top: 0;
-  left: 0;
+  height: 1.75em;
   width: 100%;
   border: none;
   padding-top: 0.5em;

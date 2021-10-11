@@ -1,17 +1,7 @@
 .sidePanelButton {
-  position: fixed;
-  left: 0.5ex;
   border: none;
   color: #333333;
-  margin-left: 0.5em;
-  margin-top: 0em;
   padding: 0;
-  background-color: rgba(0, 0, 0, 0);
+  margin-left: 0.5em;
   font-size: 120%;
-}
-
-@media screen and (max-width: 500px) {
-  .sidePanelButton {
-    position: absolute;
-  }
 }

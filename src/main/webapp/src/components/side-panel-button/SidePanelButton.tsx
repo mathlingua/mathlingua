@@ -14,13 +14,25 @@ export const SidePanelButton = () => {
   const dispatch = useAppDispatch();
 
   return (
-    <button
-      className={styles.sidePanelButton}
-      onClick={() => {
-        dispatch(sidePanelVisibilityChanged(!visible));
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        padding: 0,
+        marginLeft: 0,
+        marginRight: 0,
+        marginTop: 0,
+        marginBottom: 'auto',
       }}
     >
-      <FontAwesomeIcon icon={faBars} />
-    </button>
+      <button
+        className={styles.sidePanelButton}
+        onClick={() => {
+          dispatch(sidePanelVisibilityChanged(!visible));
+        }}
+      >
+        <FontAwesomeIcon icon={faBars} />
+      </button>
+    </div>
   );
 };

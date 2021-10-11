@@ -1,71 +1,14 @@
 .sidePanel {
-  height: 95%;
-  width: max-content;
-  min-width: 15em;
-  position: fixed;
-  z-index: 5;
-  top: 2.8em;
-  left: 0;
   background-color: #f0f0f0;
   border-right: solid;
   border-width: 1px;
   border-color: #cfcfcf;
-  overflow: auto;
   padding-top: 1em;
   border-right: none;
-}
-
-@media screen and (max-width: 500px) {
-  .sidePanel {
-    width: 100%;
-  }
-}
-
-.sidePanelContent {
-  padding-right: 0;
-  width: max-content;
-}
-
-.sidePanelItem {
-  font-family: Georgia, 'Times New Roman', Times, serif;
-  text-decoration: none;
-  color: #000000;
-  display: block;
-  padding-left: 1.25em;
-  padding-right: 0;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
-  margin: 0;
-}
-
-.sidePanelBottom {
-  margin-bottom: 3em;
-}
-
-.selected {
-  font-style: italic;
-}
-
-.mathlinguaHomeItem {
-  font-weight: bold;
-  display: block;
-  margin-top: -1.25ex;
-  margin-bottom: -1ex;
+  width: 100%;
+  margin-left: -0.5em;
 }
 
 hr {
   border: 0.5px solid #efefef;
-}
-
-.mathlinguaListDirItem {
-  font-weight: bold;
-  display: block;
-  margin-top: -0.5ex;
-  margin-bottom: -0.5ex;
-}
-
-.mathlinguaListFileItem {
-  display: block;
-  margin-top: -0.5ex;
-  margin-bottom: -0.5ex;
 }

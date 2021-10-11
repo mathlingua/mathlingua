@@ -23,16 +23,22 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEWED_AS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.clause.secondSectionMatchesName
-import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
+import mathlingua.frontend.chalktalk.phase2.ast.common.ThreePartNode
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.BySection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateBySection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
+import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ViewingAsGroup(val viewingAsSection: ViewingAsSection, val viaSection: ViaSection) :
-    TwoPartNode<ViewingAsSection, ViaSection>(viewingAsSection, viaSection, ::ViewingAsGroup),
+data class ViewingAsGroup(
+    val viewingAsSection: ViewingAsSection, val viaSection: ViaSection, val bySection: BySection?
+) :
+    ThreePartNode<ViewingAsSection, ViaSection, BySection?>(
+        viewingAsSection, viaSection, bySection, ::ViewingAsGroup),
     Clause
 
 fun isViewingAsGroup(node: Phase1Node) =
@@ -43,7 +49,7 @@ fun validateViewingAsGroup(
 ) =
     track(node, tracker) {
         validateGroup(node.resolve(), errors, "as", DEFAULT_VIEWED_AS_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_VIEWED_AS_GROUP, listOf("as", "via")) {
+            identifySections(group, errors, DEFAULT_VIEWED_AS_GROUP, listOf("as", "via", "by?")) {
             sections ->
                 ViewingAsGroup(
                     viewingAsSection =
@@ -53,7 +59,9 @@ fun validateViewingAsGroup(
                     viaSection =
                         ensureNonNull(sections["via"], DEFAULT_VIA_SECTION) {
                             validateViaSection(it, errors, tracker)
-                        })
+                        },
+                    bySection =
+                        ifNonNull(sections["by"]) { validateBySection(it, errors, tracker) })
             }
         }
     }

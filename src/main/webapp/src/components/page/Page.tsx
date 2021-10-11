@@ -56,7 +56,8 @@ const BASE_COMPLETIONS: Completion[] = [
   },
   { name: 'equality', value: 'equality:\nbetween:\nprovided:' },
   { name: 'membership', value: 'membership:\nthrough:' },
-  { name: 'as', value: 'as:\nvia:' },
+  { name: 'as', value: 'as:\nvia\nby?:' },
+  { name: 'instance', value: 'instance:\nof\nby?:' },
   {
     name: 'Resource',
     value:

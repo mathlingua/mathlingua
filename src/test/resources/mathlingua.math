@@ -106,6 +106,9 @@ viewing:
 . as: '\set'
   via: 'X'
   by: '\some.theorem'
+. instance:
+  of: '\something'
+  by: '\some.theorem'
 . membership:
   through: 'X'
 written: "\textrm{semigroup}"

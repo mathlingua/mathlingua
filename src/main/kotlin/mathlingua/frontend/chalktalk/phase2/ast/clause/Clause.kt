@@ -47,6 +47,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.state
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.isEqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.validateEqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.instanceof.isInstanceOfGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.instanceof.validateInstanceOfGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.isMembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.validateMembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.isViewingAsGroup
@@ -137,6 +139,7 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isStatesGroup, ::validateStatesGroup),
         ValidationPair(::isMembershipGroup, ::validateMembershipGroup),
         ValidationPair(::isViewingAsGroup, ::validateViewingAsGroup),
+        ValidationPair(::isInstanceOfGroup, ::validateInstanceOfGroup),
         ValidationPair(::isEqualityGroup, ::validateEqualityGroup))
 
 fun validateClause(

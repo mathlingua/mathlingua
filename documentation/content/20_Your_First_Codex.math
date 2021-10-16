@@ -1,0 +1,697 @@
+::
+# Your First Codex
+
+Now we will build our first codex to illustrate how
+MathLingua can be used.  Suppose you are just learning
+group theory or have just rediscovered it and would like
+to keep track of what you have learned.
+
+In particular, you want to capture the definitions,
+you are using, the defintions and theorems you have
+learned.
+
+Further you want to make sure no definition or theorem
+is referencing a definition that you haven't described
+or is using a symbol that is ambiguous.
+
+Before continuing, this document itself is written with
+MathLingua, and text blocks like this paragraph is
+written with text blocks that begin with `{::}` and end
+with `{::}` (where `{{::}}` is used to write the literal
+text `{::}`) as shown below:
+
+```
+{::}
+Before continuing, this document itself is written with
+MathLingua, and text blocks like this paragraph is
+written with text blocks that begin with `{{::}}` and end
+with `{{::}}` (where `{{{::}}}` is used to write the literal
+text `{{::}}`) as shown below:
+{::}
+```
+
+## Getting Started
+
+Group theory uses sets and binary operations and so
+we first need to describe what those are.
+
+For a set, we don't need to go into detail about all of
+the axioms a set must have.  We want to focus on group
+theory and so informally thinking about a set as a
+collection of things is enough.
+
+The following code makes such a definition:
+
+```math
+[\set]
+Defines: S := {s}
+means: "A collection of things"
+written: "\textrm{set}"
+called: "set"
+```
+
+and is rendered as
+::
+
+[\set]
+Defines: S := {s}
+means:
+. "$s$ is well defined"
+. "A well defined collection of things"
+written: "\textrm{set}"
+called: "set"
+
+::
+We use a `Defines:` to specify that we are defining
+something.  `\set` is used to represent the thing $X$
+being defined.
+
+Next we say that `X := {x}` to specify $X$ is a
+homogenous collection-like object with $x$ being
+a representative from that collection.
+
+As a comparison, besides the form `X := {x}`,
+the form `f(x)` is used for function like objects,
+`{x_i}_i` is used for sequence-like objects, and
+`(X, Y, *)` for tuples.
+
+Further, we use text in double quotes in the `means:`
+section because we are informally describing what a set
+is.  Formal statements, on the other hand, are enclosed
+in single quotes as we'll see later.
+
+Next with the notion of a *set* described, we want to
+describe what a *binary operation* on a set is.  But
+first, we'll describe what a *function* is, since a
+binary operation is a type of function.
+
+```math
+[\function:on{A}:to{B}]
+Defines: f(x)
+when: 'A, B is \set'
+means:
+. 'x in A'
+. forAll: a
+  suchThat: 'a in A'
+  then:
+  . existsUnique: b
+    suchThat:
+    . 'b in B'
+    . 'f(a) = b'
+written: "f? : A? \rightarrow B?"
+called: "function on $A?$ to $B?$"
+```
+
+which is rendered as:
+::
+
+[\function:on{A}:to{B}]
+Defines: f(x)
+when: 'A, B is \set'
+means:
+. 'x in A'
+. forAll: a
+  suchThat: 'a in A'
+  then:
+  . existsUnique: b
+    suchThat:
+    . 'b in B'
+    . 'f(a) = b'
+written: "f? : A? \rightarrow B?"
+called: "function on $A?$ to $B?$"
+Metadata:
+. overview: "The key characteristic of a function is
+  that every input is mapped to a *unique* output."
+
+::
+
+There is a lot of aspects of the MathLingua language being
+used in the definition above that we will analyze next.
+
+First, we describe that a function is a mapping-like object
+`f(x)` that maps elements of the set `A` to unique elements
+of the set `B` and we specify that the command
+`\function:on{A}:to{B}` describes a function.
+
+Notice that the command `\function:on{A}:to{B}`
+reads similar to how describes a function when speaking.
+
+Commands for definitions start with a `\` and
+the `:on{A}:to{B}` part of the command allows one to
+specify named arguments.
+
+> **Note:** We could have alternately specified that the command
+`\function{A, B}` describes a function, but using named
+arguments makes the command easier to remember and read.
+
+Additionally, right now we are just talking about a function, but
+if we wanted to define a real-valued function, for example,
+in a new definition, we could state that the command
+`\real.function:on{A}:to{B}` specifies a real-valued function.
+
+It is common to use the `\adjective.noun:namedArguments`
+pattern for command names since it is similar to how mathematical
+objects are typically described when speaking.
+
+Next, the symbol `is` is a keyword in MathLingua, it specifies
+how the symbol on the left of the `is` is defined.  In
+this case, `A, B is \set` means `A` is a `\set` and
+`B` is a also a `\set`.
+
+Further, the symbol `in` is also keyword in MathLingua.
+The line `x in A` means that `x` is "in" `A`, and the
+fact that `A` is a `\set`, and the definition of a set
+is an object `S := {s}` where `s is well defined` means
+that `x is well defined`.
+
+Furthermore, notice the `written:` and `called:` sections in
+the definition of a function.
+
+The text in the written section is interpreted as being
+in LaTeX math mode, and describes what symbols are written
+on paper to specify that something is a function.  Here
+we use the notation $f : A \rightarrow B$.
+
+The `called:` section, on the other hand, has text that
+is written using Markdown and describes what is spoken
+when reading $f : A \rightarrow B$, which, in this case,
+is "$f$ is a continuous function on $A$ to $B$".
+
+Also notice that we included the optional
+`Metadata:overview:` section that has text that is written
+using Markdown, and describes any additional information
+you would like to add.  In this case, we call out that a
+function maps an input to a *unique* output.
+
+Last, an indent based syntax is used to describe the structure
+of the definition with statements (such as `A, B is \set`)
+included in single quotes.
+
+Now we can describe what a cartesian product of two sets
+is that we'll need for defining a binary operation.  We
+do that using the MathLingua text:
+
+```math
+[A \set.product/ B]
+Defines: X := {x, y}
+when: 'A, B is \set'
+means:
+. 'x in A'
+. 'y in B'
+written: "A? \times B?"
+called: "cartesian product of $A?$ and $B?$"
+```
+that is rendered as
+::
+
+[A \set.product/ B]
+Defines: X := {x, y}
+when: 'A, B is \set'
+means:
+. 'x in A'
+. 'y in B'
+written: "A?? \times B??"
+called: "cartesian product of $A?$ and $B?$"
+
+::
+Similar to the definition of a set, the cartesian product
+between two sets $A$ and $B$ is a collection of pairs
+$X : = {x,y}$ where the first element is from $A$ and the second
+is from $B$.
+
+Here we use the notation `\xxx/` that is used to define an
+infix operator.  We could have also used the prefix command
+format like above, for example `\set.product:of{A}:and{B}`, but
+in this case, infix notation is more clear.
+
+Also, notice that in the written section we use the syntax `A??`
+when referring to an input, in this case `A`, while in the
+definition of a function, we used `A?`.
+
+The `?` or `??` instructs MathLingua how to replace variables
+when rendering the definition.  Thus
+`X \set.product/ Y` will be rendered as $X \times Y$.
+
+The use of `??`, though specifies that parentheses should be
+included for complex expressions.  Thus,
+```
+   {X \set.product/ X} \set.product/ Y
+```
+and
+```
+   (X \set.product/ X) \set.product/ Y
+```
+are both rendered as $(X \times X) \times Y$.
+
+> **Note:** `{}` and `()` are both used to group together
+  expressions, but `{}` is not visible when rendered.
+
+If a `?` was used instead, the above would have been rendered as
+$X \times X \times Y$.
+
+Now we define what a binary operation on a set is:
+
+```math
+[\binary.operation:on{A}]
+Defines: *(a, b)
+when: 'A is \set'
+means: '* is \function:on{A \set.product/ A}:to{A}'
+written: "\textrm{binary operation on } A?"
+called: "binary operation on $A?$"
+```
+that is rendered as:
+::
+
+
+[\binary.operation:on{A}]
+Defines: *(a, b)
+when: 'A is \set'
+means: '* is \function:on{A \set.product/ A}:to{A}'
+written: "\textrm{binary operation on } A?"
+called: "binary operation on $A?$"
+
+::
+Note that in the structural language `*` is treated as an
+identifier just like `f`.  However, inside statements, in
+single quotes, symbols like `*`, `/`, `**`, etc. are treated
+as operators.
+
+An exciting aspect of MathLingua is that it creates a dynamic
+document.  To see this, click on the
+$* : A \times A \rightarrow A$ in the definition above.  From
+there you will see a dropdown menu listing `\function:on:to`
+and `\set.product/`.
+
+If you click on the menu items, the corresponding MathLingua
+entry will be shown under the definition of a **Binary
+Operation on $A$**.  You can further click on more text in the
+items that appear to drill down farther into the definitions.
+This makes it very easy to explore MathLingua concepts.
+
+Now we have the machinery needed to define a group, but before
+we do that, we want to record a resource where we found the
+defintion of a group.
+
+In particular, we found the definition of a group on page 7
+of the book "Group Theory" by J.S. Milne.  To record that
+resource, use a `Resource:` construct:
+
+```math
+[@group.theory.js.milne]
+Resource:
+. type: "Course Notes"
+. name: "Group Theory"
+. author: "J.S. Milne"
+. homepage: "https://www.jmilne.org"
+. url: "https://www.jmilne.org/math/CourseNotes/GT.pdf"
+. offset: "0"
+```
+
+that is rendered as:
+
+::
+
+[@GroupTheoryJsMilne]
+Resource:
+. type: "Course Notes"
+. name: "Group Theory"
+. author: "J.S. Milne"
+. homepage: "https://www.jmilne.org"
+. url: "https://www.jmilne.org/math/CourseNotes/GT.pdf"
+. offset: "0"
+
+::
+Notice that resources are identified with a name that starts
+with the `@` sigil (as compared to definitions and theorems
+that start with `\`).  Further, resource names can only contain
+letters and digits and periods (`.`).
+
+Now we can define a group:
+
+```math
+[\group]
+Defines: G := (X, *, e)
+when:
+. 'X is \set'
+. '* is \binary.operation:on{X}'
+. 'e in X'
+means:
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . 'x * e = x'
+  . 'e * x = x'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . '(x * y) * z = x * (y * z)'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . exists: y
+    suchThat:
+    . 'y in X'
+    . 'x * y = e'
+viewing:
+. as: '\set'
+  via: 'X'
+. membership:
+  through: 'X'
+written: "\textrm{group}"
+called: "group"
+Metadata:
+. resources:
+  . source: "@GroupTheoryJsMilne"
+    page: "7"
+```
+that is rendered as
+::
+
+[\group]
+Defines: G := (X, *, e)
+when:
+. 'X is \set'
+. '* is \binary.operation:on{X}'
+. 'e in X'
+means:
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . 'x * e = x'
+  . 'e * x = x'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . '(x * y) * z = x * (y * z)'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . exists: y
+    suchThat:
+    . 'y in X'
+    . 'x * y = e'
+viewing:
+. as: '\set'
+  via: 'X'
+. membership:
+  through: 'X'
+written: "\textrm{group}"
+called: "group"
+Metadata:
+. resources:
+  . source: "@GroupTheoryJsMilne"
+    page: "7"
+
+::
+Notice we included a `Metadata:resources:` section that included
+the source `@GroupTheoryJsMilne` on page 7.
+
+There is a new section we used in this definition that wasn't
+used previously, the `viewing:` section.  This is used to describe
+how to interpret the object being defined, in this case a group.
+
+The construct:
+
+```
+as: '\set'
+via: 'X'
+```
+
+instructs one to interperet the group that is the object
+`G := (X, *, e)` as a `\set` through its member `X`, which is a
+set.
+
+Thus, if `A ++ B` was defined to be an operator between two `\set`s
+`A` and `B`, then if `G := (X, *, e)` and `H := (Y, +, u)` where
+two `\groups`, then `G ++ H` would be evaluated as `X ++ Y` since
+`G` can be viewed as the set `X` and `H` as the set `Y`.
+
+That is, although `G` is tuple, the `as:via:` section allows us
+to explicitly state that we may view it as a set, as is commonly
+done in mathematics literature.
+
+The `membership:through:` section, on the other hand allows us
+to specify what it means for one to say `x in G` where
+`G := (X, *, e)` is a `\group`, and
+
+```
+membership:
+through: 'X'
+```
+
+means to interpret `x in G` as saying `x in X`, again as is
+typically done in mathematics literature.
+
+The two constructs, `as:via:` and `membership:group:` look the
+same but they are not.  In particular, `as:via:` allows one to
+specify how to view one mathematical object as another.  This
+could be, for example, how to view a group as a set or an integer
+as a rational number.  It doesn't need to involve sets.
+
+The `membership:through:` construct, on the other hand, describes
+how to interpret `x in G` for some `G`.  If `G := (X, *, e)` is a
+`\group`, then `x in G` means `x in X`.
+
+Now that we have the definition of a group, we can describe a
+theorem that will refer to the inverse of an element in a
+group.
+
+Now we'll define what the inverse of an element is:
+
+```math
+[\group{G}.inverse:of{x}]
+Defines: y
+when:
+. 'G := (X, *, e) is \group'
+. 'x in X'
+means:
+. 'x * y = e'
+. 'y * x = e'
+written: "x??^{-1}"
+called: "inverse of $x?$"
+```
+that is rendered as:
+::
+
+
+[\group{G}.inverse:of{x}]
+Defines: y
+when:
+. 'G := (X, *, e) is \group'
+. 'x in X'
+means:
+. 'x * y = e'
+. 'y * x = e'
+written: "{x??}^{-1}"
+called: "inverse of $x?$"
+
+::
+Now we can record our theorem.  It is a straightforward theorem
+meant to demonstrate how a theorem, and optionally its proof, are
+recorded.
+
+It shows how to find the inverse of the product of two elements
+in a group.
+
+The following is the code for the theorem:
+```math
+Theorem:
+given: G := (X, *, e), x, y
+if: 'x, y in G'
+then:
+. '\inv((x * y)) = \inv(y) * \inv(x)'
+using:
+. '\inv(x) := \group{G}.inverse:of{x}'
+Proof:
+. "
+First, let $z \in G$ and suppose $a, b \in G$ are inverses of $z$.
+That is,
+$$
+   a * z = e = z * a
+$$
+and
+$$
+    b * z = e = z * b
+$$
+Thus,
+\[
+    \begin{align*}
+        a & = a * e \\
+          & = a * (z * b) \\
+          & = (a * z) * b \\
+          & = e * b \\
+          & = b
+    \end{align*}
+\]
+Thus, for any element in a group, it has a unique inverse.  Thus
+we need to show $y^{-1} * x^{-1}$ is *an* inverse of $x * y$ to show
+that it is *the* inverse of $y^{-1} * x^{-1}$.  To do this notice
+\[
+    \begin{align*}
+        (x * y) * (y^{-1} * x^{-1})
+            & = x * (y * y^{-1}) * x^{-1} \\
+            & = x * e * x^{-1} \\
+            & = x * x^{-1} \\
+            & = e
+    \end{align*}
+\]
+and
+\[
+    \begin{align*}
+        (y^{-1} * x^{-1}) * (x * y)
+            & = y^{-1} * (x^{-1} * x) * y \\
+            & = y^{-1} * e * y \\
+            & = y^{-1} * y \\
+            & = e
+    \end{align*}
+\]
+Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$
+"
+```
+that is rendered as
+::
+
+
+Theorem:
+given: G := (X, *, e), x, y
+if: 'x, y in G'
+then:
+. '\inv((x * y)) = \inv(y) * \inv(x)'
+using:
+. '\inv(x) := \group{G}.inverse:of{x}'
+Proof:
+. "
+First, let $z \in G$ and suppose $a, b \in G$ are inverses of $z$.
+That is,
+$$
+   a * z = e = z * a
+$$
+and
+$$
+    b * z = e = z * b
+$$
+Thus,
+\[
+    \begin{align*}
+        a & = a * e \\
+          & = a * (z * b) \\
+          & = (a * z) * b \\
+          & = e * b \\
+          & = b
+    \end{align*}
+\]
+Thus, for any element in a group, it has a unique inverse.  Thus
+we need to show $y^{-1} * x^{-1}$ is *an* inverse of $x * y$ to show
+that it is *the* inverse of $y^{-1} * x^{-1}$.  To do this notice
+\[
+    \begin{align*}
+        (x * y) * (y^{-1} * x^{-1})
+            & = x * (y * y^{-1}) * x^{-1} \\
+            & = x * e * x^{-1} \\
+            & = x * x^{-1} \\
+            & = e
+    \end{align*}
+\]
+and
+\[
+    \begin{align*}
+        (y^{-1} * x^{-1}) * (x * y)
+            & = y^{-1} * (x^{-1} * x) * y \\
+            & = y^{-1} * e * y \\
+            & = y^{-1} * y \\
+            & = e
+    \end{align*}
+\]
+Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$
+"
+
+::
+Now we add a *topic* that is used to describe a higher level concept
+in mathematics such as describing an area of mathematics.  In this
+case, we'll describe Group Theory with the code:
+
+```math
+[#GroupTheory]
+Topic: "Group Theory"
+content:
+. "*Group Theory* is an area of mathematics that discuss
+   mathematical structures known as *Groups*."
+```
+
+As an example, we used a very concise description, but you can
+be as detailed as you want and use LaTeX.
+
+Notice that a topic has an identifier that starts with a `#`
+sigil, in this case, `#GroupTheory`.
+
+::
+
+
+[#GroupTheory]
+Topic: "Group Theory"
+content:
+. "*Group Theory* is an area of mathematics that discuss
+   mathematical structures known as *Groups*."
+
+
+::
+Last, if there is any note you want to write, you can use the
+`Note:` construct as in the code:
+```math
+Note:
+content: "Some content"
+```
+that is rendered as:
+::
+
+
+Note:
+content: "Some content"
+
+
+::
+The last construct we want to cover is the `State:` construct that
+is used to describe a statement such as what it means for a set
+to be a subset of another set.
+
+That is, a `State:` doesn't describe an object, but a relationship
+between objects.
+
+As an example, the following describes what it means for a set $A$
+to be a subset of a set $B$.
+
+```math
+[A \subset/ B]
+States:
+when: 'A, B is \set'
+that:
+. forAll: a
+  suchThat: 'a in A'
+  then: 'a in B'
+written: "A? \subset B?"
+called: "$A?$ is a subset of $B?$"
+```
+that is rendered as:
+::
+
+
+[A \subset/ B]
+States:
+when: 'A, B is \set'
+that:
+. forAll: a
+  suchThat: 'a in A'
+  then: 'a in B'
+written: "A? \subset B?"
+called: "$A?$ is a subset of $B?$"
+
+
+::
+This completes your first codex and we've covered the major parts
+of MathLingua.  Have fun creating your next codex.
+
+For any questions or comments reach out to Dominic Kramer, the
+creator of MathLingua, at DominicKramer@gmail.com.  Any feedback
+is greatly appreciated.
+::
+

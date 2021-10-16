@@ -1,0 +1,13 @@
+::
+* Recall connection to statement language
+* Describe how it is less flexible on purpose
+* Describe top level groups
+  - Describe how they have a using: section to resolve usage and make aliases
+  - Describe how each has metadata section and describe what is in the metadata:
+    -  references:
+    - topics:
+    - description:
+    - author:
+    - contributor:
+    - see:
+::

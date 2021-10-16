@@ -1,0 +1,9 @@
+::
+* Describe mlg is command line tool
+* Describe how to install
+* Briefly describe check, edit, and document
+* Describe there is a section on mlg itself
+* Describe how mlg works on a collection of documents
+  - The location of documents must be in content dir
+  - but the location of items in each file doesn’t matter
+::

@@ -1,0 +1,46 @@
+::
+## A Mathematical Codex
+
+MathLingua further differs from other technologies in that
+content written in MathLingua is rendered beautifully with
+the symbols used in traditional math resources.
+
+For example, the MathLingua code
+```
+  f is \function:on{A}:to{B}
+```
+refers to the defintion of a function that reads
+very much like spoken mathematics
+```
+  $f$ is a function on $A$ to $B$
+```
+The definition of `\function:on{}:to{}`,
+however, describes how the item is written
+and MathLingua uses that to render the
+above as
+$$
+  f : A \rightarrow B
+$$
+as is typically used in mathematical
+literature to describe a function.
+
+Thus, the MathLingua code precisely defines what a
+mathematical statement means, while its rendered form
+looks much like what would be seen in traditional
+math resources.
+
+With a collection of MathLingua documents the MathLingua
+tooling will automatically turn those documents into a
+living dynamic web application to allow you to explore
+what you have encoded with full search capabilities,
+a **codex** of math knowledge.
+
+This document itself is such an example and is written
+using MathLingua.
+
+Further, the generated web application is designed to be
+easily incorporated into GitHub pages.  MathLingua makes
+it simple for your collection of math knowledge to be
+shared with the entire world.
+
+::

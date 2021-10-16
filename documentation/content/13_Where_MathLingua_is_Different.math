@@ -1,0 +1,42 @@
+::
+# Where MathLingua is Different
+
+MathLingua is different from both digital encyclopedias
+and automated theorem provers.
+
+Its focus is not on theorem proving (it is not an
+automated theorem prover) but instead is a framework for
+recording mathematical knowledge.
+
+However, unlike existing encyclopedias, MathLingua focuses
+on concisely and precisely describing mathematical
+definitions, theorems, axioms, and conjectures in a
+consistent language that can be understood by the
+MathLingua toolchain.
+
+Unlike encylopedias, if you use a definition incorrectly
+or reference a variable or idea that has not been defined,
+the MathLingua tooling will tell you.
+
+Thus, the math encyclopedia developed called a *math codex*
+is *smart*.
+
+However, unlike automated theorem provers, you are free
+to be as formal or informal as you like in that definition.
+Just as in tradtionally written mathematics.
+
+For example, if say that $f(x)$ is a $function$, you have
+to define somewhere what a $function$ is.  That definition,
+though can be as formal as you like.
+
+The emphasis is on allowing mathematical knoweldge to be
+recorded such that the relationship between concepts,
+definitions, theorems, axios, and conjectures is precisely
+described.
+
+Then the knowledged can be gradually improved to be more and
+more formal as the collection of knowledge grows.
+
+This mimics the way mathematics has been historically
+understood and uncovered.
+::

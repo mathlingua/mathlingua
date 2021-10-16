@@ -1,0 +1,17 @@
+::
+# Automated Theorem Provers
+
+Automated theorem provers provide languages to describe
+mathematical concepts in various logical or type theory
+frameworks.
+
+These languages are very robust and precisely describe
+mathematical concepts in their underlying framework.
+
+However, those languages require one to conform to the
+particular framework used, such as dependent type theory,
+which may be unfamiliar to mathematicians.
+
+Further, the languages are often terse and are difficult
+to read and write.
+::

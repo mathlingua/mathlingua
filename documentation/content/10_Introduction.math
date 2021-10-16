@@ -1,0 +1,68 @@
+::
+# The MathLingua Language
+
+MathLingua is a language for precisely encoding
+mathematical knowledge to form *smart encyclopedias* of
+mathematics.
+
+Today there is so much mathematical knowledge one cannot
+keep it all in their head.  Further, traditional digital
+encyclopedias of mathematics fall short when it is hard to
+explore and understand their content.
+
+What we need is a language that can conveniently
+encode mathematics such that a computer can
+also easily understand it to help you explore the
+knowledge.
+
+MathLingua is that language.
+
+---
+
+To give a feel for the language consider the following
+MathLingua statement that describes the First Fundamental
+Theorem of Calculus:
+
+```math
+Theorem: "Fundamental Theorem of Calculus"
+given: f(x), F(x), I, a, b
+if:
+. 'a, b is \real'
+. 'a < b'
+. 'I := \closed.interval{a, b}'
+. 'f(x) is \continuous.function:on{I}'
+. 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
+then:
+. '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
+using:
+. 'x - y := x \real.-/ y'
+. 'x < y := x \real.leq/ y'
+```
+
+MathLingua not only allows use to precisely describe the
+theorem in an easy to read form similar to how mathematicians
+speak, but renders the theorem as:
+::
+
+
+Theorem: "Fundamental Theorem of Calculus"
+given: f(x), F(x), a, b
+if:
+. 'a, b is \real'
+. 'a < b'
+. 'f(x) is \continuous.function:on{\closed.interval{a, b}}'
+. 'F(x) is \indefinite.integral:of{f(x)}:on{
+             \closed.interval{a, b}}'
+then:
+. '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
+using:
+. 'x - y := x \real.-/ y'
+. 'x < y := x \real.leq/ y'
+
+::
+---
+
+**Note:** This document is still a work in progress.
+
+---
+::

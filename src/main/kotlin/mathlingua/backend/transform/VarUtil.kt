@@ -52,6 +52,7 @@ import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.GroupTexTalkNode
+import mathlingua.frontend.textalk.MappingNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.ParametersTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
@@ -156,6 +157,8 @@ private fun getVarsImplPhase2Node(node: Phase2Node, vars: MutableList<Var>) {
         getVarsImplPhase1Node(node.abstraction, vars, isInPlaceholderScope = false)
     } else if (node is AssignmentNode) {
         getVarsImplPhase1Node(node.assignment, vars, isInPlaceholderScope = false)
+    } else if (node is IdStatement) {
+        getVarsImplPhase2Node(node.toStatement(), vars)
     } else if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
@@ -222,7 +225,11 @@ private fun getVarsImplTexTalkNode(
                 },
             isInIdStatement)
     } else if (texTalkNode is CommandPart) {
-        vars.add(Var(name = texTalkNode.name.text, isPlaceholder = false))
+        // The following line is commented out since otherwise the
+        // signature `\some.function` would have `some` and `function` as
+        // valid variables, which is not expected.  Instead, `\some.function`
+        // should be viewed as a valid signature.
+        // vars.add(Var(name = texTalkNode.name.text, isPlaceholder = false))
         for (grp in texTalkNode.groups) {
             getVarsImplTexTalkNode(
                 grp,
@@ -351,7 +358,13 @@ private fun checkVarsImplPhase2Node(
                     val exp = params.items[0]
                     if (exp.children.isNotEmpty()) {
                         val child = exp.children[0]
-                        if (child is OperatorTexTalkNode && child.command is TextTexTalkNode) {
+                        if (child is MappingNode) {
+                            // handle forms of the type `f(x) := ...`
+                            val v = Var(name = child.name.text, isPlaceholder = false)
+                            vars.add(v)
+                            varsToRemove.add(v)
+                        } else if (child is OperatorTexTalkNode &&
+                            child.command is TextTexTalkNode) {
                             val cmd = child.command.text
                             val v = Var(name = cmd, isPlaceholder = true)
                             vars.add(v)
@@ -525,6 +538,9 @@ private fun checkVarsImplPhase2Node(
                         groupScope = GroupScope.InNone,
                         isInIdStatement = false)) {
                     thisValidVars.add(v)
+                    if (!v.isPlaceholder) {
+                        usingVars.add(v)
+                    }
                 }
                 val clauseLocation = tracker.getLocationOf(clause) ?: Location(-1, -1)
                 for (v in

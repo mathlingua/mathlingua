@@ -42,3 +42,7 @@ src/main/webapp/npm-debug.log*
 src/main/webapp/yarn-debug.log*
 src/main/webapp/yarn-error.log*
 
+release
+documentation/mlg
+documentation/.bin
+documentation/docs

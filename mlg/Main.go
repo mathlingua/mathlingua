@@ -10,18 +10,36 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
+	"runtime"
 	"strings"
 )
 
 const MATHLINGUA_VERSION = "0.11.0"
+
+type Release struct {
+	mlgUrl string
+	jarUrl string
+}
+
+func getNewMlgPath() (string, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(cwd, ".bin", "mlg.new"), nil
+}
 
 func runMathLingua(args []string) (int, error) {
 	cmdArgs := []string{
 		"-jar",
 		path.Join(".bin", "mathlingua.jar"),
 	}
-	cmdArgs = append(cmdArgs, args...)
-	cmd := exec.Command("java", cmdArgs...)
+	return runCommand("java", cmdArgs)
+}
+
+func runCommand(program string, args []string) (int, error) {
+	cmd := exec.Command(program, args...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -33,12 +51,12 @@ func runMathLingua(args []string) (int, error) {
 		return 1, err
 	}
 
-	combined := io.MultiReader(stdout, stderr)
 	err = cmd.Start()
 	if err != nil {
 		return 1, err
 	}
 
+	combined := io.MultiReader(stdout, stderr)
 	scanner := bufio.NewScanner(combined)
 	for scanner.Scan() {
 		fmt.Println(scanner.Text())
@@ -52,25 +70,43 @@ func runMathLingua(args []string) (int, error) {
 	return cmd.ProcessState.ExitCode(), nil
 }
 
-func getReleaseUrl(release string) (string, error) {
-	allUrls, err := getAllReleaseUrls()
+func getLatestVersion() (string, error) {
+	allVersions, err := getAllVersions()
 	if err != nil {
 		return "", err
 	}
 
-	for _, url := range allUrls {
-		if release == "latest" {
-			return url, nil
-		} else if strings.Contains(url, "v"+release) {
-			return url, nil
-		}
+	if len(allVersions) == 0 {
+		return "", errors.New("No releases exist")
 	}
 
-	return "", nil
+	return allVersions[0], nil
+}
+
+// version is either "latest" or of the form "x.x.x"
+func getRelease(version string) (Release, error) {
+	if version == "latest" {
+		latestVersion, err := getLatestVersion()
+		if err != nil {
+			return Release{}, err
+		}
+		version = latestVersion
+	}
+
+	ext := ""
+	if runtime.GOOS == "windows" {
+		ext = ".exe"
+	}
+
+	urlPrefix := "https://github.com/DominicKramer/mathlingua/releases/download/"
+	return Release{
+		mlgUrl: urlPrefix + "v" + version + "/mlg-" + version + "-" + runtime.GOOS + "-" + runtime.GOARCH + ext,
+		jarUrl: urlPrefix + "v" + version + "/mathlingua-" + version + ".jar",
+	}, nil
 }
 
 func getAllVersions() ([]string, error) {
-	allUrls, err := getAllReleaseUrls()
+	allUrls, err := getAllUrls()
 	if err != nil {
 		return nil, err
 	}
@@ -79,18 +115,24 @@ func getAllVersions() ([]string, error) {
 	for _, url := range allUrls {
 		withoutPrefix := strings.ReplaceAll(url,
 			"https://github.com/DominicKramer/mathlingua/releases/download/v", "")
+
 		index := strings.Index(withoutPrefix, "/")
+		version := ""
 		if index < 0 {
-			result = append(result, withoutPrefix)
+			version = withoutPrefix
 		} else {
-			result = append(result, withoutPrefix[:index])
+			version = withoutPrefix[:index]
+		}
+
+		if len(result) == 0 || result[len(result)-1] != version {
+			result = append(result, version)
 		}
 	}
 
 	return result, nil
 }
 
-func getAllReleaseUrls() ([]string, error) {
+func getAllUrls() ([]string, error) {
 	resp, err := http.Get(
 		"https://api.github.com/repos/DominicKramer/mathlingua/releases")
 	if err != nil {
@@ -110,26 +152,26 @@ func getAllReleaseUrls() ([]string, error) {
 	for _, item := range jsonData {
 		castErr := errors.New("Could not determine download url")
 
-		asserts, ok := item["assets"].([]interface{})
+		assets, ok := item["assets"].([]interface{})
 		if !ok {
 			return nil, castErr
 		}
 
-		if len(asserts) == 0 {
+		if len(assets) == 0 {
 			return nil, castErr
 		}
 
-		resultMap, ok := asserts[0].(map[string]interface{})
-		if !ok {
-			return nil, castErr
-		}
+		for _, asset := range assets {
+			resultMap, ok := asset.(map[string]interface{})
+			if !ok {
+				return nil, castErr
+			}
 
-		browserDownloadUrl := resultMap["browser_download_url"].(string)
-		if !ok {
-			return nil, castErr
-		}
+			browserDownloadUrl := resultMap["browser_download_url"].(string)
+			if !ok {
+				return nil, castErr
+			}
 
-		if strings.HasSuffix(browserDownloadUrl, ".jar") {
 			urls = append(urls, browserDownloadUrl)
 		}
 	}
@@ -137,8 +179,8 @@ func getAllReleaseUrls() ([]string, error) {
 	return urls, nil
 }
 
-func downloadUrl(url string) error {
-	outPath := path.Join(".bin", "mathlingua.jar.part")
+func downloadUrl(url string, to string) error {
+	outPath := to + ".part"
 	outputFile, err := os.Create(outPath)
 	if err != nil {
 		return err
@@ -156,16 +198,17 @@ func downloadUrl(url string) error {
 		return err
 	}
 
-	return os.Rename(outPath, path.Join(".bin", "mathlingua.jar"))
+	return os.Rename(outPath, to)
 }
 
-func ensureMathLinguaJarExists(version string, isUpdating bool) error {
+func ensureMathLinguaJarExists(programName string, programArgs []string,
+	version string, isUpdating bool) (bool, error) {
 	binDir := ".bin"
 	_, err := os.Stat(binDir)
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(binDir, 0755)
 		if err != nil {
-			return err
+			return false, err
 		}
 	}
 
@@ -183,26 +226,80 @@ func ensureMathLinguaJarExists(version string, isUpdating bool) error {
 			fmt.Println("Downloading version " + version + " of MathLingua...")
 		}
 
-		releaseUrl, err := getReleaseUrl(version)
+		release, err := getRelease(version)
 		if err != nil {
-			return err
+			return false, err
 		}
 
-		if releaseUrl == "" {
+		if release.jarUrl == "" {
 			if version == "latest" {
-				return errors.New("ERROR: Unable to find the latest version of MathLingua")
+				return false, errors.New("ERROR: Unable to find the latest version of MathLingua")
 			} else {
-				return errors.New("ERROR: Unable to find version " + version + " of MathLingua")
+				return false, errors.New("ERROR: Unable to find version " + version + " of MathLingua")
 			}
 		}
 
-		downloadUrl(releaseUrl)
+		if release.mlgUrl == "" {
+			if version == "latest" {
+				return false, errors.New("ERROR: Unable to find the latest version of mlg")
+			} else {
+				return false, errors.New("ERROR: Unable to find version " + version + " of mlg")
+			}
+		}
+
+		// download the mathlingua.jar file
+		downloadUrl(release.jarUrl, path.Join(".bin", "mathlingua.jar"))
+
+		newMlgPath, err := getNewMlgPath()
+		if err != nil {
+			return false, err
+		}
+
+		downloadUrl(release.mlgUrl, newMlgPath)
+		os.Chmod(newMlgPath, 0755)
+
+		_, err = runCommand(newMlgPath, programArgs)
+		return false, err
 	}
 
-	return nil
+	return true, nil
+}
+
+func copy(src, dest string) error {
+	from, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer from.Close()
+
+	to, err := os.Create(dest)
+	if err != nil {
+		return err
+	}
+	defer to.Close()
+
+	_, err = io.Copy(to, from)
+	return err
 }
 
 func main() {
+	programName := filepath.Base(os.Args[0])
+
+	newMlgPath, err := getNewMlgPath()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if programName == "mlg.new" {
+		copy(newMlgPath, "mlg")
+	} else {
+		_, err := os.Stat(newMlgPath)
+		if err == nil {
+			os.Remove(newMlgPath)
+		}
+	}
+
 	args := os.Args[1:]
 	// when mlg is initially run, it will download version MATHLINGUA_VERSION
 	version := MATHLINGUA_VERSION
@@ -211,9 +308,9 @@ func main() {
 		if args[0] == "update" {
 			isUpdating = true
 
-			// remove the mathlingua.jar file so either the specified
+			// remove the .bin directory so that the specified
 			// version or the latest version is downloaded
-			os.Remove(path.Join(".bin", "mathlingua.jar"))
+			os.RemoveAll(".bin")
 
 			if len(args) >= 2 {
 				// use the version given if specified
@@ -245,23 +342,24 @@ func main() {
 		}
 	}
 
-	err := ensureMathLinguaJarExists(version, isUpdating)
+	programArgs := args
+	if isUpdating {
+		programArgs = []string{"version"}
+	}
+
+	runJarFile, err := ensureMathLinguaJarExists(programName, programArgs, version, isUpdating)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	if isUpdating {
-		exitCode, err := runMathLingua([]string{"version"})
-		if err != nil {
-			fmt.Println(err)
-		}
-		os.Exit(exitCode)
-	} else {
-		exitCode, err := runMathLingua(args)
-		if err != nil {
-			fmt.Println(err)
-		}
-		os.Exit(exitCode)
+	if !runJarFile {
+		os.Exit(0)
 	}
+
+	exitCode, err := runMathLingua(programArgs)
+	if err != nil {
+		fmt.Println(err)
+	}
+	os.Exit(exitCode)
 }

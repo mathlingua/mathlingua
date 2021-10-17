@@ -13,6 +13,8 @@ import (
 	"strings"
 )
 
+const MATHLINGUA_VERSION = "0.11.0"
+
 func runMathLingua(args []string) (int, error) {
 	cmdArgs := []string{
 		"-jar",
@@ -197,7 +199,7 @@ func ensureMathLinguaJarExists(version string, isUpdating bool) error {
 
 func main() {
 	args := os.Args[1:]
-	version := "latest"
+	version := MATHLINGUA_VERSION
 	isUpdating := false
 	if len(args) >= 1 {
 		if args[0] == "update" {

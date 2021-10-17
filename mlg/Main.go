@@ -199,6 +199,7 @@ func ensureMathLinguaJarExists(version string, isUpdating bool) error {
 
 func main() {
 	args := os.Args[1:]
+	// when mlg is initially run, it will download version MATHLINGUA_VERSION
 	version := MATHLINGUA_VERSION
 	isUpdating := false
 	if len(args) >= 1 {
@@ -210,11 +211,15 @@ func main() {
 			os.Remove(path.Join(".bin", "mathlingua.jar"))
 
 			if len(args) >= 2 {
+				// use the version given if specified
 				if strings.HasPrefix(args[1], "v") {
 					version = args[1][1:]
 				} else {
 					version = args[1]
 				}
+			} else {
+				// otherwise if an explicit version isn't given, update to the latest
+				version = "latest"
 			}
 		} else if args[0] == "versions" {
 			versions, err := getAllVersions()

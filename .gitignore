@@ -46,3 +46,7 @@ release
 documentation/mlg
 documentation/.bin
 documentation/docs
+
+mlg/.bin
+mlg/mlg
+

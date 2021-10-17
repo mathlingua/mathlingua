@@ -138,7 +138,8 @@ func getAllReleaseUrls() ([]string, error) {
 }
 
 func downloadUrl(url string) error {
-	outputFile, err := os.Create(path.Join(".bin", "mathlingua.jar"))
+	outPath := path.Join(".bin", "mathlingua.jar.part")
+	outputFile, err := os.Create(outPath)
 	if err != nil {
 		return err
 	}
@@ -151,7 +152,11 @@ func downloadUrl(url string) error {
 	defer resp.Body.Close()
 
 	_, err = io.Copy(outputFile, resp.Body)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return os.Rename(outPath, path.Join(".bin", "mathlingua.jar"))
 }
 
 func ensureMathLinguaJarExists(version string, isUpdating bool) error {

@@ -5,21 +5,33 @@ MathLingua is a language for precisely encoding
 mathematical knowledge to form *smart encyclopedias* of
 mathematics.
 
-Today there is so much mathematical knowledge one cannot
-keep it all in their head.  Further, traditional digital
-encyclopedias of mathematics fall short when it is hard to
-explore and understand their content.
+Traditional digital mathematical documents cannot be
+easily understood by computers, and automated theorem
+prover languages require mathematical knowledge to be
+expressed in a particular logical framework.
 
-What we need is a language that can conveniently
-encode mathematics such that a computer can
-also easily understand it to help you explore the
-knowledge.
+The MathLingua language lies in the middle.  It allows
+one to describe mathematical knowledge with the same
+flexibility and level of formality as with traditional
+mathematical documents while allowing the MathLingua
+tooling to understand the structure of that knowledge.
 
-MathLingua is that language.
+The focus is on making it easy to precisely describe
+definitions, theorems, axioms, and conjectures, where
+the MathLingua tooling provides insights such as
+incorrect usages of definitions or referencing concepts
+that haven't been defined.
+
+From a collection of mathematical knowledge written in
+MathLingua, the MathLingua tooling creates a robust
+interactive web application for exploring that knowledge.
+
+For example, this documentation is written in
+MathLingua!
 
 ---
 
-To give a feel for the language consider the following
+To give a feel for the language, consider the following
 MathLingua statement that describes the First Fundamental
 Theorem of Calculus:
 
@@ -39,20 +51,23 @@ using:
 . 'x < y := x \real.leq/ y'
 ```
 
-MathLingua not only allows use to precisely describe the
-theorem in an easy to read form similar to how mathematicians
-speak, but renders the theorem as:
+The above statement appears wordy, but uses the same
+amount of words one would use when reading the theorem
+out loud.  This provides precision in the description
+of the theorem without sacrificing the conciseness of
+mathematical notication because the theorem is
+rendered as:
 ::
 
 
 Theorem: "Fundamental Theorem of Calculus"
-given: f(x), F(x), a, b
+given: f(x), F(x), I, a, b
 if:
 . 'a, b is \real'
 . 'a < b'
-. 'f(x) is \continuous.function:on{\closed.interval{a, b}}'
-. 'F(x) is \indefinite.integral:of{f(x)}:on{
-             \closed.interval{a, b}}'
+. 'I := \closed.interval{a, b}'
+. 'f(x) is \continuous.function:on{I}'
+. 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
 then:
 . '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
 using:
@@ -62,7 +77,37 @@ using:
 ::
 ---
 
-**Note:** This document is still a work in progress.
+Notice that standard integral symbol is used in the
+rendering of the theorem.  Further, if you are reading
+the rendered theorem above and want to know what
+$$
+    \int_a^b f(x) dx
+$$
+means (i.e. is it the definite integral, indefinite
+integral, Lebesgue integral, etc.) just click on it
+and you'll see a popup menu showing that it
+means `\definite.integral:of`.
+
+Next if you click on that text,
+the definition of the definite integral will be
+displayed.
+
+All one needs to do is write the definition of the
+definite integral and the statement of the Fundamental
+Theorem of Calculus in the MathLingua language, and
+the MathLingua tooling automatically creates this robust
+interactive portal for exploring the knowledge you
+encoded.
+
+---
+
+**Note:** MathLingua is still in beta.  It and this
+document are still under development.
+
+Any questions, comments, or feedback are greatly
+appreciated and can be sent to Dominic Kramer, the
+creator of MathLingua, at
+[DominicKramer@gmail.com](mailto:DominicKramer@gmail.com).
 
 ---
 ::

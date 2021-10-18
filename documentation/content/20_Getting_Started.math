@@ -1,5 +1,5 @@
 ::
-# Your First Codex
+# Getting Started
 
 Now we will build our first codex to illustrate how
 MathLingua can be used.  Suppose you are just learning
@@ -15,22 +15,22 @@ is referencing a definition that you haven't described
 or is using a symbol that is ambiguous.
 
 Before continuing, this document itself is written with
-MathLingua, and text blocks like this paragraph is
+MathLingua, and text blocks like this paragraph are
 written with text blocks that begin with `{::}` and end
 with `{::}` (where `{{::}}` is used to write the literal
 text `{::}`) as shown below:
 
 ```
 {::}
-Before continuing, this document itself is written with
-MathLingua, and text blocks like this paragraph is
-written with text blocks that begin with `{{::}}` and end
-with `{{::}}` (where `{{{::}}}` is used to write the literal
-text `{{::}}`) as shown below:
+Before continuing, this document
+itself is written with MathLingua,
+and text blocks like this paragraph
+are written with text blocks that begin
+with `{{::}}` and end with `{{::}}`
+(where `{{{::}}}` is used to write the
+literal text `{{::}}`) as shown below:
 {::}
 ```
-
-## Getting Started
 
 Group theory uses sets and binary operations and so
 we first need to describe what those are.

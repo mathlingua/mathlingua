@@ -1,0 +1,95 @@
+::
+# Installing MathLingua
+
+To install the MathLingua command line tool `mlg`, simply
+download the latest release for your particular computer
+from the MathLingua [releases page](https://github.com/DominicKramer/mathlingua/releases).
+
+For example, for a 64-bit computer running OS X download
+```
+mlg-<version>-darwin-amd64
+```
+
+Next, save that executable file to the directory where
+you want to write your MathLingua documents.
+
+> **Note:** You can rename the executable to `mlg` (or
+`mlg.exe` on Windows ) to make it easier to use.  The
+rest of this documentation will simply refer to the
+executable as `mlg`.
+
+Now at the command prompt in that directory simply
+run
+```
+./mlg check
+```
+to get started.  You should see a message
+saying that 0 files were processed. That is because you
+haven't written any files yet.
+
+To get started writting your MathLingua documents, type
+```
+./mlg edit
+```
+Now open [http://localhost:8080](http://localhost:8080)
+in your web browser to see your MathLingua documents.
+
+The view is empty because we haven't created a document
+yet.  To do so, click the pencil icon in the top right
+corner of the page to enter edit mode.
+
+If the side panel is not visible, click the icon with
+three short horizontal lines in the top left corner to
+have it displayed.
+
+Now click the new document icon that looks like a document
+with a plus in it.  This will create a new document called
+`Untitled.math`.
+
+If you click on `Untitled.math`, the document will open
+in the editor with the text.
+```
+{::}
+{::}
+```
+The text between a `{::}` and a `{::}` can be anything,
+including LaTeX and allows you to add descriptive text
+to your document.
+
+Between the `{::}` and `{::}`, type
+`# Welcome to MathLingua` and you should see the preview
+on the right side of the editor update with the text.
+
+Your document should look like
+```
+{::}
+# Welcome to MathLingua
+{::}
+```
+
+Next, we will write a simple theorem.  After the second `{::}`
+type
+```
+Theorem:
+then: '0 = 0'
+```
+so that your document should look like
+```
+{::}
+Welcome to MathLingua
+{::}
+
+Theorem:
+then: '0 = 0'
+```
+
+Congratulations, you've written your first MathLingua
+document.  Now if you click on the eye icon in the top
+right corner of the page you can view your document in
+reader mode.
+
+The theorem we described above was not very exciting,
+but the next section will show how to describe some
+Group Theory with MathLingua.
+::
+

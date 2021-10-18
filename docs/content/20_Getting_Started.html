@@ -1,0 +1,948 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="description" content="A codex of mathematical knowledge">
+    <meta name="keywords" content="math, maths, mathematics, knowledge, database, repository, codex, encyclopedia">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
+          integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
+          crossorigin="anonymous">
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
+            integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
+            crossorigin="anonymous">
+    </script>
+    <script defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js">
+    </script>
+
+        <script>
+            
+    function buildMathFragment(rawText) {
+        let text = rawText;
+        if (text[0] === '"') {
+            text = text.substring(1);
+        }
+        if (text[text.length - 1] === '"') {
+            text = text.substring(0, text.length - 1);
+        }
+        text = text.replace(/([a-zA-Z0-9])\?\??/g, '$1');
+        const fragment = document.createDocumentFragment();
+        let buffer = '';
+        let i = 0;
+        while (i < text.length) {
+            if (text[i] === '$' && text[i+1] === '$' && text[i+2] === '$') {
+                i += 3; // skip over the $s
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '$' && text[i+1] === '$' && text[i+2] === '$')) {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the second $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the third $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '[') {
+                i += 2; // skip over \ and [
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                span.className = 'display-mode';
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ']')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ']') {
+                    i++; // move past the ]
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '(') {
+                i += 2; // skip over \ and ()
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ')')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ')') {
+                    i++; // move past the )
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '$' && text[i+1] === '$') {
+                i += 2; // skip over $ and $
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                span.className = 'display-mode';
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '$' && text[i+1] === '$')) {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '$') {
+                i++; // skip over the $
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                     text[i] !== '$') {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else {
+                buffer += text[i++];
+            }
+        }
+
+        if (buffer.length > 0) {
+            fragment.appendChild(document.createTextNode(buffer));
+        }
+
+        return fragment;
+    }
+
+    function render(node) {
+        if (node.className && node.className.indexOf && node.className.indexOf('no-render') >= 0) {
+            return;
+        }
+
+        let isInWritten = false;
+        const parent = node.parentNode;
+        if (node.className === 'mathlingua') {
+            for (let i=0; i<node.childNodes.length; i++) {
+                const n = node.childNodes[i];
+                if (n && n.className === 'mathlingua-header' &&
+                    n.textContent === 'written:') {
+                    isInWritten = true;
+                    break;
+                }
+            }
+        }
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+            const child = node.childNodes[i];
+
+            // node is an element node => nodeType === 1
+            // node is an attribute node => nodeType === 2
+            // node is a text node => nodeType === 3
+            // node is a comment node => nodeType === 8
+            if (child.nodeType === 3) {
+                let text = child.textContent;
+                if (text.trim()) {
+                    if (isInWritten) {
+                        // if the text is in a written: section
+                        // turn "some text" to $$$some text$$$
+                        // so the text is in math mode
+                        if (text[0] === '"') {
+                            text = text.substring(1);
+                        }
+                        if (text[text.length - 1] === '"') {
+                            text = text.substring(0, text.length - 1);
+                        }
+                        text = '$$$' + text + '$$$';
+                    }
+                    const fragment = buildMathFragment(text);
+                    i += fragment.childNodes.length - 1;
+                    node.replaceChild(fragment, child);
+                }
+            } else if (child.nodeType === 1) {
+                render(child);
+            }
+        }
+    }
+
+
+            
+    function flipEntity(id) {
+        const renEl = document.getElementById('rendered-' + id);
+        const litEl = document.getElementById('literal-' + id);
+        if (renEl && litEl) {
+            if (renEl.className === 'mathlingua-rendered-visible') {
+                renEl.className = 'mathlingua-rendered-hidden';
+                litEl.className = 'mathlingua-literal-visible';
+            } else {
+                renEl.className = 'mathlingua-rendered-visible';
+                litEl.className = 'mathlingua-literal-hidden';
+            }
+        }
+    }
+
+    function toggleProof(id) {
+        const proofEl = document.getElementById('proof-' + id);
+        const iconEl = document.getElementById('icon-' + id);
+        if (proofEl) {
+            if (proofEl.className === 'mathlingua-proof-hidden') {
+                proofEl.className = 'mathlingua-proof-shown';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9652;';
+                }
+            } else {
+                proofEl.className = 'mathlingua-proof-hidden';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9662;';
+                }
+            }
+        }
+    }
+
+
+            function initPage() {
+                const el = document.getElementById('__main_content__');
+                if (el) {
+                    render(el);
+                }
+            }
+        </script>
+        <style>
+            
+    .content {
+        padding-top: 1.5em;
+        padding-bottom: 1em;
+        margin-top: 2.5em;
+        margin-bottom: 1em;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+        font-size: 1em;
+        width: 50em;
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-color: rgba(210, 210, 210);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(240, 240, 240, 0.5);
+    }
+
+    @media screen and (max-width: 500px) {
+        .content {
+            width: 99%;
+            margin-top: 2.5vh;
+            margin-bottom: 0;
+        }
+    }
+
+    body {
+        background-color: #dddddd;
+        padding-bottom: 1em;
+    }
+
+    hr {
+        border: 0.5px solid #efefef;
+    }
+
+    h1, h2, h3, h4 {
+        color: #0055bb;
+        text-align: center;
+    }
+
+    p {
+        text-align: left;
+        text-indent: 0;
+    }
+
+    .mathlingua-flip-icon {
+        position: relative;
+        top: 0;
+        left: 100%;
+        border: none;
+        color: #aaaaaa;
+        background: #ffffff;
+        margin: 0;
+        padding: 0;
+        font-size: 110%;
+    }
+
+    .mathlingua-rendered-visible {
+        display: block;
+    }
+
+    .mathlingua-rendered-hidden {
+        display: none;
+    }
+
+    .mathlingua-literal-visible {
+        display: block;
+    }
+
+    .mathlingua-literal-hidden {
+        display: none;
+    }
+
+    .mathlingua-home {
+        width: 80%;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .mathlingua-dir-item-hidden {
+        display: none;
+    }
+
+    .mathlingua-dir-item-shown {
+        display: block;
+    }
+
+    .mathlingua-home-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -1.25ex;
+        margin-bottom: -1ex;
+    }
+
+    .mathlingua-list-dir-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
+    }
+
+    .mathlingua-list-file-item {
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
+    }
+
+    .mathlingua-top-level {
+        overflow-y: hidden;
+        overflow-x: auto;
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-radius: 2px;
+        padding-top: 0;
+        padding-bottom: 1em;
+        padding-left: 1.1em;
+        padding-right: 1.1em;
+        max-width: 75%;
+        width: max-content;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+        margin-top: 2.25em;
+        margin-bottom: 2.25em;
+        border-color: rgba(230, 230, 230);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(240, 240, 240, 0.5);
+    }
+
+    .mathlingua-block-comment {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-block-comment-top-level {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        text-align: left;
+        text-indent: 0;
+        background-color: #ffffff;
+        max-width: 80%;
+        width: 80%;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+    }
+
+    .end-mathlingua-top-level {
+        padding-top: 0.5em;
+        margin: 0;
+    }
+
+    .mathlingua-topic-group-id {
+        display: block;
+        padding: 0 0 1em 0;
+        font-family: monospace;
+        text-align: center;
+        color: #5500aa;
+    }
+
+    .mathlingua-topic-name {
+        display: block;
+        padding: 0 0 0.2em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        font-weight: bold;
+        text-align: center;
+        color: #0055bb;
+    }
+
+    .mathlingua-topic-content {
+        display: block;
+        padding: 0 0 1.2em 0;
+        margin: 0.2em 0 -1.2em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        color: #000000;
+    }
+
+    .mathlingua-overview {
+        display: block;
+        padding: 0.5em 0 0.5em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        color: #000000;
+        margin-top: -2ex;
+        margin-bottom: -2ex;
+    }
+
+    .mathlingua-resources-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.25em;
+    }
+
+    .mathlingua-resources-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+    
+    .mathlingua-topics-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.5em;
+    }
+
+    .mathlingua-topic-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+
+    .mathlingua-related-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.5em;
+    }
+
+    .mathlingua-related-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+
+    .mathlingua-foundation-header {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        text-align: center;
+        font-weight: normal;
+        padding-bottom: 1ex;
+        color: #777777;
+    }
+
+    .mathlingua {
+        font-family: monospace;
+    }
+
+    .mathlingua-proof-icon {
+        float:right;
+        color: #aaaaaa;
+        cursor: default;
+    }
+
+    .mathlingua-proof-shown {
+        display: block;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-hidden {
+        display: none;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-header {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-header-literal {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: monospace;
+    }
+
+    .mathlingua-whitespace {
+        padding: 0;
+        margin: 0;
+        margin-left: 1ex;
+    }
+
+    .mathlingua-id {
+        color: #5500aa;
+        overflow-x: scroll;
+    }
+
+    .mathlingua-text {
+        color: #000000;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
+    }
+
+    .mathlingua-text-no-render {
+        color: #000000;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
+    }
+
+    .literal-mathlingua-text {
+        color: #386930;
+        display: inline;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+
+    .literal-mathlingua-text-no-render {
+        color: #386930;
+        display: inline;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+
+    .mathlingua-url {
+        color: #0000aa;
+        text-decoration: none;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-link {
+        color: #0000aa;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .mathlingua-statement-no-render {
+        color: #007377;
+    }
+
+    .mathlingua-statement-container {
+        display: inline;
+    }
+
+    .literal-mathlingua-statement {
+        color: #007377;
+    }
+
+    .mathlingua-dropdown-menu-shown {
+        position: absolute;
+        display: block;
+        z-index: 1;
+        background-color: #ffffff;
+        box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                    inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+        border: solid;
+        border-width: 1px;
+        border-radius: 0px;
+        border-color: rgba(200, 200, 200);
+    }
+
+    .mathlingua-dropdown-menu-hidden {
+        display: none;
+    }
+
+    .mathlingua-dropdown-menu-item {
+        display: block;
+        margin: 0.75ex;
+    }
+
+    .mathlingua-dropdown-menu-item:hover {
+        font-style: italic;
+    }
+
+    .mathlingua-called {
+        font-weight: bold;
+        display: table;
+        margin-top: -1em;
+        margin-left: auto;
+        margin-bottom: -1ex;
+        margin-right: auto;
+    }
+
+    .display-mode {
+        margin-left: auto;
+        margin-right: auto;
+        width: max-content;
+        display: block;
+        padding-top: 2ex;
+        padding-bottom: 3ex;
+    }
+
+    .katex {
+        font-size: 1em;
+    }
+
+    .katex-display {
+        display: contents;
+    }
+
+    .katex-display > .katex {
+        display: contents;
+    }
+
+    .katex-display > .katex > .katex-html {
+        display: contents;
+    }
+
+        </style>
+    </head>
+    <body onload="initPage()">
+        <div class="content" id="__main_content__">
+            <div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <h1>Getting Started</h1><p>Now we will build our first codex to illustrate how
+MathLingua can be used.  Suppose you are just learning
+group theory or have just rediscovered it and would like
+to keep track of what you have learned.</p><p>In particular, you want to capture the definitions,
+you are using, the defintions and theorems you have
+learned.</p><p>Further you want to make sure no definition or theorem
+is referencing a definition that you havent described
+or is using a symbol that is ambiguous.</p><p>Before continuing, this document itself is written with
+MathLingua, and text blocks like this paragraph are
+written with text blocks that begin with <code>::</code> and end
+with <code>::</code> (where <code>{::}</code> is used to write the literal
+text <code>::</code>) as shown below:</p><pre><code>::
+Before continuing, this document
+itself is written with MathLingua,
+and text blocks like this paragraph
+are written with text blocks that begin
+with `{::}` and end with `{::}`
+(where `{{::}}` is used to write the
+literal text `{::}`) as shown below:
+::
+</code></pre><p>Group theory uses sets and binary operations and so
+we first need to describe what those are.</p><p>For a set, we dont need to go into detail about all of
+the axioms a set must have.  We want to focus on group
+theory and so informally thinking about a set as a
+collection of things is enough.</p><p>The following code makes such a definition:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='0490f8b0-bbc0-48ec-a497-88356e15ae0d-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\set]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>S := {s}</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "A collection of things" </span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\textrm{set}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "set" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>and is rendered as</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('4ed2c529-6f05-4224-8e73-9405d2146a61')">&#8226;</button><div id='rendered-4ed2c529-6f05-4224-8e73-9405d2146a61' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Set</p> </span><span class='mathlingua'><div id='459a9d4d-746b-458d-a699-b93aa35770a2-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\set]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$S := \{s\}$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>$s$ is well defined</p> ">  <p>$s$ is well defined</p> 
+ </span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>A well defined collection of things</p> ">  <p>A well defined collection of things</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\textrm{set}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-4ed2c529-6f05-4224-8e73-9405d2146a61' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='2e570b41-208a-49fc-bb21-5bb46dd6067d-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\set]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>S := {s}</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$s$ is well defined" </span></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "A well defined collection of things" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\textrm{set}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "set" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>We use a <code>Defines:</code> to specify that we are defining
+something.  <code>\set</code> is used to represent the thing $X$
+being defined.</p><p>Next we say that <code>X := {x}</code> to specify $X$ is a
+homogenous collection-like object with $x$ being
+a representative from that collection.</p><p>As a comparison, besides the form <code>X := {x}</code>,
+the form <code>f(x)</code> is used for function like objects,
+<code>{x_i}_i</code> is used for sequence-like objects, and
+<code>(X, Y, *)</code> for tuples.</p><p>Further, we use text in double quotes in the <code>means:</code>
+section because we are informally describing what a set
+is.  Formal statements, on the other hand, are enclosed
+in single quotes as well see later.</p><p>Next with the notion of a <em>set</em> described, we want to
+describe what a <em>binary operation</em> on a set is.  But
+first, well describe what a <em>function</em> is, since a
+binary operation is a type of function.</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='75dedf42-41e4-4543-9dd9-cc156ea6e0ff-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\function:on{A}:to{B}]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>f(x)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8936264003760767894-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A, B is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-8936264003760767894-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-8936264003760767894-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-1383894487873660221-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in A'</span></div></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>a</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7065528855315787718-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a in A'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>existsUnique:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>b</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--546584356052952609-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'b in B'</span></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4451483561483612510-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'f(a) = b'</span></div></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "f? : A? \rightarrow B?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "function on $A?$ to $B?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>which is rendered as:</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('5ace80bb-9444-4312-b021-046111d5bbe0')">&#8226;</button><div id='rendered-5ace80bb-9444-4312-b021-046111d5bbe0' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Function On $A?$ To $B?$</p> </span><span class='mathlingua'><div id='26d5921f-5cf6-4d4e-a3fa-ce21ac678722-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\function:on{A}:to{B}]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$f(x)$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5801830690302424865-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='A, B is \set'>$$$A, B$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-5801830690302424865-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-5801830690302424865-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-1740256466616704753-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x in A'>$$$x \in A$$$</span></div></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$a$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-4421891385938702210-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='a in A'>$$$a \in A$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>existsUnique:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$b$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5246476767909383107-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='b in B'>$$$b \in B$$$</span></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-1786256730779113086-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='f(a) = b'>$$$f(a) = b$$$</span></div></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"f? : A? \rightarrow B?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span><hr/><span class='mathlingua-metadata'><span class='mathlingua-overview'>  <p>&quot;The key characteristic of a function is
+that every input is mapped to a <em>unique</em> output.&quot;</p> 
+ </span></span></div><div id='literal-5ace80bb-9444-4312-b021-046111d5bbe0' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='e500d3b2-6cad-498f-969e-90825dd22c27-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\function:on{A}:to{B}]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>f(x)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2603323600906989317-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A, B is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2603323600906989317-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--2603323600906989317-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7034545957363025516-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in A'</span></div></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>a</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5122180318158431628-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a in A'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>existsUnique:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>b</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--6218153247791764634-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'b in B'</span></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5650089354665608741-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'f(a) = b'</span></div></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "f? : A? \rightarrow B?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "function on $A?$ to $B?$" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Metadata:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>overview:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "The key characteristic of a function is<br/>&nbsp;&nbsp;that every input is mapped to a *unique* output." </span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>There is a lot of aspects of the MathLingua language being
+used in the definition above that we will analyze next.</p><p>First, we describe that a function is a mapping-like object
+<code>f(x)</code> that maps elements of the set <code>A</code> to unique elements
+of the set <code>B</code> and we specify that the command
+<code>\function:on{A}:to{B}</code> describes a function.</p><p>Notice that the command <code>\function:on{A}:to{B}</code>
+reads similar to how describes a function when speaking.</p><p>Commands for definitions start with a <code></code> and
+the <code>:on{A}:to{B}</code> part of the command allows one to
+specify named arguments.</p><blockquote><p><strong>Note:</strong> We could have alternately specified that the command
+<code>\function{A, B}</code> describes a function, but using named
+arguments makes the command easier to remember and read.</p></blockquote><p>Additionally, right now we are just talking about a function, but
+if we wanted to define a real-valued function, for example,
+in a new definition, we could state that the command
+<code>\real.function:on{A}:to{B}</code> specifies a real-valued function.</p><p>It is common to use the <code>\adjective.noun:namedArguments</code>
+pattern for command names since it is similar to how mathematical
+objects are typically described when speaking.</p><p>Next, the symbol <code>is</code> is a keyword in MathLingua, it specifies
+how the symbol on the left of the <code>is</code> is defined.  In
+this case, <code>A, B is \set</code> means <code>A</code> is a <code>\set</code> and
+<code>B</code> is a also a <code>\set</code>.</p><p>Further, the symbol <code>in</code> is also keyword in MathLingua.
+The line <code>x in A</code> means that <code>x</code> is &quot;in&quot; <code>A</code>, and the
+fact that <code>A</code> is a <code>\set</code>, and the definition of a set
+is an object <code>S := {s}</code> where <code>s is well defined</code> means
+that <code>x is well defined</code>.</p><p>Furthermore, notice the <code>written:</code> and <code>called:</code> sections in
+the definition of a function.</p><p>The text in the written section is interpreted as being
+in LaTeX math mode, and describes what symbols are written
+on paper to specify that something is a function.  Here
+we use the notation $f : A \rightarrow B$.</p><p>The <code>called:</code> section, on the other hand, has text that
+is written using Markdown and describes what is spoken
+when reading $f : A \rightarrow B$, which, in this case,
+is &quot;$f$ is a continuous function on $A$ to $B$&quot;.</p><p>Also notice that we included the optional
+<code>Metadata:overview:</code> section that has text that is written
+using Markdown, and describes any additional information
+you would like to add.  In this case, we call out that a
+function maps an input to a <em>unique</em> output.</p><p>Last, an indent based syntax is used to describe the structure
+of the definition with statements (such as <code>A, B is \set</code>)
+included in single quotes.</p><p>Now we can describe what a cartesian product of two sets
+is that we'll need for defining a binary operation.  We
+do that using the MathLingua text:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='55d66e54-5caa-43c5-8003-9655491cef92-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[A \set.product/ B]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>X := {x, y}</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--6693360122006499893-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A, B is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--6693360122006499893-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--6693360122006499893-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-1617806276994150149-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in A'</span></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7838047528772205049-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y in B'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "A? \times B?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "cartesian product of $A?$ and $B?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('2b3262b0-2bf0-483f-ac75-4b282449411e')">&#8226;</button><div id='rendered-2b3262b0-2bf0-483f-ac75-4b282449411e' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Cartesian Product Of $A?$ And $B?$</p> </span><span class='mathlingua'><div id='3ef0471b-9067-43e3-95a9-c301c9002169-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[A \set.product/ B]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$X := \{x, y\}$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4986129883311416758-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='A, B is \set'>$$$A, B$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4986129883311416758-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--4986129883311416758-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7131392001107799182-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x in A'>$$$x \in A$$$</span></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4799231605951888122-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='y in B'>$$$y \in B$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"A?? \times B??"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-2b3262b0-2bf0-483f-ac75-4b282449411e' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='112bab0e-d9ad-4522-90b1-2baca32e29cb-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[A \set.product/ B]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>X := {x, y}</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-911832768175034558-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A, B is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-911832768175034558-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-911832768175034558-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7935893297485346567-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in A'</span></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7407552236678944403-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y in B'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "A?? \times B??" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "cartesian product of $A?$ and $B?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Similar to the definition of a set, the cartesian product
+between two sets $A$ and $B$ is a collection of pairs
+$X : = {x,y}$ where the first element is from $A$ and the second
+is from $B$.</p><p>Here we use the notation <code>\xxx/</code> that is used to define an
+infix operator.  We could have also used the prefix command
+format like above, for example <code>\set.product:of{A}:and{B}</code>, but
+in this case, infix notation is more clear.</p><p>Also, notice that in the written section we use the syntax <code>A??</code>
+when referring to an input, in this case <code>A</code>, while in the
+definition of a function, we used <code>A?</code>.</p><p>The <code>?</code> or <code>??</code> instructs MathLingua how to replace variables
+when rendering the definition.  Thus
+<code>X \set.product/ Y</code> will be rendered as $X \times Y$.</p><p>The use of <code>??</code>, though specifies that parentheses should be
+included for complex expressions.  Thus,</p><pre><code>{X \set.product/ X} \set.product/ Y
+</code></pre><p>and</p><pre><code>(X \set.product/ X) \set.product/ Y
+</code></pre><p>are both rendered as $(X \times X) \times Y$.</p><blockquote><p><strong>Note:</strong> <code>{}</code> and <code>()</code> are both used to group together
+expressions, but <code>{}</code> is not visible when rendered.</p></blockquote><p>If a <code>?</code> was used instead, the above would have been rendered as
+$X \times X \times Y$.</p><p>Now we define what a binary operation on a set is:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='efbc25e5-2449-4fa7-80b4-1d228592b798-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\binary.operation:on{A}]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>*(a, b)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7711021168967556518-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-7711021168967556518-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-7711021168967556518-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8457464468742081549-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'* is \function:on{A \set.product/ A}:to{A}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--8457464468742081549-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\function:on:to', 'statement--8457464468742081549-CUSTOM_SUFFIX')">\function:on:to</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set.product', 'statement--8457464468742081549-CUSTOM_SUFFIX')">\set.product</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\textrm{binary operation on } A?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "binary operation on $A?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as:</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('feaf66d1-8e98-486b-b421-ad8fbc55d3ba')">&#8226;</button><div id='rendered-feaf66d1-8e98-486b-b421-ad8fbc55d3ba' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Binary Operation On $A?$</p> </span><span class='mathlingua'><div id='9196fc55-fc0e-4a48-966c-95746f0dc58a-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\binary.operation:on{A}]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$*(a, b)$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7426032841757928637-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='A is \set'>$$$A$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--7426032841757928637-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--7426032841757928637-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5100354454654524334-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='* is \function:on{A \set.product/ A}:to{A}'>$$$*$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$* : A \times A \rightarrow A$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--5100354454654524334-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\function:on:to', 'statement--5100354454654524334-CUSTOM_SUFFIX')">\function:on:to</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set.product', 'statement--5100354454654524334-CUSTOM_SUFFIX')">\set.product</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\textrm{binary operation on } A?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-feaf66d1-8e98-486b-b421-ad8fbc55d3ba' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='5e64d9ac-70c0-4bad-9a1a-f2ab38b2534e-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\binary.operation:on{A}]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>*(a, b)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1990514961336489674-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1990514961336489674-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--1990514961336489674-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--6806438384789490442-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'* is \function:on{A \set.product/ A}:to{A}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--6806438384789490442-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\function:on:to', 'statement--6806438384789490442-CUSTOM_SUFFIX')">\function:on:to</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set.product', 'statement--6806438384789490442-CUSTOM_SUFFIX')">\set.product</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\textrm{binary operation on } A?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "binary operation on $A?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Note that in the structural language <code>*</code> is treated as an
+identifier just like <code>f</code>.  However, inside statements, in
+single quotes, symbols like <code>*</code>, <code>/</code>, <code>**</code>, etc. are treated
+as operators.</p><p>An exciting aspect of MathLingua is that it creates a dynamic
+document.  To see this, click on the
+$* : A \times A \rightarrow A$ in the definition above.  From
+there you will see a dropdown menu listing <code>\function:on:to</code>
+and <code>\set.product/</code>.</p><p>If you click on the menu items, the corresponding MathLingua
+entry will be shown under the definition of a <strong>Binary
+Operation on $A$</strong>.  You can further click on more text in the
+items that appear to drill down farther into the definitions.
+This makes it very easy to explore MathLingua concepts.</p><p>Now we have the machinery needed to define a group, but before
+we do that, we want to record a resource where we found the
+defintion of a group.</p><p>In particular, we found the definition of a group on page 7
+of the book &quot;Group Theory&quot; by J.S. Milne.  To record that
+resource, use a <code>Resource:</code> construct:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='f49e7f9c-6732-413a-b313-f9b5502dc067-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[@group.theory.js.milne]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Resource:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>type:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Course Notes" </span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>name:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Group Theory" </span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>author:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "J.S. Milne" </span></span></span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>homepage:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text">""https://www.jmilne.org""</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>url:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text">""https://www.jmilne.org/math/CourseNotes/GT.pdf""</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>offset:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "0" </span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as:</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('2f0532e2-92c8-428f-8eaf-deaa696656ae')">&#8226;</button><div id='rendered-2f0532e2-92c8-428f-8eaf-deaa696656ae' class='mathlingua-rendered-visible'><span class='mathlingua'><div id='e17881f6-fc31-4813-a32a-677a366b5c03-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[@GroupTheoryJsMilne]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Resource:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>type:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>Course Notes</p> ">  <p>Course Notes</p> 
+ </span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>name:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>Group Theory</p> ">  <p>Group Theory</p> 
+ </span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>author:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>J.S. Milne</p> ">  <p>J.S. Milne</p> 
+ </span></span></span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>homepage:</span><span class='mathlingua-whitespace'></span><span class="mathlingua-url"><a class="mathlingua-link" target="_blank" href="https://www.jmilne.org">"www.jmilne.org"</a></span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>url:</span><span class='mathlingua-whitespace'></span><span class="mathlingua-url"><a class="mathlingua-link" target="_blank" href="https://www.jmilne.org/math/CourseNotes/GT.pdf">"www.jmilne.org/.../GT.pdf"</a></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>offset:</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>0</p> ">  <p>0</p> 
+ </span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></div><div id='literal-2f0532e2-92c8-428f-8eaf-deaa696656ae' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='dfe74e85-d3a3-45ed-8e5d-cd7afa0480c0-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[@GroupTheoryJsMilne]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Resource:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>type:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Course Notes" </span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>name:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Group Theory" </span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>author:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "J.S. Milne" </span></span></span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>homepage:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text">""https://www.jmilne.org""</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>url:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text">""https://www.jmilne.org/math/CourseNotes/GT.pdf""</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>offset:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "0" </span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Notice that resources are identified with a name that starts
+with the <code>@</code> sigil (as compared to definitions and theorems
+that start with <code></code>).  Further, resource names can only contain
+letters and digits and periods (<code>.</code>).</p><p>Now we can define a group:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='7d2f0939-e540-48ef-baf5-6b06c5a25f98-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\group]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>G := (X, *, e)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5485914695378280198-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--5485914695378280198-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--5485914695378280198-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7621805560134374813-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'* is \binary.operation:on{X}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-7621805560134374813-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\binary.operation:on', 'statement-7621805560134374813-CUSTOM_SUFFIX')">\binary.operation:on</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7552138246465656795-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'e in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7666265927117216200-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-751214118799089181-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x * e = x'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-751214118799089181-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-751214118799089181-CUSTOM_SUFFIX')">*</a></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7687735749496273200-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'e * x = x'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-7687735749496273200-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-7687735749496273200-CUSTOM_SUFFIX')">*</a></div></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>z</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8077771266368421838-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x, y, z in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--9063801432468027957-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'(x * y) * z = x * (y * z)'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--9063801432468027957-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement--9063801432468027957-CUSTOM_SUFFIX')">*</a></div></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7457264923435434659-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>exists:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--41708056413424159-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y in X'</span></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1536495048709400-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x * y = e'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1536495048709400-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement--1536495048709400-CUSTOM_SUFFIX')">*</a></div></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>viewing:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>as:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--3799844943957509344-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--3799844943957509344-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--3799844943957509344-CUSTOM_SUFFIX')">\set</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>via:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5799140710104007522-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>membership:</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>through:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8015850756921355515-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X'</span></div></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\textrm{group}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "group" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Metadata:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>resources:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>source:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "@GroupTheoryJsMilne" </span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>page:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "7" </span></span></span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('a63d0c0d-f709-48c8-b1ad-545b916dbc05')">&#8226;</button><div id='rendered-a63d0c0d-f709-48c8-b1ad-545b916dbc05' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Group</p> </span><span class='mathlingua'><div id='f35ab29f-7615-4892-ac27-a0500d0bed9a-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\group]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$G := (X, *, e)$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3157503883164175309-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='X is \set'>$$$X$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3157503883164175309-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-3157503883164175309-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-6378479560657642644-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='* is \binary.operation:on{X}'>$$$*$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{binary operation on } X$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-6378479560657642644-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\binary.operation:on', 'statement-6378479560657642644-CUSTOM_SUFFIX')">\binary.operation:on</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8542931482816863826-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='e in X'>$$$e \in X$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$x$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4259249821114370545-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x in X'>$$$x \in X$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4430437426501550301-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x * e = x'>$$$x * e = x$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4430437426501550301-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-1489319305319007597-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='e * x = x'>$$$e * x = x$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-1489319305319007597-CUSTOM_SUFFIX'></div></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$x$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$y$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$z$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7913382918218362995-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x, y, z in X'>$$$x, y, z \in X$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3535198281405797613-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='(x * y) * z = x * (y * z)'>$$$(x * y) * z = x * (y * z)$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3535198281405797613-CUSTOM_SUFFIX'></div></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$x$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5405366974503988267-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x in X'>$$$x \in X$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>exists:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$y$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4594340298439981572-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='y in X'>$$$y \in X$$$</span></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1319037567603780886-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x * y = e'>$$$x * y = e$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1319037567603780886-CUSTOM_SUFFIX'></div></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>viewing:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>as:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2501255012175659936-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='\set'>$$$\textrm{set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2501255012175659936-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--2501255012175659936-CUSTOM_SUFFIX')">\set</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>via:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1294155500675746097-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='X'>$$$X$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>membership:</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>through:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--3687506618490377144-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='X'>$$$X$$$</span></div></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\textrm{group}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span><hr/><span class='mathlingua-metadata'><span class='mathlingua-resources-header'>Resources</span><span class='mathlingua-resources-item'>GroupTheoryJsMilne (Page 7)</span></span></div><div id='literal-a63d0c0d-f709-48c8-b1ad-545b916dbc05' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='8deacae6-24fe-4018-8461-e2075a5369ac-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\group]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>G := (X, *, e)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-4440605650668486550-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-4440605650668486550-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-4440605650668486550-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--3416398091028962620-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'* is \binary.operation:on{X}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--3416398091028962620-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\binary.operation:on', 'statement--3416398091028962620-CUSTOM_SUFFIX')">\binary.operation:on</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8479931149735553172-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'e in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2044070764496339523-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2319540119192433617-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x * e = x'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2319540119192433617-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement--2319540119192433617-CUSTOM_SUFFIX')">*</a></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4603860678904504059-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'e * x = x'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4603860678904504059-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement--4603860678904504059-CUSTOM_SUFFIX')">*</a></div></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>z</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5775220797935527593-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x, y, z in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7881065224170998956-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'(x * y) * z = x * (y * z)'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-7881065224170998956-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-7881065224170998956-CUSTOM_SUFFIX')">*</a></div></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7478814458642269657-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>exists:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7717472633754109551-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y in X'</span></div></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7827804577022131449-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x * y = e'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-7827804577022131449-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-7827804577022131449-CUSTOM_SUFFIX')">*</a></div></span></span></span></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>viewing:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>as:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4414092913229595203-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4414092913229595203-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--4414092913229595203-CUSTOM_SUFFIX')">\set</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>via:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7632985147322431590-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>membership:</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>through:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7641587243716984409-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X'</span></div></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\textrm{group}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "group" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Metadata:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>resources:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>source:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "@GroupTheoryJsMilne" </span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>page:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "7" </span></span></span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Notice we included a <code>Metadata:resources:</code> section that included
+the source <code>@GroupTheoryJsMilne</code> on page 7.</p><p>There is a new section we used in this definition that wasnt
+used previously, the <code>viewing:</code> section.  This is used to describe
+how to interpret the object being defined, in this case a group.</p><p>The construct:</p><pre><code>as: \set
+via: X
+</code></pre><p>instructs one to interperet the group that is the object
+<code>G := (X, *, e)</code> as a <code>\set</code> through its member <code>X</code>, which is a
+set.</p><p>Thus, if <code>A ++ B</code> was defined to be an operator between two <code>\set</code>s
+<code>A</code> and <code>B</code>, then if <code>G := (X, *, e)</code> and <code>H := (Y, +, u)</code> where
+two <code>\groups</code>, then <code>G ++ H</code> would be evaluated as <code>X ++ Y</code> since
+<code>G</code> can be viewed as the set <code>X</code> and <code>H</code> as the set <code>Y</code>.</p><p>That is, although <code>G</code> is tuple, the <code>as:via:</code> section allows us
+to explicitly state that we may view it as a set, as is commonly
+done in mathematics literature.</p><p>The <code>membership:through:</code> section, on the other hand allows us
+to specify what it means for one to say <code>x in G</code> where
+<code>G := (X, *, e)</code> is a <code>\group</code>, and</p><pre><code>membership:
+through: X
+</code></pre><p>means to interpret <code>x in G</code> as saying <code>x in X</code>, again as is
+typically done in mathematics literature.</p><p>The two constructs, <code>as:via:</code> and <code>membership:group:</code> look the
+same but they are not.  In particular, <code>as:via:</code> allows one to
+specify how to view one mathematical object as another.  This
+could be, for example, how to view a group as a set or an integer
+as a rational number.  It doesnt need to involve sets.</p><p>The <code>membership:through:</code> construct, on the other hand, describes
+how to interpret <code>x in G</code> for some <code>G</code>.  If <code>G := (X, *, e)</code> is a
+<code>\group</code>, then <code>x in G</code> means <code>x in X</code>.</p><p>Now that we have the definition of a group, we can describe a
+theorem that will refer to the inverse of an element in a
+group.</p><p>Now we'll define what the inverse of an element is:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='afa85584-7e67-4f3d-8ee6-06248608602b-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\group{G}.inverse:of{x}]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--161222172672662800-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'G := (X, *, e) is \group'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--161222172672662800-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\group', 'statement--161222172672662800-CUSTOM_SUFFIX')">\group</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3821164056832415764-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-89036972134088686-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x * y = e'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-89036972134088686-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-89036972134088686-CUSTOM_SUFFIX')">*</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-696845822143370167-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y * x = e'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-696845822143370167-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-696845822143370167-CUSTOM_SUFFIX')">*</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x??^{-1}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "inverse of $x?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as:</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('d82367e0-2258-41b1-a309-b9ce20def855')">&#8226;</button><div id='rendered-d82367e0-2258-41b1-a309-b9ce20def855' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Inverse Of $x?$</p> </span><span class='mathlingua'><div id='8cd09b38-eac2-4c62-9389-839b284596ae-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\group{G}.inverse:of{x}]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$y$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8353918323046439306-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='G := (X, *, e) is \group'>$$$G := (X, *, e)$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{group}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-8353918323046439306-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\group', 'statement-8353918323046439306-CUSTOM_SUFFIX')">\group</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-4222226707978438939-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x in X'>$$$x \in X$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3808777273346008923-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x * y = e'>$$$x * y = e$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3808777273346008923-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3380341933624236218-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='y * x = e'>$$$y * x = e$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3380341933624236218-CUSTOM_SUFFIX'></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"{x??}^{-1}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-d82367e0-2258-41b1-a309-b9ce20def855' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='58c1cd3b-2dfa-42f2-b54a-23ee4e8c2afe-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\group{G}.inverse:of{x}]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5742254779729186291-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'G := (X, *, e) is \group'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--5742254779729186291-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\group', 'statement--5742254779729186291-CUSTOM_SUFFIX')">\group</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8488936195385134155-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in X'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-2845859281549709996-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x * y = e'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-2845859281549709996-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-2845859281549709996-CUSTOM_SUFFIX')">*</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5801511256394536636-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y * x = e'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-5801511256394536636-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement-5801511256394536636-CUSTOM_SUFFIX')">*</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "{x??}^{-1}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "inverse of $x?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Now we can record our theorem.  It is a straightforward theorem
+meant to demonstrate how a theorem, and optionally its proof, are
+recorded.</p><p>It shows how to find the inverse of the product of two elements
+in a group.</p><p>The following is the code for the theorem:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='18c94321-2fbf-4f76-8b67-2935a57fff44-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header-literal'>Theorem:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>given:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>G := (X, *, e)</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>if:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7634291146841681652-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x, y in G'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4294446541686067995-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\inv((x * y)) = \inv(y) * \inv(x)'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4294446541686067995-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement--4294446541686067995-CUSTOM_SUFFIX')">*</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\inv', 'statement--4294446541686067995-CUSTOM_SUFFIX')">\inv</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>using:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--813949567124541444-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\inv(x) := \group{G}.inverse:of{x}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--813949567124541444-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\inv', 'statement--813949567124541444-CUSTOM_SUFFIX')">\inv</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\group.inverse:of', 'statement--813949567124541444-CUSTOM_SUFFIX')">\group.inverse:of</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Proof:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "<br/>First, let $z \in G$ and suppose $a, b \in G$ are inverses of $z$.<br/>That is,<br/>$$<br/>&nbsp;&nbsp;&nbsp;a * z = e = z * a<br/>$$<br/>and<br/>$$<br/>&nbsp;&nbsp;&nbsp;&nbsp;b * z = e = z * b<br/>$$<br/>Thus,<br/>\[<br/>&nbsp;&nbsp;&nbsp;&nbsp;\begin{align*}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a & = a * e \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = a * (z * b) \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = (a * z) * b \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = e * b \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = b<br/>&nbsp;&nbsp;&nbsp;&nbsp;\end{align*}<br/>\]<br/>Thus, for any element in a group, it has a unique inverse.  Thus<br/>we need to show $y^{-1} * x^{-1}$ is *an* inverse of $x * y$ to show<br/>that it is *the* inverse of $y^{-1} * x^{-1}$.  To do this notice<br/>\[<br/>&nbsp;&nbsp;&nbsp;&nbsp;\begin{align*}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x * y) * (y^{-1} * x^{-1})<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = x * (y * y^{-1}) * x^{-1} \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = x * e * x^{-1} \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = x * x^{-1} \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = e<br/>&nbsp;&nbsp;&nbsp;&nbsp;\end{align*}<br/>\]<br/>and<br/>\[<br/>&nbsp;&nbsp;&nbsp;&nbsp;\begin{align*}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(y^{-1} * x^{-1}) * (x * y)<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = y^{-1} * (x^{-1} * x) * y \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = y^{-1} * e * y \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = y^{-1} * y \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = e<br/>&nbsp;&nbsp;&nbsp;&nbsp;\end{align*}<br/>\]<br/>Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$<br/>" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('12eb687b-3d93-4ab6-982d-ddf1a1f05487')">&#8226;</button><div id='rendered-12eb687b-3d93-4ab6-982d-ddf1a1f05487' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua'><div id='871dcbd9-8b02-4d35-b9aa-e2a8ebc211c1-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header'>Theorem:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>given:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$G := (X, *, e)$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$x$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$y$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>if:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5278984777629008822-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x, y in G'>$$$x, y \in G$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--6826254690984233957-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='\inv((x * y)) = \inv(y) * \inv(x)'>$$${(x * y)}^{-1} = {y}^{-1} * {x}^{-1}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--6826254690984233957-CUSTOM_SUFFIX'></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>using:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--517018667066708839-CUSTOM_SUFFIX')"><span class="mathlingua-direct-statement">\inv(x) := \group{G}.inverse:of{x}</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--517018667066708839-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\group.inverse:of', 'statement--517018667066708839-CUSTOM_SUFFIX')">\group.inverse:of</a></div></span><div class='end-mathlingua-top-level'></div></div></div></span></span><hr/><div class='mathlingua-proof-header'>Proof</div><span class='mathlingua-proof-shown'><span class='mathlingua'><span class='mathlingua-text' title=" <p>First, let $z \in G$ and suppose $a, b \in G$ are inverses of $z$.
+That is,
+$$
+   a * z = e = z * a
+$$
+and
+$$
+    b * z = e = z * b
+$$
+Thus,
+\[
+    \begin{align*}
+        a &amp; = a * e \\
+          &amp; = a * (z * b) \\
+          &amp; = (a * z) * b \\
+          &amp; = e * b \\
+          &amp; = b
+    \end{align*}
+\]
+Thus, for any element in a group, it has a unique inverse.  Thus
+we need to show $y^{-1} * x^{-1}$ is <em>an</em> inverse of $x * y$ to show
+that it is <em>the</em> inverse of $y^{-1} * x^{-1}$.  To do this notice
+\[
+    \begin{align*}
+        (x * y) * (y^{-1} * x^{-1})
+            &amp; = x * (y * y^{-1}) * x^{-1} \\
+            &amp; = x * e * x^{-1} \\
+            &amp; = x * x^{-1} \\
+            &amp; = e
+    \end{align*}
+\]
+and
+\[
+    \begin{align*}
+        (y^{-1} * x^{-1}) * (x * y)
+            &amp; = y^{-1} * (x^{-1} * x) * y \\
+            &amp; = y^{-1} * e * y \\
+            &amp; = y^{-1} * y \\
+            &amp; = e
+    \end{align*}
+\]
+Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$</p> ">  <p>First, let $z \in G$ and suppose $a, b \in G$ are inverses of $z$.
+That is,
+$$
+a * z = e = z * a
+$$
+and
+$$
+b * z = e = z * b
+$$
+Thus,
+\[
+\begin{align*}
+a &amp; = a * e \\
+&amp; = a * (z * b) \\
+&amp; = (a * z) * b \\
+&amp; = e * b \\
+&amp; = b
+\end{align*}
+\]
+Thus, for any element in a group, it has a unique inverse.  Thus
+we need to show $y^{-1} * x^{-1}$ is <em>an</em> inverse of $x * y$ to show
+that it is <em>the</em> inverse of $y^{-1} * x^{-1}$.  To do this notice
+\[
+\begin{align*}
+(x * y) * (y^{-1} * x^{-1})
+&amp; = x * (y * y^{-1}) * x^{-1} \\
+&amp; = x * e * x^{-1} \\
+&amp; = x * x^{-1} \\
+&amp; = e
+\end{align*}
+\]
+and
+\[
+\begin{align*}
+(y^{-1} * x^{-1}) * (x * y)
+&amp; = y^{-1} * (x^{-1} * x) * y \\
+&amp; = y^{-1} * e * y \\
+&amp; = y^{-1} * y \\
+&amp; = e
+\end{align*}
+\]
+Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$</p> 
+ </span></span></span></div><div id='literal-12eb687b-3d93-4ab6-982d-ddf1a1f05487' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='b68e4bb0-a32d-460c-809f-79fef5f19710-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header-literal'>Theorem:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>given:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>G := (X, *, e)</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>x</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>y</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>if:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-2059683672107821137-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x, y in G'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2445560006222686179-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\inv((x * y)) = \inv(y) * \inv(x)'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2445560006222686179-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('*', 'statement--2445560006222686179-CUSTOM_SUFFIX')">*</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\inv', 'statement--2445560006222686179-CUSTOM_SUFFIX')">\inv</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>using:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5991556884586722872-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\inv(x) := \group{G}.inverse:of{x}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-5991556884586722872-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\inv', 'statement-5991556884586722872-CUSTOM_SUFFIX')">\inv</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\group.inverse:of', 'statement-5991556884586722872-CUSTOM_SUFFIX')">\group.inverse:of</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Proof:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "<br/>First, let $z \in G$ and suppose $a, b \in G$ are inverses of $z$.<br/>That is,<br/>$$<br/>&nbsp;&nbsp;&nbsp;a * z = e = z * a<br/>$$<br/>and<br/>$$<br/>&nbsp;&nbsp;&nbsp;&nbsp;b * z = e = z * b<br/>$$<br/>Thus,<br/>\[<br/>&nbsp;&nbsp;&nbsp;&nbsp;\begin{align*}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;a & = a * e \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = a * (z * b) \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = (a * z) * b \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = e * b \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = b<br/>&nbsp;&nbsp;&nbsp;&nbsp;\end{align*}<br/>\]<br/>Thus, for any element in a group, it has a unique inverse.  Thus<br/>we need to show $y^{-1} * x^{-1}$ is *an* inverse of $x * y$ to show<br/>that it is *the* inverse of $y^{-1} * x^{-1}$.  To do this notice<br/>\[<br/>&nbsp;&nbsp;&nbsp;&nbsp;\begin{align*}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(x * y) * (y^{-1} * x^{-1})<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = x * (y * y^{-1}) * x^{-1} \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = x * e * x^{-1} \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = x * x^{-1} \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = e<br/>&nbsp;&nbsp;&nbsp;&nbsp;\end{align*}<br/>\]<br/>and<br/>\[<br/>&nbsp;&nbsp;&nbsp;&nbsp;\begin{align*}<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(y^{-1} * x^{-1}) * (x * y)<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = y^{-1} * (x^{-1} * x) * y \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = y^{-1} * e * y \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = y^{-1} * y \\<br/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;& = e<br/>&nbsp;&nbsp;&nbsp;&nbsp;\end{align*}<br/>\]<br/>Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$<br/>" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Now we add a <em>topic</em> that is used to describe a higher level concept
+in mathematics such as describing an area of mathematics.  In this
+case, we'll describe Group Theory with the code:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='90e346a3-1b18-4055-84da-d0d276709c20-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[#GroupTheory]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Topic:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Group Theory" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>content:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "*Group Theory* is an area of mathematics that discuss<br/>&nbsp;&nbsp;&nbsp;mathematical structures known as *Groups*." </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>As an example, we used a very concise description, but you can
+be as detailed as you want and use LaTeX.</p><p>Notice that a topic has an identifier that starts with a <code>#</code>
+sigil, in this case, <code>#GroupTheory</code>.</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('dbaf17ef-290b-43ac-a324-c957262ec8f5')">&#8226;</button><div id='rendered-dbaf17ef-290b-43ac-a324-c957262ec8f5' class='mathlingua-rendered-visible'><span class='mathlingua-topic-group'><span class='mathlingua-topic-name'>"Group Theory"</span><span class='mathlingua-topic-group-id'>(#GroupTheory)</span><span class='mathlingua-topic-content'> <p>&quot;<em>Group Theory</em> is an area of mathematics that discuss
+   mathematical structures known as <em>Groups</em>.&quot;</p> </span></span></div><div id='literal-dbaf17ef-290b-43ac-a324-c957262ec8f5' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='dde0b16f-b962-4aad-bde0-26fb7b9bb380-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[#GroupTheory]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Topic:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Group Theory" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>content:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "*Group Theory* is an area of mathematics that discuss<br/>&nbsp;&nbsp;&nbsp;mathematical structures known as *Groups*." </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Last, if there is any note you want to write, you can use the
+<code>Note:</code> construct as in the code:</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='1c380dd8-d2b1-4b39-8ec3-dd00d98d5653-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header-literal'>Note:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>content:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Some content" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as:</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('23b0bb5b-c4ae-43e1-a458-b70110253042')">&#8226;</button><div id='rendered-23b0bb5b-c4ae-43e1-a458-b70110253042' class='mathlingua-rendered-visible'><span class='mathlingua-note-group'><span class='mathlingua-note-title'>Note</span><span class='mathlingua-note-content'> <p>&quot;Some content&quot;</p> </span></span></div><div id='literal-23b0bb5b-c4ae-43e1-a458-b70110253042' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='4ca5e337-2141-4097-b7e5-4b2ba96429fd-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header-literal'>Note:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>content:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Some content" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>The last construct we want to cover is the <code>State:</code> construct that
+is used to describe a statement such as what it means for a set
+to be a subset of another set.</p><p>That is, a <code>State:</code> doesn't describe an object, but a relationship
+between objects.</p><p>As an example, the following describes what it means for a set $A$
+to be a subset of a set $B$.</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='2b12e9a4-a714-4fd0-8549-2a099ddca92d-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[A \subset/ B]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--3030865543749216083-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A, B is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--3030865543749216083-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--3030865543749216083-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>that:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>a</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-6418312913706476846-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a in A'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8948265617214836297-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a in B'</span></div></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "A? \subset B?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$A?$ is a subset of $B?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>that is rendered as:</p> 
+ </span></span></div><div class='mathlingua-top-level'><div><button class='mathlingua-flip-icon' onclick="flipEntity('616b9959-c495-40fe-ad1f-ace8bbc39c03')">&#8226;</button><div id='rendered-616b9959-c495-40fe-ad1f-ace8bbc39c03' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>$A?$ Is a Subset Of $B?$</p> </span><span class='mathlingua'><div id='f345e1a3-25a7-4a83-975e-de008006b712-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[A \subset/ B]</span><br/><span class='mathlingua'><span class='mathlingua-header'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7149154954445113548-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='A, B is \set'>$$$A, B$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--7149154954445113548-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--7149154954445113548-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>that:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument'>$$$a$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3841256983380097055-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='a in A'>$$$a \in A$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-6842276771526502782-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='a in B'>$$$a \in B$$$</span></div></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"A? \subset B?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-616b9959-c495-40fe-ad1f-ace8bbc39c03' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='db875e07-84cf-4ce5-a16b-9b2323d47ba4-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[A \subset/ B]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8196620538651418468-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'A, B is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--8196620538651418468-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--8196620538651418468-CUSTOM_SUFFIX')">\set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>that:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>forAll:</span><span class='mathlingua-whitespace'></span><span class='mathlingua'><span class='mathlingua-argument-no-render'>a</span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>suchThat:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4924388433128196884-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a in A'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>then:</span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8774861990628911702-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a in B'</span></div></span></span></span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "A? \subset B?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$A?$ is a subset of $B?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>This completes your first codex and we've covered the major parts
+of MathLingua.  Have fun creating your next codex.</p><p>For any questions or comments reach out to Dominic Kramer, the
+creator of MathLingua, at DominicKramer@gmail.com.  Any feedback
+is greatly appreciated.</p> 
+ </span></span></div>
+        </div>
+    </body>

@@ -682,13 +682,48 @@
     </head>
     <body onload="initPage()">
         <div class="content" id="__main_content__">
-            <div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <h1>Automated Theorem Provers</h1><p>Automated theorem provers provide languages to describe
-mathematical concepts in various logical or type theory
-frameworks.</p><p>These languages are very robust and precisely describe
-mathematical concepts in their underlying framework.</p><p>However, those languages require one to conform to the
-particular framework used, such as dependent type theory,
-which may be unfamiliar to mathematicians.</p><p>Further, the languages are often terse and are difficult
-to read and write.</p> 
- </span></span></div>
+            <div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <h1>Installing MathLingua</h1><p>To install the MathLingua command line tool <code>mlg</code>, simply
+download the latest release for your particular computer
+from the MathLingua <a href="https://github.com/DominicKramer/mathlingua/releases">releases page</a>.</p><p>For example, for a 64-bit computer running OS X download</p><pre><code>mlg-&lt;version&gt;-darwin-amd64
+</code></pre><p>Next, save that executable file to the directory where
+you want to write your MathLingua documents.</p><blockquote><p><strong>Note:</strong> You can rename the executable to <code>mlg</code> (or
+<code>mlg.exe</code> on Windows ) to make it easier to use.  The
+rest of this documentation will simply refer to the
+executable as <code>mlg</code>.</p></blockquote><p>Now at the command prompt in that directory simply
+run</p><pre><code>./mlg check
+</code></pre><p>to get started.  You should see a message
+saying that 0 files were processed. That is because you
+havent written any files yet.</p><p>To get started writting your MathLingua documents, type</p><pre><code>./mlg edit
+</code></pre><p>Now open <a href="http://localhost:8080">http://localhost:8080</a>
+in your web browser to see your MathLingua documents.</p><p>The view is empty because we havent created a document
+yet.  To do so, click the pencil icon in the top right
+corner of the page to enter edit mode.</p><p>If the side panel is not visible, click the icon with
+three short horizontal lines in the top left corner to
+have it displayed.</p><p>Now click the new document icon that looks like a document
+with a plus in it.  This will create a new document called
+<code>Untitled.math</code>.</p><p>If you click on <code>Untitled.math</code>, the document will open
+in the editor with the text.</p><pre><code>::
+::
+</code></pre><p>The text between a <code>::</code> and a <code>::</code> can be anything,
+including LaTeX and allows you to add descriptive text
+to your document.</p><p>Between the <code>::</code> and <code>::</code>, type
+<code># Welcome to MathLingua</code> and you should see the preview
+on the right side of the editor update with the text.</p><p>Your document should look like</p><pre><code>::
+# Welcome to MathLingua
+::
+</code></pre><p>Next, we will write a simple theorem.  After the second <code>::</code>
+type</p><pre><code>Theorem:
+then: 0 = 0
+</code></pre><p>so that your document should look like</p><pre><code>::
+Welcome to MathLingua
+::
+<p>Theorem:
+then: 0 = 0
+</code></pre><p>Congratulations, you've written your first MathLingua
+document.  Now if you click on the eye icon in the top
+right corner of the page you can view your document in
+reader mode.</p><p>The theorem we described above was not very exciting,
+but the next section will show how to describe some
+Group Theory with MathLingua.</p> </p> </span></span></div>
         </div>
     </body>

@@ -1110,6 +1110,246 @@ internal class EndToEndCheckTest {
     }
 
     @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with a function`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: 'g(x) := x'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with function with new placeholder vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: 'g(t) := t'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with identifier`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: 'g := 0'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with signature`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: '\g(x) := x'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with signature operator using new placeholder vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: 'u \op/ v := 0'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with signature operator re-using placeholder var`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: 'x \op/ y := 0'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with operator`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: 'u ** v := 0'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in square brackets with using section with operator re-using placeholder vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something[x]{f}]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+                    Theorem:
+                    given: f(x)
+                    then: '\something[x]{f}'
+                    using: 'x ** y := 0'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
     fun `check does not report errors when defining X colon equals`() {
         runCheckTest(
             files =

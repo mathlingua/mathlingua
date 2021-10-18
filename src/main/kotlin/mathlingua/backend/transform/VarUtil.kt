@@ -200,6 +200,19 @@ private fun getVarsImplTexTalkNode(
                             (groupScope == GroupScope.InParen && isInIdStatement) ||
                             (groupScope != GroupScope.InNone && isInLhsColonEquals)))
         }
+    } else if (texTalkNode is OperatorTexTalkNode) {
+        if (texTalkNode.lhs != null) {
+            getVarsImplTexTalkNode(
+                texTalkNode.lhs, vars, isInLhsColonEquals, GroupScope.InParen, isInIdStatement)
+        }
+
+        if (texTalkNode.rhs != null) {
+            getVarsImplTexTalkNode(
+                texTalkNode.rhs, vars, isInLhsColonEquals, GroupScope.InParen, isInIdStatement)
+        }
+
+        getVarsImplTexTalkNode(
+            texTalkNode.command, vars, isInLhsColonEquals, groupScope, isInIdStatement)
     } else if (texTalkNode is ColonEqualsTexTalkNode) {
         getVarsImplTexTalkNode(texTalkNode.lhs, vars, true, groupScope, isInIdStatement)
         getVarsImplTexTalkNode(texTalkNode.rhs, vars, false, groupScope, isInIdStatement)
@@ -363,12 +376,25 @@ private fun checkVarsImplPhase2Node(
                             val v = Var(name = child.name.text, isPlaceholder = false)
                             vars.add(v)
                             varsToRemove.add(v)
-                        } else if (child is OperatorTexTalkNode &&
-                            child.command is TextTexTalkNode) {
-                            val cmd = child.command.text
-                            val v = Var(name = cmd, isPlaceholder = true)
-                            vars.add(v)
-                            varsToRemove.add(v)
+                        } else if (child is OperatorTexTalkNode) {
+                            if (child.command is TextTexTalkNode) {
+                                val cmd = child.command.text
+                                val v = Var(name = cmd, isPlaceholder = true)
+                                vars.add(v)
+                                varsToRemove.add(v)
+                            }
+
+                            if (child.lhs != null && child.lhs is TextTexTalkNode) {
+                                val v = Var(name = child.lhs.text, isPlaceholder = true)
+                                vars.add(v)
+                                varsToRemove.add(v)
+                            }
+
+                            if (child.rhs != null && child.rhs is TextTexTalkNode) {
+                                val v = Var(name = child.rhs.text, isPlaceholder = true)
+                                vars.add(v)
+                                varsToRemove.add(v)
+                            }
                         } else if (child is GroupTexTalkNode &&
                             child.parameters.items.isNotEmpty() &&
                             child.parameters.items[0].children.isNotEmpty() &&

@@ -12,6 +12,10 @@ npm run build
 
 echo "Building the jar"
 cd ../../..
+
+echo "Removing old release jars"
+rm -f build/releases/*.jar
+
 ./gradlew build
 
 cp build/releases/*.jar release

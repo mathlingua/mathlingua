@@ -35,6 +35,7 @@ func runMathLingua(args []string) (int, error) {
 		"-jar",
 		path.Join(".bin", "mathlingua.jar"),
 	}
+	cmdArgs = append(cmdArgs, args...)
 	return runCommand("java", cmdArgs)
 }
 
@@ -85,23 +86,60 @@ func getLatestVersion() (string, error) {
 
 // version is either "latest" or of the form "x.x.x"
 func getRelease(version string) (Release, error) {
+	versionString := ""
 	if version == "latest" {
 		latestVersion, err := getLatestVersion()
 		if err != nil {
 			return Release{}, err
 		}
-		version = latestVersion
+		versionString = "-" + latestVersion
+	} else {
+		versionString = "-" + version
 	}
 
-	ext := ""
-	if runtime.GOOS == "windows" {
-		ext = ".exe"
+	allUrls, err := getAllUrls()
+	if err != nil {
+		return Release{}, err
 	}
 
-	urlPrefix := "https://github.com/DominicKramer/mathlingua/releases/download/"
+	mlgUrl := ""
+	jarUrl := ""
+
+	osString := "-" + runtime.GOOS
+	archString := "-" + runtime.GOARCH
+
+	// The following, for example, looks for a url that contains
+	// `mlg`, `-darwin`, `-amd64`, and `-0.11.0` to find the URL.
+	//
+	// That way, if, in the future, if the order of the name of
+	// items in a executable name changes, this code will still
+	// be able to identify the URL.
+	//
+	// That is, `mlg-0.11.0-darwin-amd64` and
+	// `mlg-darwin-amd64-0.11.0` will both be identified using the
+	// logic below.
+	//
+	// This provides freedom to change the format of executable
+	// names in the future (to a small degree) if needed.
+
+	for _, url := range allUrls {
+		if mlgUrl == "" &&
+		   strings.Contains(url, "mlg") &&
+		   strings.Contains(url, osString) &&
+			 strings.Contains(url, archString) &&
+			 strings.Contains(url, versionString) {
+				 mlgUrl = url
+		} else if jarUrl == "" &&
+			strings.Contains(url, "mathlingua") &&
+			strings.Contains(url, versionString) &&
+			strings.HasSuffix(url, ".jar") {
+				jarUrl = url
+		}
+	}
+
 	return Release{
-		mlgUrl: urlPrefix + "v" + version + "/mlg-" + version + "-" + runtime.GOOS + "-" + runtime.GOARCH + ext,
-		jarUrl: urlPrefix + "v" + version + "/mathlingua-" + version + ".jar",
+		mlgUrl: mlgUrl,
+		jarUrl: jarUrl,
 	}, nil
 }
 
@@ -221,9 +259,9 @@ func ensureMathLinguaJarExists(programName string, programArgs []string,
 		}
 
 		if version == "latest" {
-			fmt.Println("Downloading the latest version of MathLingua...")
+			fmt.Println("Downloading the latest version of MathLingua core...")
 		} else {
-			fmt.Println("Downloading version " + version + " of MathLingua...")
+			fmt.Println("Downloading version " + version + " of MathLingua core...")
 		}
 
 		release, err := getRelease(version)
@@ -239,17 +277,33 @@ func ensureMathLinguaJarExists(programName string, programArgs []string,
 			}
 		}
 
-		if release.mlgUrl == "" {
-			if version == "latest" {
-				return false, errors.New("ERROR: Unable to find the latest version of mlg")
-			} else {
-				return false, errors.New("ERROR: Unable to find version " + version + " of mlg")
-			}
-		}
-
 		// download the mathlingua.jar file
 		downloadUrl(release.jarUrl, path.Join(".bin", "mathlingua.jar"))
 
+		// if the user is not running `mlg update`, don't attempt to
+		// replace the mlg script.  We just want to get a jarfile
+		// that aligns with the version of the `mlg` exectuable
+		// the user already has
+		if !isUpdating {
+			return true, nil
+		}
+
+		if release.mlgUrl == "" {
+			if version == "latest" {
+				fmt.Println("WARNING: Unable to find the latest version of mlg")
+			} else {
+				fmt.Println("WARNING: Unable to find version " + version + " of mlg")
+			}
+		}
+
+		// if the version of mlg could not be found continue with the
+		// existing version of mlg and run the jarfile.
+		// Note: a warning is still printed above in this case.
+		if release.mlgUrl == "" {
+			return true, nil
+		}
+
+		// otherwise, the version of mlg could be found, so install it
 		newMlgPath, err := getNewMlgPath()
 		if err != nil {
 			return false, err

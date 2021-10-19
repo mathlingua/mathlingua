@@ -17,24 +17,46 @@ import (
 
 const MATHLINGUA_VERSION = "0.11.0"
 
+const MLG_NAME = "mlg"
+const NEW_MLG_NAME = "mlg.new"
+const MATHLINGUA_JAR_NAME = "mathlingua.jar"
+
 type Release struct {
 	mlgUrl string
 	jarUrl string
 }
 
-func getNewMlgPath() (string, error) {
+func getBinPath() (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	return path.Join(cwd, ".bin", "mlg.new"), nil
+	return path.Join(cwd, ".bin"), nil
+}
+
+func getMathLinguaJarPath() (string, error) {
+	binPath, err := getBinPath()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(binPath, MATHLINGUA_JAR_NAME), nil
+}
+
+func getNewMlgPath() (string, error) {
+	binPath, err := getBinPath()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(binPath, NEW_MLG_NAME), nil
 }
 
 func runMathLingua(args []string) (int, error) {
-	cmdArgs := []string{
-		"-jar",
-		path.Join(".bin", "mathlingua.jar"),
+	jarFile, err := getMathLinguaJarPath()
+	if err != nil {
+		return -1, err
 	}
+
+	cmdArgs := []string{"-jar", jarFile}
 	cmdArgs = append(cmdArgs, args...)
 	return runCommand("java", cmdArgs)
 }
@@ -124,16 +146,16 @@ func getRelease(version string) (Release, error) {
 
 	for _, url := range allUrls {
 		if mlgUrl == "" &&
-		   strings.Contains(url, "mlg") &&
-		   strings.Contains(url, osString) &&
-			 strings.Contains(url, archString) &&
-			 strings.Contains(url, versionString) {
-				 mlgUrl = url
+			strings.Contains(url, "mlg") &&
+			strings.Contains(url, osString) &&
+			strings.Contains(url, archString) &&
+			strings.Contains(url, versionString) {
+			mlgUrl = url
 		} else if jarUrl == "" &&
 			strings.Contains(url, "mathlingua") &&
 			strings.Contains(url, versionString) &&
 			strings.HasSuffix(url, ".jar") {
-				jarUrl = url
+			jarUrl = url
 		}
 	}
 
@@ -241,8 +263,12 @@ func downloadUrl(url string, to string) error {
 
 func ensureMathLinguaJarExists(programName string, programArgs []string,
 	version string, isUpdating bool) (bool, error) {
-	binDir := ".bin"
-	_, err := os.Stat(binDir)
+	binDir, err := getBinPath()
+	if err != nil {
+		return false, err
+	}
+
+	_, err = os.Stat(binDir)
 	if os.IsNotExist(err) {
 		err := os.MkdirAll(binDir, 0755)
 		if err != nil {
@@ -250,7 +276,11 @@ func ensureMathLinguaJarExists(programName string, programArgs []string,
 		}
 	}
 
-	jarfile := path.Join(binDir, "mathlingua.jar")
+	jarfile, err := getMathLinguaJarPath()
+	if err != nil {
+		return false, err
+	}
+
 	_, err = os.Stat(jarfile)
 	if os.IsNotExist(err) {
 		if !isUpdating {
@@ -278,7 +308,7 @@ func ensureMathLinguaJarExists(programName string, programArgs []string,
 		}
 
 		// download the mathlingua.jar file
-		downloadUrl(release.jarUrl, path.Join(".bin", "mathlingua.jar"))
+		downloadUrl(release.jarUrl, jarfile)
 
 		// if the user is not running `mlg update`, don't attempt to
 		// replace the mlg script.  We just want to get a jarfile
@@ -345,8 +375,8 @@ func main() {
 		os.Exit(1)
 	}
 
-	if programName == "mlg.new" {
-		copy(newMlgPath, "mlg")
+	if programName == NEW_MLG_NAME {
+		copy(newMlgPath, MLG_NAME)
 	} else {
 		_, err := os.Stat(newMlgPath)
 		if err == nil {

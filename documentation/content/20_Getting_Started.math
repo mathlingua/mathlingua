@@ -11,7 +11,7 @@ you are using, the defintions and theorems you have
 learned.
 
 Further you want to make sure no definition or theorem
-is referencing a definition that you haven't described
+is referencing a definition that you haven`\'`t described
 or is using a symbol that is ambiguous.
 
 Before continuing, this document itself is written with
@@ -35,7 +35,7 @@ literal text `{{::}}`) as shown below:
 Group theory uses sets and binary operations and so
 we first need to describe what those are.
 
-For a set, we don't need to go into detail about all of
+For a set, we don`\'`t need to go into detail about all of
 the axioms a set must have.  We want to focus on group
 theory and so informally thinking about a set as a
 collection of things is enough.
@@ -78,11 +78,11 @@ the form `f(x)` is used for function like objects,
 Further, we use text in double quotes in the `means:`
 section because we are informally describing what a set
 is.  Formal statements, on the other hand, are enclosed
-in single quotes as we'll see later.
+in single quotes as we`\'`ll see later.
 
 Next with the notion of a *set* described, we want to
 describe what a *binary operation* on a set is.  But
-first, we'll describe what a *function* is, since a
+first, we`\'`ll describe what a *function* is, since a
 binary operation is a type of function.
 
 ```math
@@ -188,7 +188,7 @@ of the definition with statements (such as `A, B is \set`)
 included in single quotes.
 
 Now we can describe what a cartesian product of two sets
-is that we'll need for defining a binary operation.  We
+is that we`\'`ll need for defining a binary operation.  We
 do that using the MathLingua text:
 
 ```math
@@ -406,7 +406,7 @@ Metadata:
 Notice we included a `Metadata:resources:` section that included
 the source `@GroupTheoryJsMilne` on page 7.
 
-There is a new section we used in this definition that wasn't
+There is a new section we used in this definition that wasn`\'`t
 used previously, the `viewing:` section.  This is used to describe
 how to interpret the object being defined, in this case a group.
 
@@ -446,7 +446,7 @@ The two constructs, `as:via:` and `membership:group:` look the
 same but they are not.  In particular, `as:via:` allows one to
 specify how to view one mathematical object as another.  This
 could be, for example, how to view a group as a set or an integer
-as a rational number.  It doesn't need to involve sets.
+as a rational number.  It doesn`\'`t need to involve sets.
 
 The `membership:through:` construct, on the other hand, describes
 how to interpret `x in G` for some `G`.  If `G := (X, *, e)` is a
@@ -456,7 +456,7 @@ Now that we have the definition of a group, we can describe a
 theorem that will refer to the inverse of an element in a
 group.
 
-Now we'll define what the inverse of an element is:
+Now we`\'`ll define what the inverse of an element is:
 
 ```math
 [\group{G}.inverse:of{x}]
@@ -608,7 +608,7 @@ Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$
 ::
 Now we add a *topic* that is used to describe a higher level concept
 in mathematics such as describing an area of mathematics.  In this
-case, we'll describe Group Theory with the code:
+case, we`\'`ll describe Group Theory with the code:
 
 ```math
 [#GroupTheory]
@@ -654,7 +654,7 @@ The last construct we want to cover is the `State:` construct that
 is used to describe a statement such as what it means for a set
 to be a subset of another set.
 
-That is, a `State:` doesn't describe an object, but a relationship
+That is, a `State:` doesn`\'`t describe an object, but a relationship
 between objects.
 
 As an example, the following describes what it means for a set $A$
@@ -687,11 +687,7 @@ called: "$A?$ is a subset of $B?$"
 
 
 ::
-This completes your first codex and we've covered the major parts
+This completes your first codex and we`\'`ve covered the major parts
 of MathLingua.  Have fun creating your next codex.
-
-For any questions or comments reach out to Dominic Kramer, the
-creator of MathLingua, at DominicKramer@gmail.com.  Any feedback
-is greatly appreciated.
 ::
 

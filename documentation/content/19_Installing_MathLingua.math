@@ -71,7 +71,7 @@ Next, we will write a simple theorem.  After the second `{::}`
 type
 ```
 Theorem:
-then: '0 = 0'
+then: \'0 = 0\'
 ```
 so that your document should look like
 ```
@@ -80,10 +80,10 @@ Welcome to MathLingua
 {::}
 
 Theorem:
-then: '0 = 0'
+then: \'0 = 0\'
 ```
 
-Congratulations, you've written your first MathLingua
+Congratulations, you`\'`ve written your first MathLingua
 document.  Now if you click on the eye icon in the top
 right corner of the page you can view your document in
 reader mode.

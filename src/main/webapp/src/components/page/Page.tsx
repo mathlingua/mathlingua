@@ -368,6 +368,9 @@ const EditorView = memo(
           width: '100%',
           height: 'calc(100vh - 1.75em)',
           minHeight: 'calc(100vh - 1.75em)',
+          borderRight: 'solid',
+          borderRightWidth: '1px',
+          borderRightColor: '#dddddd',
         }}
         annotations={annotations}
       ></AceEditor>
@@ -394,7 +397,9 @@ const SideBySideView = (props: {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'row' }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'row', background: '#ffffff' }}
+    >
       <div style={{ width: '50%' }}>
         <EditorView
           viewedPath={props.relativePath}
@@ -407,9 +412,6 @@ const SideBySideView = (props: {
           maxHeight: 'calc(100vh - 1.75em)',
           height: 'max-content',
           overflow: 'scroll',
-          borderLeft: 'solid',
-          borderLeftWidth: '1px',
-          borderLeftColor: '#dddddd',
           background: '#ffffff',
         }}
       >

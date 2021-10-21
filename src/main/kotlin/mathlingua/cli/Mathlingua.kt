@@ -196,15 +196,27 @@ object Mathlingua {
                 try {
                     val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
                     logger.log("Writing page ${pathAndContent.path}")
-                    val file = fs.getFileOrDirectory(pathAndContent.path)
-                    println("Writing to path ${pathAndContent.path} content:")
-                    println(pathAndContent.content)
-                    file.writeText(pathAndContent.content)
-                    println("Done writing to path ${pathAndContent.path}")
-                    val newSource = buildSourceFile(file)
-                    getSourceCollection().removeSource(pathAndContent.path)
-                    getSourceCollection().addSource(newSource)
-                    ctx.status(200)
+                    val path =
+                        if (pathAndContent.path == "") {
+                            val page = getSourceCollection().getPage(pathAndContent.path)
+                            page?.fileResult?.relativePath
+                        } else {
+                            pathAndContent.path
+                        }
+
+                    if (path == null) {
+                        ctx.status(404)
+                    } else {
+                        val file = fs.getFileOrDirectory(path)
+                        println("Writing to path ${pathAndContent.path} content:")
+                        println(pathAndContent.content)
+                        file.writeText(pathAndContent.content)
+                        println("Done writing to path ${pathAndContent.path}")
+                        val newSource = buildSourceFile(file)
+                        getSourceCollection().removeSource(pathAndContent.path)
+                        getSourceCollection().addSource(newSource)
+                        ctx.status(200)
+                    }
                 } catch (err: Exception) {
                     err.printStackTrace()
                     ctx.status(500)
@@ -212,8 +224,16 @@ object Mathlingua {
             }
             .get("/api/readPage") { ctx ->
                 try {
-                    val path = ctx.queryParam("path", null)
-                    logger.log("Reading page $path")
+                    val queryPath = ctx.queryParam("path", null)
+                    logger.log("Reading page $queryPath")
+                    val path =
+                        if (queryPath == "") {
+                            val page = getSourceCollection().getPage(queryPath)
+                            page?.fileResult?.relativePath
+                        } else {
+                            queryPath
+                        }
+
                     if (path == null) {
                         ctx.status(400)
                     } else {

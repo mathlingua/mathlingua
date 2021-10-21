@@ -46,9 +46,11 @@ mark {
 .previousLink {
   float: left;
   color: #aaaaaa;
+  font-size: 135%;
 }
 
 .nextLink {
   float: right;
   color: #aaaaaa;
+  font-size: 135%;
 }

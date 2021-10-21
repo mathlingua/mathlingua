@@ -5,17 +5,23 @@ Today there is so much mathematical knowledge, (definitions,
 theorems, axioms, and conjectures) that it is hard to keep track
 of what is known and what is unknown.
 
-Further, digital encyclopedia publishing tools see definitions,
+Digital encyclopedia publishing tools see definitions,
 theorems, axioms, and conjectures as text.  They cannot understand
 their meanings or the connections between them.
 
-Last, authors are tasked with making such items consistently
+Further, authors are tasked with making sure such items
 use the same symbols, are easy to read, and are displayed nicely
 on the page.
 
+Last, automated theorem proving languages have syntax that differs
+from how mathematics is typically written, have a steep learning
+curve, and express results in a way that doesn't use the same symbols
+used in math literature.
+
 What we need is a language that allows authors to focus on
 describing what mathematics concepts mean, with the system helping with
-presentation and analysis of those concepts.
+presentation and analysis of those concepts, all while being
+easy and fun to use.
 
 MathLingua is that language.
 
@@ -74,114 +80,41 @@ Note that MathLingua provides a clear syntax that is as
 verbose as spoken mathematics but renders to the symbols
 used in written mathematics.
 
-Further, MathLingua makes no assumptions about what symbols to
-use.  Every definition expressed with MathLingua contains
-the logical meaning of the definition, as well as how the
-concept being defined is written, and how it is spoken.
+Next, the MathLingua language uses a clean indented style with
+a consistent format for describing definitions, theorems, and
+other items to make recording and reading such information easy.
 
-Further, the MathLingua tooling automatically checks for
-inconsistencies in usages of definitions in other
-definitions, theorems, axioms, and conjectures.
+Further, the MathLingua language allows authors to define not
+just the meaning of definitions, but how the concepts they
+defined are written in the literature or spoken out loud.
 
-Even more, without any configuraion needed, the MathLingua
-tooling generates beautiful dynamic web apps to explore
+Last, without any configuraion needed, the MathLingua
+tooling generates beautiful dynamic web pages to explore
 the math catalog created.  This web page itself, is made
 entirely with MathLingua!
 
-
-
-::
-
-::
-
-MathLingua is a language for precisely encoding
-mathematical knowledge to form *smart encyclopedias* of
-mathematics.
-
-Traditional digital mathematical documents cannot be
-easily understood by computers, and automated theorem
-prover languages require mathematical knowledge to be
-expressed in a particular logical framework.
-
-The MathLingua language lies in the middle.  It allows
-one to describe mathematical knowledge with the same
-flexibility and level of formality as with traditional
-mathematical documents while allowing the MathLingua
-tooling to understand the structure of that knowledge.
-
-The focus is on making it easy to precisely describe
-definitions, theorems, axioms, and conjectures, where
-the MathLingua tooling provides insights such as
-incorrect usages of definitions or referencing concepts
-that haven't been defined.
-
-From a collection of mathematical knowledge written in
-MathLingua, the MathLingua tooling creates a robust
-interactive web application for exploring that knowledge.
-
-For example, this documentation is written in
-MathLingua!
-
----
-
-To give a feel for the language, consider the following
-MathLingua statement that describes the First Fundamental
-Theorem of Calculus:
-
-```math
-Theorem: "Fundamental Theorem of Calculus"
-given: f(x), F(x), I, a, b
-if:
-. 'a, b is \real'
-. 'a < b'
-. 'I := \closed.interval{a, b}'
-. 'f(x) is \continuous.function:on{I}'
-. 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
-then:
-. '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
-using:
-. 'x - y := x \real.-/ y'
-. 'x < y := x \real.leq/ y'
-```
-
-The above statement appears wordy, but uses the same
-amount of words one would use when reading the theorem
-out loud.  This provides precision in the description
-of the theorem without sacrificing the conciseness of
-mathematical notication because the theorem is
-rendered as:
-::
-
-
-::
----
-
-Notice that standard integral symbol is used in the
-rendering of the theorem.  Further, if you are reading
-the rendered theorem above and want to know what
+To see the power of the web pages created, click on the
 $$
     \int_a^b f(x) dx
 $$
-means (i.e. is it the definite integral, indefinite
-integral, Lebesgue integral, etc.) just click on it
-and you'll see a popup menu showing that it
-means `\definite.integral:of`.
+symbol inside the Fundamental Theorem of Calculus definition
+above.
 
-Next if you click on that text,
-the definition of the definite integral will be
-displayed.
+A popup will appear that shows that this
+represents `\definite.integral:of` and if you click on that
+text, the definition of the definite integral is displayed.
 
-All one needs to do is write the definition of the
-definite integral and the statement of the Fundamental
-Theorem of Calculus in the MathLingua language, and
-the MathLingua tooling automatically creates this robust
-interactive portal for exploring the knowledge you
-encoded.
+All the author needs to do is describe the Fundamental
+Theorem of Calclus and the definite integral in MathLingua
+and the MathLingua tooling handles the rest.
 
----
+Keep reading for a step-by-step guide to use MathLingua
+to build your first catalog of mathematical knowledge.
 
-**Note:** MathLingua is still in beta.  It and this
-document are still under development.
+-----
+
+MathLingua is still in beta.  It and this document are still
+under development.
 
 Any questions, comments, or feedback are greatly
 appreciated and can be sent to Dominic Kramer, the

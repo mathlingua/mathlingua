@@ -1,4 +1,43 @@
 
+
+[\real]
+Defines: x
+means: "A real number"
+written: "\textrm{real}"
+called: "real"
+
+
+[a \real.</ b]
+States:
+that: ""
+written: "a? < b?"
+called: "$a?$ is less than $b?$"
+
+
+[a \real.leq/ b]
+States:
+that: ""
+written: "a? \leq b?"
+called: "$a?$ is less than $b?$"
+
+
+[a \real.-/ b]
+States:
+that: ""
+written: "a? - b?"
+called: "$a?$ minus $b?$"
+
+
+
+
+
+::
+-------------------
+::
+
+
+
+
 [\closed.interval{a, b}]
 Defines: I
 means: "closed interval"
@@ -29,21 +68,4 @@ written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
 called: "definite integral of $f?$ from $a?$ to $b?$"
 
 
-[\real]
-Defines: f
-means: ""
-written: "\textrm{real}"
-called: "real"
 
-[a \real.leq/ b]
-States:
-that: ""
-written: "a? < b?"
-called: "$a?$ is less than $b?$"
-
-
-[a \real.-/ b]
-States:
-that: ""
-written: "a? - b?"
-called: "$a?$ minus $b?$"

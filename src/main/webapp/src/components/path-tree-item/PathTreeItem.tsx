@@ -28,6 +28,7 @@ import {
 export interface PathTreeNode {
   name: string;
   isDir: boolean;
+  isFirstMathFile: boolean;
   path: string;
   children: PathTreeNode[];
 }
@@ -309,7 +310,8 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             to={`/${props.node.path}`}
             key={props.node.name}
             className={
-              props.viewedPath === props.node.path
+              props.viewedPath === props.node.path ||
+              (props.viewedPath === '' && props.node.isFirstMathFile)
                 ? `${styles.link} ${styles.selected}`
                 : styles.link
             }

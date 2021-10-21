@@ -22,6 +22,7 @@ export const SidePanel = (props: SidePanelProps) => {
   const [pathData, setPathData] = useState({
     name: '',
     isDir: true,
+    isFirstMathFile: false,
     path: '',
     children: [],
   } as PathTreeNode);
@@ -79,16 +80,22 @@ function allPathsToTreeNode(allPaths: string[]): PathTreeNode {
   const root: PathTreeNode = {
     name: '',
     isDir: true,
+    isFirstMathFile: false,
     path: '',
     children: [],
   };
+  const isFirstMathFileFound: [boolean] = [false];
   for (const path of allPaths) {
-    populateTreeNode(root, path);
+    populateTreeNode(root, path, isFirstMathFileFound);
   }
   return root;
 }
 
-function populateTreeNode(root: PathTreeNode, path: string) {
+function populateTreeNode(
+  root: PathTreeNode,
+  path: string,
+  isFirstMathFileFound: [boolean]
+) {
   const parts = path.split('/');
   let cur = root;
   for (let i = 0; i < parts.length; i++) {
@@ -98,9 +105,15 @@ function populateTreeNode(root: PathTreeNode, path: string) {
       cur = child;
     } else {
       const isDir = i !== parts.length - 1;
+      let isFirstMathFile = false;
+      if (!isFirstMathFileFound[0] && !isDir) {
+        isFirstMathFile = true;
+        isFirstMathFileFound[0] = true;
+      }
       const newChild: PathTreeNode = {
         name: p,
         isDir,
+        isFirstMathFile,
         path: parts.slice(0, i + 1).join('/'),
         children: [],
       };

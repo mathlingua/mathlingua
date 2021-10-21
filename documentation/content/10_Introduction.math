@@ -93,12 +93,9 @@ tooling generates beautiful dynamic web pages to explore
 the math catalog created.  This web page itself, is made
 entirely with MathLingua!
 
-To see the power of the web pages created, click on the
-$$
-    \int_a^b f(x) dx
-$$
-symbol inside the Fundamental Theorem of Calculus definition
-above.
+To see the power of the web pages created, click on the definite
+integral symbol inside the Fundamental Theorem of Calculus
+definition above.
 
 A popup will appear that shows that this
 represents `\definite.integral:of` and if you click on that

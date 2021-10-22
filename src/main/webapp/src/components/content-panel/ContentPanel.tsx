@@ -61,7 +61,9 @@ const ThreeColumnContent = (props: {
             !props.isMobile || props.isSidePanelVisible ? 'block' : 'none',
           width: props.isMobile ? '100%' : '20%',
           padding: 0,
-          margin: 0,
+          marginLeft: 0,
+          marginBottom: 0,
+          marginTop: '0.25em',
         }}
       >
         {props.isSidePanelVisible ? (
@@ -75,7 +77,9 @@ const ThreeColumnContent = (props: {
               ? '0%'
               : '95%'
             : '60%',
-          marginTop: '1em',
+          marginTop: props.isMobile ? '0.5em' : '1em',
+          marginLeft: 'auto',
+          marginRight: 'auto',
         }}
       >
         <Page

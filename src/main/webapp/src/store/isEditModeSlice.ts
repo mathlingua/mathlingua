@@ -1,4 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { isStatic } from '../services/api';
 import { RootState } from './store';
 
 export interface IsEditModeState {
@@ -6,7 +7,7 @@ export interface IsEditModeState {
 }
 
 const initialState: IsEditModeState = {
-  isEditMode: false,
+  isEditMode: !isStatic(),
 };
 
 const isEditModeSlice = createSlice({

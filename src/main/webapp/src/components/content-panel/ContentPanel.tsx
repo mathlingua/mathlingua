@@ -2,9 +2,14 @@ import { useLocation } from 'react-router';
 import { Page } from '../page/Page';
 import { SidePanel } from '../side-panel/SidePanel';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
-import { useAppSelector } from '../../support/hooks';
-import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
-import { isOnMobile, isOnWideScreen } from '../../support/util';
+import { useAppDispatch, useAppSelector } from '../../support/hooks';
+import sidePanelVisibleSlice, {
+  selectSidePanelVisible,
+  sidePanelVisibilityChanged,
+} from '../../store/sidePanelVisibleSlice';
+// import { isOnMobile } from '../../support/util';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { isOnMobile } from '../../support/util';
 
 export interface HashLocation {
   viewedPath: string;
@@ -25,7 +30,6 @@ export const ContentPanel = () => {
   const hashLocation = getHashLocation(useLocation());
   const isEditMode = useAppSelector(selectIsEditMode);
   const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
-  const isMobile = isOnMobile();
 
   return isEditMode ? (
     <TwoColumnContent
@@ -34,18 +38,50 @@ export const ContentPanel = () => {
     ></TwoColumnContent>
   ) : (
     <ThreeColumnContent
-      isMobile={isMobile}
       hashLocation={hashLocation}
-      isSidePanelVisible={isSidePanelVisible}
+      startedWithSidePanelVisible={isSidePanelVisible}
     ></ThreeColumnContent>
   );
 };
 
 const ThreeColumnContent = (props: {
-  isMobile: boolean;
   hashLocation: HashLocation;
-  isSidePanelVisible: boolean;
+  startedWithSidePanelVisible: boolean;
 }) => {
+  const dispatch = useAppDispatch();
+  const ref = useRef(null);
+
+  const isZoomedInEnoughToHideSidebar = useCallback(
+    () =>
+      ref.current &&
+      (ref.current as any).clientWidth >= 0.75 * window.screen.width,
+    [ref]
+  );
+
+  const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
+  const [zoomedInEnoughToHideSidebar, setZoomedInEnoughToHideSidebar] =
+    useState(isZoomedInEnoughToHideSidebar());
+
+  useEffect(() => {
+    const handleResize = () => {
+      const newZoomedIn = isZoomedInEnoughToHideSidebar();
+      if (props.startedWithSidePanelVisible) {
+        if (newZoomedIn) {
+          dispatch(sidePanelVisibilityChanged(false));
+        } else {
+          dispatch(sidePanelVisibilityChanged(true));
+        }
+      }
+      setZoomedInEnoughToHideSidebar(newZoomedIn);
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const centerWidth = '45em';
+  const sideWidth = `calc((100% - ${centerWidth}) / 2)`;
   return (
     <div
       style={{
@@ -58,30 +94,31 @@ const ThreeColumnContent = (props: {
       <div
         style={{
           display:
-            !props.isMobile || props.isSidePanelVisible ? 'block' : 'none',
-          width: props.isMobile ? '100%' : isOnWideScreen() ? '30%' : '25%',
+            !zoomedInEnoughToHideSidebar || isSidePanelVisible
+              ? 'block'
+              : 'none',
+          width: zoomedInEnoughToHideSidebar ? '100%' : sideWidth,
           padding: 0,
           marginLeft: 0,
           marginBottom: 0,
           marginTop: '0.25em',
         }}
       >
-        {props.isSidePanelVisible ? (
-          <div style={isOnMobile() ? {} : { float: 'right' }}>
+        {isSidePanelVisible ? (
+          <div style={zoomedInEnoughToHideSidebar ? {} : { float: 'right' }}>
             <SidePanel viewedPath={props.hashLocation.viewedPath} />
           </div>
         ) : null}
       </div>
       <div
+        ref={ref}
         style={{
-          width: props.isMobile
-            ? props.isSidePanelVisible
+          width: isOnMobile()
+            ? isSidePanelVisible
               ? '0%'
               : '95%'
-            : isOnWideScreen()
-            ? '40%'
-            : '50%',
-          marginTop: props.isMobile ? '0.5em' : '1em',
+            : centerWidth,
+          marginTop: zoomedInEnoughToHideSidebar ? '0.5em' : '1em',
           marginLeft: 'auto',
           marginRight: 'auto',
         }}
@@ -93,8 +130,8 @@ const ThreeColumnContent = (props: {
       </div>
       <div
         style={{
-          width: props.isMobile ? '0%' : isOnWideScreen() ? '30%' : '25%',
-          display: props.isMobile ? 'none' : 'block',
+          width: zoomedInEnoughToHideSidebar ? '0%' : sideWidth,
+          display: zoomedInEnoughToHideSidebar ? 'none' : 'block',
         }}
       ></div>
     </div>

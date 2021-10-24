@@ -135,14 +135,24 @@ export const SearchPanel = () => {
         className={styles.searchButton}
         onClick={() => search(query)}
       >
-        <FontAwesomeIcon icon={faSearch} />
+        <FontAwesomeIcon
+          icon={faSearch}
+          style={{
+            filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+          }}
+        />
       </button>
       <button
         type="button"
         className={styles.clearButton}
         onClick={clearSearch}
       >
-        <FontAwesomeIcon icon={faTimes} />
+        <FontAwesomeIcon
+          icon={faTimes}
+          style={{
+            filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+          }}
+        />
       </button>
       <div
         ref={ref}

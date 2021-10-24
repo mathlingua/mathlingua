@@ -147,7 +147,12 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsDeleting(false);
           }}
         >
-          <FontAwesomeIcon icon={faPencilAlt} />
+          <FontAwesomeIcon
+            icon={faPencilAlt}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
         </button>
         {props.node.isDir && !isEditing && !isDeleting ? (
           <button
@@ -162,7 +167,12 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
               await reloadAllPaths();
             }}
           >
-            <FontAwesomeIcon icon={faFileMedical} />
+            <FontAwesomeIcon
+              icon={faFileMedical}
+              style={{
+                filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+              }}
+            />
           </button>
         ) : null}
         {props.node.isDir && !isEditing && !isDeleting ? (
@@ -178,7 +188,12 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
               await reloadAllPaths();
             }}
           >
-            <FontAwesomeIcon icon={faFolderPlus} />
+            <FontAwesomeIcon
+              icon={faFolderPlus}
+              style={{
+                filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+              }}
+            />
           </button>
         ) : null}
         <button
@@ -200,7 +215,12 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsDeleting(false);
           }}
         >
-          <FontAwesomeIcon icon={faCheck} />
+          <FontAwesomeIcon
+            icon={faCheck}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
         </button>
         <button
           className={styles.button}
@@ -210,7 +230,12 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsDeleting(false);
           }}
         >
-          <FontAwesomeIcon icon={faTimes} />
+          <FontAwesomeIcon
+            icon={faTimes}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
         </button>
         <button
           className={styles.button}
@@ -225,7 +250,12 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             setIsEditing(false);
           }}
         >
-          <FontAwesomeIcon icon={faTrashAlt} />
+          <FontAwesomeIcon
+            icon={faTrashAlt}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
         </button>
       </span>
     ) : null;
@@ -246,11 +276,21 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
         >
           {isExpanded ? (
             <button className={styles.triangle}>
-              <FontAwesomeIcon icon={faCaretDown} />
+              <FontAwesomeIcon
+                icon={faCaretDown}
+                style={{
+                  filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+                }}
+              />
             </button>
           ) : (
             <button className={styles.triangle}>
-              <FontAwesomeIcon icon={faCaretRight} />
+              <FontAwesomeIcon
+                icon={faCaretRight}
+                style={{
+                  filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+                }}
+              />
             </button>
           )}
           {isEditing ? (

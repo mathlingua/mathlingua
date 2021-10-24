@@ -61,7 +61,7 @@
 .searchButton {
   border: none;
   color: #333333;
-  background-color: #f0f0f3;
+  background-color: transparent;
   height: 100%;
   padding-top: 0;
   padding-bottom: 0;
@@ -74,7 +74,7 @@
   border: none;
   background: none;
   color: #333333;
-  background-color: #f0f0f3;
+  background-color: transparent;
   height: 100%;
   padding-top: 0;
   padding-bottom: 0;

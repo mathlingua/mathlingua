@@ -19,6 +19,7 @@ li {
 .link {
   text-decoration: none;
   color: black;
+  text-shadow: 0.45px 0.45px 0px rgba(0, 0, 0, 0.2);
 }
 
 .sidePanelItem {
@@ -31,6 +32,7 @@ li {
   padding-top: 0em;
   padding-bottom: 1.2em;
   margin: 0;
+  text-shadow: 0.45px 0.45px 0px rgba(0, 0, 0, 0.2);
 }
 
 .mathlinguaListDirItem {
@@ -45,7 +47,7 @@ li {
 }
 
 .selected {
-  font-style: italic;
+  text-decoration: underline;
 }
 
 .errorStats {

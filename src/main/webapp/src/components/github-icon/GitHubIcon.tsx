@@ -26,10 +26,22 @@ export const GitHubIcon = () => {
     >
       {url ? (
         <a href={url} target="_blank">
-          <FontAwesomeIcon className={styles.githubIcon} icon={faGithub} />
+          <FontAwesomeIcon
+            className={styles.githubIcon}
+            icon={faGithub}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
         </a>
       ) : (
-        <FontAwesomeIcon className={styles.githubIcon} icon={faGithub} />
+        <FontAwesomeIcon
+          className={styles.githubIcon}
+          icon={faGithub}
+          style={{
+            filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+          }}
+        />
       )}
     </div>
   );

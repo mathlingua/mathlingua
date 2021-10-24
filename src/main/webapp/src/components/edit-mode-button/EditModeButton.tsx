@@ -44,9 +44,19 @@ export const EditModeButton = () => {
         }}
       >
         {isEditMode ? (
-          <FontAwesomeIcon icon={faEye} />
+          <FontAwesomeIcon
+            icon={faEye}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
         ) : (
-          <FontAwesomeIcon icon={faEdit} />
+          <FontAwesomeIcon
+            icon={faEdit}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
         )}
       </button>
     </div>

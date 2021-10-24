@@ -31,7 +31,12 @@ export const SidePanelButton = () => {
           dispatch(sidePanelVisibilityChanged(!visible));
         }}
       >
-        <FontAwesomeIcon icon={faBars} />
+        <FontAwesomeIcon
+          icon={faBars}
+          style={{
+            filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+          }}
+        />
       </button>
     </div>
   );

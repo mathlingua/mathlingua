@@ -4,7 +4,7 @@ import { SidePanel } from '../side-panel/SidePanel';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
 import { useAppSelector } from '../../support/hooks';
 import { selectSidePanelVisible } from '../../store/sidePanelVisibleSlice';
-import { isOnMobile } from '../../support/util';
+import { isOnMobile, isOnWideScreen } from '../../support/util';
 
 export interface HashLocation {
   viewedPath: string;
@@ -59,7 +59,7 @@ const ThreeColumnContent = (props: {
         style={{
           display:
             !props.isMobile || props.isSidePanelVisible ? 'block' : 'none',
-          width: props.isMobile ? '100%' : '20%',
+          width: props.isMobile ? '100%' : isOnWideScreen() ? '30%' : '25%',
           padding: 0,
           marginLeft: 0,
           marginBottom: 0,
@@ -67,7 +67,9 @@ const ThreeColumnContent = (props: {
         }}
       >
         {props.isSidePanelVisible ? (
-          <SidePanel viewedPath={props.hashLocation.viewedPath} />
+          <div style={isOnMobile() ? {} : { float: 'right' }}>
+            <SidePanel viewedPath={props.hashLocation.viewedPath} />
+          </div>
         ) : null}
       </div>
       <div
@@ -76,7 +78,9 @@ const ThreeColumnContent = (props: {
             ? props.isSidePanelVisible
               ? '0%'
               : '95%'
-            : '60%',
+            : isOnWideScreen()
+            ? '40%'
+            : '50%',
           marginTop: props.isMobile ? '0.5em' : '1em',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -89,7 +93,7 @@ const ThreeColumnContent = (props: {
       </div>
       <div
         style={{
-          width: props.isMobile ? '0%' : '20%',
+          width: props.isMobile ? '0%' : isOnWideScreen() ? '30%' : '25%',
           display: props.isMobile ? 'none' : 'block',
         }}
       ></div>

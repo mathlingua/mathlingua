@@ -28,14 +28,15 @@ li {
   display: block;
   padding-left: 1.25em;
   padding-right: 1.5em;
-  padding-top: 0.5em;
-  padding-bottom: 0.5em;
+  padding-top: 0em;
+  padding-bottom: 1.2em;
   margin: 0;
 }
 
 .mathlinguaListDirItem {
   font-weight: bold;
   display: block;
+  padding-bottom: 1em;
 }
 
 .mathlinguaListFileItem {

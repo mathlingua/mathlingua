@@ -58,7 +58,7 @@ export const SidePanel = (props: SidePanelProps) => {
         isEditMode
           ? {
               height: 'calc(100vh - 1.75em)',
-              overflow: 'scroll',
+              overflow: 'auto',
             }
           : {}
       }

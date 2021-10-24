@@ -439,6 +439,15 @@ object Mathlingua {
                     ctx.status(500)
                 }
             }
+            .get("/api/gitHubUrl") { ctx ->
+                try {
+                    logger.log("Getting the GitHub url")
+                    ctx.json(GitHubUrlResponse(url = getGitHubUrl()))
+                } catch (err: Exception) {
+                    err.printStackTrace()
+                    ctx.status(500)
+                }
+            }
             .get("/api/*") { ctx -> ctx.status(400) }
     }
 
@@ -469,6 +478,8 @@ object Mathlingua {
 
 @Serializable data class CheckResponse(val errors: List<CheckError>)
 
+@Serializable data class GitHubUrlResponse(val url: String?)
+
 @Serializable
 data class CheckError(val path: String, val message: String, val row: Int, val column: Int)
 
@@ -481,6 +492,16 @@ data class CheckError(val path: String, val message: String, val row: Int, val c
 @Serializable data class CompleteWordResponse(val suffixes: List<String>)
 
 @Serializable data class CompleteSignatureResponse(val suffixes: List<String>)
+
+private fun getGitHubUrl(): String? {
+    val pro = ProcessBuilder("git", "ls-remote", "--get-url").start()
+    val exit = pro.waitFor()
+    return if (exit != 0) {
+        null
+    } else {
+        String(pro.inputStream.readAllBytes()).replace("git@github.com:", "https://github.com/")
+    }
+}
 
 private fun String.jsonSanitize() =
     this.replace("\\", "\\\\")
@@ -777,7 +798,8 @@ data class ErrorResult(
 @Serializable
 data class CollectionResult(val fileResults: List<FileResult>, val errors: List<ErrorResult>)
 
-@Serializable data class DecompositionResult(val collectionResult: CollectionResult)
+@Serializable
+data class DecompositionResult(val collectionResult: CollectionResult, val gitHubUrl: String?)
 
 private fun getSignature(node: Phase2Node?): String? {
     return when (node) {
@@ -858,6 +880,7 @@ private fun decompose(
                     }))
     }
     return DecompositionResult(
+        gitHubUrl = getGitHubUrl(),
         collectionResult =
             CollectionResult(
                 fileResults = fileResults,

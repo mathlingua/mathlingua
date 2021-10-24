@@ -2,8 +2,16 @@ import styles from './GitHubIcon.module.css';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faGithub } from '@fortawesome/free-brands-svg-icons';
+import { useEffect, useState } from 'react';
+import { getGitHubUrl } from '../../services/api';
 
 export const GitHubIcon = () => {
+  const [url, setUrl] = useState('' as string | undefined);
+
+  useEffect(() => {
+    getGitHubUrl().then((url) => setUrl(url));
+  }, []);
+
   return (
     <div
       style={{
@@ -16,9 +24,13 @@ export const GitHubIcon = () => {
         marginBottom: 'auto',
       }}
     >
-      <a href="https://github.com/DominicKramer/codex">
+      {url ? (
+        <a href={url} target="_blank">
+          <FontAwesomeIcon className={styles.githubIcon} icon={faGithub} />
+        </a>
+      ) : (
         <FontAwesomeIcon className={styles.githubIcon} icon={faGithub} />
-      </a>
+      )}
     </div>
   );
 };

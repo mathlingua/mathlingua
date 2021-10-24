@@ -34,7 +34,7 @@ export interface CollectionResult {
 }
 
 export interface DecompositionResult {
-  homeHtml: string;
+  gitHubUrl?: string;
   collectionResult: CollectionResult;
 }
 
@@ -49,6 +49,10 @@ export interface CheckError {
   column: number;
 }
 
+export interface GitHubUrlResponse {
+  url?: string;
+}
+
 interface ApiClient {
   getAllPaths(): Promise<string[]>;
   getFileResult(path: string): Promise<FileResult | undefined>;
@@ -56,6 +60,7 @@ interface ApiClient {
   getAutocompleteSuffixes(word: string): Promise<string[]>;
   getEntityWithSignature(signature: string): Promise<EntityResult | undefined>;
   check(): Promise<CheckResponse>;
+  getGitHubUrl(): Promise<string | undefined>;
 }
 
 function notifyOfError(error: string) {
@@ -128,6 +133,17 @@ class NetworkApiClient implements ApiClient {
       return { errors: [] };
     }
   }
+
+  async getGitHubUrl(): Promise<string | undefined> {
+    try {
+      const res = await axios.get('/api/gitHubUrl');
+      const gitHubUrlInfo: GitHubUrlResponse = res.data;
+      return gitHubUrlInfo.url;
+    } catch (err: any) {
+      notifyOfError(err.message);
+      return undefined;
+    }
+  }
 }
 
 class StaticApiClient implements ApiClient {
@@ -138,6 +154,7 @@ class StaticApiClient implements ApiClient {
   private pathToFileResult: Map<string, FileResult>;
   private firstFileResult: FileResult | undefined;
   private checkResponse: CheckResponse;
+  private gitHubUrl: string | undefined;
 
   constructor(data: DecompositionResult) {
     this.searchClient = new Search(data);
@@ -176,6 +193,8 @@ class StaticApiClient implements ApiClient {
         message: err.message,
       })),
     };
+
+    this.gitHubUrl = data.gitHubUrl;
   }
 
   async getAllPaths(): Promise<string[]> {
@@ -206,6 +225,10 @@ class StaticApiClient implements ApiClient {
 
   async check(): Promise<CheckResponse> {
     return this.checkResponse;
+  }
+
+  async getGitHubUrl(): Promise<string | undefined> {
+    return this.gitHubUrl;
   }
 }
 
@@ -252,6 +275,10 @@ export async function getEntityWithSignature(
 
 export async function check(): Promise<CheckResponse> {
   return getClient().check();
+}
+
+export async function getGitHubUrl(): Promise<string | undefined> {
+  return getClient().getGitHubUrl();
 }
 
 export async function writeFileResult(path: string, content: string) {

@@ -75,9 +75,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.BetweenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.EqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.EqualitySection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.instanceof.InstanceOfGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.instanceof.InstanceSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.instanceof.OfSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.MembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.MembershipSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ThroughSection
@@ -528,8 +525,6 @@ val DEFAULT_VIEWED_AS_SECTION = ViewingAsSection(statement = DEFAULT_STATEMENT)
 
 val DEFAULT_VIA_SECTION = ViaSection(statement = DEFAULT_STATEMENT)
 
-val DEFAULT_OF_SECTION = OfSection(statement = DEFAULT_STATEMENT)
-
 val DEFAULT_BY_SECTION = BySection(statement = DEFAULT_STATEMENT)
 
 val DEFAULT_THROUGH_SECTION = ThroughSection(statement = DEFAULT_STATEMENT)
@@ -544,14 +539,6 @@ val DEFAULT_VIEWED_AS_GROUP =
     ViewingAsGroup(
         viewingAsSection = DEFAULT_VIEWED_AS_SECTION,
         viaSection = DEFAULT_VIA_SECTION,
-        bySection = DEFAULT_BY_SECTION)
-
-val DEFAULT_INSTANCE_SECTION = InstanceSection()
-
-val DEFAULT_INSTANCE_OF_GROUP =
-    InstanceOfGroup(
-        instanceSection = DEFAULT_INSTANCE_SECTION,
-        ofSection = DEFAULT_OF_SECTION,
         bySection = DEFAULT_BY_SECTION)
 
 val DEFAULT_VIEWING_SECTION = ViewingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)

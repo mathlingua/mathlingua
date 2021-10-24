@@ -23,7 +23,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.EqualityGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.instanceof.InstanceOfGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.MembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.track
@@ -60,7 +59,6 @@ fun validateViewingSection(
             for (clause in clauses.clauses) {
                 if (clause !is MembershipGroup &&
                     clause !is ViewingAsGroup &&
-                    clause !is InstanceOfGroup &&
                     clause !is EqualityGroup) {
                     val location = tracker.getLocationOf(clause) ?: Location(row = -1, column = -1)
                     errors.add(

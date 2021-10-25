@@ -108,6 +108,33 @@ class Clean : CliktCommand(help = "Delete generated HTML files") {
     }
 }
 
+class Versions : CliktCommand(help = "Lists available MathLingua versions") {
+    override fun run() {
+        val logger = TermUiLogger(termUi = TermUi)
+        logger.log(
+            "This functionality is not available when the MathLingua jar " +
+                "file is run directly.  Use the mlg executable instead.")
+        exitProcess(1)
+    }
+}
+
+class Update : CliktCommand(help = "Updates to the specified version of MathLingua") {
+    private val version: String by option(
+            help =
+                "The MathLingua version to update to " +
+                    "or 'latest' to update to the latest version.  See the 'versions' command for " +
+                    "available versions.")
+        .default("latest")
+
+    override fun run() {
+        val logger = TermUiLogger(termUi = TermUi)
+        logger.log(
+            "This functionality is not available when the MathLingua jar " +
+                "file is run directly.  Use the mlg executable instead.")
+        exitProcess(1)
+    }
+}
+
 private fun whteRbtObj() {
     println("Jurassic Park, System Security Interface")
     Thread.sleep(700)
@@ -149,7 +176,10 @@ private fun whteRbtObj() {
 }
 
 fun main(args: Array<String>) {
-    val mlg = Mlg().subcommands(Check(), Clean(), Document(), Edit(), Help(), Version())
+    val mlg =
+        Mlg()
+            .subcommands(
+                Check(), Clean(), Document(), Edit(), Help(), Update(), Version(), Versions())
     helpText = mlg.getFormattedHelp()
     mlg.main(args)
 }

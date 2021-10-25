@@ -177,6 +177,28 @@ object Mathlingua {
             return sourceCollection!!
         }
 
+        if (getSourceCollection().getAllPaths().isEmpty()) {
+            val contentDir = fs.getDirectory(listOf("content"))
+            if (!fs.exists(contentDir)) {
+                fs.mkdirs(contentDir)
+            }
+
+            val welcomeFile = fs.getFile(listOf("content", "welcome.math"))
+            if (!fs.exists(welcomeFile)) {
+                fs.writeText(
+                    welcomeFile,
+                    """
+                    ::
+                    # Welcome to MathLingua
+                    See [www.mathlingua.org](https://www.mathlingua.org) for more information and
+                    help getting started.
+                    ::
+                """.trimIndent())
+                // invalidate the collection so it is re-generated the next time it is requested
+                sourceCollection = null
+            }
+        }
+
         val app = Javalin.create().start(port)
         app.config.addStaticFiles("/assets")
         app.before("/") { ctx ->

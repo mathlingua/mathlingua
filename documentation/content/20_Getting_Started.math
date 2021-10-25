@@ -1,7 +1,8 @@
 ::
 # Getting Started
 
-Now we will build our first codex to illustrate how
+Now we will build our first collection of mathematical
+knowledge to illustrate how
 MathLingua can be used.  Suppose you are just learning
 group theory or have just rediscovered it and would like
 to keep track of what you have learned.
@@ -13,6 +14,8 @@ learned.
 Further you want to make sure no definition or theorem
 is referencing a definition that you haven`\'`t described
 or is using a symbol that is ambiguous.
+
+## Text Blocks
 
 Before continuing, this document itself is written with
 MathLingua, and text blocks like this paragraph are
@@ -31,6 +34,8 @@ with `{{::}}` and end with `{{::}}`
 literal text `{{::}}`) as shown below:
 {::}
 ```
+
+## Some Initial Definitions
 
 Group theory uses sets and binary operations and so
 we first need to describe what those are.
@@ -124,6 +129,8 @@ Metadata:
   that every input is mapped to a *unique* output."
 
 ::
+
+## Diving Deeper
 
 There is a lot of aspects of the MathLingua language being
 used in the definition above that we will analyze next.
@@ -276,6 +283,8 @@ identifier just like `f`.  However, inside statements, in
 single quotes, symbols like `*`, `/`, `**`, etc. are treated
 as operators.
 
+## The Dynamics of MathLingua
+
 An exciting aspect of MathLingua is that it creates a dynamic
 document.  To see this, click on the
 $* : A \times A \rightarrow A$ in the definition above.  From
@@ -287,6 +296,8 @@ entry will be shown under the definition of a **Binary
 Operation on $A$**.  You can further click on more text in the
 items that appear to drill down farther into the definitions.
 This makes it very easy to explore MathLingua concepts.
+
+## Recording Resources
 
 Now we have the machinery needed to define a group, but before
 we do that, we want to record a resource where we found the
@@ -325,6 +336,8 @@ Notice that resources are identified with a name that starts
 with the `@` sigil (as compared to definitions and theorems
 that start with `\`).  Further, resource names can only contain
 letters and digits and periods (`.`).
+
+## The Main Definition
 
 Now we can define a group:
 
@@ -486,6 +499,8 @@ written: "{x??}^{-1}"
 called: "inverse of $x?$"
 
 ::
+## Adding a Theorem
+
 Now we can record our theorem.  It is a straightforward theorem
 meant to demonstrate how a theorem, and optionally its proof, are
 recorded.
@@ -606,6 +621,8 @@ Thus $y^{-1} * x^{-1}$ is the inverse of $x * y$. $\Box$
 "
 
 ::
+## Creating a Topic
+
 Now we add a *topic* that is used to describe a higher level concept
 in mathematics such as describing an area of mathematics.  In this
 case, we`\'`ll describe Group Theory with the code:
@@ -635,6 +652,8 @@ content:
 
 
 ::
+## Introducing a Note
+
 Last, if there is any note you want to write, you can use the
 `Note:` construct as in the code:
 ```math
@@ -650,6 +669,8 @@ content: "Some content"
 
 
 ::
+## Describing a Relationship
+
 The last construct we want to cover is the `State:` construct that
 is used to describe a statement such as what it means for a set
 to be a subset of another set.
@@ -688,6 +709,7 @@ called: "$A?$ is a subset of $B?$"
 
 ::
 This completes your first codex and we`\'`ve covered the major parts
-of MathLingua.  Have fun creating your next codex.
+of MathLingua.  Have fun creating your next collection of
+mathematical knowledge.
 ::
 

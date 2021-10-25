@@ -18,54 +18,25 @@ you want to write your MathLingua documents.
 rest of this documentation will simply refer to the
 executable as `mlg`.
 
-Now at the command prompt in that directory simply
-run
-```
-./mlg check
-```
-to get started.  You should see a message
-saying that 0 files were processed. That is because you
-haven't written any files yet.
-
-To get started writting your MathLingua documents, type
+Now at the command prompt in that directory, simply run
 ```
 ./mlg edit
 ```
-Now open [http://localhost:8080](http://localhost:8080)
-in your web browser to see your MathLingua documents.
+and then visit [http://localhost:8080](http://localhost:8080).
 
-The view is empty because we haven't created a document
-yet.  To do so, click the pencil icon in the top right
-corner of the page to enter edit mode.
+The MathLingua command line tool, `mlg` provides a rich
+integrated development environment right in your browser.
+No additional software is needed and `./mlg edit` starts
+that environment.
 
-If the side panel is not visible, click the icon with
-three short horizontal lines in the top left corner to
-have it displayed.
+You will notice the `welcome.math` file is already selected
+in the editor, which is on the left side of the page, with
+the rendered output of the page on the right side of the page.
 
-Now click the new document icon that looks like a document
-with a plus in it.  This will create a new document called
-`Untitled.math`.
+The text between the `{::}` and `{::}` can be any
+[CommonMark](https://commonmark.org/) Markdown text and
+can include LaTeX.
 
-If you click on `Untitled.math`, the document will open
-in the editor with the text.
-```
-{::}
-{::}
-```
-The text between a `{::}` and a `{::}` can be anything,
-including LaTeX and allows you to add descriptive text
-to your document.
-
-Between the `{::}` and `{::}`, type
-`# Welcome to MathLingua` and you should see the preview
-on the right side of the editor update with the text.
-
-Your document should look like
-```
-{::}
-# Welcome to MathLingua
-{::}
-```
 
 Next, we will write a simple theorem.  After the second `{::}`
 type
@@ -76,7 +47,9 @@ then: \'0 = 0\'
 so that your document should look like
 ```
 {::}
-Welcome to MathLingua
+# Welcome to MathLingua
+See [www.mathlingua.org](https://www.mathlingua.org) for
+more information and help getting started.
 {::}
 
 Theorem:

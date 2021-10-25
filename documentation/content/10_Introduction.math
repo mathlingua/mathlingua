@@ -1,6 +1,12 @@
 ::
 # The MathLingua Language
 
+*MathLingua is a language to create precise,
+automatically analyzed, beautifully rendered, catalogs
+of mathematical knowledge.*
+
+## The Problem
+
 Today there is so much mathematical knowledge, (definitions,
 theorems, axioms, and conjectures) that it is hard to keep track
 of what is known and what is unknown.
@@ -25,7 +31,7 @@ easy and fun to use.
 
 MathLingua is that language.
 
------
+## Introducing MathLingua
 
 MathLingua is a unique language for creating catalogs of
 mathematical knowledge that are expressed precisely, rendered
@@ -108,7 +114,7 @@ and the MathLingua tooling handles the rest.
 Keep reading for a step-by-step guide to use MathLingua
 to build your first catalog of mathematical knowledge.
 
------
+## Contact
 
 MathLingua is still in beta.  It and this document are still
 under development.
@@ -117,6 +123,4 @@ Any questions, comments, or feedback are greatly
 appreciated and can be sent to Dominic Kramer, the
 creator of MathLingua, at
 [DominicKramer@gmail.com](mailto:DominicKramer@gmail.com).
-
----
 ::

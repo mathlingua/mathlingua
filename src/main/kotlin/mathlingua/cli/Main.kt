@@ -66,8 +66,28 @@ private class Edit :
     private val port: Int by option(help = "The port to listen on").int().default(8080)
 
     override fun run() {
+        val logger = TermUiLogger(termUi = TermUi)
         val fs = newDiskFileSystem()
-        Mathlingua.serve(fs = fs, logger = TermUiLogger(termUi = TermUi), port = port)
+        Mathlingua.serve(fs = fs, logger = logger, port = port) {
+            val url = "http://localhost:${port}"
+            try {
+                val osName = System.getProperty("os.name").lowercase()
+                if (osName.contains("win")) {
+                    ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", url)
+                } else
+                    if (osName.contains("mac")) {
+                            ProcessBuilder("open", url)
+                        } else {
+                            ProcessBuilder("xdg-open", url)
+                        }
+                        .start()
+            } catch (e: Exception) {
+                logger.error("Failed to automatically open $url")
+                if (e.message != null) {
+                    logger.error(e.message!!)
+                }
+            }
+        }
     }
 }
 

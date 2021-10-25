@@ -165,9 +165,9 @@ object Mathlingua {
         return 0
     }
 
-    fun serve(fs: VirtualFileSystem, logger: Logger, port: Int) {
-        logger.log("Visit localhost:$port to see your rendered MathLingua code.")
-        logger.log("Every time you refresh the page, your MathLingua code will be re-analyzed.")
+    fun serve(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -> Unit)?) {
+        logger.log("Opening http://localhost:$port for you to edit your MathLingua files.")
+        logger.log("Every time you refresh the page, your MathLingua files will be re-analyzed.")
 
         var sourceCollection: SourceCollection? = null
         fun getSourceCollection(): SourceCollection {
@@ -471,6 +471,10 @@ object Mathlingua {
                 }
             }
             .get("/api/*") { ctx -> ctx.status(400) }
+
+        if (onStart != null) {
+            onStart()
+        }
     }
 
     fun decompose(fs: VirtualFileSystem, logger: Logger) {

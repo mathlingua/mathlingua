@@ -53,8 +53,9 @@ const ThreeColumnContent = (props: {
 
   const isZoomedInEnoughToHideSidebar = useCallback(
     () =>
-      ref.current &&
-      (ref.current as any).clientWidth >= 0.75 * window.screen.width,
+      isOnMobile() ||
+      (ref.current &&
+        (ref.current as any).clientWidth >= 0.75 * window.screen.width),
     [ref]
   );
 

@@ -18,6 +18,7 @@ package mathlingua.mathlingua.textalk
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo
+import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.textalk.TexTalkToken
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.newTexTalkLexer
@@ -131,5 +132,30 @@ internal class TexTalkLexerTest {
 
         assertThat(actual).isEqualTo(expected)
         assertThat(lexer.errors.size).isEqualTo(0)
+    }
+
+    @Test
+    fun `correctly handles stropping`() {
+        val text = "`someVar``**``some var`"
+        val lexer = newTexTalkLexer(text)
+        val actual: MutableList<TexTalkToken> = ArrayList()
+        while (lexer.hasNext()) {
+            actual.add(lexer.next())
+        }
+
+        val expected =
+            listOf(
+                TexTalkToken(
+                    text = "someVar", tokenType = TexTalkTokenType.Identifier, row = 0, column = 0),
+                TexTalkToken(
+                    text = "**", tokenType = TexTalkTokenType.Identifier, row = 0, column = 9),
+                TexTalkToken(
+                    text = "some var",
+                    tokenType = TexTalkTokenType.Identifier,
+                    row = 0,
+                    column = 13))
+
+        assertThat(actual).isEqualTo(expected)
+        assertThat(lexer.errors).isEqualTo(emptyList<ParseError>())
     }
 }

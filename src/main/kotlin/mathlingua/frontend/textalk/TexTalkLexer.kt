@@ -52,6 +52,30 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
             if (c == '\n') {
                 line++
                 column = 0
+            } else if (c == '`') {
+                val startLine = line
+                val startCol = column
+                val builder = StringBuilder()
+                while (i < text.length && text[i] != '`') {
+                    val nextChar = text[i++]
+                    builder.append(nextChar)
+                    column++
+                    if (nextChar == '\n') {
+                        line++
+                    }
+                }
+                if (i < text.length && text[i] == '`') {
+                    // move past the trailing `
+                    i++
+                    column++
+                } else {
+                    this.errors.add(
+                        ParseError(
+                            message = "Expected terminating `", row = startLine, column = startCol))
+                }
+                this.tokens.add(
+                    TexTalkToken(
+                        builder.toString(), TexTalkTokenType.Identifier, startLine, startCol))
             } else if (c == '\\') {
                 this.tokens.add(TexTalkToken("" + c, TexTalkTokenType.Backslash, line, column))
                 // make sure not to match words that start with 'is' such as 'isomorphic'

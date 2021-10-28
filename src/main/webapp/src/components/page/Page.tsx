@@ -97,6 +97,7 @@ export const Page = (props: PageProps) => {
   useEffect(() => {
     api.getFileResult(props.viewedPath).then((fileResult) => {
       if (fileResult) {
+        setError('');
         setFileResult(fileResult);
       } else {
         setError('Page Not Found');

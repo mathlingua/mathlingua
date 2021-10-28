@@ -86,6 +86,14 @@ export interface PageProps {
   targetId: string;
 }
 
+// needed to allow Command+s on Mac and Ctrl+s on other systems to
+// save the current document
+document.addEventListener('keydown', (event) => {
+  if ((event.ctrlKey || event.metaKey) && event.key == 's') {
+    event.preventDefault();
+  }
+});
+
 export const Page = (props: PageProps) => {
   const [fileResult, setFileResult] = useState(
     undefined as api.FileResult | undefined
@@ -319,10 +327,10 @@ const EditorView = memo(
       }
     }, [viewedPath]);
 
-    const saveContent = async (relativePath: string) => {
+    const saveContent = async () => {
       const content = (aceEditorRef.current as any)?.editor?.getValue();
       if (content) {
-        await api.writeFileResult(relativePath, content);
+        await api.writeFileResult(viewedPath, content);
         return true;
       }
       return false;
@@ -335,7 +343,7 @@ const EditorView = memo(
         scheduledFunction.cancel();
       }
       scheduledFunction = debounce(async () => {
-        const saved = await saveContent(viewedPath);
+        const saved = await saveContent();
         if (saved) {
           await Promise.all([
             api.check().then((resp) => {
@@ -381,6 +389,16 @@ const EditorView = memo(
           borderRightWidth: '1px',
           borderRightColor: '#dddddd',
         }}
+        commands={[
+          {
+            name: 'save',
+            bindKey: {
+              win: 'Ctrl-s',
+              mac: 'Command-s',
+            },
+            exec: () => saveContent(),
+          },
+        ]}
         annotations={annotations}
       ></AceEditor>
     );

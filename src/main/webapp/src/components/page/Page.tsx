@@ -254,6 +254,17 @@ const EditorView = memo(
   }) => {
     const aceEditorRef = useRef(null);
     const [annotations, setAnnotations] = useState([] as Annotation[]);
+    const [viewedPath, setViewedPath] = useState(props.viewedPath);
+
+    useEffect(() => {
+      console.log(`In use effect for props.viewedPath=${props.viewedPath}`);
+      api.getResolvedPath(props.viewedPath).then((path) => {
+        console.log(`resolving ${props.viewedPath} to ${path}`);
+        if (path) {
+          setViewedPath(path);
+        }
+      });
+    }, [props.viewedPath]);
 
     useEffect(() => {
       langTools.setCompleters();
@@ -301,13 +312,13 @@ const EditorView = memo(
           errors: [],
           relativePath: '',
         });
-        api.readPage(props.viewedPath).then((content) => {
+        api.readPage(viewedPath).then((content) => {
           editorRefVal.editor.setValue(content);
           editorRefVal.editor.clearSelection();
           editorRefVal.editor.getSession().setAnnotations(annotations);
         });
       }
-    }, [props.viewedPath]);
+    }, [viewedPath]);
 
     const saveContent = async (relativePath: string) => {
       const content = (aceEditorRef.current as any)?.editor?.getValue();
@@ -325,13 +336,13 @@ const EditorView = memo(
         scheduledFunction.cancel();
       }
       scheduledFunction = debounce(async () => {
-        const saved = await saveContent(props.viewedPath);
+        const saved = await saveContent(viewedPath);
         if (saved) {
           await Promise.all([
             api.check().then((resp) => {
               setAnnotations(
                 resp.errors
-                  .filter((err) => err.path === props.viewedPath)
+                  .filter((err) => err.path === viewedPath)
                   .map((err) => ({
                     row: Math.max(0, err.row),
                     column: Math.max(0, err.column),
@@ -341,7 +352,7 @@ const EditorView = memo(
               );
             }),
             api
-              .getFileResult(props.viewedPath)
+              .getFileResult(viewedPath)
               .then((fileResult) => props.onFileResultChanged(fileResult)),
           ]);
         }

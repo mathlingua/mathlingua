@@ -470,6 +470,12 @@ object Mathlingua {
                     ctx.status(500)
                 }
             }
+            .get("/api/resolvePath") { ctx ->
+                val pathToResolve = ctx.queryParam("path") ?: ""
+                val resolvedPath =
+                    getSourceCollection().getPage(pathToResolve)?.fileResult?.relativePath ?: ""
+                ctx.json(ResolvePathResponse(path = resolvedPath))
+            }
             .get("/api/*") { ctx -> ctx.status(400) }
 
         if (onStart != null) {
@@ -483,6 +489,8 @@ object Mathlingua {
                 decompose(fs = fs, sourceCollection = buildSourceCollection(fs), mlgFiles = null)))
     }
 }
+
+@Serializable data class ResolvePathResponse(val path: String)
 
 @Serializable data class DeleteDirRequest(val path: String)
 

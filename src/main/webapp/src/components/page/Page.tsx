@@ -257,9 +257,7 @@ const EditorView = memo(
     const [viewedPath, setViewedPath] = useState(props.viewedPath);
 
     useEffect(() => {
-      console.log(`In use effect for props.viewedPath=${props.viewedPath}`);
       api.getResolvedPath(props.viewedPath).then((path) => {
-        console.log(`resolving ${props.viewedPath} to ${path}`);
         if (path) {
           setViewedPath(path);
         }

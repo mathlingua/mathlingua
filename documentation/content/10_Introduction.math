@@ -46,6 +46,14 @@ theorems, axioms, and conjectures mean without having to manually
 check definitions are used correctly, every term used
 is defined, and statements are precise.
 
+MathLingua is not a typesetting language like LaTeX, and it is
+not a proof assistant like Lean.  Instead, it is in-between.
+
+It provides checking of results (although doesn`\'`t provide all
+of the checks of proof assistants) while providing an easy to use
+language for precisely describing the structure of results with
+the level of formality comparable to traditional math literature.
+
 For example, consider the MathLingua statement of (one part of)
 the Fundamental Theorem of Calculus,
 ::
@@ -68,7 +76,8 @@ using:
 
 ::
 The MathLingua code for the theorem is given below, and the
-MathLingua tooling automatically creates the above rendering.
+MathLingua command line tool `mlg` automatically creates the
+above rendering of the theorem.
 ```math
 Theorem: "Fundamental Theorem of Calculus"
 given: f(x), F(x), I, a, b

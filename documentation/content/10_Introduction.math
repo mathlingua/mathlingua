@@ -11,29 +11,32 @@ Today there is so much mathematical knowledge, (definitions,
 theorems, axioms, and conjectures) that it is hard to keep track
 of what is known and what is unknown.
 
-Digital encyclopedia publishing tools see definitions,
-theorems, axioms, and conjectures as text.  They cannot understand
-their meanings or the connections between them.
+Further, today`\'`s collections of mathematical content are
+either:
 
-Further, authors are tasked with making sure such items
-use the same symbols, are easy to read, and are displayed nicely
-on the page.
+1. are written in languages like LaTeX that describe how math
+   statements look, but not what they mean.
+2. are written in proof assistant languages that describe
+   what math statements mean, but not how they look.
 
-Last, automated theorem proving languages have syntax that differs
-from how mathematics is typically written, have a steep learning
-curve, and express results in a way that doesn't use the same symbols
-used in math literature.
+Further, languages like LaTeX do not provide any tools to verify
+that definitions and theorems are used correctly and don't
+reference undefined symbols or definitions.
 
-What we need is a language that allows authors to focus on
-describing what mathematics concepts mean, with the system helping with
-presentation and analysis of those concepts, all while being
-easy and fun to use.
+Next, proof assistant languages provide checking but require
+writing in a difficult language and require everything
+to written very formally.
+
+What we need is a language that allows one to describe the
+appearance of mathematical concepts as well as their meaning
+with the same level of formality of traditional math literature,
+all with the ability to be analyzed automatically.
 
 MathLingua is that language.
 
 ## Introducing MathLingua
 
-MathLingua is a unique language for creating catalogs of
+MathLingua is a unique language for creating collections of
 mathematical knowledge that are expressed precisely, rendered
 beautifully, and whose connections and usages are analyzed
 automatically.

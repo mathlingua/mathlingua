@@ -512,7 +512,9 @@ The following is the code for the theorem:
 ```math
 Theorem:
 given: G := (X, *, e), x, y
-if: 'x, y in G'
+if:
+. 'G is \group'
+. 'x, y in G'
 then:
 . '\inv((x * y)) = \inv(y) * \inv(x)'
 using:
@@ -569,7 +571,9 @@ that is rendered as
 
 Theorem:
 given: G := (X, *, e), x, y
-if: 'x, y in G'
+if:
+. 'G is \group'
+. 'x, y in G'
 then:
 . '\inv((x * y)) = \inv(y) * \inv(x)'
 using:

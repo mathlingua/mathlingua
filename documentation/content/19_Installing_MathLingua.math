@@ -48,8 +48,10 @@ so that your document should look like
 ```
 {::}
 # Welcome to MathLingua
-See [www.mathlingua.org](https://www.mathlingua.org) for
-more information and help getting started.
+See [www.mathlingua.org]
+(https://www.mathlingua.org) for
+more information and help getting
+started.
 {::}
 
 Theorem:

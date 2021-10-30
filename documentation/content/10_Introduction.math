@@ -11,26 +11,27 @@ Today there is so much mathematical knowledge, (definitions,
 theorems, axioms, and conjectures) that it is hard to keep track
 of what is known and what is unknown.
 
-Further, today`\'`s collections of mathematical content are
-either:
+To record mathematical knowledge today one typically uses either:
 
-1. are written in languages like LaTeX that describe how math
-   statements look, but not what they mean.
-2. are written in proof assistant languages that describe
-   what math statements mean, but not how they look.
+* LaTeX that describes what a math statement looks like and
+  is easy to write, but:
+1. doesn`\'`t describe what a math statement means
+2. doesn`\'`t have tools to verify that definitions and
+   theorems are used correctly and don`\'`t reference
+   undefined symbols or definitions
 
-Further, languages like LaTeX do not provide any tools to verify
-that definitions and theorems are used correctly and don't
-reference undefined symbols or definitions.
+* proof assistant languages that describe what a math
+  statement means and have verification capabilities but:
+1. don`\'`t describe what a math statement looks like
+2. have a very steep learning curve
+3. require all math statements to be expressed extremely
+   formally often very differently from how they are
+   typically expressed in math literature
 
-Next, proof assistant languages provide checking but require
-writing in a difficult language and require everything
-to written very formally.
-
-What we need is a language that allows one to describe the
-appearance of mathematical concepts as well as their meaning
-with the same level of formality of traditional math literature,
-all with the ability to be analyzed automatically.
+What we need is a language to easily describe the meaning
+and appearance of mathematical concepts with the same level of
+formality of traditional math literature, all with the ability
+to be analyzed automatically.
 
 MathLingua is that language.
 
@@ -122,9 +123,6 @@ text, the definition of the definite integral is displayed.
 All the author needs to do is describe the Fundamental
 Theorem of Calclus and the definite integral in MathLingua
 and the MathLingua tooling handles the rest.
-
-Keep reading for a step-by-step guide to use MathLingua
-to build your first catalog of mathematical knowledge.
 
 ## Contact
 

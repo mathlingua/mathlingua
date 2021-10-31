@@ -3,13 +3,11 @@ import { BlockComment } from '../block-comment/BlockComment';
 import styles from './Page.module.css';
 
 import * as api from '../../services/api';
-import React, { memo, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ErrorView } from '../error-view/ErrorView';
 import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGroup';
 import { useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
-
-import debounce from 'lodash.debounce';
 
 import AceEditor from 'react-ace';
 
@@ -80,8 +78,6 @@ const BASE_COMPLETIONS: Completion[] = [
   { name: 'Note', value: 'Note:\ncontent:\nMetadata?:' },
 ];
 
-let scheduledFunction: { (): void; cancel(): void } | null = null;
-
 export interface PageProps {
   viewedPath: string;
   targetId: string;
@@ -90,7 +86,7 @@ export interface PageProps {
 // needed to allow Command+s on Mac and Ctrl+s on other systems to
 // save the current document
 document.addEventListener('keydown', (event) => {
-  if ((event.ctrlKey || event.metaKey) && event.key == 's') {
+  if ((event.ctrlKey || event.metaKey) && event.key === 's') {
     event.preventDefault();
   }
 });
@@ -286,8 +282,13 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
     this.setupTimer();
   }
 
-  componentDidUpdate(prevProps: EditorViewProps) {
-    this.initializeEditor(prevProps);
+  componentDidUpdate(prevProps: EditorViewProps, prevState: EditorViewState) {
+    if (
+      prevProps.viewedPath !== this.props.viewedPath ||
+      (!prevState.editor && !!this.state.editor)
+    ) {
+      this.initializeEditor();
+    }
   }
 
   componentWillUnmount() {
@@ -324,15 +325,7 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
     }, 500);
   }
 
-  private initializeEditor(prevProps?: EditorViewProps) {
-    if (prevProps && prevProps.viewedPath === this.props.viewedPath) {
-      return;
-    }
-
-    if (!this.state.editor) {
-      return;
-    }
-
+  private initializeEditor() {
     this.props.onFileResultChanged({
       content: '',
       entities: [],

@@ -3,13 +3,14 @@ import { Page } from '../page/Page';
 import { SidePanel } from '../side-panel/SidePanel';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
-import sidePanelVisibleSlice, {
+import {
   selectSidePanelVisible,
   sidePanelVisibilityChanged,
 } from '../../store/sidePanelVisibleSlice';
 // import { isOnMobile } from '../../support/util';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { isOnMobile } from '../../support/util';
+import * as api from '../../services/api';
 
 export interface HashLocation {
   viewedPath: string;
@@ -143,6 +144,21 @@ const TwoColumnContent = (props: {
   hashLocation: HashLocation;
   isSidePanelVisible: boolean;
 }) => {
+  const [viewedPath, setViewedPath] = useState(props.hashLocation.viewedPath);
+
+  useEffect(() => {
+    const propsPath = props.hashLocation.viewedPath;
+    if (propsPath === '') {
+      api.getResolvedPath(propsPath).then((path) => {
+        if (path) {
+          setViewedPath(path);
+        }
+      });
+    } else {
+      setViewedPath(propsPath);
+    }
+  }, [props.hashLocation]);
+
   return (
     <div
       style={{
@@ -166,10 +182,7 @@ const TwoColumnContent = (props: {
           marginTop: '0.5em',
         }}
       >
-        <Page
-          viewedPath={props.hashLocation.viewedPath}
-          targetId={props.hashLocation.targetId}
-        />
+        <Page viewedPath={viewedPath} targetId={props.hashLocation.targetId} />
       </div>
     </div>
   );

@@ -3,7 +3,7 @@ import { BlockComment } from '../block-comment/BlockComment';
 import styles from './Page.module.css';
 
 import * as api from '../../services/api';
-import { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { ErrorView } from '../error-view/ErrorView';
 import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGroup';
 import { useAppSelector } from '../../support/hooks';
@@ -21,6 +21,7 @@ import { isOnMobile } from '../../support/util';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight, faAngleLeft } from '@fortawesome/free-solid-svg-icons';
+import { clearInterval, setInterval } from 'timers';
 
 interface Annotation {
   row: number;
@@ -256,14 +257,95 @@ const RenderedContent = (props: {
   );
 };
 
-const EditorView = (props: {
+interface EditorViewProps {
   viewedPath: string;
   onFileResultChanged(fileResult: api.FileResult | undefined): void;
-}) => {
-  const [editor, setEditor] = useState(undefined as any);
-  const [annotations, setAnnotations] = useState([] as Annotation[]);
+}
 
-  useEffect(() => {
+interface EditorViewState {
+  editor: any;
+  annotations: Annotation[];
+  dirty: boolean;
+}
+
+class EditorView extends React.Component<EditorViewProps, EditorViewState> {
+  private timer: any;
+
+  constructor(props: EditorViewProps) {
+    super(props);
+    this.state = {
+      editor: null,
+      annotations: [],
+      dirty: false,
+    };
+  }
+
+  componentDidMount() {
+    this.setupCompletions();
+    this.initializeEditor();
+    this.setupTimer();
+  }
+
+  componentDidUpdate(prevProps: EditorViewProps) {
+    this.initializeEditor(prevProps);
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
+
+  private setupTimer() {
+    this.timer = setInterval(async () => {
+      if (this.state.dirty && this.state.editor) {
+        const viewedPath = this.props.viewedPath;
+        this.setState({ ...this.state, dirty: false });
+        const content = this.state.editor.getValue();
+        await api.writeFileResult(viewedPath, content);
+        await Promise.all([
+          api.check().then((resp) => {
+            const newAnnotations = resp.errors
+              .filter((err) => err.path === viewedPath)
+              .map(
+                (err) =>
+                  ({
+                    row: Math.max(0, err.row),
+                    column: Math.max(0, err.column),
+                    text: err.message,
+                    type: 'error',
+                  } as Annotation)
+              );
+            this.setState({ ...this.state, annotations: newAnnotations });
+          }),
+          api
+            .getFileResult(viewedPath)
+            .then((fileResult) => this.props.onFileResultChanged(fileResult)),
+        ]);
+      }
+    }, 500);
+  }
+
+  private initializeEditor(prevProps?: EditorViewProps) {
+    if (prevProps && prevProps.viewedPath === this.props.viewedPath) {
+      return;
+    }
+
+    if (!this.state.editor) {
+      return;
+    }
+
+    this.props.onFileResultChanged({
+      content: '',
+      entities: [],
+      errors: [],
+      relativePath: '',
+    });
+    api.readPage(this.props.viewedPath).then((content) => {
+      this.state.editor.setValue(content);
+      this.state.editor.clearSelection();
+    });
+  }
+
+  private setupCompletions() {
     langTools.setCompleters();
     langTools.addCompleter({
       getCompletions: async (
@@ -298,107 +380,57 @@ const EditorView = (props: {
         );
       },
     });
-  }, []);
+  }
 
-  useEffect(() => {
-    if (!editor) {
-      return;
-    }
-
-    props.onFileResultChanged({
-      content: '',
-      entities: [],
-      errors: [],
-      relativePath: '',
-    });
-    api.readPage(props.viewedPath).then((content) => {
-      editor.setValue(content);
-      editor.clearSelection();
-      editor.getSession().setAnnotations(annotations);
-    });
-  }, [props.viewedPath, editor]);
-
-  const saveContent = async () => {
-    if (!editor) {
-      return false;
-    }
-    const content = editor.getValue();
-    await api.writeFileResult(props.viewedPath, content);
-    return true;
-  };
-
-  const onChange = async () => {
-    // only do a save/check after a short pause after the user
-    // has stopped typing
-    if (scheduledFunction) {
-      scheduledFunction.cancel();
-    }
-    scheduledFunction = debounce(async () => {
-      const saved = await saveContent();
-      if (saved) {
-        await Promise.all([
-          api.check().then((resp) => {
-            setAnnotations(
-              resp.errors
-                .filter((err) => err.path === props.viewedPath)
-                .map((err) => ({
-                  row: Math.max(0, err.row),
-                  column: Math.max(0, err.column),
-                  text: err.message,
-                  type: 'error',
-                }))
-            );
-          }),
-          api
-            .getFileResult(props.viewedPath)
-            .then((fileResult) => props.onFileResultChanged(fileResult)),
-        ]);
-      }
-    }, 500);
-    scheduledFunction();
-  };
-
-  return (
-    <AceEditor
-      ref={(ref) => {
-        const newEditor = ref?.editor;
-        if (newEditor) {
-          setEditor(newEditor);
-        }
-      }}
-      mode="yaml"
-      theme="eclipse"
-      onChange={onChange}
-      name="ace-editor"
-      editorProps={{ $blockScrolling: true }}
-      highlightActiveLine={false}
-      showPrintMargin={false}
-      enableBasicAutocompletion={true}
-      enableLiveAutocompletion={false}
-      fontSize="90%"
-      style={{
-        position: 'relative',
-        width: '100%',
-        height: 'calc(100vh - 1.75em)',
-        minHeight: 'calc(100vh - 1.75em)',
-        borderRight: 'solid',
-        borderRightWidth: '1px',
-        borderRightColor: '#dddddd',
-      }}
-      commands={[
-        {
-          name: 'save',
-          bindKey: {
-            win: 'Ctrl-s',
-            mac: 'Command-s',
-          },
-          exec: () => saveContent(),
-        },
-      ]}
-      annotations={annotations}
-    ></AceEditor>
-  );
-};
+  render() {
+    return (
+      <div>
+        <AceEditor
+          ref={(ref) => {
+            const newEditor = ref?.editor;
+            if (newEditor && newEditor !== this.state.editor) {
+              this.setState({ ...this.state, editor: newEditor });
+            }
+          }}
+          mode="yaml"
+          theme="eclipse"
+          onChange={() => this.setState({ ...this.state, dirty: true })}
+          name="ace-editor"
+          editorProps={{ $blockScrolling: true }}
+          highlightActiveLine={false}
+          showPrintMargin={false}
+          enableBasicAutocompletion={true}
+          enableLiveAutocompletion={false}
+          fontSize="90%"
+          style={{
+            position: 'relative',
+            width: '100%',
+            height: 'calc(100vh - 1.75em)',
+            minHeight: 'calc(100vh - 1.75em)',
+            borderRight: 'solid',
+            borderRightWidth: '1px',
+            borderRightColor: '#dddddd',
+          }}
+          commands={[
+            {
+              name: 'save',
+              bindKey: {
+                win: 'Ctrl-s',
+                mac: 'Command-s',
+              },
+              exec: () => {
+                if (!this.state.dirty) {
+                  this.setState({ ...this.state, dirty: true });
+                }
+              },
+            },
+          ]}
+          annotations={this.state.annotations}
+        ></AceEditor>
+      </div>
+    );
+  }
+}
 
 const SideBySideView = (props: {
   relativePath: string;

@@ -1,0 +1,375 @@
+::
+# The Real Numbers
+
+Here we give an informal description of the real
+numbers, describing only the level of detail needed
+to describe the First Fundamental Theorem of Calculus
+given in the [Introduction](#/content/10_Introduction.math).
+
+First, we need to describe what a binary relation is
+so that an *ordered set* is:
+::
+
+
+[\binary.relation:on{A}]
+Defines: R
+when:
+. 'A is \set'
+means:
+. 'R \subset/ {A \set.product/ A}'
+written: "\textrm{binary relation on } A?"
+called: "binary relation on $A?$"
+Metadata:
+. overview: "Two elements $a, b \in A$ are said to be related
+             if $(a, b) \in R$."
+
+
+[\that{a}:not{b}{c}]
+States:
+that:
+. 'a'
+. not: 'b'
+. not: 'c'
+written: "a? \textrm{ holds but not } b? \textrm{ and not } c?"
+called: "$a?$ but not $b?$ and not $c?$"
+
+
+
+[\exactly.one.of{a}{b}{c}]
+States:
+that:
+. or:
+  . '\that{a}:not{b}{c}'
+  . '\that{b}:not{a}{c}'
+  . '\that{c}:not{a}{b}'
+written: "\textrm{exactly one of } a?, b?, \textrm{ and } c?"
+called: "exactly one of $a?$, $b?$, and $c?$"
+
+
+
+[\ordered.set]
+Defines: (S, <)
+when:
+. 'S is \set'
+. '< is \binary.relation:on{S}'
+means:
+. forAll: x, y
+  suchThat: 'x, y in S'
+  then:
+  . '\exactly.one.of{x < y}{y < x}{x = y}'
+. forAll: x, y, z
+  suchThat: 'x, y, z in S'
+  then:
+  . if:
+    . 'x < y'
+    . 'y < z'
+    then:
+    . 'x < z'
+viewing:
+. as: '\set'
+  via: 'S'
+. membership:
+  through: 'S'
+written: "\textrm{ordered set}"
+called: "ordered set"
+
+
+[a \leq{X}/ b]
+States:
+requiring: S, <
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. or:
+  . 'a < b'
+  . 'a = b'
+written: "a? \leq b?"
+called: "$a?$ is less than or equal to $b?$"
+
+
+[a \lt{X}/ b]
+States:
+requiring: S, <
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. 'a < b'
+written: "a? < b?"
+called: "$a?$ is less than $b?$"
+
+
+[a \gt{X}/ b]
+States:
+requiring: S, <
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. 'b \lt{X}/ a'
+written: "a? > b?"
+called: "$a?$ is greater than $b?$"
+
+
+[a \geq{X}/ b]
+States:
+requiring: S, <
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. 'b \leq{X}/ a'
+written: "a? \geq b?"
+called: "$a?$ is greater than or equal to $b?$"
+
+
+[\upper.bound:of{X}]
+Defines: b
+requiring: E, S, <
+when:
+. '(S, <) is \ordered.set'
+. 'E \subset/ S'
+means:
+. forAll: x
+  suchThat: 'x in E'
+  then: 'x \leq{X}/ b'
+written: "\textrm{upper bound of } X?"
+called: "upper bound of $X?$"
+
+
+[\bounded.above.set{X}]
+Defines: X := (E, <)
+when:
+. 'X is \ordered.set'
+means:
+. exists: b
+  suchThat:
+  . 'b is \upper.bound:of{X}'
+viewing:
+. as: '\set'
+  via: 'E'
+. membership:
+  through: 'E'
+written: "\textrm{bounded above}"
+called: "bounded above"
+
+
+[\supremum:of{X}]
+Defines: beta
+when:
+. 'X := (E, <) is \bounded.above.set{X}'
+means:
+. 'beta is \upper.bound:of{X}'
+. forAll: b
+  suchThat: 'b is \upper.bound:of{X}'
+  then: 'b \geq{X}/ beta'
+written: "\sup X?"
+called: "supremum of $X?$"
+
+
+[\lower.bound:of{X}]
+Defines: b
+requiring: E, S, <
+when:
+. '(S, <) is \ordered.set'
+. 'E \subset/ S'
+means:
+. forAll: x
+  suchThat: 'x in E'
+  then: 'x \geq{X}/ b'
+written: "\textrm{lower bound of } X?"
+called: "lower bound of $X?$"
+
+
+[\bounded.below.set{X}]
+Defines: X := (E, <)
+when:
+. 'X is \ordered.set'
+means:
+. exists: b
+  suchThat:
+  . 'b is \lower.bound:of{X}'
+viewing:
+. as: '\set'
+  via: 'E'
+. membership:
+  through: 'E'
+written: "\textrm{bounded below}"
+called: "bounded below"
+
+
+[\infimum:of{X}]
+Defines: alpha
+when:
+. 'X := (E, <) is \bounded.above.set{X}'
+means:
+. 'alpha is \lower.bound:of{X}'
+. forAll: a
+  suchThat: 'a is \lower.bound:of{X}'
+  then: 'a \leq{X}/ alpha'
+written: "\inf X?"
+called: "infimum of $X?$"
+
+
+[\empty.set]
+Defines: X
+means:
+. 'X is \set'
+. not:
+  . exists: x
+    suchThat:
+    . 'x in X'
+written: "\textrm{empty set}"
+called: "empty set"
+
+
+[\nonempty.set]
+Defines: X
+means:
+. 'X is \set'
+. not: 'X is \empty.set'
+written: "\textrm{non-empty set}"
+called: "non-empty set"
+
+
+
+[\least.upper.bound.property.set]
+Defines: X := (S, <)
+when: 'X is \ordered.set'
+means:
+. forAll: E
+  suchThat:
+  . 'E is \nonempty.set'
+  . 'E \subset/ S'
+  . 'E is \bounded.above.set{X}'
+  then:
+  . exists: b
+    suchThat:
+    . 'b = \supremum:of{X}'
+written: "\textrm{least-upper-bound property set}"
+called: "least-upper-bound property set"
+
+
+[\field]
+Defines: F := (X, +, *, 0, 1)
+when:
+. 'X is \set'
+. '+ is \binary.operation:on{X}'
+. '* is \binary.operation:on{X}'
+. '0 in X'
+. '1 in X'
+means:
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x + y in X'
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x + y = y + x'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then: '(x + y) + z = x + (y + z)'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . 'x + 0 = x'
+  . '0 + x = x'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . exists: y
+    suchThat:
+    . 'y in X'
+    . 'x + y = 0'
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x * y in X'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . exists: y
+    suchThat:
+    . 'y in X'
+    . 'x * y = 1'
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x * y = y * x'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . 'x*(y + z) = x*y + x*z'
+written: "\textrm{field}"
+called: "field"
+
+
+-------------------------------------
+
+
+[\real]
+Defines: x
+means: "A real number"
+written: "\textrm{real}"
+called: "real"
+
+
+[a \real.</ b]
+States:
+that: ""
+written: "a? < b?"
+called: "$a?$ is less than $b?$"
+
+
+[a \real.leq/ b]
+States:
+that: ""
+written: "a? \leq b?"
+called: "$a?$ is less than $b?$"
+
+
+[a \real.-/ b]
+States:
+that: ""
+written: "a? - b?"
+called: "$a?$ minus $b?$"
+
+
+
+
+
+::
+-------------------
+::
+
+
+
+
+[\closed.interval{a, b}]
+Defines: I
+means: "closed interval"
+written: "[a?, b?]"
+called: "closed interval between $a?$ and $b?$"
+
+
+
+[\continuous.function:on{A}]
+Defines: f(x)
+requiring: B
+means: 'f is \function:on{A}:to{B}'
+written: "\textrm{continuous function on } A?"
+called: "continuous function on $A?$"
+
+
+[\indefinite.integral:of{f}:on{A}]
+Defines: F(x)
+means: "something"
+written: "\textrm{indefinite integral of } f? \textrm{ on } A?"
+called: "indefinite integral of $f?$ on $A?$"
+
+
+[\definite.integral[x]_{a}^{b}:of{f}]
+Defines: L
+means: ""
+written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
+called: "definite integral of $f?$ from $a?$ to $b?$"
+
+

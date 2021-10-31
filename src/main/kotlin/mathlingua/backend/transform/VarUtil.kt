@@ -326,10 +326,17 @@ private fun checkVarsImplPhase2Node(
         }
         varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, tracker, errors))
         varsToRemove.addAll(checkDefineSectionVars(node.definesSection, vars, tracker, errors))
-        if (node.requiringSection != null) {
-            varsToRemove.addAll(
-                checkRequiringSectionVars(node.requiringSection!!, vars, tracker, errors))
+    }
+
+    val requiringSection =
+        when (node) {
+            is DefinesGroup -> node.requiringSection
+            is StatesGroup -> node.requiringSection
+            else -> null
         }
+
+    if (requiringSection != null) {
+        varsToRemove.addAll(checkRequiringSectionVars(requiringSection, vars, tracker, errors))
     }
 
     if (node is HasUsingSection && node.usingSection != null) {

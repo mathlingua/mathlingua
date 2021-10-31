@@ -1457,4 +1457,70 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report undefined symbols for symbols defined in Defines-requiring`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\f{X}]
+                    Defines: Y
+                    requiring: S, <
+                    means: 'X := (S, <) is \something'
+                    written: "f"
+                    called: "f"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report undefined symbols for symbols defined in States-requiring`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\f{X}]
+                    States:
+                    requiring: S, <
+                    that: 'X := (S, <) is \something'
+                    written: "f"
+                    called: "f"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

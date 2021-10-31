@@ -138,7 +138,7 @@ written: "\textrm{upper bound of } X?"
 called: "upper bound of $X?$"
 
 
-[\bounded.above.set{X}]
+[\bounded.above.set]
 Defines: X := (E, <)
 when:
 . 'X is \ordered.set'
@@ -158,7 +158,7 @@ called: "bounded above"
 [\supremum:of{X}]
 Defines: beta
 when:
-. 'X := (E, <) is \bounded.above.set{X}'
+. 'X := (E, <) is \bounded.above.set'
 means:
 . 'beta is \upper.bound:of{X}'
 . forAll: b
@@ -182,7 +182,7 @@ written: "\textrm{lower bound of } X?"
 called: "lower bound of $X?$"
 
 
-[\bounded.below.set{X}]
+[\bounded.below.set]
 Defines: X := (E, <)
 when:
 . 'X is \ordered.set'
@@ -202,7 +202,7 @@ called: "bounded below"
 [\infimum:of{X}]
 Defines: alpha
 when:
-. 'X := (E, <) is \bounded.above.set{X}'
+. 'X := (E, <) is \bounded.above.set'
 means:
 . 'alpha is \lower.bound:of{X}'
 . forAll: a
@@ -242,7 +242,7 @@ means:
   suchThat:
   . 'E is \nonempty.set'
   . 'E \subset/ S'
-  . 'E is \bounded.above.set{X}'
+  . 'E is \bounded.above.set'
   then:
   . exists: b
     suchThat:

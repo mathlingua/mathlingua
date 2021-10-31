@@ -1620,4 +1620,114 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report errors of duplicate base types when a Defines doesn't define an identifier`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\another]
+                    Defines: X
+                    means: "another"
+                    written: "another"
+                    called: "another"
+
+
+                    [\f]
+                    Defines: (S, <)
+                    when:
+                    . 'S is \something'
+                    . '< is \something.else'
+                    means:
+                    . '0 < 1'
+                    viewing:
+                    . as: '\another'
+                      via: 'S'
+                    . membership:
+                      through: 'S'
+                    written: "\textrm{ordered set}"
+                    called: "ordered set"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors of duplicate base types when a Defines uses a viewing-as without a identifier target`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\another]
+                    Defines: (X, Y)
+                    means: "another"
+                    written: "another"
+                    called: "another"
+
+
+                    [\f]
+                    Defines: (S, <)
+                    when:
+                    . 'S is \something'
+                    . '< is \something.else'
+                    means:
+                    . '0 < 1'
+                    viewing:
+                    . as: '\another'
+                      via: 'S'
+                    . membership:
+                      through: 'S'
+                    written: "\textrm{ordered set}"
+                    called: "ordered set"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

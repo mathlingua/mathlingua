@@ -24,11 +24,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
-import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
@@ -47,18 +46,60 @@ class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGr
             val sig = pair.first.value
             val def = pair.second
             val name = getTargetName(def.definesSection.targets[0])
-            signatureMap[sig.form] =
-                getDefSignatures(def, name, pair.first.tracker ?: newLocationTracker())
+            val defSignatures = mutableSetOf<String>()
+            if (name != null) {
+                defSignatures.addAll(
+                    getDefSignatures(def, name, pair.first.tracker ?: newLocationTracker()))
+            }
+
+            if (def.viewingSection != null) {
+                var asSection: ViewingAsGroup? = null
+                for (clause in def.viewingSection.clauses.clauses) {
+                    if (clause is ViewingAsGroup) {
+                        asSection = clause
+                        break
+                    }
+                }
+                if (asSection != null) {
+                    when (val root = asSection.viewingAsSection.statement.texTalkRoot
+                    ) {
+                        is ValidationSuccess -> {
+                            if (root.value.children.size == 1 &&
+                                root.value.children[0] is Command) {
+                                val cmd = root.value.children[0] as Command
+                                defSignatures.add(cmd.signature())
+                            }
+                            // TODO: have an error reported if the viewing:as: section doesn't
+                            // contain a
+                            // Command
+                        }
+                        else -> {
+                            // TODO: have an error reported if the viewing:as: section doesn't
+                            // have valid
+                            // textalk code
+                        }
+                    }
+                }
+            }
+            signatureMap[sig.form] = defSignatures
         }
     }
 
-    private fun getTargetName(target: Target): String {
+    private fun getTargetName(target: Target): String? {
         return when (target) {
+            is AbstractionNode -> {
+                if (!target.abstraction.isEnclosed &&
+                    target.abstraction.parts.size == 1 &&
+                    !target.abstraction.isVarArgs &&
+                    target.abstraction.subParams == null) {
+                    target.abstraction.parts.first().name.text
+                } else {
+                    null
+                }
+            }
             is Identifier -> target.name
-            is AbstractionNode -> target.abstraction.parts.joinToString(".") { it.name.text }
             is AssignmentNode -> target.assignment.lhs.text
-            is TupleNode -> target.tuple.toCode()
-            else -> target.toCode(false, 0).getCode()
+            else -> null
         }
     }
 
@@ -76,21 +117,6 @@ class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGr
             ) {
                 is ValidationSuccess -> {
                     getAllTypesImpl(validation.value, target, result)
-                }
-            }
-        } else if (node is ViewingAsSection) {
-            val root = node.statement.texTalkRoot
-            when (root) {
-                is ValidationSuccess -> {
-                    if (root.value.children.size == 1 && root.value.children[0] is Command) {
-                        result.add(root.value.children[0] as Command)
-                    }
-                    // TODO: have an error reported if the viewing:as: section doesn't contain a
-                    // Command
-                }
-                else -> {
-                    // TODO: have an error reported if the viewing:as: section doesn't have valid
-                    // textalk code
                 }
             }
         }

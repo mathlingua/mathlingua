@@ -28,6 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
@@ -75,6 +76,21 @@ class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGr
             ) {
                 is ValidationSuccess -> {
                     getAllTypesImpl(validation.value, target, result)
+                }
+            }
+        } else if (node is ViewingAsSection) {
+            val root = node.statement.texTalkRoot
+            when (root) {
+                is ValidationSuccess -> {
+                    if (root.value.children.size == 1 && root.value.children[0] is Command) {
+                        result.add(root.value.children[0] as Command)
+                    }
+                    // TODO: have an error reported if the viewing:as: section doesn't contain a
+                    // Command
+                }
+                else -> {
+                    // TODO: have an error reported if the viewing:as: section doesn't have valid
+                    // textalk code
                 }
             }
         }

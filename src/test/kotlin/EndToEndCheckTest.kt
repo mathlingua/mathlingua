@@ -1523,4 +1523,101 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check reports errors of duplicate base types when duplicate base types exist`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\f{X}]
+                    States:
+                    when:
+                    . 'X is \something'
+                    . 'X is \something.else'
+                    that: "something"
+                    written: "f"
+                    called: "f"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 18, Column: 3)
+                'X' has more than one base type: {\something, \something.else}
+                Found type paths:
+                {\something}, {\something.else}
+
+                ERROR: content/file1.math (Line: 19, Column: 3)
+                'X' has more than one base type: {\something, \something.else}
+                Found type paths:
+                {\something}, {\something.else}
+
+                FAILED
+                Processed 1 file
+                2 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 2)
+    }
+
+    @Test
+    fun `check does not report errors of duplicate base types when viewing-as causes no duplicate base types`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    viewing:
+                    . as: '\something'
+                      via: 'X'
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\f{X}]
+                    States:
+                    when:
+                    . 'X is \something'
+                    . 'X is \something.else'
+                    that: "something"
+                    written: "f"
+                    called: "f"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

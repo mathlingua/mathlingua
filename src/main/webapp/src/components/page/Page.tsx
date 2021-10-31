@@ -256,154 +256,149 @@ const RenderedContent = (props: {
   );
 };
 
-const EditorView = memo(
-  (props: {
-    viewedPath: string;
-    onFileResultChanged(fileResult: api.FileResult | undefined): void;
-  }) => {
-    const aceEditorRef = useRef(null);
-    const [annotations, setAnnotations] = useState([] as Annotation[]);
-    const [viewedPath, setViewedPath] = useState(props.viewedPath);
+const EditorView = (props: {
+  viewedPath: string;
+  onFileResultChanged(fileResult: api.FileResult | undefined): void;
+}) => {
+  const [editor, setEditor] = useState(undefined as any);
+  const [annotations, setAnnotations] = useState([] as Annotation[]);
 
-    useEffect(() => {
-      api.getResolvedPath(props.viewedPath).then((path) => {
-        if (path) {
-          setViewedPath(path);
+  useEffect(() => {
+    langTools.setCompleters();
+    langTools.addCompleter({
+      getCompletions: async (
+        editor: any,
+        session: {},
+        pos: { column: number },
+        prefix: string,
+        callback: (n: null, arr: any[]) => void
+      ) => {
+        if (prefix.length === 0) {
+          return callback(null, []);
         }
-      });
-    }, [props.viewedPath]);
+        const column = pos.column;
+        let indent = '\n';
+        for (let i = 0; i < column - prefix.length; i++) {
+          indent += ' ';
+        }
+        const remoteCompletions = (
+          await api.getSignatureSuffixes(`\\${prefix}`)
+        ).map((suffix) => ({
+          name: prefix + suffix,
+          value: prefix + suffix,
+        }));
+        callback(
+          null,
+          BASE_COMPLETIONS.concat(remoteCompletions).map((item) => {
+            return {
+              name: item.name.replace(/\\/, ''),
+              value: item.value.replace(/\\/, '').replace(/\n/g, indent),
+            };
+          })
+        );
+      },
+    });
+  }, []);
 
-    useEffect(() => {
-      langTools.setCompleters();
-      langTools.addCompleter({
-        getCompletions: async (
-          editor: any,
-          session: {},
-          pos: { column: number },
-          prefix: string,
-          callback: (n: null, arr: any[]) => void
-        ) => {
-          if (prefix.length === 0) {
-            return callback(null, []);
-          }
-          const column = pos.column;
-          let indent = '\n';
-          for (let i = 0; i < column - prefix.length; i++) {
-            indent += ' ';
-          }
-          const remoteCompletions = (
-            await api.getSignatureSuffixes(`\\${prefix}`)
-          ).map((suffix) => ({
-            name: prefix + suffix,
-            value: prefix + suffix,
-          }));
-          callback(
-            null,
-            BASE_COMPLETIONS.concat(remoteCompletions).map((item) => {
-              return {
-                name: item.name.replace(/\\/, ''),
-                value: item.value.replace(/\\/, '').replace(/\n/g, indent),
-              };
-            })
-          );
-        },
-      });
-    }, []);
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
 
-    useEffect(() => {
-      const editorRefVal = aceEditorRef.current as any;
-      if (editorRefVal) {
-        props.onFileResultChanged({
-          content: '',
-          entities: [],
-          errors: [],
-          relativePath: '',
-        });
-        api.readPage(viewedPath).then((content) => {
-          editorRefVal.editor.setValue(content);
-          editorRefVal.editor.clearSelection();
-          editorRefVal.editor.getSession().setAnnotations(annotations);
-        });
-      }
-    }, [viewedPath]);
+    props.onFileResultChanged({
+      content: '',
+      entities: [],
+      errors: [],
+      relativePath: '',
+    });
+    api.readPage(props.viewedPath).then((content) => {
+      editor.setValue(content);
+      editor.clearSelection();
+      editor.getSession().setAnnotations(annotations);
+    });
+  }, [props.viewedPath, editor]);
 
-    const saveContent = async () => {
-      const content = (aceEditorRef.current as any)?.editor?.getValue();
-      if (content) {
-        await api.writeFileResult(viewedPath, content);
-        return true;
-      }
+  const saveContent = async () => {
+    if (!editor) {
       return false;
-    };
+    }
+    const content = editor.getValue();
+    await api.writeFileResult(props.viewedPath, content);
+    return true;
+  };
 
-    const onChange = async () => {
-      // only do a save/check after a short pause after the user
-      // has stopped typing
-      if (scheduledFunction) {
-        scheduledFunction.cancel();
+  const onChange = async () => {
+    // only do a save/check after a short pause after the user
+    // has stopped typing
+    if (scheduledFunction) {
+      scheduledFunction.cancel();
+    }
+    scheduledFunction = debounce(async () => {
+      const saved = await saveContent();
+      if (saved) {
+        await Promise.all([
+          api.check().then((resp) => {
+            setAnnotations(
+              resp.errors
+                .filter((err) => err.path === props.viewedPath)
+                .map((err) => ({
+                  row: Math.max(0, err.row),
+                  column: Math.max(0, err.column),
+                  text: err.message,
+                  type: 'error',
+                }))
+            );
+          }),
+          api
+            .getFileResult(props.viewedPath)
+            .then((fileResult) => props.onFileResultChanged(fileResult)),
+        ]);
       }
-      scheduledFunction = debounce(async () => {
-        const saved = await saveContent();
-        if (saved) {
-          await Promise.all([
-            api.check().then((resp) => {
-              setAnnotations(
-                resp.errors
-                  .filter((err) => err.path === viewedPath)
-                  .map((err) => ({
-                    row: Math.max(0, err.row),
-                    column: Math.max(0, err.column),
-                    text: err.message,
-                    type: 'error',
-                  }))
-              );
-            }),
-            api
-              .getFileResult(viewedPath)
-              .then((fileResult) => props.onFileResultChanged(fileResult)),
-          ]);
-        }
-      }, 500);
-      scheduledFunction();
-    };
+    }, 500);
+    scheduledFunction();
+  };
 
-    return (
-      <AceEditor
-        ref={aceEditorRef}
-        mode="yaml"
-        theme="eclipse"
-        onChange={onChange}
-        name="ace-editor"
-        editorProps={{ $blockScrolling: true }}
-        highlightActiveLine={false}
-        showPrintMargin={false}
-        enableBasicAutocompletion={true}
-        enableLiveAutocompletion={false}
-        fontSize="90%"
-        style={{
-          position: 'relative',
-          width: '100%',
-          height: 'calc(100vh - 1.75em)',
-          minHeight: 'calc(100vh - 1.75em)',
-          borderRight: 'solid',
-          borderRightWidth: '1px',
-          borderRightColor: '#dddddd',
-        }}
-        commands={[
-          {
-            name: 'save',
-            bindKey: {
-              win: 'Ctrl-s',
-              mac: 'Command-s',
-            },
-            exec: () => saveContent(),
+  return (
+    <AceEditor
+      ref={(ref) => {
+        const newEditor = ref?.editor;
+        if (newEditor) {
+          setEditor(newEditor);
+        }
+      }}
+      mode="yaml"
+      theme="eclipse"
+      onChange={onChange}
+      name="ace-editor"
+      editorProps={{ $blockScrolling: true }}
+      highlightActiveLine={false}
+      showPrintMargin={false}
+      enableBasicAutocompletion={true}
+      enableLiveAutocompletion={false}
+      fontSize="90%"
+      style={{
+        position: 'relative',
+        width: '100%',
+        height: 'calc(100vh - 1.75em)',
+        minHeight: 'calc(100vh - 1.75em)',
+        borderRight: 'solid',
+        borderRightWidth: '1px',
+        borderRightColor: '#dddddd',
+      }}
+      commands={[
+        {
+          name: 'save',
+          bindKey: {
+            win: 'Ctrl-s',
+            mac: 'Command-s',
           },
-        ]}
-        annotations={annotations}
-      ></AceEditor>
-    );
-  }
-);
+          exec: () => saveContent(),
+        },
+      ]}
+      annotations={annotations}
+    ></AceEditor>
+  );
+};
 
 const SideBySideView = (props: {
   relativePath: string;

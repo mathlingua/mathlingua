@@ -9,6 +9,8 @@ import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGro
 import { useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
 
+import debounce from 'lodash.debounce';
+
 import AceEditor from 'react-ace';
 
 import * as langTools from 'ace-builds/src-noconflict/ext-language_tools';
@@ -19,7 +21,7 @@ import { isOnMobile } from '../../support/util';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight, faAngleLeft } from '@fortawesome/free-solid-svg-icons';
-import { clearInterval, setInterval } from 'timers';
+import { DebouncedFunc } from 'lodash';
 
 interface Annotation {
   row: number;
@@ -259,70 +261,94 @@ interface EditorViewProps {
 }
 
 interface EditorViewState {
-  editor: any;
   annotations: Annotation[];
-  dirty: boolean;
 }
 
 class EditorView extends React.Component<EditorViewProps, EditorViewState> {
-  private timer: any;
+  private scheduledFunction: DebouncedFunc<any> | null = null;
+  private editor: any;
 
   constructor(props: EditorViewProps) {
     super(props);
     this.state = {
-      editor: null,
       annotations: [],
-      dirty: false,
     };
   }
 
   componentDidMount() {
     this.setupCompletions();
     this.initializeEditor();
-    this.setupTimer();
   }
 
-  componentDidUpdate(prevProps: EditorViewProps, prevState: EditorViewState) {
-    if (
-      prevProps.viewedPath !== this.props.viewedPath ||
-      (!prevState.editor && !!this.state.editor)
-    ) {
+  shouldComponentUpdate(
+    nextProps: EditorViewProps,
+    nextState: EditorViewState
+  ) {
+    return (
+      nextProps.viewedPath !== this.props.viewedPath ||
+      nextState.annotations !== this.state.annotations
+    );
+  }
+
+  componentDidUpdate(prevProps: EditorViewProps) {
+    if (prevProps.viewedPath !== this.props.viewedPath) {
       this.initializeEditor();
     }
   }
 
   componentWillUnmount() {
-    clearInterval(this.timer);
+    if (this.scheduledFunction) {
+      this.scheduledFunction.cancel();
+    }
   }
 
-  private setupTimer() {
-    this.timer = setInterval(async () => {
-      if (this.state.dirty && this.state.editor) {
-        const viewedPath = this.props.viewedPath;
-        this.setState({ ...this.state, dirty: false });
-        const content = this.state.editor.getValue();
-        await api.writeFileResult(viewedPath, content);
-        await Promise.all([
-          api.check().then((resp) => {
-            const newAnnotations = resp.errors
-              .filter((err) => err.path === viewedPath)
-              .map(
-                (err) =>
-                  ({
-                    row: Math.max(0, err.row),
-                    column: Math.max(0, err.column),
-                    text: err.message,
-                    type: 'error',
-                  } as Annotation)
-              );
-            this.setState({ ...this.state, annotations: newAnnotations });
-          }),
-          api
-            .getFileResult(viewedPath)
-            .then((fileResult) => this.props.onFileResultChanged(fileResult)),
-        ]);
-      }
-    }, 500);
+  private areAnnotationsEqual(ann1: Annotation, ann2: Annotation): boolean {
+    return (
+      ann1.column === ann2.column &&
+      ann1.row === ann2.row &&
+      ann1.text === ann2.text &&
+      ann1.type === ann2.type
+    );
+  }
+
+  private async saveAndUpdateAnnotations(viewedPath: string, content: string) {
+    await api.writeFileResult(viewedPath, content);
+    await Promise.all([
+      api.check().then((resp) => {
+        const newAnnotations = resp.errors
+          .filter((err) => err.path === viewedPath)
+          .map(
+            (err) =>
+              ({
+                row: Math.max(0, err.row),
+                column: Math.max(0, err.column),
+                text: err.message,
+                type: 'error',
+              } as Annotation)
+          );
+
+        let annotationsDiffer = false;
+        if (this.state.annotations.length !== newAnnotations.length) {
+          annotationsDiffer = true;
+        } else {
+          for (let i = 0; i < this.state.annotations.length; i++) {
+            const thisAn = this.state.annotations[i];
+            const newAn = newAnnotations[i];
+            if (!this.areAnnotationsEqual(thisAn, newAn)) {
+              annotationsDiffer = true;
+              break;
+            }
+          }
+        }
+
+        if (annotationsDiffer) {
+          this.setState({ ...this.state, annotations: newAnnotations });
+        }
+      }),
+      api
+        .getFileResult(viewedPath)
+        .then((fileResult) => this.props.onFileResultChanged(fileResult)),
+    ]);
   }
 
   private initializeEditor() {
@@ -333,8 +359,8 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
       relativePath: '',
     });
     api.readPage(this.props.viewedPath).then((content) => {
-      this.state.editor.setValue(content);
-      this.state.editor.clearSelection();
+      this.editor.setValue(content);
+      this.editor.clearSelection();
     });
   }
 
@@ -381,13 +407,26 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
         <AceEditor
           ref={(ref) => {
             const newEditor = ref?.editor;
-            if (newEditor && newEditor !== this.state.editor) {
-              this.setState({ ...this.state, editor: newEditor });
+            if (newEditor && newEditor !== this.editor) {
+              this.editor = newEditor;
             }
           }}
           mode="yaml"
           theme="eclipse"
-          onChange={() => this.setState({ ...this.state, dirty: true })}
+          onChange={() => {
+            if (this.scheduledFunction) {
+              this.scheduledFunction.cancel();
+            }
+            this.scheduledFunction = debounce(async () => {
+              if (this.editor) {
+                await this.saveAndUpdateAnnotations(
+                  this.props.viewedPath,
+                  this.editor.getValue()
+                );
+              }
+            }, 500);
+            this.scheduledFunction();
+          }}
           name="ace-editor"
           editorProps={{ $blockScrolling: true }}
           highlightActiveLine={false}
@@ -412,8 +451,11 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
                 mac: 'Command-s',
               },
               exec: () => {
-                if (!this.state.dirty) {
-                  this.setState({ ...this.state, dirty: true });
+                if (this.editor) {
+                  return this.saveAndUpdateAnnotations(
+                    this.props.viewedPath,
+                    this.editor.getValue()
+                  );
                 }
               },
             },

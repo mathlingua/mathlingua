@@ -292,6 +292,9 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
 
   componentDidUpdate(prevProps: EditorViewProps) {
     if (prevProps.viewedPath !== this.props.viewedPath) {
+      if (this.scheduledFunction) {
+        this.scheduledFunction.flush();
+      }
       this.initializeEditor();
     }
   }
@@ -417,12 +420,11 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
             if (this.scheduledFunction) {
               this.scheduledFunction.cancel();
             }
+            const viewedPath = this.props.viewedPath;
+            const content = this.editor.getValue();
             this.scheduledFunction = debounce(async () => {
               if (this.editor) {
-                await this.saveAndUpdateAnnotations(
-                  this.props.viewedPath,
-                  this.editor.getValue()
-                );
+                await this.saveAndUpdateAnnotations(viewedPath, content);
               }
             }, 500);
             this.scheduledFunction();

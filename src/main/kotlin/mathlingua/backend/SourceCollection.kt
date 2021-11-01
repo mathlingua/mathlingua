@@ -123,6 +123,7 @@ interface SourceCollection {
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
     fun prettyPrint(node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean): String
     fun getAllPaths(): List<String>
+    fun getFirstPath(): String
     fun getPage(path: String): Page?
     fun getWithSignature(signature: String): EntityResult?
     fun addSource(sf: SourceFile)
@@ -402,16 +403,9 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
             .map { it.joinToString(fs.getFileSeparator()) }
     }
 
-    override fun getPage(path: String): Page? {
-        if (path == "") {
-            val paths = getAllPaths()
-            return if (paths.isEmpty()) {
-                null
-            } else {
-                getPage(paths[0])
-            }
-        }
+    override fun getFirstPath() = getAllPaths().first()
 
+    override fun getPage(path: String): Page? {
         val sourceFile = sourceFiles[path] ?: return null
         val fileResult = sourceFileToFileResult[sourceFile]
         if (fileResult != null) {

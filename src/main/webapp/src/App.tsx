@@ -13,7 +13,18 @@ export const App = () => {
         <div className={styles.contentPanel}>
           <TopBar />
           <Switch>
-            <Route path="/:relativePath(.*)" children={<ContentPanel />} />
+            <Route
+              path="/:relativePath(.*)"
+              render={(routerProps) => (
+                <ContentPanel
+                  redirect={(path) =>
+                    routerProps.history.push({
+                      pathname: path,
+                    })
+                  }
+                />
+              )}
+            />
           </Switch>
         </div>
       </ErrorBoundary>

@@ -218,18 +218,11 @@ object Mathlingua {
                 try {
                     val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
                     logger.log("Writing page ${pathAndContent.path}")
-                    val path =
-                        if (pathAndContent.path == "") {
-                            val page = getSourceCollection().getPage(pathAndContent.path)
-                            page?.fileResult?.relativePath
-                        } else {
-                            pathAndContent.path
-                        }
 
-                    if (path == null) {
+                    if (pathAndContent.path == null) {
                         ctx.status(404)
                     } else {
-                        val file = fs.getFileOrDirectory(path)
+                        val file = fs.getFileOrDirectory(pathAndContent.path)
                         println("Writing to path ${pathAndContent.path} content:")
                         println(pathAndContent.content)
                         file.writeText(pathAndContent.content)
@@ -246,16 +239,8 @@ object Mathlingua {
             }
             .get("/api/readPage") { ctx ->
                 try {
-                    val queryPath = ctx.queryParam("path", null)
-                    logger.log("Reading page $queryPath")
-                    val path =
-                        if (queryPath == "") {
-                            val page = getSourceCollection().getPage(queryPath)
-                            page?.fileResult?.relativePath
-                        } else {
-                            queryPath
-                        }
-
+                    val path = ctx.queryParam("path", null)
+                    logger.log("Reading page $path")
                     if (path == null) {
                         ctx.status(400)
                     } else {
@@ -470,11 +455,8 @@ object Mathlingua {
                     ctx.status(500)
                 }
             }
-            .get("/api/resolvePath") { ctx ->
-                val pathToResolve = ctx.queryParam("path") ?: ""
-                val resolvedPath =
-                    getSourceCollection().getPage(pathToResolve)?.fileResult?.relativePath ?: ""
-                ctx.json(ResolvePathResponse(path = resolvedPath))
+            .get("/api/firstPath") { ctx ->
+                ctx.json(FirstPathResponse(path = getSourceCollection().getFirstPath()))
             }
             .get("/api/*") { ctx -> ctx.status(400) }
 
@@ -490,7 +472,7 @@ object Mathlingua {
     }
 }
 
-@Serializable data class ResolvePathResponse(val path: String)
+@Serializable data class FirstPathResponse(val path: String)
 
 @Serializable data class DeleteDirRequest(val path: String)
 

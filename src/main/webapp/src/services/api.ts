@@ -385,11 +385,9 @@ export async function getSignatureSuffixes(prefix: string): Promise<string[]> {
   }
 }
 
-export async function getResolvedPath(path: string): Promise<string> {
+export async function getFirstPath(): Promise<string> {
   try {
-    const res = await axios.get('/api/resolvePath', {
-      params: { path },
-    });
+    const res = await axios.get('/api/firstPath');
     return res.data.path;
   } catch (error: any) {
     notifyOfError(error.message);

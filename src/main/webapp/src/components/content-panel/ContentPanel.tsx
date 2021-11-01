@@ -8,7 +8,7 @@ import {
   sidePanelVisibilityChanged,
 } from '../../store/sidePanelVisibleSlice';
 // import { isOnMobile } from '../../support/util';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isOnMobile } from '../../support/util';
 import * as api from '../../services/api';
 
@@ -27,10 +27,26 @@ function getHashLocation(location: {
   };
 }
 
-export const ContentPanel = () => {
+export interface ContentPanelProps {
+  redirect: (relativePath: string) => void;
+}
+
+export const ContentPanel = (props: ContentPanelProps) => {
   const hashLocation = getHashLocation(useLocation());
   const isEditMode = useAppSelector(selectIsEditMode);
   const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
+
+  useEffect(() => {
+    if (hashLocation.viewedPath === '') {
+      api.getFirstPath().then((path) => props.redirect(path));
+    }
+  }, []);
+
+  // If the viewedPath is empty, then don't show anything.  The
+  // effect above will redirect to the first page.
+  if (hashLocation.viewedPath === '') {
+    return null;
+  }
 
   return isEditMode ? (
     <TwoColumnContent
@@ -144,21 +160,6 @@ const TwoColumnContent = (props: {
   hashLocation: HashLocation;
   isSidePanelVisible: boolean;
 }) => {
-  const [viewedPath, setViewedPath] = useState(props.hashLocation.viewedPath);
-
-  useEffect(() => {
-    const propsPath = props.hashLocation.viewedPath;
-    if (propsPath === '') {
-      api.getResolvedPath(propsPath).then((path) => {
-        if (path) {
-          setViewedPath(path);
-        }
-      });
-    } else {
-      setViewedPath(propsPath);
-    }
-  }, [props.hashLocation]);
-
   return (
     <div
       style={{
@@ -182,7 +183,10 @@ const TwoColumnContent = (props: {
           marginTop: '0.5em',
         }}
       >
-        <Page viewedPath={viewedPath} targetId={props.hashLocation.targetId} />
+        <Page
+          viewedPath={props.hashLocation.viewedPath}
+          targetId={props.hashLocation.targetId}
+        />
       </div>
     </div>
   );

@@ -36,7 +36,6 @@ li {
 }
 
 .mathlinguaListDirItem {
-  font-weight: bold;
   display: block;
   padding-bottom: 1em;
 }
@@ -47,7 +46,7 @@ li {
 }
 
 .selected {
-  text-decoration: underline;
+  font-weight: bold;
 }
 
 .errorStats {

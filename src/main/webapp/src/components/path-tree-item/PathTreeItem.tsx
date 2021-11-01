@@ -41,7 +41,9 @@ export interface PathTreeItemProps {
 export const PathTreeItem = (props: PathTreeItemProps) => {
   const dispatch = useAppDispatch();
   const [isExpanded, setIsExpanded] = useState(
-    props.node.isDir && props.node.name === 'content'
+    props.node.isDir &&
+      (props.node.name === 'content' ||
+        props.viewedPath.startsWith(props.node.path))
   );
   const isEditMode = useAppSelector(selectIsEditMode);
   const allErrorResults = useAppSelector(selectErrorResults);

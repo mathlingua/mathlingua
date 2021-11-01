@@ -7,7 +7,7 @@ to describe the First Fundamental Theorem of Calculus
 given in the [Introduction](#/content/10_Introduction.math).
 
 First, we need to describe what a binary relation is
-so that an *ordered set* is:
+so that we can define an *ordered set*.
 ::
 
 
@@ -22,6 +22,12 @@ called: "binary relation on $A?$"
 Metadata:
 . overview: "Two elements $a, b \in A$ are said to be related
              if $(a, b) \in R$."
+
+
+::
+Before defining and ordered set, we need to describe
+what it means for exactly one of several statements to be true.
+::
 
 
 [\that{a}:not{b}{c}]
@@ -45,6 +51,12 @@ that:
 written: "\textrm{exactly one of } a?, b?, \textrm{ and } c?"
 called: "exactly one of $a?$, $b?$, and $c?$"
 
+
+::
+Now an ordered set is a set with a relation that allows
+elements to be ordered.  This is needed because the real
+number system will turn out to be an ordered set.
+::
 
 
 [\ordered.set]
@@ -72,6 +84,12 @@ viewing:
   through: 'S'
 written: "\textrm{ordered set}"
 called: "ordered set"
+
+
+::
+Within an ordered set the operations $<$, $>$, $\leq$,
+and $\geq$ can be defined.
+::
 
 
 [a \leq{X}/ b]
@@ -124,6 +142,15 @@ written: "a? \geq b?"
 called: "$a?$ is greater than or equal to $b?$"
 
 
+::
+Now to define the Riemann Integral we will need to
+generalize the *maximum* of a set of real numbers.
+
+First, we need to describe what it means for an element
+to be an upper bound of a set.
+::
+
+
 [\upper.bound:of{X}]
 Defines: b
 requiring: E, S, <
@@ -136,6 +163,12 @@ means:
   then: 'x \leq{X}/ b'
 written: "\textrm{upper bound of } X?"
 called: "upper bound of $X?$"
+
+
+::
+Any ordered set that has an upper bound is said to be
+*bounded above*.
+::
 
 
 [\bounded.above.set]
@@ -155,6 +188,12 @@ written: "\textrm{bounded above}"
 called: "bounded above"
 
 
+::
+Now we can define the *supremum* of a set that generalizes
+the maximum of a set.
+::
+
+
 [\supremum:of{X}]
 Defines: beta
 when:
@@ -166,6 +205,15 @@ means:
   then: 'b \geq{X}/ beta'
 written: "\sup X?"
 called: "supremum of $X?$"
+
+
+::
+In a similar way we generalized the maximum of a set,
+we generalize the minimum of a set.
+
+Similar to the upper bound of a set, we define a lower
+bound of a set.
+::
 
 
 [\lower.bound:of{X}]
@@ -180,6 +228,11 @@ means:
   then: 'x \geq{X}/ b'
 written: "\textrm{lower bound of } X?"
 called: "lower bound of $X?$"
+
+
+::
+Any set with a lower bound is said to be *bounded below*.
+::
 
 
 [\bounded.below.set]
@@ -199,6 +252,12 @@ written: "\textrm{bounded below}"
 called: "bounded below"
 
 
+::
+Next, we define the *infimum* of a set that generalizes
+the minimum of a set.
+::
+
+
 [\infimum:of{X}]
 Defines: alpha
 when:
@@ -210,6 +269,12 @@ means:
   then: 'a \leq{X}/ alpha'
 written: "\inf X?"
 called: "infimum of $X?$"
+
+
+::
+Before continuing we need to define what it means for
+a set to be empty or non-empty.
+::
 
 
 [\empty.set]
@@ -233,6 +298,12 @@ written: "\textrm{non-empty set}"
 called: "non-empty set"
 
 
+::
+With the above, we can define the *least-upper-bound-property*
+that turns out to be a fundamental characteristic of the
+real numbers.
+::
+
 
 [\least.upper.bound.property.set]
 Defines: X := (S, <)
@@ -249,6 +320,13 @@ means:
     . 'b = \supremum:of{X}'
 written: "\textrm{least-upper-bound property set}"
 called: "least-upper-bound property set"
+
+
+::
+Now before defining the real numbers, we need to define
+a *field* that describes the algebraic properties that
+the real numbers satisfies.
+::
 
 
 [\field]
@@ -302,7 +380,9 @@ written: "\textrm{field}"
 called: "field"
 
 
--------------------------------------
+::
+-------------------
+::
 
 
 [\real]
@@ -331,16 +411,6 @@ States:
 that: ""
 written: "a? - b?"
 called: "$a?$ minus $b?$"
-
-
-
-
-
-::
--------------------
-::
-
-
 
 
 [\closed.interval{a, b}]

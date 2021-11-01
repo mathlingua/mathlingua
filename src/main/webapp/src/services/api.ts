@@ -61,6 +61,7 @@ interface ApiClient {
   getEntityWithSignature(signature: string): Promise<EntityResult | undefined>;
   check(): Promise<CheckResponse>;
   getGitHubUrl(): Promise<string | undefined>;
+  getFirstPath(): Promise<string>;
 }
 
 function notifyOfError(error: string) {
@@ -142,6 +143,16 @@ class NetworkApiClient implements ApiClient {
     } catch (err: any) {
       notifyOfError(err.message);
       return undefined;
+    }
+  }
+
+  async getFirstPath(): Promise<string> {
+    try {
+      const res = await axios.get('/api/firstPath');
+      return res.data.path;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return '';
     }
   }
 }
@@ -230,6 +241,10 @@ class StaticApiClient implements ApiClient {
   async getGitHubUrl(): Promise<string | undefined> {
     return this.gitHubUrl;
   }
+
+  async getFirstPath(): Promise<string> {
+    return this.allPaths[0];
+  }
 }
 
 let client: ApiClient | null = null;
@@ -251,6 +266,10 @@ export function isStatic() {
 
 export async function getAllPaths(): Promise<string[]> {
   return getClient().getAllPaths();
+}
+
+export async function getFirstPath(): Promise<string> {
+  return getClient().getFirstPath();
 }
 
 export async function getFileResult(
@@ -382,15 +401,5 @@ export async function getSignatureSuffixes(prefix: string): Promise<string[]> {
   } catch (error: any) {
     notifyOfError(error.message);
     return [];
-  }
-}
-
-export async function getFirstPath(): Promise<string> {
-  try {
-    const res = await axios.get('/api/firstPath');
-    return res.data.path;
-  } catch (error: any) {
-    notifyOfError(error.message);
-    return '';
   }
 }

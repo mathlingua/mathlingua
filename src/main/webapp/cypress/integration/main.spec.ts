@@ -1,6 +1,8 @@
 describe('MathLingua Editor', () => {
   beforeEach(() => {
     cy.visit('http://localhost:3000');
+    // switch to reader mode and not edit mode
+    cy.get('[data-test-id="edit-mode-button"]').click();
   });
 
   it('shows the first page initially', () => {
@@ -13,18 +15,7 @@ describe('MathLingua Editor', () => {
     cy.contains('Some text on Some_Page.math.');
   });
 
-  it('displays a popup menu when clicking on a statement', () => {
-    cy.get('.mathlingua-statement-container').click();
-    cy.contains('\\some.function');
-  });
-
-  it('displays a panel when clicking a statement popup menu item', () => {
-    cy.get('.mathlingua-statement-container').click();
-    cy.contains('\\some.function').click();
-    cy.contains('SomeFunctionCalled');
-  });
-
-  it("closes a top-level-entry in a sub-panel when it's close button is pressed", () => {
+  it('can expand top level group items and then close them', () => {
     cy.get('.mathlingua-statement-container').click();
     cy.contains('\\some.function').click();
     cy.contains('SomeFunctionCalled');

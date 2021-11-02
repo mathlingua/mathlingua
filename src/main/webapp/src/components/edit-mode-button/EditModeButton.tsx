@@ -28,6 +28,7 @@ export const EditModeButton = () => {
     >
       <button
         className={styles.editModeButton}
+        data-test-id="edit-mode-button"
         onClick={async () => {
           dispatch(isEditModeUpdated(!isEditMode));
           const res = await check();

@@ -60,6 +60,7 @@ import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.getRandomUuid
 import mathlingua.md5Hash
+import kotlin.system.exitProcess
 
 const val MATHLINGUA_VERSION = "0.12.0"
 
@@ -457,6 +458,14 @@ object Mathlingua {
             }
             .get("/api/firstPath") { ctx ->
                 ctx.json(FirstPathResponse(path = getSourceCollection().getFirstPath()))
+            }
+            .get("/api/shutdown") {
+                // The /api/shutdown hook is used by the end-to-end tests to shutdown
+                // the server after the tests are done.  It is ok to expose this since
+                // the server is only designed to be run by a user on their local machine.
+                // Thus, they already have the ability to shutdown the server if they
+                // want to.
+                exitProcess(0)
             }
             .get("/api/*") { ctx -> ctx.status(400) }
 

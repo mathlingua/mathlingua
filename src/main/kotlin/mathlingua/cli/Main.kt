@@ -64,11 +64,26 @@ private class Edit :
                 "localhost:<port> (i.e. localhost:8080) in your web browser to " +
                 "access the app.") {
     private val port: Int by option(help = "The port to listen on").int().default(8080)
+    private val open: Boolean by option(
+            help = "If specified a browser will be automatically opened")
+        .flag()
+    private val noOpen: Boolean by option(
+            help = "If specified a browser will not be automatically opened")
+        .flag()
 
     override fun run() {
         val logger = TermUiLogger(termUi = TermUi)
+        if (open && noOpen) {
+            logger.error("Error: --open and --no-open cannot both be specified at the same time")
+            return
+        }
+
         val fs = newDiskFileSystem()
         Mathlingua.serve(fs = fs, logger = logger, port = port) {
+            if (!open) {
+                return@serve
+            }
+
             val url = "http://localhost:${port}"
             try {
                 val osName = System.getProperty("os.name").lowercase()

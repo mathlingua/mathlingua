@@ -22,6 +22,7 @@ import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.jar.JarFile
+import kotlin.system.exitProcess
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -60,7 +61,6 @@ import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.getRandomUuid
 import mathlingua.md5Hash
-import kotlin.system.exitProcess
 
 const val MATHLINGUA_VERSION = "0.12.0"
 

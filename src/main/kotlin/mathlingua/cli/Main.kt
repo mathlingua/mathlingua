@@ -80,7 +80,13 @@ private class Edit :
 
         val fs = newDiskFileSystem()
         Mathlingua.serve(fs = fs, logger = logger, port = port) {
-            if (!open) {
+            // --open and --no-open cannot be both specified at the same time
+            // Thus, if noOpen is true then --no-open was specified and the browser
+            // should not be opened.  If noOpen is false, then --no-open was not
+            // specified.  Thus either --open was specified or neither were specified.
+            // In either case, open the browser because we want the default behavior to
+            // open the browser.
+            if (noOpen) {
                 return@serve
             }
 

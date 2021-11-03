@@ -1,6 +1,8 @@
+const PORT = Cypress.env('PORT') || '3000';
+
 describe('MathLingua Editor', () => {
   beforeEach(() => {
-    cy.visit('http://localhost:3000');
+    cy.visit(`http://localhost:${PORT}`);
     // switch to reader mode and not edit mode
     cy.get('[data-test-id="edit-mode-button"]').click();
   });

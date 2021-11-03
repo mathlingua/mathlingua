@@ -50,3 +50,4 @@ documentation/docs
 mlg/.bin
 mlg/mlg
 
+src/main/webapp/cypress/videos/

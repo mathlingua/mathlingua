@@ -61,10 +61,9 @@ number system will turn out to be an ordered set.
 
 [\ordered.set]
 Defines: (S, <)
-when:
+means:
 . 'S is \set'
 . '< is \binary.relation:on{S}'
-means:
 . forAll: x, y
   suchThat: 'x, y in S'
   then:
@@ -173,9 +172,8 @@ Any ordered set that has an upper bound is said to be
 
 [\bounded.above.set]
 Defines: X := (E, <)
-when:
-. 'X is \ordered.set'
 means:
+. 'X is \ordered.set'
 . exists: b
   suchThat:
   . 'b is \upper.bound:of{X}'
@@ -197,7 +195,7 @@ the maximum of a set.
 [\supremum:of{X}]
 Defines: beta
 when:
-. 'X := (E, <) is \bounded.above.set'
+. 'X is \bounded.above.set'
 means:
 . 'beta is \upper.bound:of{X}'
 . forAll: b
@@ -237,9 +235,8 @@ Any set with a lower bound is said to be *bounded below*.
 
 [\bounded.below.set]
 Defines: X := (E, <)
-when:
-. 'X is \ordered.set'
 means:
+. 'X is \ordered.set'
 . exists: b
   suchThat:
   . 'b is \lower.bound:of{X}'
@@ -261,7 +258,7 @@ the minimum of a set.
 [\infimum:of{X}]
 Defines: alpha
 when:
-. 'X := (E, <) is \bounded.above.set'
+. 'X is \bounded.above.set'
 means:
 . 'alpha is \lower.bound:of{X}'
 . forAll: a
@@ -307,8 +304,8 @@ real numbers.
 
 [\least.upper.bound.property.set]
 Defines: X := (S, <)
-when: 'X is \ordered.set'
 means:
+. 'X is \ordered.set'
 . forAll: E
   suchThat:
   . 'E is \nonempty.set'
@@ -331,13 +328,12 @@ the real numbers satisfies.
 
 [\field]
 Defines: F := (X, +, *, 0, 1)
-when:
+means:
 . 'X is \set'
 . '+ is \binary.operation:on{X}'
 . '* is \binary.operation:on{X}'
 . '0 in X'
 . '1 in X'
-means:
 . forAll: x, y
   suchThat: 'x, y in X'
   then: 'x + y in X'

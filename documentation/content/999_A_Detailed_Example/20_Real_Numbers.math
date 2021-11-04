@@ -154,7 +154,7 @@ to be an upper bound of a set.
 Defines: b
 requiring: E, S, <
 when:
-. '(S, <) is \ordered.set'
+. 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
 means:
 . forAll: x
@@ -218,7 +218,7 @@ bound of a set.
 Defines: b
 requiring: E, S, <
 when:
-. '(S, <) is \ordered.set'
+. 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
 means:
 . forAll: x

@@ -33,6 +33,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
@@ -93,9 +94,11 @@ internal fun renameVarsTexTalkNode(texTalkNode: TexTalkNode, map: Map<String, St
         }
     }
 
-internal fun checkVarsPhase2Node(node: Phase2Node, tracker: LocationTracker): Set<ParseError> {
+internal fun checkVarsPhase2Node(
+    topLevel: TopLevelGroup, node: Phase2Node, tracker: LocationTracker
+): Set<ParseError> {
     val errors = mutableListOf<ParseError>()
-    checkVarsImplPhase2Node(node, VarMultiSet(), tracker, errors)
+    checkVarsImplPhase2Node(topLevel, node, VarMultiSet(), tracker, errors)
     return errors.toSet()
 }
 
@@ -313,10 +316,15 @@ private fun getVarsImplTexTalkNode(
 // -----------------------------------------------------------------------------
 
 private fun checkVarsImplPhase2Node(
-    node: Phase2Node, vars: VarMultiSet, tracker: LocationTracker, errors: MutableList<ParseError>
+    topLevel: TopLevelGroup,
+    node: Phase2Node,
+    vars: VarMultiSet,
+    tracker: LocationTracker,
+    errors: MutableList<ParseError>
 ): List<Var> {
     val varsToRemove = VarMultiSet()
-    val location = tracker.getLocationOf(node) ?: Location(-1, -1)
+    val location =
+        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
     if (node is DefinesGroup) {
         val whenSection = node.whenSection
         if (whenSection != null) {
@@ -324,8 +332,9 @@ private fun checkVarsImplPhase2Node(
                 checkWhenSectionVars(
                     node = whenSection, vars = vars, tracker = tracker, errors = errors))
         }
-        varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, tracker, errors))
-        varsToRemove.addAll(checkDefineSectionVars(node.definesSection, vars, tracker, errors))
+        varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
+        varsToRemove.addAll(
+            checkDefineSectionVars(topLevel, node.definesSection, vars, tracker, errors))
     }
 
     val requiringSection =
@@ -336,7 +345,8 @@ private fun checkVarsImplPhase2Node(
         }
 
     if (requiringSection != null) {
-        varsToRemove.addAll(checkRequiringSectionVars(requiringSection, vars, tracker, errors))
+        varsToRemove.addAll(
+            checkRequiringSectionVars(topLevel, requiringSection, vars, tracker, errors))
     }
 
     if (node is HasUsingSection && node.usingSection != null) {
@@ -425,21 +435,24 @@ private fun checkVarsImplPhase2Node(
 
     when (node) {
         is StatesGroup -> {
-            varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, tracker, errors))
+            varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
         }
         is TheoremGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
             }
         }
         is AxiomGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
             }
         }
         is ConjectureGroup -> {
             if (node.givenSection != null) {
-                varsToRemove.addAll(checkGivenSectionVars(node.givenSection, vars, tracker, errors))
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
             }
         }
         is ForAllGroup -> {
@@ -449,7 +462,7 @@ private fun checkVarsImplPhase2Node(
                 if (vars.hasConflict(v)) {
                     errors.add(
                         ParseError(
-                            message = "Duplicate defined symbol '$v'",
+                            message = "Duplicate defined symbol '$v' in `forAll:`",
                             row = location.row,
                             column = location.column))
                 }
@@ -464,7 +477,7 @@ private fun checkVarsImplPhase2Node(
                 if (vars.hasConflict(v)) {
                     errors.add(
                         ParseError(
-                            message = "Duplicate defined symbol '$v'",
+                            message = "Duplicate defined symbol '$v' in `equality:`",
                             row = location.row,
                             column = location.column))
                 }
@@ -479,7 +492,7 @@ private fun checkVarsImplPhase2Node(
                 if (vars.hasConflict(v)) {
                     errors.add(
                         ParseError(
-                            message = "Duplicate defined symbol '$v'",
+                            message = "Duplicate defined symbol '$v' in `exists:`",
                             row = location.row,
                             column = location.column))
                 }
@@ -494,7 +507,7 @@ private fun checkVarsImplPhase2Node(
                 if (vars.hasConflict(v)) {
                     errors.add(
                         ParseError(
-                            message = "Duplicate defined symbol '$v'",
+                            message = "Duplicate defined symbol '$v' in `existsUnique:`",
                             row = location.row,
                             column = location.column))
                 }
@@ -503,7 +516,7 @@ private fun checkVarsImplPhase2Node(
             varsToRemove.addAll(existsVars)
         }
         is Statement -> {
-            varsToRemove.addAll(checkVarsImplStatement(node, vars, tracker, errors))
+            varsToRemove.addAll(checkVarsImplStatement(topLevel, node, vars, tracker, errors))
         }
     }
 
@@ -578,6 +591,7 @@ private fun checkVarsImplPhase2Node(
                 val clauseLocation = tracker.getLocationOf(clause) ?: Location(-1, -1)
                 for (v in
                     checkVarsImplTexTalkNode(
+                        topLevel = topLevel,
                         texTalkNode = colonEquals.rhs,
                         location = clauseLocation,
                         vars = thisValidVars,
@@ -587,19 +601,19 @@ private fun checkVarsImplPhase2Node(
                     usingVars.add(v)
                 }
             } else {
-                for (v in checkVarsImplPhase2Node(clause, usingVars, tracker, errors)) {
+                for (v in checkVarsImplPhase2Node(topLevel, clause, usingVars, tracker, errors)) {
                     usingVars.add(v)
                 }
             }
         }
 
         node.forEach {
-            for (v in checkVarsImplPhase2Node(it, usingVars, tracker, errors)) {
+            for (v in checkVarsImplPhase2Node(topLevel, it, usingVars, tracker, errors)) {
                 usingVars.add(v)
             }
         }
     } else {
-        node.forEach { checkVarsImplPhase2Node(it, vars, tracker, errors) }
+        node.forEach { checkVarsImplPhase2Node(topLevel, it, vars, tracker, errors) }
         for (v in varsToRemove.toList()) {
             vars.remove(v)
         }
@@ -699,7 +713,7 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
             if (vars.hasConflict(v)) {
                 errors.add(
                     ParseError(
-                        message = "Duplicate defined symbol '$v'",
+                        message = "Duplicate defined symbol '$v' in `::=`",
                         row = location.row,
                         column = location.column))
             }
@@ -713,18 +727,20 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
 }
 
 private fun checkDefineSectionVars(
+    topLevel: TopLevelGroup,
     node: DefinesSection,
     vars: VarMultiSet,
     tracker: LocationTracker,
     errors: MutableList<ParseError>
 ): List<Var> {
-    val location = tracker.getLocationOf(node) ?: Location(-1, -1)
+    val location =
+        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
     val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(
                 ParseError(
-                    message = "Duplicate defined symbol '$v'",
+                    message = "Duplicate defined symbol '$v' in `Defines:`",
                     row = location.row,
                     column = location.column))
         }
@@ -734,18 +750,20 @@ private fun checkDefineSectionVars(
 }
 
 private fun checkRequiringSectionVars(
+    topLevel: TopLevelGroup,
     node: RequiringSection,
     vars: VarMultiSet,
     tracker: LocationTracker,
     errors: MutableList<ParseError>
 ): List<Var> {
-    val location = tracker.getLocationOf(node) ?: Location(-1, -1)
+    val location =
+        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
     val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(
                 ParseError(
-                    message = "Duplicate defined symbol '$v'",
+                    message = "Duplicate defined symbol '$v' in `requiring:`",
                     row = location.row,
                     column = location.column))
         }
@@ -755,15 +773,20 @@ private fun checkRequiringSectionVars(
 }
 
 private fun checkGivenSectionVars(
-    node: GivenSection, vars: VarMultiSet, tracker: LocationTracker, errors: MutableList<ParseError>
+    topLevel: TopLevelGroup,
+    node: GivenSection,
+    vars: VarMultiSet,
+    tracker: LocationTracker,
+    errors: MutableList<ParseError>
 ): List<Var> {
-    val location = tracker.getLocationOf(node) ?: Location(-1, -1)
+    val location =
+        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
     val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(
                 ParseError(
-                    message = "Duplicate defined symbol '$v'",
+                    message = "Duplicate defined symbol '$v' in `given:`",
                     row = location.row,
                     column = location.column))
         }
@@ -773,6 +796,7 @@ private fun checkGivenSectionVars(
 }
 
 private fun checkVarsImplStatement(
+    topLevel: TopLevelGroup,
     statement: Statement,
     vars: VarMultiSet,
     tracker: LocationTracker,
@@ -871,6 +895,7 @@ private fun checkVarsImplStatement(
 
             val subFound =
                 checkVarsImplTexTalkNode(
+                    topLevel = topLevel,
                     texTalkNode = colonEquals.rhs,
                     location = location,
                     vars = varsCopy,
@@ -885,6 +910,7 @@ private fun checkVarsImplStatement(
             // otherwise there aren't any additional symbols to add before
             // checking for the use of undefined symbols
             checkVarsImplTexTalkNode(
+                topLevel = topLevel,
                 texTalkNode = statement.texTalkRoot.value,
                 location = location,
                 vars = vars,
@@ -900,6 +926,7 @@ private fun checkVarsImplStatement(
 private fun isNumberLiteral(text: String) = Regex("[+-]?\\d+(\\.\\d+)?").matchEntire(text) != null
 
 private fun checkVarsImplTexTalkNode(
+    topLevel: TopLevelGroup,
     texTalkNode: TexTalkNode,
     location: Location,
     vars: VarMultiSet,
@@ -910,6 +937,7 @@ private fun checkVarsImplTexTalkNode(
     val varsToRemove = VarMultiSet()
     if (texTalkNode is ColonEqualsTexTalkNode) {
         checkVarsImplTexTalkNode(
+            topLevel = topLevel,
             texTalkNode = texTalkNode.lhs,
             location = location,
             vars = vars,
@@ -917,6 +945,7 @@ private fun checkVarsImplTexTalkNode(
             isInLhsColonEquals = true,
             groupScope = groupScope)
         checkVarsImplTexTalkNode(
+            topLevel = topLevel,
             texTalkNode = texTalkNode.rhs,
             location = location,
             vars = vars,
@@ -958,13 +987,14 @@ private fun checkVarsImplTexTalkNode(
                     if (vars.hasConflict(v)) {
                         errors.add(
                             ParseError(
-                                message = "Duplicate defined symbol '$v'",
+                                message = "Duplicate defined symbol '$v' within square parens",
                                 row = location.row,
                                 column = location.column))
                     }
                     vars.add(v)
                 }
                 checkVarsImplTexTalkNode(
+                    topLevel = topLevel,
                     texTalkNode = part.square,
                     location = location,
                     vars = vars,
@@ -974,6 +1004,7 @@ private fun checkVarsImplTexTalkNode(
             }
             for (grp in part.groups) {
                 checkVarsImplTexTalkNode(
+                    topLevel = topLevel,
                     texTalkNode = grp,
                     location = location,
                     vars = vars,
@@ -998,6 +1029,7 @@ private fun checkVarsImplTexTalkNode(
             for (grp in part.namedGroups) {
                 grp.groups.forEach {
                     checkVarsImplTexTalkNode(
+                        topLevel = topLevel,
                         texTalkNode = it,
                         location = location,
                         vars = vars,
@@ -1022,6 +1054,7 @@ private fun checkVarsImplTexTalkNode(
             }
             if (part.paren != null) {
                 checkVarsImplTexTalkNode(
+                    topLevel = topLevel,
                     texTalkNode = part.paren,
                     location = location,
                     vars = vars,
@@ -1031,6 +1064,7 @@ private fun checkVarsImplTexTalkNode(
             }
             if (part.subSup != null) {
                 checkVarsImplTexTalkNode(
+                    topLevel = topLevel,
                     texTalkNode = part.subSup,
                     location = location,
                     vars = vars,
@@ -1042,6 +1076,7 @@ private fun checkVarsImplTexTalkNode(
     } else {
         texTalkNode.forEach {
             checkVarsImplTexTalkNode(
+                topLevel = topLevel,
                 texTalkNode = it,
                 location = location,
                 vars = vars,
@@ -1057,10 +1092,15 @@ private fun checkVarsImplTexTalkNode(
 }
 
 private fun checkVarsImplIdStatement(
-    id: IdStatement, vars: VarMultiSet, tracker: LocationTracker, errors: MutableList<ParseError>
+    topLevel: TopLevelGroup,
+    id: IdStatement,
+    vars: VarMultiSet,
+    tracker: LocationTracker,
+    errors: MutableList<ParseError>
 ): List<Var> {
     return if (id.texTalkRoot is ValidationSuccess) {
-        val location = tracker.getLocationOf(id) ?: Location(-1, -1)
+        val location =
+            tracker.getLocationOf(id) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
         // Do not add variables in parens because they will be added
         // in the description in a Defines section
         //
@@ -1085,7 +1125,7 @@ private fun checkVarsImplIdStatement(
             if (vars.hasConflict(v)) {
                 errors.add(
                     ParseError(
-                        message = "Duplicate defined symbol '$v'",
+                        message = "Duplicate defined symbol '$v' in `[...]`",
                         row = location.row,
                         column = location.column))
             }

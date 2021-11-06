@@ -994,7 +994,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
         for (grp in allGroups) {
             val tracker = grp.tracker ?: newLocationTracker()
-            val errs = checkVarsPhase2Node(grp.value.normalized, tracker)
+            val errs = checkVarsPhase2Node(grp.value.original, grp.value.normalized, tracker)
             result.addAll(
                 errs.map { ValueSourceTracker(value = it, source = grp.source, tracker = tracker) })
         }

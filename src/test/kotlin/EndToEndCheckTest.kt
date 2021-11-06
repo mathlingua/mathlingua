@@ -274,8 +274,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'x'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'x' in `exists:`
 
                 FAILED
                 Processed 1 file
@@ -303,8 +303,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'x'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'x' in `existsUnique:`
 
                 FAILED
                 Processed 1 file
@@ -332,8 +332,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'x'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'x' in `forAll:`
 
                 FAILED
                 Processed 1 file
@@ -359,8 +359,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'x'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'x' in `given:`
 
                 FAILED
                 Processed 1 file
@@ -386,8 +386,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'x'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'x' in `given:`
 
                 FAILED
                 Processed 1 file
@@ -413,8 +413,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'x'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'x' in `given:`
 
                 FAILED
                 Processed 1 file
@@ -443,8 +443,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'y'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'y' in `exists:`
 
                 FAILED
                 Processed 1 file
@@ -473,8 +473,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'y'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'y' in `existsUnique:`
 
                 FAILED
                 Processed 1 file
@@ -503,8 +503,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'y'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'y' in `forAll:`
 
                 FAILED
                 Processed 1 file
@@ -536,7 +536,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 6, Column: 5)
-                Duplicate defined symbol 'y'
+                Duplicate defined symbol 'y' in `forAll:`
 
                 FAILED
                 Processed 1 file
@@ -568,7 +568,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 6, Column: 5)
-                Duplicate defined symbol 'y'
+                Duplicate defined symbol 'y' in `forAll:`
 
                 FAILED
                 Processed 1 file
@@ -600,7 +600,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 6, Column: 5)
-                Duplicate defined symbol 'y'
+                Duplicate defined symbol 'y' in `exists:`
 
                 FAILED
                 Processed 1 file
@@ -632,7 +632,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 6, Column: 5)
-                Duplicate defined symbol 'y'
+                Duplicate defined symbol 'y' in `existsUnique:`
 
                 FAILED
                 Processed 1 file
@@ -1006,8 +1006,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 0, Column: 0)
-                Duplicate defined symbol 'x'
+                ERROR: content/file1.math (Line: 1, Column: 1)
+                Duplicate defined symbol 'x' in `forAll:`
 
                 FAILED
                 Processed 1 file

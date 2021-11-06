@@ -376,6 +376,147 @@ written: "\textrm{field}"
 called: "field"
 
 
+[\ordered.field]
+Defines: F := (X, +, *, 0, 1, <)
+means:
+. '(X, +, *, 0, 1) is \field'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . if: 'x < y'
+    then: 'x + z < y + z'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . if:
+    . '0 < x'
+    . '0 < y'
+    then:
+    . '0 < x * y'
+viewing:
+. as: '\field'
+  via: '(X, +, *, 0, 1)'
+written: "\textrm{ordered field}"
+called: "ordered field"
+
+
+[\positive:within{F}]
+Defines: x
+requiring: S, <
+when: 'F := (X, +, *, 0, 1, <) is \ordered.field'
+means:
+. '0 < x'
+written: "\textrm{positive}"
+called: "positive"
+
+
+[\set[x...]:where{within}:suchThat{cond}...]
+Defines:Y := {y...}
+means:
+. 'Y is \set'
+. 'y... := x...'
+written:
+. "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"
+called:
+. "set of $x?$ where $within?$ such that $cond?$"
+
+
+[\integers.set]
+Defines: N
+means:
+. "The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$} "
+viewing:
+. as: '\set'
+  via: 'N'
+. membership:
+  through: 'N'
+written: "\mathbb{N}"
+called: "naturals"
+
+
+[x \integers.+/ y]
+Defines: z
+means: "The addition of two integers"
+written: "x?? + y??"
+called: "integer addition"
+
+
+[x \integers.*/ y]
+Defines: z
+means: "The product of two integers"
+written: "x?? y??"
+called: "integer multiplication"
+
+
+[x \in/ X]
+States:
+when: 'X is \set'
+that: 'x in X'
+written: "x? \in X?"
+called: "set membership"
+
+
+[\rationals.set]
+Defines: Q
+means: 'Q := \set[x, p, q]:where{x := (p, q)}
+                          :suchThat{p \in/ \integers.set}
+                                   {q \in/ \integers.set}'
+written: "\mathbb{Q}"
+called: "rationals"
+
+
+[\Rational{a, b}]
+Defines: x := (a, b)
+means:
+. 'x in \rationals.set'
+written: "\frac{a?}{b?}"
+called: "rational"
+
+
+[x \rational.*/ y]
+Defines: z
+requiring: p1, q1, p2, q2
+when:
+. 'x := \Rational{p1, q1}'
+. 'y := \Rational{p2, q2}'
+means:
+. 'z := \Rational{p1 * p2, q1 * q2}'
+using:
+. 'a * b := a \integers.*/ b'
+written: "x?? y??"
+called: "rational multiplication"
+
+
+[x \rational.+/ y]
+Defines: z
+requiring: p1, q1, p2, q2
+when:
+. 'x := \Rational{p1, q1}'
+. 'y := \Rational{p2, q2}'
+means:
+. 'z := \Rational{p1 * q2 + p2*q1, q1 * q2}'
+using:
+. 'a * b := a \integers.*/ b'
+. 'a + b := a \integers.+/ b'
+written: "x?? + y??"
+called: "rational addition"
+
+
+[\rationals.field]
+Defines: Q := (X, +, *, 0, 1)
+means:
+. 'X := \rationals.set'
+written: "\mathbb{Q}"
+called: "rationals as a field"
+
+
+[\rationals.ordered.set]
+Defines: Q := (X, <)
+means:
+. 'X := \rationals.set'
+written: "\mathbb{Q}"
+called: "rationals as an ordered set"
+
 ::
 -------------------
 ::

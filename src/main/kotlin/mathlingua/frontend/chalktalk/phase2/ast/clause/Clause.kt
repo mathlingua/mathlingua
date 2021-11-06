@@ -22,6 +22,8 @@ import mathlingua.frontend.chalktalk.phase1.ast.getColumn
 import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_IF_GROUP
+import mathlingua.frontend.chalktalk.phase2.ast.clause.have.isHaveGroup
+import mathlingua.frontend.chalktalk.phase2.ast.clause.have.validateHaveGroup
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.isIfGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateIfGroup
@@ -137,7 +139,8 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isStatesGroup, ::validateStatesGroup),
         ValidationPair(::isMembershipGroup, ::validateMembershipGroup),
         ValidationPair(::isViewingAsGroup, ::validateViewingAsGroup),
-        ValidationPair(::isEqualityGroup, ::validateEqualityGroup))
+        ValidationPair(::isEqualityGroup, ::validateEqualityGroup),
+        ValidationPair(::isHaveGroup, ::validateHaveGroup))
 
 fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

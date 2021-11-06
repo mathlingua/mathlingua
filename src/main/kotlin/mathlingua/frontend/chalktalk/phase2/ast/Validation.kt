@@ -35,6 +35,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.have.HaveGroup
+import mathlingua.frontend.chalktalk.phase2.ast.clause.have.HaveSection
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateIdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -540,6 +542,11 @@ val DEFAULT_VIEWED_AS_GROUP =
         viewingAsSection = DEFAULT_VIEWED_AS_SECTION,
         viaSection = DEFAULT_VIA_SECTION,
         bySection = DEFAULT_BY_SECTION)
+
+val DEFAULT_HAVE_SECTION = HaveSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+
+val DEFAULT_HAVE_GROUP =
+    HaveGroup(haveSection = DEFAULT_HAVE_SECTION, bySection = DEFAULT_BY_SECTION)
 
 val DEFAULT_VIEWING_SECTION = ViewingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 

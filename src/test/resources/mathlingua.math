@@ -48,6 +48,15 @@ means:
 . 'X is \set'
 . 'x is \prime'
 . 'x is \even'
+. have: 'x is \something'
+  by: '\some.theorem'
+. have:
+  . 'x is \something.else'
+  . forAll: a, b
+    suchThat: 'a, b is \something'
+    then:
+    . 'a, b is \something'
+  by: '\some.other.theorem'
 written: "\textbf{even primes}"
 called: "even primes2"
 

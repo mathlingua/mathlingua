@@ -61,7 +61,7 @@ private class TexTalkParserImpl : TexTalkParser {
         fun parse(): ExpressionTexTalkNode {
             val exp = expression(null) ?: ExpressionTexTalkNode(emptyList())
             return standaloneOperatorToIdentifier(
-                resolveColonOrColonColonEqualsNode(
+                resolveColonEqualsNode(
                     resolveInNode(
                         resolveIsNode(exp))) as ExpressionTexTalkNode) as ExpressionTexTalkNode
         }
@@ -157,13 +157,12 @@ private class TexTalkParserImpl : TexTalkParser {
             }
         }
 
-        private fun resolveColonOrColonColonEqualsNode(node: TexTalkNode): TexTalkNode {
+        private fun resolveColonEqualsNode(node: TexTalkNode): TexTalkNode {
             return node.transform { texTalkNode ->
                 if (texTalkNode !is ExpressionTexTalkNode) {
                     texTalkNode
                 } else {
                     var colonEqualsIndex = -1
-                    var colonColonEqualsIndex = -1
                     for (i in texTalkNode.children.indices) {
                         val child = texTalkNode.children[i]
                         if (child is TextTexTalkNode && child.type == TexTalkNodeType.ColonEquals) {
@@ -172,18 +171,7 @@ private class TexTalkParserImpl : TexTalkParser {
                             } else {
                                 addError("A statement can only contain one ':='")
                             }
-                        } else if (child is TextTexTalkNode &&
-                            child.type == TexTalkNodeType.ColonColonEquals) {
-                            if (colonColonEqualsIndex < 0) {
-                                colonColonEqualsIndex = i
-                            } else {
-                                addError("A statement can only contain one '::='")
-                            }
                         }
-                    }
-
-                    if (colonEqualsIndex >= 0 && colonColonEqualsIndex >= 0) {
-                        addError("A statement can only contain ':=' or '::=', but not both.")
                     }
 
                     when {
@@ -195,15 +183,6 @@ private class TexTalkParserImpl : TexTalkParser {
                                     colonEqualsIndex + 1,
                                     texTalkNode.children.size)
                             ExpressionTexTalkNode(listOf(ColonEqualsTexTalkNode(lhs, rhs)))
-                        }
-                        colonColonEqualsIndex >= 0 -> {
-                            val lhs = parameters(texTalkNode.children, 0, colonColonEqualsIndex)
-                            val rhs =
-                                parameters(
-                                    texTalkNode.children,
-                                    colonColonEqualsIndex + 1,
-                                    texTalkNode.children.size)
-                            ExpressionTexTalkNode(listOf(ColonColonEqualsTexTalkNode(lhs, rhs)))
                         }
                         else -> {
                             texTalkNode
@@ -589,10 +568,6 @@ private class TexTalkParserImpl : TexTalkParser {
                             ?: text(TexTalkTokenType.Underscore, TexTalkNodeType.Operator, false)
                             ?: text(
                             TexTalkTokenType.ColonEquals, TexTalkNodeType.ColonEquals, false)
-                            ?: text(
-                            TexTalkTokenType.ColonColonEquals,
-                            TexTalkNodeType.ColonColonEquals,
-                            false)
                             ?: text(TexTalkTokenType.DotDotDot, TexTalkNodeType.Operator, false)
 
                 if (child == null) {

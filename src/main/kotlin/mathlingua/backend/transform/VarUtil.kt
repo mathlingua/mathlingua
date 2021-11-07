@@ -48,7 +48,6 @@ import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.textalk.ColonColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
@@ -193,8 +192,7 @@ private fun getVarsImplTexTalkNode(
     isInIdStatement: Boolean
 ) {
     if (texTalkNode is TextTexTalkNode) {
-        if (texTalkNode.tokenType != TexTalkTokenType.ColonEquals &&
-            texTalkNode.tokenType != TexTalkTokenType.ColonColonEquals) {
+        if (texTalkNode.tokenType != TexTalkTokenType.ColonEquals) {
             vars.add(
                 Var(
                     name = texTalkNode.text.removeSuffix("..."),
@@ -656,26 +654,25 @@ private fun checkWhenSectionVars(
     val whenVars = VarMultiSet()
     for (clause in node.clauses.clauses) {
         whenVars.addAll(
-            checkColonOrColonColonEqualsRhsSymbols(
-                clause, tracker = tracker, vars = vars, errors = errors))
+            checkColonEqualsRhsSymbols(clause, tracker = tracker, vars = vars, errors = errors))
     }
     return whenVars.toList()
 }
 
-private fun checkColonOrColonColonEqualsRhsSymbols(
+private fun checkColonEqualsRhsSymbols(
     node: Phase2Node, tracker: LocationTracker, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val result = VarMultiSet()
     if (node is Statement) {
         result.addAll(
-            checkColonOrColonColonEqualsRhsSymbols(
+            checkColonEqualsRhsSymbols(
                 statement = node, tracker = tracker, vars = vars, errors = errors))
     }
-    node.forEach { checkColonOrColonColonEqualsRhsSymbols(it, tracker, vars, errors) }
+    node.forEach { checkColonEqualsRhsSymbols(it, tracker, vars, errors) }
     return result.toList()
 }
 
-private fun checkColonOrColonColonEqualsRhsSymbols(
+private fun checkColonEqualsRhsSymbols(
     statement: Statement,
     tracker: LocationTracker,
     vars: VarMultiSet,
@@ -686,28 +683,20 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
     if (validation is ValidationSuccess) {
         val location = tracker.getLocationOf(statement) ?: Location(-1, -1)
         result.addAll(
-            checkColonOrColonColonEqualsRhsSymbols(
+            checkColonEqualsRhsSymbols(
                 node = validation.value, location = location, vars = vars, errors = errors))
     }
     return result.toList()
 }
 
-private fun checkColonOrColonColonEqualsRhsSymbols(
+private fun checkColonEqualsRhsSymbols(
     node: TexTalkNode, location: Location, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val result = VarMultiSet()
-    val params =
-        if (node is ColonEqualsTexTalkNode) {
-            node.rhs
-        } else if (node is ColonColonEqualsTexTalkNode) {
-            node.rhs
-        } else {
-            null
-        }
-    if (params != null) {
+    if (node is ColonEqualsTexTalkNode) {
         for (v in
             getVarsTexTalkNode(
-                texTalkNode = params,
+                texTalkNode = node.rhs,
                 isInLhsColonEquals = false,
                 groupScope = GroupScope.InNone,
                 isInIdStatement = false)) {
@@ -720,9 +709,7 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
             }
         }
     }
-    node.forEach {
-        result.addAll(checkColonOrColonColonEqualsRhsSymbols(it, location, vars, errors))
-    }
+    node.forEach { result.addAll(checkColonEqualsRhsSymbols(it, location, vars, errors)) }
     return result.toList()
 }
 

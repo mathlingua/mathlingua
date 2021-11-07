@@ -24,7 +24,6 @@ import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.textalk.ColonColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
@@ -109,16 +108,6 @@ private fun findAllSignaturesImpl(
     location: Location
 ) {
     if (texTalkNode is ColonEqualsTexTalkNode) {
-        texTalkNode.lhs.forEach {
-            findAllSignaturesImpl(it, ignoreLhsEqual, isInLhsEqual = true, signatures, location)
-        }
-        texTalkNode.rhs.forEach {
-            findAllSignaturesImpl(it, ignoreLhsEqual, isInLhsEqual = false, signatures, location)
-        }
-        return
-    }
-
-    if (texTalkNode is ColonColonEqualsTexTalkNode) {
         texTalkNode.lhs.forEach {
             findAllSignaturesImpl(it, ignoreLhsEqual, isInLhsEqual = true, signatures, location)
         }

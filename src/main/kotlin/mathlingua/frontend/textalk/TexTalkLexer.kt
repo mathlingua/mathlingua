@@ -96,16 +96,6 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 // skip the 'n'
                 i++
                 column++
-            } else if (c == ':' &&
-                i < text.length &&
-                text[i] == ':' &&
-                i + 1 < text.length &&
-                text[i + 1] == '=') {
-                this.tokens.add(
-                    TexTalkToken("::=", TexTalkTokenType.ColonColonEquals, line, column))
-                // skip the : and =
-                i += 2
-                column += 2
             } else if (c == ':' && i < text.length && text[i] == '=') {
                 this.tokens.add(TexTalkToken(":=", TexTalkTokenType.ColonEquals, line, column))
                 // skip the =

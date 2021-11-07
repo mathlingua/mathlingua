@@ -138,38 +138,6 @@ data class ColonEqualsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: Param
                 rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
 
-data class ColonColonEqualsTexTalkNode(
-    val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode
-) : TexTalkNode {
-
-    override val type: TexTalkNodeType
-        get() = TexTalkNodeType.ColonColonEquals
-
-    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
-        val res = interceptor(this)
-        if (res != null) {
-            return res
-        }
-
-        val builder = StringBuilder()
-        builder.append(lhs.toCode(interceptor))
-        builder.append(" ::= ")
-        builder.append(rhs.toCode(interceptor))
-        return builder.toString()
-    }
-
-    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
-        fn(lhs)
-        fn(rhs)
-    }
-
-    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
-        transformer(
-            ColonColonEqualsTexTalkNode(
-                lhs = lhs.transform(transformer) as ParametersTexTalkNode,
-                rhs = rhs.transform(transformer) as ParametersTexTalkNode))
-}
-
 data class CommandPart(
     val name: TextTexTalkNode,
     val square: GroupTexTalkNode?,
@@ -651,7 +619,6 @@ enum class TexTalkTokenType {
     Underscore,
     Caret,
     ColonEquals,
-    ColonColonEquals,
     Is,
     In,
     DotDotDot,

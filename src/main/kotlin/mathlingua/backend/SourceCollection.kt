@@ -75,7 +75,6 @@ import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.support.validationSuccess
-import mathlingua.frontend.textalk.ColonColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
@@ -1245,7 +1244,7 @@ private fun getInnerDefinedSignatures(clauses: List<Clause>): Set<String> {
 private fun getInnerDefinedSignaturesImpl(
     node: TexTalkNode, isInColonEquals: Boolean, result: MutableSet<String>
 ) {
-    val isColonEquals = node is ColonEqualsTexTalkNode || node is ColonColonEqualsTexTalkNode
+    val isColonEquals = node is ColonEqualsTexTalkNode
     if (node is TextTexTalkNode && isOperatorName(node.text)) {
         result.add(node.text)
     }

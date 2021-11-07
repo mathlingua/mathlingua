@@ -1,0 +1,16 @@
+::
+# The Riemann Integral
+::
+
+[\indefinite.integral:of{f}:on{A}]
+Defines: F(x)
+means: "something"
+written: "\textrm{indefinite integral of } f? \textrm{ on } A?"
+called: "indefinite integral of $f?$ on $A?$"
+
+
+[\definite.integral[x]_{a}^{b}:of{f}]
+Defines: L
+means: ""
+written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
+called: "definite integral of $f?$ from $a?$ to $b?$"

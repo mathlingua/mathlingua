@@ -1,0 +1,65 @@
+::
+# The Real Numbers
+
+At this point we have the tooling needed to
+describe the real numbers.  Here we just state
+their existence without building them from scratch.
+::
+
+
+[\real.numbers]
+Defines: R := (X, +, *, 0, 1, <)
+means:
+. 'R is \ordered.field'
+. '\rationals.set \subset/ X'
+written: "\mathbb{R}"
+called: "the real numbers"
+
+
+[\real]
+Defines: x
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+means: 'x in X'
+written: "\textrm{real}"
+called: "real number"
+
+
+[x \real.+/ y]
+Defines: f(x, y)
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+means: 'f(x, y) := x + y'
+written: "x?? + y??"
+called: "real addition of $x?$ and $y?$"
+
+
+[x \real.-/ y]
+Defines: f(x, y)
+requiring: R
+when: 'R is \real.numbers'
+means: 'f(x, y) := x + inv(y)'
+using:
+. 'inv(a) := \additive.inverse:of{a}:inField{R}'
+written: "x? - y?"
+called: "real difference of $x?$ and $y?$"
+
+
+[x \real.*/ y]
+Defines: f(x, y)
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+means: 'f(x, y) := x * y'
+written: "x?? y??"
+called: "real multiplication of $x?$ and $y?$"
+
+
+[x \real.lt/ y]
+States:
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+that:
+. 'x < y'
+written: "x? < y?"
+called: "$x?$ is less than $y?$"
+

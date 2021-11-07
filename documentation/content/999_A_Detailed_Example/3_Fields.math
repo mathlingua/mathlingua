@@ -1,0 +1,117 @@
+::
+# Fields
+
+Before defining the real numbers, we need to define
+a *field* that describes the algebraic properties that
+the real numbers satisfies.
+::
+
+[\field]
+Defines: F := (X, +, *, 0, 1)
+means:
+. 'X is \set'
+. '+ is \binary.operation:on{X}'
+. '* is \binary.operation:on{X}'
+. '0 in X'
+. '1 in X'
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x + y in X'
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x + y = y + x'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then: '(x + y) + z = x + (y + z)'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . 'x + 0 = x'
+  . '0 + x = x'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . exists: y
+    suchThat:
+    . 'y in X'
+    . 'x + y = 0'
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x * y in X'
+. forAll: x
+  suchThat: 'x in X'
+  then:
+  . exists: y
+    suchThat:
+    . 'y in X'
+    . 'x * y = 1'
+. forAll: x, y
+  suchThat: 'x, y in X'
+  then: 'x * y = y * x'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . 'x*(y + z) = x*y + x*z'
+written: "\textrm{field}"
+called: "field"
+
+
+::
+If a field also has an order, then it is called
+an *ordered field* as defined below:
+::
+
+
+[\ordered.field]
+Defines: F := (X, +, *, 0, 1, <)
+means:
+. '(X, +, *, 0, 1) is \field'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . if: 'x < y'
+    then: 'x + z < y + z'
+. forAll: x, y, z
+  suchThat: 'x, y, z in X'
+  then:
+  . if:
+    . '0 < x'
+    . '0 < y'
+    then:
+    . '0 < x * y'
+viewing:
+. as: '\field'
+  via: '(X, +, *, 0, 1)'
+written: "\textrm{ordered field}"
+called: "ordered field"
+
+
+[\positive:within{F}]
+Defines: x
+requiring: X, +, *, 0, 1, <
+when: 'F := (X, +, *, 0, 1, <) is \ordered.field'
+means:
+. '0 < x'
+written: "\textrm{positive}"
+called: "positive"
+
+
+[\additive.inverse:of{x}:inField{F}]
+Defines: y
+requiring: X, +, *, 0, 1
+when: 'F := (X, +, *, 0, 1)'
+means:
+. 'x + y = 0'
+written: "-x?"
+called: "additive inverse of $x?$"
+
+
+[x \field{F}.-/ y]
+States:
+requiring: X, +, *, 0, 1
+when: 'F := (X, +, *, 0, 1)'
+that:
+. 'x + \additive.inverse:of{y}:inField{F}'
+written: "x?? - y??"
+called: "$x??$ minus $y??$"
+

@@ -325,17 +325,6 @@ private fun checkVarsImplPhase2Node(
     val varsToRemove = VarMultiSet()
     val location =
         tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
-    if (node is DefinesGroup) {
-        val whenSection = node.whenSection
-        if (whenSection != null) {
-            varsToRemove.addAll(
-                checkWhenSectionVars(
-                    node = whenSection, vars = vars, tracker = tracker, errors = errors))
-        }
-        varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
-        varsToRemove.addAll(
-            checkDefineSectionVars(topLevel, node.definesSection, vars, tracker, errors))
-    }
 
     val requiringSection =
         when (node) {
@@ -347,6 +336,18 @@ private fun checkVarsImplPhase2Node(
     if (requiringSection != null) {
         varsToRemove.addAll(
             checkRequiringSectionVars(topLevel, requiringSection, vars, tracker, errors))
+    }
+
+    if (node is DefinesGroup) {
+        val whenSection = node.whenSection
+        if (whenSection != null) {
+            varsToRemove.addAll(
+                checkWhenSectionVars(
+                    node = whenSection, vars = vars, tracker = tracker, errors = errors))
+        }
+        varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
+        varsToRemove.addAll(
+            checkDefineSectionVars(topLevel, node.definesSection, vars, tracker, errors))
     }
 
     if (node is HasUsingSection && node.usingSection != null) {
@@ -710,14 +711,13 @@ private fun checkColonOrColonColonEqualsRhsSymbols(
                 isInLhsColonEquals = false,
                 groupScope = GroupScope.InNone,
                 isInIdStatement = false)) {
-            if (vars.hasConflict(v)) {
+            if (!vars.contains(v)) {
                 errors.add(
                     ParseError(
-                        message = "Duplicate defined symbol '$v' in `::=`",
+                        message = "Undefined symbol '$v' in `:=`",
                         row = location.row,
                         column = location.column))
             }
-            vars.add(v)
         }
     }
     node.forEach {

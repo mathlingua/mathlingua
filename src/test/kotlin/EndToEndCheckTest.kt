@@ -1730,4 +1730,92 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report for symbols introduced in requiring section and used in colon equals`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    requiring: a, b
+                    when: 'X := (a, b)'
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else{X}]
+                    States:
+                    requiring: a, b
+                    when: 'X := (a, b)'
+                    that: "something"
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for symbols used in when section and not introduced in requiring section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    when: 'X := (a, b)'
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else{X}]
+                    States:
+                    when: 'X := (a, b)'
+                    that: "something"
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 3, Column: 7)
+                Undefined symbol 'a' in `:=`
+
+                ERROR: content/file1.math (Line: 3, Column: 7)
+                Undefined symbol 'b' in `:=`
+
+                ERROR: content/file1.math (Line: 3, Column: 7)
+                Undefined symbol 'a'
+
+                ERROR: content/file1.math (Line: 3, Column: 7)
+                Undefined symbol 'b'
+
+                ERROR: content/file1.math (Line: 11, Column: 7)
+                Undefined symbol 'a'
+
+                ERROR: content/file1.math (Line: 11, Column: 7)
+                Undefined symbol 'b'
+
+                FAILED
+                Processed 1 file
+                6 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 6)
+    }
 }

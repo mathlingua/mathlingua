@@ -28,6 +28,18 @@ written: "(a?, b?)"
 called: "the open interval from $a?$ to $b?$"
 
 
+[\closed.interval{a, b}]
+Defines: I
+requiring: R
+when: 'R is \real.numbers'
+means:
+. 'I := \set[x]:where{x \in/ \real.numbers}
+               :suchThat{a \real.leq/ x}
+                        {x \real.leq/ b}'
+written: "[a?, b?]"
+called: "the open interval from $a?$ to $b?$"
+
+
 [\continuous.function:on{I}:at{c}]
 Defines: f(x)
 requiring: R, a, b
@@ -68,3 +80,19 @@ means:
   then: 'f is \continuous.function:on{I}:at{c}'
 written: "\textrm{continuous function on } I?"
 called: "continuous function on $I?$"
+
+
+[\bounded.real.function:on{I}]
+Defines: f(x)
+requiring: a, b
+when: 'I := \closed.interval{a, b}'
+means:
+. 'f is \function:on{I}:to{\real.numbers}'
+. exists: M
+  suchThat:
+  . 'M is \real'
+  . forAll: t
+    suchThat: 't in I'
+    then: '\real.abs(f(t)) \real.leq/ M'
+written: "\textrm{bounded real function on } I?"
+called: "bounded real function on $I?$"

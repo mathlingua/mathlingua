@@ -63,3 +63,36 @@ that:
 written: "x? < y?"
 called: "$x?$ is less than $y?$"
 
+
+[x \real.gt/ y]
+States:
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+that:
+. 'y < x'
+written: "x? > y?"
+called: "$x?$ is greater than $y?$"
+
+
+[x \real.leq/ y]
+States:
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+that:
+. or:
+  . 'x < y'
+  . 'x = y'
+written: "x? \leq y?"
+called: "$x?$ is less than or equal to $y?$"
+
+
+[x \real.geq/ y]
+States:
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+that:
+. or:
+  . 'y < x'
+  . 'x = y'
+written: "x? \geq y?"
+called: "$x?$ is greater than or equal to $y?$"

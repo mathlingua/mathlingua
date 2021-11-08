@@ -1,16 +1,194 @@
 ::
 # The Riemann Integral
+
+Now we have the background needed to describe the
+Riemann Integral.
 ::
 
-[\indefinite.integral:of{f}:on{A}]
-Defines: F(x)
-means: "something"
-written: "\textrm{indefinite integral of } f? \textrm{ on } A?"
-called: "indefinite integral of $f?$ on $A?$"
+
+[\finite.real.sequence:size{n}]
+Defines: X := {x_i}_i
+when: 'n is \integer'
+means:
+. forAll: j
+  suchThat:
+  . 'j is \integer'
+  . 'j \integers.geq/ 0'
+  . 'j \integers.leq/ n'
+  then:
+  . 'x_{j} is \real'
+written: "\textrm{finite sequence of size } n?"
+called: "finite sequence of size $n?$"
+
+
+[\partition:of{I}:size{n}]
+Defines: X := {x_i}_i
+requiring: a, b
+when:
+. 'I is \closed.interval{a, b}'
+means:
+. 'X is \finite.real.sequence:size{n}'
+. 'x_{0} = a'
+. 'x_{n} = b'
+. forAll: j
+  suchThat:
+  . 'j is \integer'
+  . 'j \integers.geq/ 1'
+  . 'j \integers.leq/ n'
+  then:
+  . 'x_{j \integers.-/ 1} \integers.lt/ x_{j}'
+written: "\textrm{partition of } I? \text{ of size } n?"
+called: "partition of $I?$ of size $n?$"
+
+
+[\finite.sum[i]_{a}^{b}{f}]
+Defines: L
+requiring: S(n)
+evaluated:
+. 'L = S(b)'
+. 'S(a) := f(a)'
+. forAll: j
+  suchThat:
+  . 'j \integers.gt/ a'
+  . 'j \integers.leq/ b'
+  then:
+  . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
+written: "\displaystyle \sum_{i? = a?}^{b?} f?"
+called: "finite sum of $f$ from $a?$ to $b?$"
+
+
+[\infimum:of{f}:over{P}:at{i}]
+Defines: L
+requiring: I, a, b, n, X
+when:
+. 'I is \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+. 'i is \integer'
+. 'i \integers.geq/ 1'
+. 'i \integers.leq/ n'
+evaluated:
+. 'L := \infimum:of{\set[x]:where{f(x)}
+                           :suchThat{x \real.geq/ x_{i - 1}}
+                                    {x \real.leq/ x_{i}}}'
+using:
+. 'x - y := x \integers.-/ y'
+written: "m_{i?, P?, f?}"
+called: "infimum of $f?$ over partition $P?$ at index $i?$"
+
+
+[\supremum:of{f}:over{P}:at{i}]
+Defines: L
+requiring: I, a, b, n, X
+when:
+. 'I is \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+. 'i is \integer'
+. 'i \integers.geq/ 1'
+. 'i \integers.leq/ n'
+evaluated:
+. 'L := \supremum:of{\set[x]:where{f(x)}
+                            :suchThat{x \real.geq/ x_{i - 1}}
+                                     {x \real.leq/ x_{i}}}'
+using:
+. 'x - y := x \integers.-/ y'
+written: "M_{i?, P?, f?}"
+called: "supremum of $f?$ over partition $P?$ at index $i?$"
+
+
+[\lower.darboux.sum:of{f}:over{P}]
+Defines: S
+requiring: I, a, b, n, Q := {x_i}_i
+when:
+. 'I is \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := Q is \partition:of{I}:size{n}'
+evaluated:
+. 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
+using:
+. 'm_{i} := \infimum:of{f}:over{P}:at{i}'
+. 'a * b := a \real.*/ b'
+written: "L(f?, P?)"
+called: "lower Riemann sum of $f?$ over $P?$"
+
+
+[\upper.darboux.sum:of{f}:over{P}]
+Defines: S
+requiring: I, a, b, n, Q := {x_i}_i
+when:
+. 'I is \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := Q is \partition:of{I}:size{n}'
+evaluated:
+. 'S := \finite.sum[i]_{0}^{n}{M_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
+using:
+. 'M_{i} := \supremum:of{f}:over{P}:at{i}'
+. 'a * b := a \real.*/ b'
+written: "U(L?, P?)"
+called: "lower Riemann sum of $f?$ over $P?$"
+
+
+[x \is/ P]
+States:
+that: 'x is P'
+written: "x? \textrm{ is } P?"
+called: "$x?$ is $P?$"
+
+
+[\lower.darboux.integral:of{f}:on{a, b}]
+Defines: S
+requiring: I
+when:
+. 'I is \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+evaluated:
+. 'S := \supremum:of{\set[P, n]:where{L(f, P)}
+                               :suchThat{P \is/ \partition:of{I}:size{n}}}'
+using:
+. 'L(f, P) := \lower.darboux.sum:of{f}:over{P}'
+written: "\underline{\displaystyle \int_{a?}^{b?}} f?"
+called: "Lower Darboux Integral of $f?$ on $[a?, b?]$"
+
+
+[\upper.darboux.integral:of{f}:on{a, b}]
+Defines: S
+requiring: I
+when:
+. 'I is \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+evaluated:
+. 'S := \infimum:of{\set[P, n]:where{U(f, P)}
+                              :suchThat{P \is/ \partition:of{I}:size{n}}}'
+using:
+. 'U(f, P) := \upper.darboux.sum:of{f}:over{P}'
+written: "\overline{\displaystyle \int_{a?}^{b?}} f?"
+called: "Lower Darboux Integral of $f?$ on $[a?, b?]$"
+
+
+[\rieman.integralble.function:on{a, b}]
+Defines: f(x)
+means:
+. '\lower.darboux.integral:of{f}:on{a, b} =
+   \upper.darboux.integral:of{f}:on{a, b}'
+written: "\textrm{Riemann integrable function on } [a?, b?]"
+called: "Riemann integrable function on $[a?, b?]$"
 
 
 [\definite.integral[x]_{a}^{b}:of{f}]
-Defines: L
-means: ""
+Defines: S
+when:
+. 'f is \rieman.integralble.function:on{a, b}'
+means:
+. 'S := \lower.darboux.integral:of{f}:on{a, b}'
 written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
 called: "definite integral of $f?$ from $a?$ to $b?$"
+
+
+[\indefinite.integral:of{f}:on{A}]
+Defines: F(x)
+means:
+. "$F'(x) = f(x)$ for all $x \in A$"
+written: "\textrm{indefinite integral of } f? \textrm{ on } A?"
+called: "indefinite integral of $f?$ on $A?$"
+

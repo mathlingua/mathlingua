@@ -474,6 +474,7 @@ Now we`\'`ll define what the inverse of an element is:
 ```math
 [\group{G}.inverse:of{x}]
 Defines: y
+requiring: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
@@ -489,6 +490,7 @@ that is rendered as:
 
 [\group{G}.inverse:of{x}]
 Defines: y
+requiring: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'

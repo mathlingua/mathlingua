@@ -892,8 +892,9 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                         val lhsItems = colonEquals.lhs.items
                         val rhsItems = colonEquals.rhs.items
                         if (lhsItems.size != 1 || rhsItems.size != 1) {
-                            throw RuntimeException(
+                            println(
                                 "The left-hand-side and right-hand-side of a := must have exactly one expression")
+                            break
                         }
 
                         // Given the statment: '\f(x) := \g(x)'

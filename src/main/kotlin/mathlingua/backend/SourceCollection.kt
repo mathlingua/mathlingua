@@ -48,6 +48,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
@@ -1377,6 +1378,25 @@ fun getInnerDefinedSignatures(group: TopLevelGroup, tracker: LocationTracker?): 
         }
     }
 
+    val requiringSection =
+        when (group) {
+            is DefinesGroup -> group.requiringSection
+            is StatesGroup -> group.requiringSection
+            else -> null
+        }
+
+    if (requiringSection != null) {
+        for (target in requiringSection.targets) {
+            result.addAll(
+                findOperatorNamesWithin(target).map {
+                    Signature(
+                        form = it,
+                        location = tracker?.getLocationOf(target)
+                                ?: Location(row = -1, column = -1))
+                })
+        }
+    }
+
     if (group is DefinesGroup) {
         if (group.whenSection != null) {
             val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
@@ -1409,6 +1429,32 @@ fun getInnerDefinedSignatures(group: TopLevelGroup, tracker: LocationTracker?): 
         }
     }
     return result
+}
+
+private fun findOperatorNamesWithin(target: Target): List<String> {
+    val result = mutableListOf<String>()
+    findOperatorNamesWithinImpl(target, result)
+    return result
+}
+
+private fun findOperatorNamesWithinImpl(node: Phase2Node, result: MutableList<String>) {
+    if (node is Identifier && isOperatorName(node.name)) {
+        result.add(node.name)
+    } else if (node is AssignmentNode) {
+        findOperatorNamesWithinImpl(node.assignment, result)
+    } else if (node is TupleNode) {
+        findOperatorNamesWithinImpl(node.tuple, result)
+    } else if (node is AbstractionNode) {
+        findOperatorNamesWithinImpl(node.abstraction, result)
+    }
+    node.forEach { findOperatorNamesWithinImpl(it, result) }
+}
+
+private fun findOperatorNamesWithinImpl(node: Phase1Node, result: MutableList<String>) {
+    if (node is Phase1Token && isOperatorName(node.text)) {
+        result.add(node.text)
+    }
+    node.forEach { findOperatorNamesWithinImpl(it, result) }
 }
 
 private fun findAllPhase1Statements(node: Phase1Node): List<Phase1Token> {

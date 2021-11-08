@@ -1818,4 +1818,30 @@ internal class EndToEndCheckTest {
             expectedExitCode = 1,
             expectedNumErrors = 6)
     }
+
+    @Test
+    fun `check does not report errors for signatures introduced as operators in requiring section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: f(x, y)
+                    requiring: R := (X, *)
+                    means: 'f(x, y) := x * y'
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

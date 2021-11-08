@@ -36,7 +36,7 @@ called: "real addition of $x?$ and $y?$"
 
 [x \real.-/ y]
 Defines: f(x, y)
-requiring: R
+requiring: R := (X, +, *, 0, 1, <)
 when: 'R is \real.numbers'
 means: 'f(x, y) := x + inv(y)'
 using:

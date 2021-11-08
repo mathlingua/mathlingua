@@ -98,8 +98,10 @@ called: "positive"
 
 [\additive.inverse:of{x}:inField{F}]
 Defines: y
-requiring: X, +, *, 0, 1
-when: 'F := (X, +, *, 0, 1)'
+requiring: (X, +, *, 0, 1)
+when:
+. 'F := (X, +, *, 0, 1) is \field'
+. 'x in X'
 means:
 . 'x + y = 0'
 written: "-x?"
@@ -109,9 +111,43 @@ called: "additive inverse of $x?$"
 [x \field{F}.-/ y]
 States:
 requiring: X, +, *, 0, 1
-when: 'F := (X, +, *, 0, 1)'
+when:
+. 'F := (X, +, *, 0, 1)'
+. 'x, y in X'
 that:
 . 'x + \additive.inverse:of{y}:inField{F}'
 written: "x?? - y??"
 called: "$x??$ minus $y??$"
 
+
+[x \neq/ y]
+States:
+that:
+. not: 'x = y'
+written: "x? \neq y?"
+called: "$x?$ is not equal to $y?$"
+
+
+[\multiplicative.inverse:of{x}:inField{F}]
+Defines: y
+requiring: (X, +, *, 0, 1)
+when:
+. 'F := (X, +, *, 0, 1) is \field'
+. 'x in X'
+. 'x \neq/ 0'
+means:
+. 'x * y = 1'
+written: "x??^{-1}"
+called: "multiplicative inverse of $x?$"
+
+
+[x \field{F}.div/ y]
+States:
+requiring: X, +, *, 0, 1
+when:
+. 'F := (X, +, *, 0, 1)'
+. 'x, y in X'
+that:
+. 'x * \multiplicative.inverse:of{y}:inField{F}'
+written: "x? y??^{-1}"
+called: "$x?$ times the inverse of $y?$"

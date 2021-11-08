@@ -59,11 +59,11 @@ called: "finite sum of $f$ from $a?$ to $b?$"
 
 [\infimum:of{f}:over{P}:at{i}]
 Defines: L
-requiring: I, a, b, n, X
+requiring: I, a, b, n, Q := {p_j}_j
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+. 'P := Q is \partition:of{I}:size{n}'
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
@@ -79,11 +79,11 @@ called: "infimum of $f?$ over partition $P?$ at index $i?$"
 
 [\supremum:of{f}:over{P}:at{i}]
 Defines: L
-requiring: I, a, b, n, X
+requiring: I, a, b, n, Q := {p_j}_j
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+. 'P := Q is \partition:of{I}:size{n}'
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
@@ -110,7 +110,7 @@ using:
 . 'm_{i} := \infimum:of{f}:over{P}:at{i}'
 . 'a * b := a \real.*/ b'
 written: "L(f?, P?)"
-called: "lower Riemann sum of $f?$ over $P?$"
+called: "lower Dorboux sum of $f?$ over $P?$"
 
 
 [\upper.darboux.sum:of{f}:over{P}]
@@ -126,7 +126,7 @@ using:
 . 'M_{i} := \supremum:of{f}:over{P}:at{i}'
 . 'a * b := a \real.*/ b'
 written: "U(L?, P?)"
-called: "lower Riemann sum of $f?$ over $P?$"
+called: "lower Darboux sum of $f?$ over $P?$"
 
 
 [x \is/ P]
@@ -163,7 +163,7 @@ evaluated:
 using:
 . 'U(f, P) := \upper.darboux.sum:of{f}:over{P}'
 written: "\overline{\displaystyle \int_{a?}^{b?}} f?"
-called: "Lower Darboux Integral of $f?$ on $[a?, b?]$"
+called: "Upper Darboux Integral of $f?$ on $[a?, b?]$"
 
 
 [\rieman.integralble.function:on{a, b}]
@@ -185,10 +185,17 @@ written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
 called: "definite integral of $f?$ from $a?$ to $b?$"
 
 
-[\indefinite.integral:of{f}:on{A}]
+[\indefinite.integral:of{f}:on{I}]
 Defines: F(x)
+requiring: a, b
+when:
+. 'I := \open.interval{a, b}'
+. 'f is \function:on{I}:to{\real.numbers}'
 means:
-. "$F'(x) = f(x)$ for all $x \in A$"
+. forAll: t
+  suchThat: 't in I'
+  then:
+  . '\derivative:of{F}:at{t} = f(t)'
 written: "\textrm{indefinite integral of } f? \textrm{ on } A?"
 called: "indefinite integral of $f?$ on $A?$"
 

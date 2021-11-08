@@ -54,6 +54,27 @@ written: "x?? y??"
 called: "real multiplication of $x?$ and $y?$"
 
 
+[x \real.div/ y]
+Defines: f(x, y)
+requiring: R := (X, +, *, 0, 1, <)
+when: 'R is \real.numbers'
+means: 'f(x, y) := x * inv(y)'
+using:
+. 'inv(a) := \multiplicative.inverse:of{a}:inField{R}'
+written: "\frac{x??}{y??}"
+called: "real division of $x?$ by $y?$"
+
+
+[\real.frac{x}{y}]
+States:
+when:
+. 'x, y is \real'
+that:
+. 'x \real.div/ y'
+written: "\frac{x??}{y??}"
+called: "real division of $x?$ by $y?$"
+
+
 [x \real.lt/ y]
 States:
 requiring: R := (X, +, *, 0, 1, <)

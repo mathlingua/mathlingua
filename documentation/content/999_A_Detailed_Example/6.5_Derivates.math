@@ -1,0 +1,21 @@
+::
+# The Derivative
+::
+
+
+[\derivative:of{f}:at{c}]
+Defines: L
+requiring: I, a, b
+when:
+. 'I := \open.interval{a, b}'
+. 'f is \function:on{I}:to{\real.numbers}'
+. 'c in I'
+means:
+. 'L := \function.limit[x]_{c}{
+    \real.frac{f(x) - f(c)}{x - c}}'
+using:
+. 'a - b := a \real.-/ b'
+written:
+. "f?'(c?)"
+. "\frac{d}{d x?} f?(x?) |_{x? = c?}"
+called: "the derivative of $f?(x?)$ at $c?$"

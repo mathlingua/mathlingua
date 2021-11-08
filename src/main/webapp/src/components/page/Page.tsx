@@ -3,10 +3,10 @@ import { BlockComment } from '../block-comment/BlockComment';
 import styles from './Page.module.css';
 
 import * as api from '../../services/api';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { Dispatch, useEffect, useRef, useState } from 'react';
 import { ErrorView } from '../error-view/ErrorView';
 import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGroup';
-import { useAppSelector } from '../../support/hooks';
+import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { selectQuery } from '../../store/querySlice';
 
 import debounce from 'lodash.debounce';
@@ -22,6 +22,8 @@ import { isOnMobile } from '../../support/util';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faAngleRight, faAngleLeft } from '@fortawesome/free-solid-svg-icons';
 import { DebouncedFunc } from 'lodash';
+import { errorResultsUpdated } from '../../store/errorResultsSlice';
+import { AppDispatch } from '../../store/store';
 
 interface Annotation {
   row: number;
@@ -258,6 +260,7 @@ const RenderedContent = (props: {
 interface EditorViewProps {
   viewedPath: string;
   onFileResultChanged(fileResult: api.FileResult | undefined): void;
+  dispatch: AppDispatch;
 }
 
 interface EditorViewState {
@@ -275,9 +278,9 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
     };
   }
 
-  componentDidMount() {
+  async componentDidMount() {
     this.setupCompletions();
-    this.initializeEditor();
+    await this.initializeEditor();
   }
 
   shouldComponentUpdate(
@@ -290,12 +293,12 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
     );
   }
 
-  componentDidUpdate(prevProps: EditorViewProps) {
+  async componentDidUpdate(prevProps: EditorViewProps) {
     if (prevProps.viewedPath !== this.props.viewedPath) {
       if (this.scheduledFunction) {
         this.scheduledFunction.flush();
       }
-      this.initializeEditor();
+      await this.initializeEditor();
     }
   }
 
@@ -314,57 +317,72 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
     );
   }
 
+  private check(viewedPath: string) {
+    return api.check().then((resp) => {
+      const newAnnotations = resp.errors
+        .filter((err) => err.path === viewedPath)
+        .map(
+          (err) =>
+            ({
+              row: Math.max(0, err.row),
+              column: Math.max(0, err.column),
+              text: err.message,
+              type: 'error',
+            } as Annotation)
+        );
+
+      let annotationsDiffer = false;
+      if (this.state.annotations.length !== newAnnotations.length) {
+        annotationsDiffer = true;
+      } else {
+        for (let i = 0; i < this.state.annotations.length; i++) {
+          const thisAn = this.state.annotations[i];
+          const newAn = newAnnotations[i];
+          if (!this.areAnnotationsEqual(thisAn, newAn)) {
+            annotationsDiffer = true;
+            break;
+          }
+        }
+      }
+
+      if (annotationsDiffer) {
+        this.setState({ ...this.state, annotations: newAnnotations });
+      }
+    });
+  }
+
   private async saveAndUpdateAnnotations(viewedPath: string, content: string) {
     await api.writeFileResult(viewedPath, content);
     await Promise.all([
-      api.check().then((resp) => {
-        const newAnnotations = resp.errors
-          .filter((err) => err.path === viewedPath)
-          .map(
-            (err) =>
-              ({
-                row: Math.max(0, err.row),
-                column: Math.max(0, err.column),
-                text: err.message,
-                type: 'error',
-              } as Annotation)
-          );
-
-        let annotationsDiffer = false;
-        if (this.state.annotations.length !== newAnnotations.length) {
-          annotationsDiffer = true;
-        } else {
-          for (let i = 0; i < this.state.annotations.length; i++) {
-            const thisAn = this.state.annotations[i];
-            const newAn = newAnnotations[i];
-            if (!this.areAnnotationsEqual(thisAn, newAn)) {
-              annotationsDiffer = true;
-              break;
-            }
-          }
-        }
-
-        if (annotationsDiffer) {
-          this.setState({ ...this.state, annotations: newAnnotations });
-        }
-      }),
+      this.check(viewedPath),
       api
         .getFileResult(viewedPath)
         .then((fileResult) => this.props.onFileResultChanged(fileResult)),
     ]);
   }
 
-  private initializeEditor() {
+  private async initializeEditor() {
     this.props.onFileResultChanged({
       content: '',
       entities: [],
       errors: [],
       relativePath: '',
     });
-    api.readPage(this.props.viewedPath).then((content) => {
+    await api.readPage(this.props.viewedPath).then((content) => {
       this.editor.setValue(content);
       this.editor.clearSelection();
     });
+    const res = await api.check();
+    this.props.dispatch(
+      errorResultsUpdated(
+        res.errors.map((err) => ({
+          row: err.row,
+          column: err.column,
+          message: err.message,
+          relativePath: err.path,
+        }))
+      )
+    );
   }
 
   private setupCompletions() {
@@ -478,6 +496,7 @@ const SideBySideView = (props: {
   const [relativePath, setRelativePath] = useState(props.relativePath);
   const [errors, setErrors] = useState(props.errors);
   const [entities, setEntities] = useState(props.entities);
+  const dispatch = useAppDispatch();
 
   const onFileResultChanged = (result: api.FileResult) => {
     if (result) {
@@ -493,6 +512,7 @@ const SideBySideView = (props: {
     >
       <div style={{ width: '50%' }}>
         <EditorView
+          dispatch={dispatch}
           viewedPath={props.relativePath}
           onFileResultChanged={onFileResultChanged}
         />

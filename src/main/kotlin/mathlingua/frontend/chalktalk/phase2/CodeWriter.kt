@@ -1103,7 +1103,12 @@ class MathLinguaCodeWriter(
                     "'$stmtText'"
                 })
         } else {
-            builder.append("'$stmtText'")
+            // As a hack to get the { and } to appear when a SequenceNode
+            // is rendered as LaTeX in html using KaTeX, a SequenceNode renders
+            // itself as \\{...\\}_{...}.  To make the MathLingua code for the
+            // SequenceNode look correct, we need to replace the \\{ with {
+            // and \\} with }.
+            builder.append("'${stmtText.replace("\\{", "{").replace("\\}", "}")}'")
         }
     }
 

@@ -33,5 +33,5 @@ xyz... := f(abc + x)
 (x + 1)
 (a, b := c)
 {x + 1}
-{x_{i}}_{i}
-{f_{i}(x)}_{i}
+{x_{i}}_{i}                                                         :OUTPUT:     \{x_{i}\}_{i}
+{f_{i}(x)}_{i}                                                      :OUTPUT:     \{f_{i}(x)\}_{i}

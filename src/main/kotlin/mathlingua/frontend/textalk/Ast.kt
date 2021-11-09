@@ -353,9 +353,13 @@ data class SequenceNode(val mapping: MappingNode, val subGroup: GroupTexTalkNode
 
         val buffer = StringBuilder()
 
-        buffer.append("{")
+        // The use of \\{ and \\} is a hack so that rendering the sequence node code
+        // as LaTeX in html using KaTeX shows the { and }.  The MathLingua code
+        // writer knows about this and replaces the \\{ with { and \\} with }
+        // when rendering the literal MathLingua code.
+        buffer.append("\\{")
         buffer.append(mapping.toCode(interceptor))
-        buffer.append("}")
+        buffer.append("\\}")
 
         buffer.append("_")
         buffer.append(subGroup.toCode(interceptor))

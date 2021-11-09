@@ -431,6 +431,50 @@ private class TexTalkParserImpl : TexTalkParser {
             return grp
         }
 
+        private fun sequenceOrCurlyGroup(): TexTalkNode? {
+            val curlyGroup = group(TexTalkNodeType.CurlyGroup) ?: return null
+
+            if (has(TexTalkTokenType.Underscore)) {
+                val underscore = next() // move past the _
+                if (curlyGroup.isVarArg ||
+                    curlyGroup.parameters.items.size != 1 ||
+                    curlyGroup.parameters.items[0].children.size != 1 ||
+                    curlyGroup.parameters.items[0].children[0] !is MappingNode) {
+                    errors.add(
+                        ParseError(
+                            message =
+                                "Expected something of the form x_{i} or f_{i}(x) within the {...}",
+                            row = underscore.row,
+                            column = underscore.column))
+                    return curlyGroup
+                }
+
+                val mapping = curlyGroup.parameters.items[0].children[0] as MappingNode
+                val subGroup = group(nodeType = TexTalkNodeType.CurlyGroup)
+                if (subGroup == null) {
+                    errors.add(
+                        ParseError(
+                            message = "Expected _ to be followed by a {...}",
+                            row = underscore.row,
+                            column = underscore.column))
+                    return curlyGroup
+                }
+                return SequenceNode(mapping = mapping, subGroup = subGroup)
+            }
+
+            return curlyGroup
+        }
+
+        private fun tupleOrParenGroup(): TexTalkNode? {
+            val parenGroup = group(TexTalkNodeType.ParenGroup) ?: return null
+
+            if (!parenGroup.isVarArg && parenGroup.parameters.items.size != 1) {
+                return TupleNode(params = parenGroup.parameters)
+            }
+
+            return parenGroup
+        }
+
         private fun group(nodeType: TexTalkNodeType): GroupTexTalkNode? {
             val startType: TexTalkTokenType
             val endType: TexTalkTokenType
@@ -557,8 +601,7 @@ private class TexTalkParserImpl : TexTalkParser {
                 (terminators == null || !terminators.contains(texTalkLexer.peek().tokenType))) {
                 val child =
                     command()
-                        ?: mappingOrIdentifier() ?: group(TexTalkNodeType.ParenGroup)
-                            ?: group(TexTalkNodeType.CurlyGroup)
+                        ?: mappingOrIdentifier() ?: sequenceOrCurlyGroup() ?: tupleOrParenGroup()
                             ?: text(TexTalkTokenType.Is, TexTalkNodeType.Is, false)
                             ?: text(TexTalkTokenType.In, TexTalkNodeType.In, false)
                             ?: text(TexTalkTokenType.Identifier, TexTalkNodeType.Identifier, true)

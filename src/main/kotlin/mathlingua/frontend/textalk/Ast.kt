@@ -16,6 +16,8 @@
 
 package mathlingua.frontend.textalk
 
+import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
+
 enum class TexTalkNodeType {
     Token,
     Identifier,
@@ -35,7 +37,9 @@ enum class TexTalkNodeType {
     In,
     ColonColonEquals,
     ColonEquals,
-    Mapping
+    Mapping,
+    Tuple,
+    Sequence
 }
 
 interface TexTalkNode {
@@ -310,6 +314,64 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
         transformer(
             ParametersTexTalkNode(
                 items = items.map { it.transform(transformer) as ExpressionTexTalkNode }))
+}
+
+data class TupleNode(val params: ParametersTexTalkNode) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Tuple
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val buffer = StringBuilder()
+        buffer.append("(")
+        buffer.append(params.toCode(interceptor))
+        buffer.append(")")
+        return buffer.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(params)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        TupleNode(params = params.transform(transformer) as ParametersTexTalkNode)
+}
+
+data class SequenceNode(val mapping: MappingNode, val subGroup: GroupTexTalkNode) : TexTalkNode {
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Sequence
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val buffer = StringBuilder()
+
+        buffer.append("{")
+        buffer.append(mapping.toCode(interceptor))
+        buffer.append("}")
+
+        buffer.append("_")
+        buffer.append(subGroup.toCode(interceptor))
+
+        return buffer.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(mapping)
+        fn(subGroup)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        SequenceNode(
+            mapping = mapping.transform(transformer),
+            subGroup = subGroup.transform(transformer) as GroupTexTalkNode)
 }
 
 data class MappingNode(

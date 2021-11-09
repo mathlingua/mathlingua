@@ -96,6 +96,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theore
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.ProofSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.ContextSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.RelatedGroup
@@ -345,6 +346,8 @@ val DEFAULT_THAT_SECTION = ThatSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_USING_SECTION = UsingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
+val DEFAULT_CONTEXT_SECTION = ContextSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+
 val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
@@ -397,6 +400,7 @@ val DEFAULT_STATES_GROUP =
         statesSection = DEFAULT_STATES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
+        contextSection = DEFAULT_CONTEXT_SECTION,
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -567,6 +571,7 @@ val DEFAULT_DEFINES_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         requiringSection = DEFAULT_REQUIRING_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
+        contextSection = DEFAULT_CONTEXT_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         evaluatedSection = DEFAULT_EVALUATED_SECTION,
         viewingSection = DEFAULT_VIEWING_SECTION,

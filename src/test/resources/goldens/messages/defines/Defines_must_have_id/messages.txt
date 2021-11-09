@@ -6,6 +6,7 @@ For pattern:
 Defines:
 requiring?:
 when?:
+context?:
 means?:
 evaluated?:
 viewing?:

@@ -43,6 +43,7 @@ Document(
                )
                requiringSection = null
                whenSection = null
+               contextSection = null
                meansSection = MeansSection(
                  clauses = ClauseListNode(
                    clauses = [

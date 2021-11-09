@@ -39,10 +39,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateRequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.ContextSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateContextSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
@@ -60,6 +62,7 @@ data class StatesGroup(
     val statesSection: StatesSection,
     val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
+    val contextSection: ContextSection?,
     val thatSection: ThatSection,
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
@@ -76,6 +79,9 @@ data class StatesGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
+        if (contextSection != null) {
+            fn(contextSection)
+        }
         fn(thatSection)
         if (usingSection != null) {
             fn(usingSection)
@@ -88,7 +94,7 @@ data class StatesGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        val sections = mutableListOf(statesSection, requiringSection, whenSection)
+        val sections = mutableListOf(statesSection, requiringSection, whenSection, contextSection)
         sections.add(thatSection)
         sections.add(usingSection)
         sections.add(writtenSection)
@@ -106,6 +112,7 @@ data class StatesGroup(
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                contextSection = contextSection?.transform(chalkTransformer) as ContextSection?,
                 thatSection = chalkTransformer(thatSection) as ThatSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -128,6 +135,7 @@ fun validateStatesGroup(
                     "States",
                     "requiring?",
                     "when?",
+                    "context?",
                     "that",
                     "using?",
                     "written",
@@ -147,6 +155,10 @@ fun validateStatesGroup(
                         },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
+                    contextSection =
+                        ifNonNull(sections["context"]) {
+                            validateContextSection(it, errors, tracker)
+                        },
                     thatSection =
                         ensureNonNull(sections["that"], DEFAULT_THAT_SECTION) {
                             validateThatSection(it, errors, tracker)

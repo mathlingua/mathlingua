@@ -39,10 +39,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.valid
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateViewingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.ContextSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateContextSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
@@ -67,6 +69,7 @@ data class DefinesGroup(
     val definesSection: DefinesSection,
     val requiringSection: RequiringSection?,
     val whenSection: WhenSection?,
+    val contextSection: ContextSection?,
     val meansSection: MeansSection?,
     val evaluatedSection: EvaluatedSection?,
     val viewingSection: ViewingSection?,
@@ -84,6 +87,9 @@ data class DefinesGroup(
         }
         if (whenSection != null) {
             fn(whenSection)
+        }
+        if (contextSection != null) {
+            fn(contextSection)
         }
         if (meansSection != null) {
             fn(meansSection)
@@ -110,6 +116,7 @@ data class DefinesGroup(
                 definesSection,
                 requiringSection,
                 whenSection,
+                contextSection,
                 meansSection,
                 evaluatedSection,
                 viewingSection,
@@ -129,6 +136,7 @@ data class DefinesGroup(
                 requiringSection =
                     requiringSection?.transform(chalkTransformer) as RequiringSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                contextSection = contextSection?.transform(chalkTransformer) as ContextSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 evaluatedSection =
                     evaluatedSection?.transform(chalkTransformer) as EvaluatedSection?,
@@ -154,6 +162,7 @@ fun validateDefinesGroup(
                     "Defines",
                     "requiring?",
                     "when?",
+                    "context?",
                     "means?",
                     "evaluated?",
                     "viewing?",
@@ -177,6 +186,10 @@ fun validateDefinesGroup(
                         whenSection =
                             ifNonNull(sections["when"]) {
                                 validateWhenSection(it, errors, tracker)
+                            },
+                        contextSection =
+                            ifNonNull(sections["context"]) {
+                                validateContextSection(it, errors, tracker)
                             },
                         meansSection =
                             ifNonNull(sections["means"]) {

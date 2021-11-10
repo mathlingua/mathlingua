@@ -32,16 +32,6 @@ written: "\textrm{some.function}(x?)"
 called: "some function2 over $A?$"
 
 
-[\some.function3{x}]
-Defines: X
-requiring: a, b
-when: 'x = a'
-context: 'x = b'
-means: "something"
-written: "something"
-called: "something"
-
-
 [\even.primes]
 Defines: X := {x}
 means:
@@ -135,16 +125,6 @@ called: "semigroup"
 States:
 when: 'A, B, C is \something'
 that: 'A + B - C is \something'
-written: "something"
-called: "something"
-
-
-[\some.thing2{A}]
-States:
-requiring: X
-when: 'A is \something'
-context: 'A = X'
-that: 'A + X is \something'
 written: "something"
 called: "something"
 

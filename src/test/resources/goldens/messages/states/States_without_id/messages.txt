@@ -6,7 +6,6 @@ For pattern:
 States:
 requiring?:
 when?:
-context?:
 that:
 using?:
 written:

@@ -12,10 +12,8 @@ operation defined next.
 
 [\binary.relation:on{A}]
 Defines: R
-when:
-. 'A is \set'
-means:
-. 'R \subset/ {A \set.product/ A}'
+when: 'A is \set'
+means: 'R \subset/ {A \set.product/ A}'
 written: "\textrm{binary relation on } A?"
 called: "binary relation on $A?$"
 Metadata:
@@ -93,7 +91,7 @@ and $\geq$ can be defined.
 
 [a \leq{X}/ b]
 States:
-requiring: S, <
+requiring: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -107,7 +105,7 @@ called: "$a?$ is less than or equal to $b?$"
 
 [a \lt{X}/ b]
 States:
-requiring: S, <
+requiring: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -119,7 +117,7 @@ called: "$a?$ is less than $b?$"
 
 [a \gt{X}/ b]
 States:
-requiring: S, <
+requiring: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -131,7 +129,7 @@ called: "$a?$ is greater than $b?$"
 
 [a \geq{X}/ b]
 States:
-requiring: S, <
+requiring: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -152,7 +150,7 @@ to be an upper bound of a set.
 
 [\upper.bound:of{X}]
 Defines: b
-requiring: E, S, <
+requiring: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
@@ -194,8 +192,7 @@ the maximum of a set.
 
 [\supremum:of{X}]
 Defines: beta
-when:
-. 'X is \bounded.above.set'
+when: 'X is \bounded.above.set'
 means:
 . 'beta is \upper.bound:of{X}'
 . forAll: b
@@ -216,7 +213,7 @@ bound of a set.
 
 [\lower.bound:of{X}]
 Defines: b
-requiring: E, S, <
+requiring: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
@@ -257,8 +254,7 @@ the minimum of a set.
 
 [\infimum:of{X}]
 Defines: alpha
-when:
-. 'X is \bounded.above.set'
+when: 'X is \bounded.above.set'
 means:
 . 'alpha is \lower.bound:of{X}'
 . forAll: a

@@ -88,7 +88,7 @@ called: "ordered field"
 
 [\positive:within{F}]
 Defines: x
-requiring: X, +, *, 0, 1, <
+requiring: (X, +, *, 0, 1, <)
 when: 'F := (X, +, *, 0, 1, <) is \ordered.field'
 means:
 . '0 < x'
@@ -110,7 +110,7 @@ called: "additive inverse of $x?$"
 
 [x \field{F}.-/ y]
 States:
-requiring: X, +, *, 0, 1
+requiring: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1)'
 . 'x, y in X'
@@ -143,7 +143,7 @@ called: "multiplicative inverse of $x?$"
 
 [x \field{F}.div/ y]
 States:
-requiring: X, +, *, 0, 1
+requiring: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1)'
 . 'x, y in X'

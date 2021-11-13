@@ -41,7 +41,7 @@ Document(
                              )
                            ]
                )
-               requiringSection = null
+               givenSection = null
                whenSection = null
                meansSection = MeansSection(
                  clauses = ClauseListNode(

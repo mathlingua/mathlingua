@@ -4,7 +4,7 @@ Message:
 For pattern:
 
 Defines:
-requiring?:
+given?:
 when?:
 means?:
 evaluated?:
@@ -24,7 +24,7 @@ Message:
 For pattern:
 
 Defines:
-requiring?:
+given?:
 when?:
 means?:
 evaluated?:
@@ -44,7 +44,7 @@ Message:
 For pattern:
 
 Defines:
-requiring?:
+given?:
 when?:
 means?:
 evaluated?:
@@ -64,7 +64,7 @@ Message:
 For pattern:
 
 Defines:
-requiring?:
+given?:
 when?:
 means?:
 evaluated?:
@@ -84,7 +84,7 @@ Message:
 For pattern:
 
 Defines:
-requiring?:
+given?:
 when?:
 means?:
 evaluated?:
@@ -104,7 +104,7 @@ Message:
 For pattern:
 
 Defines:
-requiring?:
+given?:
 when?:
 means?:
 evaluated?:

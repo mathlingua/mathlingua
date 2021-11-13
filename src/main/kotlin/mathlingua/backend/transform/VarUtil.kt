@@ -36,7 +36,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.EqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
@@ -324,16 +323,37 @@ private fun checkVarsImplPhase2Node(
     val location =
         tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
 
-    val requiringSection =
-        when (node) {
-            is DefinesGroup -> node.requiringSection
-            is StatesGroup -> node.requiringSection
-            else -> null
+    when (node) {
+        is DefinesGroup -> {
+            if (node.givenSection != null) {
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
+            }
         }
-
-    if (requiringSection != null) {
-        varsToRemove.addAll(
-            checkRequiringSectionVars(topLevel, requiringSection, vars, tracker, errors))
+        is StatesGroup -> {
+            if (node.givenSection != null) {
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
+            }
+        }
+        is TheoremGroup -> {
+            if (node.givenSection != null) {
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
+            }
+        }
+        is AxiomGroup -> {
+            if (node.givenSection != null) {
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
+            }
+        }
+        is ConjectureGroup -> {
+            if (node.givenSection != null) {
+                varsToRemove.addAll(
+                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
+            }
+        }
     }
 
     if (node is DefinesGroup) {
@@ -436,24 +456,6 @@ private fun checkVarsImplPhase2Node(
         is StatesGroup -> {
             varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
         }
-        is TheoremGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
-        }
-        is AxiomGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
-        }
-        is ConjectureGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
-        }
         is ForAllGroup -> {
             val forAllVars =
                 node.forAllSection.targets.map { getVarsPhase2Node(node = it) }.flatten()
@@ -531,8 +533,8 @@ private fun checkVarsImplPhase2Node(
             for (target in node.definesSection.targets) {
                 usingVars.addAll(getVarsPhase2Node(target))
             }
-            if (node.requiringSection != null) {
-                for (target in node.requiringSection.targets) {
+            if (node.givenSection != null) {
+                for (target in node.givenSection.targets) {
                     usingVars.addAll(getVarsPhase2Node(target))
                 }
             }
@@ -541,8 +543,8 @@ private fun checkVarsImplPhase2Node(
             }
         } else if (node is StatesGroup) {
             usingVars.addAll(getVarsPhase2Node(node.id))
-            if (node.requiringSection != null) {
-                for (target in node.requiringSection.targets) {
+            if (node.givenSection != null) {
+                for (target in node.givenSection.targets) {
                     usingVars.addAll(getVarsPhase2Node(target))
                 }
             }
@@ -728,29 +730,6 @@ private fun checkDefineSectionVars(
             errors.add(
                 ParseError(
                     message = "Duplicate defined symbol '$v' in `Defines:`",
-                    row = location.row,
-                    column = location.column))
-        }
-        vars.add(v)
-    }
-    return givenVars
-}
-
-private fun checkRequiringSectionVars(
-    topLevel: TopLevelGroup,
-    node: RequiringSection,
-    vars: VarMultiSet,
-    tracker: LocationTracker,
-    errors: MutableList<ParseError>
-): List<Var> {
-    val location =
-        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
-    val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
-    for (v in givenVars) {
-        if (vars.hasConflict(v)) {
-            errors.add(
-                ParseError(
-                    message = "Duplicate defined symbol '$v' in `requiring:`",
                     row = location.row,
                     column = location.column))
         }

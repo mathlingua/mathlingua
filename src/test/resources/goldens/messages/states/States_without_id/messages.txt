@@ -4,7 +4,7 @@ Message:
 For pattern:
 
 States:
-requiring?:
+given?:
 when?:
 that:
 using?:

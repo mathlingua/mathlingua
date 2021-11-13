@@ -8,7 +8,7 @@ Document(
                          ]
                )
                givenSection = null
-               ifOrIffSection = null
+               whenSection = null
                thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [
@@ -18,6 +18,7 @@ Document(
                              ]
                  )
                )
+               iffSection = null
                usingSection = null
                proofSection = null
                metaDataSection = null

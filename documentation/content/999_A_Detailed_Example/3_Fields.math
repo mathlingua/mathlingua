@@ -88,7 +88,7 @@ called: "ordered field"
 
 [\positive:within{F}]
 Defines: x
-requiring: (X, +, *, 0, 1, <)
+given: (X, +, *, 0, 1, <)
 when: 'F := (X, +, *, 0, 1, <) is \ordered.field'
 means:
 . '0 < x'
@@ -98,7 +98,7 @@ called: "positive"
 
 [\additive.inverse:of{x}:inField{F}]
 Defines: y
-requiring: (X, +, *, 0, 1)
+given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x in X'
@@ -110,9 +110,9 @@ called: "additive inverse of $x?$"
 
 [x \field{F}.-/ y]
 States:
-requiring: (X, +, *, 0, 1)
+given: (X, +, *, 0, 1)
 when:
-. 'F := (X, +, *, 0, 1)'
+. 'F := (X, +, *, 0, 1) is \field'
 . 'x, y in X'
 that:
 . 'x + \additive.inverse:of{y}:inField{F}'
@@ -130,7 +130,7 @@ called: "$x?$ is not equal to $y?$"
 
 [\multiplicative.inverse:of{x}:inField{F}]
 Defines: y
-requiring: (X, +, *, 0, 1)
+given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x in X'
@@ -143,9 +143,9 @@ called: "multiplicative inverse of $x?$"
 
 [x \field{F}.div/ y]
 States:
-requiring: (X, +, *, 0, 1)
+given: (X, +, *, 0, 1)
 when:
-. 'F := (X, +, *, 0, 1)'
+. 'F := (X, +, *, 0, 1) is \field'
 . 'x, y in X'
 that:
 . 'x * \multiplicative.inverse:of{y}:inField{F}'

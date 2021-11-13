@@ -35,10 +35,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateRequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
@@ -58,7 +58,7 @@ data class StatesGroup(
     override val signature: Signature?,
     override val id: IdStatement,
     val statesSection: StatesSection,
-    val requiringSection: RequiringSection?,
+    val givenSection: GivenSection?,
     val whenSection: WhenSection?,
     val thatSection: ThatSection,
     override val usingSection: UsingSection?,
@@ -70,8 +70,8 @@ data class StatesGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(statesSection)
-        if (requiringSection != null) {
-            fn(requiringSection)
+        if (givenSection != null) {
+            fn(givenSection)
         }
         if (whenSection != null) {
             fn(whenSection)
@@ -88,7 +88,7 @@ data class StatesGroup(
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
-        val sections = mutableListOf(statesSection, requiringSection, whenSection)
+        val sections = mutableListOf(statesSection, givenSection, whenSection)
         sections.add(thatSection)
         sections.add(usingSection)
         sections.add(writtenSection)
@@ -103,8 +103,7 @@ data class StatesGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 statesSection = statesSection.transform(chalkTransformer) as StatesSection,
-                requiringSection =
-                    requiringSection?.transform(chalkTransformer) as RequiringSection?,
+                givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 thatSection = chalkTransformer(thatSection) as ThatSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -126,7 +125,7 @@ fun validateStatesGroup(
                 DEFAULT_STATES_GROUP,
                 listOf(
                     "States",
-                    "requiring?",
+                    "given?",
                     "when?",
                     "that",
                     "using?",
@@ -141,10 +140,8 @@ fun validateStatesGroup(
                         ensureNonNull(sections["States"], DEFAULT_STATES_SECTION) {
                             validateStatesSection(it, errors, tracker)
                         },
-                    requiringSection =
-                        ifNonNull(sections["requiring"]) {
-                            validateRequiringSection(it, errors, tracker)
-                        },
+                    givenSection =
+                        ifNonNull(sections["given"]) { validateGivenSection(it, errors, tracker) },
                     whenSection =
                         ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
                     thatSection =

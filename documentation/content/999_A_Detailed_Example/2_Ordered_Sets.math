@@ -91,7 +91,7 @@ and $\geq$ can be defined.
 
 [a \leq{X}/ b]
 States:
-requiring: (S, <)
+given: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -105,7 +105,7 @@ called: "$a?$ is less than or equal to $b?$"
 
 [a \lt{X}/ b]
 States:
-requiring: (S, <)
+given: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -117,7 +117,7 @@ called: "$a?$ is less than $b?$"
 
 [a \gt{X}/ b]
 States:
-requiring: (S, <)
+given: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -129,7 +129,7 @@ called: "$a?$ is greater than $b?$"
 
 [a \geq{X}/ b]
 States:
-requiring: (S, <)
+given: (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'a, b in X'
@@ -150,7 +150,7 @@ to be an upper bound of a set.
 
 [\upper.bound:of{X}]
 Defines: b
-requiring: E, (S, <)
+given: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
@@ -213,7 +213,7 @@ bound of a set.
 
 [\lower.bound:of{X}]
 Defines: b
-requiring: E, (S, <)
+given: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'

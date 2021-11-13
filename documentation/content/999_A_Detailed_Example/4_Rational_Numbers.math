@@ -114,7 +114,7 @@ called: "rational"
 
 [x \rational.*/ y]
 Defines: z
-requiring: p1, q1, p2, q2
+given: (p1, q1), (p2, q2)
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
@@ -128,7 +128,7 @@ called: "rational multiplication"
 
 [x \rational.+/ y]
 Defines: z
-requiring: p1, q1, p2, q2
+given: (p1, q1), (p2, q2)
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
@@ -156,7 +156,7 @@ called: "rationals as a field"
 
 [x \rational.lt/ y]
 States:
-requiring: Q
+given: Q
 when: 'Q is \rationals.field'
 that:
 . 'y \field{Q}.-/ x is \positive:within{Q}'

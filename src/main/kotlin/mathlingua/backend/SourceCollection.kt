@@ -939,7 +939,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                                 id = null,
                                 theoremSection = TheoremSection(names = emptyList()),
                                 givenSection = null,
-                                ifOrIffSection = null,
+                                whenSection = null,
                                 thenSection =
                                     ThenSection(
                                         clauses =
@@ -950,6 +950,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                                                             text = rhs.toCode(),
                                                             texTalkRoot =
                                                                 validationSuccess(rhs))))),
+                                iffSection = null,
                                 proofSection = null,
                                 usingSection = null,
                                 metaDataSection = null)
@@ -968,7 +969,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                                         signature = id.signature(newLocationTracker()),
                                         id = id,
                                         definesSection = DefinesSection(targets = emptyList()),
-                                        requiringSection = null,
+                                        givenSection = null,
                                         whenSection = null,
                                         meansSection =
                                             MeansSection(
@@ -1381,8 +1382,8 @@ fun getInnerDefinedSignatures(group: TopLevelGroup, tracker: LocationTracker?): 
 
     val requiringSection =
         when (group) {
-            is DefinesGroup -> group.requiringSection
-            is StatesGroup -> group.requiringSection
+            is DefinesGroup -> group.givenSection
+            is StatesGroup -> group.givenSection
             else -> null
         }
 
@@ -1509,7 +1510,7 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                                 signature = id.signature(newLocationTracker()),
                                 id = id,
                                 definesSection = DefinesSection(targets = emptyList()),
-                                requiringSection = null,
+                                givenSection = null,
                                 whenSection = null,
                                 meansSection =
                                     MeansSection(clauses = ClauseListNode(clauses = emptyList())),

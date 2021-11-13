@@ -131,50 +131,50 @@ called: "something"
 
 Theorem: "some name"
 given: x, y
-if: 'x, y is \something'
+when: 'x, y is \something'
 then: 'x + y is \something'
 
 
 Theorem:
-if: 'x'
+when: 'x'
 then: 'y'
 
 
 Theorem:
-iff: 'x'
 then: 'y'
+iff: 'x'
 
 
 Axiom: "some name"
 given: x, y
-if: 'x, y is \something'
+when: 'x, y is \something'
 then: 'x + y is \something'
 
 
 Axiom:
-if: 'x'
+when: 'x'
 then: 'y'
 
 
 Axiom:
-iff: 'x'
 then: 'y'
+iff: 'x'
 
 
 Conjecture: "some name"
 given: x, y
-if: 'x, y is \something'
+when: 'x, y is \something'
 then: 'x + y is \something'
 
 
 Conjecture:
-if: 'x'
+when: 'x'
 then: 'y'
 
 
 Conjecture:
-iff: 'x'
 then: 'y'
+iff: 'x'
 
 
 [@some.resource]

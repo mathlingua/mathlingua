@@ -474,7 +474,7 @@ Now we`\'`ll define what the inverse of an element is:
 ```math
 [\group{G}.inverse:of{x}]
 Defines: y
-requiring: X, *, e
+given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
@@ -490,7 +490,7 @@ that is rendered as:
 
 [\group{G}.inverse:of{x}]
 Defines: y
-requiring: X, *, e
+given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
@@ -514,7 +514,7 @@ The following is the code for the theorem:
 ```math
 Theorem:
 given: G := (X, *, e), x, y
-if:
+when:
 . 'G is \group'
 . 'x, y in G'
 then:
@@ -573,7 +573,7 @@ that is rendered as
 
 Theorem:
 given: G := (X, *, e), x, y
-if:
+when:
 . 'G is \group'
 . 'x, y in G'
 then:

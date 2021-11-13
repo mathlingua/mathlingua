@@ -5,7 +5,7 @@
 
 [\function.limit[x]_{c}{f}]
 Defines: L
-requiring: I, a, b, R
+given: I, a, b, R
 when:
 . 'I is \open.interval{a, b}'
 . 'f is \function:on{I}:to{\real.numbers}'

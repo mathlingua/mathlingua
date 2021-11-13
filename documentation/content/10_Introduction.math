@@ -64,7 +64,7 @@ express in MathLingua:
 
 Theorem: "Fundamental Theorem of Calculus"
 given: f(x), F(x), I, a, b
-if:
+when:
 . 'a, b is \real'
 . 'a < b'
 . 'I := \open.interval{a, b}'
@@ -84,7 +84,7 @@ above rendering of the theorem.
 ```math
 Theorem: "Fundamental Theorem of Calculus"
 given: f(x), F(x), I, a, b
-if:
+when:
 . 'a, b is \real'
 . 'a < b'
 . 'I := \open.interval{a, b}'

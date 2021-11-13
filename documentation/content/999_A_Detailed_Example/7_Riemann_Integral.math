@@ -23,7 +23,7 @@ called: "finite sequence of size $n?$"
 
 [\partition:of{I}:size{n}]
 Defines: X := {x_i}_i
-requiring: a, b
+given: a, b
 when:
 . 'I is \closed.interval{a, b}'
 means:
@@ -43,7 +43,7 @@ called: "partition of $I?$ of size $n?$"
 
 [\finite.sum[i]_{a}^{b}{f}]
 Defines: L
-requiring: S(n)
+given: S(n)
 evaluated:
 . 'L = S(b)'
 . 'S(a) := f(a)'
@@ -59,11 +59,11 @@ called: "finite sum of $f$ from $a?$ to $b?$"
 
 [\infimum:of{f}:over{P}:at{i}]
 Defines: L
-requiring: I, a, b, n, Q := {p_j}_j
+given: I, a, b, n, {p_j}_j
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-. 'P := Q is \partition:of{I}:size{n}'
+. 'P := {p_{j}}_{j} is \partition:of{I}:size{n}'
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
@@ -79,11 +79,11 @@ called: "infimum of $f?$ over partition $P?$ at index $i?$"
 
 [\supremum:of{f}:over{P}:at{i}]
 Defines: L
-requiring: I, a, b, n, Q := {p_j}_j
+given: I, a, b, n, {p_j}_j
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-. 'P := Q is \partition:of{I}:size{n}'
+. 'P := {p_{j}}_{j} is \partition:of{I}:size{n}'
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
@@ -99,11 +99,11 @@ called: "supremum of $f?$ over partition $P?$ at index $i?$"
 
 [\lower.darboux.sum:of{f}:over{P}]
 Defines: S
-requiring: I, a, b, n, Q := {x_i}_i
+given: I, a, b, n, {x_i}_i
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-. 'P := Q is \partition:of{I}:size{n}'
+. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
 evaluated:
 . 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
@@ -115,11 +115,11 @@ called: "lower Dorboux sum of $f?$ over $P?$"
 
 [\upper.darboux.sum:of{f}:over{P}]
 Defines: S
-requiring: I, a, b, n, Q := {x_i}_i
+given: I, a, b, n, {x_i}_i
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-. 'P := Q is \partition:of{I}:size{n}'
+. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
 evaluated:
 . 'S := \finite.sum[i]_{0}^{n}{M_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
@@ -138,7 +138,7 @@ called: "$x?$ is $P?$"
 
 [\lower.darboux.integral:of{f}:on{a, b}]
 Defines: S
-requiring: I
+given: I
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
@@ -153,7 +153,7 @@ called: "Lower Darboux Integral of $f?$ on $[a?, b?]$"
 
 [\upper.darboux.integral:of{f}:on{a, b}]
 Defines: S
-requiring: I
+given: I
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
@@ -187,7 +187,7 @@ called: "definite integral of $f?$ from $a?$ to $b?$"
 
 [\indefinite.integral:of{f}:on{I}]
 Defines: F(x)
-requiring: a, b
+given: a, b
 when:
 . 'I := \open.interval{a, b}'
 . 'f is \function:on{I}:to{\real.numbers}'

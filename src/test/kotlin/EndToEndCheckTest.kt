@@ -1459,7 +1459,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report undefined symbols for symbols defined in Defines-requiring`() {
+    fun `check does not report undefined symbols for symbols defined in Defines-given`() {
         runCheckTest(
             files =
                 listOf(
@@ -1476,7 +1476,7 @@ internal class EndToEndCheckTest {
 
                     [\f{X}]
                     Defines: Y
-                    requiring: S, <
+                    given: S, <
                     means: 'X := (S, <) is \something'
                     written: "f"
                     called: "f"
@@ -1492,7 +1492,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report undefined symbols for symbols defined in States-requiring`() {
+    fun `check does not report undefined symbols for symbols defined in States-given`() {
         runCheckTest(
             files =
                 listOf(
@@ -1509,7 +1509,7 @@ internal class EndToEndCheckTest {
 
                     [\f{X}]
                     States:
-                    requiring: S, <
+                    given: S, <
                     that: 'X := (S, <) is \something'
                     written: "f"
                     called: "f"
@@ -1732,7 +1732,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report for symbols introduced in requiring section and used in colon equals`() {
+    fun `check does not report for symbols introduced in given section and used in colon equals`() {
         runCheckTest(
             files =
                 listOf(
@@ -1742,7 +1742,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    requiring: a, b
+                    given: a, b
                     when: 'X := (a, b)'
                     means: "something"
                     written: "something"
@@ -1751,7 +1751,7 @@ internal class EndToEndCheckTest {
 
                     [\something.else{X}]
                     States:
-                    requiring: a, b
+                    given: a, b
                     when: 'X := (a, b)'
                     that: "something"
                     written: "something"
@@ -1768,7 +1768,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for symbols used in when section and not introduced in requiring section`() {
+    fun `check reports errors for symbols used in when section and not introduced in given section`() {
         runCheckTest(
             files =
                 listOf(
@@ -1820,7 +1820,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for signatures introduced as operators in requiring section`() {
+    fun `check does not report errors for signatures introduced as operators in given section`() {
         runCheckTest(
             files =
                 listOf(
@@ -1830,7 +1830,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: f(x, y)
-                    requiring: R := (X, *)
+                    given: R := (X, *)
                     means: 'f(x, y) := x * y'
                     written: "something"
                     called: "something"

@@ -29,17 +29,19 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getOptionalId
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateThenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.validateIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.IfOrIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.validateIfOrIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
@@ -54,8 +56,9 @@ data class AxiomGroup(
     override val id: IdStatement?,
     val axiomSection: AxiomSection,
     val givenSection: GivenSection?,
-    val ifOrIffSection: IfOrIffSection?,
+    val whenSection: WhenSection?,
     val thenSection: ThenSection,
+    val iffSection: IffSection?,
     override val usingSection: UsingSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature {
@@ -71,10 +74,13 @@ data class AxiomGroup(
         if (givenSection != null) {
             fn(givenSection)
         }
-        if (ifOrIffSection != null) {
-            fn(ifOrIffSection.resolve())
+        if (whenSection != null) {
+            fn(whenSection)
         }
         fn(thenSection)
+        if (iffSection != null) {
+            fn(iffSection)
+        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -89,8 +95,9 @@ data class AxiomGroup(
             id,
             axiomSection,
             givenSection,
-            ifOrIffSection?.resolve(),
+            whenSection,
             thenSection,
+            iffSection,
             usingSection,
             metaDataSection)
 
@@ -101,8 +108,9 @@ data class AxiomGroup(
                 id = id?.transform(chalkTransformer) as IdStatement?,
                 axiomSection = axiomSection.transform(chalkTransformer) as AxiomSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
-                ifOrIffSection = ifOrIffSection?.transform(chalkTransformer),
+                whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+                iffSection = iffSection?.transform(chalkTransformer) as IffSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
@@ -119,7 +127,7 @@ fun validateAxiomGroup(
                 group,
                 errors,
                 DEFAULT_AXIOM_GROUP,
-                listOf("Axiom", "given?", "if?", "iff?", "then", "using?", "Metadata?")) {
+                listOf("Axiom", "given?", "when?", "then", "iff?", "using?", "Metadata?")) {
             sections ->
                 AxiomGroup(
                     signature = id?.signature(tracker),
@@ -130,11 +138,14 @@ fun validateAxiomGroup(
                         },
                     givenSection =
                         ifNonNull(sections["given"]) { validateGivenSection(it, errors, tracker) },
-                    ifOrIffSection = validateIfOrIffSection(node, sections, errors, tracker),
+                    whenSection =
+                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
                     thenSection =
                         ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
                             validateThenSection(it, errors, tracker)
                         },
+                    iffSection =
+                        ifNonNull(sections["iff"]) { validateIffSection(it, errors, tracker) },
                     usingSection =
                         ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
                     metaDataSection =

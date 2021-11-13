@@ -39,6 +39,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.valid
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateViewingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
@@ -65,7 +67,7 @@ data class DefinesGroup(
     override val signature: Signature?,
     override val id: IdStatement,
     val definesSection: DefinesSection,
-    val requiringSection: RequiringSection?,
+    val givenSection: GivenSection?,
     val whenSection: WhenSection?,
     val meansSection: MeansSection?,
     val evaluatedSection: EvaluatedSection?,
@@ -79,8 +81,8 @@ data class DefinesGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
-        if (requiringSection != null) {
-            fn(requiringSection)
+        if (givenSection != null) {
+            fn(givenSection)
         }
         if (whenSection != null) {
             fn(whenSection)
@@ -108,7 +110,7 @@ data class DefinesGroup(
         val sections =
             mutableListOf(
                 definesSection,
-                requiringSection,
+                givenSection,
                 whenSection,
                 meansSection,
                 evaluatedSection,
@@ -126,8 +128,7 @@ data class DefinesGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
-                requiringSection =
-                    requiringSection?.transform(chalkTransformer) as RequiringSection?,
+                givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 evaluatedSection =
@@ -152,7 +153,7 @@ fun validateDefinesGroup(
                 DEFAULT_DEFINES_GROUP,
                 listOf(
                     "Defines",
-                    "requiring?",
+                    "given?",
                     "when?",
                     "means?",
                     "evaluated?",
@@ -170,9 +171,9 @@ fun validateDefinesGroup(
                             ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
                                 validateDefinesSection(it, errors, tracker)
                             },
-                        requiringSection =
-                            ifNonNull(sections["requiring"]) {
-                                validateRequiringSection(it, errors, tracker)
+                        givenSection =
+                            ifNonNull(sections["given"]) {
+                                validateGivenSection(it, errors, tracker)
                             },
                         whenSection =
                             ifNonNull(sections["when"]) {

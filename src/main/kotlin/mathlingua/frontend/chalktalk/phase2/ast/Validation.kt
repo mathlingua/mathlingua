@@ -68,7 +68,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.EvaluatedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.RequiringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.ThatSection
@@ -388,14 +387,14 @@ val DEFAULT_NOT_GROUP = NotGroup(notSection = DEFAULT_NOT_SECTION)
 
 val DEFAULT_OR_GROUP = OrGroup(orSection = DEFAULT_OR_SECTION)
 
-val DEFAULT_REQUIRING_SECTION = RequiringSection(targets = listOf())
+val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
 
 val DEFAULT_STATES_GROUP =
     StatesGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         statesSection = DEFAULT_STATES_SECTION,
-        requiringSection = DEFAULT_REQUIRING_SECTION,
+        givenSection = DEFAULT_GIVEN_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = DEFAULT_USING_SECTION,
@@ -429,8 +428,6 @@ val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
 val DEFAULT_PROOF_SECTION = ProofSection(text = "")
 
-val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
-
 val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
 
 val DEFAULT_AXIOM_GROUP =
@@ -439,8 +436,9 @@ val DEFAULT_AXIOM_GROUP =
         id = DEFAULT_ID_STATEMENT,
         axiomSection = DEFAULT_AXIOM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
-        ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
+        iffSection = DEFAULT_IFF_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
@@ -450,8 +448,9 @@ val DEFAULT_CONJECTURE_GROUP =
         id = DEFAULT_ID_STATEMENT,
         conjectureSection = DEFAULT_CONJECTURE_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
-        ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
+        iffSection = DEFAULT_IFF_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
@@ -461,8 +460,9 @@ val DEFAULT_THEOREM_GROUP =
         id = DEFAULT_ID_STATEMENT,
         theoremSection = DEFAULT_THEOREM_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
-        ifOrIffSection = DEFAULT_IF_OR_IFF_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
+        iffSection = DEFAULT_IFF_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION,
         proofSection = DEFAULT_PROOF_SECTION)
@@ -565,7 +565,7 @@ val DEFAULT_DEFINES_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
-        requiringSection = DEFAULT_REQUIRING_SECTION,
+        givenSection = DEFAULT_GIVEN_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         evaluatedSection = DEFAULT_EVALUATED_SECTION,

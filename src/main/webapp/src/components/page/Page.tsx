@@ -319,6 +319,17 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
 
   private check(viewedPath: string) {
     return api.check().then((resp) => {
+      this.props.dispatch(
+        errorResultsUpdated(
+          resp.errors.map((err) => ({
+            row: err.row,
+            column: err.column,
+            message: err.message,
+            relativePath: err.path,
+          }))
+        )
+      );
+
       const newAnnotations = resp.errors
         .filter((err) => err.path === viewedPath)
         .map(
@@ -372,17 +383,7 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
       this.editor.setValue(content);
       this.editor.clearSelection();
     });
-    const res = await api.check();
-    this.props.dispatch(
-      errorResultsUpdated(
-        res.errors.map((err) => ({
-          row: err.row,
-          column: err.column,
-          message: err.message,
-          relativePath: err.path,
-        }))
-      )
-    );
+    await this.check(this.props.viewedPath);
   }
 
   private setupCompletions() {

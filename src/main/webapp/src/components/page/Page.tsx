@@ -453,8 +453,9 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
           showPrintMargin={false}
           enableBasicAutocompletion={true}
           enableLiveAutocompletion={false}
-          fontSize="90%"
+          fontSize="100%"
           style={{
+            fontFamily: "'Inconsolata', monospace",
             position: 'relative',
             width: '100%',
             height: 'calc(100vh - 1.75em)',

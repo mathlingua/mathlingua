@@ -59,7 +59,7 @@ p {
 .mathlingua-topic-group-id {
   display: block;
   padding: 0 0 1em 0;
-  font-family: monospace;
+  font-family: 'Inconsolata', monospace;
   text-align: center;
   color: #5500aa;
 }
@@ -85,7 +85,7 @@ p {
 .mathlingua-note-group-id {
   display: block;
   padding: 1ex 0 1em 0;
-  font-family: monospace;
+  font-family: 'Inconsolata', monospace;
   text-align: center;
   color: #5500aa;
 }
@@ -173,7 +173,7 @@ p {
 }
 
 .mathlingua {
-  font-family: monospace;
+  font-family: 'Inconsolata', monospace;
 }
 
 .mathlingua-proof-icon {
@@ -211,7 +211,7 @@ p {
   color: #0055bb;
   text-shadow: 0px 1px 0px rgba(255, 255, 255, 0),
     0px 0.4px 0px rgba(0, 0, 0, 0.2);
-  font-family: monospace;
+  font-family: 'Inconsolata', monospace;
 }
 
 .mathlingua-whitespace {
@@ -244,14 +244,14 @@ p {
 .literal-mathlingua-text {
   color: #386930;
   display: inline;
-  font-family: monospace;
+  font-family: 'Inconsolata', monospace;
   line-height: 1.3;
 }
 
 .literal-mathlingua-text-no-render {
   color: #386930;
   display: inline;
-  font-family: monospace;
+  font-family: 'Inconsolata', monospace;
   line-height: 1.3;
 }
 
@@ -273,7 +273,7 @@ p {
 }
 
 .mathlingua-direct-statement {
-  font-family: monospace;
+  font-family: 'Inconsolata', monospace;
   font-size: 95%;
 }
 

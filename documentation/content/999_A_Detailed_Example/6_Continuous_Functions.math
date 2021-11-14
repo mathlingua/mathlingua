@@ -49,21 +49,7 @@ when:
 . 'c in I'
 means:
 . 'f is \function:on{I}:to{R}'
-. forAll: epsilon
-  suchThat: 'epsilon is \positive:within{R}'
-  then:
-  . exists: delta
-    suchThat:
-    . 'delta is \positive:within{R}'
-    . forAll: t
-      suchThat:
-      . 't in I'
-      . '\real.abs(t - c) < delta'
-      then:
-      . '\real.abs(f(t) - f(c)) < epsilon'
-using:
-. 'a - b := a \real.-/ b'
-. 'a < b := a \real.lt/ b'
+. 'f(c) = \function.limit[x]_{c}{f(x)}'
 written: "\textrm{continuous function on } I? \textrm{ at } c?"
 called: "continuous function on $I?$ at $c?$"
 

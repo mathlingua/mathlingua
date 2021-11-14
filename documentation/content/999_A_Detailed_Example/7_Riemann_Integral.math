@@ -126,14 +126,7 @@ using:
 . 'M_{i} := \supremum:of{f}:over{P}:at{i}'
 . 'a * b := a \real.*/ b'
 written: "U(L?, P?)"
-called: "lower Darboux sum of $f?$ over $P?$"
-
-
-[x \is/ P]
-States:
-that: 'x is P'
-written: "x? \textrm{ is } P?"
-called: "$x?$ is $P?$"
+called: "upper Darboux sum of $f?$ over $P?$"
 
 
 [\lower.darboux.integral:of{f}:on{a, b}]
@@ -144,7 +137,7 @@ when:
 . 'f is \bounded.real.function:on{I}'
 evaluated:
 . 'S := \supremum:of{\set[P, n]:where{L(f, P)}
-                               :suchThat{P \is/ \partition:of{I}:size{n}}}'
+                               :suchThat{P is \partition:of{I}:size{n}}}'
 using:
 . 'L(f, P) := \lower.darboux.sum:of{f}:over{P}'
 written: "\underline{\displaystyle \int_{a?}^{b?}} f?"
@@ -159,14 +152,14 @@ when:
 . 'f is \bounded.real.function:on{I}'
 evaluated:
 . 'S := \infimum:of{\set[P, n]:where{U(f, P)}
-                              :suchThat{P \is/ \partition:of{I}:size{n}}}'
+                              :suchThat{P is \partition:of{I}:size{n}}}'
 using:
 . 'U(f, P) := \upper.darboux.sum:of{f}:over{P}'
 written: "\overline{\displaystyle \int_{a?}^{b?}} f?"
 called: "Upper Darboux Integral of $f?$ on $[a?, b?]$"
 
 
-[\rieman.integralble.function:on{a, b}]
+[\riemann.integralble.function:on{a, b}]
 Defines: f(x)
 means:
 . '\lower.darboux.integral:of{f}:on{a, b} =
@@ -178,7 +171,7 @@ called: "Riemann integrable function on $[a?, b?]$"
 [\definite.integral[x]_{a}^{b}:of{f}]
 Defines: S
 when:
-. 'f is \rieman.integralble.function:on{a, b}'
+. 'f is \riemann.integralble.function:on{a, b}'
 means:
 . 'S := \lower.darboux.integral:of{f}:on{a, b}'
 written: "\displaystyle \int_{a?}^{b?} f? \: d x?"

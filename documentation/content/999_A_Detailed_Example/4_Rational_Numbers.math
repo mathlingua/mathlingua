@@ -86,19 +86,11 @@ written: "x?? < y??"
 called: "$x?$ is less than $y?$"
 
 
-[x \in/ X]
-States:
-when: 'X is \set'
-that: 'x in X'
-written: "x? \in X?"
-called: "set membership"
-
-
 [\rationals.set]
 Defines: Q
 means: 'Q := \set[x, p, q]:where{x := (p, q)}
-                          :suchThat{p \in/ \integers.set}
-                                   {q \in/ \integers.set}'
+                          :suchThat{p in \integers.set}
+                                   {q in \integers.set}'
 written: "\mathbb{Q}"
 called: "rationals"
 
@@ -114,7 +106,7 @@ called: "rational"
 
 [x \rational.*/ y]
 Defines: z
-given: (p1, q1), (p2, q2)
+given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
@@ -128,7 +120,7 @@ called: "rational multiplication"
 
 [x \rational.+/ y]
 Defines: z
-given: (p1, q1), (p2, q2)
+given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'

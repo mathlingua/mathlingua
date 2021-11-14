@@ -21,7 +21,7 @@ Defines: I
 given: R
 when: 'R is \real.numbers'
 means:
-. 'I := \set[x]:where{x \in/ \real.numbers}
+. 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.lt/ x}
                         {x \real.lt/ b}'
 written: "(a?, b?)"
@@ -33,11 +33,11 @@ Defines: I
 given: R
 when: 'R is \real.numbers'
 means:
-. 'I := \set[x]:where{x \in/ \real.numbers}
+. 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.leq/ x}
                         {x \real.leq/ b}'
 written: "[a?, b?]"
-called: "the open interval from $a?$ to $b?$"
+called: "the closed interval from $a?$ to $b?$"
 
 
 [\continuous.function:on{I}:at{c}]

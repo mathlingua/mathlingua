@@ -6,48 +6,37 @@ a *field* that describes the algebraic properties that
 the real numbers satisfies.
 ::
 
-[\field]
-Defines: F := (X, +, *, 0, 1)
+
+[\abelian.group]
+Defines: G := (X, *, e)
 means:
-. 'X is \set'
-. '+ is \binary.operation:on{X}'
-. '* is \binary.operation:on{X}'
-. '0 in X'
-. '1 in X'
-. forAll: x, y
-  suchThat: 'x, y in X'
-  then: 'x + y in X'
-. forAll: x, y
-  suchThat: 'x, y in X'
-  then: 'x + y = y + x'
-. forAll: x, y, z
-  suchThat: 'x, y, z in X'
-  then: '(x + y) + z = x + (y + z)'
-. forAll: x
-  suchThat: 'x in X'
-  then:
-  . 'x + 0 = x'
-  . '0 + x = x'
-. forAll: x
-  suchThat: 'x in X'
-  then:
-  . exists: y
-    suchThat:
-    . 'y in X'
-    . 'x + y = 0'
-. forAll: x, y
-  suchThat: 'x, y in X'
-  then: 'x * y in X'
-. forAll: x
-  suchThat: 'x in X'
-  then:
-  . exists: y
-    suchThat:
-    . 'y in X'
-    . 'x * y = 1'
+. 'G is \group'
 . forAll: x, y
   suchThat: 'x, y in X'
   then: 'x * y = y * x'
+viewing:
+. as: '\group'
+  via: 'G'
+written: "\textrm{Abelian group}"
+called: "Abelian group"
+
+
+[A \set.minus/ B]
+Defines: C := {c}
+when: 'A, B is \set'
+means:
+. 'C is \set'
+. 'c in A'
+. not: 'c in B'
+written: "A? \backslash B?"
+called: "$A?$ set minus $B?$"
+
+
+[\field]
+Defines: F := (X, +, *, 0, 1)
+means:
+. '(X, +, 0) is \abelian.group'
+. '(X \set.minus/ 0, *, 1) is \abelian.group'
 . forAll: x, y, z
   suchThat: 'x, y, z in X'
   then:

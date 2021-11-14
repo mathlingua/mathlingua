@@ -906,7 +906,8 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                                 texTalkNode = lhs,
                                 isInLhsColonEquals = true,
                                 groupScope = GroupScope.InNone,
-                                isInIdStatement = false)
+                                isInIdStatement = false,
+                                forceIsPlaceholder = false)
                                 .toSet()
                                 .map { it.name }
 

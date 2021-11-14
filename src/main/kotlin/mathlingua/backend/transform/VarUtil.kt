@@ -54,6 +54,7 @@ import mathlingua.frontend.textalk.GroupTexTalkNode
 import mathlingua.frontend.textalk.MappingNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.ParametersTexTalkNode
+import mathlingua.frontend.textalk.SequenceNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
@@ -76,10 +77,12 @@ internal fun getVarsTexTalkNode(
     texTalkNode: TexTalkNode,
     isInLhsColonEquals: Boolean,
     groupScope: GroupScope,
-    isInIdStatement: Boolean
+    isInIdStatement: Boolean,
+    forceIsPlaceholder: Boolean
 ): List<Var> {
     val vars = mutableListOf<Var>()
-    getVarsImplTexTalkNode(texTalkNode, vars, isInLhsColonEquals, groupScope, isInIdStatement)
+    getVarsImplTexTalkNode(
+        texTalkNode, vars, isInLhsColonEquals, groupScope, isInIdStatement, forceIsPlaceholder)
     return vars
 }
 
@@ -168,7 +171,8 @@ private fun getVarsImplPhase2Node(node: Phase2Node, vars: MutableList<Var>) {
                     vars = vars,
                     isInLhsColonEquals = false,
                     groupScope = GroupScope.InNone,
-                    isInIdStatement = false)
+                    isInIdStatement = false,
+                    forceIsPlaceholder = false)
             }
         }
     } else {
@@ -188,7 +192,8 @@ private fun getVarsImplTexTalkNode(
     vars: MutableList<Var>,
     isInLhsColonEquals: Boolean,
     groupScope: GroupScope,
-    isInIdStatement: Boolean
+    isInIdStatement: Boolean,
+    forceIsPlaceholder: Boolean
 ) {
     if (texTalkNode is TextTexTalkNode) {
         if (texTalkNode.tokenType != TexTalkTokenType.ColonEquals) {
@@ -196,26 +201,44 @@ private fun getVarsImplTexTalkNode(
                 Var(
                     name = texTalkNode.text.removeSuffix("..."),
                     isPlaceholder =
-                        groupScope == GroupScope.InSquare ||
+                        forceIsPlaceholder ||
+                            groupScope == GroupScope.InSquare ||
                             (groupScope == GroupScope.InParen && isInIdStatement) ||
                             (groupScope != GroupScope.InNone && isInLhsColonEquals)))
         }
     } else if (texTalkNode is OperatorTexTalkNode) {
         if (texTalkNode.lhs != null) {
             getVarsImplTexTalkNode(
-                texTalkNode.lhs, vars, isInLhsColonEquals, GroupScope.InParen, isInIdStatement)
+                texTalkNode.lhs,
+                vars,
+                isInLhsColonEquals,
+                GroupScope.InParen,
+                isInIdStatement,
+                forceIsPlaceholder)
         }
 
         if (texTalkNode.rhs != null) {
             getVarsImplTexTalkNode(
-                texTalkNode.rhs, vars, isInLhsColonEquals, GroupScope.InParen, isInIdStatement)
+                texTalkNode.rhs,
+                vars,
+                isInLhsColonEquals,
+                GroupScope.InParen,
+                isInIdStatement,
+                forceIsPlaceholder)
         }
 
         getVarsImplTexTalkNode(
-            texTalkNode.command, vars, isInLhsColonEquals, groupScope, isInIdStatement)
+            texTalkNode.command,
+            vars,
+            isInLhsColonEquals,
+            groupScope,
+            isInIdStatement,
+            forceIsPlaceholder)
     } else if (texTalkNode is ColonEqualsTexTalkNode) {
-        getVarsImplTexTalkNode(texTalkNode.lhs, vars, true, groupScope, isInIdStatement)
-        getVarsImplTexTalkNode(texTalkNode.rhs, vars, false, groupScope, isInIdStatement)
+        getVarsImplTexTalkNode(
+            texTalkNode.lhs, vars, true, groupScope, isInIdStatement, forceIsPlaceholder)
+        getVarsImplTexTalkNode(
+            texTalkNode.rhs, vars, false, groupScope, isInIdStatement, forceIsPlaceholder)
     } else if (texTalkNode is GroupTexTalkNode) {
         getVarsImplTexTalkNode(
             texTalkNode.parameters,
@@ -236,7 +259,8 @@ private fun getVarsImplTexTalkNode(
                         GroupScope.InNone
                     }
                 },
-            isInIdStatement)
+            isInIdStatement,
+            forceIsPlaceholder)
     } else if (texTalkNode is CommandPart) {
         // The following line is commented out since otherwise the
         // signature `\some.function` would have `some` and `function` as
@@ -262,7 +286,8 @@ private fun getVarsImplTexTalkNode(
                         GroupScope.InNone
                     }
                 },
-                isInIdStatement)
+                isInIdStatement,
+                forceIsPlaceholder)
         }
         for (grp in texTalkNode.namedGroups) {
             grp.groups.forEach {
@@ -284,28 +309,82 @@ private fun getVarsImplTexTalkNode(
                             GroupScope.InNone
                         }
                     },
-                    isInIdStatement)
+                    isInIdStatement,
+                    forceIsPlaceholder)
             }
         }
         if (texTalkNode.paren != null) {
             getVarsImplTexTalkNode(
-                texTalkNode.paren, vars, isInLhsColonEquals, GroupScope.InParen, isInIdStatement)
+                texTalkNode.paren,
+                vars,
+                isInLhsColonEquals,
+                GroupScope.InParen,
+                isInIdStatement,
+                forceIsPlaceholder)
         }
         if (texTalkNode.square != null) {
             getVarsImplTexTalkNode(
-                texTalkNode.square, vars, isInLhsColonEquals, GroupScope.InSquare, isInIdStatement)
+                texTalkNode.square,
+                vars,
+                isInLhsColonEquals,
+                GroupScope.InSquare,
+                isInIdStatement,
+                forceIsPlaceholder)
         }
         if (texTalkNode.subSup != null) {
             getVarsImplTexTalkNode(
-                texTalkNode.subSup, vars, isInLhsColonEquals, groupScope, isInIdStatement)
+                texTalkNode.subSup,
+                vars,
+                isInLhsColonEquals,
+                groupScope,
+                isInIdStatement,
+                forceIsPlaceholder)
         }
     } else if (texTalkNode is ParametersTexTalkNode) {
         texTalkNode.forEach {
-            getVarsImplTexTalkNode(it, vars, isInLhsColonEquals, groupScope, isInIdStatement)
+            getVarsImplTexTalkNode(
+                it, vars, isInLhsColonEquals, groupScope, isInIdStatement, forceIsPlaceholder)
         }
+    } else if (texTalkNode is SequenceNode) {
+        getVarsImplTexTalkNode(
+            texTalkNode.mapping.name,
+            vars,
+            isInLhsColonEquals,
+            groupScope,
+            isInIdStatement,
+            forceIsPlaceholder)
+        if (texTalkNode.mapping.parenGroup != null) {
+            getVarsImplTexTalkNode(
+                texTalkNode.mapping.parenGroup,
+                vars,
+                isInLhsColonEquals,
+                GroupScope.InParen,
+                isInIdStatement,
+                forceIsPlaceholder = true)
+        }
+        if (texTalkNode.mapping.subGroup != null) {
+            // treat the parameters like they are in squares to force them to be considered
+            // placeholders
+            getVarsImplTexTalkNode(
+                texTalkNode.mapping.subGroup,
+                vars,
+                isInLhsColonEquals,
+                GroupScope.InSquare,
+                isInIdStatement,
+                forceIsPlaceholder = true)
+        }
+        // treat the parameters like they are in squares to force them to be considered placeholders
+        getVarsImplTexTalkNode(
+            texTalkNode.subGroup,
+            vars,
+            isInLhsColonEquals,
+            GroupScope.InSquare,
+            isInIdStatement,
+            forceIsPlaceholder = true)
     } else {
         texTalkNode.forEach {
-            getVarsImplTexTalkNode(it, vars, isInLhsColonEquals, groupScope, isInIdStatement)
+            getVarsImplTexTalkNode(
+                it, vars, isInLhsColonEquals, groupScope, isInIdStatement, forceIsPlaceholder)
         }
     }
 }
@@ -323,37 +402,24 @@ private fun checkVarsImplPhase2Node(
     val location =
         tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
 
-    when (node) {
-        is DefinesGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
+    if (node is DefinesGroup) {
+        varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
+        varsToRemove.addAll(
+            checkDefineSectionVars(topLevel, node.definesSection, vars, tracker, errors))
+    }
+
+    val givenSection =
+        when (node) {
+            is DefinesGroup -> node.givenSection
+            is StatesGroup -> node.givenSection
+            is TheoremGroup -> node.givenSection
+            is AxiomGroup -> node.givenSection
+            is ConjectureGroup -> node.givenSection
+            else -> null
         }
-        is StatesGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
-        }
-        is TheoremGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
-        }
-        is AxiomGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
-        }
-        is ConjectureGroup -> {
-            if (node.givenSection != null) {
-                varsToRemove.addAll(
-                    checkGivenSectionVars(topLevel, node.givenSection, vars, tracker, errors))
-            }
-        }
+
+    if (givenSection != null) {
+        varsToRemove.addAll(checkGivenSectionVars(topLevel, givenSection, vars, tracker, errors))
     }
 
     if (node is DefinesGroup) {
@@ -363,9 +429,6 @@ private fun checkVarsImplPhase2Node(
                 checkWhenSectionVars(
                     node = whenSection, vars = vars, tracker = tracker, errors = errors))
         }
-        varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
-        varsToRemove.addAll(
-            checkDefineSectionVars(topLevel, node.definesSection, vars, tracker, errors))
     }
 
     if (node is HasUsingSection && node.usingSection != null) {
@@ -583,7 +646,8 @@ private fun checkVarsImplPhase2Node(
                         texTalkNode = colonEquals.lhs,
                         isInLhsColonEquals = true,
                         groupScope = GroupScope.InNone,
-                        isInIdStatement = false)) {
+                        isInIdStatement = false,
+                        forceIsPlaceholder = false)) {
                     thisValidVars.add(v)
                     if (!v.isPlaceholder) {
                         usingVars.add(v)
@@ -644,7 +708,8 @@ private fun getLeftHandSideVars(statement: Statement): List<Var> {
                     texTalkNode = colonEquals.lhs,
                     isInLhsColonEquals = true,
                     groupScope = GroupScope.InNone,
-                    isInIdStatement = false))
+                    isInIdStatement = false,
+                    forceIsPlaceholder = false))
         }
     }
     return result
@@ -701,7 +766,8 @@ private fun checkColonEqualsRhsSymbols(
                 texTalkNode = node.rhs,
                 isInLhsColonEquals = false,
                 groupScope = GroupScope.InNone,
-                isInIdStatement = false)) {
+                isInIdStatement = false,
+                forceIsPlaceholder = false)) {
             if (!vars.contains(v)) {
                 errors.add(
                     ParseError(
@@ -805,7 +871,8 @@ private fun checkVarsImplStatement(
                                 texTalkNode = child.lhs,
                                 isInLhsColonEquals = true,
                                 groupScope = GroupScope.InParen,
-                                isInIdStatement = false))
+                                isInIdStatement = false,
+                                forceIsPlaceholder = false))
                     }
 
                     if (child.rhs != null) {
@@ -814,7 +881,8 @@ private fun checkVarsImplStatement(
                                 texTalkNode = child.rhs,
                                 isInLhsColonEquals = true,
                                 groupScope = GroupScope.InParen,
-                                isInIdStatement = false))
+                                isInIdStatement = false,
+                                forceIsPlaceholder = false))
                     }
                 } else if (child is GroupTexTalkNode) {
                     names.addAll(
@@ -836,7 +904,8 @@ private fun checkVarsImplStatement(
                                         GroupScope.InNone
                                     }
                                 },
-                            isInIdStatement = false))
+                            isInIdStatement = false,
+                            forceIsPlaceholder = false))
                 } else if (child is TextTexTalkNode) {
                     names.add(Var(name = child.text, isPlaceholder = true))
                 } else {
@@ -846,7 +915,8 @@ private fun checkVarsImplStatement(
                             texTalkNode = child,
                             isInLhsColonEquals = true,
                             groupScope = GroupScope.InNone,
-                            isInIdStatement = false))
+                            isInIdStatement = false,
+                            forceIsPlaceholder = false))
                 }
             }
 
@@ -947,7 +1017,8 @@ private fun checkVarsImplTexTalkNode(
                         texTalkNode = part.square,
                         isInLhsColonEquals = isInLhsColonEquals,
                         groupScope = GroupScope.InSquare,
-                        isInIdStatement = false)
+                        isInIdStatement = false,
+                        forceIsPlaceholder = false)
                 varsToRemove.addAll(squareVars)
                 for (v in squareVars) {
                     if (vars.hasConflict(v)) {
@@ -1086,7 +1157,8 @@ private fun checkVarsImplIdStatement(
                 texTalkNode = id.texTalkRoot.value,
                 isInLhsColonEquals = false,
                 groupScope = GroupScope.InNone,
-                isInIdStatement = true)
+                isInIdStatement = true,
+                forceIsPlaceholder = false)
         for (v in idVars) {
             if (vars.hasConflict(v)) {
                 errors.add(

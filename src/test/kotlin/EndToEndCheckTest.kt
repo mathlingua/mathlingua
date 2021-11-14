@@ -1350,6 +1350,116 @@ internal class EndToEndCheckTest {
     }
 
     @Test
+    fun `check does not report errors when placeholder variables are shared in function like mappings`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else]
+                    Defines: f(x)
+                    when: 'f(x) is \something'
+                    means: 'f(x)'
+                    written: "something else"
+                    called: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when placeholder variables are shared in sequence like mappings`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else]
+                    Defines: {x_i}_i
+                    when: '{x_{i}}_{i} is \something'
+                    means:
+                    . '{x_{i}}_{i}'
+                    . 'x_{i}'
+                    written: "something else"
+                    called: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for function like mappings used as signature vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else{f(x)}]
+                    Defines: X
+                    when: 'f(x) is \something'
+                    means:
+                    . 'f(x) := 0'
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\another.thing{f(x)}]
+                    Defines: X
+                    means:
+                    . 'f(x) := 0'
+                    written: "another thing"
+                    called: "another thing"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
     fun `check does not report errors when defining X colon equals`() {
         runCheckTest(
             files =
@@ -1832,6 +1942,139 @@ internal class EndToEndCheckTest {
                     Defines: f(x, y)
                     given: R := (X, *)
                     means: 'f(x, y) := x * y'
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for placeholder vars in sequence definitions in when sections`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: A
+                    given: X, {x_i}_i
+                    when: 'X := {x_{i}}_{i} is \something'
+                    means: "something"
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for undefined vars used in function like mapping calls`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: f(x)
+                    means: 'f(t)'
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 3, Column: 8)
+                Undefined symbol 't'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not reports errors for placeholder vars used in function like mapping calls`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: f(x)
+                    means: 'f(x)'
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for undefined vars used in sequence like mapping calls`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: {x_i}_i
+                    means: 'x_{j}'
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 3, Column: 8)
+                Undefined symbol 'j'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not reports errors for placeholder vars used in sequence like mapping calls`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: {x_i}_i
+                    means: 'x_{i}'
                     written: "something"
                     called: "something"
                 """.trimIndent())),

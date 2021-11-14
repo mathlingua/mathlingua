@@ -1460,6 +1460,183 @@ internal class EndToEndCheckTest {
     }
 
     @Test
+    fun `check does not report errors for sequence like mappings used as signature vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else{{x_{i}}_{i}}]
+                    Defines: X
+                    when: '{x_{i}}_{i} is \something'
+                    means:
+                    . '{x_{i}}_{i} := 0'
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\another.thing{{x_{i}}_{i}}]
+                    Defines: X
+                    means:
+                    . '{x_{i}}_{i} := 0'
+                    written: "another thing"
+                    called: "another thing"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for function like mappings that use new placeholder vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: f(x)
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else{f(x)}]
+                    Defines: X
+                    when: 'f(t) is \something'
+                    means:
+                    . 'f(u) is \something'
+                    . 'f(v) := 0'
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\another.thing{{x_{i}}_{i}}]
+                    Defines: X
+                    means:
+                    . 'f(t) := 0'
+                    written: "another thing"
+                    called: "another thing"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for sequence like mappings that use new placeholder vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: f(x)
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else{{x_{i}}_{i}}]
+                    Defines: X
+                    when: '{x_{j}}_{j} is \something'
+                    means:
+                    . '{x_{k}}_{k} is \something'
+                    . '{x_{t}}_{t} := 0'
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\another.thing{{x_{i}}_{i}}]
+                    Defines: X
+                    means:
+                    . '{x_{j}}_{j} := 0'
+                    written: "another thing"
+                    called: "another thing"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for sequence like mappings that don't consistently use the same placeholder vars`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else{{x_{i}}_{j}}]
+                    Defines: X
+                    when: '{x_{i}}_{j} is \something'
+                    means:
+                    . '{x_{i}}_{j} := 0'
+                    written: "something else"
+                    called: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 1, Column: 24)
+                An item of the form {x_{A}}_{B} must specify the exact same symbols in A and B
+
+                ERROR: content/file1.math (Line: 1, Column: 8)
+                An item of the form {x_{A}}_{B} must specify the exact same symbols in A and B
+
+                ERROR: content/file1.math (Line: 1, Column: 8)
+                An item of the form {x_{A}}_{B} must specify the exact same symbols in A and B
+
+                ERROR: content/file1.math (Line: 10, Column: 14)
+                An item of the form {x_{A}}_{B} must specify the exact same symbols in A and B
+
+                ERROR: content/file1.math (Line: 12, Column: 10)
+                An item of the form {x_{A}}_{B} must specify the exact same symbols in A and B
+
+                FAILED
+                Processed 1 file
+                5 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 5)
+    }
+
+    @Test
     fun `check does not report errors when defining X colon equals`() {
         runCheckTest(
             files =
@@ -1916,6 +2093,12 @@ internal class EndToEndCheckTest {
                 Undefined symbol 'b'
 
                 ERROR: content/file1.math (Line: 11, Column: 7)
+                Undefined symbol 'a' in `:=`
+
+                ERROR: content/file1.math (Line: 11, Column: 7)
+                Undefined symbol 'b' in `:=`
+
+                ERROR: content/file1.math (Line: 11, Column: 7)
                 Undefined symbol 'a'
 
                 ERROR: content/file1.math (Line: 11, Column: 7)
@@ -1923,10 +2106,10 @@ internal class EndToEndCheckTest {
 
                 FAILED
                 Processed 1 file
-                6 errors detected
+                8 errors detected
         """.trimIndent(),
             expectedExitCode = 1,
-            expectedNumErrors = 6)
+            expectedNumErrors = 8)
     }
 
     @Test

@@ -16,8 +16,6 @@
 
 package mathlingua.frontend.textalk
 
-import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
-
 enum class TexTalkNodeType {
     Token,
     Identifier,

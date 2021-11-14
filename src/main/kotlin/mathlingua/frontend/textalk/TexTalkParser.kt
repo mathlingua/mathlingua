@@ -459,6 +459,16 @@ private class TexTalkParserImpl : TexTalkParser {
                             column = underscore.column))
                     return curlyGroup
                 }
+
+                if (mapping.subGroup != subGroup) {
+                    errors.add(
+                        ParseError(
+                            message =
+                                "An item of the form {x_{A}}_{B} must specify the exact same symbols in A and B",
+                            row = underscore.row,
+                            column = underscore.column))
+                }
+
                 return SequenceNode(mapping = mapping, subGroup = subGroup)
             }
 

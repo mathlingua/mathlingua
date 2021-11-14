@@ -904,7 +904,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                         val lhsVars =
                             getVarsTexTalkNode(
                                 texTalkNode = lhs,
-                                isInLhsColonEquals = true,
+                                isInLhsOfColonEqualsIsOrIn = true,
                                 groupScope = GroupScope.InNone,
                                 isInIdStatement = false,
                                 forceIsPlaceholder = false)

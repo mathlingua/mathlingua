@@ -814,43 +814,50 @@ open class HtmlCodeWriter(
                         }
                         .replace("'", "")
 
+            val stmtWithoutCurly =
+                Regex("\\{.*?}").replace(stmtText) { " ".repeat(it.value.length) }
+            val stmtWithoutParen =
+                Regex("\\(.*\\)").replace(stmtWithoutCurly) { " ".repeat(it.value.length) }
+            val stmtWithoutGroups =
+                Regex("\\[.*]").replace(stmtWithoutParen) { " ".repeat(it.value.length) }
+
             builder.append("<span class='mathlingua-statement' title='$title'>")
-            if (stmtText.contains(IS)) {
-                val index = stmtText.indexOf(IS)
+            if (stmtWithoutGroups.contains(IS)) {
+                val index = stmtWithoutGroups.indexOf(IS)
                 val lhs = stmtText.substring(0, index)
                 val rhs = stmtText.substring(index + IS.length).trim()
                 val rhsResult = prettyPrintTexTalk(lhs, rhs)
                 if (rhsResult.matchedTarget) {
-                    builder.append("$$$${rhsResult.text}$$$")
+                    builder.append("$$$${rhsResult.text.replace(" in ", " \\in ")}$$$")
                 } else {
                     val lhsResult = prettyPrintTexTalk(lhs, lhs)
-                    builder.append("$$$${lhsResult.text}$$$")
+                    builder.append("$$$${lhsResult.text.replace(" in ", " \\in ")}$$$")
                     writeSpace()
                     writeDirect("<span class='mathlingua-is'>is</span>")
                     writeSpace()
-                    builder.append("$$$${rhsResult.text}$$$")
+                    builder.append("$$$${rhsResult.text.replace(" in ", " \\in ")}$$$")
                 }
-            } else if (stmtText.contains(IN)) {
-                val index = stmtText.indexOf(IN)
+            } else if (stmtWithoutGroups.contains(IN)) {
+                val index = stmtWithoutGroups.indexOf(IN)
                 val lhs = stmtText.substring(0, index)
                 val rhs = stmtText.substring(index + IN.length).trim()
                 val rhsResult = prettyPrintTexTalk(lhs, rhs)
                 if (rhsResult.matchedTarget) {
-                    builder.append("$$$${rhsResult.text}$$$")
+                    builder.append("$$$${rhsResult.text.replace(" in ", " \\in ")}$$$")
                 } else {
                     val lhsResult = prettyPrintTexTalk(lhs, lhs)
                     builder.append("$$$")
-                    builder.append(lhsResult.text)
+                    builder.append(lhsResult.text.replace(" in ", " \\in "))
                     writeDirect(" \\in ")
-                    builder.append(rhsResult.text)
+                    builder.append(rhsResult.text.replace(" in ", " \\in "))
                     builder.append("$$$")
                 }
             } else {
                 if (root is ValidationSuccess &&
                     (defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty())) {
-                    builder.append("$$$$fullExpansion$$$")
+                    builder.append("$$$${fullExpansion?.replace(" in ", " \\in ")}$$$")
                 } else {
-                    builder.append("$$$$stmtText$$$")
+                    builder.append("$$$${stmtText.replace(" in ", " \\in ")}$$$")
                 }
             }
             builder.append("</span>")

@@ -26,7 +26,9 @@ import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.GroupTexTalkNode
+import mathlingua.frontend.textalk.MappingNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
+import mathlingua.frontend.textalk.SequenceNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
@@ -208,12 +210,26 @@ private fun findSubstitutions(
         return
     }
 
-    // this assumes all of the parameters are TextTexTalkNode with only the last one possible
-    // variadic
+    // this assumes that each parameters is either a TextTexTalkNode, MappingNode, or SequenceNode
+    // with only the last one possibly variadic (and must be a TextTexTalkNode in that case)
+    // That is, a signature can only have `X`, `f(x)`, `{x_{i}}_{i}` or `{f_{i}(x)}_{i}` as
+    // parameters.
+    // Thus, parameters of the form `X := ...`, `f(x) := ...` etc. are not supported.
     val paramNames =
-        pattern.parameters.items.map { it.children[0] as TextTexTalkNode }.map { it.text }
+        pattern.parameters.items
+            .map {
+                if (it.children[0] is MappingNode) {
+                    (it.children[0] as MappingNode).name
+                } else if (it.children[0] is SequenceNode) {
+                    (it.children[0] as SequenceNode).mapping.name
+                } else {
+                    it.children[0] as TextTexTalkNode
+                }
+            }
+            .map { it.text }
     val isVariadic =
         pattern.parameters.items.isNotEmpty() &&
+            (pattern.parameters.items.last().children[0] is TextTexTalkNode) &&
             (pattern.parameters.items.last().children[0] as TextTexTalkNode).isVarArg
 
     val values = value.parameters.items
@@ -405,12 +421,13 @@ private fun validatePatternGroupImpl(
         }
 
         val item = expression.children[0]
-        if (item !is TextTexTalkNode) {
-            errors.add("Parameters can only be identifiers but found '${item.toCode()}'")
+        if (item !is TextTexTalkNode && item !is MappingNode && item !is SequenceNode) {
+            errors.add(
+                "Parameters can only be of the form X, f(x), {x_{i}}_{i}, or {f_{i}(x)}_{i} but found '${item.toCode()}'")
             continue
         }
 
-        if (item.isVarArg && i != group.parameters.items.size - 1) {
+        if (item is TextTexTalkNode && item.isVarArg && i != group.parameters.items.size - 1) {
             errors.add("Only the last parameter in a group can be variadic: '${item.toCode()}'")
         }
     }

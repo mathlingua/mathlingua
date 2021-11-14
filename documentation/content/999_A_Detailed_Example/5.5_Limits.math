@@ -3,7 +3,7 @@
 ::
 
 
-[\function.limit[x]_{c}{f}]
+[\function.limit[x]_{c}{f(x)}]
 Defines: L
 given: I, a, b, R
 when:
@@ -30,6 +30,6 @@ using:
 . 'x < y := x \real.lt/ y'
 written:
 . "\displaystyle \lim_{x? \rightarrow c?} f?"
-. "f?(x?) \rightarrow L? \textrm{ as } x? \rightarrow c?"
+. "f? \rightarrow L? \textrm{ as } x? \rightarrow c?"
 called:
 . "limit of $f?(x?)$ as $x?$ approaches $c?$"

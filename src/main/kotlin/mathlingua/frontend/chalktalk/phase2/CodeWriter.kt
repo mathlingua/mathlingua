@@ -828,14 +828,17 @@ open class HtmlCodeWriter(
                 val rhs = stmtText.substring(index + IS.length).trim()
                 val rhsResult = prettyPrintTexTalk(lhs, rhs)
                 if (rhsResult.matchedTarget) {
-                    builder.append("$$$${rhsResult.text.replace(" in ", " \\in ")}$$$")
+                    builder.append(
+                        "$$$${rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
                 } else {
                     val lhsResult = prettyPrintTexTalk(lhs, lhs)
-                    builder.append("$$$${lhsResult.text.replace(" in ", " \\in ")}$$$")
+                    builder.append(
+                        "$$$${lhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
                     writeSpace()
                     writeDirect("<span class='mathlingua-is'>is</span>")
                     writeSpace()
-                    builder.append("$$$${rhsResult.text.replace(" in ", " \\in ")}$$$")
+                    builder.append(
+                        "$$$${rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
                 }
             } else if (stmtWithoutGroups.contains(IN)) {
                 val index = stmtWithoutGroups.indexOf(IN)
@@ -843,21 +846,26 @@ open class HtmlCodeWriter(
                 val rhs = stmtText.substring(index + IN.length).trim()
                 val rhsResult = prettyPrintTexTalk(lhs, rhs)
                 if (rhsResult.matchedTarget) {
-                    builder.append("$$$${rhsResult.text.replace(" in ", " \\in ")}$$$")
+                    builder.append(
+                        "$$$${rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
                 } else {
                     val lhsResult = prettyPrintTexTalk(lhs, lhs)
                     builder.append("$$$")
-                    builder.append(lhsResult.text.replace(" in ", " \\in "))
+                    builder.append(
+                        lhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }"))
                     writeDirect(" \\in ")
-                    builder.append(rhsResult.text.replace(" in ", " \\in "))
+                    builder.append(
+                        rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }"))
                     builder.append("$$$")
                 }
             } else {
                 if (root is ValidationSuccess &&
                     (defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty())) {
-                    builder.append("$$$${fullExpansion?.replace(" in ", " \\in ")}$$$")
+                    builder.append(
+                        "$$$${fullExpansion?.replace(" in ", " \\in ")?.replace(" is ", "\\textrm{ is }")}$$$")
                 } else {
-                    builder.append("$$$${stmtText.replace(" in ", " \\in ")}$$$")
+                    builder.append(
+                        "$$$${stmtText.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
                 }
             }
             builder.append("</span>")

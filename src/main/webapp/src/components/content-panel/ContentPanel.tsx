@@ -123,7 +123,13 @@ const ThreeColumnContent = (props: {
         }}
       >
         {isSidePanelVisible ? (
-          <div style={zoomedInEnoughToHideSidebar ? {} : { float: 'right' }}>
+          <div
+            style={
+              zoomedInEnoughToHideSidebar
+                ? {}
+                : { width: '100%', float: 'right' }
+            }
+          >
             <SidePanel viewedPath={props.hashLocation.viewedPath} />
           </div>
         ) : null}

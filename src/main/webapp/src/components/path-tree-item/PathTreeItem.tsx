@@ -270,8 +270,8 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
       <span
         className={styles.sidePanelItem}
         style={{
-          width: isEditMode ? 'max-content' : '100%',
-          maxWidth: isEditMode ? 'max-content' : '100%',
+          width: isEditMode ? 'max-content' : 'unset',
+          maxWidth: isEditMode ? 'max-content' : 'unset',
         }}
       >
         <li
@@ -334,8 +334,8 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
     <span
       className={styles.sidePanelItem}
       style={{
-        width: isEditMode ? 'max-content' : '100%',
-        maxWidth: isEditMode ? 'max-content' : '100%',
+        width: isEditMode ? 'max-content' : 'unset',
+        maxWidth: isEditMode ? 'max-content' : 'unset',
       }}
     >
       <li className={styles.mathlinguaListFileItem}>

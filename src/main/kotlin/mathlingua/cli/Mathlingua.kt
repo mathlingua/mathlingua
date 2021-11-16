@@ -42,6 +42,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
@@ -834,6 +835,9 @@ private fun getSignature(node: Phase2Node?): String? {
         is DefinesGroup -> {
             node.signature?.form
         }
+        is StatesGroup -> {
+            node.signature?.form
+        }
         is TheoremGroup -> {
             node.signature?.form
         }
@@ -842,6 +846,12 @@ private fun getSignature(node: Phase2Node?): String? {
         }
         is ConjectureGroup -> {
             node.signature?.form
+        }
+        is TopicGroup -> {
+            node.id?.trim()?.removeSurrounding("[", "]")?.trim()
+        }
+        is ResourceGroup -> {
+            node.id.trim().removeSurrounding("[", "]").trim()
         }
         else -> {
             null

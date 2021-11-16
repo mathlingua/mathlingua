@@ -22,7 +22,7 @@ Metadata:
 
 
 ::
-Now, before defining and ordered set, we need to
+Now, before defining an ordered set, we need to
 describe what it means for exactly one of several
 statements to be true.
 ::
@@ -203,11 +203,9 @@ called: "supremum of $X?$"
 
 
 ::
-In a similar way we generalized the maximum of a set,
-we generalize the minimum of a set.
-
-Similar to the upper bound of a set, we define a lower
-bound of a set.
+In a similar way to how we generalized the maximum of a set,
+we generalize the minimum of a set.  Hence, similar to the
+upper bound of a set, we define a lower bound of a set.
 ::
 
 
@@ -265,7 +263,11 @@ called: "infimum of $X?$"
 
 
 ::
-Before continuing we need to define what it means for
+Last, we`\'`ll define what it means for a set to have
+the *least-upper-bound property* which turns out to be
+a key characteristic of the real numbers.
+
+However, before doing so we need to define what it means for
 a set to be empty or non-empty.
 ::
 
@@ -292,9 +294,8 @@ called: "non-empty set"
 
 
 ::
-With the above, we can define the *least-upper-bound-property*
-that turns out to be a fundamental characteristic of the
-real numbers.
+With the above, we can define the *least-upper-bound property*
+as follows:
 ::
 
 

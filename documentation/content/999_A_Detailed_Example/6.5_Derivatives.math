@@ -1,5 +1,12 @@
 ::
 # The Derivative
+
+Next, we need to discuss what the *derivative* of a function
+is.  For real valued functions, the derivative $f'(x)$ of a
+function $f(x)$ is a function that, for any $a$, gives the
+slope of the tangent line to $f(x)$ at $a$.
+
+This notion is made precise below:
 ::
 
 

@@ -1,5 +1,17 @@
 ::
 # Limits
+
+Now we have the tools needed to define a fundamental topic
+of real analysis, the notion of a limit.
+
+Specifically, the notion of a limit formalizes the idea that
+in real analysis, if one cannot evaluate $f(c)$ for some
+real number $c$ and some real-valued function $f$, then
+one can still get information about $f(c)$ by analyzing $f(x)$
+for values of $x$ that are arbitrarily close to $c$.
+
+Limits will be essential for describing the *derivative* of
+a function.
 ::
 
 

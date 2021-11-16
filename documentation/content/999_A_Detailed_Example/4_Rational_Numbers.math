@@ -1,8 +1,11 @@
 ::
 # The Rational Numbers
 
-To describe the real numbers it is necessary to
-describe the rational numbers, that we define here.
+Now we need to describe what the rational numbers are.  It
+will turn out that an important characterstic of the real
+numbers is that they contain the rational numbers.
+
+Before continuing, we need to define "set builder notation".
 ::
 
 
@@ -15,6 +18,17 @@ written:
 . "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"
 called:
 . "set of $x?$ where $within?$ such that $cond?$"
+
+
+::
+The rational numbers are ratios of integers with operations
+of addition and multiplication defined with respect to
+addition and multiplication of integers.
+
+The precise way in which the integers are defined is not
+important here.  Instead, we only need to accept their
+existence.  As such we describe them informally.
+::
 
 
 [\integers.set]
@@ -30,11 +44,25 @@ written: "\mathbb{N}"
 called: "naturals"
 
 
+::
+When we say that $n$ is an integer, we mean that it is an
+element of the set of integers, as described below.
+::
+
+
 [\integer]
 Defines: N
 means: 'N in \integers.set'
 written: "\textrm{integer}"
 called: "integer"
+
+
+::
+Again, we don`\'`t need to concern ourselves with how the
+operations of addition and multplication of the integers
+is defined, and how the ordering of the integers is defined
+and so we simply state their existence below.
+::
 
 
 [x \integers.+/ y]
@@ -86,6 +114,14 @@ written: "x?? < y??"
 called: "$x?$ is less than $y?$"
 
 
+::
+Now we can define what the set of rational numbers are,
+and we describe a rational number as a pair of integers.
+The first integer is the numerator and the second is the
+denominator.
+::
+
+
 [\rationals.set]
 Defines: Q
 means: 'Q := \set[x, p, q]:where{x := (p, q)}
@@ -93,6 +129,21 @@ means: 'Q := \set[x, p, q]:where{x := (p, q)}
                                    {q in \integers.set}'
 written: "\mathbb{Q}"
 called: "rationals"
+
+
+::
+Next we describe how to build a rational number from two
+integers $a$ and $b$ and describe the notation
+$\frac{a}{b}$.
+
+At this point, $\frac{a}{b}$ is just a notation, but it will
+turn out that the notation will make sense even viewing the
+integers $a$ and $b$ as real numbers.
+
+Specifically, $\frac{a}{b}$ can be also be read
+as the product of $a$ and the multiplicative inverse of $b$
+(provided $b \neq 0$) when viewing $a$ and $b$ as real numbers.
+::
 
 
 [\Rational{a, b}]
@@ -104,18 +155,11 @@ written: "\frac{a?}{b?}"
 called: "rational"
 
 
-[x \rational.*/ y]
-Defines: z
-given: p1, q1, p2, q2
-when:
-. 'x := \Rational{p1, q1}'
-. 'y := \Rational{p2, q2}'
-means:
-. 'z := \Rational{p1 * p2, q1 * q2}'
-using:
-. 'a * b := a \integers.*/ b'
-written: "x?? y??"
-called: "rational multiplication"
+::
+Now we can define the operations of addition and multiplication
+of two rational numbers using the operations of addition
+and multplication of integers.
+::
 
 
 [x \rational.+/ y]
@@ -133,6 +177,31 @@ written: "x?? + y??"
 called: "rational addition"
 
 
+[x \rational.*/ y]
+Defines: z
+given: p1, q1, p2, q2
+when:
+. 'x := \Rational{p1, q1}'
+. 'y := \Rational{p2, q2}'
+means:
+. 'z := \Rational{p1 * p2, q1 * q2}'
+using:
+. 'a * b := a \integers.*/ b'
+written: "x?? y??"
+called: "rational multiplication"
+
+
+::
+With the above operations of addition and multiplication
+and the defined *set* of rational numbers, the *field*
+of rational numbers can be defined.
+
+That is, the set of rational numbers defined above equipped
+with the operations of addition and multiplication also defined
+above becomes a field.
+::
+
+
 [\rationals.field]
 Defines: Q := (X, +, *, 0, 1)
 means:
@@ -146,6 +215,12 @@ written: "\mathbb{Q}"
 called: "rationals as a field"
 
 
+::
+Later we will need the precise description of what it
+means for $x < y$ for two rational numbers $x$ and $y$.
+::
+
+
 [x \rational.lt/ y]
 States:
 given: Q
@@ -154,6 +229,12 @@ that:
 . 'y \field{Q}.-/ x is \positive:within{Q}'
 written: "x?? < y??"
 called: "$x?$ is less than $y?$"
+
+
+::
+Now equipped with the definition of $<$ above,
+the set of rational numbers is an ordered set.
+::
 
 
 [\rationals.ordered.set]

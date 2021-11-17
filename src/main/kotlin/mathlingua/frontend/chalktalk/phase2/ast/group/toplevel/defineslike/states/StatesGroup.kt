@@ -20,7 +20,6 @@ import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CALLED_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATES_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THAT_SECTION
@@ -63,7 +62,7 @@ data class StatesGroup(
     val thatSection: ThatSection,
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
-    val calledSection: CalledSection,
+    val calledSection: CalledSection?,
     override val metaDataSection: MetaDataSection?
 ) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
 
@@ -81,7 +80,9 @@ data class StatesGroup(
             fn(usingSection)
         }
         fn(writtenSection)
-        fn(calledSection)
+        if (calledSection != null) {
+            fn(calledSection)
+        }
         if (metaDataSection != null) {
             fn(metaDataSection)
         }
@@ -97,6 +98,12 @@ data class StatesGroup(
         return topLevelToCode(this, writer, isArg, indent, id, *sections.toTypedArray())
     }
 
+    fun getCalled() =
+        calledSection?.forms
+            ?: writtenSection.forms.map {
+                "$${it.removeSurrounding("\"", "\"").replace("textrm", "textbf")}$"
+            }
+
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             StatesGroup(
@@ -108,7 +115,7 @@ data class StatesGroup(
                 thatSection = chalkTransformer(thatSection) as ThatSection,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
-                calledSection = calledSection.transform(chalkTransformer) as CalledSection,
+                calledSection = calledSection?.transform(chalkTransformer) as CalledSection?,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
@@ -130,7 +137,7 @@ fun validateStatesGroup(
                     "that",
                     "using?",
                     "written",
-                    "called",
+                    "called?",
                     "Metadata?")) { sections ->
                 val id = getId(group, errors, tracker)
                 StatesGroup(
@@ -155,7 +162,7 @@ fun validateStatesGroup(
                             validateWrittenSection(it, errors, tracker)
                         },
                     calledSection =
-                        ensureNonNull(sections["called"], DEFAULT_CALLED_SECTION) {
+                        ifNonNull(sections["called"]) {
                             validateCalledSection(it, errors, tracker)
                         },
                     metaDataSection =

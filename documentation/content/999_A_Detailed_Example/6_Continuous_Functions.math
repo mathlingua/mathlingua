@@ -98,7 +98,6 @@ means:
 . 'f is \function:on{I}:to{R}'
 . 'f(c) = \function.limit[x]_{c}{f(x)}'
 written: "\textrm{continuous function on } I? \textrm{ at } c?"
-called: "continuous function on $I?$ at $c?$"
 
 
 ::
@@ -119,4 +118,4 @@ means:
   suchThat: 'c in I'
   then: 'f is \continuous.function:on{I}:at{c}'
 written: "\textrm{continuous function on } I?"
-called: "continuous function on $I?$"
+

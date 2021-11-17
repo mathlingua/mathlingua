@@ -26,7 +26,6 @@ means:
     suchThat: 't in I'
     then: '\real.abs(f(t)) \real.leq/ M'
 written: "\textrm{bounded real function on } I?"
-called: "bounded real function on $I?$"
 
 
 ::

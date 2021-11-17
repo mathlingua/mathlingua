@@ -54,7 +54,6 @@ element of the set of integers, as described below.
 Defines: N
 means: 'N in \integers.set'
 written: "\textrm{integer}"
-called: "integer"
 
 
 ::

@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
+import java.util.StringTokenizer
 import kotlin.random.Random
 import mathlingua.backend.getInnerDefinedSignatures
 import mathlingua.backend.getPatternsToWrittenAs
@@ -266,17 +267,29 @@ open class HtmlCodeWriter(
     }
 
     private fun capitalizeWords(text: String): String {
-        val calledWords = mutableListOf<String>()
-        val words = text.split(" ")
-        for (i in words.indices) {
-            val word = words[i]
-            if (i > 0 && (word == "a" || word == "an" || word == "the")) {
-                calledWords.add(word)
+        val tokenizer = StringTokenizer(text, " {}()[]\"'`", true)
+        val builder = StringBuilder()
+        var firstToken = true
+        while (tokenizer.hasMoreTokens()) {
+            val word = tokenizer.nextToken()
+            if (!firstToken &&
+                (word.length <= 4 ||
+                    word == "a" ||
+                    word == "an" ||
+                    word == "the" ||
+                    word == "at" ||
+                    word == "to" ||
+                    word == "by" ||
+                    word == "and" ||
+                    word == "but" ||
+                    word == "for")) {
+                builder.append(word)
             } else {
-                calledWords.add(word.replaceFirstChar { it.uppercase() })
+                builder.append(word.replaceFirstChar { it.uppercase() })
             }
+            firstToken = false
         }
-        return calledWords.joinToString(" ")
+        return builder.toString()
     }
 
     override fun generateCode(node: Phase2Node): String {
@@ -289,15 +302,14 @@ open class HtmlCodeWriter(
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
                 builder.append("<span class='mathlingua-called'>")
-                val called =
-                    capitalizeWords(node.calledSection.forms.first().removeSurrounding("\"", "\""))
+                val called = capitalizeWords(node.getCalled().first().removeSurrounding("\"", "\""))
                 builder.append(parseMarkdown(called))
                 builder.append("</span>")
                 builder.append(
                     node.copy(
                             metaDataSection = null,
                             calledSection =
-                                if (node.calledSection.forms.size == 1) {
+                                if (node.getCalled().size == 1) {
                                     // use an empty list to specify that the called: section should
                                     // not
                                     // be rendered since the single form that the item is called is
@@ -319,8 +331,7 @@ open class HtmlCodeWriter(
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
                 builder.append("<span class='mathlingua-called'>")
-                val called =
-                    capitalizeWords(node.calledSection.forms.first().removeSurrounding("\"", "\""))
+                val called = capitalizeWords(node.getCalled().first().removeSurrounding("\"", "\""))
                 builder.append(parseMarkdown(called))
                 builder.append("</span>")
                 builder.append(
@@ -330,7 +341,7 @@ open class HtmlCodeWriter(
                             // forms to signal that the "called:" section shouldn't be rendered
                             // since
                             // the called form is used as the title
-                            if (it.calledSection.forms.size == 1) {
+                            if (it.getCalled().size == 1) {
                                 it.copy(calledSection = CalledSection(forms = emptyList()))
                             } else {
                                 it

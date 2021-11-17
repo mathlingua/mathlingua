@@ -29,7 +29,6 @@ viewing:
 . as: '\group'
   via: 'G'
 written: "\textrm{Abelian group}"
-called: "Abelian group"
 
 
 ::
@@ -78,7 +77,6 @@ viewing:
 . as: '\set'
   via: 'X'
 written: "\textrm{field}"
-called: "field"
 
 
 ::
@@ -183,7 +181,6 @@ viewing:
 . as: '\field'
   via: '(X, +, *, 0, 1)'
 written: "\textrm{ordered field}"
-called: "ordered field"
 
 
 ::
@@ -213,6 +210,4 @@ when: 'F := (X, +, *, 0, 1, <) is \ordered.field'
 means:
 . '0 < x'
 written: "\textrm{positive}"
-called: "positive"
-
 

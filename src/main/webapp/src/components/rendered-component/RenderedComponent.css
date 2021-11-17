@@ -286,15 +286,17 @@ p {
 }
 
 .mathlingua-called {
-  font-family: Georgia, 'Times New Roman', Times, serif;
-  font-style: italic;
-  font-weight: bold;
+  font: bold 0.95em Georgia, 'Times New Roman', Times, serif !important;
   display: table;
   margin-top: -1em;
   margin-left: auto;
   margin-bottom: -1ex;
   margin-right: auto;
   width: max-content;
+}
+
+.mathlingua-called .katex {
+  font: bold 1em Georgia, 'Times New Roman', Times, serif !important;
 }
 
 .display-mode {

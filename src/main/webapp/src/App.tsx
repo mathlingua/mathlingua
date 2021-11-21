@@ -1,18 +1,28 @@
 import styles from './App.module.css';
 
 import React from 'react';
-import { TopBar } from './components/topbar/TopBar';
 
 import { HashRouter, Switch, Route } from 'react-router-dom';
 import { ContentPanel } from './components/content-panel/ContentPanel';
+import { ReferencePanel } from './components/reference/ReferencePanel';
+import { TexTalkReferencePanel } from './components/reference/tex-talk-reference-panel/TexTalkReferencePanel';
+import { ChalkTalkReferencePanel } from './components/reference/chalk-talk-reference-panel/ChalkTalkReferencePanel';
 
 export const App = () => {
   return (
     <HashRouter hashType="slash">
       <ErrorBoundary>
         <div className={styles.contentPanel}>
-          <TopBar />
           <Switch>
+            <Route exact path="/help">
+              <ReferencePanel />
+            </Route>
+            <Route exact path="/help/expressionLanguage">
+              <TexTalkReferencePanel />
+            </Route>
+            <Route exact path="/help/structuralLanguage">
+              <ChalkTalkReferencePanel />
+            </Route>
             <Route
               path="/:relativePath(.*)"
               render={(routerProps) => (

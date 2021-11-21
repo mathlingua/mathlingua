@@ -1,0 +1,37 @@
+.referenceBody {
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+}
+
+.referenceContent {
+  padding-top: 0em;
+  padding-left: 3em;
+  padding-bottom: 3em;
+  margin-bottom: 2em;
+}
+
+.referenceTitle {
+  font-size: 3em;
+  color: #0055bb;
+  padding-top: 0.25em;
+  padding-bottom: 0.5em;
+}
+
+.referenceHeader1 {
+  font-size: 1.5em;
+  color: #0055bb;
+  padding-top: 1em;
+  padding-bottom: 0.25em;
+}
+
+.referenceHeader2 {
+  font-size: 1.25em;
+  color: #0055bb;
+  margin-top: 1em;
+  margin-bottom: -1em;
+}
+
+a {
+  text-decoration: none;
+}

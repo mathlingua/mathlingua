@@ -11,6 +11,7 @@ import {
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isOnMobile } from '../../support/util';
 import * as api from '../../services/api';
+import { TopBar } from '../topbar/TopBar';
 
 export interface HashLocation {
   viewedPath: string;
@@ -48,7 +49,7 @@ export const ContentPanel = (props: ContentPanelProps) => {
     return null;
   }
 
-  return isEditMode ? (
+  const innerPanel = isEditMode ? (
     <TwoColumnContent
       hashLocation={hashLocation}
       isSidePanelVisible={isSidePanelVisible}
@@ -58,6 +59,13 @@ export const ContentPanel = (props: ContentPanelProps) => {
       hashLocation={hashLocation}
       startedWithSidePanelVisible={isSidePanelVisible}
     ></ThreeColumnContent>
+  );
+
+  return (
+    <div>
+      <TopBar />
+      {innerPanel}
+    </div>
   );
 };
 

@@ -5,6 +5,7 @@ import { SearchPanel } from '../search-panel/SearchPanel';
 import { GitHubIcon } from '../github-icon/GitHubIcon';
 import { isStatic } from '../../services/api';
 import { EditModeButton } from '../edit-mode-button/EditModeButton';
+import { HelpButton } from '../help-button/HelpButton';
 
 export const TopBar = () => {
   return (
@@ -13,6 +14,7 @@ export const TopBar = () => {
       <SearchPanel />
       {isStatic() ? null : <EditModeButton />}
       <GitHubIcon />
+      <HelpButton />
     </div>
   );
 };

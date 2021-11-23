@@ -103,10 +103,14 @@ internal fun renameVarsTexTalkNode(texTalkNode: TexTalkNode, map: Map<String, St
     }
 
 internal fun checkVarsPhase2Node(
-    topLevel: TopLevelGroup, node: Phase2Node, tracker: LocationTracker
+    topLevel: TopLevelGroup,
+    node: Phase2Node,
+    signatureOperatorVars: List<String>,
+    tracker: LocationTracker
 ): Set<ParseError> {
     val errors = mutableListOf<ParseError>()
-    checkVarsImplPhase2Node(topLevel, node, VarMultiSet(), tracker, errors)
+    val vars = VarMultiSet()
+    checkVarsImplPhase2Node(topLevel, node, vars, tracker, errors)
     return errors.toSet()
 }
 
@@ -234,13 +238,18 @@ private fun getVarsImplTexTalkNode(
                 forceIsPlaceholder)
         }
 
-        getVarsImplTexTalkNode(
-            texTalkNode.command,
-            vars,
-            isInLhsColonEquals,
-            groupScope,
-            isInIdStatement,
-            forceIsPlaceholder)
+        // if the texTalkNode is an operator of the form `x * y` where the `*` is a
+        // TextTexTalkNode that is an operator then don't add `*` as a variable because
+        // it should be treated as a signature
+        if (texTalkNode.command !is TextTexTalkNode || !isOperatorName(texTalkNode.command.text)) {
+            getVarsImplTexTalkNode(
+                texTalkNode.command,
+                vars,
+                isInLhsColonEquals,
+                groupScope,
+                isInIdStatement,
+                forceIsPlaceholder)
+        }
     } else if (texTalkNode is ColonEqualsTexTalkNode) {
         getVarsImplTexTalkNode(
             texTalkNode.lhs, vars, true, groupScope, isInIdStatement, forceIsPlaceholder)

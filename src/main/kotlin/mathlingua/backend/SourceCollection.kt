@@ -995,9 +995,12 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
     override fun getSymbolErrors(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
+        val sigOpVars =
+            getDefinedSignatures().toList().map { it.value.form }.filter { !it.startsWith("\\") }
         for (grp in allGroups) {
             val tracker = grp.tracker ?: newLocationTracker()
-            val errs = checkVarsPhase2Node(grp.value.original, grp.value.normalized, tracker)
+            val errs =
+                checkVarsPhase2Node(grp.value.original, grp.value.normalized, sigOpVars, tracker)
             result.addAll(
                 errs.map { ValueSourceTracker(value = it, source = grp.source, tracker = tracker) })
         }
@@ -1246,13 +1249,17 @@ private fun getInnerDefinedSignatures(clauses: List<Clause>): Set<String> {
 }
 
 private fun getInnerDefinedSignaturesImpl(
-    node: TexTalkNode, isInColonEquals: Boolean, result: MutableSet<String>
+    node: TexTalkNode, isInColonEqualsRhs: Boolean, result: MutableSet<String>
 ) {
-    val isColonEquals = node is ColonEqualsTexTalkNode
-    if (node is TextTexTalkNode && isOperatorName(node.text)) {
+    if (node is ColonEqualsTexTalkNode) {
+        getInnerDefinedSignaturesImpl(
+            node = node.lhs, isInColonEqualsRhs = isInColonEqualsRhs, result)
+        getInnerDefinedSignaturesImpl(node = node.rhs, isInColonEqualsRhs = true, result)
+    } else if (!isInColonEqualsRhs && node is TextTexTalkNode && isOperatorName(node.text)) {
         result.add(node.text)
+    } else {
+        node.forEach { getInnerDefinedSignaturesImpl(it, isInColonEqualsRhs, result) }
     }
-    node.forEach { getInnerDefinedSignaturesImpl(it, isInColonEquals || isColonEquals, result) }
 }
 
 private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {

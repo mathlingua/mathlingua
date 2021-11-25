@@ -57,7 +57,6 @@ import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
-import mathlingua.getRandomUuid
 import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
@@ -226,11 +225,6 @@ open class HtmlCodeWriter(
                             builder.append(textBuilder.toString())
                             builder.append("</span>")
                         }
-                        is StringItem -> {
-                            builder.append("<span class='mathlingua-resources-item'>")
-                            builder.append(res.text.removeSurrounding("\"", "\""))
-                            builder.append("</span>")
-                        }
                         else -> {
                             System.err.println(
                                 "ERROR: Unrecognized resource type: ${res.javaClass.simpleName}")
@@ -351,7 +345,7 @@ open class HtmlCodeWriter(
                         .getCode())
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
-                    builder.append(generateMetaDataSectionCode(node.metaDataSection!!))
+                    builder.append(generateMetaDataSectionCode(node.metaDataSection))
                 }
                 builder.toString()
             }
@@ -380,7 +374,6 @@ open class HtmlCodeWriter(
                         .getCode())
                 builder.append("</span>")
                 if (node.proofSection != null) {
-                    val id = getRandomUuid()
                     builder.append("<hr/><div class='mathlingua-proof-header'>Proof</div>")
                     builder.append("<span class='mathlingua-proof-shown'>")
                     val writer = newCodeWriter(defines, states, axioms, literal)
@@ -652,7 +645,7 @@ open class HtmlCodeWriter(
             if (!text.endsWith("\"")) {
                 displayTextBuilder.append("\"")
             }
-            val text =
+            val newText =
                 displayTextBuilder.toString().split("\n").joinToString("<br/>") {
                     val builder = StringBuilder()
                     for (i in it.indices) {
@@ -665,7 +658,7 @@ open class HtmlCodeWriter(
                     builder.append(it.trimIndent())
                     builder.toString().replace("\t", "&nbsp;&nbsp;")
                 }
-            builder.append("<span class=\"literal-mathlingua-text-no-render\"> $text </span>")
+            builder.append("<span class=\"literal-mathlingua-text-no-render\"> $newText </span>")
             return
         }
 

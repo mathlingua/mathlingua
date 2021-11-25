@@ -103,10 +103,7 @@ internal fun renameVarsTexTalkNode(texTalkNode: TexTalkNode, map: Map<String, St
     }
 
 internal fun checkVarsPhase2Node(
-    topLevel: TopLevelGroup,
-    node: Phase2Node,
-    signatureOperatorVars: List<String>,
-    tracker: LocationTracker
+    topLevel: TopLevelGroup, node: Phase2Node, tracker: LocationTracker
 ): Set<ParseError> {
     val errors = mutableListOf<ParseError>()
     val vars = VarMultiSet()
@@ -175,6 +172,9 @@ private fun getVarsImplPhase2Node(node: Phase2Node, vars: MutableList<Var>) {
                     groupScope = GroupScope.InNone,
                     isInIdStatement = false,
                     forceIsPlaceholder = false)
+            }
+            else -> {
+                // if the parsing fails, then the vars cannot be determined
             }
         }
     } else {

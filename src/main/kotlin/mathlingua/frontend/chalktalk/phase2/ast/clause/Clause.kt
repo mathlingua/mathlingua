@@ -149,7 +149,7 @@ fun validateClause(
 
     for (pair in CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
-            return pair.validate(node, errors, tracker) as Clause
+            return pair.validate(node, errors, tracker)
         }
     }
 

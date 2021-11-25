@@ -221,19 +221,15 @@ object Mathlingua {
                     val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
                     logger.log("Writing page ${pathAndContent.path}")
 
-                    if (pathAndContent.path == null) {
-                        ctx.status(404)
-                    } else {
-                        val file = fs.getFileOrDirectory(pathAndContent.path)
-                        println("Writing to path ${pathAndContent.path} content:")
-                        println(pathAndContent.content)
-                        file.writeText(pathAndContent.content)
-                        println("Done writing to path ${pathAndContent.path}")
-                        val newSource = buildSourceFile(file)
-                        getSourceCollection().removeSource(pathAndContent.path)
-                        getSourceCollection().addSource(newSource)
-                        ctx.status(200)
-                    }
+                    val file = fs.getFileOrDirectory(pathAndContent.path)
+                    println("Writing to path ${pathAndContent.path} content:")
+                    println(pathAndContent.content)
+                    file.writeText(pathAndContent.content)
+                    println("Done writing to path ${pathAndContent.path}")
+                    val newSource = buildSourceFile(file)
+                    getSourceCollection().removeSource(pathAndContent.path)
+                    getSourceCollection().addSource(newSource)
+                    ctx.status(200)
                 } catch (err: Exception) {
                     err.printStackTrace()
                     ctx.status(500)
@@ -975,7 +971,7 @@ private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
         }
         is DefinesGroup -> {
             if (node.signature != null) {
-                words.add(node.signature!!.form)
+                words.add(node.signature.form)
             }
             when (val validation = node.id.texTalkRoot
             ) {

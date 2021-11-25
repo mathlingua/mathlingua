@@ -672,8 +672,8 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                 }
             }
 
-            val validation = sf.value.validation
-            when (validation) {
+            when (val validation = sf.value.validation
+            ) {
                 is ValidationSuccess -> {
                     val tracker = validation.value.tracker
                     val doc = validation.value.document
@@ -722,6 +722,9 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                                 })
                         }
                     }
+                }
+                else -> {
+                    // if parsing fails, then no further checking is needed
                 }
             }
         }
@@ -1178,12 +1181,9 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
     override fun getSymbolErrors(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
-        val sigOpVars =
-            getDefinedSignatures().toList().map { it.value.form }.filter { !it.startsWith("\\") }
         for (grp in allGroups) {
             val tracker = grp.tracker ?: newLocationTracker()
-            val errs =
-                checkVarsPhase2Node(grp.value.original, grp.value.normalized, sigOpVars, tracker)
+            val errs = checkVarsPhase2Node(grp.value.original, grp.value.normalized, tracker)
             result.addAll(
                 errs.map { ValueSourceTracker(value = it, source = grp.source, tracker = tracker) })
         }
@@ -1606,9 +1606,9 @@ fun getInnerDefinedSignatures(group: TopLevelGroup, tracker: LocationTracker?): 
 
     if (group is DefinesGroup) {
         if (group.whenSection != null) {
-            val location = tracker?.getLocationOf(group.whenSection!!) ?: Location(-1, -1)
+            val location = tracker?.getLocationOf(group.whenSection) ?: Location(-1, -1)
             result.addAll(
-                getInnerDefinedSignatures(group.whenSection!!.clauses.clauses).map {
+                getInnerDefinedSignatures(group.whenSection.clauses.clauses).map {
                     Signature(form = it, location = location)
                 })
         }

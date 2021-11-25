@@ -41,7 +41,7 @@ define next.
 
 
 [\finite.real.sequence:size{n}]
-Defines: X := {x_i}_i
+Defines: X := {x_{i}}_{i}
 when: 'n is \integer'
 means:
 . forAll: j
@@ -62,7 +62,7 @@ a *partition* of a closed interval.
 
 
 [\partition:of{I}:size{n}]
-Defines: X := {x_i}_i
+Defines: X := {x_{i}}_{i}
 given: a, b
 when:
 . 'I is \closed.interval{a, b}'
@@ -120,7 +120,7 @@ the $i$-th point and the $(i+1)$-th point in the partition.
 
 [\infimum:of{f}:over{P}:at{i}]
 Defines: L
-given: I, a, b, n, {p_j}_j
+given: I, a, b, n, {p_{j}}_{j}
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
@@ -147,7 +147,7 @@ two points in a partition.
 
 [\supremum:of{f}:over{P}:at{i}]
 Defines: L
-given: I, a, b, n, {p_j}_j
+given: I, a, b, n, {p_{j}}_{j}
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
@@ -177,7 +177,7 @@ $P$.
 
 [\lower.darboux.sum:of{f}:over{P}]
 Defines: S
-given: I, a, b, n, {x_i}_i
+given: I, a, b, n, {x_{i}}_{i}
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
@@ -200,7 +200,7 @@ approximation to the area under the curve $f(x)$ for
 
 [\upper.darboux.sum:of{f}:over{P}]
 Defines: S
-given: I, a, b, n, {x_i}_i
+given: I, a, b, n, {x_{i}}_{i}
 when:
 . 'I is \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'

@@ -1,9 +1,0 @@
-::
-talk about how it describes things around entries
-
-•  talk about how it uses markdown
-
-•  talk about how math groups work
-
-•  talk about how links work
-::

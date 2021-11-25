@@ -1,9 +1,0 @@
-::
-Identifiers
-
-•  Tuples
-
-•  Mappings
-
-•  Collections
-::

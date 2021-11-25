@@ -38,12 +38,19 @@ Root(
                                                                        parts = [
                                                                                  AbstractionPart(
                                                                                    name = Phase1Token(
-                                                                                     text = "a_k"
+                                                                                     text = "a"
                                                                                      type = ChalkTalkTokenType.Name
                                                                                      row = 2
                                                                                      column = 11
                                                                                    )
-                                                                                   subParams = null
+                                                                                   subParams = [
+                                                                                                 Phase1Token(
+                                                                                                   text = "k"
+                                                                                                   type = ChalkTalkTokenType.Name
+                                                                                                   row = 2
+                                                                                                   column = 14
+                                                                                                 )
+                                                                                               ]
                                                                                    params = null
                                                                                    tail = null
                                                                                  )
@@ -53,7 +60,7 @@ Root(
                                                                                        text = "k"
                                                                                        type = ChalkTalkTokenType.Name
                                                                                        row = 2
-                                                                                       column = 16
+                                                                                       column = 19
                                                                                      )
                                                                                    ]
                                                                      )

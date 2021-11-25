@@ -247,13 +247,11 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
             expect(ChalkTalkTokenType.RCurly)
             if (has(ChalkTalkTokenType.Underscore)) {
                 expect(ChalkTalkTokenType.Underscore)
-                if (has(ChalkTalkTokenType.LCurly)) {
-                    expect(ChalkTalkTokenType.LCurly)
-                    subParams = nameList(ChalkTalkTokenType.RCurly)
-                    expect(ChalkTalkTokenType.RCurly)
-                } else {
-                    subParams = listOf(expect(ChalkTalkTokenType.Name))
-                }
+                // subparams must be of the form _{...}
+                // i.e. be enclosed in { and }
+                expect(ChalkTalkTokenType.LCurly)
+                subParams = nameList(ChalkTalkTokenType.RCurly)
+                expect(ChalkTalkTokenType.RCurly)
             }
 
             if (has(ChalkTalkTokenType.DotDotDot)) {
@@ -279,13 +277,11 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
         var subParams: List<Phase1Token>? = null
         if (has(ChalkTalkTokenType.Underscore)) {
             expect(ChalkTalkTokenType.Underscore)
-            if (has(ChalkTalkTokenType.LCurly)) {
-                expect(ChalkTalkTokenType.LCurly)
-                subParams = nameList(ChalkTalkTokenType.RCurly)
-                expect(ChalkTalkTokenType.RCurly)
-            } else {
-                subParams = listOf(expect(ChalkTalkTokenType.Name))
-            }
+            // the subparams must be of the form _{...}
+            // i.e. enclosed in { and }
+            expect(ChalkTalkTokenType.LCurly)
+            subParams = nameList(ChalkTalkTokenType.RCurly)
+            expect(ChalkTalkTokenType.RCurly)
         }
 
         var names: List<Phase1Token>? = null

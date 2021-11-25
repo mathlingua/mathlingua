@@ -1399,7 +1399,7 @@ internal class EndToEndCheckTest {
 
 
                     [\something.else]
-                    Defines: {x_i}_i
+                    Defines: {x_{i}}_{i}
                     when: '{x_{i}}_{i} is \something'
                     means:
                     . '{x_{i}}_{i}'
@@ -2149,7 +2149,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: A
-                    given: X, {x_i}_i
+                    given: X, {x_{i}}_{i}
                     when: 'X := {x_{i}}_{i} is \something'
                     means: "something"
                     written: "something"
@@ -2228,7 +2228,7 @@ internal class EndToEndCheckTest {
                         content =
                             """
                     [\something]
-                    Defines: {x_i}_i
+                    Defines: {x_{i}}_{i}
                     means: 'x_{j}'
                     written: "something"
                     called: "something"
@@ -2256,7 +2256,7 @@ internal class EndToEndCheckTest {
                         content =
                             """
                     [\something]
-                    Defines: {x_i}_i
+                    Defines: {x_{i}}_{i}
                     means: 'x_{i}'
                     written: "something"
                     called: "something"

@@ -1,4 +1,4 @@
 Theorem:
 then:
-. forAll: {a_k}_k
+. forAll: {a_{k}}_{k}
   then: "something"

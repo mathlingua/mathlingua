@@ -64,7 +64,7 @@ cd ..
 
 echo "Updating the documentation's mlg"
 mkdir -p documentation
-cp release/mlg-${MLG_VERSION}-darwin-amd64 documentation/mlg
+cp release/mlg-${MLG_VERSION}-darwin-arm64 documentation/mlg
 
 echo "Building the documentation"
 ./bin/build-docs.sh

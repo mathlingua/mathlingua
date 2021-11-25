@@ -870,6 +870,284 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                 axioms = doExpand.thenUse { axiomGroups.map { it.value.normalized } })
         }
 
+    private fun getExpandedText(
+        exp: ExpressionTexTalkNode, aliasDefines: List<DefinesGroup>
+    ): String? {
+        val writer =
+            getWriter(html = false, literal = false, doExpand = true, aliasDefines = aliasDefines)
+        val tmpTheorem =
+            TheoremGroup(
+                signature = null,
+                id = null,
+                theoremSection = TheoremSection(names = emptyList()),
+                givenSection = null,
+                whenSection = null,
+                thenSection =
+                    ThenSection(
+                        clauses =
+                            ClauseListNode(
+                                clauses =
+                                    listOf(
+                                        Statement(
+                                            text = exp.toCode(),
+                                            texTalkRoot = validationSuccess(exp))))),
+                iffSection = null,
+                proofSection = null,
+                usingSection = null,
+                metaDataSection = null)
+        val expanded = tmpTheorem.toCode(false, 0, writer).getCode()
+        return when (val validation = FrontEnd.parse(expanded)
+        ) {
+            is ValidationSuccess -> {
+                val doc = validation.value
+                val stmt = doc.theorems()[0].thenSection.clauses.clauses[0] as Statement
+                stmt.text
+            }
+            else -> {
+                null
+            }
+        }
+    }
+
+    private fun attemptAddAliasDefinesForColonEqualsTuple(
+        colonEquals: ColonEqualsTexTalkNode, aliasDefines: MutableList<DefinesGroup>
+    ) {
+        val lhsItems = colonEquals.lhs.items
+        val rhsItems = colonEquals.rhs.items
+        if (lhsItems.size != 1 || rhsItems.size != 1) {
+            println(
+                "The left-hand-side and right-hand-side of a := must have exactly one expression")
+            return
+        }
+
+        val lhsItem = lhsItems[0]
+        if (lhsItem.children.size != 1 ||
+            lhsItem.children[0] !is mathlingua.frontend.textalk.TupleNode) {
+            return
+        }
+
+        val leftTuple = lhsItem.children[0] as mathlingua.frontend.textalk.TupleNode
+        val lhsNames =
+            leftTuple
+                .params
+                .items
+                .filter { it.children.size == 1 && it.children[0] is TextTexTalkNode }
+                .map { it.children[0] as TextTexTalkNode }
+                .map { it.text }
+        if (lhsNames.isEmpty()) {
+            return
+        }
+
+        val rhsItem = rhsItems[0]
+        if (rhsItem.children.size != 1 || rhsItem.children[0] !is Command) {
+            return
+        }
+        val rhsCommand = rhsItem.children[0] as Command
+        val rhsSignature = rhsCommand.signature()
+
+        var rhsMatchedDefines: DefinesGroup? = null
+        for (defVal in definesGroups) {
+            val def = defVal.value.original
+            if (def.signature?.form == rhsSignature) {
+                rhsMatchedDefines = def
+                break
+            }
+        }
+
+        if (rhsMatchedDefines == null) {
+            return
+        }
+
+        var rhsNames: List<String>? = null
+        val rhsTargets = rhsMatchedDefines.definesSection.targets
+        if (rhsTargets.size == 1) {
+            val singleTarget = rhsTargets[0]
+            var tupleTarget: Tuple? = null
+            if (singleTarget is AssignmentNode && singleTarget.assignment.rhs is Tuple) {
+                tupleTarget = singleTarget.assignment.rhs
+            } else if (singleTarget is TupleNode) {
+                tupleTarget = singleTarget.tuple
+            }
+
+            if (tupleTarget != null) {
+                rhsNames =
+                    tupleTarget.items
+                        .filter {
+                            it is Abstraction &&
+                                !it.isEnclosed &&
+                                !it.isVarArgs &&
+                                it.parts.size == 1 &&
+                                it.parts[0].params == null &&
+                                it.parts[0].tail == null &&
+                                it.parts[0].subParams == null
+                        }
+                        .map { (it as Abstraction).parts[0].name.text }
+            }
+        }
+
+        if (rhsNames == null) {
+            return
+        }
+
+        if (lhsNames.size != rhsNames.size) {
+            return
+        }
+
+        val toFromNameMap = mutableMapOf<String, String>()
+        for (i in lhsNames.indices) {
+            toFromNameMap[rhsNames[i]] = lhsNames[i]
+        }
+
+        val fromNameToColonEqualsMap = mutableMapOf<String, ColonEqualsTexTalkNode>()
+
+        fun maybeIdentifyFromNameToColonEquals(clause: Clause) {
+            if (clause is Statement &&
+                clause.texTalkRoot is ValidationSuccess &&
+                clause.texTalkRoot.value.children.size == 1 &&
+                clause.texTalkRoot.value.children[0] is ColonEqualsTexTalkNode) {
+                val colonEqualsNode = clause.texTalkRoot.value.children[0] as ColonEqualsTexTalkNode
+                if (colonEqualsNode.lhs.items.size == 1 &&
+                    colonEqualsNode.lhs.items[0].children.size == 1 &&
+                    colonEqualsNode.lhs.items[0].children[0] is OperatorTexTalkNode) {
+                    val op = colonEqualsNode.lhs.items[0].children[0] as OperatorTexTalkNode
+                    if (op.command is TextTexTalkNode) {
+                        val opName = op.command.text
+                        if (toFromNameMap.containsKey(opName)) {
+                            val fromName = toFromNameMap[opName]!!
+                            fromNameToColonEqualsMap[fromName] = colonEqualsNode
+                        }
+                    }
+                }
+            }
+        }
+
+        for (clause in rhsMatchedDefines.meansSection?.clauses?.clauses ?: emptyList()) {
+            maybeIdentifyFromNameToColonEquals(clause)
+        }
+
+        for (clause in rhsMatchedDefines.evaluatedSection?.clauses?.clauses ?: emptyList()) {
+            maybeIdentifyFromNameToColonEquals(clause)
+        }
+
+        for ((fromName, colonEqualsNode) in fromNameToColonEqualsMap.entries) {
+            val rhs = colonEqualsNode.rhs.items[0]
+            val rhsSig =
+                if (rhs.children.size == 1 && rhs.children[0] is Command) {
+                    (rhs.children[0] as Command).signature()
+                } else if (rhs.children.size == 1 &&
+                    rhs.children[0] is OperatorTexTalkNode &&
+                    (rhs.children[0] as OperatorTexTalkNode).command is Command) {
+                    ((rhs.children[0] as OperatorTexTalkNode).command as Command).signature()
+                } else if (rhs.children.size == 1 &&
+                    rhs.children[0] is OperatorTexTalkNode &&
+                    (rhs.children[0] as OperatorTexTalkNode).command is TextTexTalkNode) {
+                    ((rhs.children[0] as OperatorTexTalkNode).command as TextTexTalkNode).text
+                } else {
+                    null
+                }
+
+            if (rhsSig == null) {
+                continue
+            }
+
+            var rhsDef: DefinesGroup? = null
+            for (grpVal in definesGroups) {
+                if (grpVal.value.original.signature?.form == rhsSig) {
+                    rhsDef = grpVal.value.original
+                    break
+                }
+            }
+
+            if (rhsDef == null) {
+                continue
+            }
+
+            val lhs =
+                colonEqualsNode.lhs.items[0].transform {
+                    if (it is TextTexTalkNode) {
+                        val thisFromName = toFromNameMap[it.text]
+                        if (fromName == thisFromName) {
+                            TextTexTalkNode(
+                                type = TexTalkNodeType.Identifier,
+                                tokenType = TexTalkTokenType.Identifier,
+                                text = fromName,
+                                isVarArg = false)
+                        } else {
+                            it
+                        }
+                    } else {
+                        it
+                    }
+                } as ExpressionTexTalkNode
+            val id = IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+            val syntheticDefines = rhsDef.copy(id = id)
+            aliasDefines.add(syntheticDefines)
+        }
+    }
+
+    private fun attemptAddAliasDefinesForColonEqualsOperator(
+        colonEquals: ColonEqualsTexTalkNode, aliasDefines: MutableList<DefinesGroup>
+    ) {
+        val lhsItems = colonEquals.lhs.items
+        val rhsItems = colonEquals.rhs.items
+        if (lhsItems.size != 1 || rhsItems.size != 1) {
+            println(
+                "The left-hand-side and right-hand-side of a := must have exactly one expression")
+            return
+        }
+
+        // Given the statment: '\f(x) := \g(x)'
+        // then lhs is `\f(x)`
+        // and lhsVars is the set containing only `x`
+        val lhs = lhsItems[0]
+        val lhsVars =
+            getVarsTexTalkNode(
+                texTalkNode = lhs,
+                isInLhsOfColonEqualsIsOrIn = true,
+                groupScope = GroupScope.InNone,
+                isInIdStatement = false,
+                forceIsPlaceholder = false)
+                .toSet()
+                .map { it.name }
+
+        // convert the right hand side from `\g(x)` to `\g(x?)`
+        // to conform to the way "writtenAs" sections are written
+        val rhs =
+            rhsItems[0].transform {
+                if (it is TextTexTalkNode &&
+                    it.type == TexTalkNodeType.Identifier &&
+                    it.tokenType == TexTalkTokenType.Identifier &&
+                    lhsVars.contains(it.text)) {
+                    it.copy(
+                        // use toCode() so ... is printed if the identifier is
+                        // vararg
+                        text = "${it.toCode()}?")
+                } else {
+                    it
+                }
+            } as ExpressionTexTalkNode
+
+        val stmtText = getExpandedText(rhs, aliasDefines)
+        if (stmtText != null) {
+            val id = IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+            val syntheticDefines =
+                DefinesGroup(
+                    signature = id.signature(newLocationTracker()),
+                    id = id,
+                    definesSection = DefinesSection(targets = emptyList()),
+                    givenSection = null,
+                    whenSection = null,
+                    meansSection = MeansSection(clauses = ClauseListNode(clauses = emptyList())),
+                    evaluatedSection = null,
+                    viewingSection = null,
+                    usingSection = null,
+                    writtenSection = WrittenSection(forms = listOf("\"${stmtText}\"")),
+                    calledSection = CalledSection(forms = emptyList()),
+                    metaDataSection = null)
+            aliasDefines.add(syntheticDefines)
+        }
+    }
+
     override fun prettyPrint(
         node: Phase2Node, html: Boolean, literal: Boolean, doExpand: Boolean
     ): String {
@@ -889,107 +1167,12 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
                         val colonEquals =
                             clause.texTalkRoot.value.children.first() as ColonEqualsTexTalkNode
-                        val lhsItems = colonEquals.lhs.items
-                        val rhsItems = colonEquals.rhs.items
-                        if (lhsItems.size != 1 || rhsItems.size != 1) {
-                            println(
-                                "The left-hand-side and right-hand-side of a := must have exactly one expression")
-                            break
-                        }
-
-                        // Given the statment: '\f(x) := \g(x)'
-                        // then lhs is `\f(x)`
-                        // and lhsVars is the set containing only `x`
-                        val lhs = lhsItems[0]
-                        val lhsVars =
-                            getVarsTexTalkNode(
-                                texTalkNode = lhs,
-                                isInLhsOfColonEqualsIsOrIn = true,
-                                groupScope = GroupScope.InNone,
-                                isInIdStatement = false,
-                                forceIsPlaceholder = false)
-                                .toSet()
-                                .map { it.name }
-
-                        // convert the right hand side from `\g(x)` to `\g(x?)`
-                        // to conform to the way "writtenAs" sections are written
-                        val rhs =
-                            rhsItems[0].transform {
-                                if (it is TextTexTalkNode &&
-                                    it.type == TexTalkNodeType.Identifier &&
-                                    it.tokenType == TexTalkTokenType.Identifier &&
-                                    lhsVars.contains(it.text)) {
-                                    it.copy(
-                                        // use toCode() so ... is printed if the identifier is
-                                        // vararg
-                                        text = "${it.toCode()}?")
-                                } else {
-                                    it
-                                }
-                            } as ExpressionTexTalkNode
-
-                        val writer =
-                            getWriter(
-                                html = false,
-                                literal = false,
-                                doExpand = true,
-                                aliasDefines = aliasDefines)
-                        val tmpTheorem =
-                            TheoremGroup(
-                                signature = null,
-                                id = null,
-                                theoremSection = TheoremSection(names = emptyList()),
-                                givenSection = null,
-                                whenSection = null,
-                                thenSection =
-                                    ThenSection(
-                                        clauses =
-                                            ClauseListNode(
-                                                clauses =
-                                                    listOf(
-                                                        Statement(
-                                                            text = rhs.toCode(),
-                                                            texTalkRoot =
-                                                                validationSuccess(rhs))))),
-                                iffSection = null,
-                                proofSection = null,
-                                usingSection = null,
-                                metaDataSection = null)
-                        val expanded = tmpTheorem.toCode(false, 0, writer).getCode()
-                        when (val validation = FrontEnd.parse(expanded)
-                        ) {
-                            is ValidationSuccess -> {
-                                val doc = validation.value
-                                val stmt =
-                                    doc.theorems()[0].thenSection.clauses.clauses[0] as Statement
-                                val id =
-                                    IdStatement(
-                                        text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
-                                val syntheticDefines =
-                                    DefinesGroup(
-                                        signature = id.signature(newLocationTracker()),
-                                        id = id,
-                                        definesSection = DefinesSection(targets = emptyList()),
-                                        givenSection = null,
-                                        whenSection = null,
-                                        meansSection =
-                                            MeansSection(
-                                                clauses = ClauseListNode(clauses = emptyList())),
-                                        evaluatedSection = null,
-                                        viewingSection = null,
-                                        usingSection = null,
-                                        writtenSection =
-                                            WrittenSection(forms = listOf("\"${stmt.text}\"")),
-                                        calledSection = CalledSection(forms = emptyList()),
-                                        metaDataSection = null)
-                                aliasDefines.add(syntheticDefines)
-                            }
-                        }
+                        attemptAddAliasDefinesForColonEqualsOperator(colonEquals, aliasDefines)
+                        attemptAddAliasDefinesForColonEqualsTuple(colonEquals, aliasDefines)
                     }
                 }
             }
         }
-
         return getWriter(html, literal, doExpand, aliasDefines).generateCode(node)
     }
 
@@ -1262,7 +1445,7 @@ private fun getInnerDefinedSignaturesImpl(
     }
 }
 
-private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {
+private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): List<String> {
     return if (node.children.size == 1 &&
         node.children[0] is ColonEqualsTexTalkNode &&
         (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
@@ -1294,13 +1477,14 @@ private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {
                 .command as TextTexTalkNode)
             .tokenType == TexTalkTokenType.Operator) {
         // match -f := ...
-        ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                            0] as GroupTexTalkNode)
-                        .parameters
-                        .items[0]
-                    .children[0] as OperatorTexTalkNode)
-                .command as TextTexTalkNode)
-            .text
+        listOf(
+            ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                                0] as GroupTexTalkNode)
+                            .parameters
+                            .items[0]
+                        .children[0] as OperatorTexTalkNode)
+                    .command as TextTexTalkNode)
+                .text)
     } else if (node.children.isNotEmpty() &&
         node.children[0] is ColonEqualsTexTalkNode &&
         (node.children[0] as ColonEqualsTexTalkNode).lhs.items.isNotEmpty() &&
@@ -1311,22 +1495,36 @@ private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): String? {
                 0] as OperatorTexTalkNode)
             .command is TextTexTalkNode) {
         // match `a + b := ...`
-        (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                    0] as OperatorTexTalkNode)
-                .command as TextTexTalkNode)
-            .text
+        listOf(
+            (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
+                        0] as OperatorTexTalkNode)
+                    .command as TextTexTalkNode)
+                .text)
     } else if (node.children.size == 1 && node.children[0] is ColonEqualsTexTalkNode) {
         val colonEquals = node.children[0] as ColonEqualsTexTalkNode
         val lhs = colonEquals.lhs.items.firstOrNull()
-        if (lhs != null) {
-            IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
-                .signature(newLocationTracker())
-                ?.form
+        if (lhs != null &&
+            lhs.children.size == 1 &&
+            lhs.children[0] is mathlingua.frontend.textalk.TupleNode) {
+            val tuple = lhs.children[0] as mathlingua.frontend.textalk.TupleNode
+            tuple.params.items
+                .filter { it.children.size == 1 && it.children[0] is TextTexTalkNode }
+                .map { (it.children[0] as TextTexTalkNode).text }
+        } else if (lhs != null) {
+            val id =
+                IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+                    .signature(newLocationTracker())
+                    ?.form
+            if (id == null) {
+                emptyList()
+            } else {
+                listOf(id)
+            }
         } else {
-            null
+            emptyList()
         }
     } else {
-        null
+        emptyList()
     }
 }
 
@@ -1378,8 +1576,7 @@ fun getInnerDefinedSignatures(group: TopLevelGroup, tracker: LocationTracker?): 
                 when (val validation = clause.texTalkRoot
                 ) {
                     is ValidationSuccess -> {
-                        val sigForm = getUsingDefinedSignature(validation.value)
-                        if (sigForm != null) {
+                        for (sigForm in getUsingDefinedSignature(validation.value)) {
                             result.add(Signature(form = sigForm, location = location))
                         }
                     }

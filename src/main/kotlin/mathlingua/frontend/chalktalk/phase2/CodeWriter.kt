@@ -586,7 +586,8 @@ open class HtmlCodeWriter(
             id.toStatement()
                 .toCode(false, 0, MathLinguaCodeWriter(emptyList(), emptyList(), emptyList()))
                 .getCode()
-        // < needs to be replaced with &lt; so that operators of the form \x.</ are rendered correctly
+        // < needs to be replaced with &lt; so that operators of the form \x.</ are rendered
+        // correctly
         builder.append(stmt.removeSurrounding("'", "'").replace("<", "&lt;"))
         builder.append(']')
         builder.append("</span>")

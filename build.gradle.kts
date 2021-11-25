@@ -51,21 +51,20 @@ repositories {
 
 dependencies {
     implementation(kotlin("gradle-plugin", version = "1.5.21"))
-    implementation("com.fifesoft:rsyntaxtextarea:3.0.3")
     implementation(kotlin("stdlib", KotlinCompilerVersion.VERSION))
-    implementation("com.github.ajalt:clikt:2.6.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.4.2")
+    implementation("com.github.ajalt:clikt:2.8.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.5.2-native-mt")
     implementation("org.jetbrains:markdown:0.2.4")
     implementation("io.javalin:javalin:3.13.10")
     implementation("org.slf4j:slf4j-nop:1.7.32")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.2.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.12.4")
-    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.19")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.1")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.0")
+    testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
     testImplementation(kotlin("reflect", version = "1.5.0"))
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.5.1")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.1")
     testImplementation("com.tylerthrailkill.helpers:pretty-print:2.0.2")
-    testImplementation("com.beust:klaxon:5.4")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.5.1")
+    testImplementation("com.beust:klaxon:5.5")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.8.1")
 }
 
 tasks {

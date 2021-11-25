@@ -194,13 +194,14 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 this.chalkTalkTokens.add(
                     Phase1Token(name, ChalkTalkTokenType.Name, startLine, startColumn))
             } else if (isNameChar(c) || c == '?') {
-                // a name can be of the form
+                // a name token can be of the form
                 //   ?
                 //   name
                 //   name?
                 //   name...
                 //   name#123
                 //   name...#other...
+                // where name is either <text> or <text>_<text>
                 val startLine = line
                 val startColumn = column
                 var name = "" + c
@@ -230,6 +231,20 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                             name += text[i++]
                             column++
                         }
+                    }
+                }
+
+                // check if the name is of the form text_text
+                if (i < text.length &&
+                    text[i] == '_' &&
+                    i + 1 < text.length &&
+                    isNameChar(text[i + 1])) {
+                    name += text[i++]
+                    column++
+
+                    while (i < text.length && isNameChar(text[i])) {
+                        name += text[i++]
+                        column++
                     }
                 }
 

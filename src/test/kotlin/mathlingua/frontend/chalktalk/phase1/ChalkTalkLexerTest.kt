@@ -27,7 +27,7 @@ import org.junit.jupiter.api.Test
 internal class ChalkTalkLexerTest {
     @Test
     fun `correctly identifies names`() {
-        val text = "name1 name2... name3#123 name4...#name5..."
+        val text = "name1 name2... name3#123 name4...#name5... X_1 abc123_xyz5"
         val lexer = newChalkTalkLexer(text)
         val actual: MutableList<Phase1Token> = ArrayList()
         while (lexer.hasNext()) {
@@ -45,6 +45,9 @@ internal class ChalkTalkLexerTest {
                     type = ChalkTalkTokenType.Name,
                     row = 0,
                     column = 25),
+                Phase1Token(text = "X_1", type = ChalkTalkTokenType.Name, row = 0, column = 43),
+                Phase1Token(
+                    text = "abc123_xyz5", type = ChalkTalkTokenType.Name, row = 0, column = 47),
                 Phase1Token(
                     text = "<Indent>", type = ChalkTalkTokenType.Begin, row = 1, column = 0),
                 Phase1Token(

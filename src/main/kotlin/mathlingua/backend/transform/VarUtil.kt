@@ -120,18 +120,9 @@ private fun getVarsImplPhase1Node(
     node: Phase1Node, vars: MutableList<Var>, isInPlaceholderScope: Boolean
 ) {
     if (node is Phase1Token) {
-        val index = node.text.indexOf('_')
-        if (index >= 0) {
-            // If a Phase1Node is of the form `x_i` then record `x` as a variable name
-            // This will occur if a Defines: has a target of the form {x_i}_i
-            vars.add(
-                Var(name = node.text.substring(0, index), isPlaceholder = isInPlaceholderScope))
-        } else {
-            // If the variable is variadic, store the non-variadic version of the name.
-            // That is if it is `x...` store `x`.
-            vars.add(
-                Var(name = node.text.removeSuffix("..."), isPlaceholder = isInPlaceholderScope))
-        }
+        // If the variable is variadic, store the non-variadic version of the name.
+        // That is if it is `x...` store `x`.
+        vars.add(Var(name = node.text.removeSuffix("..."), isPlaceholder = isInPlaceholderScope))
     } else if (node is AbstractionPart) {
         getVarsImplPhase1Node(node.name, vars, isInPlaceholderScope = false)
         if (node.params != null) {

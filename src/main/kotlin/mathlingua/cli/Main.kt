@@ -228,7 +228,7 @@ fun main(args: Array<String>) {
         // handle the case when a port is already in use as an error that doesn't
         // cause the stack trace to be displayed
         if (e.message != null && (e.message!!).contains("Port already in use")) {
-            println(e.message)
+            println("${red(bold("ERROR:"))} ${e.message}")
         } else {
             throw e
         }

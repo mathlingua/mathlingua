@@ -65,16 +65,6 @@ import mathlingua.md5Hash
 
 const val MATHLINGUA_VERSION = "0.12.0"
 
-private fun bold(text: String) = "\u001B[1m$text\u001B[0m"
-
-@Suppress("SAME_PARAMETER_VALUE")
-private fun green(text: String) = "\u001B[32m$text\u001B[0m"
-
-private fun red(text: String) = "\u001B[31m$text\u001B[0m"
-
-@Suppress("UNUSED")
-private fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
-
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {
         val sourceCollection =

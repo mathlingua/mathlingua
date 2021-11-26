@@ -117,7 +117,7 @@ data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem(
         transformer(
             Assignment(
                 lhs = lhs.transform(transformer) as Phase1Token,
-                rhs = rhs.transform(transformer) as Phase1Token))
+                rhs = rhs.transform(transformer) as AssignmentRhs))
 }
 
 // ------------------------------------------------------------------------------------------------------------------ //

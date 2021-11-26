@@ -25,6 +25,7 @@ import mathlingua.backend.transform.expandAsWritten
 import mathlingua.backend.transform.findAllStatementSignatures
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -555,7 +556,16 @@ open class HtmlCodeWriter(
     override fun writePhase1Node(phase1Node: Phase1Node) {
         if (shouldExpand()) {
             builder.append("<span class='mathlingua-argument'>")
-            val code = prettyPrintIdentifier(phase1Node.toCode())
+            val code =
+                phase1Node
+                    .transform {
+                        if (it is Phase1Token) {
+                            it.copy(text = prettyPrintIdentifier(it.text))
+                        } else {
+                            it
+                        }
+                    }
+                    .toCode()
             builder.append(
                 "$$$${code
                     .replace("{", "\\{")
@@ -1174,7 +1184,7 @@ internal fun prettyPrintIdentifier(text: String): String {
                 groups[1]
             }
         val number = groups[2]
-        "${name}_$number"
+        "${name}_{$number}"
     } else {
         if (isGreekLetter(text)) {
             "\\$text"

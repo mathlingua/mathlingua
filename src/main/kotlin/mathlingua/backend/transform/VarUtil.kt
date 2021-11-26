@@ -53,7 +53,6 @@ import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.GroupTexTalkNode
 import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
-import mathlingua.frontend.textalk.MappingNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.ParametersTexTalkNode
 import mathlingua.frontend.textalk.SequenceNode
@@ -455,6 +454,8 @@ private fun checkVarsImplPhase2Node(
                 node = whenSection, vars = vars, tracker = tracker, errors = errors))
     }
 
+    // verify the `using:` section clauses are of the correct form and add the left-hand-side
+    // symbols to the known symbols in `vars`
     if (node is HasUsingSection && node.usingSection != null) {
         for (clause in node.usingSection!!.clauses.clauses) {
             val clauseLocation = tracker.getLocationOf(clause) ?: Location(-1, -1)
@@ -467,8 +468,20 @@ private fun checkVarsImplPhase2Node(
                 continue
             }
 
-            val statement = clause
-            val validation = statement.texTalkRoot
+            val lhsVars = getLeftHandSideVars(clause)
+            for (v in lhsVars) {
+                if (vars.hasConflict(v)) {
+                    errors.add(
+                        ParseError(
+                            message = "Duplicate defined symbol '${v.name}' in `using:`",
+                            row = clauseLocation.row,
+                            column = clauseLocation.column))
+                }
+                vars.add(v)
+                varsToRemove.add(v)
+            }
+
+            val validation = clause.texTalkRoot
             if (validation is ValidationSuccess) {
                 val root = validation.value
                 if (root.children.size != 1 || root.children[0] !is ColonEqualsTexTalkNode) {
@@ -479,61 +492,6 @@ private fun checkVarsImplPhase2Node(
                             row = clauseLocation.row,
                             column = clauseLocation.column))
                     continue
-                }
-
-                val colonEquals = root.children[0] as ColonEqualsTexTalkNode
-                val params = colonEquals.lhs
-                if (params.items.size != 1) {
-                    errors.add(
-                        ParseError(
-                            message =
-                                "The left-hand side of an operator must have exactly one argument",
-                            row = clauseLocation.row,
-                            column = clauseLocation.column))
-                } else {
-                    val exp = params.items[0]
-                    if (exp.children.isNotEmpty()) {
-                        val child = exp.children[0]
-                        if (child is MappingNode) {
-                            // handle forms of the type `f(x) := ...`
-                            val v = Var(name = child.name.text, isPlaceholder = false)
-                            vars.add(v)
-                            varsToRemove.add(v)
-                        } else if (child is OperatorTexTalkNode) {
-                            if (child.command is TextTexTalkNode) {
-                                val cmd = child.command.text
-                                val v = Var(name = cmd, isPlaceholder = true)
-                                vars.add(v)
-                                varsToRemove.add(v)
-                            }
-
-                            if (child.lhs != null && child.lhs is TextTexTalkNode) {
-                                val v = Var(name = child.lhs.text, isPlaceholder = true)
-                                vars.add(v)
-                                varsToRemove.add(v)
-                            }
-
-                            if (child.rhs != null && child.rhs is TextTexTalkNode) {
-                                val v = Var(name = child.rhs.text, isPlaceholder = true)
-                                vars.add(v)
-                                varsToRemove.add(v)
-                            }
-                        } else if (child is GroupTexTalkNode &&
-                            child.parameters.items.isNotEmpty() &&
-                            child.parameters.items[0].children.isNotEmpty() &&
-                            child.parameters.items[0].children[0] is TextTexTalkNode) {
-                            val text =
-                                (child.parameters.items[0].children[0] as TextTexTalkNode).text
-                            val v = Var(name = text, isPlaceholder = true)
-                            vars.add(v)
-                            varsToRemove.add(v)
-                        } else if (child is TextTexTalkNode) {
-                            val name = child.text
-                            val v = Var(name = name, isPlaceholder = true)
-                            vars.add(v)
-                            varsToRemove.add(v)
-                        }
-                    }
                 }
             }
         }
@@ -608,104 +566,9 @@ private fun checkVarsImplPhase2Node(
         }
     }
 
-    if (node is HasUsingSection && node.usingSection != null) {
-        // a `using:` section cannot reference other symbols
-        // defined in a group.  However, if `x := y`, for
-        // example, is defined in a statement, then the
-        // statements in the `using:` section after `x := y`
-        // can reference the symbol `x`.
-        val usingVars = VarMultiSet()
-        if (node is DefinesGroup) {
-            usingVars.addAll(getVarsPhase2Node(node.id))
-            for (target in node.definesSection.targets) {
-                usingVars.addAll(getVarsPhase2Node(target))
-            }
-            if (node.givenSection != null) {
-                for (target in node.givenSection.targets) {
-                    usingVars.addAll(getVarsPhase2Node(target))
-                }
-            }
-            if (node.whenSection != null) {
-                usingVars.addAll(getVarsIntroducedInWhenSection(node.whenSection))
-            }
-        } else if (node is StatesGroup) {
-            usingVars.addAll(getVarsPhase2Node(node.id))
-            if (node.givenSection != null) {
-                for (target in node.givenSection.targets) {
-                    usingVars.addAll(getVarsPhase2Node(target))
-                }
-            }
-            if (node.whenSection != null) {
-                usingVars.addAll(getVarsIntroducedInWhenSection(node.whenSection))
-            }
-        } else if (node is TheoremGroup) {
-            if (node.givenSection != null) {
-                for (target in node.givenSection.targets) {
-                    usingVars.addAll(getVarsPhase2Node(target))
-                }
-            }
-        } else if (node is ConjectureGroup) {
-            if (node.givenSection != null) {
-                for (target in node.givenSection.targets) {
-                    usingVars.addAll(getVarsPhase2Node(target))
-                }
-            }
-        } else if (node is AxiomGroup) {
-            if (node.givenSection != null) {
-                for (target in node.givenSection.targets) {
-                    usingVars.addAll(getVarsPhase2Node(target))
-                }
-            }
-        }
-
-        for (clause in node.usingSection!!.clauses.clauses) {
-            if (clause is Statement &&
-                clause.texTalkRoot is ValidationSuccess &&
-                clause.texTalkRoot.value.children.size == 1 &&
-                clause.texTalkRoot.value.children[0] is ColonEqualsTexTalkNode) {
-                val colonEquals = clause.texTalkRoot.value.children[0] as ColonEqualsTexTalkNode
-                val thisValidVars = usingVars.copy()
-                for (v in
-                    getVarsTexTalkNode(
-                        texTalkNode = colonEquals.lhs,
-                        isInLhsOfColonEqualsIsOrIn = true,
-                        groupScope = GroupScope.InNone,
-                        isInIdStatement = false,
-                        forceIsPlaceholder = false)) {
-                    thisValidVars.add(v)
-                    if (!v.isPlaceholder) {
-                        usingVars.add(v)
-                    }
-                }
-                val clauseLocation = tracker.getLocationOf(clause) ?: Location(-1, -1)
-                for (v in
-                    checkVarsImplTexTalkNode(
-                        topLevel = topLevel,
-                        texTalkNode = colonEquals.rhs,
-                        location = clauseLocation,
-                        vars = thisValidVars,
-                        errors = errors,
-                        isInLhsOfColonEqualsIsOrIn = false,
-                        groupScope = GroupScope.InNone)) {
-                    usingVars.add(v)
-                }
-            } else {
-                for (v in checkVarsImplPhase2Node(topLevel, clause, usingVars, tracker, errors)) {
-                    usingVars.add(v)
-                }
-            }
-        }
-
-        node.forEach {
-            for (v in checkVarsImplPhase2Node(topLevel, it, usingVars, tracker, errors)) {
-                usingVars.add(v)
-            }
-        }
-    } else {
-        node.forEach { checkVarsImplPhase2Node(topLevel, it, vars, tracker, errors) }
-        for (v in varsToRemove.toList()) {
-            vars.remove(v)
-        }
+    node.forEach { checkVarsImplPhase2Node(topLevel, it, vars, tracker, errors) }
+    for (v in varsToRemove.toList()) {
+        vars.remove(v)
     }
 
     return varsToRemove.toList()

@@ -50,12 +50,12 @@ const BASE_COMPLETIONS: Completion[] = [
   {
     name: 'Defines:',
     value:
-      'Defines:\nrequiring?:\nwhen?:\nmeans:\nevaluated?:\nviewing?:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+      'Defines:\ngiven?:\nwhen?:\nmeans:\nevaluated?:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:',
   },
   {
     name: 'States',
     value:
-      'States:\nrequiring?:\nwhen?:\nthat:\nusing?:\nwritten:\ncalled:\nMetadata?:',
+      'States:\ngiven?:\nwhen?:\nthat:\nusing?:\nwritten:\ncalled?:\nMetadata?:',
   },
   { name: 'equality', value: 'equality:\nbetween:\nprovided:' },
   { name: 'membership', value: 'membership:\nthrough:' },

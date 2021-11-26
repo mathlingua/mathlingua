@@ -186,7 +186,7 @@ evaluated:
 . 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
 . 'm_{i} := \infimum:of{f}:over{P}:at{i}'
-. 'a * b := a \real.*/ b'
+. 'p * q := p \real.*/ q'
 written: "L(f?, P?)"
 called: "lower Dorboux sum of $f?$ over $P?$"
 
@@ -209,7 +209,7 @@ evaluated:
 . 'S := \finite.sum[i]_{0}^{n}{M_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
 . 'M_{i} := \supremum:of{f}:over{P}:at{i}'
-. 'a * b := a \real.*/ b'
+. 'p * q := p \real.*/ q'
 written: "U(L?, P?)"
 called: "upper Darboux sum of $f?$ over $P?$"
 
@@ -235,7 +235,7 @@ evaluated:
 . 'S := \supremum:of{\set[P, n]:where{L(f, P)}
                                :suchThat{P is \partition:of{I}:size{n}}}'
 using:
-. 'L(f, P) := \lower.darboux.sum:of{f}:over{P}'
+. 'L(g, P) := \lower.darboux.sum:of{g}:over{P}'
 written: "\underline{\displaystyle \int_{a?}^{b?}} f?"
 called: "Lower Darboux Integral of $f?$ on $[a?, b?]$"
 
@@ -250,7 +250,7 @@ evaluated:
 . 'S := \infimum:of{\set[P, n]:where{U(f, P)}
                               :suchThat{P is \partition:of{I}:size{n}}}'
 using:
-. 'U(f, P) := \upper.darboux.sum:of{f}:over{P}'
+. 'U(g, P) := \upper.darboux.sum:of{g}:over{P}'
 written: "\overline{\displaystyle \int_{a?}^{b?}} f?"
 called: "Upper Darboux Integral of $f?$ on $[a?, b?]$"
 

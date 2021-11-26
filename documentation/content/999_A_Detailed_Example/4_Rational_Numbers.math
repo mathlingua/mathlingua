@@ -184,10 +184,15 @@ when:
 . 'y := \Rational{p2, q2}'
 means:
 . 'z := \Rational{p1 * p2, q1 * q2}'
+. 'A = 0'
+. 'f(x) = 0'
 using:
+. 'A := 0'
+. 'f(x) := 0'
 . 'a * b := a \integers.*/ b'
 written: "x?? y??"
 called: "rational multiplication"
+
 
 
 ::

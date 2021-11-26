@@ -579,7 +579,7 @@ when:
 then:
 . '\inv((x * y)) = \inv(y) * \inv(x)'
 using:
-. '\inv(x) := \group{G}.inverse:of{x}'
+. '\inv(a) := \group{G}.inverse:of{a}'
 Proof:
 . "
 First, let $z \in G$ and suppose $a, b \in G$ are inverses of $z$.

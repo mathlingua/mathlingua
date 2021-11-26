@@ -21,7 +21,7 @@ means:
 . 'L := \function.limit[x]_{c}{
     \real.frac{f(x) - f(c)}{x - c}}'
 using:
-. 'a - b := a \real.-/ b'
+. 'x - y := x \real.-/ y'
 written:
 . "f?'(c?)"
 . "\frac{d}{d x?} f?(x?) |_{x? = c?}"

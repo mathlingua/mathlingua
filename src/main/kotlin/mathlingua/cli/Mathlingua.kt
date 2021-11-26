@@ -636,9 +636,7 @@ private fun exportFile(
             contentBuilder.append(element.first)
             contentBuilder.append("</div>")
         } else {
-            contentBuilder.append("<div class='mathlingua-top-level'>")
             contentBuilder.append(element.first)
-            contentBuilder.append("</div>")
         }
     }
 
@@ -936,8 +934,7 @@ private fun getUnifiedRenderedTopLevelElements(
             val literal = element.rawFormHtml
             val id = getRandomUuid()
             val html =
-                "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">" +
-                    "&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded}</div>" +
+                "<div><button class='mathlingua-flip-icon' onclick=\"flipEntity('$id')\">&#8226;</button><div id='rendered-$id' class='mathlingua-rendered-visible'>${expanded}</div>" +
                     "<div id='literal-$id' class='mathlingua-literal-hidden'>${literal}</div></div>"
             codeElements.add(Pair(html, node))
         }
@@ -1349,7 +1346,7 @@ const val SHARED_CSS =
     }
 
     body {
-        background-color: #dddddd;
+        background-color: #f0f0f3;
         padding-bottom: 1em;
     }
 
@@ -1368,14 +1365,15 @@ const val SHARED_CSS =
     }
 
     .mathlingua-flip-icon {
-        position: relative;
-        top: 0;
+        position: sticky;
+        top: 1em;
         left: 100%;
         border: none;
         color: #aaaaaa;
         background: #ffffff;
         margin: 0;
         padding: 0;
+        padding-right: 2em;
         font-size: 110%;
     }
 
@@ -1437,10 +1435,10 @@ const val SHARED_CSS =
         border: solid;
         border-width: 1px;
         border-radius: 2px;
-        padding-top: 0;
+        padding-top: 2em;
         padding-bottom: 1em;
-        padding-left: 1.1em;
-        padding-right: 1.1em;
+        padding-left: 2em;
+        padding-right: 2em;
         max-width: 75%;
         width: max-content;
         margin-left: auto; /* for centering content */
@@ -1697,7 +1695,7 @@ const val SHARED_CSS =
         display: table;
         margin-top: -1em;
         margin-left: auto;
-        margin-bottom: -1ex;
+        margin-bottom: -2em;
         margin-right: auto;
     }
 

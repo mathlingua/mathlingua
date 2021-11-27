@@ -63,7 +63,7 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.getRandomUuid
 import mathlingua.md5Hash
 
-const val MATHLINGUA_VERSION = "0.12.0"
+const val MATHLINGUA_VERSION = "0.13.0"
 
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {

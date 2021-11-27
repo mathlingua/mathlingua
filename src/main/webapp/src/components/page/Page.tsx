@@ -25,62 +25,18 @@ import { DebouncedFunc } from 'lodash';
 import { errorResultsUpdated } from '../../store/errorResultsSlice';
 import { AppDispatch } from '../../store/store';
 
+let BASE_COMPLETIONS: api.CompletionItem[] = [];
+if (!api.isStatic()) {
+  // the static version of the site doesn't allow editing and doesn't have a backend running
+  api.getCompletions().then(completions => { BASE_COMPLETIONS = completions.items }).catch(console.error);
+}
+
 interface Annotation {
   row: number;
   column: number;
   text: string;
   type: 'error';
 }
-
-interface Completion {
-  name: string;
-  value: string;
-}
-
-const BASE_COMPLETIONS: Completion[] = [
-  { name: 'and', value: 'and:' },
-  { name: 'exists', value: 'exists:\nsuchThat:' },
-  { name: 'existsUnique', value: 'existsUnique:\nsuchThat:' },
-  { name: 'forAll', value: 'forAll:\nsuchThat?:\nthen:' },
-  { name: 'if', value: 'if:\nthen:' },
-  { name: 'iff', value: 'iff:\nthen:' },
-  { name: 'not', value: 'not:' },
-  { name: 'or', value: 'or:' },
-  { name: 'piecewise', value: 'piecewise:' },
-  {
-    name: 'Defines:',
-    value:
-      'Defines:\ngiven?:\nwhen?:\nmeans:\nevaluated?:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:',
-  },
-  {
-    name: 'States',
-    value:
-      'States:\ngiven?:\nwhen?:\nthat:\nusing?:\nwritten:\ncalled?:\nMetadata?:',
-  },
-  { name: 'equality', value: 'equality:\nbetween:\nprovided:' },
-  { name: 'membership', value: 'membership:\nthrough:' },
-  { name: 'as', value: 'as:\nvia:\nby?:' },
-  {
-    name: 'Resource',
-    value:
-      'Resource:\n. type?: ""\n. name?: ""\n. author?: ""\n. homepage?: ""\n. url?: ""\n. offset?: ""\nMetadata?:',
-  },
-  {
-    name: 'Axiom',
-    value: 'Axiom:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
-  },
-  {
-    name: 'Conjecture',
-    value: 'Conjecture:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:',
-  },
-  {
-    name: 'Theorem',
-    value:
-      'Theorem:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nProof?:\nMetadata?:',
-  },
-  { name: 'Topic', value: 'Topic:\ncontent:\nMetadata?:' },
-  { name: 'Note', value: 'Note:\ncontent:\nMetadata?:' },
-];
 
 export interface PageProps {
   viewedPath: string;

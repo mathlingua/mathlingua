@@ -454,6 +454,7 @@ object Mathlingua {
                 // want to.
                 exitProcess(0)
             }
+            .get("/api/completions") { ctx -> ctx.json(COMPLETIONS) }
             .get("/api/*") { ctx -> ctx.status(400) }
 
         if (onStart != null) {
@@ -465,6 +466,10 @@ object Mathlingua {
         logger.log(
             Json.encodeToString(
                 decompose(fs = fs, sourceCollection = buildSourceCollection(fs), mlgFiles = null)))
+    }
+
+    fun completionJson(logger: Logger) {
+        logger.log(Json.encodeToString(COMPLETIONS))
     }
 }
 
@@ -1753,3 +1758,53 @@ fun buildStandaloneHtml(content: String) =
         </div>
     </body>
 """
+
+@Serializable data class CompletionItem(val name: String, val value: String)
+
+@Serializable data class Completions(val items: List<CompletionItem>)
+
+private val COMPLETIONS =
+    Completions(
+        items =
+            listOf(
+                CompletionItem(name = "and", value = "and:"),
+                CompletionItem(name = "exists", value = "exists:\nsuchThat:"),
+                CompletionItem(name = "existsUnique", value = "existsUnique:\nsuchThat:"),
+                CompletionItem(name = "forAll", value = "forAll:\nsuchThat?:\nthen:"),
+                CompletionItem(name = "if", value = "if:\nthen:"),
+                CompletionItem(name = "iff", value = "iff:\nthen:"),
+                CompletionItem(name = "not", value = "not:"),
+                CompletionItem(name = "or", value = "or:"),
+                CompletionItem(name = "piecewise", value = "piecewise:"),
+                CompletionItem(
+                    name = "Defines:",
+                    value =
+                        "Defines:\ngiven?:\nwhen?:\nmeans:\nevaluated?:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
+                ),
+                CompletionItem(
+                    name = "States",
+                    value =
+                        "States:\ngiven?:\nwhen?:\nthat:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
+                ),
+                CompletionItem(name = "equality", value = "equality:\nbetween:\nprovided:"),
+                CompletionItem(name = "membership", value = "membership:\nthrough:"),
+                CompletionItem(name = "as", value = "as:\nvia:\nby?:"),
+                CompletionItem(
+                    name = "Resource",
+                    value =
+                        "Resource:\n. type? = \"\"\n. name? = \"\"\n. author? = \"\"\n. homepage? = \"\"\n. url? = \"\"\n. offset? = \"\"\nMetadata?:",
+                ),
+                CompletionItem(
+                    name = "Axiom",
+                    value = "Axiom:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:",
+                ),
+                CompletionItem(
+                    name = "Conjecture",
+                    value = "Conjecture:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:",
+                ),
+                CompletionItem(
+                    name = "Theorem",
+                    value = "Theorem:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nProof?:\nMetadata?:",
+                ),
+                CompletionItem(name = "Topic", value = "Topic:\ncontent:\nMetadata?:"),
+                CompletionItem(name = "Note", value = "Note:\ncontent:\nMetadata?:")))

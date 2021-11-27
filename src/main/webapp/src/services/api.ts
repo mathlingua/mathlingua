@@ -53,6 +53,15 @@ export interface GitHubUrlResponse {
   url?: string;
 }
 
+export interface CompletionItem {
+  name: string;
+  value: string;
+}
+
+export interface Completions {
+  items: CompletionItem[];
+}
+
 interface ApiClient {
   getAllPaths(): Promise<string[]>;
   getFileResult(path: string): Promise<FileResult | undefined>;
@@ -401,5 +410,15 @@ export async function getSignatureSuffixes(prefix: string): Promise<string[]> {
   } catch (error: any) {
     notifyOfError(error.message);
     return [];
+  }
+}
+
+export async function getCompletions(): Promise<Completions> {
+  try {
+    const res = await axios.get('/api/completions');
+    return res.data;
+  } catch (error: any) {
+    notifyOfError(error.message);
+    return { items: [] };
   }
 }

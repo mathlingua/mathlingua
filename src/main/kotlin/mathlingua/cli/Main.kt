@@ -136,7 +136,11 @@ var helpText = ""
 class Help : CliktCommand(help = "Show this message and exit") {
     override fun run() {
         val logger = TermUiLogger(termUi = TermUi)
-        logger.log(helpText)
+        if (System.getProperty("__MATHLINGUA_SHOW_COMPLETIONS__") == "true") {
+            Mathlingua.completionJson(logger)
+        } else {
+            logger.log(helpText)
+        }
         exitProcess(0)
     }
 }

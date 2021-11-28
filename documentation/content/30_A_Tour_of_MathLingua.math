@@ -1,25 +1,26 @@
 ::
 # A Tour of MathLingua
 
-Now we will build our first collection of mathematical
-knowledge to illustrate how
-MathLingua can be used.  Suppose you are just learning
+Suppose you are just learning
 group theory or have just rediscovered it and would like
 to keep track of what you have learned.
 
-In particular, you want to capture the definitions,
-you are using, the defintions and theorems you have
-learned.
+In particular, you want to capture the defintions and
+theorems you have learned.
 
 Further you want to make sure no definition or theorem
 is referencing a definition that you haven`\'`t described
 or is using a symbol that is ambiguous.
 
+In this section, we`\'`ll build such a collection of
+knowledge from scratch to illustrate how MathLingua can
+be used.
+
 ## Text Blocks
 
-Before continuing, this document itself is written with
+Before continuing, this document itself is written in
 MathLingua, and text blocks like this paragraph are
-written with text blocks that begin with `{::}` and end
+written with *text blocks* that begin with `{::}` and end
 with `{::}` (where `{{::}}` is used to write the literal
 text `{::}`) as shown below:
 
@@ -28,7 +29,7 @@ text `{::}`) as shown below:
 Before continuing, this document
 itself is written with MathLingua,
 and text blocks like this paragraph
-are written with text blocks that begin
+are written with *text blocks* that begin
 with `{{::}}` and end with `{{::}}`
 (where `{{{::}}}` is used to write the
 literal text `{{::}}`) as shown below:
@@ -43,9 +44,8 @@ we first need to describe what those are.
 For a set, we don`\'`t need to go into detail about all of
 the axioms a set must have.  We want to focus on group
 theory and so informally thinking about a set as a
-collection of things is enough.
-
-The following code makes such a definition:
+collection of things is enough.  As such, we define a
+set as follows:
 
 ```math
 [\set]
@@ -77,7 +77,7 @@ a representative from that collection.
 
 As a comparison, besides the form `X := {x}`,
 the form `f(x)` is used for function like objects,
-`{x_i}_i` is used for sequence-like objects, and
+`{x_{i}}_{i}` is used for sequence-like objects, and
 `(X, Y, *)` for tuples.
 
 Further, we use text in double quotes in the `means:`
@@ -141,7 +141,7 @@ of the set `B` and we specify that the command
 `\function:on{A}:to{B}` describes a function.
 
 Notice that the command `\function:on{A}:to{B}`
-reads similar to how describes a function when speaking.
+reads similar to how one describes a function when speaking.
 
 Commands for definitions start with a `\` and
 the `:on{A}:to{B}` part of the command allows one to
@@ -151,14 +151,17 @@ specify named arguments.
 `\function{A, B}` describes a function, but using named
 arguments makes the command easier to remember and read.
 
-Additionally, right now we are just talking about a function, but
-if we wanted to define a real-valued function, for example,
-in a new definition, we could state that the command
+Additionally, right now we are just talking about a function,
+but, in the future, if we wanted to define a real-valued
+function, for example, we could state that the command
 `\real.function:on{A}:to{B}` specifies a real-valued function.
 
 It is common to use the `\adjective.noun:namedArguments`
-pattern for command names since it is similar to how mathematical
-objects are typically described when speaking.
+pattern for command names since it is similar to how
+mathematical objects are typically described when speaking.
+
+However this is not a hard requirement, and you can use
+whatever name format that makes the most sense for you.
 
 Next, the symbol `is` is a keyword in MathLingua, it specifies
 how the symbol on the left of the `is` is defined.  In
@@ -180,9 +183,9 @@ on paper to specify that something is a function.  Here
 we use the notation $f : A \rightarrow B$.
 
 The `called:` section, on the other hand, has text that
-is written using Markdown and describes what is spoken
-when reading $f : A \rightarrow B$, which, in this case,
-is "$f$ is a continuous function on $A$ to $B$".
+is written using CommonMark Markdown and describes what is
+spoken when reading $f : A \rightarrow B$, which, in this
+case, is "$f$ is a continuous function on $A$ to $B$".
 
 Also notice that we included the optional
 `Metadata:overview:` section that has text that is written
@@ -191,7 +194,7 @@ you would like to add.  In this case, we call out that a
 function maps an input to a *unique* output.
 
 Last, an indent based syntax is used to describe the structure
-of the definition with statements (such as `A, B is \set`)
+of the definition with expressions (such as `A, B is \set`)
 included in single quotes.
 
 Now we can describe what a cartesian product of two sets
@@ -221,13 +224,13 @@ written: "A?? \times B??"
 called: "cartesian product of $A?$ and $B?$"
 
 ::
-Similar to the definition of a set, the cartesian product
-between two sets $A$ and $B$ is a collection of pairs
+Similar to the definition of a set, the Cartesian product
+between two sets, $A$ and $B$, is a collection of pairs
 $X : = {x,y}$ where the first element is from $A$ and the second
 is from $B$.
 
 Here we use the notation `\xxx/` that is used to define an
-infix operator.  We could have also used the prefix command
+infix command.  We could have also used the prefix command
 format like above, for example `\set.product:of{A}:and{B}`, but
 in this case, infix notation is more clear.
 
@@ -469,7 +472,7 @@ Now that we have the definition of a group, we can describe a
 theorem that will refer to the inverse of an element in a
 group.
 
-Now we`\'`ll define what the inverse of an element is:
+Before doing so we`\'`ll define what the inverse of an element is:
 
 ```math
 [\group{G}.inverse:of{x}]
@@ -681,8 +684,8 @@ The last construct we want to cover is the `State:` construct that
 is used to describe a statement such as what it means for a set
 to be a subset of another set.
 
-That is, a `State:` doesn`\'`t describe an object, but a relationship
-between objects.
+That is, a `State:` doesn`\'`t describe a mathematical object, but a
+relationship between objects.
 
 As an example, the following describes what it means for a set $A$
 to be a subset of a set $B$.

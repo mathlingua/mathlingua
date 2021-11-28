@@ -11,8 +11,23 @@ mlg-<version>-darwin-amd64
 ```
 
 Next, save that executable file to the directory where
-you want to write your MathLingua documents.
+you want to write your MathLingua documents.  You can rename
+the executable to `mlg` (or `mlg.exe` on Windows ) to make it
+easier to use.
 
-**Note:** You can rename the executable to `mlg` (or
-`mlg.exe` on Windows ) to make it easier to use.
+## MacOS Usage
+
+On MacOS, running the `mlg` command may cause a popup window
+to appear stating that the app cannot be verified or, when
+running `mlg` in the command prompt, it will be immediately
+closed with a message saying it was `killed`.
+
+This occurs because `mlg` is not notorized by Apple.  To use
+`mlg` follow the "If you want to open an app that hasn`\'`t
+been notarized or is from an unidentified developer" section in
+[Safely open apps on your Mac](https://support.apple.com/en-us/HT202491).
+
+If you want to inspect `mlg` before using it, the full source
+code for it and the MathLingua language is open source and can
+be found on [GitHub](https://github.com/DominicKramer/mathlingua).
 ::

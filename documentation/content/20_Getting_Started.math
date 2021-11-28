@@ -5,11 +5,15 @@ After installing the MathLingua command line tool, `mlg`,
 in the directory where you want to write your MathLingua
 documents, open a command prompt in that directory.
 
-Then to get started creating MathLingua documents, simply run
+## Starting from Scratch
+
+To get started creating MathLingua documents from scratch,
+simply run
 ```
 ./mlg edit
 ```
-from the command line.
+from the command line in the directory where you saved the
+`mlg` tool.
 
 After running that command, the URL
 [http://localhost:8080](http://localhost:8080)
@@ -55,6 +59,15 @@ automatically updated.
 
 However, to read the document you just wrote in non-edit mode,
 click on the eye icon in the top right corner of the page.
+
+## Starting from Math Codex
+
+Starting from scratch requires that you write all of the
+definitions and mathematical concepts you will be using.
+
+To start with a common library of mathematical concepts already
+available to you, follow the instructs at the
+[codex](https://github.com/DominicKramer/codex) GitHub repo.
 
 ## Next Steps
 

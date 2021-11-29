@@ -1,6 +1,15 @@
 ::
 # Installing MathLingua
 
+To author MathLingua documents, you will need to install the
+MathLingua command line tool `mlg` as well as a Java Runtime
+Environment version 8 or higher.  Mac OS, Linux, and Windows
+platforms are all supported.
+
+See the [Java documentation](https://www.oracle.com/java/technologies/downloads/)
+for instructions on how to install a Java Runtime Environment
+on your system.
+
 To install the MathLingua command line tool `mlg`, simply
 download the latest release for your particular computer
 from the MathLingua [releases page](https://github.com/DominicKramer/mathlingua/releases).
@@ -12,7 +21,7 @@ mlg-<version>-darwin-amd64
 
 Next, save that executable file to the directory where
 you want to write your MathLingua documents.  You can rename
-the executable to `mlg` (or `mlg.exe` on Windows ) to make it
+the executable to `mlg` (or `mlg.exe` on Windows) to make it
 easier to use.
 
 ## MacOS Usage

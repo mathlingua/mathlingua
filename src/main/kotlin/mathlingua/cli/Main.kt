@@ -94,14 +94,12 @@ private class Edit :
             try {
                 val osName = System.getProperty("os.name").lowercase()
                 if (osName.contains("win")) {
-                    ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", url)
-                } else
-                    if (osName.contains("mac")) {
-                            ProcessBuilder("open", url)
-                        } else {
-                            ProcessBuilder("xdg-open", url)
-                        }
-                        .start()
+                    ProcessBuilder("rundll32", "url.dll,FileProtocolHandler", url).start()
+                } else if (osName.contains("mac")) {
+                    ProcessBuilder("open", url).start()
+                } else {
+                    ProcessBuilder("xdg-open", url).start()
+                }
             } catch (e: Exception) {
                 logger.error("Failed to automatically open $url")
                 if (e.message != null) {

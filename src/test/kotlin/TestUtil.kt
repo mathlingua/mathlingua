@@ -70,7 +70,6 @@ private fun loadTestCasesImpl(
     fs: VirtualFileSystem, file: VirtualFile, result: MutableList<TestCase>
 ) {
     if (file.isDirectory() && containsInputDotMath(file)) {
-        val cwd = fs.cwd()
         result.add(
             TestCase(
                 name = file.absolutePath().last(),

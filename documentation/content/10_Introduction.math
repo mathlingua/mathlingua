@@ -133,6 +133,16 @@ Theorem of Calclus and the definite integral in MathLingua.
 The MathLingua tooling then handles everything else to make
 a beautiful and powerful web page to explore that knowledge.
 
+## More Examples
+
+The *A Detailed Example* section of this site contains a
+more detailed example of a collection of MathLingua documents.
+
+In addition, the [Math Codex](https://www.mathcodex.org) is
+an ongoing effort to build a library of mathematical knowledge
+written in MathLingua.  The source code can be found at the
+[codex](https://github.com/DominicKramer/codex) GitHub repo.
+
 ## Contact
 
 MathLingua is still in beta.  It and this document are still

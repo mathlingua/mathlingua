@@ -48,12 +48,18 @@ check definitions are used correctly, every term used
 is defined, and statements are precise.
 
 MathLingua is not a typesetting language like LaTeX, and it is
-not a proof assistant like Lean.  Instead, it is in-between.
+not a proof assistant (or automated theorem prover) like Lean.
+Instead, it is in-between.
 
 It provides checking of results (although doesn`\'`t provide all
 of the checks of proof assistants) while providing an easy to use
 language for precisely describing the structure of results with
 the level of formality comparable to traditional math literature.
+
+The goal of MathLingua isn`\'`t automated theorem proving.  Instead
+it is to provide a robust and easy to use tool for describing
+mathematics with more structure than what is found in traditional
+books and encyclopedias.
 
 ## An Example
 

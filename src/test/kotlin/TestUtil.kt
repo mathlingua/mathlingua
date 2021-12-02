@@ -17,6 +17,7 @@
 package mathlingua
 
 import com.tylerthrailkill.helpers.prettyprint.pp
+import java.io.File
 import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileException
 import mathlingua.cli.VirtualFileSystem
@@ -46,7 +47,7 @@ fun loadTestCases(type: GoldenType): List<TestCase> {
     val root = fs.getDirectory(listOf("src", "test", "resources", "goldens", type.name.lowercase()))
     if (!root.exists()) {
         throw VirtualFileException(
-            "Golden root directory ${root.absolutePath().joinToString(fs.getFileSeparator())} does not exist")
+            "Golden root directory ${root.absolutePath().joinToString(File.separator)} does not exist")
     }
     loadTestCasesImpl(fs, root, result)
     return result
@@ -73,12 +74,15 @@ private fun loadTestCasesImpl(
         result.add(
             TestCase(
                 name = file.absolutePath().last(),
-                input = fs.getFile(file.relativePathTo(cwd).plus("input.math")),
-                phase1Output = fs.getFile(file.relativePathTo(cwd).plus("phase1-output.math")),
-                phase1Structure = fs.getFile(file.relativePathTo(cwd).plus("phase1-structure.txt")),
-                phase2Output = fs.getFile(file.relativePathTo(cwd).plus("phase2-output.math")),
+                input = fs.getFile(file.relativePath().split("/").plus("input.math")),
+                phase1Output =
+                    fs.getFile(file.relativePath().split("/").plus("phase1-output.math")),
+                phase1Structure =
+                    fs.getFile(file.relativePath().split("/").plus("phase1-structure.txt")),
+                phase2Output =
+                    fs.getFile(file.relativePath().split("/").plus("phase2-output.math")),
                 phase2Structure =
-                    fs.getFile(file.relativePathTo(cwd).plus("phase2-structure.txt"))))
+                    fs.getFile(file.relativePath().split("/").plus("phase2-structure.txt"))))
     }
 
     if (file.isDirectory()) {

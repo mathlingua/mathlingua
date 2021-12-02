@@ -161,9 +161,11 @@ fun newDiskFileSystem(): VirtualFileSystem {
     return DiskFileSystem()
 }
 
-private class DiskFileSystem() : VirtualFileSystem {
+private class DiskFileSystem : VirtualFileSystem {
+    private val SLASH = "/"
+    val REAL_FILE_SEPARATOR = File.separator
     private val cwd =
-        Paths.get(".").toAbsolutePath().normalize().toFile().absolutePath.split(getFileSeparator())
+        Paths.get(".").toAbsolutePath().normalize().toFile().absolutePath.split(REAL_FILE_SEPARATOR)
     private val cwdFile = VirtualFileImpl(absolutePathParts = cwd, directory = true, this)
 
     private fun getAbsolutePath(relativePath: List<String>): List<String> {
@@ -173,12 +175,11 @@ private class DiskFileSystem() : VirtualFileSystem {
         return absolutePath
     }
 
-    override fun getFileSeparator() = File.separator
-
     override fun getFileOrDirectory(path: String): VirtualFile {
-        val file = File(path).normalize().absoluteFile
-        val cwdFile = File(cwd.joinToString(getFileSeparator()))
-        val relPath = file.toRelativeString(cwdFile).split(getFileSeparator())
+        val realPath = path.split(SLASH).joinToString(REAL_FILE_SEPARATOR)
+        val file = File(realPath).normalize().absoluteFile
+        val cwdFile = File(cwd.joinToString(REAL_FILE_SEPARATOR))
+        val relPath = file.toRelativeString(cwdFile).split(REAL_FILE_SEPARATOR)
         return if (file.isDirectory) {
             getDirectory(relPath)
         } else {
@@ -198,11 +199,14 @@ private class DiskFileSystem() : VirtualFileSystem {
 
     override fun cwd() = cwdFile
 
-    private fun VirtualFile.toFile() =
-        File(this.absolutePath().joinToString(File.separator)).normalize()
+    private fun VirtualFile.toFile(): File {
+        val absPath = this.absolutePath()
+        val joined = absPath.joinToString(File.separator)
+        return File(joined).normalize()
+    }
 
-    override fun relativePathTo(vf: VirtualFile, dir: VirtualFile) =
-        vf.toFile().toRelativeString(dir.toFile()).split(File.separator)
+    override fun relativePath(vf: VirtualFile) =
+        vf.toFile().toRelativeString(cwdFile.toFile()).split(File.separator).joinToString(SLASH)
 
     override fun exists(vf: VirtualFile) = vf.toFile().exists()
 

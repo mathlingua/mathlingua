@@ -16,12 +16,19 @@
 
 package mathlingua.cli
 
-fun bold(text: String) = "\u001B[1m$text\u001B[0m"
+private fun String.onWindowsReturn(text: String): String =
+    if (System.getProperty("os.name").lowercase().contains("win")) {
+        text
+    } else {
+        this
+    }
+
+fun bold(text: String) = "\u001B[1m$text\u001B[0m".onWindowsReturn(text)
 
 @Suppress("SAME_PARAMETER_VALUE")
-fun green(text: String) = "\u001B[32m$text\u001B[0m"
+fun green(text: String) = "\u001B[32m$text\u001B[0m".onWindowsReturn(text)
 
-fun red(text: String) = "\u001B[31m$text\u001B[0m"
+fun red(text: String) = "\u001B[31m$text\u001B[0m".onWindowsReturn(text)
 
 @Suppress("UNUSED")
-fun yellow(text: String) = "\u001B[33m$text\u001B[0m"
+fun yellow(text: String) = "\u001B[33m$text\u001B[0m".onWindowsReturn(text)

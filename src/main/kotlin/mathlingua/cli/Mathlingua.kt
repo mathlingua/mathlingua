@@ -70,7 +70,7 @@ object Mathlingua {
         val sourceCollection =
             newSourceCollection(fs, files.ifEmpty { listOf(fs.getDirectory(listOf("content"))) })
         val errors = BackEnd.check(sourceCollection)
-        logger.log(getErrorOutput(fs, errors, sourceCollection.size(), json))
+        logger.log(getErrorOutput(errors, sourceCollection.size(), json))
         return if (errors.isEmpty()) {
             0
         } else {
@@ -103,19 +103,16 @@ object Mathlingua {
         val files = result.first
         val errors = mutableListOf<ErrorResult>()
         errors.addAll(result.second)
-        val cwd = fs.cwd()
-        val sep = fs.getFileSeparator()
         errors.addAll(
             export(fs = fs, logger = logger).map {
                 ErrorResult(
-                    relativePath = it.source.file.relativePathTo(cwd).joinToString(sep),
+                    relativePath = it.source.file.relativePath(),
                     message = it.value.message,
                     row = it.value.row,
                     column = it.value.column)
             })
         logger.log(
             getErrorOutput(
-                fs,
                 errors.map {
                     ValueSourceTracker(
                         value = ParseError(message = it.message, row = it.row, column = it.column),
@@ -353,11 +350,7 @@ object Mathlingua {
                             errors =
                                 BackEnd.check(getSourceCollection()).map {
                                     CheckError(
-                                        path =
-                                            it.source
-                                                .file
-                                                .relativePathTo(fs.cwd())
-                                                .joinToString(fs.getFileSeparator()),
+                                        path = it.source.file.relativePath(),
                                         message = it.value.message,
                                         row = it.value.row,
                                         column = it.value.column)
@@ -402,11 +395,7 @@ object Mathlingua {
                     ctx.json(
                         SearchResponse(
                             paths =
-                                getSourceCollection().search(query).map {
-                                    it.file
-                                        .relativePathTo(fs.cwd())
-                                        .joinToString(fs.getFileSeparator())
-                                }))
+                                getSourceCollection().search(query).map { it.file.relativePath() }))
                 } catch (err: Exception) {
                     err.printStackTrace()
                     ctx.status(500)
@@ -511,7 +500,12 @@ data class CheckError(val path: String, val message: String, val row: Int, val c
 @Serializable data class CompleteSignatureResponse(val suffixes: List<String>)
 
 private fun getGitHubUrl(): String? {
-    val pro = ProcessBuilder("git", "ls-remote", "--get-url").start()
+    val pro =
+        try {
+            ProcessBuilder("git", "ls-remote", "--get-url").start()
+        } catch (e: Exception) {
+            return null
+        }
     val exit = pro.waitFor()
     return if (exit != 0) {
         null
@@ -545,22 +539,18 @@ private fun getExportedDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf
 private fun getContentDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("content"))
 
 private fun getErrorOutput(
-    fs: VirtualFileSystem,
-    errors: List<ValueSourceTracker<ParseError>>,
-    numFilesProcessed: Int,
-    json: Boolean
+    errors: List<ValueSourceTracker<ParseError>>, numFilesProcessed: Int, json: Boolean
 ): String {
     val builder = StringBuilder()
     if (json) {
         builder.append("[")
     }
-    val cwd = fs.cwd()
     for (i in errors.indices) {
         val err = errors[i]
         if (json) {
             builder.append("{")
             builder.append(
-                "  \"file\": \"${err.source.file.absolutePath().joinToString(fs.getFileSeparator()).jsonSanitize()}\",")
+                "  \"file\": \"${err.source.file.absolutePath().joinToString(File.separator).jsonSanitize()}\",")
             builder.append("  \"type\": \"ERROR\",")
             builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
             builder.append("  \"failedLine\": \"\",")
@@ -574,7 +564,7 @@ private fun getErrorOutput(
             builder.append(bold(red("ERROR: ")))
             builder.append(
                 bold(
-                    "${err.source.file.relativePathTo(cwd).joinToString(fs.getFileSeparator())} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
+                    "${err.source.file.relativePath()} (Line: ${err.value.row + 1}, Column: ${err.value.column + 1})\n"))
             builder.append(err.value.message.trim())
             builder.append("\n\n")
         }
@@ -606,7 +596,7 @@ private fun exportFile(
 ): List<ValueSourceTracker<ParseError>> {
     if (!target.exists()) {
         val message =
-            "ERROR: The file ${target.absolutePath().joinToString(fs.getFileSeparator())} does not exist"
+            "ERROR: The file ${target.absolutePath().joinToString(File.separator)} does not exist"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -619,7 +609,7 @@ private fun exportFile(
 
     if (target.isDirectory() || !target.absolutePath().last().endsWith(".math")) {
         val message =
-            "ERROR: The path ${target.absolutePath().joinToString(fs.getFileSeparator())} is not a .math file"
+            "ERROR: The path ${target.absolutePath().joinToString(File.separator)} is not a .math file"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -657,7 +647,7 @@ private fun exportFile(
     } else {
         // get the path relative to the current working directory with
         // the file extension replaced with ".html"
-        val relHtmlPath = target.relativePathTo(fs.cwd()).toMutableList()
+        val relHtmlPath = target.relativePath().split("/").toMutableList()
         if (relHtmlPath.size > 0) {
             relHtmlPath[relHtmlPath.size - 1] =
                 relHtmlPath[relHtmlPath.size - 1].replace(".math", ".html")
@@ -670,7 +660,7 @@ private fun exportFile(
             fs.getDirectory(htmlPath.filterIndexed { index, _ -> index < htmlPath.size - 1 })
         parentDir.mkdirs()
         outFile.writeText(text)
-        logger.log("Wrote ${outFile.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())}")
+        logger.log("Wrote ${outFile.relativePath().split("/").joinToString(File.separator)}")
     }
 
     return errors
@@ -706,7 +696,7 @@ private fun renderAll(
         }
     val jarPath = uriPrefix.replace("jar:file:", "")
 
-    val docDir = File(getDocsDirectory(fs).absolutePath().joinToString(fs.getFileSeparator()))
+    val docDir = File(getDocsDirectory(fs).absolutePath().joinToString(File.separator))
     docDir.mkdirs()
 
     val cnameFile = File("CNAME")
@@ -740,7 +730,7 @@ private fun renderAll(
         val indexText =
             indexFile.readText().replace("<head>", "<head><script src=\"./data.js\"></script>")
         indexFile.writeText(indexText)
-        logger.log("Wrote docs/index.html")
+        logger.log("Wrote docs${File.separator}index.html")
     }
 
     val decomp =
@@ -749,7 +739,7 @@ private fun renderAll(
 
     val dataFile = File(docDir, "data.js")
     dataFile.writeText("window.MATHLINGUA_DATA = $data")
-    logger.log("Wrote docs/data.js")
+    logger.log("Wrote docs${File.separator}data.js")
 
     return Pair(
         decomp.collectionResult.fileResults.map { it.relativePath }, decomp.collectionResult.errors)
@@ -863,20 +853,12 @@ private fun decompose(
             getCompleteRenderedTopLevelElements(
                 f = f, sourceCollection = sourceCollection, noexpand = false, errors = fErrors)
         errors.addAll(fErrors)
-        val relativePath = f.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator())
+        val relativePath = f.relativePath()
         fileResults.add(
             FileResult(
                 relativePath = relativePath,
-                previousRelativePath =
-                    resolvedMlgFiles
-                        .getOrNull(i - 1)
-                        ?.relativePathTo(fs.cwd())
-                        ?.joinToString(fs.getFileSeparator()),
-                nextRelativePath =
-                    resolvedMlgFiles
-                        .getOrNull(i + 1)
-                        ?.relativePathTo(fs.cwd())
-                        ?.joinToString(fs.getFileSeparator()),
+                previousRelativePath = resolvedMlgFiles.getOrNull(i - 1)?.relativePath(),
+                nextRelativePath = resolvedMlgFiles.getOrNull(i + 1)?.relativePath(),
                 content = sanitizeHtmlForJs(f.readText()),
                 entities =
                     elements.map {
@@ -911,11 +893,7 @@ private fun decompose(
                 errors =
                     errors.map {
                         ErrorResult(
-                            relativePath =
-                                it.source
-                                    .file
-                                    .relativePathTo(fs.cwd())
-                                    .joinToString(fs.getFileSeparator()),
+                            relativePath = it.source.file.relativePath(),
                             message = it.value.message,
                             row = it.value.row,
                             column = it.value.column)

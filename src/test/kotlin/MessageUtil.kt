@@ -16,6 +16,7 @@
 
 package mathlingua
 
+import java.io.File
 import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileException
 import mathlingua.cli.VirtualFileSystem
@@ -95,9 +96,8 @@ private fun loadMessageTestCaseImpl(
     }
 
     if (containsInputDotMath(file)) {
-        val cwd = fs.cwd()
-        val messageFile = fs.getFile(file.relativePathTo(cwd).plus("messages.txt"))
-        val input = fs.getFile(file.relativePathTo(cwd).plus("input.math")).readText()
+        val messageFile = fs.getFile(file.relativePath().split("/").plus("messages.txt"))
+        val input = fs.getFile(file.relativePath().split("/").plus("input.math")).readText()
         val expectedErrors =
             if (OVERWRITE_GOLDEN_FILES) {
                 val validation = FrontEnd.parse(input)
@@ -143,7 +143,7 @@ fun loadMessageTestCases(): List<MessageTestCase> {
     val root = fs.getDirectory(listOf("src", "test", "resources", "goldens", "messages"))
     if (!root.exists()) {
         throw VirtualFileException(
-            "Golden root directory ${root.absolutePath().joinToString(fs.getFileSeparator())} does not exist")
+            "Golden root directory ${root.absolutePath().joinToString(File.separator)} does not exist")
     }
 
     val result = mutableListOf<MessageTestCase>()

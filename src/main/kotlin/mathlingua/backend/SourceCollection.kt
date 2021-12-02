@@ -305,12 +305,9 @@ fun TopLevelGroup.toEntityResult(
 }
 
 fun SourceFile.toFileResult(
-    fs: VirtualFileSystem,
-    nextRelativePath: String?,
-    previousRelativePath: String?,
-    sourceCollection: SourceCollection
+    nextRelativePath: String?, previousRelativePath: String?, sourceCollection: SourceCollection
 ): FileResult {
-    val relativePath = this.file.relativePathTo(fs.cwd()).joinToString("/")
+    val relativePath = this.file.relativePath()
     return FileResult(
         relativePath = relativePath,
         nextRelativePath = nextRelativePath,
@@ -398,9 +395,9 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         return sourceFiles
             .keys
             .toList()
-            .map { it.split(fs.getFileSeparator()) }
+            .map { it.split("/") }
             .sortedWith(STRING_PARTS_COMPARATOR)
-            .map { it.joinToString(fs.getFileSeparator()) }
+            .map { it.joinToString("/") }
     }
 
     override fun getFirstPath() = getAllPaths().first()
@@ -415,8 +412,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         var prev: SourceFile? = null
         var next: SourceFile? = null
         for (i in sources.indices) {
-            if (sources[i].file.relativePathTo(fs.cwd()).joinToString(fs.getFileSeparator()) ==
-                path) {
+            if (sources[i].file.relativePath() == path) {
                 prev = sources.getOrNull(i - 1)
                 next = sources.getOrNull(i + 1)
                 break
@@ -425,11 +421,8 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
         val evalFileResult =
             sourceFile.toFileResult(
-                fs = fs,
-                previousRelativePath =
-                    prev?.file?.relativePathTo(fs.cwd())?.joinToString(fs.getFileSeparator()),
-                nextRelativePath =
-                    next?.file?.relativePathTo(fs.cwd())?.joinToString(fs.getFileSeparator()),
+                previousRelativePath = prev?.file?.relativePath(),
+                nextRelativePath = next?.file?.relativePath(),
                 sourceCollection = this)
         sourceFileToFileResult[sourceFile] = evalFileResult
         return Page(sourceFile = sourceFile, fileResult = evalFileResult)
@@ -442,7 +435,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
     override fun removeSource(path: String) {
         sourceFileToFileResult.clear()
-        val relPath = path.split(fs.getFileSeparator())
+        val relPath = path.split("/")
         searchIndex.remove(relPath)
         val sf = sourceFiles[path] ?: return
         sourceFiles.remove(path)
@@ -491,7 +484,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
     override fun addSource(sf: SourceFile) {
         sourceFileToFileResult.clear()
-        val relativePath = sf.file.relativePathTo(fs.cwd()).joinToString("/")
+        val relativePath = sf.file.relativePath()
         sourceFiles[relativePath] = sf
         searchIndex.add(sf)
         val validation = sf.validation

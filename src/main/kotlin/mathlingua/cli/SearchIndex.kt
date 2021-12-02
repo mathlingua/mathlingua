@@ -12,13 +12,13 @@ data class SearchIndex(val fs: VirtualFileSystem) {
         when (val validation = sf.validation
         ) {
             is ValidationSuccess -> {
-                val relPath = sf.file.relativePathTo(fs.cwd())
+                val relPath = sf.file.relativePath()
                 val doc = validation.value.document
                 for (grp in doc.groups) {
                     for (word in getAllWords(grp)) {
                         val key = word.lowercase()
                         val pathSet = searchIndex[key] ?: newMutableMultiSet()
-                        pathSet.add(relPath)
+                        pathSet.add(relPath.split("/"))
                         searchIndex[key] = pathSet
                     }
                 }

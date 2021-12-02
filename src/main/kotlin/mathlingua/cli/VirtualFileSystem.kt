@@ -20,7 +20,7 @@ class VirtualFileException(message: String) : Exception(message)
 
 interface VirtualFile {
     fun absolutePath(): List<String>
-    fun relativePathTo(dir: VirtualFile): List<String>
+    fun relativePath(): String
     fun isDirectory(): Boolean
     fun exists(): Boolean
     fun readText(): String
@@ -31,12 +31,11 @@ interface VirtualFile {
 }
 
 interface VirtualFileSystem {
-    fun getFileSeparator(): String
     fun getFileOrDirectory(path: String): VirtualFile
     fun getFile(relativePath: List<String>): VirtualFile
     fun getDirectory(relativePath: List<String>): VirtualFile
     fun cwd(): VirtualFile
-    fun relativePathTo(vf: VirtualFile, dir: VirtualFile): List<String>
+    fun relativePath(vf: VirtualFile): String
     fun exists(vf: VirtualFile): Boolean
     fun mkdirs(vf: VirtualFile): Boolean
     fun readText(vf: VirtualFile): String
@@ -56,10 +55,9 @@ data class VirtualFileImpl(
     private val directory: Boolean,
     private val fs: VirtualFileSystem
 ) : VirtualFile {
-
     override fun absolutePath() = absolutePathParts
 
-    override fun relativePathTo(dir: VirtualFile) = fs.relativePathTo(this, dir)
+    override fun relativePath() = fs.relativePath(this)
 
     override fun isDirectory() = directory
 
@@ -83,6 +81,7 @@ private class MemoryFileNode(
     val children: MutableMap<String, MemoryFileNode>)
 
 private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSystem {
+    private val SLASH = "/"
 
     private val root =
         MemoryFileNode(name = "", isDirectory = true, content = "", children = mutableMapOf())
@@ -107,13 +106,11 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
         return absolutePath
     }
 
-    override fun getFileSeparator() = "/"
-
     override fun getFileOrDirectory(path: String) =
-        if (path.endsWith(getFileSeparator())) {
-            getDirectory(path.split(getFileSeparator()))
+        if (path.endsWith(SLASH)) {
+            getDirectory(path.split(SLASH))
         } else {
-            getFile(path.split(getFileSeparator()))
+            getFile(path.split(SLASH))
         }
 
     override fun getFile(relativePath: List<String>): VirtualFile {
@@ -128,18 +125,17 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
 
     override fun cwd() = cwdFile
 
-    override fun relativePathTo(vf: VirtualFile, dir: VirtualFile): List<String> {
+    override fun relativePath(vf: VirtualFile): String {
         val vfParts = vf.absolutePath()
-        val dirParts = dir.absolutePath()
         var i = 0
-        while (i < dirParts.size && i < vfParts.size && dirParts[i] == vfParts[i]) {
+        while (i < cwd.size && i < vfParts.size && cwd[i] == vfParts[i]) {
             i++
         }
         val relParts = mutableListOf<String>()
         while (i < vfParts.size) {
             relParts.add(vfParts[i++])
         }
-        return relParts
+        return relParts.joinToString("/")
     }
 
     override fun exists(vf: VirtualFile): Boolean {
@@ -187,7 +183,7 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
                     tail = newFile
                 } else {
                     throw VirtualFileException(
-                        "File not found: ${absolutePath.joinToString(getFileSeparator())}")
+                        "File not found: ${absolutePath.joinToString(SLASH)}")
                 }
             } else {
                 tail = tail.children[part]!!

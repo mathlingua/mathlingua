@@ -5,6 +5,7 @@ import { getDocItems } from './ChalkTalkReference';
 
 export const ChalkTalkReferencePanel = () => {
   let content = `<div class='chalkTalkReferenceTitle'>Structural Language Reference</div>`;
+  content += '<p><b>Note:</b> This document is still a work in progress and is not complete.</p>';
 
   for (const item of getDocItems()) {
     content += `<div class='chalkTalkReferenceName'>&lt;${item.name}&gt;</div>\n`;

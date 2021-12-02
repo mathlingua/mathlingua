@@ -5,6 +5,7 @@ import { getDocItems } from './TexTalkReference';
 
 export const TexTalkReferencePanel = () => {
   let content = `<div class='texTalkReferenceTitle'>Expression Language Reference</div>`;
+  content += '<p><b>Note:</b> This document is still a work in progress and is not complete.</p>';
 
   for (const item of getDocItems()) {
     content += `<div class='texTalkReferenceName'>&lt;${item.name}&gt;</div>\n`;

@@ -27,6 +27,8 @@ object BackEnd {
         errors.addAll(checkDuplicateDefinedSignatures(sourceCollection))
         errors.addAll(checkInvalidTypes(sourceCollection))
         errors.addAll(checkSymbolErrors(sourceCollection))
+        errors.addAll(checkIsRhs(sourceCollection))
+        errors.addAll(checkColonEqualsRhs(sourceCollection))
         return errors
     }
 
@@ -81,5 +83,15 @@ object BackEnd {
         sourceCollection: SourceCollection
     ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getSymbolErrors()
+    }
+
+    fun checkIsRhs(sourceCollection: SourceCollection): List<ValueSourceTracker<ParseError>> {
+        return sourceCollection.getIsRhsErrors()
+    }
+
+    fun checkColonEqualsRhs(
+        sourceCollection: SourceCollection
+    ): List<ValueSourceTracker<ParseError>> {
+        return sourceCollection.getColonEqualsRhsErrors()
     }
 }

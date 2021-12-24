@@ -80,6 +80,7 @@ import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.GroupTexTalkNode
+import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TexTalkNodeType
@@ -118,6 +119,8 @@ interface SourceCollection {
     fun getParseErrors(): List<ValueSourceTracker<ParseError>>
     fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
     fun getSymbolErrors(): List<ValueSourceTracker<ParseError>>
+    fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>>
+    fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>>
     fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
@@ -580,6 +583,82 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
     }
 
     override fun size() = sourceFiles.size
+
+    override fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>> {
+        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+        val sigsWithEvaluated = getSignaturesWithEvaluatedSection().map { it.value.form }.toSet()
+        for (svt in allGroups) {
+            val rhsSigs =
+                findIsRhsSignatures(svt.value.normalized, svt.tracker ?: newLocationTracker())
+            for (sig in rhsSigs) {
+                if (sigsWithEvaluated.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(
+                            value =
+                                ParseError(
+                                    message =
+                                        "The right-hand-side of an `is` cannot reference a `Defines:` with an `evaluated:` section but found '${sig.form}'",
+                                    row = sig.location.row,
+                                    column = sig.location.column),
+                            source = svt.source,
+                            tracker = svt.tracker))
+                }
+            }
+        }
+        return result
+    }
+
+    override fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>> {
+        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+        val sigsWithoutEvaluated =
+            getSignaturesWithoutEvaluatedSection().map { it.value.form }.toSet()
+        for (svt in allGroups) {
+            val rhsSigs =
+                findColonEqualsRhsSignatures(
+                    svt.value.normalized, svt.tracker ?: newLocationTracker())
+            for (sig in rhsSigs) {
+                if (sigsWithoutEvaluated.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(
+                            value =
+                                ParseError(
+                                    message =
+                                        "The right-hand-side of an `:=` cannot reference a `Defines:` without an `evaluated:` section but found '${sig.form}'",
+                                    row = sig.location.row,
+                                    column = sig.location.column),
+                            source = svt.source,
+                            tracker = svt.tracker))
+                }
+            }
+        }
+        return result
+    }
+
+    fun getSignaturesWithoutEvaluatedSection(): List<ValueSourceTracker<Signature>> {
+        val result = mutableListOf<ValueSourceTracker<Signature>>()
+        for (svt in definesGroups) {
+            val def = svt.value.original
+            if (def.evaluatedSection == null && def.signature != null) {
+                result.add(
+                    ValueSourceTracker(
+                        value = def.signature, source = svt.source, tracker = svt.tracker))
+            }
+        }
+        return result
+    }
+
+    fun getSignaturesWithEvaluatedSection(): List<ValueSourceTracker<Signature>> {
+        val result = mutableListOf<ValueSourceTracker<Signature>>()
+        for (svt in definesGroups) {
+            val def = svt.value.original
+            if (def.evaluatedSection != null && def.signature != null) {
+                result.add(
+                    ValueSourceTracker(
+                        value = def.signature, source = svt.source, tracker = svt.tracker))
+            }
+        }
+        return result
+    }
 
     override fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>> {
         val result = mutableSetOf<ValueSourceTracker<Signature>>()
@@ -1767,4 +1846,92 @@ private fun findAllTexTalkNodesImpl(node: Phase2Node, result: MutableList<TexTal
         }
     }
     node.forEach { findAllTexTalkNodesImpl(it, result) }
+}
+
+private fun findIsRhsSignatures(
+    node: Phase2Node, locationTracker: LocationTracker
+): List<Signature> {
+    val result = mutableListOf<Signature>()
+    findIsRhsSignatures(node, locationTracker, result)
+    return result
+}
+
+private fun findIsRhsSignatures(
+    node: Phase2Node, locationTracker: LocationTracker, rhsIsSignatures: MutableList<Signature>
+) {
+    if (node is Statement) {
+        when (node.texTalkRoot) {
+            is ValidationSuccess -> {
+                val location =
+                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                findIsRhsSignatures(node.texTalkRoot.value, location, rhsIsSignatures)
+            }
+            else -> {
+                // ignore statements that do not parse
+            }
+        }
+    } else {
+        node.forEach { findIsRhsSignatures(it, locationTracker, rhsIsSignatures) }
+    }
+}
+
+private fun findIsRhsSignatures(
+    node: TexTalkNode, location: Location, rhsIsSignatures: MutableList<Signature>
+) {
+    if (node is IsTexTalkNode) {
+        node.rhs.items.forEach { item ->
+            item.children.forEach { child ->
+                if (child is Command) {
+                    val signature = child.signature()
+                    rhsIsSignatures.add(Signature(form = signature, location = location))
+                }
+            }
+        }
+    } else {
+        node.forEach { findIsRhsSignatures(it, location, rhsIsSignatures) }
+    }
+}
+
+private fun findColonEqualsRhsSignatures(
+    node: Phase2Node, locationTracker: LocationTracker
+): List<Signature> {
+    val result = mutableListOf<Signature>()
+    findColonEqualsRhsSignatures(node, locationTracker, result)
+    return result
+}
+
+private fun findColonEqualsRhsSignatures(
+    node: Phase2Node, locationTracker: LocationTracker, rhsIsSignatures: MutableList<Signature>
+) {
+    if (node is Statement) {
+        when (node.texTalkRoot) {
+            is ValidationSuccess -> {
+                val location =
+                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                findColonEqualsRhsSignatures(node.texTalkRoot.value, location, rhsIsSignatures)
+            }
+            else -> {
+                // ignore statements that do not parse
+            }
+        }
+    } else {
+        node.forEach { findColonEqualsRhsSignatures(it, locationTracker, rhsIsSignatures) }
+    }
+}
+
+private fun findColonEqualsRhsSignatures(
+    node: TexTalkNode, location: Location, rhsIsSignatures: MutableList<Signature>
+) {
+    if (node is ColonEqualsTexTalkNode) {
+        node.rhs.items.forEach { item ->
+            item.children.forEach { child ->
+                if (child is Command) {
+                    val signature = child.signature()
+                    rhsIsSignatures.add(Signature(form = signature, location = location))
+                }
+            }
+        }
+    } else {
+        node.forEach { findColonEqualsRhsSignatures(it, location, rhsIsSignatures) }
+    }
 }

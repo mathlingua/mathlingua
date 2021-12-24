@@ -2333,4 +2333,132 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check reports errors for using a command on right-hand-side of an 'is' that has an evaluated section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    evaluated: 'X := 0'
+                    written: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: 'X is \something'
+                    written: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 10, Column: 8)
+                The right-hand-side of an `is` cannot reference a `Defines:` with an `evaluated:` section but found '\something'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for using a command on right-hand-side of an 'is' that does not have an evaluated section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: 'X is \something'
+                    written: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for using a command on right-hand-side of an colon equals that does not has an evaluated section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: 'X := \something'
+                    written: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 8)
+                The right-hand-side of an `:=` cannot reference a `Defines:` without an `evaluated:` section but found '\something'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for using a command on right-hand-side of an colon equals that has an evaluated section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    evaluated: 'X := 0'
+                    written: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: 'X := \something'
+                    written: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

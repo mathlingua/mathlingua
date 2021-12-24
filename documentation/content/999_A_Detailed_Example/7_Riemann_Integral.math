@@ -65,7 +65,7 @@ a *partition* of a closed interval.
 Defines: X := {x_{i}}_{i}
 given: a, b
 when:
-. 'I is \closed.interval{a, b}'
+. 'I := \closed.interval{a, b}'
 means:
 . 'X is \finite.real.sequence:size{n}'
 . 'x_{0} = a'
@@ -122,7 +122,7 @@ the $i$-th point and the $(i+1)$-th point in the partition.
 Defines: L
 given: I, a, b, n, {p_{j}}_{j}
 when:
-. 'I is \closed.interval{a, b}'
+. 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {p_{j}}_{j} is \partition:of{I}:size{n}'
 . 'i is \integer'
@@ -149,7 +149,7 @@ two points in a partition.
 Defines: L
 given: I, a, b, n, {p_{j}}_{j}
 when:
-. 'I is \closed.interval{a, b}'
+. 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {p_{j}}_{j} is \partition:of{I}:size{n}'
 . 'i is \integer'
@@ -179,7 +179,7 @@ $P$.
 Defines: S
 given: I, a, b, n, {x_{i}}_{i}
 when:
-. 'I is \closed.interval{a, b}'
+. 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
 evaluated:
@@ -202,7 +202,7 @@ approximation to the area under the curve $f(x)$ for
 Defines: S
 given: I, a, b, n, {x_{i}}_{i}
 when:
-. 'I is \closed.interval{a, b}'
+. 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
 evaluated:
@@ -229,7 +229,7 @@ upper bound approximation of the area, as defined below.
 Defines: S
 given: I
 when:
-. 'I is \closed.interval{a, b}'
+. 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 evaluated:
 . 'S := \supremum:of{\set[P, n]:where{L(f, P)}
@@ -244,7 +244,7 @@ called: "Lower Darboux Integral of $f?$ on $[a?, b?]$"
 Defines: S
 given: I
 when:
-. 'I is \closed.interval{a, b}'
+. 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 evaluated:
 . 'S := \infimum:of{\set[P, n]:where{U(f, P)}

@@ -481,7 +481,7 @@ given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
-means:
+evaluated:
 . 'x * y = e'
 . 'y * x = e'
 written: "x??^{-1}"
@@ -497,7 +497,7 @@ given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
-means:
+evaluated:
 . 'x * y = e'
 . 'y * x = e'
 written: "{x??}^{-1}"

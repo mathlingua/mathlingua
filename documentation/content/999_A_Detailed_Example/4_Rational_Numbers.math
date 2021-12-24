@@ -13,6 +13,7 @@ Before continuing, we need to define "set builder notation".
 Defines:Y := {y...}
 means:
 . 'Y is \set'
+evaluated:
 . 'y... := x...'
 written:
 . "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"
@@ -123,9 +124,9 @@ denominator.
 
 [\rationals.set]
 Defines: Q
-means: 'Q := \set[x, p, q]:where{x := (p, q)}
-                          :suchThat{p in \integers.set}
-                                   {q in \integers.set}'
+evaluated: 'Q := \set[x, p, q]:where{x := (p, q)}
+                              :suchThat{p in \integers.set}
+                                       {q in \integers.set}'
 written: "\mathbb{Q}"
 called: "rationals"
 
@@ -148,8 +149,9 @@ as the product of $a$ and the multiplicative inverse of $b$
 [\Rational{a, b}]
 Defines: x
 means:
-. 'x := (a, b)'
 . 'x in \rationals.set'
+evaluated:
+. 'x := (a, b)'
 written: "\frac{a?}{b?}"
 called: "rational"
 

@@ -190,6 +190,7 @@ Defines: beta
 when: 'X is \bounded.above.set'
 means:
 . 'beta is \upper.bound:of{X}'
+evaluated:
 . forAll: b
   suchThat: 'b is \upper.bound:of{X}'
   then: 'b \geq{X}/ beta'
@@ -248,6 +249,7 @@ Defines: alpha
 when: 'X is \bounded.above.set'
 means:
 . 'alpha is \lower.bound:of{X}'
+evaluated:
 . forAll: a
   suchThat: 'a is \lower.bound:of{X}'
   then: 'a \leq{X}/ alpha'

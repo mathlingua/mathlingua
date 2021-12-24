@@ -49,7 +49,7 @@ we won`\'`t be discussing such intervals here.
 Defines: I
 given: R
 when: 'R is \real.numbers'
-means:
+evaluated:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.lt/ x}
                         {x \real.lt/ b}'
@@ -61,7 +61,7 @@ called: "the open interval from $a?$ to $b?$"
 Defines: I
 given: R
 when: 'R is \real.numbers'
-means:
+evaluated:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.leq/ x}
                         {x \real.leq/ b}'

@@ -19,11 +19,11 @@ a function.
 Defines: L
 given: I, a, b, R
 when:
-. 'I is \open.interval{a, b}'
+. 'I := \open.interval{a, b}'
 . 'f is \function:on{I}:to{\real.numbers}'
 . 'c in I'
 . 'R is \real.numbers'
-means:
+evaluated:
 . forAll: epsilon
   suchThat: 'epsilon is \positive:within{R}'
   then:

@@ -40,6 +40,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -932,12 +933,16 @@ fun getAllWords(node: Phase2Node): Set<String> {
 }
 
 private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
+    if (node is HasSignature && node.signature != null) {
+        words.add("[${node.signature!!.form}]")
+    }
+
     when (node) {
         is ResourceGroup -> {
             // searching for a reference with or without @ in front
             // should find the associated reference group
             words.add(node.id)
-            words.add("@node.id")
+            words.add(node.id.removePrefix("@"))
         }
         is DefinesGroup -> {
             if (node.signature != null) {

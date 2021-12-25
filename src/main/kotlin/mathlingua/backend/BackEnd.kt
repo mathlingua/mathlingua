@@ -29,6 +29,7 @@ object BackEnd {
         errors.addAll(checkSymbolErrors(sourceCollection))
         errors.addAll(checkIsRhs(sourceCollection))
         errors.addAll(checkColonEqualsRhs(sourceCollection))
+        errors.addAll(checkInputOutputSymbolErrors(sourceCollection))
         return errors
     }
 
@@ -93,5 +94,11 @@ object BackEnd {
         sourceCollection: SourceCollection
     ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getColonEqualsRhsErrors()
+    }
+
+    fun checkInputOutputSymbolErrors(
+        sourceCollection: SourceCollection
+    ): List<ValueSourceTracker<ParseError>> {
+        return sourceCollection.getInputOutputSymbolErrors()
     }
 }

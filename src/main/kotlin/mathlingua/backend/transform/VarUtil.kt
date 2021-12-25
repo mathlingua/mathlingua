@@ -607,8 +607,19 @@ private fun checkWhenSectionVars(
 ): List<Var> {
     val whenVars = VarMultiSet()
     for (clause in node.clauses.clauses) {
+        // if a clause is a forAll:, exists:, or existsUnique: group
+        // then make sure `vars` is updated to include the introduced symbols
+        val clauseVars =
+            when (clause) {
+                is ForAllGroup -> getVarsPhase2Node(clause.forAllSection)
+                is ExistsGroup -> getVarsPhase2Node(clause.existsSection)
+                is ExistsUniqueGroup -> getVarsPhase2Node(clause.existsUniqueSection)
+                else -> emptyList()
+            }
+        vars.addAll(clauseVars)
         whenVars.addAll(
             checkColonEqualsRhsSymbols(clause, tracker = tracker, vars = vars, errors = errors))
+        vars.removeAll(clauseVars)
     }
     return whenVars.toList()
 }
@@ -655,7 +666,7 @@ private fun checkColonEqualsRhsSymbols(
                 groupScope = GroupScope.InNone,
                 isInIdStatement = false,
                 forceIsPlaceholder = false)) {
-            if (!vars.contains(v)) {
+            if (!vars.contains(v) && !isNumberLiteral(v.name)) {
                 errors.add(
                     ParseError(
                         message = "Undefined symbol '$v' in `:=`",
@@ -1163,6 +1174,12 @@ private class VarMultiSet : MutableMultiSet<Var> {
             placeholders.remove(value)
         } else {
             nonPlaceholders.remove(value)
+        }
+    }
+
+    override fun removeAll(values: Collection<Var>) {
+        for (v in values) {
+            remove(v)
         }
     }
 

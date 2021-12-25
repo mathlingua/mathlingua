@@ -1367,8 +1367,7 @@ internal class EndToEndCheckTest {
 
                     [\something.else]
                     Defines: f(x)
-                    when: 'f(x) is \something'
-                    means: 'f(x)'
+                    means: 'f(x) is \something'
                     written: "something else"
                     called: "something else"
                 """.trimIndent())),
@@ -1400,8 +1399,8 @@ internal class EndToEndCheckTest {
 
                     [\something.else]
                     Defines: {x_{i}}_{i}
-                    when: '{x_{i}}_{i} is \something'
                     means:
+                    . '{x_{i}}_{i} is \something'
                     . '{x_{i}}_{i}'
                     . 'x_{i}'
                     written: "something else"
@@ -1437,7 +1436,7 @@ internal class EndToEndCheckTest {
                     Defines: X
                     when: 'f(x) is \something'
                     means:
-                    . 'f(x) := 0'
+                    . 'f(x) = 0'
                     written: "something else"
                     called: "something else"
 
@@ -1445,7 +1444,7 @@ internal class EndToEndCheckTest {
                     [\another.thing{f(x)}]
                     Defines: X
                     means:
-                    . 'f(x) := 0'
+                    . 'f(x) = 0'
                     written: "another thing"
                     called: "another thing"
                 """.trimIndent())),
@@ -1479,7 +1478,7 @@ internal class EndToEndCheckTest {
                     Defines: X
                     when: '{x_{i}}_{i} is \something'
                     means:
-                    . '{x_{i}}_{i} := 0'
+                    . '{x_{i}}_{i} = 0'
                     written: "something else"
                     called: "something else"
 
@@ -1487,7 +1486,7 @@ internal class EndToEndCheckTest {
                     [\another.thing{{x_{i}}_{i}}]
                     Defines: X
                     means:
-                    . '{x_{i}}_{i} := 0'
+                    . '{x_{i}}_{i} = 0'
                     written: "another thing"
                     called: "another thing"
                 """.trimIndent())),
@@ -1502,7 +1501,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for function like mappings that use new placeholder vars`() {
+    fun `check reports errors for function like mappings that use new placeholder vars`() {
         runCheckTest(
             files =
                 listOf(
@@ -1519,10 +1518,11 @@ internal class EndToEndCheckTest {
 
                     [\something.else{f(x)}]
                     Defines: X
-                    when: 'f(t) is \something'
-                    means:
+                    when:
+                    . 'f(t) is \something'
                     . 'f(u) is \something'
-                    . 'f(v) := 0'
+                    means:
+                    . 'f(v) = 0'
                     written: "something else"
                     called: "something else"
 
@@ -1530,22 +1530,28 @@ internal class EndToEndCheckTest {
                     [\another.thing{{x_{i}}_{i}}]
                     Defines: X
                     means:
-                    . 'f(t) := 0'
+                    . 'x_{t} = 0'
                     written: "another thing"
                     called: "another thing"
                 """.trimIndent())),
             expectedOutput =
                 """
-                SUCCESS
+                ERROR: content/file1.math (Line: 14, Column: 3)
+                Undefined symbol 'v'
+
+                ERROR: content/file1.math (Line: 22, Column: 3)
+                Undefined symbol 't'
+
+                FAILED
                 Processed 1 file
-                0 errors detected
+                2 errors detected
         """.trimIndent(),
-            expectedExitCode = 0,
-            expectedNumErrors = 0)
+            expectedExitCode = 1,
+            expectedNumErrors = 2)
     }
 
     @Test
-    fun `check does not report errors for sequence like mappings that use new placeholder vars`() {
+    fun `check reports errors for sequence like mappings that use new placeholder vars`() {
         runCheckTest(
             files =
                 listOf(
@@ -1564,27 +1570,37 @@ internal class EndToEndCheckTest {
                     Defines: X
                     when: '{x_{j}}_{j} is \something'
                     means:
-                    . '{x_{k}}_{k} is \something'
-                    . '{x_{t}}_{t} := 0'
+                    . '{x_{k}}_{k}'
+                    . '{x_{t}}_{t}'
                     written: "something else"
                     called: "something else"
 
 
                     [\another.thing{{x_{i}}_{i}}]
                     Defines: X
-                    means:
-                    . '{x_{j}}_{j} := 0'
+                    when:
+                    . '{x_{j}}_{j}'
+                    means: "something"
                     written: "another thing"
                     called: "another thing"
                 """.trimIndent())),
             expectedOutput =
                 """
-                SUCCESS
+                ERROR: content/file1.math (Line: 12, Column: 3)
+                Undefined symbol 'k'
+
+                ERROR: content/file1.math (Line: 13, Column: 3)
+                Undefined symbol 't'
+
+                ERROR: content/file1.math (Line: 21, Column: 3)
+                Undefined symbol 'j'
+
+                FAILED
                 Processed 1 file
-                0 errors detected
+                3 errors detected
         """.trimIndent(),
-            expectedExitCode = 0,
-            expectedNumErrors = 0)
+            expectedExitCode = 1,
+            expectedNumErrors = 3)
     }
 
     @Test
@@ -1764,7 +1780,8 @@ internal class EndToEndCheckTest {
                     [\f{X}]
                     Defines: Y
                     given: S, <
-                    means: 'X := (S, <) is \something'
+                    when: 'X := (S, <) is \something'
+                    means: "something"
                     written: "f"
                     called: "f"
                 """.trimIndent())),
@@ -1940,10 +1957,9 @@ internal class EndToEndCheckTest {
 
                     [\f]
                     Defines: (S, <)
-                    when:
+                    means:
                     . 'S is \something'
                     . '< is \something.else'
-                    means:
                     . '0 < 1'
                     viewing:
                     . as: '\another'
@@ -1995,10 +2011,9 @@ internal class EndToEndCheckTest {
 
                     [\f]
                     Defines: (S, <)
-                    when:
+                    means:
                     . 'S is \something'
                     . '< is \something.else'
-                    means:
                     . '0 < 1'
                     viewing:
                     . as: '\another'
@@ -2030,8 +2045,7 @@ internal class EndToEndCheckTest {
                     [\something]
                     Defines: X
                     given: a, b
-                    when: 'X := (a, b)'
-                    means: "something"
+                    means: 'X := (a, b)'
                     written: "something"
                     called: "something"
 
@@ -2065,7 +2079,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    when: 'X := (a, b)'
+                    when: '(a, b)'
                     means: "something"
                     written: "something"
                     called: "something"
@@ -2080,12 +2094,6 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 3, Column: 7)
-                Undefined symbol 'a' in `:=`
-
-                ERROR: content/file1.math (Line: 3, Column: 7)
-                Undefined symbol 'b' in `:=`
-
                 ERROR: content/file1.math (Line: 3, Column: 7)
                 Undefined symbol 'a'
 
@@ -2106,10 +2114,10 @@ internal class EndToEndCheckTest {
 
                 FAILED
                 Processed 1 file
-                8 errors detected
+                6 errors detected
         """.trimIndent(),
             expectedExitCode = 1,
-            expectedNumErrors = 8)
+            expectedNumErrors = 6)
     }
 
     @Test
@@ -2451,6 +2459,713 @@ internal class EndToEndCheckTest {
                     Defines: X
                     means: 'X := \something'
                     written: "something else"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for id input var used in lhs of is statement in means`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something{A}]
+                    Defines: X
+                    means: 'A is \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 8)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for id input var used in lhs of is statement in when`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something{A}]
+                    Defines: X
+                    when: 'A is \something.else'
+                    means: "something"
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for id input var used in lhs of colon equals statement in means`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something{A}]
+                    Defines: X
+                    means: 'A := \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 8)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for id input var used in lhs of colon equals statement in when`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something{A}]
+                    Defines: X
+                    when: 'A := \something.else'
+                    means: "something"
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for id input var used in lhs of is statement in evaluated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something{A}]
+                    Defines: X
+                    evaluated: 'A is \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 12)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check reports errors for id input var used in lhs of colon equals statement in evaluated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something{A}]
+                    Defines: X
+                    evaluated: 'A := \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 12)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check reports errors for given section input var used in lhs of is statement in means`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    given: A
+                    means: 'A is \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 10, Column: 8)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for given section input var used in lhs of is statement in when`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    given: A
+                    when: 'A is \something.else'
+                    means: "something"
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for given section input var used in lhs of colon equals statement in means`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    given: A
+                    means: 'A := \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 10, Column: 8)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for given section input var used in lhs of colon equals statement in when`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    given: A
+                    when: 'A := \something.else'
+                    means: "something"
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for given section input var used in lhs of is statement in evaluated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    given: A
+                    evaluated: 'A is \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 10, Column: 12)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check reports errors for given section input var used in lhs of colon equals statement in evaluated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    given: A
+                    evaluated: 'A := \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 10, Column: 12)
+                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check reports errors for Defines section var used in lhs of is statement in when`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    when: 'X is \something.else'
+                    means: "something"
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 7)
+                A `when:` section cannot describe a symbol introduced in a `Defines:` section but found 'X'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for Defines section var used in lhs of is statement in means`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    means: 'X is \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for Defines section var used in lhs of is statement in evaluated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    evaluated: 'X is \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for Defines section var used in lhs of colon equals statement in when`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    when: 'X := \something.else'
+                    means: "something"
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 7)
+                A `when:` section cannot describe a symbol introduced in a `Defines:` section but found 'X'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for Defines section var used in lhs of colon equals statement in means`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    means: 'X := \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for Defines section var used in lhs of colon equals statement in evaluated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    evaluated: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    evaluated: 'X := \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for id input vars also declared in Defines used in lhs of is statement in means`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\real.numbers]
+                    Defines: R
+                    means: "something"
+                    written: "something"
+
+
+                    [x \real.+/ y]
+                    Defines: f(x, y)
+                    given: R := (X, +, *, 0, 1, <)
+                    when: 'R is \real.numbers'
+                    means: 'f(x, y) := x + y'
+                    written: "x?? + y??"
+                    called: "real addition of x? and y?"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for id input vars also declared in Defines used in lhs of is statement in evaluated`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\real.numbers]
+                    Defines: R
+                    means: "something"
+                    written: "something"
+
+
+                    [x \real.+/ y]
+                    Defines: f(x, y)
+                    given: R := (X, +, *, 0, 1, <)
+                    when: 'R is \real.numbers'
+                    evaluated: 'f(x, y) := x + y'
+                    written: "x?? + y??"
+                    called: "real addition of x? and y?"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for an edge case defining a function declared in a given section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [a \integers.+/ b]
+                    Defines: f(a, b)
+                    evaluated: "something"
+                    written: "a? + b?"
+
+
+                    [a \integers.-/ b]
+                    Defines: f(a, b)
+                    evaluated: "something"
+                    written: "a? - b?"
+
+
+                    [a \integers.gt/ b]
+                    States:
+                    that: "something"
+                    written: "a? > b?"
+
+
+                    [a \integers.leq/ b]
+                    States:
+                    that: "something"
+                    written: "a? \leq b?"
+
+
+                    [\finite.sum[i]_{a}^{b}{f(i)}]
+                    Defines: L
+                    given: S(n)
+                    when:
+                    . 'S(a) := f(a)'
+                    . forAll: j
+                      suchThat:
+                      . 'j \integers.gt/ a'
+                      . 'j \integers.leq/ b'
+                      then:
+                      . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
+                    evaluated:
+                    . 'L := S(b)'
+                    written: "\displaystyle \sum_{i? = a?}^{b?} f?"
+                    called: "finite sum of f? from a? to b?"
                 """.trimIndent())),
             expectedOutput =
                 """

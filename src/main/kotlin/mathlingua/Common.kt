@@ -240,6 +240,7 @@ interface MutableMultiSet<T> {
     fun add(value: T)
     fun addAll(values: Collection<T>)
     fun remove(value: T)
+    fun removeAll(values: Collection<T>)
     fun contains(key: T): Boolean
     fun toList(): List<T>
     fun isEmpty(): Boolean
@@ -272,6 +273,12 @@ private class MutableMultiSetImpl<T> : MutableMultiSet<T> {
             if (newCount <= 0) {
                 data.remove(value)
             }
+        }
+    }
+
+    override fun removeAll(values: Collection<T>) {
+        for (v in values) {
+            remove(v)
         }
     }
 

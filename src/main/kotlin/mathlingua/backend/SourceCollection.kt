@@ -21,6 +21,7 @@ import mathlingua.backend.transform.GroupScope
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.checkVarsPhase2Node
 import mathlingua.backend.transform.expandAsWritten
+import mathlingua.backend.transform.getVarsPhase2Node
 import mathlingua.backend.transform.getVarsTexTalkNode
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
@@ -121,6 +122,7 @@ interface SourceCollection {
     fun getSymbolErrors(): List<ValueSourceTracker<ParseError>>
     fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>>
     fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>>
+    fun getInputOutputSymbolErrors(): List<ValueSourceTracker<ParseError>>
     fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
@@ -1339,6 +1341,143 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
         return result.map { Pair(first = it.first, second = it.second.normalized) }
     }
+
+    override fun getInputOutputSymbolErrors(): List<ValueSourceTracker<ParseError>> {
+        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+        for (vst in allGroups) {
+            val group = vst.value.normalized
+            val tracker = vst.tracker ?: newLocationTracker()
+
+            val inputs = getInputSymbols(group)
+            val outputs = getOutputSymbols(group)
+
+            val whenSection = getWhenSection(group)
+            if (whenSection != null) {
+                val usedSymbols =
+                    findIsLhsSymbols(whenSection, tracker)
+                        .toMutableList()
+                        .plus(findColonEqualsLhsSymbols(whenSection, tracker))
+                for (pair in usedSymbols) {
+                    val sym = pair.first
+                    val location = pair.second
+                    if (outputs.contains(sym)) {
+                        errors.add(
+                            ValueSourceTracker(
+                                value =
+                                    ParseError(
+                                        message =
+                                            "A `when:` section cannot describe a symbol introduced in a `Defines:` section but found '${sym}'",
+                                        row = location.row,
+                                        column = location.column),
+                                source = vst.source,
+                                tracker = vst.tracker))
+                    }
+                }
+            }
+
+            for (meansOrEval in getMeansEvaluatedSections(group)) {
+                val usedSymbols =
+                    findIsLhsSymbols(meansOrEval, tracker)
+                        .toMutableList()
+                        .plus(findColonEqualsLhsSymbols(meansOrEval, tracker))
+                for (pair in usedSymbols) {
+                    val sym = pair.first
+                    val location = pair.second
+                    if (inputs.contains(sym) && !outputs.contains(sym)) {
+                        errors.add(
+                            ValueSourceTracker(
+                                value =
+                                    ParseError(
+                                        message =
+                                            "A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found '${sym}'",
+                                        row = location.row,
+                                        column = location.column),
+                                source = vst.source,
+                                tracker = vst.tracker))
+                    }
+                }
+            }
+        }
+        return errors
+    }
+}
+
+private fun getWhenSection(topLevelGroup: TopLevelGroup) =
+    when (topLevelGroup) {
+        is DefinesGroup -> topLevelGroup.whenSection
+        is StatesGroup -> topLevelGroup.whenSection
+        is TheoremGroup -> topLevelGroup.whenSection
+        is AxiomGroup -> topLevelGroup.whenSection
+        is ConjectureGroup -> topLevelGroup.whenSection
+        else -> null
+    }
+
+private fun getMeansEvaluatedSections(topLevelGroup: TopLevelGroup) =
+    when (topLevelGroup) {
+        is DefinesGroup -> {
+            val result = mutableListOf<Phase2Node>()
+            if (topLevelGroup.meansSection != null) {
+                result.add(topLevelGroup.meansSection)
+            }
+            if (topLevelGroup.evaluatedSection != null) {
+                result.add(topLevelGroup.evaluatedSection)
+            }
+            result
+        }
+        else -> emptyList()
+    }
+
+private fun getInputSymbols(topLevelGroup: TopLevelGroup): Set<String> {
+    val result = mutableSetOf<String>()
+    when (topLevelGroup) {
+        is DefinesGroup -> {
+            result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
+            if (topLevelGroup.givenSection != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
+            }
+        }
+        is StatesGroup -> {
+            result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
+            if (topLevelGroup.givenSection != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
+            }
+        }
+        is TheoremGroup -> {
+            if (topLevelGroup.id != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
+            }
+            if (topLevelGroup.givenSection != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
+            }
+        }
+        is AxiomGroup -> {
+            if (topLevelGroup.id != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
+            }
+            if (topLevelGroup.givenSection != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
+            }
+        }
+        is ConjectureGroup -> {
+            if (topLevelGroup.id != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
+            }
+            if (topLevelGroup.givenSection != null) {
+                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
+            }
+        }
+    }
+    return result
+}
+
+private fun getOutputSymbols(topLevelGroup: TopLevelGroup): Set<String> {
+    val result = mutableSetOf<String>()
+    when (topLevelGroup) {
+        is DefinesGroup -> {
+            result.addAll(getVarsPhase2Node(topLevelGroup.definesSection).map { it.name })
+        }
+    }
+    return result
 }
 
 fun getPatternsToWrittenAs(
@@ -1933,5 +2072,103 @@ private fun findColonEqualsRhsSignatures(
         }
     } else {
         node.forEach { findColonEqualsRhsSignatures(it, location, rhsIsSignatures) }
+    }
+}
+
+private fun findIsLhsSymbols(
+    node: Phase2Node, locationTracker: LocationTracker
+): List<Pair<String, Location>> {
+    val result = mutableListOf<Pair<String, Location>>()
+    findIsLhsSymbols(node, locationTracker, result)
+    return result
+}
+
+private fun findIsLhsSymbols(
+    node: Phase2Node,
+    locationTracker: LocationTracker,
+    lhsIsSymbols: MutableList<Pair<String, Location>>
+) {
+    if (node is Statement) {
+        when (node.texTalkRoot) {
+            is ValidationSuccess -> {
+                val location =
+                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                findIsLhsSymbols(node.texTalkRoot.value, location, lhsIsSymbols)
+            }
+            else -> {
+                // ignore statements that do not parse
+            }
+        }
+    } else {
+        node.forEach { findIsLhsSymbols(it, locationTracker, lhsIsSymbols) }
+    }
+}
+
+private fun findIsLhsSymbols(
+    node: TexTalkNode, location: Location, lhsIsSymbols: MutableList<Pair<String, Location>>
+) {
+    if (node is IsTexTalkNode) {
+        node.lhs.items.forEach {
+            lhsIsSymbols.addAll(
+                getVarsTexTalkNode(
+                    it,
+                    isInLhsOfColonEqualsIsOrIn = false,
+                    groupScope = GroupScope.InNone,
+                    isInIdStatement = false,
+                    forceIsPlaceholder = false)
+                    .map { symbol -> Pair(symbol.name, location) })
+        }
+    } else {
+        node.forEach { findIsLhsSymbols(it, location, lhsIsSymbols) }
+    }
+}
+
+private fun findColonEqualsLhsSymbols(
+    node: Phase2Node, locationTracker: LocationTracker
+): List<Pair<String, Location>> {
+    val result = mutableListOf<Pair<String, Location>>()
+    findColonEqualsLhsSymbols(node, locationTracker, result)
+    return result
+}
+
+private fun findColonEqualsLhsSymbols(
+    node: Phase2Node,
+    locationTracker: LocationTracker,
+    lhsColonEqualsSymbols: MutableList<Pair<String, Location>>
+) {
+    if (node is Statement) {
+        when (node.texTalkRoot) {
+            is ValidationSuccess -> {
+                val location =
+                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                findColonEqualsLhsSymbols(node.texTalkRoot.value, location, lhsColonEqualsSymbols)
+            }
+            else -> {
+                // ignore statements that do not parse
+            }
+        }
+    } else {
+        node.forEach { findColonEqualsLhsSymbols(it, locationTracker, lhsColonEqualsSymbols) }
+    }
+}
+
+private fun findColonEqualsLhsSymbols(
+    node: TexTalkNode,
+    location: Location,
+    lhsColonEqualsSymbols: MutableList<Pair<String, Location>>
+) {
+    if (node is ColonEqualsTexTalkNode) {
+        node.lhs.items.forEach {
+            lhsColonEqualsSymbols.addAll(
+                getVarsTexTalkNode(
+                    it,
+                    isInLhsOfColonEqualsIsOrIn = true,
+                    groupScope = GroupScope.InNone,
+                    isInIdStatement = false,
+                    forceIsPlaceholder = false)
+                    .map { symbol -> Pair(symbol.name, location) })
+        }
+    } else {
+        node.forEach { findColonEqualsLhsSymbols(it, location, lhsColonEqualsSymbols) }
     }
 }

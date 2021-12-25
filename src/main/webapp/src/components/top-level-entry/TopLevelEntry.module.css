@@ -14,10 +14,9 @@
   margin-right: auto; /* for centering content */
   margin-top: 2.25em;
   margin-bottom: 2.25em;
-  border-color: rgba(230, 230, 230);
+  border-color: #e0e0e0;
   border-radius: 2px;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
-    inset 0 0 0 0 rgba(240, 240, 240, 0.5);
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, .1);
 }
 
 .mathlinguaIconPane {

@@ -47,7 +47,7 @@ p {
   margin-right: auto; /* for centering content */
   margin-top: 2.25em;
   margin-bottom: 2.25em;
-  border-color: rgba(230, 230, 230);
+  border-color: #dedede;
   border-radius: 2px;
 }
 

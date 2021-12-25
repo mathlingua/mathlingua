@@ -97,8 +97,7 @@ real numbers.
 [\finite.sum[i]_{a}^{b}{f(i)}]
 Defines: L
 given: S(n)
-evaluated:
-. 'L := S(b)'
+when:
 . 'S(a) := f(a)'
 . forAll: j
   suchThat:
@@ -106,6 +105,8 @@ evaluated:
   . 'j \integers.leq/ b'
   then:
   . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
+evaluated:
+. 'L := S(b)'
 written: "\displaystyle \sum_{i? = a?}^{b?} f?"
 called: "finite sum of $f$ from $a?$ to $b?$"
 

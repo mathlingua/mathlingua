@@ -347,11 +347,10 @@ Now we can define a group:
 ```math
 [\group]
 Defines: G := (X, *, e)
-when:
+means:
 . 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
-means:
 . forAll: x
   suchThat: 'x in X'
   then:
@@ -385,11 +384,10 @@ that is rendered as
 
 [\group]
 Defines: G := (X, *, e)
-when:
+means:
 . 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
-means:
 . forAll: x
   suchThat: 'x in X'
   then:

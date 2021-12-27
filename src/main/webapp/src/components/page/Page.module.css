@@ -14,8 +14,7 @@
   border-width: 1px;
   border-color: #dddddd; /* rgba(210, 210, 210); */
   border-radius: 1px;
-  box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
-    inset 0 0 0 0 rgba(240, 240, 240, 0.5);
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, .1);
 }
 
 @media screen and (max-width: 500px) {

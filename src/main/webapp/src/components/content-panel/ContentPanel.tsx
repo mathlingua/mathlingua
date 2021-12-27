@@ -191,9 +191,7 @@ const TwoColumnContent = (props: {
       <div
         style={{
           width: props.isSidePanelVisible ? '80%' : '100%',
-          border: 'solid',
-          borderColor: '#cccccc',
-          borderWidth: '1px',
+          border: 'none',
           marginTop: '0.5em',
         }}
       >

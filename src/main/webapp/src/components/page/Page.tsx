@@ -12,6 +12,7 @@ import { selectQuery } from '../../store/querySlice';
 import debounce from 'lodash.debounce';
 
 import AceEditor from 'react-ace';
+import 'ace-builds/src-min-noconflict/ext-searchbox';
 
 import * as langTools from 'ace-builds/src-noconflict/ext-language_tools';
 import 'ace-builds/src-noconflict/mode-yaml';
@@ -340,6 +341,25 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
       this.editor.clearSelection();
     });
     await this.check(this.props.viewedPath);
+
+    const gutterElements = document.getElementsByClassName('ace_gutter');
+    if (gutterElements) {
+      for (const el of Array.from(gutterElements)) {
+        (el as any).style.backgroundColor = '#f5f5f8';
+        (el as any).style.borderRight = 'solid';
+        (el as any).style.borderRightWidth = '1px';
+        (el as any).style.borderRightColor = '#dddddd';
+      }
+    }
+
+    const contentElements = document.getElementsByClassName('ace_content');
+    if (contentElements) {
+      for (const el of Array.from(contentElements)) {
+        (el as any).style.borderTop = 'solid';
+        (el as any).style.borderTopColor = '#dddddd';
+        (el as any).style.borderTopWidth = '1px';
+      }
+    }
   }
 
   private setupCompletions() {
@@ -482,6 +502,9 @@ const SideBySideView = (props: {
           height: 'max-content',
           overflow: 'scroll',
           background: '#ffffff',
+          borderTop: 'solid',
+          borderTopColor: '#dddddd',
+          borderTopWidth: '1px'
         }}
       >
         <RenderedContent

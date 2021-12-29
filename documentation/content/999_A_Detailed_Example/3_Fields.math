@@ -99,13 +99,13 @@ called: "additive inverse of $x?$"
 
 
 [x \field{F}.-/ y]
-States:
+Defines: f(x, y)
 given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x, y in X'
-that:
-. 'x + \additive.inverse:of{y}:inField{F}'
+expresses:
+. 'f(x, y) := x + \additive.inverse:of{y}:inField{F}'
 written: "x?? - y??"
 called: "$x??$ minus $y??$"
 
@@ -138,13 +138,13 @@ called: "multiplicative inverse of $x?$"
 
 
 [x \field{F}.div/ y]
-States:
+Defines: f(x, y)
 given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x, y in X'
-that:
-. 'x * \multiplicative.inverse:of{y}:inField{F}'
+expresses:
+. 'f(x, y) := x * \multiplicative.inverse:of{y}:inField{F}'
 written: "x? y??^{-1}"
 called: "$x?$ times the inverse of $y?$"
 

@@ -290,7 +290,7 @@ Riemann Integrable.
 Defines: S
 when:
 . 'f is \riemann.integralble.function:on{a, b}'
-means:
+expresses:
 . 'S := \lower.darboux.integral:of{f}:on{a, b}'
 written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
 called: "definite integral of $f?$ from $a?$ to $b?$"

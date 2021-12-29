@@ -86,29 +86,29 @@ called: "integer multiplication"
 
 
 [x \integers.geq/ y]
-Defines: z
-means: "$x?$ is greater than or equal to $y?$"
+States:
+that: "$x?$ is greater than or equal to $y?$"
 written: "x?? \geq y??"
 called: "$x?$ is greater than or equal to $y?$"
 
 
 [x \integers.gt/ y]
-Defines: z
-means: "$x?$ is greater than $y?$"
+States:
+that: "$x?$ is greater than $y?$"
 written: "x?? > y??"
 called: "$x?$ is greater than $y?$"
 
 
 [x \integers.leq/ y]
-Defines: z
-means: "$x?$ is less than or equal to $y?$"
+States:
+that: "$x?$ is less than or equal to $y?$"
 written: "x?? \leq y??"
 called: "$x?$ is less than or equal to $y?$"
 
 
 [x \integers.lt/ y]
-Defines: z
-means: "$x?$ is less than $y?$"
+States:
+that: "$x?$ is less than $y?$"
 written: "x?? < y??"
 called: "$x?$ is less than $y?$"
 
@@ -167,7 +167,7 @@ given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
-means:
+expresses:
 . 'z := \Rational{p1 * q2 + p2*q1, q1 * q2}'
 using:
 . 'a * b := a \integers.*/ b'
@@ -182,13 +182,9 @@ given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
-means:
+expresses:
 . 'z := \Rational{p1 * p2, q1 * q2}'
-. 'A = 0'
-. 'f(x) = 0'
 using:
-. 'A := 0'
-. 'f(x) := 0'
 . 'a * b := a \integers.*/ b'
 written: "x?? y??"
 called: "rational multiplication"

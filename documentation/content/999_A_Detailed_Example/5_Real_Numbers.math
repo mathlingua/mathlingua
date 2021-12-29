@@ -57,7 +57,7 @@ to define those concepts in the real numbers.
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R is \real.numbers'
-means: 'f(x, y) := x + y'
+expresses: 'f(x, y) := x + y'
 written: "x?? + y??"
 called: "real addition of $x?$ and $y?$"
 
@@ -66,7 +66,7 @@ called: "real addition of $x?$ and $y?$"
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R is \real.numbers'
-means: 'f(x, y) := x + inv(y)'
+expresses: 'f(x, y) := x + inv(y)'
 using:
 . 'inv(a) := \additive.inverse:of{a}:inField{R}'
 written: "x? - y?"
@@ -77,7 +77,7 @@ called: "real difference of $x?$ and $y?$"
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R is \real.numbers'
-means: 'f(x, y) := x * y'
+expresses: 'f(x, y) := x * y'
 written: "x?? y??"
 called: "real multiplication of $x?$ and $y?$"
 
@@ -86,7 +86,7 @@ called: "real multiplication of $x?$ and $y?$"
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R is \real.numbers'
-means: 'f(x, y) := x * inv(y)'
+expresses: 'f(x, y) := x * inv(y)'
 using:
 . 'inv(a) := \multiplicative.inverse:of{a}:inField{R}'
 written: "\frac{x??}{y??}"
@@ -101,11 +101,11 @@ real number $y$, namely $\frac{x}{y}$.
 
 
 [\real.frac{x}{y}]
-States:
+Defines: z
 when:
 . 'x, y is \real'
-that:
-. 'x \real.div/ y'
+expresses:
+. 'z := x \real.div/ y'
 written: "\frac{x??}{y??}"
 called: "real division of $x?$ by $y?$"
 

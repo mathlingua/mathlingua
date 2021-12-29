@@ -1,6 +1,6 @@
 .entitiesPanel {
   display: none;
-  background-color: #fafafa;
+  background-color: #f9f9fb;
   overflow-x: auto;
   overflow-y: auto;
   white-space: nowrap;
@@ -10,7 +10,7 @@
   border: solid;
   border-width: 1px;
   border-radius: 2px;
-  border-color: #ccc;
+  border-color: #cfcfcf;
   box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
     inset 0 0 0 0 rgba(240, 240, 240, 0.5);
   transition: 0.1s;
@@ -19,14 +19,14 @@
 .entitiesPanelItem {
   margin: 1em;
   display: block;
-  background-color: #fafafa;
+  background-color: transparent;
 }
 
 .closeAllButton {
   position: absolute;
   border: none;
   color: #aaaaaa;
-  background: #fafafa;
+  background: transparent;
   padding: 1em;
   font-size: 75%;
 }

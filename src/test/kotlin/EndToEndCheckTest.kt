@@ -2343,7 +2343,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for using a command on right-hand-side of an 'is' that has an evaluated section`() {
+    fun `check reports errors for using a command on right-hand-side of an 'is' that has an expresses section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2353,8 +2353,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
-                    evaluated: 'X := 0'
+                    expresses: 'X := 0'
                     written: "something"
 
 
@@ -2365,8 +2364,8 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 10, Column: 8)
-                The right-hand-side of an `is` cannot reference a `Defines:` with an `evaluated:` section but found '\something'
+                ERROR: content/file1.math (Line: 9, Column: 8)
+                The right-hand-side of an `is` cannot reference a `Defines:` with an `expresses:` section but found '\something'
 
                 FAILED
                 Processed 1 file
@@ -2377,7 +2376,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for using a command on right-hand-side of an 'is' that does not have an evaluated section`() {
+    fun `check does not report errors for using a command on right-hand-side of an 'is' that does not have an expresses section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2407,7 +2406,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for using a command on right-hand-side of an colon equals that does not has an evaluated section`() {
+    fun `check reports errors for using a command on right-hand-side of an colon equals that does not has an expresses section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2429,7 +2428,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 9, Column: 8)
-                The right-hand-side of an `:=` cannot reference a `Defines:` without an `evaluated:` section but found '\something'
+                The right-hand-side of an `:=` cannot reference a `Defines:` without an `expresses:` section but found '\something'
 
                 FAILED
                 Processed 1 file
@@ -2440,7 +2439,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for using a command on right-hand-side of an colon equals that has an evaluated section`() {
+    fun `check does not report errors for using a command on right-hand-side of an colon equals that has an expresses section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2450,8 +2449,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
-                    evaluated: 'X := 0'
+                    expresses: 'X := 0'
                     written: "something"
 
 
@@ -2493,7 +2491,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 9, Column: 8)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2545,7 +2543,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
@@ -2557,7 +2555,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 9, Column: 8)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2578,7 +2576,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
@@ -2599,7 +2597,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for id input var used in lhs of is statement in evaluated`() {
+    fun `check reports errors for id input var used in lhs of is statement in expresses`() {
         runCheckTest(
             files =
                 listOf(
@@ -2615,13 +2613,13 @@ internal class EndToEndCheckTest {
 
                     [\something{A}]
                     Defines: X
-                    evaluated: 'A is \something.else'
+                    expresses: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 9, Column: 12)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2632,7 +2630,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for id input var used in lhs of colon equals statement in evaluated`() {
+    fun `check reports errors for id input var used in lhs of colon equals statement in expresses`() {
         runCheckTest(
             files =
                 listOf(
@@ -2642,19 +2640,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
                     [\something{A}]
                     Defines: X
-                    evaluated: 'A := \something.else'
+                    expresses: 'A := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 9, Column: 12)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2688,7 +2686,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 10, Column: 8)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2741,7 +2739,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
@@ -2754,7 +2752,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 10, Column: 8)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2775,7 +2773,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
@@ -2797,7 +2795,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for given section input var used in lhs of is statement in evaluated`() {
+    fun `check reports errors for given section input var used in lhs of is statement in expresses`() {
         runCheckTest(
             files =
                 listOf(
@@ -2814,13 +2812,13 @@ internal class EndToEndCheckTest {
                     [\something]
                     Defines: X
                     given: A
-                    evaluated: 'A is \something.else'
+                    expresses: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 10, Column: 12)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2831,7 +2829,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for given section input var used in lhs of colon equals statement in evaluated`() {
+    fun `check reports errors for given section input var used in lhs of colon equals statement in expresses`() {
         runCheckTest(
             files =
                 listOf(
@@ -2841,20 +2839,20 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
                     given: A
-                    evaluated: 'A := \something.else'
+                    expresses: 'A := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 10, Column: 12)
-                A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2929,7 +2927,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for Defines section var used in lhs of is statement in evaluated`() {
+    fun `check does not report errors for Defines section var used in lhs of is statement in expresses`() {
         runCheckTest(
             files =
                 listOf(
@@ -2945,7 +2943,7 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: X
-                    evaluated: 'X is \something.else'
+                    expresses: 'X is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -2969,7 +2967,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
@@ -3003,7 +3001,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
@@ -3023,7 +3021,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for Defines section var used in lhs of colon equals statement in evaluated`() {
+    fun `check does not report errors for Defines section var used in lhs of colon equals statement in expresses`() {
         runCheckTest(
             files =
                 listOf(
@@ -3033,13 +3031,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    evaluated: "something else"
+                    expresses: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
-                    evaluated: 'X := \something.else'
+                    expresses: 'X := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3086,7 +3084,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for id input vars also declared in Defines used in lhs of is statement in evaluated`() {
+    fun `check does not report errors for id input vars also declared in Defines used in lhs of is statement in expresses`() {
         runCheckTest(
             files =
                 listOf(
@@ -3104,7 +3102,7 @@ internal class EndToEndCheckTest {
                     Defines: f(x, y)
                     given: R := (X, +, *, 0, 1, <)
                     when: 'R is \real.numbers'
-                    evaluated: 'f(x, y) := x + y'
+                    expresses: 'f(x, y) := x + y'
                     written: "x?? + y??"
                     called: "real addition of x? and y?"
                 """.trimIndent())),
@@ -3129,13 +3127,13 @@ internal class EndToEndCheckTest {
                             """
                     [a \integers.+/ b]
                     Defines: f(a, b)
-                    evaluated: "something"
+                    expresses: "something"
                     written: "a? + b?"
 
 
                     [a \integers.-/ b]
                     Defines: f(a, b)
-                    evaluated: "something"
+                    expresses: "something"
                     written: "a? - b?"
 
 
@@ -3162,7 +3160,7 @@ internal class EndToEndCheckTest {
                       . 'j \integers.leq/ b'
                       then:
                       . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
-                    evaluated:
+                    expresses:
                     . 'L := S(b)'
                     written: "\displaystyle \sum_{i? = a?}^{b?} f?"
                     called: "finite sum of f? from a? to b?"

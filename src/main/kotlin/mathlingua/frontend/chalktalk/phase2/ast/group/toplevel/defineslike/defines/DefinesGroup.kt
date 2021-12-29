@@ -19,6 +19,8 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase1.ast.getColumn
+import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
@@ -69,7 +71,7 @@ data class DefinesGroup(
     val givenSection: GivenSection?,
     val whenSection: WhenSection?,
     val meansSection: MeansSection?,
-    val evaluatedSection: EvaluatedSection?,
+    val expressesSection: ExpressesSection?,
     val viewingSection: ViewingSection?,
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
@@ -89,8 +91,8 @@ data class DefinesGroup(
         if (meansSection != null) {
             fn(meansSection)
         }
-        if (evaluatedSection != null) {
-            fn(evaluatedSection)
+        if (expressesSection != null) {
+            fn(expressesSection)
         }
         if (viewingSection != null) {
             fn(viewingSection)
@@ -114,7 +116,7 @@ data class DefinesGroup(
                 givenSection,
                 whenSection,
                 meansSection,
-                evaluatedSection,
+                expressesSection,
                 viewingSection,
                 usingSection,
                 writtenSection,
@@ -138,8 +140,8 @@ data class DefinesGroup(
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
-                evaluatedSection =
-                    evaluatedSection?.transform(chalkTransformer) as EvaluatedSection?,
+                expressesSection =
+                    expressesSection?.transform(chalkTransformer) as ExpressesSection?,
                 viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -163,7 +165,7 @@ fun validateDefinesGroup(
                     "given?",
                     "when?",
                     "means?",
-                    "evaluated?",
+                    "expresses?",
                     "viewing?",
                     "using?",
                     "written",
@@ -190,9 +192,9 @@ fun validateDefinesGroup(
                             ifNonNull(sections["means"]) {
                                 validateMeansSection(it, errors, tracker)
                             },
-                        evaluatedSection =
-                            ifNonNull(sections["evaluated"]) {
-                                validateEvaluatedSection(it, errors, tracker)
+                        expressesSection =
+                            ifNonNull(sections["expresses"]) {
+                                validateExpressesSection(it, errors, tracker)
                             },
                         viewingSection =
                             ifNonNull(sections["viewing"]) {
@@ -218,6 +220,14 @@ fun validateDefinesGroup(
                 val funcArgsError = checkIfFunctionSignatureMatchDefines(def, tracker)
                 if (funcArgsError != null) {
                     errors.add(funcArgsError)
+                    DEFAULT_DEFINES_GROUP
+                } else if (def.meansSection != null && def.expressesSection != null) {
+                    errors.add(
+                        ParseError(
+                            message =
+                                "A `Defines:` cannot have both a `means:` and an `expresses:` section",
+                            row = getRow(node),
+                            column = getColumn(node)))
                     DEFAULT_DEFINES_GROUP
                 } else {
                     def

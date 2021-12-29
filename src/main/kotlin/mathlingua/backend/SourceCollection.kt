@@ -588,18 +588,18 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
     override fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
-        val sigsWithEvaluated = getSignaturesWithEvaluatedSection().map { it.value.form }.toSet()
+        val sigsWithExpresses = getSignaturesWithExpressesSection().map { it.value.form }.toSet()
         for (svt in allGroups) {
             val rhsSigs =
                 findIsRhsSignatures(svt.value.normalized, svt.tracker ?: newLocationTracker())
             for (sig in rhsSigs) {
-                if (sigsWithEvaluated.contains(sig.form)) {
+                if (sigsWithExpresses.contains(sig.form)) {
                     result.add(
                         ValueSourceTracker(
                             value =
                                 ParseError(
                                     message =
-                                        "The right-hand-side of an `is` cannot reference a `Defines:` with an `evaluated:` section but found '${sig.form}'",
+                                        "The right-hand-side of an `is` cannot reference a `Defines:` with an `expresses:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
                             source = svt.source,
@@ -612,20 +612,20 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
 
     override fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
-        val sigsWithoutEvaluated =
-            getSignaturesWithoutEvaluatedSection().map { it.value.form }.toSet()
+        val sigsWithoutExpresses =
+            getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
         for (svt in allGroups) {
             val rhsSigs =
                 findColonEqualsRhsSignatures(
                     svt.value.normalized, svt.tracker ?: newLocationTracker())
             for (sig in rhsSigs) {
-                if (sigsWithoutEvaluated.contains(sig.form)) {
+                if (sigsWithoutExpresses.contains(sig.form)) {
                     result.add(
                         ValueSourceTracker(
                             value =
                                 ParseError(
                                     message =
-                                        "The right-hand-side of an `:=` cannot reference a `Defines:` without an `evaluated:` section but found '${sig.form}'",
+                                        "The right-hand-side of an `:=` cannot reference a `Defines:` without an `expresses:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
                             source = svt.source,
@@ -636,11 +636,11 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         return result
     }
 
-    fun getSignaturesWithoutEvaluatedSection(): List<ValueSourceTracker<Signature>> {
+    fun getSignaturesWithoutExpressesSection(): List<ValueSourceTracker<Signature>> {
         val result = mutableListOf<ValueSourceTracker<Signature>>()
         for (svt in definesGroups) {
             val def = svt.value.original
-            if (def.evaluatedSection == null && def.signature != null) {
+            if (def.expressesSection == null && def.signature != null) {
                 result.add(
                     ValueSourceTracker(
                         value = def.signature, source = svt.source, tracker = svt.tracker))
@@ -649,11 +649,11 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         return result
     }
 
-    fun getSignaturesWithEvaluatedSection(): List<ValueSourceTracker<Signature>> {
+    fun getSignaturesWithExpressesSection(): List<ValueSourceTracker<Signature>> {
         val result = mutableListOf<ValueSourceTracker<Signature>>()
         for (svt in definesGroups) {
             val def = svt.value.original
-            if (def.evaluatedSection != null && def.signature != null) {
+            if (def.expressesSection != null && def.signature != null) {
                 result.add(
                     ValueSourceTracker(
                         value = def.signature, source = svt.source, tracker = svt.tracker))
@@ -1102,7 +1102,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
             maybeIdentifyFromNameToColonEquals(clause)
         }
 
-        for (clause in rhsMatchedDefines.evaluatedSection?.clauses?.clauses ?: emptyList()) {
+        for (clause in rhsMatchedDefines.expressesSection?.clauses?.clauses ?: emptyList()) {
             maybeIdentifyFromNameToColonEquals(clause)
         }
 
@@ -1215,7 +1215,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                     givenSection = null,
                     whenSection = null,
                     meansSection = MeansSection(clauses = ClauseListNode(clauses = emptyList())),
-                    evaluatedSection = null,
+                    expressesSection = null,
                     viewingSection = null,
                     usingSection = null,
                     writtenSection = WrittenSection(forms = listOf("\"${stmtText}\"")),
@@ -1375,7 +1375,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                 }
             }
 
-            for (meansOrEval in getMeansEvaluatedSections(group)) {
+            for (meansOrEval in getMeansExpressesSections(group)) {
                 val usedSymbols =
                     findIsLhsSymbols(meansOrEval, tracker)
                         .toMutableList()
@@ -1389,7 +1389,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                                 value =
                                     ParseError(
                                         message =
-                                            "A `means:` or `evaluated:` section cannot describe a symbol introduced in a [...] or `given:` section but found '${sym}'",
+                                            "A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found '${sym}'",
                                         row = location.row,
                                         column = location.column),
                                 source = vst.source,
@@ -1412,15 +1412,15 @@ private fun getWhenSection(topLevelGroup: TopLevelGroup) =
         else -> null
     }
 
-private fun getMeansEvaluatedSections(topLevelGroup: TopLevelGroup) =
+private fun getMeansExpressesSections(topLevelGroup: TopLevelGroup) =
     when (topLevelGroup) {
         is DefinesGroup -> {
             val result = mutableListOf<Phase2Node>()
             if (topLevelGroup.meansSection != null) {
                 result.add(topLevelGroup.meansSection)
             }
-            if (topLevelGroup.evaluatedSection != null) {
-                result.add(topLevelGroup.evaluatedSection)
+            if (topLevelGroup.expressesSection != null) {
+                result.add(topLevelGroup.expressesSection)
             }
             result
         }
@@ -1930,7 +1930,7 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                                 whenSection = null,
                                 meansSection =
                                     MeansSection(clauses = ClauseListNode(clauses = emptyList())),
-                                evaluatedSection = null,
+                                expressesSection = null,
                                 viewingSection = null,
                                 usingSection = null,
                                 writtenSection = WrittenSection(forms = listOf(rhs.toCode())),

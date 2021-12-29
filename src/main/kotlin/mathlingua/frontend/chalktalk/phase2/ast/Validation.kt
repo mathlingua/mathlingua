@@ -65,7 +65,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Calle
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.EvaluatedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ExpressesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -336,7 +336,7 @@ val DEFAULT_PIECEWISE_SECTION = PiecewiseSection()
 
 val DEFAULT_NOTE_SECTION = NoteSection()
 
-val DEFAULT_EVALUATED_SECTION = EvaluatedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+val DEFAULT_EXPRESSED_SECTION = ExpressesSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 val DEFAULT_PROVIDED_SECTION = ProvidedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
@@ -568,7 +568,7 @@ val DEFAULT_DEFINES_GROUP =
         givenSection = DEFAULT_GIVEN_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
-        evaluatedSection = DEFAULT_EVALUATED_SECTION,
+        expressesSection = DEFAULT_EXPRESSED_SECTION,
         viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,

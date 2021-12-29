@@ -7,7 +7,7 @@ Defines:
 given?:
 when?:
 means?:
-evaluated?:
+expresses?:
 viewing?:
 using?:
 written:
@@ -27,7 +27,7 @@ Defines:
 given?:
 when?:
 means?:
-evaluated?:
+expresses?:
 viewing?:
 using?:
 written:
@@ -47,7 +47,7 @@ Defines:
 given?:
 when?:
 means?:
-evaluated?:
+expresses?:
 viewing?:
 using?:
 written:
@@ -67,7 +67,7 @@ Defines:
 given?:
 when?:
 means?:
-evaluated?:
+expresses?:
 viewing?:
 using?:
 written:
@@ -87,7 +87,7 @@ Defines:
 given?:
 when?:
 means?:
-evaluated?:
+expresses?:
 viewing?:
 using?:
 written:
@@ -107,7 +107,7 @@ Defines:
 given?:
 when?:
 means?:
-evaluated?:
+expresses?:
 viewing?:
 using?:
 written:

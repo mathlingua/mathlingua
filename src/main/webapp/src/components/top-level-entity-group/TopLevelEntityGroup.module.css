@@ -4,19 +4,19 @@
 .triangle {
   width: 0;
   height: 0;
-  border-left: 0.76em solid transparent;
-  border-right: 0.76em solid transparent;
-  border-bottom: 0.76em solid #fafafa;
-  margin-left: -0.76em;
-  padding-top: 0.15em;
+  border-left: 0.7em solid transparent;
+  border-right: 0.7em solid transparent;
+  border-bottom: 0.75em solid #fafafc;
+  margin-left: -0.68em;
+  padding-top: 0.1em;
 }
 
 .triangleBorder {
   width: 0;
   height: 0;
-  border-left: 0.9em solid transparent;
-  border-right: 0.9em solid transparent;
-  border-bottom: 0.9em solid #cccccc;
+  border-left: 0.8em solid transparent;
+  border-right: 0.8em solid transparent;
+  border-bottom: 0.85em solid #cfcfcf;
   margin-left: auto;
   margin-right: auto;
   padding: -1em;

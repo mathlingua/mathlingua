@@ -105,7 +105,7 @@ Document(
                              ]
                  )
                )
-               evaluatedSection = null
+               expressesSection = null
                viewingSection = null
                usingSection = null
                writtenSection = WrittenSection(

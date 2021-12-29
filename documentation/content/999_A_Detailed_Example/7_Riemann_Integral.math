@@ -105,7 +105,7 @@ when:
   . 'j \integers.leq/ b'
   then:
   . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
-evaluated:
+expresses:
 . 'L := S(b)'
 written: "\displaystyle \sum_{i? = a?}^{b?} f?"
 called: "finite sum of $f$ from $a?$ to $b?$"
@@ -129,7 +129,7 @@ when:
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
-evaluated:
+expresses:
 . 'L := \infimum:of{\set[x]:where{f(x)}
                            :suchThat{x \real.geq/ x_{i - 1}}
                                     {x \real.leq/ x_{i}}}'
@@ -156,7 +156,7 @@ when:
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
-evaluated:
+expresses:
 . 'L := \supremum:of{\set[x]:where{f(x)}
                             :suchThat{x \real.geq/ x_{i - 1}}
                                      {x \real.leq/ x_{i}}}'
@@ -183,7 +183,7 @@ when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
-evaluated:
+expresses:
 . 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
 . 'm_{i} := \infimum:of{f}:over{P}:at{i}'
@@ -206,7 +206,7 @@ when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
-evaluated:
+expresses:
 . 'S := \finite.sum[i]_{0}^{n}{M_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
 . 'M_{i} := \supremum:of{f}:over{P}:at{i}'
@@ -232,7 +232,7 @@ given: I
 when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-evaluated:
+expresses:
 . 'S := \supremum:of{\set[P, n]:where{L(f, P)}
                                :suchThat{P is \partition:of{I}:size{n}}}'
 using:
@@ -247,7 +247,7 @@ given: I
 when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-evaluated:
+expresses:
 . 'S := \infimum:of{\set[P, n]:where{U(f, P)}
                               :suchThat{P is \partition:of{I}:size{n}}}'
 using:

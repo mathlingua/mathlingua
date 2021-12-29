@@ -10,10 +10,9 @@ Before continuing, we need to define "set builder notation".
 
 
 [\set[x...]:where{within}:suchThat{cond}...]
-Defines:Y := {y...}
-means:
+Defines: Y := {y...}
+expresses:
 . 'Y is \set'
-evaluated:
 . 'y... := x...'
 written:
 . "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"
@@ -124,7 +123,7 @@ denominator.
 
 [\rationals.set]
 Defines: Q
-evaluated: 'Q := \set[x, p, q]:where{x := (p, q)}
+expresses: 'Q := \set[x, p, q]:where{x := (p, q)}
                               :suchThat{p in \integers.set}
                                        {q in \integers.set}'
 written: "\mathbb{Q}"
@@ -148,9 +147,8 @@ as the product of $a$ and the multiplicative inverse of $b$
 
 [\Rational{a, b}]
 Defines: x
-means:
+expresses:
 . 'x in \rationals.set'
-evaluated:
 . 'x := (a, b)'
 written: "\frac{a?}{b?}"
 called: "rational"

@@ -188,9 +188,8 @@ the maximum of a set.
 [\supremum:of{X}]
 Defines: beta
 when: 'X is \bounded.above.set'
-means:
+expresses:
 . 'beta is \upper.bound:of{X}'
-evaluated:
 . forAll: b
   suchThat: 'b is \upper.bound:of{X}'
   then: 'b \geq{X}/ beta'
@@ -247,9 +246,8 @@ the minimum of a set.
 [\infimum:of{X}]
 Defines: alpha
 when: 'X is \bounded.above.set'
-means:
+expresses:
 . 'alpha is \lower.bound:of{X}'
-evaluated:
 . forAll: a
   suchThat: 'a is \lower.bound:of{X}'
   then: 'a \leq{X}/ alpha'
@@ -269,7 +267,7 @@ a set to be empty or non-empty.
 
 [\empty.set]
 Defines: X
-means:
+expresses:
 . 'X is \set'
 . not:
   . exists: x
@@ -282,7 +280,7 @@ written: "\textrm{empty set}"
 Defines: X
 means:
 . 'X is \set'
-. not: 'X is \empty.set'
+. not: 'X := \empty.set'
 written: "\textrm{non-empty set}"
 
 

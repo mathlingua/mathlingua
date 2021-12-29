@@ -43,7 +43,7 @@ exluding the additive identity $0$, is an Abelian group.
 [A \set.minus/ B]
 Defines: C := {c}
 when: 'A, B is \set'
-means:
+expresses:
 . 'C is \set'
 . 'c in A'
 . not: 'c in B'
@@ -92,7 +92,7 @@ given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x in X'
-evaluated:
+expresses:
 . 'x + y = 0'
 written: "-x?"
 called: "additive inverse of $x?$"
@@ -131,7 +131,7 @@ when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x in X'
 . 'x \neq/ 0'
-evaluated:
+expresses:
 . 'x * y = 1'
 written: "x??^{-1}"
 called: "multiplicative inverse of $x?$"

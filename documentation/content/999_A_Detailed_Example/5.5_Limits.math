@@ -23,7 +23,7 @@ when:
 . 'f is \function:on{I}:to{\real.numbers}'
 . 'c in I'
 . 'R is \real.numbers'
-evaluated:
+expresses:
 . forAll: epsilon
   suchThat: 'epsilon is \positive:within{R}'
   then:

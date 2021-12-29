@@ -148,8 +148,9 @@ const ThreeColumnContent = (props: {
           width: isOnMobile()
             ? isSidePanelVisible
               ? '0%'
-              : '95%'
+              : centerWidth
             : centerWidth,
+          maxWidth: '95%',
           marginTop: zoomedInEnoughToHideSidebar ? '0.5em' : '1em',
           marginLeft: 'auto',
           marginRight: 'auto',

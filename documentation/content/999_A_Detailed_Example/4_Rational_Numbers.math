@@ -33,7 +33,7 @@ existence.  As such we describe them informally.
 
 [\integers.set]
 Defines: N
-means:
+expresses:
 . "The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$} "
 viewing:
 . as: '\set'
@@ -66,21 +66,21 @@ and so we simply state their existence below.
 
 [x \integers.+/ y]
 Defines: z
-means: "The addition of two integers"
+expresses: "The addition of two integers"
 written: "x?? + y??"
 called: "integer addition"
 
 
 [x \integers.-/ y]
 Defines: z
-means: "The difference of two integers"
+expresses: "The difference of two integers"
 written: "x?? - y??"
 called: "integer subtraction"
 
 
 [x \integers.*/ y]
 Defines: z
-means: "The product of two integers"
+expresses: "The product of two integers"
 written: "x?? y??"
 called: "integer multiplication"
 

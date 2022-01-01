@@ -17,7 +17,7 @@ close two real numbers are.
 [\real.abs(x)]
 Defines: f(x)
 given: R
-when: 'R is \real.numbers'
+when: 'R := \real.numbers'
 expresses:
 . piecewise:
   when: 'x is \positive:within{R}'
@@ -48,7 +48,7 @@ we won`\'`t be discussing such intervals here.
 [\open.interval{a, b}]
 Defines: I
 given: R
-when: 'R is \real.numbers'
+when: 'R := \real.numbers'
 expresses:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.lt/ x}
@@ -60,7 +60,7 @@ called: "the open interval from $a?$ to $b?$"
 [\closed.interval{a, b}]
 Defines: I
 given: R
-when: 'R is \real.numbers'
+when: 'R := \real.numbers'
 expresses:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.leq/ x}
@@ -91,7 +91,7 @@ use the more restrictive definition.
 Defines: f(x)
 given: R, a, b
 when:
-. 'R is \real.numbers'
+. 'R := \real.numbers'
 . 'I := \open.interval{a, b}'
 . 'c in I'
 means:
@@ -111,7 +111,7 @@ a function to be continuous on an entire set.
 Defines: f(x)
 given: R, a, b
 when:
-. 'R is \real.numbers'
+. 'R := \real.numbers'
 . 'I := \open.interval{a, b}'
 means:
 . forAll: c

@@ -66,6 +66,50 @@ class MatcherKtTest {
     }
 
     @Test
+    fun testSimpleOperatorExpandAsWrittenAddParens() {
+        val patternToExpansion =
+            mapOf(
+                OperatorTexTalkNode(
+                    lhs = buildText("A"),
+                    command = buildCommand("\\set.in/"),
+                    rhs = buildText("B")) to WrittenAsForm(target = null, form = "A+? \\in B+?"))
+        val node = buildNode("{X + Y} \\set.in/ {A + B}")
+        val expanded = expandAsWritten(null, node, patternToExpansion)
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text)
+            .isEqualTo("\\left ( {X + Y} \\right ) \\in \\left ( {A + B} \\right )")
+    }
+
+    @Test
+    fun testSimpleOperatorExpandAsWrittenDoNotAddParensForSimpleExpressions() {
+        val patternToExpansion =
+            mapOf(
+                OperatorTexTalkNode(
+                    lhs = buildText("A"),
+                    command = buildCommand("\\set.in/"),
+                    rhs = buildText("B")) to WrittenAsForm(target = null, form = "A+? \\in B+?"))
+        val node = buildNode("X \\set.in/ Y")
+        val expanded = expandAsWritten(null, node, patternToExpansion)
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("X \\in Y")
+    }
+
+    @Test
+    fun testSimpleOperatorExpandAsWrittenRemoveParens() {
+        val patternToExpansion =
+            mapOf(
+                OperatorTexTalkNode(
+                    lhs = buildText("A"),
+                    command = buildCommand("\\over/"),
+                    rhs = buildText("B")) to
+                    WrittenAsForm(target = null, form = "\\frac{A-?}{B-?}"))
+        val node = buildNode("(X + Y) \\over/ (A + B)")
+        val expanded = expandAsWritten(null, node, patternToExpansion)
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text).isEqualTo("\\frac{X + Y}{A + B}")
+    }
+
+    @Test
     fun testOperatorWithArgumentExpandAsWritten() {
         val patternToExpansion =
             mapOf(
@@ -240,6 +284,37 @@ class MatcherKtTest {
                     WrittenAsForm(
                         target = null, form = "form{prefix ... \\textrm{and} ... suffix}?"))
         val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
+        val expanded = expandAsWritten(null, node, patternToExpansion)
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text)
+            .isEqualTo(
+                "prefix a > 0 \\textrm{and} b < 0 \\textrm{and} c = 0 suffix + prefix A = 0 \\textrm{and} B < 0 suffix")
+    }
+
+    @Test
+    fun testVarArgInfixWithPrefixAndSuffixExpandAsWrittenAddParens() {
+        val patternToExpansion =
+            mapOf(
+                buildOperator(buildCommand("\\and{form}...")) to
+                    WrittenAsForm(
+                        target = null, form = "form{prefix ... \\textrm{and} ... suffix}+?"))
+        val node = buildNode("\\and{a > 0}{b < 0}{c = 0} + \\and{A = 0}{B < 0}")
+        val expanded = expandAsWritten(null, node, patternToExpansion)
+        assertThat(expanded.errors).isEmpty()
+        assertThat(expanded.text)
+            .isEqualTo(
+                "prefix \\left ( a > 0 \\right ) \\textrm{and} \\left ( b < 0 \\right ) \\textrm{and} \\left ( c = 0 \\right ) suffix + prefix \\left ( A = 0 \\right ) \\textrm{and} \\left ( B < 0 \\right ) suffix")
+    }
+
+    @Test
+    fun testVarArgInfixWithPrefixAndSuffixExpandAsWrittenRemoveParens() {
+        val patternToExpansion =
+            mapOf(
+                buildOperator(buildCommand("\\and{form}...")) to
+                    WrittenAsForm(
+                        target = null, form = "form{prefix ... \\textrm{and} ... suffix}-?"))
+        val node =
+            buildNode("\\and{(a > 0)}{   (b < 0)   }{  (c = 0)  } + \\and{ (A = 0)}{(B < 0) }")
         val expanded = expandAsWritten(null, node, patternToExpansion)
         assertThat(expanded.errors).isEmpty()
         assertThat(expanded.text)

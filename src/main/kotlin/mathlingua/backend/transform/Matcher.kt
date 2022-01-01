@@ -150,7 +150,7 @@ internal fun expandAsWritten(
         sigToPatternExpansion[opPattern.signature()] =
             PatternExpansion(pattern = opPattern, expansion = expansion)
     }
-    return expandAsWrittenImpl(target, node, sigToPatternExpansion, false)
+    return expandAsWrittenImpl(target, node, sigToPatternExpansion, SurroundingKind.DoNothing)
 }
 
 // -----------------------------------------------------------------------------
@@ -571,15 +571,29 @@ private fun expandAsWrittenImplImpl(
         if (exp.isNotEmpty()) {
             val expToStringParen =
                 exp.joinToString(" ") {
-                    expandAsWrittenImpl(fromTarget, it, sigToPatternExpansion, true).text
+                    expandAsWrittenImpl(
+                            fromTarget, it, sigToPatternExpansion, SurroundingKind.AddParens)
+                        .text
                         ?: it.toCode()
                 }
-            matchedTarget = matchedTarget || (name == fromTarget && expansion.contains("$name??"))
-            expansion = expansion.replace("$name??", expToStringParen)
+            matchedTarget = matchedTarget || (name == fromTarget && expansion.contains("$name+?"))
+            expansion = expansion.replace("$name+?", expToStringParen)
+
+            val expToStringNoParen =
+                exp.joinToString(" ") {
+                    expandAsWrittenImpl(
+                            fromTarget, it, sigToPatternExpansion, SurroundingKind.RemoveParens)
+                        .text
+                        ?: it.toCode()
+                }
+            matchedTarget = matchedTarget || (name == fromTarget && expansion.contains("$name-?"))
+            expansion = expansion.replace("$name-?", expToStringNoParen)
 
             val expToString =
                 exp.joinToString(" ") {
-                    expandAsWrittenImpl(fromTarget, it, sigToPatternExpansion, false).text
+                    expandAsWrittenImpl(
+                            fromTarget, it, sigToPatternExpansion, SurroundingKind.DoNothing)
+                        .text
                         ?: it.toCode()
                 }
             matchedTarget = matchedTarget || (name == fromTarget && expansion.contains("$name?"))
@@ -588,7 +602,8 @@ private fun expandAsWrittenImplImpl(
 
         // now handle the case where the substitution is specified as 'name{...}?'
         // instead of just 'name?'
-        var hasDoubleQuestion = false
+        var hasPlusQuestionMark = false
+        var hasMinusQuestionMark = false
         var startIndex = 0
         val target = "$name{"
         while (true) {
@@ -619,25 +634,51 @@ private fun expandAsWrittenImplImpl(
                 if (c == '}' &&
                     leftCurlyCount == 0 &&
                     i < expansion.length &&
+                    expansion[i] == '+' &&
+                    i + 1 < expansion.length &&
+                    expansion[i + 1] == '?') {
+                    isValid = true
+                    i += 2 // move past the + and ?
+                    hasPlusQuestionMark = true
+                    break
+                } else if (c == '}' &&
+                    leftCurlyCount == 0 &&
+                    i < expansion.length &&
+                    expansion[i] == '-' &&
+                    i + 1 < expansion.length &&
+                    expansion[i + 1] == '?') {
+                    isValid = true
+                    i += 2 // move past the - and ?
+                    hasMinusQuestionMark = true
+                    break
+                } else if (c == '}' &&
+                    leftCurlyCount == 0 &&
+                    i < expansion.length &&
                     expansion[i] == '?') {
                     isValid = true
                     i++ // move past the ?
-                    if (i < expansion.length && expansion[i] == '?') {
-                        hasDoubleQuestion = true
-                    }
                     break
                 } else {
                     innerTextBuffer.append(c)
                 }
             }
 
+            val surroundingKind =
+                if (hasPlusQuestionMark) {
+                    SurroundingKind.AddParens
+                } else if (hasMinusQuestionMark) {
+                    SurroundingKind.RemoveParens
+                } else {
+                    SurroundingKind.DoNothing
+                }
+
             if (isValid) {
                 var innerText = innerTextBuffer.toString()
                 val expansionPrefix = expansion.substring(0, index)
                 // add 2 at the end for the trailing }?
-                // or  3 at the end for the trailing }??
+                // or  3 at the end for the trailing }+? or }-?
                 val delta =
-                    if (hasDoubleQuestion) {
+                    if (hasPlusQuestionMark || hasMinusQuestionMark) {
                         3
                     } else {
                         2
@@ -651,11 +692,11 @@ private fun expandAsWrittenImplImpl(
 
                 // if the pattern is name{}?? then the user has requested parens be added around
                 // a match if it is of a complex form (i.e. 'a + b' but not 'a')
-                val addParens = hasDoubleQuestion
                 if (infixRegex.matches(innerText)) {
                     val args =
                         exp.map {
-                            expandAsWrittenImpl(fromTarget, it, sigToPatternExpansion, addParens)
+                            expandAsWrittenImpl(
+                                    fromTarget, it, sigToPatternExpansion, surroundingKind)
                                 .text
                                 ?: it.toCode()
                         }
@@ -683,7 +724,8 @@ private fun expandAsWrittenImplImpl(
                 } else if (prefixRegex.matches(innerText)) {
                     val args =
                         exp.map {
-                            expandAsWrittenImpl(fromTarget, it, sigToPatternExpansion, addParens)
+                            expandAsWrittenImpl(
+                                    fromTarget, it, sigToPatternExpansion, surroundingKind)
                                 .text
                                 ?: it.toCode()
                         }
@@ -703,7 +745,8 @@ private fun expandAsWrittenImplImpl(
                 } else if (suffixRegex.matches(innerText)) {
                     val args =
                         exp.map {
-                            expandAsWrittenImpl(fromTarget, it, sigToPatternExpansion, addParens)
+                            expandAsWrittenImpl(
+                                    fromTarget, it, sigToPatternExpansion, surroundingKind)
                                 .text
                                 ?: it.toCode()
                         }
@@ -750,11 +793,17 @@ private fun shouldHaveParen(node: TexTalkNode): Boolean {
     return true
 }
 
+private enum class SurroundingKind {
+    AddParens,
+    RemoveParens,
+    DoNothing
+}
+
 private fun expandAsWrittenImpl(
     fromTarget: String?,
     node: TexTalkNode,
     sigToPatternExpansion: Map<String, PatternExpansion>,
-    addParens: Boolean
+    surroundingKind: SurroundingKind
 ): Expansion {
     val errors = mutableListOf<String>()
     var matchedTarget = false
@@ -776,7 +825,8 @@ private fun expandAsWrittenImpl(
                 is ColonEqualsTexTalkNode -> {
                     val lhsText = it.lhs.toCode()
                     val rhsResult =
-                        expandAsWrittenImpl(fromTarget, it.rhs, sigToPatternExpansion, addParens)
+                        expandAsWrittenImpl(
+                            fromTarget, it.rhs, sigToPatternExpansion, surroundingKind)
                     errors.addAll(rhsResult.errors)
                     matchedTarget = matchedTarget || rhsResult.matchedTarget
                     "$lhsText := ${rhsResult.text}"
@@ -787,11 +837,13 @@ private fun expandAsWrittenImpl(
 
     return Expansion(
         text =
-            if (addParens &&
+            if (surroundingKind == SurroundingKind.AddParens &&
                 shouldHaveParen(node) &&
                 !code.startsWith("(") &&
                 !code.endsWith(")")) {
                 "\\left ( $code \\right )"
+            } else if (surroundingKind == SurroundingKind.RemoveParens) {
+                code.trim().removeSurrounding("(", ")")
             } else {
                 code
             },

@@ -1052,7 +1052,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means:
+                    expresses:
                     . 'x'
                     . 'X'
                     . 'f'
@@ -1086,7 +1086,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means:
+                    expresses:
                     . 'x'
                     . 'X'
                     . 'f'
@@ -1120,7 +1120,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -1150,7 +1150,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -1180,7 +1180,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -1210,7 +1210,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -1240,7 +1240,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -1270,7 +1270,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -1300,7 +1300,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -1330,7 +1330,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    means: "something"
+                    expresses: "something"
                     written: "something"
                     called: "something"
 
@@ -2430,12 +2430,15 @@ internal class EndToEndCheckTest {
                 ERROR: content/file1.math (Line: 9, Column: 8)
                 The right-hand-side of an `:=` cannot reference a `Defines:` without an `expresses:` section but found '\something'
 
+                ERROR: content/file1.math (Line: 9, Column: 8)
+                Cannot use '\something' in a non-`is` or non-`in` statement since its definition doesn't have an `expresses:` section
+
                 FAILED
                 Processed 1 file
-                1 error detected
+                2 errors detected
         """.trimIndent(),
             expectedExitCode = 1,
-            expectedNumErrors = 1)
+            expectedNumErrors = 2)
     }
 
     @Test
@@ -3171,6 +3174,406 @@ internal class EndToEndCheckTest {
                 Processed 1 file
                 0 errors detected
         """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for non-expresses signatures used in non-'is' statement`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    means: '\something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 9, Column: 8)
+                Cannot use '\something.else' in a non-`is` or non-`in` statement since its definition doesn't have an `expresses:` section
+
+                FAILED
+                Processed 1 file
+                1 error detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors for non-expresses signatures used in 'is' statements`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: X
+                    means: 'X is \something.else'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for non-expresses signatures used in 'in' statements`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\some.states]
+                    States:
+                    that: "something"
+                    written: "something"
+
+
+                    [\some.axiom]
+                    Axiom:
+                    then: "something"
+
+
+                    [\some.conjecture]
+                    Conjecture:
+                    then: "something"
+
+
+                    [\some.theorem]
+                    Theorem:
+                    then: "something"
+
+
+                    [\something]
+                    Defines: X
+                    means:
+                    . 'X in \something.else'
+                    . 'X in \some.states'
+                    . 'X in \some.axiom'
+                    . 'X in \some.conjecture'
+                    . 'X in \some.theorem'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 34, Column: 3)
+                No matching definition found for \some.conjecture
+
+                ERROR: content/file1.math (Line: 35, Column: 3)
+                No matching definition found for \some.theorem
+
+                ERROR: content/file1.math (Line: 31, Column: 3)
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\something.else'
+
+                ERROR: content/file1.math (Line: 32, Column: 3)
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.states'
+
+                ERROR: content/file1.math (Line: 33, Column: 3)
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.axiom'
+
+                ERROR: content/file1.math (Line: 34, Column: 3)
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.conjecture'
+
+                ERROR: content/file1.math (Line: 35, Column: 3)
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.theorem'
+
+                FAILED
+                Processed 1 file
+                7 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 7)
+    }
+
+    @Test
+    fun `check reports errors for non-expresses signatures used in 'is' statements`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\some.states]
+                    States:
+                    that: "something"
+                    written: "something"
+
+
+                    [\some.axiom]
+                    Axiom:
+                    then: "something"
+
+
+                    [\some.conjecture]
+                    Conjecture:
+                    then: "something"
+
+
+                    [\some.theorem]
+                    Theorem:
+                    then: "something"
+
+
+                    [\something1]
+                    Defines: X
+                    means:
+                    . 'X is \something.else'
+                    written: "something"
+
+
+                    [\something2]
+                    Defines: X
+                    means:
+                    . 'X is \some.states'
+                    written: "something"
+
+
+                    [\something3]
+                    Defines: X
+                    means:
+                    . 'X is \some.axiom'
+                    written: "something"
+
+
+                    [\something4]
+                    Defines: X
+                    means:
+                    . 'X is \some.conjecture'
+                    written: "something"
+
+
+                    [\something5]
+                    Defines: X
+                    means:
+                    . 'X is \some.theorem'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 52, Column: 3)
+                No matching definition found for \some.conjecture
+
+                ERROR: content/file1.math (Line: 59, Column: 3)
+                No matching definition found for \some.theorem
+
+                ERROR: content/file1.math (Line: 38, Column: 3)
+                The right-hand-side of an `is` cannot reference a `States:` but found '\some.states'
+
+                ERROR: content/file1.math (Line: 45, Column: 3)
+                The right-hand-side of an `is` cannot reference a `Axiom:` but found '\some.axiom'
+
+                ERROR: content/file1.math (Line: 45, Column: 3)
+                The right-hand-side of an `is` cannot reference a `Conjecture:` but found '\some.axiom'
+
+                ERROR: content/file1.math (Line: 59, Column: 3)
+                The right-hand-side of an `is` cannot reference a `Theorem:` but found '\some.theorem'
+
+                FAILED
+                Processed 1 file
+                6 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 6)
+    }
+
+    @Test
+    fun `check does not reports errors for expresses signatures used in the right-hand-side of an 'in' statement`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\f{x}]
+                    Defines: y
+                    expresses: "something"
+                    written: "something"
+
+
+                    [\something]
+                    Defines: X
+                    means: 'X in \f{\something.else}'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for non-expresses signatures used in the right-hand-side of an 'in' statement`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+
+
+                    [\f{x}]
+                    Defines: y
+                    means: "something"
+                    written: "something"
+
+
+                    [\something]
+                    Defines: X
+                    means: 'X in \f{\something.else}'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 15, Column: 8)
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\f'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+            """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    /*
+     * Originally, it was thought that a States: could only be used in another states.
+     * For example, `(A \subset/ B) \or/ (B \subset/ A)`.  In this case, both `\subset/`
+     * and `\or/` could be States:.
+     *
+     * However, something like `\set[x]{x}:suchThat{x \lt/ 1}` is something that is
+     * reasonable to write but `\set:suchThat` is a Defines:
+     *
+     * Thus, the test below shouldn't actually report errors for `States:` used as
+     * arguments to a non-States:
+
+    @Test
+    fun `check reports errors for States signatures used in non-States contexts`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\some.states]
+                    States:
+                    that: "something"
+                    written: "something"
+
+
+                    [\f{x}]
+                    Defines: y
+                    means: "something"
+                    written: "something"
+
+
+                    [\something]
+                    Defines: X
+                    means: 'X is \f{\some.states}'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 15, Column: 8)
+                The signature '\some.states' (since it is a `States:`) can only be used within `States:` but it is used within '\f'
+
+                FAILED
+                Processed 1 file
+                1 error detected
+            """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+     */
+
+    @Test
+    fun `check does not report errors for States signatures used in States contexts`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\some.states]
+                    States:
+                    that: "something"
+                    written: "something"
+
+
+                    [\f{x}]
+                    States:
+                    that: "something"
+                    written: "something"
+
+
+                    [\something]
+                    Defines: X
+                    means: '\f{\some.states}'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }

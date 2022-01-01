@@ -30,6 +30,8 @@ object BackEnd {
         errors.addAll(checkIsRhs(sourceCollection))
         errors.addAll(checkColonEqualsRhs(sourceCollection))
         errors.addAll(checkInputOutputSymbolErrors(sourceCollection))
+        errors.addAll(checkNonExpressesUsedInNonIsStatements(sourceCollection))
+        // errors.addAll(checkStatesUsedInNonStatesContext(sourceCollection))
         return errors
     }
 
@@ -101,4 +103,18 @@ object BackEnd {
     ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getInputOutputSymbolErrors()
     }
+
+    fun checkNonExpressesUsedInNonIsStatements(
+        sourceCollection: SourceCollection
+    ): List<ValueSourceTracker<ParseError>> {
+        return sourceCollection.getNonExpressesUsedInNonIsNonInStatementsErrors()
+    }
+
+    /*
+    fun checkStatesUsedInNonStatesContext(
+        sourceCollection: SourceCollection
+    ): List<ValueSourceTracker<ParseError>> {
+        return sourceCollection.getStatesUsedInNonStatesContextErrors()
+    }
+     */
 }

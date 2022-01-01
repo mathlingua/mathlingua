@@ -64,6 +64,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
@@ -81,6 +82,7 @@ import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.GroupTexTalkNode
+import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
@@ -123,6 +125,8 @@ interface SourceCollection {
     fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>>
     fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>>
     fun getInputOutputSymbolErrors(): List<ValueSourceTracker<ParseError>>
+    fun getNonExpressesUsedInNonIsNonInStatementsErrors(): List<ValueSourceTracker<ParseError>>
+    // fun getStatesUsedInNonStatesContextErrors(): List<ValueSourceTracker<ParseError>>
     fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
@@ -589,10 +593,14 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
     override fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>> {
         val result = mutableListOf<ValueSourceTracker<ParseError>>()
         val sigsWithExpresses = getSignaturesWithExpressesSection().map { it.value.form }.toSet()
+        val theoremSigs = theoremGroups.mapNotNull { it.value.original.signature?.form }.toSet()
+        val axiomSigs = axiomGroups.mapNotNull { it.value.original.signature?.form }.toSet()
+        val conjectureSigs = axiomGroups.mapNotNull { it.value.original.signature?.form }.toSet()
+        val statesSigs = statesGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         for (svt in allGroups) {
-            val rhsSigs =
+            val rhsIsSigs =
                 findIsRhsSignatures(svt.value.normalized, svt.tracker ?: newLocationTracker())
-            for (sig in rhsSigs) {
+            for (sig in rhsIsSigs) {
                 if (sigsWithExpresses.contains(sig.form)) {
                     result.add(
                         ValueSourceTracker(
@@ -600,6 +608,77 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `is` cannot reference a `Defines:` with an `expresses:` section but found '${sig.form}'",
+                                    row = sig.location.row,
+                                    column = sig.location.column),
+                            source = svt.source,
+                            tracker = svt.tracker))
+                }
+
+                if (theoremSigs.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(
+                            value =
+                                ParseError(
+                                    message =
+                                        "The right-hand-side of an `is` cannot reference a `Theorem:` but found '${sig.form}'",
+                                    row = sig.location.row,
+                                    column = sig.location.column),
+                            source = svt.source,
+                            tracker = svt.tracker))
+                }
+
+                if (axiomSigs.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(
+                            value =
+                                ParseError(
+                                    message =
+                                        "The right-hand-side of an `is` cannot reference a `Axiom:` but found '${sig.form}'",
+                                    row = sig.location.row,
+                                    column = sig.location.column),
+                            source = svt.source,
+                            tracker = svt.tracker))
+                }
+
+                if (conjectureSigs.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(
+                            value =
+                                ParseError(
+                                    message =
+                                        "The right-hand-side of an `is` cannot reference a `Conjecture:` but found '${sig.form}'",
+                                    row = sig.location.row,
+                                    column = sig.location.column),
+                            source = svt.source,
+                            tracker = svt.tracker))
+                }
+
+                if (statesSigs.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(
+                            value =
+                                ParseError(
+                                    message =
+                                        "The right-hand-side of an `is` cannot reference a `States:` but found '${sig.form}'",
+                                    row = sig.location.row,
+                                    column = sig.location.column),
+                            source = svt.source,
+                            tracker = svt.tracker))
+                }
+            }
+
+            val sigsWithoutExpresses =
+                getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
+            val rhsInSigs =
+                findInRhsSignatures(svt.value.normalized, svt.tracker ?: newLocationTracker())
+            for (sig in rhsInSigs) {
+                if (sigsWithoutExpresses.contains(sig.form)) {
+                    result.add(
+                        ValueSourceTracker(
+                            value =
+                                ParseError(
+                                    message =
+                                        "The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
                             source = svt.source,
@@ -636,11 +715,11 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         return result
     }
 
-    fun getSignaturesWithoutExpressesSection(): List<ValueSourceTracker<Signature>> {
+    private fun getSignaturesWithStates(): List<ValueSourceTracker<Signature>> {
         val result = mutableListOf<ValueSourceTracker<Signature>>()
-        for (svt in definesGroups) {
+        for (svt in statesGroups) {
             val def = svt.value.original
-            if (def.expressesSection == null && def.signature != null) {
+            if (def.signature != null) {
                 result.add(
                     ValueSourceTracker(
                         value = def.signature, source = svt.source, tracker = svt.tracker))
@@ -649,7 +728,22 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         return result
     }
 
-    fun getSignaturesWithExpressesSection(): List<ValueSourceTracker<Signature>> {
+    private fun getSignaturesWithoutExpressesSection(): List<ValueSourceTracker<Signature>> {
+        val result = mutableListOf<ValueSourceTracker<Signature>>()
+        for (svt in allGroups) {
+            val def = svt.value.original
+            if (def is HasSignature) {
+                val sig = def.signature ?: continue
+                if (def !is DefinesGroup || def.expressesSection == null) {
+                    result.add(
+                        ValueSourceTracker(value = sig, source = svt.source, tracker = svt.tracker))
+                }
+            }
+        }
+        return result
+    }
+
+    private fun getSignaturesWithExpressesSection(): List<ValueSourceTracker<Signature>> {
         val result = mutableListOf<ValueSourceTracker<Signature>>()
         for (svt in definesGroups) {
             val def = svt.value.original
@@ -1400,6 +1494,183 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         }
         return errors
     }
+
+    override fun getNonExpressesUsedInNonIsNonInStatementsErrors():
+        List<ValueSourceTracker<ParseError>> {
+        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+        val signaturesWithoutExpresses =
+            getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
+        val statesSigs = statesGroups.mapNotNull { it.value.original.signature?.form }.toSet()
+        for (vst in allGroups) {
+            val group = vst.value.normalized
+            val tracker = vst.tracker ?: newLocationTracker()
+
+            for (stmtPair in getNonIsNonInStatementsNonInAsSections(group)) {
+                val stmt = stmtPair.first
+                val exp = stmtPair.second
+                for (sig in getSignaturesWithin(exp)) {
+                    if (signaturesWithoutExpresses.contains(sig) && !statesSigs.contains(sig)) {
+                        val location =
+                            tracker.getLocationOf(stmt) ?: Location(row = -1, column = -1)
+                        errors.add(
+                            ValueSourceTracker(
+                                value =
+                                    ParseError(
+                                        message =
+                                            "Cannot use '$sig' in a non-`is` or non-`in` statement since its definition doesn't have an `expresses:` section",
+                                        row = location.row,
+                                        column = location.column),
+                                source = vst.source,
+                                tracker = vst.tracker))
+                    }
+                }
+            }
+        }
+        return errors
+    }
+
+    /*
+        * Originally, it was thought that a States: could only be used in another states.
+        * For example, `(A \subset/ B) \or/ (B \subset/ A)`.  In this case, both `\subset/`
+        * and `\or/` could be States:.
+        *
+        * However, something like `\set[x]{x}:suchThat{x \lt/ 1}` is something that is
+        * reasonable to write but `\set:suchThat` is a Defines:
+        *
+        * Thus, the code below that reports an error for any States: used in a non-States:
+        * context isn't actually needed.
+        *
+       override fun getStatesUsedInNonStatesContextErrors(): List<ValueSourceTracker<ParseError>> {
+           val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+           val signaturesWithStates = getSignaturesWithStates().map { it.value.form }.toSet()
+           for (vst in allGroups) {
+               val group = vst.value.original
+               val tracker = vst.tracker ?: newLocationTracker()
+               for (err in findInvalidUsesOfStatesSigs(group, signaturesWithStates, tracker)) {
+                   errors.add(
+                       ValueSourceTracker(value = err, source = vst.source, tracker = vst.tracker))
+               }
+           }
+           return errors
+       }
+    */
+}
+
+/*
+private fun findInvalidUsesOfStatesSigs(
+node: Phase2Node, statesSignatures: Set<String>, tracker: LocationTracker
+): List<ParseError> {
+val result = mutableListOf<ParseError>()
+findInvalidUsesOfStatesSigsImpl(node, statesSignatures, tracker, result)
+return result
+}
+
+private fun findInvalidUsesOfStatesSigsImpl(
+node: Phase2Node,
+statesSignatures: Set<String>,
+tracker: LocationTracker,
+result: MutableList<ParseError>
+) {
+if (node is Statement) {
+    when (val validation = node.texTalkRoot
+    ) {
+        is ValidationSuccess -> {
+            findInvalidUsesOfStatesSigs(
+                node, validation.value, null, statesSignatures, tracker, result)
+        }
+        is ValidationFailure -> {
+            // do not process statements that have parse errors
+        }
+    }
+} else {
+    node.forEach { findInvalidUsesOfStatesSigsImpl(it, statesSignatures, tracker, result) }
+}
+}
+
+private fun findInvalidUsesOfStatesSigs(
+statement: Statement,
+node: TexTalkNode,
+parentNonStatesSig: String?,
+statesSignatures: Set<String>,
+tracker: LocationTracker,
+result: MutableList<ParseError>
+) {
+if (node is Command) {
+    val sig = node.signature()
+    if (parentNonStatesSig != null && statesSignatures.contains(sig)) {
+        val location = tracker.getLocationOf(statement) ?: Location(row = -1, column = -1)
+        result.add(
+            ParseError(
+                message =
+                    "The signature '$sig' (since it is a `States:`) can only be used within `States:` but it is used within '$parentNonStatesSig'",
+                row = location.row,
+                column = location.column))
+    }
+
+    if (statesSignatures.contains(sig)) {
+        // node is a States: command
+        // use parentNonStatesSig = null since the parent of the children of node are within a
+        // States:
+        node.forEach {
+            findInvalidUsesOfStatesSigs(statement, it, null, statesSignatures, tracker, result)
+        }
+    } else {
+        node.forEach {
+            findInvalidUsesOfStatesSigs(statement, it, sig, statesSignatures, tracker, result)
+        }
+    }
+} else {
+    node.forEach {
+        findInvalidUsesOfStatesSigs(
+            statement, it, parentNonStatesSig, statesSignatures, tracker, result)
+    }
+}
+}
+*/
+
+private fun getSignaturesWithin(node: TexTalkNode): List<String> {
+    val result = mutableListOf<String>()
+    getSignaturesImpl(node, result)
+    return result
+}
+
+private fun getSignaturesImpl(node: TexTalkNode, result: MutableList<String>) {
+    if (node is Command) {
+        result.add(node.signature())
+    } else {
+        node.forEach { getSignaturesImpl(it, result) }
+    }
+}
+
+private fun getNonIsNonInStatementsNonInAsSections(
+    node: Phase2Node
+): List<Pair<Statement, TexTalkNode>> {
+    val result = mutableListOf<Pair<Statement, TexTalkNode>>()
+    getNonIsNonInStatementsNonInAsSections(node, result)
+    return result
+}
+
+private fun getNonIsNonInStatementsNonInAsSections(
+    node: Phase2Node, result: MutableList<Pair<Statement, TexTalkNode>>
+) {
+    if (node is Statement) {
+        when (val validation = node.texTalkRoot
+        ) {
+            is ValidationSuccess -> {
+                val exp = validation.value
+                if (exp.children.size != 1 ||
+                    (exp.children[0] !is IsTexTalkNode && exp.children[0] !is InTexTalkNode)) {
+                    result.add(Pair(node, exp))
+                }
+            }
+            else -> {
+                // invalid statements are not processed since it cannot be determined
+                // if they are of the form `... is ...`
+            }
+        }
+    } else if (node !is ViewingAsSection) {
+        node.forEach { getNonIsNonInStatementsNonInAsSections(it, result) }
+    }
 }
 
 private fun getWhenSection(topLevelGroup: TopLevelGroup) =
@@ -2028,6 +2299,50 @@ private fun findIsRhsSignatures(
         }
     } else {
         node.forEach { findIsRhsSignatures(it, location, rhsIsSignatures) }
+    }
+}
+
+private fun findInRhsSignatures(
+    node: Phase2Node, locationTracker: LocationTracker
+): List<Signature> {
+    val result = mutableListOf<Signature>()
+    findInRhsSignatures(node, locationTracker, result)
+    return result
+}
+
+private fun findInRhsSignatures(
+    node: Phase2Node, locationTracker: LocationTracker, rhsInSignatures: MutableList<Signature>
+) {
+    if (node is Statement) {
+        when (node.texTalkRoot) {
+            is ValidationSuccess -> {
+                val location =
+                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                findInRhsSignatures(node.texTalkRoot.value, location, rhsInSignatures)
+            }
+            else -> {
+                // ignore statements that do not parse
+            }
+        }
+    } else {
+        node.forEach { findInRhsSignatures(it, locationTracker, rhsInSignatures) }
+    }
+}
+
+private fun findInRhsSignatures(
+    node: TexTalkNode, location: Location, rhsInSignatures: MutableList<Signature>
+) {
+    if (node is InTexTalkNode) {
+        node.rhs.items.forEach { item ->
+            item.children.forEach { child ->
+                if (child is Command) {
+                    val signature = child.signature()
+                    rhsInSignatures.add(Signature(form = signature, location = location))
+                }
+            }
+        }
+    } else {
+        node.forEach { findInRhsSignatures(it, location, rhsInSignatures) }
     }
 }
 

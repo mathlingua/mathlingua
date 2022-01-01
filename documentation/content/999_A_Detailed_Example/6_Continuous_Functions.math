@@ -16,13 +16,12 @@ close two real numbers are.
 
 [\real.abs(x)]
 Defines: f(x)
-given: R
-when: 'R := \real.numbers'
 expresses:
+. 'f(x) is \function:on{\real.numbers}:to{\real.numbers}'
 . piecewise:
-  when: 'x is \positive:within{R}'
+  when: 'x is \positive:within{\real.numbers}'
   then: 'f(x) := x'
-  else: 'f(x) := \additive.inverse:of{x}:inField{R}'
+  else: 'f(x) := \additive.inverse:of{x}:inField{\real.numbers}'
 written: "\left | x? \right |"
 called: "the absolute value of $x?$"
 

@@ -106,8 +106,8 @@ when:
 . 'x, y in X'
 expresses:
 . 'f(x, y) := x + \additive.inverse:of{y}:inField{F}'
-written: "x?? - y??"
-called: "$x??$ minus $y??$"
+written: "x+? - y+?"
+called: "$x+?$ minus $y+?$"
 
 
 ::
@@ -133,7 +133,7 @@ when:
 . 'x \neq/ 0'
 expresses:
 . 'x * y = 1'
-written: "x??^{-1}"
+written: "x+?^{-1}"
 called: "multiplicative inverse of $x?$"
 
 
@@ -145,7 +145,7 @@ when:
 . 'x, y in X'
 expresses:
 . 'f(x, y) := x * \multiplicative.inverse:of{y}:inField{F}'
-written: "x? y??^{-1}"
+written: "x? y+?^{-1}"
 called: "$x?$ times the inverse of $y?$"
 
 

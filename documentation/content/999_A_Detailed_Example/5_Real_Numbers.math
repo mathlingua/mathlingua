@@ -58,7 +58,7 @@ Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
 expresses: 'f(x, y) := x + y'
-written: "x?? + y??"
+written: "x+? + y+?"
 called: "real addition of $x?$ and $y?$"
 
 
@@ -78,7 +78,7 @@ Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
 expresses: 'f(x, y) := x * y'
-written: "x?? y??"
+written: "x+? y+?"
 called: "real multiplication of $x?$ and $y?$"
 
 
@@ -89,7 +89,7 @@ when: 'R := \real.numbers'
 expresses: 'f(x, y) := x * inv(y)'
 using:
 . 'inv(a) := \multiplicative.inverse:of{a}:inField{R}'
-written: "\frac{x??}{y??}"
+written: "\frac{x-?}{y-?}"
 called: "real division of $x?$ by $y?$"
 
 
@@ -106,7 +106,7 @@ when:
 . 'x, y is \real'
 expresses:
 . 'z := x \real.div/ y'
-written: "\frac{x??}{y??}"
+written: "\frac{x-?}{y-?}"
 called: "real division of $x?$ by $y?$"
 
 

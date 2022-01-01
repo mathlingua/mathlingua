@@ -220,7 +220,7 @@ when: 'A, B is \set'
 expresses:
 . 'x in A'
 . 'y in B'
-written: "A?? \times B??"
+written: "A+? \times B+?"
 called: "cartesian product of $A?$ and $B?$"
 
 ::
@@ -234,15 +234,15 @@ infix command.  We could have also used the prefix command
 format like above, for example `\set.product:of{A}:and{B}`, but
 in this case, infix notation is more clear.
 
-Also, notice that in the written section we use the syntax `A??`
+Also, notice that in the written section we use the syntax `A+?`
 when referring to an input, in this case `A`, while in the
 definition of a function, we used `A?`.
 
-The `?` or `??` instructs MathLingua how to replace variables
-when rendering the definition.  Thus
+The `?`, `+?`, or `-?` instructs MathLingua how to replace
+variables when rendering the definition.  Thus
 `X \set.product/ Y` will be rendered as $X \times Y$.
 
-The use of `??`, though specifies that parentheses should be
+The use of `+?`, though specifies that parentheses should be
 included for complex expressions.  Thus,
 ```
    {X \set.product/ X} \set.product/ Y
@@ -258,6 +258,9 @@ are both rendered as $(X \times X) \times Y$.
 
 If a `?` was used instead, the above would have been rendered as
 $X \times X \times Y$.
+
+Last, if a `-?` was used instead, then any parens around an
+expression will be removed.
 
 Now we define what a binary operation on a set is:
 
@@ -482,7 +485,7 @@ when:
 expresses:
 . 'x * y = e'
 . 'y * x = e'
-written: "x??^{-1}"
+written: "x+?^{-1}"
 called: "inverse of $x?$"
 ```
 that is rendered as:
@@ -498,7 +501,7 @@ when:
 expresses:
 . 'x * y = e'
 . 'y * x = e'
-written: "{x??}^{-1}"
+written: "{x+?}^{-1}"
 called: "inverse of $x?$"
 
 ::

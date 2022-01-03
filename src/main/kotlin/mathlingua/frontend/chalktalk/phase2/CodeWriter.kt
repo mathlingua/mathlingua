@@ -16,7 +16,6 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
-import java.util.StringTokenizer
 import kotlin.random.Random
 import mathlingua.backend.getInnerDefinedSignatures
 import mathlingua.backend.getPatternsToWrittenAs
@@ -261,32 +260,6 @@ open class HtmlCodeWriter(
         return builder.toString()
     }
 
-    private fun capitalizeWords(text: String): String {
-        val tokenizer = StringTokenizer(text, " {}()[]\"'`", true)
-        val builder = StringBuilder()
-        var firstToken = true
-        while (tokenizer.hasMoreTokens()) {
-            val word = tokenizer.nextToken()
-            if (!firstToken &&
-                (word.length <= 4 ||
-                    word == "a" ||
-                    word == "an" ||
-                    word == "the" ||
-                    word == "at" ||
-                    word == "to" ||
-                    word == "by" ||
-                    word == "and" ||
-                    word == "but" ||
-                    word == "for")) {
-                builder.append(word)
-            } else {
-                builder.append(word.replaceFirstChar { it.uppercase() })
-            }
-            firstToken = false
-        }
-        return builder.toString()
-    }
-
     override fun generateCode(node: Phase2Node): String {
         if (literal) {
             return node.toCode(false, 0, this).getCode()
@@ -297,7 +270,7 @@ open class HtmlCodeWriter(
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
                 builder.append("<span class='mathlingua-called'>")
-                val called = capitalizeWords(node.getCalled().first().removeSurrounding("\"", "\""))
+                val called = node.getCalled().first().removeSurrounding("\"", "\"")
                 builder.append(parseMarkdown(called))
                 builder.append("</span>")
                 builder.append(
@@ -326,7 +299,7 @@ open class HtmlCodeWriter(
                 val builder = StringBuilder()
                 builder.append("<span class='mathlingua-data'>")
                 builder.append("<span class='mathlingua-called'>")
-                val called = capitalizeWords(node.getCalled().first().removeSurrounding("\"", "\""))
+                val called = node.getCalled().first().removeSurrounding("\"", "\"")
                 builder.append(parseMarkdown(called))
                 builder.append("</span>")
                 builder.append(
@@ -356,7 +329,7 @@ open class HtmlCodeWriter(
                 val names = node.theoremSection.names
                 if (names.isNotEmpty()) {
                     builder.append("<span class='mathlingua-called'>")
-                    val name = capitalizeWords(names.first().removeSurrounding("\"", "\""))
+                    val name = names.first().removeSurrounding("\"", "\"")
                     builder.append(parseMarkdown(name))
                     builder.append("</span>")
                 }
@@ -393,7 +366,7 @@ open class HtmlCodeWriter(
                 val names = node.axiomSection.names
                 if (names.isNotEmpty()) {
                     builder.append("<span class='mathlingua-called'>")
-                    val name = capitalizeWords(names.first().removeSurrounding("\"", "\""))
+                    val name = names.first().removeSurrounding("\"", "\"")
                     builder.append(parseMarkdown(name))
                     builder.append("</span>")
                 }
@@ -421,7 +394,7 @@ open class HtmlCodeWriter(
                 val names = node.conjectureSection.names
                 if (names.isNotEmpty()) {
                     builder.append("<span class='mathlingua-called'>")
-                    val name = capitalizeWords(names.first().removeSurrounding("\"", "\""))
+                    val name = names.first().removeSurrounding("\"", "\"")
                     builder.append(parseMarkdown(name))
                     builder.append("</span>")
                 }

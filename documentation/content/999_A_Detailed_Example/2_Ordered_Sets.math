@@ -14,7 +14,7 @@ operation defined next.
 Defines: R
 when: 'A is \set'
 means: 'R \subset/ {A \set.product/ A}'
-written: "\textrm{binary relation on } A?"
+written: "\textrm{Binary Relation on } A?"
 Metadata:
 . overview: "Two elements $a, b \in A$ are said to be related
              if $(a, b) \in R$."
@@ -77,7 +77,7 @@ viewing:
   via: 'S'
 . membership:
   through: 'S'
-written: "\textrm{ordered set}"
+written: "\textrm{Ordered Set}"
 
 
 ::
@@ -155,7 +155,7 @@ means:
 . forAll: x
   suchThat: 'x in E'
   then: 'x \leq{X}/ b'
-written: "\textrm{upper bound of } X?"
+written: "\textrm{Upper Bound of } X?"
 
 
 ::
@@ -176,7 +176,7 @@ viewing:
   via: 'E'
 . membership:
   through: 'E'
-written: "\textrm{bounded above}"
+written: "\textrm{Bounded Above}"
 
 
 ::
@@ -194,7 +194,7 @@ expresses:
   suchThat: 'b is \upper.bound:of{X}'
   then: 'b \geq{X}/ beta'
 written: "\sup X?"
-called: "supremum of $X?$"
+called: "Supremum of $X?$"
 
 
 ::
@@ -214,7 +214,7 @@ means:
 . forAll: x
   suchThat: 'x in E'
   then: 'x \geq{X}/ b'
-written: "\textrm{lower bound of } X?"
+written: "\textrm{Lower Bound of } X?"
 
 
 ::
@@ -234,7 +234,7 @@ viewing:
   via: 'E'
 . membership:
   through: 'E'
-written: "\textrm{bounded below}"
+written: "\textrm{Bounded Below}"
 
 
 ::
@@ -252,7 +252,7 @@ expresses:
   suchThat: 'a is \lower.bound:of{X}'
   then: 'a \leq{X}/ alpha'
 written: "\inf X?"
-called: "infimum of $X?$"
+called: "Infimum of $X?$"
 
 
 ::
@@ -273,7 +273,7 @@ expresses:
   . exists: x
     suchThat:
     . 'x in X'
-written: "\textrm{empty set}"
+written: "\textrm{Empty Set}"
 
 
 [\nonempty.set]
@@ -281,7 +281,7 @@ Defines: X
 means:
 . 'X is \set'
 . not: 'X := \empty.set'
-written: "\textrm{non-empty set}"
+written: "\textrm{Non-Empty Set}"
 
 
 ::
@@ -303,4 +303,4 @@ means:
   . exists: b
     suchThat:
     . 'b = \supremum:of{X}'
-written: "\textrm{least-upper-bound property set}"
+written: "\textrm{Least-Upper-Bound Property Set}"

@@ -23,7 +23,7 @@ expresses:
   then: 'f(x) := x'
   else: 'f(x) := \additive.inverse:of{x}:inField{\real.numbers}'
 written: "\left | x? \right |"
-called: "the absolute value of $x?$"
+called: "The Absolute Value of $x?$"
 
 
 ::
@@ -46,26 +46,22 @@ we won`\'`t be discussing such intervals here.
 
 [\open.interval{a, b}]
 Defines: I
-given: R
-when: 'R := \real.numbers'
 expresses:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.lt/ x}
                         {x \real.lt/ b}'
 written: "(a?, b?)"
-called: "the open interval from $a?$ to $b?$"
+called: "The Open Interval from $a?$ to $b?$"
 
 
 [\closed.interval{a, b}]
 Defines: I
-given: R
-when: 'R := \real.numbers'
 expresses:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.leq/ x}
                         {x \real.leq/ b}'
 written: "[a?, b?]"
-called: "the closed interval from $a?$ to $b?$"
+called: "The Closed Interval from $a?$ to $b?$"
 
 
 ::
@@ -88,15 +84,16 @@ use the more restrictive definition.
 
 [\continuous.function:on{I}:at{c}]
 Defines: f(x)
-given: R, a, b
+given: a, b
 when:
-. 'R := \real.numbers'
 . 'I := \open.interval{a, b}'
 . 'c in I'
 means:
 . 'f is \function:on{I}:to{R}'
 . 'f(c) = \function.limit[x]_{c}{f(x)}'
-written: "\textrm{continuous function on } I? \textrm{ at } c?"
+using:
+. 'R := \real.numbers'
+written: "\textrm{Continuous Function on } I? \textrm{ at } c?"
 
 
 ::
@@ -108,13 +105,12 @@ a function to be continuous on an entire set.
 
 [\continuous.function:on{I}]
 Defines: f(x)
-given: R, a, b
+given: a, b
 when:
-. 'R := \real.numbers'
 . 'I := \open.interval{a, b}'
 means:
 . forAll: c
   suchThat: 'c in I'
   then: 'f is \continuous.function:on{I}:at{c}'
-written: "\textrm{continuous function on } I?"
+written: "\textrm{Continuous Function on } I?"
 

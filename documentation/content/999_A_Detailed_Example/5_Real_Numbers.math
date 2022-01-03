@@ -24,7 +24,7 @@ viewing:
 . membership:
   through: 'X'
 written: "\mathbb{R}"
-called: "the real numbers"
+called: "The Real Numbers"
 
 
 ::
@@ -38,8 +38,8 @@ Defines: x
 given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
 means: 'x in X'
-written: "\textrm{real}"
-called: "real number"
+written: "\textrm{Real}"
+called: "Real Number"
 
 
 ::
@@ -59,7 +59,7 @@ given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
 expresses: 'f(x, y) := x + y'
 written: "x+? + y+?"
-called: "real addition of $x?$ and $y?$"
+called: "Real Addition of $x?$ and $y?$"
 
 
 [x \real.-/ y]
@@ -70,7 +70,7 @@ expresses: 'f(x, y) := x + inv(y)'
 using:
 . 'inv(a) := \additive.inverse:of{a}:inField{R}'
 written: "x? - y?"
-called: "real difference of $x?$ and $y?$"
+called: "Real Difference of $x?$ and $y?$"
 
 
 [x \real.*/ y]
@@ -79,7 +79,7 @@ given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
 expresses: 'f(x, y) := x * y'
 written: "x+? y+?"
-called: "real multiplication of $x?$ and $y?$"
+called: "Real Multiplication of $x?$ and $y?$"
 
 
 [x \real.div/ y]
@@ -90,7 +90,7 @@ expresses: 'f(x, y) := x * inv(y)'
 using:
 . 'inv(a) := \multiplicative.inverse:of{a}:inField{R}'
 written: "\frac{x-?}{y-?}"
-called: "real division of $x?$ by $y?$"
+called: "Real Division of $x?$ by $y?$"
 
 
 ::
@@ -107,7 +107,7 @@ when:
 expresses:
 . 'z := x \real.div/ y'
 written: "\frac{x-?}{y-?}"
-called: "real division of $x?$ by $y?$"
+called: "Real Division of $x?$ by $y?$"
 
 
 ::

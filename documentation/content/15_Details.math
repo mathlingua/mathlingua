@@ -40,7 +40,7 @@ illustrative purposes:
 [\set]
 Defines: X
 means: "A collection of objects"
-written: "\textrm{set}"
+written: "\textrm{Set}"
 ```
 ```math
 [\function:on{A}:to{B}]
@@ -50,7 +50,7 @@ means:
 . forAll: t
   suchThat: 't in A'
   then: 'f(t) in B'
-written: "\textrm{function from } A? \textrm{ to } B?"
+written: "\textrm{Function from } A? \textrm{ to } B?"
 ```
 ```math
 [\bounded.function:on{A}:to{B}]

@@ -17,7 +17,7 @@ expresses:
 written:
 . "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"
 called:
-. "set of $x?$ where $within?$ such that $cond?$"
+. "Set of $x?$ where $within?$ such that $cond?$"
 
 
 ::
@@ -41,7 +41,7 @@ viewing:
 . membership:
   through: 'N'
 written: "\mathbb{N}"
-called: "naturals"
+called: "Naturals"
 
 
 ::
@@ -53,7 +53,7 @@ element of the set of integers, as described below.
 [\integer]
 Defines: N
 means: 'N in \integers.set'
-written: "\textrm{integer}"
+written: "\textrm{Integer}"
 
 
 ::
@@ -68,21 +68,21 @@ and so we simply state their existence below.
 Defines: z
 expresses: "The addition of two integers"
 written: "x+? + y+?"
-called: "integer addition"
+called: "Integer Addition"
 
 
 [x \integers.-/ y]
 Defines: z
 expresses: "The difference of two integers"
 written: "x+? - y+?"
-called: "integer subtraction"
+called: "Integer Subtraction"
 
 
 [x \integers.*/ y]
 Defines: z
 expresses: "The product of two integers"
 written: "x+? y+?"
-called: "integer multiplication"
+called: "Integer Multiplication"
 
 
 [x \integers.geq/ y]
@@ -127,7 +127,7 @@ expresses: 'Q := \set[x, p, q]:where{x := (p, q)}
                               :suchThat{p in \integers.set}
                                        {q in \integers.set}'
 written: "\mathbb{Q}"
-called: "rationals"
+called: "Rationals"
 
 
 ::
@@ -151,7 +151,7 @@ expresses:
 . 'x in \rationals.set'
 . 'x := (a, b)'
 written: "\frac{a?}{b?}"
-called: "rational"
+called: "Rational"
 
 
 ::
@@ -173,7 +173,7 @@ using:
 . 'a * b := a \integers.*/ b'
 . 'a + b := a \integers.+/ b'
 written: "x+? + y+?"
-called: "rational addition"
+called: "Rational Addition"
 
 
 [x \rational.*/ y]
@@ -187,7 +187,7 @@ expresses:
 using:
 . 'a * b := a \integers.*/ b'
 written: "x+? y+?"
-called: "rational multiplication"
+called: "Rational Multiplication"
 
 
 
@@ -212,7 +212,7 @@ means:
 . '0 := \Rational{0, 1}'
 . '1 := \Rational{1, 1}'
 written: "\mathbb{Q}"
-called: "rationals as a field"
+called: "Rationals as a Field"
 
 
 ::
@@ -243,4 +243,4 @@ means:
 . 'X := \rationals.set'
 . 'x < y := x \rational.lt/ y'
 written: "\mathbb{Q}"
-called: "rationals as an ordered set"
+called: "Rationals as an Ordered Set"

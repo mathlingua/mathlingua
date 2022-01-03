@@ -51,8 +51,8 @@ set as follows:
 [\set]
 Defines: S := {s}
 means: "A collection of things"
-written: "\textrm{set}"
-called: "set"
+written: "\textrm{Set}"
+called: "Set"
 ```
 
 and is rendered as
@@ -63,8 +63,8 @@ Defines: S := {s}
 means:
 . "$s$ is well defined"
 . "A well defined collection of things"
-written: "\textrm{set}"
-called: "set"
+written: "\textrm{Set}"
+called: "Set"
 
 ::
 We use a `Defines:` to specify that we are defining
@@ -104,7 +104,7 @@ means:
     . 'b in B'
     . 'f(a) = b'
 written: "f? : A? \rightarrow B?"
-called: "function on $A?$ to $B?$"
+called: "Function on $A?$ to $B?$"
 ```
 
 which is rendered as:
@@ -123,7 +123,7 @@ means:
     . 'b in B'
     . 'f(a) = b'
 written: "f? : A? \rightarrow B?"
-called: "function on $A?$ to $B?$"
+called: "Function on $A?$ to $B?$"
 Metadata:
 . overview: "The key characteristic of a function is
   that every input is mapped to a *unique* output."
@@ -209,7 +209,7 @@ expresses:
 . 'x in A'
 . 'y in B'
 written: "A? \times B?"
-called: "cartesian product of $A?$ and $B?$"
+called: "Cartesian Product of $A?$ and $B?$"
 ```
 that is rendered as
 ::
@@ -221,7 +221,7 @@ expresses:
 . 'x in A'
 . 'y in B'
 written: "A+? \times B+?"
-called: "cartesian product of $A?$ and $B?$"
+called: "Cartesian Product of $A?$ and $B?$"
 
 ::
 Similar to the definition of a set, the Cartesian product
@@ -270,7 +270,7 @@ Defines: *(a, b)
 when: 'A is \set'
 means: '* is \function:on{A \set.product/ A}:to{A}'
 written: "\textrm{binary operation on } A?"
-called: "binary operation on $A?$"
+called: "Binary Operation on $A?$"
 ```
 that is rendered as:
 ::
@@ -281,7 +281,7 @@ Defines: *(a, b)
 when: 'A is \set'
 means: '* is \function:on{A \set.product/ A}:to{A}'
 written: "\textrm{binary operation on } A?"
-called: "binary operation on $A?$"
+called: "Binary Operation on $A?$"
 
 ::
 Note that in the structural language `*` is treated as an
@@ -376,7 +376,7 @@ viewing:
 . membership:
   through: 'X'
 written: "\textrm{group}"
-called: "group"
+called: "Group"
 Metadata:
 . resources:
   . source: "@GroupTheoryJsMilne"
@@ -413,7 +413,7 @@ viewing:
 . membership:
   through: 'X'
 written: "\textrm{group}"
-called: "group"
+called: "Group"
 Metadata:
 . resources:
   . source: "@GroupTheoryJsMilne"
@@ -486,7 +486,7 @@ expresses:
 . 'x * y = e'
 . 'y * x = e'
 written: "x+?^{-1}"
-called: "inverse of $x?$"
+called: "Inverse of $x?$"
 ```
 that is rendered as:
 ::
@@ -502,7 +502,7 @@ expresses:
 . 'x * y = e'
 . 'y * x = e'
 written: "{x+?}^{-1}"
-called: "inverse of $x?$"
+called: "Inverse of $x?$"
 
 ::
 ## Adding a Theorem

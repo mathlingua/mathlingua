@@ -28,7 +28,7 @@ means:
 viewing:
 . as: '\group'
   via: 'G'
-written: "\textrm{Abelian group}"
+written: "\textrm{Abelian Group}"
 
 
 ::
@@ -76,7 +76,7 @@ means:
 viewing:
 . as: '\set'
   via: 'X'
-written: "\textrm{field}"
+written: "\textrm{Field}"
 
 
 ::
@@ -95,7 +95,7 @@ when:
 expresses:
 . 'x + y = 0'
 written: "-x?"
-called: "additive inverse of $x?$"
+called: "Additive Inverse of $x?$"
 
 
 [x \field{F}.-/ y]
@@ -134,7 +134,7 @@ when:
 expresses:
 . 'x * y = 1'
 written: "x+?^{-1}"
-called: "multiplicative inverse of $x?$"
+called: "Multiplicative Inverse of $x?$"
 
 
 [x \field{F}.div/ y]
@@ -180,7 +180,7 @@ means:
 viewing:
 . as: '\field'
   via: '(X, +, *, 0, 1)'
-written: "\textrm{ordered field}"
+written: "\textrm{Ordered Field}"
 
 
 ::
@@ -209,5 +209,5 @@ given: (X, +, *, 0, 1, <)
 when: 'F := (X, +, *, 0, 1, <) is \ordered.field'
 means:
 . '0 < x'
-written: "\textrm{positive}"
+written: "\textrm{Positive}"
 

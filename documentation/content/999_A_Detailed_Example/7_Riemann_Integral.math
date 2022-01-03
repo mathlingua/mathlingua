@@ -25,7 +25,7 @@ means:
   . forAll: t
     suchThat: 't in I'
     then: '\real.abs(f(t)) \real.leq/ M'
-written: "\textrm{bounded real function on } I?"
+written: "\textrm{Bounded Real Function on } I?"
 
 
 ::
@@ -51,8 +51,8 @@ means:
   . 'j \integers.leq/ n'
   then:
   . 'x_{j} is \real'
-written: "\textrm{finite sequence of size } n?"
-called: "finite sequence of size $n?$"
+written: "\textrm{Finite Sequence of Size } n?"
+called: "Finite Sequence of Size $n?$"
 
 
 ::
@@ -77,8 +77,8 @@ means:
   . 'j \integers.leq/ n'
   then:
   . 'x_{j \integers.-/ 1} \integers.lt/ x_{j}'
-written: "\textrm{partition of } I? \text{ of size } n?"
-called: "partition of $I?$ of size $n?$"
+written: "\textrm{Partition of } I? \text{ of Size } n?"
+called: "Partition of $I?$ of size $n?$"
 
 
 ::
@@ -108,7 +108,7 @@ when:
 expresses:
 . 'L := S(b)'
 written: "\displaystyle \sum_{i? = a?}^{b?} f?"
-called: "finite sum of $f$ from $a?$ to $b?$"
+called: "Finite Sum of $f$ from $a?$ to $b?$"
 
 
 ::
@@ -136,7 +136,7 @@ expresses:
 using:
 . 'x - y := x \integers.-/ y'
 written: "m_{i?, P?, f?}"
-called: "infimum of $f?$ over partition $P?$ at index $i?$"
+called: "Infimum of $f?$ over partition $P?$ at index $i?$"
 
 
 ::
@@ -163,7 +163,7 @@ expresses:
 using:
 . 'x - y := x \integers.-/ y'
 written: "M_{i?, P?, f?}"
-called: "supremum of $f?$ over partition $P?$ at index $i?$"
+called: "Supremum of $f?$ over partition $P?$ at index $i?$"
 
 
 ::
@@ -189,7 +189,7 @@ using:
 . 'm_{i} := \infimum:of{f}:over{P}:at{i}'
 . 'p * q := p \real.*/ q'
 written: "L(f?, P?)"
-called: "lower Dorboux sum of $f?$ over $P?$"
+called: "Lower Dorboux Sum of $f?$ over $P?$"
 
 
 ::
@@ -212,7 +212,7 @@ using:
 . 'M_{i} := \supremum:of{f}:over{P}:at{i}'
 . 'p * q := p \real.*/ q'
 written: "U(L?, P?)"
-called: "upper Darboux sum of $f?$ over $P?$"
+called: "Upper Darboux Sum of $f?$ over $P?$"
 
 
 ::
@@ -273,8 +273,8 @@ Defines: f(x)
 means:
 . '\lower.darboux.integral:of{f}:on{a, b} =
    \upper.darboux.integral:of{f}:on{a, b}'
-written: "\textrm{Riemann integrable function on } [a?, b?]"
-called: "Riemann integrable function on $[a?, b?]$"
+written: "\textrm{Riemann integrable Function on } [a?, b?]"
+called: "Riemann Integrable Function on $[a?, b?]$"
 
 
 ::
@@ -293,7 +293,7 @@ when:
 expresses:
 . 'S := \lower.darboux.integral:of{f}:on{a, b}'
 written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
-called: "definite integral of $f?$ from $a?$ to $b?$"
+called: "Definite Integral of $f?$ from $a?$ to $b?$"
 
 
 ::
@@ -321,8 +321,8 @@ means:
   suchThat: 't in I'
   then:
   . '\derivative:of{F}:at{t} = f(t)'
-written: "\textrm{indefinite integral of } f? \textrm{ on } A?"
-called: "indefinite integral of $f?$ on $A?$"
+written: "\textrm{Indefinite Integral of } f? \textrm{ on } A?"
+called: "Indefinite Integral of $f?$ on $A?$"
 
 
 ::

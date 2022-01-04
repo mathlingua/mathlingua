@@ -12,6 +12,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { isOnMobile } from '../../support/util';
 import * as api from '../../services/api';
 import { TopBar } from '../topbar/TopBar';
+import { SignatureIndex } from '../signature-index/SignatureIndex';
 
 export interface HashLocation {
   viewedPath: string;
@@ -156,10 +157,14 @@ const ThreeColumnContent = (props: {
           marginRight: 'auto',
         }}
       >
-        <Page
-          viewedPath={props.hashLocation.viewedPath}
-          targetId={props.hashLocation.targetId}
-        />
+        {
+          (props.hashLocation.viewedPath === 'index') ?
+          <SignatureIndex /> :
+          <Page
+            viewedPath={props.hashLocation.viewedPath}
+            targetId={props.hashLocation.targetId}
+          />
+        }
       </div>
       <div
         style={{

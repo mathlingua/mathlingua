@@ -35,6 +35,7 @@ import mathlingua.backend.ValueSourceTracker
 import mathlingua.backend.buildSourceFile
 import mathlingua.backend.findMathLinguaFiles
 import mathlingua.backend.fixClassNameBug
+import mathlingua.backend.getCalledNames
 import mathlingua.backend.newSourceCollection
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
@@ -42,6 +43,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
@@ -436,6 +438,9 @@ object Mathlingua {
             .get("/api/firstPath") { ctx ->
                 ctx.json(FirstPathResponse(path = getSourceCollection().getFirstPath()))
             }
+            .get("/api/signatureIndex") { ctx ->
+                ctx.json(buildSignatureIndex(getSourceCollection()))
+            }
             .get("/api/shutdown") {
                 // The /api/shutdown hook is used by the end-to-end tests to shutdown
                 // the server after the tests are done.  It is ok to expose this since
@@ -499,6 +504,29 @@ data class CheckError(val path: String, val message: String, val row: Int, val c
 @Serializable data class CompleteWordResponse(val suffixes: List<String>)
 
 @Serializable data class CompleteSignatureResponse(val suffixes: List<String>)
+
+@Serializable data class SignatureIndex(val entries: List<SignatureIndexEntry>)
+
+@Serializable
+data class SignatureIndexEntry(
+    val id: String, val relativePath: String, val signature: String?, val called: List<String>)
+
+private fun buildSignatureIndex(sourceCollection: SourceCollection): SignatureIndex {
+    val entries = mutableListOf<SignatureIndexEntry>()
+    for (path in sourceCollection.getAllPaths()) {
+        val page = sourceCollection.getPage(path) ?: continue
+        for (entity in page.fileResult.entities) {
+            val signature = entity.signature ?: continue
+            entries.add(
+                SignatureIndexEntry(
+                    id = entity.id,
+                    relativePath = entity.relativePath,
+                    signature = signature,
+                    called = entity.called))
+        }
+    }
+    return SignatureIndex(entries = entries)
+}
 
 private fun getGitHubUrl(): String? {
     val pro =
@@ -805,7 +833,10 @@ data class ErrorResult(
 data class CollectionResult(val fileResults: List<FileResult>, val errors: List<ErrorResult>)
 
 @Serializable
-data class DecompositionResult(val collectionResult: CollectionResult, val gitHubUrl: String?)
+data class DecompositionResult(
+    val collectionResult: CollectionResult,
+    val gitHubUrl: String?,
+    val signatureIndex: SignatureIndex)
 
 private fun getSignature(node: Phase2Node?): String? {
     return when (node) {
@@ -875,6 +906,12 @@ private fun decompose(
                                     getAllWords(it.node).toList()
                                 } else {
                                     emptyList()
+                                },
+                            called =
+                                if (it.node is TopLevelGroup) {
+                                    it.node.getCalledNames()
+                                } else {
+                                    emptyList()
                                 })
                     },
                 errors =
@@ -888,6 +925,7 @@ private fun decompose(
     }
     return DecompositionResult(
         gitHubUrl = getGitHubUrl(),
+        signatureIndex = buildSignatureIndex(sourceCollection),
         collectionResult =
             CollectionResult(
                 fileResults = fileResults,

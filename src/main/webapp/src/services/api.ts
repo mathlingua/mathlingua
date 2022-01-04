@@ -7,6 +7,7 @@ export interface EntityResult {
   relativePath: string;
   type: string;
   signature: string;
+  called: string[];
   rawHtml: string;
   renderedHtml: string;
   words: string[];
@@ -33,9 +34,21 @@ export interface CollectionResult {
   errors: ErrorResult[];
 }
 
+export interface SignatureIndex {
+  entries: SignatureIndexEntry[];
+}
+
+export interface SignatureIndexEntry {
+  id: string;
+  relativePath: string;
+  signature: string | undefined;
+  called: string[];
+}
+
 export interface DecompositionResult {
   gitHubUrl?: string;
   collectionResult: CollectionResult;
+  signatureIndex: SignatureIndex;
 }
 
 export interface CheckResponse {
@@ -71,6 +84,7 @@ interface ApiClient {
   check(): Promise<CheckResponse>;
   getGitHubUrl(): Promise<string | undefined>;
   getFirstPath(): Promise<string>;
+  getSignatureIndex(): Promise<SignatureIndex>;
 }
 
 function notifyOfError(error: string) {
@@ -164,6 +178,16 @@ class NetworkApiClient implements ApiClient {
       return '';
     }
   }
+
+  async getSignatureIndex(): Promise<SignatureIndex> {
+    try {
+      const res = await axios.get('/api/signatureIndex');
+      return res.data;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return { entries: [] };
+    }
+  }
 }
 
 class StaticApiClient implements ApiClient {
@@ -175,6 +199,7 @@ class StaticApiClient implements ApiClient {
   private firstFileResult: FileResult | undefined;
   private checkResponse: CheckResponse;
   private gitHubUrl: string | undefined;
+  private signatureIndex: SignatureIndex;
 
   constructor(data: DecompositionResult) {
     this.searchClient = new Search(data);
@@ -215,6 +240,7 @@ class StaticApiClient implements ApiClient {
     };
 
     this.gitHubUrl = data.gitHubUrl;
+    this.signatureIndex = data.signatureIndex;
   }
 
   async getAllPaths(): Promise<string[]> {
@@ -253,6 +279,10 @@ class StaticApiClient implements ApiClient {
 
   async getFirstPath(): Promise<string> {
     return this.allPaths[0];
+  }
+
+  async getSignatureIndex(): Promise<SignatureIndex> {
+    return this.signatureIndex;
   }
 }
 
@@ -307,6 +337,10 @@ export async function check(): Promise<CheckResponse> {
 
 export async function getGitHubUrl(): Promise<string | undefined> {
   return getClient().getGitHubUrl();
+}
+
+export async function getSignatureIndex(): Promise<SignatureIndex> {
+  return getClient().getSignatureIndex();
 }
 
 export async function writeFileResult(path: string, content: string) {

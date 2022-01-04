@@ -65,10 +65,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
@@ -259,6 +261,7 @@ data class EntityResult(
     val relativePath: String,
     val type: String,
     val signature: String?,
+    val called: List<String>,
     val rawHtml: String,
     val renderedHtml: String,
     val words: List<String>)
@@ -310,8 +313,39 @@ fun TopLevelGroup.toEntityResult(
         rawHtml = fixClassNameBug(rawHtml),
         renderedHtml = fixClassNameBug(renderedHtml),
         words = getAllWords(this).toList(),
-        relativePath = relativePath)
+        relativePath = relativePath,
+        called = this.getCalledNames())
 }
+
+fun TopLevelGroup.getCalledNames() =
+    when (this) {
+        is TheoremGroup -> {
+            this.theoremSection.names
+        }
+        is AxiomGroup -> {
+            this.axiomSection.names
+        }
+        is ConjectureGroup -> {
+            this.conjectureSection.names
+        }
+        is DefinesGroup -> {
+            this.getCalled()
+        }
+        is StatesGroup -> {
+            this.getCalled()
+        }
+        is TopicGroup -> {
+            this.topicSection.names
+        }
+        is ResourceGroup -> {
+            val result = mutableListOf<String>()
+            for (values in this.resourceSection.items.map { it.section.values }) {
+                result.addAll(values)
+            }
+            result
+        }
+        else -> emptyList()
+    }
 
 fun SourceFile.toFileResult(
     nextRelativePath: String?, previousRelativePath: String?, sourceCollection: SourceCollection

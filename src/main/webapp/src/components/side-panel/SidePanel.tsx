@@ -7,6 +7,7 @@ import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { ErrorView } from '../error-view/ErrorView';
 import { PathTreeItem, PathTreeNode } from '../path-tree-item/PathTreeItem';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
+import { Link } from 'react-router-dom';
 
 export interface SidePanelProps {
   viewedPath: string;
@@ -51,6 +52,27 @@ export const SidePanel = (props: SidePanelProps) => {
   // if in editing mode show the 'content' directory
   const start = isEditMode ? pathData : pathData.children[0];
 
+  let items = start?.children?.map((node) => (
+    <PathTreeItem
+      key={node.name}
+      node={node}
+      viewedPath={props.viewedPath}
+    />
+  ));
+
+  if (!isEditMode && items) {
+    items = items.concat(<PathTreeItem
+      key='index'
+      node={{
+        name: 'Index',
+        path: 'index',
+        isDir: false,
+        isFirstMathFile: false,
+        children: [],
+      }}
+      viewedPath={props.viewedPath}/>);
+  }
+
   const sidePanel = (
     <div
       className={styles.sidePanel}
@@ -63,13 +85,7 @@ export const SidePanel = (props: SidePanelProps) => {
           : {}
       }
     >
-      {start?.children?.map((node) => (
-        <PathTreeItem
-          key={node.name}
-          node={node}
-          viewedPath={props.viewedPath}
-        />
-      ))}
+      {items}
     </div>
   );
 

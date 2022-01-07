@@ -30,13 +30,15 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ExistsGroup(val existsSection: ExistsSection, val suchThatSection: SuchThatSection) :
+internal data class ExistsGroup(
+    val existsSection: ExistsSection, val suchThatSection: SuchThatSection
+) :
     TwoPartNode<ExistsSection, SuchThatSection>(existsSection, suchThatSection, ::ExistsGroup),
     Clause
 
-fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
+internal fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
 
-fun validateExistsGroup(
+internal fun validateExistsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

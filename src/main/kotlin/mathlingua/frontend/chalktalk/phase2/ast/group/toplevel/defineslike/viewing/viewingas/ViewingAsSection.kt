@@ -28,7 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ViewingAsSection(val statement: Statement) : Phase2Node {
+internal data class ViewingAsSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
@@ -44,7 +44,7 @@ data class ViewingAsSection(val statement: Statement) : Phase2Node {
         chalkTransformer(ViewingAsSection(statement = chalkTransformer(statement) as Statement))
 }
 
-fun validateViewingAsSection(
+internal fun validateViewingAsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

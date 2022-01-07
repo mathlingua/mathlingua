@@ -16,14 +16,14 @@ package mathlingua.frontend.support
 
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 
-data class Location(val row: Int, val column: Int)
+internal data class Location(val row: Int, val column: Int)
 
-interface LocationTracker {
+internal interface LocationTracker {
     fun hasLocationOf(node: Phase2Node): Boolean
     fun getLocationOf(node: Phase2Node): Location?
 }
 
-interface MutableLocationTracker : LocationTracker {
+internal interface MutableLocationTracker : LocationTracker {
     fun setLocationOf(node: Phase2Node, location: Location)
 }
 

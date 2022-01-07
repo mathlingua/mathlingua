@@ -19,7 +19,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.common
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 
-abstract class MultiPartNode(
+internal abstract class MultiPartNode(
     private val sections: List<Phase2Node?>,
     private val builder: (sections: List<Phase2Node?>) -> Phase2Node
 ) : Phase2Node {
@@ -39,7 +39,7 @@ abstract class MultiPartNode(
         chalkTransformer(builder(sections))
 }
 
-abstract class ZeroPartNode(val node: Phase1Node) : Phase2Node {
+internal abstract class ZeroPartNode(val node: Phase1Node) : Phase2Node {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -50,7 +50,7 @@ abstract class ZeroPartNode(val node: Phase1Node) : Phase2Node {
         chalkTransformer(this)
 }
 
-abstract class OnePartNode<S : Phase2Node?>(s: S, builder: (s: S) -> Phase2Node) :
+internal abstract class OnePartNode<S : Phase2Node?>(s: S, builder: (s: S) -> Phase2Node) :
     MultiPartNode(
         listOf(s),
         {
@@ -58,7 +58,7 @@ abstract class OnePartNode<S : Phase2Node?>(s: S, builder: (s: S) -> Phase2Node)
             builder(it[0] as S)
         })
 
-abstract class TwoPartNode<S1 : Phase2Node?, S2 : Phase2Node?>(
+internal abstract class TwoPartNode<S1 : Phase2Node?, S2 : Phase2Node?>(
     s1: S1, s2: S2, builder: (s1: S1, s2: S2) -> Phase2Node
 ) :
     MultiPartNode(
@@ -68,7 +68,7 @@ abstract class TwoPartNode<S1 : Phase2Node?, S2 : Phase2Node?>(
             builder(it[0] as S1, it[1] as S2)
         })
 
-abstract class ThreePartNode<S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node?>(
+internal abstract class ThreePartNode<S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node?>(
     s1: S1, s2: S2, s3: S3, builder: (s1: S1, s2: S2, s3: S3) -> Phase2Node
 ) :
     MultiPartNode(
@@ -78,7 +78,8 @@ abstract class ThreePartNode<S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node
             builder(it[0] as S1, it[1] as S2, it[2] as S3)
         })
 
-abstract class FourPartNode<S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node?, S4 : Phase2Node?>(
+internal abstract class FourPartNode<
+    S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node?, S4 : Phase2Node?>(
     s1: S1, s2: S2, s3: S3, s4: S4, builder: (s1: S1, s2: S2, s3: S3, s4: S4) -> Phase2Node
 ) :
     MultiPartNode(

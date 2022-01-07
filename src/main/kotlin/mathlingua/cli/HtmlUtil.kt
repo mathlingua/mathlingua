@@ -16,7 +16,7 @@
 
 package mathlingua.cli
 
-const val SHARED_HEADER =
+internal const val SHARED_HEADER =
     """
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
@@ -37,7 +37,7 @@ const val SHARED_HEADER =
     </script>
 """
 
-const val KATEX_RENDERING_JS =
+internal const val KATEX_RENDERING_JS =
     """
     function buildMathFragment(rawText) {
         let text = rawText;
@@ -247,7 +247,7 @@ const val KATEX_RENDERING_JS =
     }
 """
 
-const val INTERACTIVE_JS_CODE =
+internal const val INTERACTIVE_JS_CODE =
     """
     function flipEntity(id) {
         const renEl = document.getElementById('rendered-' + id);
@@ -282,7 +282,7 @@ const val INTERACTIVE_JS_CODE =
     }
 """
 
-const val SHARED_CSS =
+internal const val SHARED_CSS =
     """
     .content {
         padding-top: 1.5em;
@@ -690,7 +690,7 @@ const val SHARED_CSS =
     }
 """
 
-fun buildStandaloneHtml(content: String) =
+internal fun buildStandaloneHtml(content: String) =
     """
 <!DOCTYPE html>
 <html>

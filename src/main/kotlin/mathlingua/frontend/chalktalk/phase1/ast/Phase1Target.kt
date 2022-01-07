@@ -16,7 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase1.ast
 
-enum class ChalkTalkTokenType {
+internal enum class ChalkTalkTokenType {
     DotSpace,
     Name,
     Colon,
@@ -39,11 +39,11 @@ enum class ChalkTalkTokenType {
     BlockComment
 }
 
-sealed class Phase1Target : Phase1Node
+internal sealed class Phase1Target : Phase1Node
 
-interface GroupOrBlockComment : Phase1Node
+internal interface GroupOrBlockComment : Phase1Node
 
-data class BlockComment(val text: String) : GroupOrBlockComment {
+internal data class BlockComment(val text: String) : GroupOrBlockComment {
     override fun forEach(fn: (node: Phase1Node) -> Unit) {}
 
     override fun toCode() = text
@@ -57,7 +57,7 @@ data class BlockComment(val text: String) : GroupOrBlockComment {
     }
 }
 
-data class Group(val sections: List<Section>, val id: Phase1Token?) :
+internal data class Group(val sections: List<Section>, val id: Phase1Token?) :
     Phase1Target(), GroupOrBlockComment {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
@@ -100,9 +100,9 @@ data class Group(val sections: List<Section>, val id: Phase1Token?) :
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
-sealed class TupleItem : Phase1Target()
+internal sealed class TupleItem : Phase1Target()
 
-data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem() {
+internal data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(lhs)
@@ -122,9 +122,9 @@ data class Assignment(val lhs: Phase1Token, val rhs: AssignmentRhs) : TupleItem(
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
-sealed class AssignmentRhs : TupleItem()
+internal sealed class AssignmentRhs : TupleItem()
 
-data class Phase1Token(
+internal data class Phase1Token(
     val text: String, val type: ChalkTalkTokenType, val row: Int, val column: Int
 ) : AssignmentRhs() {
 
@@ -137,7 +137,7 @@ data class Phase1Token(
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) = transformer(this)
 }
 
-data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
+internal data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = items.forEach(fn)
 
@@ -160,7 +160,7 @@ data class Tuple(val items: List<TupleItem>) : AssignmentRhs() {
         transformer(Tuple(items = items.map { it.transform(transformer) as TupleItem }))
 }
 
-data class Abstraction(
+internal data class Abstraction(
     val isEnclosed: Boolean,
     val isVarArgs: Boolean,
     val parts: List<AbstractionPart>,
@@ -217,7 +217,7 @@ data class Abstraction(
                 subParams = subParams?.map { it.transform(transformer) as Phase1Token }))
 }
 
-data class AbstractionPart(
+internal data class AbstractionPart(
     val name: Phase1Token,
     val subParams: List<Phase1Token>?,
     val params: List<Phase1Token>?,

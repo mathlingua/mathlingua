@@ -50,7 +50,7 @@ private class Check : CliktCommand(help = "Check the MathLingua files for errors
             exitProcess(
                 Mathlingua.check(
                     fs = fs,
-                    logger = TermUiLogger(termUi = TermUi),
+                    logger = newTermUiLogger(termUi = TermUi),
                     files = file.toList().map { fs.getFileOrDirectory(it) },
                     json = json))
         }
@@ -72,7 +72,7 @@ private class Edit :
         .flag()
 
     override fun run() {
-        val logger = TermUiLogger(termUi = TermUi)
+        val logger = newTermUiLogger(termUi = TermUi)
         if (open && noOpen) {
             logger.error("Error: --open and --no-open cannot both be specified at the same time")
             return
@@ -112,7 +112,7 @@ private class Edit :
 
 private class Version : CliktCommand(help = "Print the MathLingua version") {
     override fun run() {
-        exitProcess(Mathlingua.version(logger = TermUiLogger(termUi = TermUi)))
+        exitProcess(Mathlingua.version(logger = newTermUiLogger(termUi = TermUi)))
     }
 }
 
@@ -123,17 +123,17 @@ private class Document :
     override fun run() {
         runBlocking {
             val fs = newDiskFileSystem()
-            exitProcess(Mathlingua.render(fs = fs, logger = TermUiLogger(termUi = TermUi)))
+            exitProcess(Mathlingua.render(fs = fs, logger = newTermUiLogger(termUi = TermUi)))
         }
     }
 }
 
 // this value will be populated in main()
-var helpText = ""
+private var helpText = ""
 
-class Help : CliktCommand(help = "Show this message and exit") {
+private class Help : CliktCommand(help = "Show this message and exit") {
     override fun run() {
-        val logger = TermUiLogger(termUi = TermUi)
+        val logger = newTermUiLogger(termUi = TermUi)
         if (System.getProperty("__MATHLINGUA_SHOW_COMPLETIONS__") == "true") {
             Mathlingua.completionJson(logger)
         } else {
@@ -143,17 +143,17 @@ class Help : CliktCommand(help = "Show this message and exit") {
     }
 }
 
-class Clean : CliktCommand(help = "Delete generated HTML files") {
+private class Clean : CliktCommand(help = "Delete generated HTML files") {
     override fun run() {
         val fs = newDiskFileSystem()
-        val logger = TermUiLogger(termUi = TermUi)
+        val logger = newTermUiLogger(termUi = TermUi)
         exitProcess(Mathlingua.clean(fs, logger))
     }
 }
 
-class Versions : CliktCommand(help = "Lists available MathLingua versions") {
+private class Versions : CliktCommand(help = "Lists available MathLingua versions") {
     override fun run() {
-        val logger = TermUiLogger(termUi = TermUi)
+        val logger = newTermUiLogger(termUi = TermUi)
         logger.log(
             "This functionality is not available when the MathLingua jar " +
                 "file is run directly.  Use the mlg executable instead.")
@@ -170,7 +170,7 @@ class Update : CliktCommand(help = "Updates to the specified version of MathLing
         .default("latest")
 
     override fun run() {
-        val logger = TermUiLogger(termUi = TermUi)
+        val logger = newTermUiLogger(termUi = TermUi)
         logger.log(
             "This functionality is not available when the MathLingua jar " +
                 "file is run directly.  Use the mlg executable instead.")

@@ -20,13 +20,14 @@ import mathlingua.frontend.support.ParseError
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
-interface TexTalkParser {
+internal interface TexTalkParser {
     fun parse(texTalkLexer: TexTalkLexer): TexTalkParseResult
 }
 
-data class TexTalkParseResult(val root: ExpressionTexTalkNode, val errors: List<ParseError>)
+internal data class TexTalkParseResult(
+    val root: ExpressionTexTalkNode, val errors: List<ParseError>)
 
-fun newTexTalkParser(): TexTalkParser {
+internal fun newTexTalkParser(): TexTalkParser {
     return TexTalkParserImpl()
 }
 

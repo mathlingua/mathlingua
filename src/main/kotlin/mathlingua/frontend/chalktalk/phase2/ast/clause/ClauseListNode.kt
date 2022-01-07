@@ -27,7 +27,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
+internal data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         clauses.forEach(fn)
     }
@@ -48,7 +48,7 @@ data class ClauseListNode(val clauses: List<Clause>) : Phase2Node {
     }
 }
 
-fun validateClauseListNode(
+internal fun validateClauseListNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

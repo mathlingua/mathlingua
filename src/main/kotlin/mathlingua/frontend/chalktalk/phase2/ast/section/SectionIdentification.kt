@@ -37,7 +37,7 @@ fun <T, U> ifNonNull(value: T?, builder: (value: T) -> U) =
         builder(value)
     }
 
-fun <T> identifySections(
+internal fun <T> identifySections(
     group: Group,
     errors: MutableList<ParseError>,
     default: T,
@@ -51,7 +51,9 @@ fun <T> identifySections(
         default
     }
 
-fun identifySections(sections: List<Section>, vararg expected: String): Map<String, Section> {
+internal fun identifySections(
+    sections: List<Section>, vararg expected: String
+): Map<String, Section> {
     val patternBuilder = StringBuilder()
     for (name in expected) {
         patternBuilder.append(name)

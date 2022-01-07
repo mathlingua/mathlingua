@@ -25,8 +25,9 @@ import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 
-data class IdStatement(val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>) :
-    Clause {
+internal data class IdStatement(
+    val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>
+) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,7 +42,7 @@ data class IdStatement(val text: String, val texTalkRoot: Validation<ExpressionT
     fun toStatement() = Statement(text = text, texTalkRoot = texTalkRoot)
 }
 
-fun validateIdStatement(
+internal fun validateIdStatement(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

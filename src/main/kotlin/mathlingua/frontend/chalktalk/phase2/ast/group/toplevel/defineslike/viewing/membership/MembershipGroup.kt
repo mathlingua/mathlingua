@@ -32,16 +32,16 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class MembershipGroup(
+internal data class MembershipGroup(
     val membershipSection: MembershipSection, val throughSection: ThroughSection
 ) :
     TwoPartNode<MembershipSection, ThroughSection>(
         membershipSection, throughSection, ::MembershipGroup),
     Clause
 
-fun isMembershipGroup(node: Phase1Node) = firstSectionMatchesName(node, "membership")
+internal fun isMembershipGroup(node: Phase1Node) = firstSectionMatchesName(node, "membership")
 
-fun validateMembershipGroup(
+internal fun validateMembershipGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

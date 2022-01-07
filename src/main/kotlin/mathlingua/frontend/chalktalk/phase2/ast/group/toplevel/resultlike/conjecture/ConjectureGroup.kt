@@ -51,7 +51,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ConjectureGroup(
+internal data class ConjectureGroup(
     override val signature: Signature?,
     override val id: IdStatement?,
     val conjectureSection: ConjectureSection,
@@ -116,9 +116,9 @@ data class ConjectureGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isConjectureGroup(node: Phase1Node) = firstSectionMatchesName(node, "Conjecture")
+internal fun isConjectureGroup(node: Phase1Node) = firstSectionMatchesName(node, "Conjecture")
 
-fun validateConjectureGroup(
+internal fun validateConjectureGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

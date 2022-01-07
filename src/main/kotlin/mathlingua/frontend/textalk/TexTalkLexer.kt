@@ -20,7 +20,7 @@ import mathlingua.frontend.support.ParseError
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
-interface TexTalkLexer {
+internal interface TexTalkLexer {
     fun hasNext(): Boolean
     fun hasNextNext(): Boolean
     fun peek(): TexTalkToken
@@ -29,7 +29,7 @@ interface TexTalkLexer {
     val errors: List<ParseError>
 }
 
-fun newTexTalkLexer(text: String): TexTalkLexer {
+internal fun newTexTalkLexer(text: String): TexTalkLexer {
     return TexTalkLexerImpl(text)
 }
 

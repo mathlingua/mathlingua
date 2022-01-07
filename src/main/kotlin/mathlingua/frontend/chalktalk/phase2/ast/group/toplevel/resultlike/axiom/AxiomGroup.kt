@@ -51,7 +51,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class AxiomGroup(
+internal data class AxiomGroup(
     override val signature: Signature?,
     override val id: IdStatement?,
     val axiomSection: AxiomSection,
@@ -115,9 +115,9 @@ data class AxiomGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isAxiomGroup(node: Phase1Node) = firstSectionMatchesName(node, "Axiom")
+internal fun isAxiomGroup(node: Phase1Node) = firstSectionMatchesName(node, "Axiom")
 
-fun validateAxiomGroup(
+internal fun validateAxiomGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

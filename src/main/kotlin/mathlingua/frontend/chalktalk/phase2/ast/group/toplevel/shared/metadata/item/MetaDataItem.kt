@@ -18,4 +18,4 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.
 
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 
-interface MetaDataItem : Phase2Node
+internal interface MetaDataItem : Phase2Node

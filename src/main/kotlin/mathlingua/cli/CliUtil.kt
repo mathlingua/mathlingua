@@ -19,27 +19,19 @@ package mathlingua.cli
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueSourceTracker
-import mathlingua.backend.fixClassNameBug
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-private fun String.onWindowsReturn(text: String): String =
-    if (System.getProperty("os.name").lowercase().contains("win")) {
-        text
-    } else {
-        this
-    }
-
-fun bold(text: String) = "\u001B[1m$text\u001B[0m".onWindowsReturn(text)
+internal fun bold(text: String) = "\u001B[1m$text\u001B[0m".onWindowsReturn(text)
 
 @Suppress("SAME_PARAMETER_VALUE")
-fun green(text: String) = "\u001B[32m$text\u001B[0m".onWindowsReturn(text)
+internal fun green(text: String) = "\u001B[32m$text\u001B[0m".onWindowsReturn(text)
 
-fun red(text: String) = "\u001B[31m$text\u001B[0m".onWindowsReturn(text)
+internal fun red(text: String) = "\u001B[31m$text\u001B[0m".onWindowsReturn(text)
 
 @Suppress("UNUSED")
-fun yellow(text: String) = "\u001B[33m$text\u001B[0m".onWindowsReturn(text)
+internal fun yellow(text: String) = "\u001B[33m$text\u001B[0m".onWindowsReturn(text)
 
 internal val COMPLETIONS =
     Completions(
@@ -150,3 +142,31 @@ internal fun getCompleteRenderedTopLevelElements(
     }
     return result
 }
+
+/*
+ * Class names generation has a bug where the class description looks like
+ *    class=mathlingua - top - level
+ * instead of the correct
+ *    class="mathlingua-top-level"
+ * The following function finds the incorrect class names and converts them
+ * to their correct form.
+ */
+internal fun fixClassNameBug(html: String) =
+    html
+        .replace(Regex("class[ ]*=[ ]*([ \\-_a-zA-Z0-9]+)")) {
+            // for each `class=..`. found replace ` - ` with `-`
+            val next = it.groups[0]?.value?.replace(" - ", "-") ?: it.value
+            // then replace `class=...` with `class="..."`
+            "class=\"${next.replaceFirst(Regex("class[ ]*=[ ]*"), "")}\""
+        }
+        .replace("<body>", " ")
+        .replace("</body>", " ")
+
+// -----------------------------------------------------------------------------
+
+private fun String.onWindowsReturn(text: String): String =
+    if (System.getProperty("os.name").lowercase().contains("win")) {
+        text
+    } else {
+        this
+    }

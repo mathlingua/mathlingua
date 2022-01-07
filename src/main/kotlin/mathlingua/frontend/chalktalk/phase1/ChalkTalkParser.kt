@@ -32,17 +32,17 @@ import mathlingua.frontend.chalktalk.phase1.ast.Tuple
 import mathlingua.frontend.chalktalk.phase1.ast.TupleItem
 import mathlingua.frontend.support.ParseError
 
-interface ChalkTalkParser {
+internal interface ChalkTalkParser {
     fun parse(chalkTalkLexer: ChalkTalkLexer): ChalkTalkParseResult
 }
 
-data class ChalkTalkParseResult(val root: Root?, val errors: List<ParseError>)
+internal data class ChalkTalkParseResult(val root: Root?, val errors: List<ParseError>)
 
-fun newChalkTalkParser(): ChalkTalkParser {
+internal fun newChalkTalkParser(): ChalkTalkParser {
     return ChalkTalkParserImpl()
 }
 
-// ------------------------------------------------------------------------------------------------------------------ //
+// ------------------------------------------------------------------------------------------------------------------
 
 private val INVALID = Phase1Token("INVALID", ChalkTalkTokenType.Invalid, -1, -1)
 

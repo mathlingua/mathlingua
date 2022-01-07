@@ -29,11 +29,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class OrGroup(val orSection: OrSection) : OnePartNode<OrSection>(orSection, ::OrGroup), Clause
+internal data class OrGroup(val orSection: OrSection) :
+    OnePartNode<OrSection>(orSection, ::OrGroup), Clause
 
-fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
+internal fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
 
-fun validateOrGroup(
+internal fun validateOrGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

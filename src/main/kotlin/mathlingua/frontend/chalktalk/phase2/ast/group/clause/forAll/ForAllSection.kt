@@ -27,7 +27,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ForAllSection(val targets: List<Target>) : Phase2Node {
+internal data class ForAllSection(val targets: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -42,7 +42,7 @@ data class ForAllSection(val targets: List<Target>) : Phase2Node {
             ForAllSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
 }
 
-fun validateForSection(
+internal fun validateForSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

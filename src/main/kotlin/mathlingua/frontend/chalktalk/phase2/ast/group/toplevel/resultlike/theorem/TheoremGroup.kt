@@ -49,7 +49,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class TheoremGroup(
+internal data class TheoremGroup(
     override val signature: Signature?,
     override val id: IdStatement?,
     val theoremSection: TheoremSection,
@@ -119,9 +119,9 @@ data class TheoremGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isTheoremGroup(node: Phase1Node) = firstSectionMatchesName(node, "Theorem")
+internal fun isTheoremGroup(node: Phase1Node) = firstSectionMatchesName(node, "Theorem")
 
-fun validateTheoremGroup(
+internal fun validateTheoremGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

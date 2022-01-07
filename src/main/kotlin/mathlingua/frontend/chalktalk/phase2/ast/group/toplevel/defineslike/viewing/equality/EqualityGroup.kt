@@ -33,7 +33,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class EqualityGroup(
+internal data class EqualityGroup(
     val equalitySection: EqualitySection,
     val betweenSection: BetweenSection,
     val providedSection: ProvidedSection
@@ -42,9 +42,9 @@ data class EqualityGroup(
         equalitySection, betweenSection, providedSection, ::EqualityGroup),
     Clause
 
-fun isEqualityGroup(node: Phase1Node) = firstSectionMatchesName(node, "equality")
+internal fun isEqualityGroup(node: Phase1Node) = firstSectionMatchesName(node, "equality")
 
-fun validateEqualityGroup(
+internal fun validateEqualityGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

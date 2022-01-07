@@ -21,7 +21,7 @@ import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.support.ParseError
 
-interface ChalkTalkLexer {
+internal interface ChalkTalkLexer {
     fun hasNext(): Boolean
     fun hasNextNext(): Boolean
     fun peek(): Phase1Token
@@ -30,7 +30,7 @@ interface ChalkTalkLexer {
     fun errors(): List<ParseError>
 }
 
-fun newChalkTalkLexer(text: String): ChalkTalkLexer {
+internal fun newChalkTalkLexer(text: String): ChalkTalkLexer {
     return ChalkTalkLexerImpl(text)
 }
 

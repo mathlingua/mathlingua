@@ -25,11 +25,11 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class AssignmentNode(val assignment: Assignment) : ZeroPartNode(assignment), Target
+internal data class AssignmentNode(val assignment: Assignment) : ZeroPartNode(assignment), Target
 
-fun isAssignment(node: Phase1Node) = node is Assignment
+internal fun isAssignment(node: Phase1Node) = node is Assignment
 
-fun validateAssignmentNode(
+internal fun validateAssignmentNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

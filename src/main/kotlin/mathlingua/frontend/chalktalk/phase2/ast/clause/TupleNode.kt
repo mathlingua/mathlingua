@@ -25,11 +25,11 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class TupleNode(val tuple: Tuple) : ZeroPartNode(tuple), Target
+internal data class TupleNode(val tuple: Tuple) : ZeroPartNode(tuple), Target
 
-fun isTuple(node: Phase1Node) = node is Tuple
+internal fun isTuple(node: Phase1Node) = node is Tuple
 
-fun validateTupleNode(
+internal fun validateTupleNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

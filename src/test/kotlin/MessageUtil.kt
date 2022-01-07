@@ -24,7 +24,7 @@ import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationFailure
 
-data class MessageTestCase(
+internal data class MessageTestCase(
     val name: String, val input: String, val expectedErrors: List<ParseError>)
 
 private fun getNamePrefix(name: String) = "$name:"
@@ -138,7 +138,7 @@ private fun loadMessageTestCaseImpl(
     }
 }
 
-fun loadMessageTestCases(): List<MessageTestCase> {
+internal fun loadMessageTestCases(): List<MessageTestCase> {
     val fs = newDiskFileSystem()
     val root = fs.getDirectory(listOf("src", "test", "resources", "goldens", "messages"))
     if (!root.exists()) {

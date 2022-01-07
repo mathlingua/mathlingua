@@ -33,8 +33,9 @@ import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
-data class Statement(val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>) :
-    Clause {
+internal data class Statement(
+    val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>
+) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -47,10 +48,10 @@ data class Statement(val text: String, val texTalkRoot: Validation<ExpressionTex
         chalkTransformer(this)
 }
 
-fun isStatement(node: Phase1Node) =
+internal fun isStatement(node: Phase1Node) =
     node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 
-fun validateStatement(
+internal fun validateStatement(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

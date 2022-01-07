@@ -32,12 +32,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class HaveGroup(val haveSection: HaveSection, val bySection: BySection) :
+internal data class HaveGroup(val haveSection: HaveSection, val bySection: BySection) :
     TwoPartNode<HaveSection, BySection>(haveSection, bySection, ::HaveGroup), Clause
 
-fun isHaveGroup(node: Phase1Node) = firstSectionMatchesName(node, "have")
+internal fun isHaveGroup(node: Phase1Node) = firstSectionMatchesName(node, "have")
 
-fun validateHaveGroup(
+internal fun validateHaveGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

@@ -34,7 +34,8 @@ import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-data class Expansion(val text: String?, val errors: List<String>, val matchedTarget: Boolean)
+internal data class Expansion(
+    val text: String?, val errors: List<String>, val matchedTarget: Boolean)
 
 internal fun OperatorTexTalkNode.signature() =
     when (this.command) {
@@ -67,7 +68,7 @@ internal fun IdStatement.signature(locationTracker: MutableLocationTracker): Sig
         location = locationTracker.getLocationOf(this) ?: Location(row = -1, column = -1))
 }
 
-data class Substitutions(
+internal data class Substitutions(
     val doesMatch: Boolean,
     val substitutions: Map<String, List<TexTalkNode>>,
     val errors: List<String>)

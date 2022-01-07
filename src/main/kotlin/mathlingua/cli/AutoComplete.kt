@@ -16,7 +16,19 @@
 
 package mathlingua.cli
 
-data class AutoComplete(private val preserveCase: Boolean) {
+internal interface AutoComplete {
+    fun add(word: String)
+    fun remove(word: String)
+    fun findSuffixes(word: String): List<String>
+}
+
+internal fun newAutoComplete(preserveCase: Boolean): AutoComplete {
+    return AutoCompleteImpl(preserveCase)
+}
+
+// -----------------------------------------------------------------------------
+
+private data class AutoCompleteImpl(private val preserveCase: Boolean) : AutoComplete {
     private val root = TrieNode(count = 1, isWord = false, children = mutableMapOf())
 
     private fun preProcess(word: String) =
@@ -26,7 +38,7 @@ data class AutoComplete(private val preserveCase: Boolean) {
             word.lowercase()
         }
 
-    fun add(word: String) {
+    override fun add(word: String) {
         val processedWord = preProcess(word)
         addImpl(root, processedWord, 0)
     }
@@ -52,7 +64,7 @@ data class AutoComplete(private val preserveCase: Boolean) {
         addImpl(subNode, word, index + 1)
     }
 
-    fun remove(word: String) {
+    override fun remove(word: String) {
         val processedWord = preProcess(word)
         removeImpl(root, processedWord, 0)
     }
@@ -74,7 +86,7 @@ data class AutoComplete(private val preserveCase: Boolean) {
         }
     }
 
-    fun findSuffixes(word: String): List<String> {
+    override fun findSuffixes(word: String): List<String> {
         val processedWord = preProcess(word)
         val node = findTrieLeaf(root, processedWord, 0) ?: return emptyList()
         val result = mutableSetOf<String>()

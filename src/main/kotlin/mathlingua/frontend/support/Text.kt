@@ -14,6 +14,28 @@
 
 package mathlingua.frontend.support
 
+internal fun justify(text: String, width: Int): List<String> {
+    val tokens = tokenize(text)
+    val lines = mutableListOf<String>()
+    var i = 0
+    while (i < tokens.size) {
+        val curLine = StringBuilder()
+        while (i < tokens.size && curLine.isEmpty() && tokens[i].isBlank()) {
+            i++
+        }
+        while (i < tokens.size && curLine.length + tokens[i].length <= width) {
+            curLine.append(tokens[i++])
+        }
+        if (i < tokens.size && curLine.isEmpty()) {
+            curLine.append(tokens[i++])
+        }
+        lines.add(curLine.toString())
+    }
+    return lines
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+
 private fun tokenize(text: String): List<String> {
     val tokens = mutableListOf<String>()
     var i = 0
@@ -33,24 +55,4 @@ private fun tokenize(text: String): List<String> {
         }
     }
     return tokens
-}
-
-internal fun justify(text: String, width: Int): List<String> {
-    val tokens = tokenize(text)
-    val lines = mutableListOf<String>()
-    var i = 0
-    while (i < tokens.size) {
-        val curLine = StringBuilder()
-        while (i < tokens.size && curLine.isEmpty() && tokens[i].isBlank()) {
-            i++
-        }
-        while (i < tokens.size && curLine.length + tokens[i].length <= width) {
-            curLine.append(tokens[i++])
-        }
-        if (i < tokens.size && curLine.isEmpty()) {
-            curLine.append(tokens[i++])
-        }
-        lines.add(curLine.toString())
-    }
-    return lines
 }

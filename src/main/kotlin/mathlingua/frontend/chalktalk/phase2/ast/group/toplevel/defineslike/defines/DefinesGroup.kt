@@ -64,7 +64,7 @@ import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-data class DefinesGroup(
+internal data class DefinesGroup(
     override val signature: Signature?,
     override val id: IdStatement,
     val definesSection: DefinesSection,
@@ -149,9 +149,9 @@ data class DefinesGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
+internal fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
 
-fun validateDefinesGroup(
+internal fun validateDefinesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
@@ -236,7 +236,7 @@ fun validateDefinesGroup(
         }
     }
 
-fun checkIfFunctionSignatureMatchDefines(
+internal fun checkIfFunctionSignatureMatchDefines(
     defines: DefinesGroup, tracker: LocationTracker
 ): ParseError? {
     val idArgs =

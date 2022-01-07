@@ -19,7 +19,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.common
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
 
-interface Phase2Node {
+internal interface Phase2Node {
     fun forEach(fn: (node: Phase2Node) -> Unit)
     fun toCode(
         isArg: Boolean,

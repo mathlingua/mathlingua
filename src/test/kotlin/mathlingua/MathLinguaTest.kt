@@ -5,11 +5,11 @@ import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.WrittenAsForm
-import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.newSourceCollection
 import mathlingua.backend.transform.Signature
 import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.chalktalk.phase2.getPatternsToWrittenAs
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.Command
@@ -113,7 +113,7 @@ internal class MathLinguaTest {
         val locations =
             sourceCollection.getDuplicateContent().mapNotNull {
                 if (it.tracker != null) {
-                    it.tracker!!.getLocationOf(it.value)
+                    it.tracker.getLocationOf(it.value)
                 } else {
                     null
                 }
@@ -211,7 +211,7 @@ internal class MathLinguaTest {
         val dups =
             collection.getDuplicateContent().mapNotNull {
                 if (it.tracker != null) {
-                    it.tracker!!.getLocationOf(it.value)
+                    it.tracker.getLocationOf(it.value)
                 } else {
                     null
                 }
@@ -261,7 +261,7 @@ internal class MathLinguaTest {
         val dups =
             collection.getDuplicateContent().mapNotNull {
                 if (it.tracker != null) {
-                    it.tracker!!.getLocationOf(it.value)
+                    it.tracker.getLocationOf(it.value)
                 } else {
                     null
                 }

@@ -36,7 +36,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-data class ResourceGroup(
+internal data class ResourceGroup(
     val id: String,
     val resourceSection: ResourceSection,
     override val metaDataSection: MetaDataSection?
@@ -67,9 +67,9 @@ data class ResourceGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection))
 }
 
-fun isResourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Resource")
+internal fun isResourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Resource")
 
-fun validateResourceGroup(
+internal fun validateResourceGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

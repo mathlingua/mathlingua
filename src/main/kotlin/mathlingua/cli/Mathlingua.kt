@@ -141,6 +141,8 @@ object Mathlingua {
     }
 }
 
+// -----------------------------------------------------------------------------
+
 private fun String.jsonSanitize() =
     this.replace("\\", "\\\\")
         .replace("\b", "\\b")

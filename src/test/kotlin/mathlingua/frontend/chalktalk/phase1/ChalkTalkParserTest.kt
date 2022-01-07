@@ -50,7 +50,7 @@ internal class ChalkTalkParserTest {
                 assertThat(result.root).isNotNull()
 
                 val actualOutput = result.root!!.toCode()
-                val actualStructure = serialize(result.root!!)
+                val actualStructure = serialize(result.root)
                 if (OVERWRITE_GOLDEN_FILES) {
                     println("Overwriting phase1 ChalkTalk test: ${it.name}")
                     it.phase1Output.writeText(actualOutput)

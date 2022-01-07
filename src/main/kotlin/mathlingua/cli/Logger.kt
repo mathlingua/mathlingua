@@ -23,13 +23,27 @@ interface Logger {
     fun error(message: String)
 }
 
-class TermUiLogger(private val termUi: TermUi) : Logger {
+interface AuditableLogger : Logger {
+    fun getLogs(): List<String>
+}
+
+internal fun newTermUiLogger(termUi: TermUi): Logger {
+    return TermUiLogger(termUi)
+}
+
+internal fun newMemoryLogger(): AuditableLogger {
+    return MemoryLogger()
+}
+
+// -----------------------------------------------------------------------------
+
+private class TermUiLogger(private val termUi: TermUi) : Logger {
     override fun log(message: String) = termUi.echo(message = message, err = false)
 
     override fun error(message: String) = termUi.echo(message = message, err = true)
 }
 
-class MemoryLogger : Logger {
+private class MemoryLogger : AuditableLogger {
     private val logs = mutableListOf<String>()
     private val errors = mutableListOf<String>()
 
@@ -41,7 +55,7 @@ class MemoryLogger : Logger {
         errors.add(message)
     }
 
-    fun getLogs(): List<String> {
+    override fun getLogs(): List<String> {
         return logs
     }
 

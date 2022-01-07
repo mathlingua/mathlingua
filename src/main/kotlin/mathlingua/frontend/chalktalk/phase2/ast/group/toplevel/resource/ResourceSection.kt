@@ -34,7 +34,7 @@ import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-val SOURCE_ITEM_CONSTRAINTS =
+private val SOURCE_ITEM_CONSTRAINTS =
     mapOf(
         "type" to 1,
         "name" to 1,
@@ -45,7 +45,7 @@ val SOURCE_ITEM_CONSTRAINTS =
         "offset" to 1,
         "related" to -1)
 
-class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
+internal class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -86,7 +86,7 @@ class ResourceSection(val items: List<StringSectionGroup>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validateResourceSection(
+internal fun validateResourceSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

@@ -39,7 +39,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-data class NoteGroup(
+internal data class NoteGroup(
     val id: String?,
     val noteSection: NoteSection,
     val contentSection: ContentSection,
@@ -77,9 +77,9 @@ data class NoteGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isNoteGroup(node: Phase1Node) = firstSectionMatchesName(node, "Note")
+internal fun isNoteGroup(node: Phase1Node) = firstSectionMatchesName(node, "Note")
 
-fun validateNoteGroup(
+internal fun validateNoteGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

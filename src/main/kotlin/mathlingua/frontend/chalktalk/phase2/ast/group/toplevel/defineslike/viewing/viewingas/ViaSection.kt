@@ -28,7 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ViaSection(val statement: Statement) : Phase2Node {
+internal data class ViaSection(val statement: Statement) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
@@ -44,7 +44,7 @@ data class ViaSection(val statement: Statement) : Phase2Node {
         chalkTransformer(ViaSection(statement = chalkTransformer(statement) as Statement))
 }
 
-fun validateViaSection(
+internal fun validateViaSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

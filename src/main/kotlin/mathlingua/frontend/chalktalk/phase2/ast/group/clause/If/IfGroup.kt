@@ -31,7 +31,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class IfGroup(val ifSection: IfSection, val thenSection: ThenSection) : Clause {
+internal data class IfGroup(val ifSection: IfSection, val thenSection: ThenSection) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(ifSection)
         fn(thenSection)
@@ -50,9 +50,9 @@ data class IfGroup(val ifSection: IfSection, val thenSection: ThenSection) : Cla
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection))
 }
 
-fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
+internal fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
 
-fun validateIfGroup(
+internal fun validateIfGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

@@ -30,12 +30,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ResourcesGroup(val resourcesSection: ResourcesSection) :
+internal data class ResourcesGroup(val resourcesSection: ResourcesSection) :
     OnePartNode<ResourcesSection>(resourcesSection, ::ResourcesGroup), MetaDataItem
 
-fun isResourcesGroup(node: Phase1Node) = firstSectionMatchesName(node, "resources")
+internal fun isResourcesGroup(node: Phase1Node) = firstSectionMatchesName(node, "resources")
 
-fun validateResourcesGroup(
+internal fun validateResourcesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

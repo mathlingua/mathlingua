@@ -29,12 +29,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class NotGroup(val notSection: NotSection) :
+internal data class NotGroup(val notSection: NotSection) :
     OnePartNode<NotSection>(notSection, ::NotGroup), Clause
 
-fun isNotGroup(node: Phase1Node) = firstSectionMatchesName(node, "not")
+internal fun isNotGroup(node: Phase1Node) = firstSectionMatchesName(node, "not")
 
-fun validateNotGroup(
+internal fun validateNotGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

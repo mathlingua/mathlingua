@@ -29,12 +29,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class AndGroup(val andSection: AndSection) :
+internal data class AndGroup(val andSection: AndSection) :
     OnePartNode<AndSection>(andSection, ::AndGroup), Clause
 
-fun isAndGroup(node: Phase1Node) = firstSectionMatchesName(node, "and")
+internal fun isAndGroup(node: Phase1Node) = firstSectionMatchesName(node, "and")
 
-fun validateAndGroup(
+internal fun validateAndGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

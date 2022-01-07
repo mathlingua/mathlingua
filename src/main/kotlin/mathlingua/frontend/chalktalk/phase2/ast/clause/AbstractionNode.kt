@@ -25,11 +25,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class AbstractionNode(val abstraction: Abstraction) : ZeroPartNode(abstraction), Target
+internal data class AbstractionNode(val abstraction: Abstraction) :
+    ZeroPartNode(abstraction), Target
 
-fun isAbstraction(node: Phase1Node) = node is Abstraction
+internal fun isAbstraction(node: Phase1Node) = node is Abstraction
 
-fun validateAbstractionNode(
+internal fun validateAbstractionNode(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

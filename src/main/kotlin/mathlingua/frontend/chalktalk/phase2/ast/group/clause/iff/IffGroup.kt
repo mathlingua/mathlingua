@@ -32,12 +32,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class IffGroup(val iffSection: IffSection, val thenSection: ThenSection) :
+internal data class IffGroup(val iffSection: IffSection, val thenSection: ThenSection) :
     TwoPartNode<IffSection, ThenSection>(iffSection, thenSection, ::IffGroup), Clause
 
-fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
+internal fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
 
-fun validateIffGroup(
+internal fun validateIffGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

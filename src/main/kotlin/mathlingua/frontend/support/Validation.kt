@@ -19,22 +19,23 @@ import mathlingua.frontend.chalktalk.phase1.ast.getColumn
 import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 
-data class ParseError(override val message: String, val row: Int, val column: Int) :
+internal data class ParseError(override val message: String, val row: Int, val column: Int) :
     RuntimeException(message)
 
-sealed class Validation<out T>
+internal sealed class Validation<out T>
 
-abstract class ValidationSuccess<T>(val value: T) : Validation<T>()
+internal abstract class ValidationSuccess<T>(val value: T) : Validation<T>()
 
-abstract class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
+internal abstract class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
 
-data class ValidationSuccessImpl<T>(val v: T) : ValidationSuccess<T>(v)
+internal data class ValidationSuccessImpl<T>(val v: T) : ValidationSuccess<T>(v)
 
-data class ValidationFailureImpl<T>(val errs: List<ParseError>) : ValidationFailure<T>(errs)
+internal data class ValidationFailureImpl<T>(val errs: List<ParseError>) :
+    ValidationFailure<T>(errs)
 
-fun <T> validationSuccess(value: T): ValidationSuccess<T> = ValidationSuccessImpl(value)
+internal fun <T> validationSuccess(value: T): ValidationSuccess<T> = ValidationSuccessImpl(value)
 
-fun <T : Phase2Node> validationSuccess(
+internal fun <T : Phase2Node> validationSuccess(
     tracker: MutableLocationTracker, phase1Node: Phase1Node, phase2Node: T
 ): ValidationSuccess<T> {
     tracker.setLocationOf(
@@ -42,5 +43,5 @@ fun <T : Phase2Node> validationSuccess(
     return ValidationSuccessImpl(phase2Node)
 }
 
-fun <T> validationFailure(errors: List<ParseError>): ValidationFailure<T> =
+internal fun <T> validationFailure(errors: List<ParseError>): ValidationFailure<T> =
     ValidationFailureImpl(errors)

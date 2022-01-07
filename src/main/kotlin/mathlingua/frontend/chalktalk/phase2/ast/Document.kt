@@ -61,7 +61,7 @@ import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
-data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
+internal data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
 
     fun defines() = groups.filterIsInstance<DefinesGroup>()
     fun states() = groups.filterIsInstance<StatesGroup>()
@@ -91,7 +91,9 @@ data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
     }
 }
 
-fun validateDocument(rawNode: Phase1Node, tracker: MutableLocationTracker): Validation<Document> {
+internal fun validateDocument(
+    rawNode: Phase1Node, tracker: MutableLocationTracker
+): Validation<Document> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()

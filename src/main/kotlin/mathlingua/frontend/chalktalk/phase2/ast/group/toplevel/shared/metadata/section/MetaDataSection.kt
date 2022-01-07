@@ -43,7 +43,7 @@ import mathlingua.frontend.support.ParseError
 private val META_DATA_ITEM_CONSTRAINTS =
     mapOf("overview" to 1, "tag" to -1, "author" to -1, "contributor" to -1, "id" to 1)
 
-data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
+internal data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -62,9 +62,9 @@ data class MetaDataSection(val items: List<MetaDataItem>) : Phase2Node {
             MetaDataSection(items = items.map { it.transform(chalkTransformer) as MetaDataItem }))
 }
 
-fun isMetadataSection(sec: Section) = sec.name.text == "Metadata"
+internal fun isMetadataSection(sec: Section) = sec.name.text == "Metadata"
 
-fun validateMetaDataSection(
+internal fun validateMetaDataSection(
     section: Section, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(section, tracker) {

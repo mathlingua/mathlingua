@@ -28,7 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -46,9 +46,9 @@ data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
             WhenSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun isWhenSection(sec: Section) = sec.name.text == "when"
+internal fun isWhenSection(sec: Section) = sec.name.text == "when"
 
-fun validateWhenSection(
+internal fun validateWhenSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

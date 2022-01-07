@@ -26,9 +26,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSecti
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.getRandomUuid
 
-abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
+internal abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
-class TopLevelBlockComment(val blockComment: BlockComment) : TopLevelGroup(null) {
+internal class TopLevelBlockComment(val blockComment: BlockComment) : TopLevelGroup(null) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -40,9 +40,9 @@ class TopLevelBlockComment(val blockComment: BlockComment) : TopLevelGroup(null)
         chalkTransformer(this)
 }
 
-fun isBlockComment(node: Phase1Node) = node is BlockComment
+internal fun isBlockComment(node: Phase1Node) = node is BlockComment
 
-fun topLevelToCode(
+internal fun topLevelToCode(
     topLevelGroup: TopLevelGroup?,
     writer: CodeWriter,
     isArg: Boolean,

@@ -27,7 +27,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
+internal data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = identifiers.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -43,7 +43,7 @@ data class ExistsSection(val identifiers: List<Target>) : Phase2Node {
                 identifiers = identifiers.map { it.transform(chalkTransformer) as Target }))
 }
 
-fun validateExistsSection(
+internal fun validateExistsSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

@@ -29,7 +29,7 @@ import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.support.validationFailure
 import mathlingua.frontend.support.validationSuccess
 
-data class Parse(val document: Document, val tracker: MutableLocationTracker)
+internal data class Parse(val document: Document, val tracker: MutableLocationTracker)
 
 /*
  * Represents a front end of MathLingua processing, specifically the lexing
@@ -38,7 +38,7 @@ data class Parse(val document: Document, val tracker: MutableLocationTracker)
  * or text since that information is not needed to produce and validate an AST.
  * The BackEnd handles such dependencies.
  */
-object FrontEnd {
+internal object FrontEnd {
     fun parse(input: String): Validation<Document> =
         when (val validation = parseWithLocations(input)
         ) {

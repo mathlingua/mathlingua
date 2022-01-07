@@ -42,6 +42,8 @@ internal fun getAllWords(node: Phase2Node): Set<String> {
     return result
 }
 
+// -----------------------------------------------------------------------------
+
 private fun getAllWordsImpl(node: Phase2Node, words: MutableSet<String>) {
     if (node is HasSignature && node.signature != null) {
         words.add("[${node.signature!!.form}]")

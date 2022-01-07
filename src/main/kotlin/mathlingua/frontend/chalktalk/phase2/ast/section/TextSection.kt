@@ -19,7 +19,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 
-data class TextSection(val name: String, val text: String) : Phase2Node {
+internal data class TextSection(val name: String, val text: String) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {

@@ -123,13 +123,15 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-fun <T : Phase2Node> track(node: Phase1Node, tracker: MutableLocationTracker, builder: () -> T): T {
+internal fun <T : Phase2Node> track(
+    node: Phase1Node, tracker: MutableLocationTracker, builder: () -> T
+): T {
     val phase2Node = builder()
     tracker.setLocationOf(phase2Node, Location(row = getRow(node), column = getColumn(node)))
     return phase2Node
 }
 
-fun <T, U> validateByTransform(
+internal fun <T, U> validateByTransform(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     default: T,
@@ -146,7 +148,7 @@ fun <T, U> validateByTransform(
     }
 }
 
-fun <T> validateGroup(
+internal fun <T> validateGroup(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     name: String,
@@ -167,7 +169,7 @@ fun <T> validateGroup(
         },
         builder)
 
-fun <T> validateSection(
+internal fun <T> validateSection(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     name: String,
@@ -175,7 +177,7 @@ fun <T> validateSection(
     builder: (section: Section) -> T
 ) = validateSectionImpl(node, errors, name, default, builder)
 
-fun <T> validateSection(
+internal fun <T> validateSection(
     node: Phase1Node, errors: MutableList<ParseError>, default: T, builder: (section: Section) -> T
 ) = validateSectionImpl(node, errors, null, default, builder)
 
@@ -204,7 +206,7 @@ private fun <T> validateSectionImpl(
         },
         builder)
 
-fun <T> validateTargetSection(
+internal fun <T> validateTargetSection(
     node: Phase1Node,
     errors: MutableList<ParseError>,
     name: String,
@@ -240,7 +242,7 @@ fun <T> validateTargetSection(
         }
     }
 
-fun getOptionalId(
+internal fun getOptionalId(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): IdStatement? {
     val group = node.resolve()
@@ -256,7 +258,7 @@ fun getOptionalId(
     }
 }
 
-fun getId(
+internal fun getId(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): IdStatement {
     val id = getOptionalId(node, errors, tracker)
@@ -268,7 +270,7 @@ fun getId(
     }
 }
 
-fun <T> validateSingleArg(
+internal fun <T> validateSingleArg(
     section: Section,
     errors: MutableList<ParseError>,
     default: T,
@@ -286,7 +288,7 @@ fun <T> validateSingleArg(
         builder(section.args[0])
     }
 
-val DEFAULT_ABSTRACTION =
+internal val DEFAULT_ABSTRACTION =
     AbstractionNode(
         abstraction =
             Abstraction(
@@ -295,101 +297,103 @@ val DEFAULT_ABSTRACTION =
                 parts = emptyList(),
                 subParams = emptyList()))
 
-val DEFAULT_TOKEN =
+internal val DEFAULT_TOKEN =
     Phase1Token(text = "INVALID", type = ChalkTalkTokenType.Invalid, row = -1, column = -1)
 
-val DEFAULT_ASSIGNMENT =
+internal val DEFAULT_ASSIGNMENT =
     AssignmentNode(assignment = Assignment(lhs = DEFAULT_TOKEN, rhs = DEFAULT_TOKEN))
 
-val DEFAULT_IDENTIFIER = Identifier(name = "INVALID", isVarArgs = false)
+internal val DEFAULT_IDENTIFIER = Identifier(name = "INVALID", isVarArgs = false)
 
-val DEFAULT_ID_STATEMENT =
+internal val DEFAULT_ID_STATEMENT =
     IdStatement(text = "INVALID", texTalkRoot = validationFailure(emptyList()))
 
-val DEFAULT_STATEMENT = Statement(text = "INVALID", texTalkRoot = validationFailure(emptyList()))
+internal val DEFAULT_STATEMENT =
+    Statement(text = "INVALID", texTalkRoot = validationFailure(emptyList()))
 
-val DEFAULT_TEXT = Text(text = "INVALID")
+internal val DEFAULT_TEXT = Text(text = "INVALID")
 
-val DEFAULT_TUPLE = TupleNode(tuple = Tuple(items = emptyList()))
+internal val DEFAULT_TUPLE = TupleNode(tuple = Tuple(items = emptyList()))
 
-val DEFAULT_CLAUSE_LIST_NODE = ClauseListNode(clauses = emptyList())
+internal val DEFAULT_CLAUSE_LIST_NODE = ClauseListNode(clauses = emptyList())
 
-val DEFAULT_SUCH_THAT_SECTION = SuchThatSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_SUCH_THAT_SECTION = SuchThatSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_ELSE_SECTION = ElseSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_ELSE_SECTION = ElseSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_IF_SECTION = IfSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_IF_SECTION = IfSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_THEN_SECTION = ThenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_THEN_SECTION = ThenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_IFF_SECTION = IffSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_IFF_SECTION = IffSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_NOT_SECTION = NotSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_NOT_SECTION = NotSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_OR_SECTION = OrSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_OR_SECTION = OrSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_AND_SECTION = AndSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_AND_SECTION = AndSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_AND_GROUP = AndGroup(andSection = DEFAULT_AND_SECTION)
+internal val DEFAULT_AND_GROUP = AndGroup(andSection = DEFAULT_AND_SECTION)
 
-val DEFAULT_PIECEWISE_SECTION = PiecewiseSection()
+internal val DEFAULT_PIECEWISE_SECTION = PiecewiseSection()
 
-val DEFAULT_NOTE_SECTION = NoteSection()
+internal val DEFAULT_NOTE_SECTION = NoteSection()
 
-val DEFAULT_EXPRESSED_SECTION = ExpressesSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_EXPRESSED_SECTION = ExpressesSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_PROVIDED_SECTION = ProvidedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_PROVIDED_SECTION = ProvidedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_THAT_SECTION = ThatSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_THAT_SECTION = ThatSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_USING_SECTION = UsingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_USING_SECTION = UsingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_STATES_SECTION = StatesSection()
+internal val DEFAULT_STATES_SECTION = StatesSection()
 
-val DEFAULT_EXISTS_SECTION = ExistsSection(identifiers = emptyList())
+internal val DEFAULT_EXISTS_SECTION = ExistsSection(identifiers = emptyList())
 
-val DEFAULT_EXISTS_UNIQUE_SECTION = ExistsUniqueSection(identifiers = emptyList())
+internal val DEFAULT_EXISTS_UNIQUE_SECTION = ExistsUniqueSection(identifiers = emptyList())
 
-val DEFAULT_EXISTS_GROUP =
+internal val DEFAULT_EXISTS_GROUP =
     ExistsGroup(existsSection = DEFAULT_EXISTS_SECTION, suchThatSection = DEFAULT_SUCH_THAT_SECTION)
 
-val DEFAULT_EXISTS_UNIQUE_GROUP =
+internal val DEFAULT_EXISTS_UNIQUE_GROUP =
     ExistsUniqueGroup(
         existsUniqueSection = DEFAULT_EXISTS_UNIQUE_SECTION,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION)
 
-val DEFAULT_FOR_ALL_SECTION = ForAllSection(targets = emptyList())
+internal val DEFAULT_FOR_ALL_SECTION = ForAllSection(targets = emptyList())
 
-val DEFAULT_DEFINES_SECTION = DefinesSection(targets = emptyList())
+internal val DEFAULT_DEFINES_SECTION = DefinesSection(targets = emptyList())
 
-val DEFAULT_WRITTEN_SECTION = WrittenSection(forms = emptyList())
+internal val DEFAULT_WRITTEN_SECTION = WrittenSection(forms = emptyList())
 
-val DEFAULT_CALLED_SECTION = CalledSection(forms = emptyList())
+internal val DEFAULT_CALLED_SECTION = CalledSection(forms = emptyList())
 
-val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList())
+internal val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList())
 
-val DEFAULT_FOR_ALL_GROUP =
+internal val DEFAULT_FOR_ALL_GROUP =
     ForAllGroup(
         forAllSection = DEFAULT_FOR_ALL_SECTION,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION,
         thenSection = DEFAULT_THEN_SECTION)
 
-val DEFAULT_IF_GROUP = IfGroup(ifSection = DEFAULT_IF_SECTION, thenSection = DEFAULT_THEN_SECTION)
+internal val DEFAULT_IF_GROUP =
+    IfGroup(ifSection = DEFAULT_IF_SECTION, thenSection = DEFAULT_THEN_SECTION)
 
-val DEFAULT_IFF_GROUP =
+internal val DEFAULT_IFF_GROUP =
     IffGroup(iffSection = DEFAULT_IFF_SECTION, thenSection = DEFAULT_THEN_SECTION)
 
-val DEFAULT_NOT_GROUP = NotGroup(notSection = DEFAULT_NOT_SECTION)
+internal val DEFAULT_NOT_GROUP = NotGroup(notSection = DEFAULT_NOT_SECTION)
 
-val DEFAULT_OR_GROUP = OrGroup(orSection = DEFAULT_OR_SECTION)
+internal val DEFAULT_OR_GROUP = OrGroup(orSection = DEFAULT_OR_SECTION)
 
-val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
+internal val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf())
 
-val DEFAULT_STATES_GROUP =
+internal val DEFAULT_STATES_GROUP =
     StatesGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,
@@ -402,35 +406,35 @@ val DEFAULT_STATES_GROUP =
         calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_ENTRY_SECTION = TopicSection(names = emptyList())
+internal val DEFAULT_ENTRY_SECTION = TopicSection(names = emptyList())
 
-val DEFAULT_CONTENT_SECTION = ContentSection(text = "")
+internal val DEFAULT_CONTENT_SECTION = ContentSection(text = "")
 
-val DEFAULT_TOPIC_GROUP =
+internal val DEFAULT_TOPIC_GROUP =
     TopicGroup(
         id = DEFAULT_ID_STATEMENT.text,
         topicSection = DEFAULT_ENTRY_SECTION,
         contentSection = DEFAULT_CONTENT_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_NOTE_GROUP =
+internal val DEFAULT_NOTE_GROUP =
     NoteGroup(
         id = DEFAULT_ID_STATEMENT.text,
         noteSection = DEFAULT_NOTE_SECTION,
         contentSection = DEFAULT_CONTENT_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_AXIOM_SECTION = AxiomSection(names = emptyList())
+internal val DEFAULT_AXIOM_SECTION = AxiomSection(names = emptyList())
 
-val DEFAULT_CONJECTURE_SECTION = ConjectureSection(names = emptyList())
+internal val DEFAULT_CONJECTURE_SECTION = ConjectureSection(names = emptyList())
 
-val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
+internal val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
-val DEFAULT_PROOF_SECTION = ProofSection(text = "")
+internal val DEFAULT_PROOF_SECTION = ProofSection(text = "")
 
-val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
+internal val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
 
-val DEFAULT_AXIOM_GROUP =
+internal val DEFAULT_AXIOM_GROUP =
     AxiomGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,
@@ -442,7 +446,7 @@ val DEFAULT_AXIOM_GROUP =
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_CONJECTURE_GROUP =
+internal val DEFAULT_CONJECTURE_GROUP =
     ConjectureGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,
@@ -454,7 +458,7 @@ val DEFAULT_CONJECTURE_GROUP =
         usingSection = DEFAULT_USING_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_THEOREM_GROUP =
+internal val DEFAULT_THEOREM_GROUP =
     TheoremGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,
@@ -467,100 +471,100 @@ val DEFAULT_THEOREM_GROUP =
         metaDataSection = DEFAULT_META_DATA_SECTION,
         proofSection = DEFAULT_PROOF_SECTION)
 
-val DEFAULT_RESOURCE_SECTION = ResourceSection(items = emptyList())
+internal val DEFAULT_RESOURCE_SECTION = ResourceSection(items = emptyList())
 
-val DEFAULT_RESOURCE_GROUP =
+internal val DEFAULT_RESOURCE_GROUP =
     ResourceGroup(
         id = "",
         resourceSection = DEFAULT_RESOURCE_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
 
-val DEFAULT_PIECEWISE_GROUP =
+internal val DEFAULT_PIECEWISE_GROUP =
     PiecewiseGroup(
         piecewiseSection = DEFAULT_PIECEWISE_SECTION,
         whenThen = emptyList(),
         elseSection = DEFAULT_ELSE_SECTION)
 
-val DEFAULT_SOURCE_ITEM_SECTION = SourceItemSection(sourceReference = "")
+internal val DEFAULT_SOURCE_ITEM_SECTION = SourceItemSection(sourceReference = "")
 
-val DEFAULT_CONTENT_ITEM_SECTION = ContentItemSection(content = "")
+internal val DEFAULT_CONTENT_ITEM_SECTION = ContentItemSection(content = "")
 
-val DEFAULT_OFFSET_ITEM_SECTION = OffsetItemSection(offset = "")
+internal val DEFAULT_OFFSET_ITEM_SECTION = OffsetItemSection(offset = "")
 
-val DEFAULT_SITE_ITEM_SECTION = SiteItemSection(url = "")
+internal val DEFAULT_SITE_ITEM_SECTION = SiteItemSection(url = "")
 
-val DEFAULT_NAME_ITEM_SECTION = NameItemSection(name = "")
+internal val DEFAULT_NAME_ITEM_SECTION = NameItemSection(name = "")
 
-val DEFAULT_SITE_GROUP =
+internal val DEFAULT_SITE_GROUP =
     SiteGroup(
         siteItemSection = DEFAULT_SITE_ITEM_SECTION, nameItemSection = DEFAULT_NAME_ITEM_SECTION)
 
-val DEFAULT_PAGE_ITEM_SECTION = PageItemSection(page = "")
+internal val DEFAULT_PAGE_ITEM_SECTION = PageItemSection(page = "")
 
-val DEFAULT_RESOURCES_SECTION = ResourcesSection(items = emptyList())
+internal val DEFAULT_RESOURCES_SECTION = ResourcesSection(items = emptyList())
 
-val DEFAULT_TOPICS_SECTION = TopicsSection(items = emptyList())
+internal val DEFAULT_TOPICS_SECTION = TopicsSection(items = emptyList())
 
-val DEFAULT_RELATED_SECTION = RelatedSection(items = emptyList())
+internal val DEFAULT_RELATED_SECTION = RelatedSection(items = emptyList())
 
-val DEFAULT_RESOURCES_GROUP = ResourcesGroup(resourcesSection = DEFAULT_RESOURCES_SECTION)
+internal val DEFAULT_RESOURCES_GROUP = ResourcesGroup(resourcesSection = DEFAULT_RESOURCES_SECTION)
 
-val DEFAULT_TOPICS_GROUP = TopicsGroup(topicsSection = DEFAULT_TOPICS_SECTION)
+internal val DEFAULT_TOPICS_GROUP = TopicsGroup(topicsSection = DEFAULT_TOPICS_SECTION)
 
-val DEFAULT_RELATED_GROUP = RelatedGroup(relatedSection = DEFAULT_RELATED_SECTION)
+internal val DEFAULT_RELATED_GROUP = RelatedGroup(relatedSection = DEFAULT_RELATED_SECTION)
 
-val DEFAULT_STRING_SECTION = StringSection(name = "", values = emptyList())
+internal val DEFAULT_STRING_SECTION = StringSection(name = "", values = emptyList())
 
-val DEFAULT_STRING_RESOURCE_ITEM = StringItem(text = "")
+internal val DEFAULT_STRING_RESOURCE_ITEM = StringItem(text = "")
 
-val DEFAULT_SOURCE_ITEM_GROUP =
+internal val DEFAULT_SOURCE_ITEM_GROUP =
     SourceItemGroup(
         sourceSection = DEFAULT_SOURCE_ITEM_SECTION,
         pageSection = DEFAULT_PAGE_ITEM_SECTION,
         offsetSection = DEFAULT_OFFSET_ITEM_SECTION,
         contentSection = DEFAULT_CONTENT_ITEM_SECTION)
 
-val DEFAULT_META_DATA_ITEM =
+internal val DEFAULT_META_DATA_ITEM =
     StringSectionGroup(section = StringSection(name = "", values = emptyList()))
 
-val DEFAULT_VIEWED_AS_SECTION = ViewingAsSection(statement = DEFAULT_STATEMENT)
+internal val DEFAULT_VIEWED_AS_SECTION = ViewingAsSection(statement = DEFAULT_STATEMENT)
 
-val DEFAULT_VIA_SECTION = ViaSection(statement = DEFAULT_STATEMENT)
+internal val DEFAULT_VIA_SECTION = ViaSection(statement = DEFAULT_STATEMENT)
 
-val DEFAULT_BY_SECTION = BySection(statement = DEFAULT_STATEMENT)
+internal val DEFAULT_BY_SECTION = BySection(statement = DEFAULT_STATEMENT)
 
-val DEFAULT_THROUGH_SECTION = ThroughSection(statement = DEFAULT_STATEMENT)
+internal val DEFAULT_THROUGH_SECTION = ThroughSection(statement = DEFAULT_STATEMENT)
 
-val DEFAULT_MEMBERSHIP_SECTION = MembershipSection()
+internal val DEFAULT_MEMBERSHIP_SECTION = MembershipSection()
 
-val DEFAULT_MEMBERSHIP_GROUP =
+internal val DEFAULT_MEMBERSHIP_GROUP =
     MembershipGroup(
         membershipSection = DEFAULT_MEMBERSHIP_SECTION, throughSection = DEFAULT_THROUGH_SECTION)
 
-val DEFAULT_VIEWED_AS_GROUP =
+internal val DEFAULT_VIEWED_AS_GROUP =
     ViewingAsGroup(
         viewingAsSection = DEFAULT_VIEWED_AS_SECTION,
         viaSection = DEFAULT_VIA_SECTION,
         bySection = DEFAULT_BY_SECTION)
 
-val DEFAULT_HAVE_SECTION = HaveSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_HAVE_SECTION = HaveSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_HAVE_GROUP =
+internal val DEFAULT_HAVE_GROUP =
     HaveGroup(haveSection = DEFAULT_HAVE_SECTION, bySection = DEFAULT_BY_SECTION)
 
-val DEFAULT_VIEWING_SECTION = ViewingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_VIEWING_SECTION = ViewingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-val DEFAULT_EQUALITY_SECTION = EqualitySection()
+internal val DEFAULT_EQUALITY_SECTION = EqualitySection()
 
-val DEFAULT_BETWEEN_SECTION = BetweenSection(emptyList())
+internal val DEFAULT_BETWEEN_SECTION = BetweenSection(emptyList())
 
-val DEFAULT_EQUALITY_GROUP =
+internal val DEFAULT_EQUALITY_GROUP =
     EqualityGroup(
         equalitySection = DEFAULT_EQUALITY_SECTION,
         betweenSection = DEFAULT_BETWEEN_SECTION,
         providedSection = DEFAULT_PROVIDED_SECTION)
 
-val DEFAULT_DEFINES_GROUP =
+internal val DEFAULT_DEFINES_GROUP =
     DefinesGroup(
         signature = null,
         id = DEFAULT_ID_STATEMENT,

@@ -16,7 +16,7 @@
 
 package mathlingua.cli
 
-class VirtualFileException(message: String) : Exception(message)
+internal class VirtualFileException(message: String) : Exception(message)
 
 interface VirtualFile {
     fun absolutePath(): List<String>
@@ -46,11 +46,19 @@ interface VirtualFileSystem {
     fun delete(vf: VirtualFile): Boolean
 }
 
-fun newMemoryFileSystem(cwd: List<String>): VirtualFileSystem {
+internal fun newMemoryFileSystem(cwd: List<String>): VirtualFileSystem {
     return MemoryFileSystem(cwd)
 }
 
-data class VirtualFileImpl(
+internal fun newVirtualFile(
+    absolutePathParts: List<String>, directory: Boolean, fs: VirtualFileSystem
+): VirtualFile {
+    return VirtualFileImpl(absolutePathParts, directory, fs)
+}
+
+// -----------------------------------------------------------------------------
+
+private data class VirtualFileImpl(
     private val absolutePathParts: List<String>,
     private val directory: Boolean,
     private val fs: VirtualFileSystem

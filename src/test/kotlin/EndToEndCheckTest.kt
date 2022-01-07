@@ -19,8 +19,8 @@ package mathlingua
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mathlingua.cli.Mathlingua
-import mathlingua.cli.MemoryLogger
 import mathlingua.cli.newMemoryFileSystem
+import mathlingua.cli.newMemoryLogger
 import org.junit.jupiter.api.Test
 
 private data class PathAndContent(val path: List<String>, val content: String)
@@ -40,7 +40,7 @@ internal class EndToEndCheckTest {
             vf.writeText(file.content)
         }
 
-        val logger = MemoryLogger()
+        val logger = newMemoryLogger()
         val ret = Mathlingua.check(fs = fs, logger = logger, files = emptyList(), json = false)
 
         val logText = logger.getLogs().joinToString("\n")

@@ -34,17 +34,17 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ViewingAsGroup(
+internal data class ViewingAsGroup(
     val viewingAsSection: ViewingAsSection, val viaSection: ViaSection, val bySection: BySection?
 ) :
     ThreePartNode<ViewingAsSection, ViaSection, BySection?>(
         viewingAsSection, viaSection, bySection, ::ViewingAsGroup),
     Clause
 
-fun isViewingAsGroup(node: Phase1Node) =
+internal fun isViewingAsGroup(node: Phase1Node) =
     firstSectionMatchesName(node, "as") && secondSectionMatchesName(node, "via")
 
-fun validateViewingAsGroup(
+internal fun validateViewingAsGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

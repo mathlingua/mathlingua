@@ -23,13 +23,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 
-private fun canBeOnOneLine(target: Target) =
-    target is Identifier ||
-        target is TupleNode ||
-        target is AbstractionNode ||
-        target is AssignmentNode
-
-fun appendTargetArgs(writer: CodeWriter, targets: List<Target>, indent: Int) {
+internal fun appendTargetArgs(writer: CodeWriter, targets: List<Target>, indent: Int) {
     var i = 0
     while (i < targets.size) {
         val lineItems = mutableListOf<Target>()
@@ -51,3 +45,9 @@ fun appendTargetArgs(writer: CodeWriter, targets: List<Target>, indent: Int) {
         }
     }
 }
+
+private fun canBeOnOneLine(target: Target) =
+    target is Identifier ||
+        target is TupleNode ||
+        target is AbstractionNode ||
+        target is AssignmentNode

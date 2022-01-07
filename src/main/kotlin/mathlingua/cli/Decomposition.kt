@@ -16,12 +16,9 @@
 
 package mathlingua.cli
 
-import mathlingua.backend.EntityResult
-import mathlingua.backend.FileResult
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.ValueSourceTracker
 import mathlingua.backend.findMathLinguaFiles
-import mathlingua.backend.getCalledNames
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
@@ -31,6 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
+import mathlingua.frontend.chalktalk.phase2.getCalledNames
 import mathlingua.frontend.support.ParseError
 import mathlingua.md5Hash
 
@@ -100,6 +98,8 @@ internal fun decompose(
                             column = it.value.column)
                     }))
 }
+
+// -----------------------------------------------------------------------------
 
 private fun getSignature(node: Phase2Node?): String? {
     return when (node) {

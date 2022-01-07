@@ -35,7 +35,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -71,7 +71,7 @@ data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
             MeansSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateMeansSection(
+internal fun validateMeansSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

@@ -16,7 +16,6 @@
 
 package mathlingua.backend
 
-import kotlinx.serialization.Serializable
 import mathlingua.backend.transform.GroupScope
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.checkVarsPhase2Node
@@ -26,12 +25,15 @@ import mathlingua.backend.transform.getVarsTexTalkNode
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
-import mathlingua.cli.AutoComplete
+import mathlingua.cli.EntityResult
 import mathlingua.cli.ErrorResult
-import mathlingua.cli.SearchIndex
+import mathlingua.cli.FileResult
 import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileSystem
+import mathlingua.cli.fixClassNameBug
 import mathlingua.cli.getAllWords
+import mathlingua.cli.newAutoComplete
+import mathlingua.cli.newSearchIndex
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.Parse
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
@@ -44,14 +46,11 @@ import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
 import mathlingua.frontend.chalktalk.phase2.HtmlCodeWriter
 import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.Document
-import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
@@ -65,12 +64,13 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resource.ResourceGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
+import mathlingua.frontend.chalktalk.phase2.getCalledNames
+import mathlingua.frontend.chalktalk.phase2.getInnerDefinedSignatures
+import mathlingua.frontend.chalktalk.phase2.getPatternsToWrittenAs
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
@@ -83,7 +83,6 @@ import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
-import mathlingua.frontend.textalk.GroupTexTalkNode
 import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
@@ -96,26 +95,64 @@ import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 import mathlingua.md5Hash
 
-data class SourceFile(
+internal data class SourceFile(
     val file: VirtualFile, val content: String, val validation: Validation<Parse>)
 
-fun isMathLinguaFile(file: VirtualFile) =
+internal fun SourceFile.toFileResult(
+    nextRelativePath: String?, previousRelativePath: String?, sourceCollection: SourceCollection
+): FileResult {
+    val relativePath = this.file.relativePath()
+    return FileResult(
+        relativePath = relativePath,
+        nextRelativePath = nextRelativePath,
+        previousRelativePath = previousRelativePath,
+        content = this.content,
+        entities =
+            when (val validation = this.validation
+            ) {
+                is ValidationSuccess -> {
+                    val doc = validation.value.document
+                    doc.groups.map { it.toEntityResult(relativePath, sourceCollection) }
+                }
+                else -> {
+                    emptyList()
+                }
+            },
+        errors =
+            when (val validation = this.validation
+            ) {
+                is ValidationFailure -> {
+                    validation.errors.map {
+                        ErrorResult(
+                            relativePath = relativePath,
+                            message = it.message,
+                            row = it.row,
+                            column = it.column)
+                    }
+                }
+                else -> {
+                    emptyList()
+                }
+            })
+}
+
+internal fun isMathLinguaFile(file: VirtualFile) =
     !file.isDirectory() && file.absolutePath().last().endsWith(".math")
 
-fun buildSourceFile(file: VirtualFile): SourceFile {
+internal fun buildSourceFile(file: VirtualFile): SourceFile {
     val content = file.readText()
     return SourceFile(
         file = file, content = content, validation = FrontEnd.parseWithLocations(content))
 }
 
-data class ValueSourceTracker<T>(
+internal data class ValueSourceTracker<T>(
     val value: T, val source: SourceFile, val tracker: MutableLocationTracker?)
 
-data class Page(val sourceFile: SourceFile, val fileResult: FileResult)
+internal data class Page(val sourceFile: SourceFile, val fileResult: FileResult)
 
-data class WrittenAsForm(val target: String?, val form: String)
+internal data class WrittenAsForm(val target: String?, val form: String)
 
-interface SourceCollection {
+internal interface SourceCollection {
     fun size(): Int
     fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>>
     fun getDuplicateDefinedSignatures(): List<ValueSourceTracker<Signature>>
@@ -128,7 +165,6 @@ interface SourceCollection {
     fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>>
     fun getInputOutputSymbolErrors(): List<ValueSourceTracker<ParseError>>
     fun getNonExpressesUsedInNonIsNonInStatementsErrors(): List<ValueSourceTracker<ParseError>>
-    // fun getStatesUsedInNonStatesContextErrors(): List<ValueSourceTracker<ParseError>>
     fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
@@ -143,6 +179,26 @@ interface SourceCollection {
     fun findSignaturesSuffixesFor(prefix: String): List<String>
     fun search(query: String): List<SourceFile>
 }
+
+internal fun newSourceCollection(
+    fs: VirtualFileSystem, filesOrDirs: List<VirtualFile>
+): SourceCollection {
+    val sources = findMathLinguaFiles(filesOrDirs).map { buildSourceFile(it) }
+    return SourceCollectionImpl(fs, sources)
+}
+
+internal fun newSourceCollectionFromCwd(fs: VirtualFileSystem) =
+    newSourceCollection(fs, listOf(fs.cwd()))
+
+internal fun findMathLinguaFiles(files: List<VirtualFile>): List<VirtualFile> {
+    val result = mutableListOf<VirtualFile>()
+    for (file in files) {
+        findMathLinguaFilesImpl(file, result)
+    }
+    return result
+}
+
+// -----------------------------------------------------------------------------
 
 private class StringPartsComparator : Comparator<List<String>> {
     override fun compare(list1: List<String>?, list2: List<String>?): Int {
@@ -233,21 +289,6 @@ private class SourcePathComparator : Comparator<VirtualFile> {
 
 private val SOURCE_PATH_COMPARATOR = SourcePathComparator()
 
-fun newSourceCollection(fs: VirtualFileSystem, filesOrDirs: List<VirtualFile>): SourceCollection {
-    val sources = findMathLinguaFiles(filesOrDirs).map { buildSourceFile(it) }
-    return SourceCollectionImpl(fs, sources)
-}
-
-fun newSourceCollectionFromCwd(fs: VirtualFileSystem) = newSourceCollection(fs, listOf(fs.cwd()))
-
-fun findMathLinguaFiles(files: List<VirtualFile>): List<VirtualFile> {
-    val result = mutableListOf<VirtualFile>()
-    for (file in files) {
-        findMathLinguaFilesImpl(file, result)
-    }
-    return result
-}
-
 private fun findMathLinguaFilesImpl(file: VirtualFile, result: MutableList<VirtualFile>) {
     if (isMathLinguaFile(file)) {
         result.add(file)
@@ -257,46 +298,7 @@ private fun findMathLinguaFilesImpl(file: VirtualFile, result: MutableList<Virtu
     }
 }
 
-@Serializable
-data class EntityResult(
-    val id: String,
-    val relativePath: String,
-    val type: String,
-    val signature: String?,
-    val called: List<String>,
-    val rawHtml: String,
-    val renderedHtml: String,
-    val words: List<String>)
-
-@Serializable
-data class FileResult(
-    val relativePath: String,
-    val nextRelativePath: String?,
-    val previousRelativePath: String?,
-    val content: String,
-    val entities: List<EntityResult>,
-    val errors: List<ErrorResult>)
-
-/*
- * Class names generation has a bug where the class description looks like
- *    class=mathlingua - top - level
- * instead of the correct
- *    class="mathlingua-top-level"
- * The following function finds the incorrect class names and converts them
- * to their correct form.
- */
-fun fixClassNameBug(html: String) =
-    html
-        .replace(Regex("class[ ]*=[ ]*([ \\-_a-zA-Z0-9]+)")) {
-            // for each `class=..`. found replace ` - ` with `-`
-            val next = it.groups[0]?.value?.replace(" - ", "-") ?: it.value
-            // then replace `class=...` with `class="..."`
-            "class=\"${next.replaceFirst(Regex("class[ ]*=[ ]*"), "")}\""
-        }
-        .replace("<body>", " ")
-        .replace("</body>", " ")
-
-fun TopLevelGroup.toEntityResult(
+private fun TopLevelGroup.toEntityResult(
     relativePath: String, sourceCollection: SourceCollection
 ): EntityResult {
     val renderedHtml =
@@ -319,85 +321,17 @@ fun TopLevelGroup.toEntityResult(
         called = this.getCalledNames())
 }
 
-fun TopLevelGroup.getCalledNames() =
-    when (this) {
-        is TheoremGroup -> {
-            this.theoremSection.names
-        }
-        is AxiomGroup -> {
-            this.axiomSection.names
-        }
-        is ConjectureGroup -> {
-            this.conjectureSection.names
-        }
-        is DefinesGroup -> {
-            this.getCalled()
-        }
-        is StatesGroup -> {
-            this.getCalled()
-        }
-        is TopicGroup -> {
-            this.topicSection.names
-        }
-        is ResourceGroup -> {
-            val result = mutableListOf<String>()
-            for (values in this.resourceSection.items.map { it.section.values }) {
-                result.addAll(values)
-            }
-            result
-        }
-        else -> emptyList()
-    }
+private data class Normalized<T>(val original: T, val normalized: T)
 
-fun SourceFile.toFileResult(
-    nextRelativePath: String?, previousRelativePath: String?, sourceCollection: SourceCollection
-): FileResult {
-    val relativePath = this.file.relativePath()
-    return FileResult(
-        relativePath = relativePath,
-        nextRelativePath = nextRelativePath,
-        previousRelativePath = previousRelativePath,
-        content = this.content,
-        entities =
-            when (val validation = this.validation
-            ) {
-                is ValidationSuccess -> {
-                    val doc = validation.value.document
-                    doc.groups.map { it.toEntityResult(relativePath, sourceCollection) }
-                }
-                else -> {
-                    emptyList()
-                }
-            },
-        errors =
-            when (val validation = this.validation
-            ) {
-                is ValidationFailure -> {
-                    validation.errors.map {
-                        ErrorResult(
-                            relativePath = relativePath,
-                            message = it.message,
-                            row = it.row,
-                            column = it.column)
-                    }
-                }
-                else -> {
-                    emptyList()
-                }
-            })
-}
-
-data class Normalized<T>(val original: T, val normalized: T)
-
-class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFile>) :
+private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFile>) :
     SourceCollection {
     private val sourceFiles = mutableMapOf<String, SourceFile>()
     private val sourceFileToFileResult = mutableMapOf<SourceFile, FileResult>()
 
-    private val wordAutoComplete = AutoComplete(preserveCase = false)
-    private val signatureAutoComplete = AutoComplete(preserveCase = true)
+    private val wordAutoComplete = newAutoComplete(preserveCase = false)
+    private val signatureAutoComplete = newAutoComplete(preserveCase = true)
 
-    private val searchIndex = SearchIndex(fs)
+    private val searchIndex = newSearchIndex(fs)
 
     private val signatureToTopLevelGroup = mutableMapOf<String, TopLevelGroup>()
     private val signatureToRelativePath = mutableMapOf<String, String>()
@@ -837,7 +771,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
             getAllDefinedSignatures().filter { it.second is DefinesGroup }.map {
                 Pair(it.first, it.second as DefinesGroup)
             }
-        val analyzer = SymbolAnalyzer(defs)
+        val analyzer = newSymbolAnalyzer(defs)
         for (sf in sourceFiles) {
             val lexer = newChalkTalkLexer(sf.value.content)
             val parse = newChalkTalkParser().parse(lexer)
@@ -1564,105 +1498,7 @@ class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<SourceFi
         }
         return errors
     }
-
-    /*
-        * Originally, it was thought that a States: could only be used in another states.
-        * For example, `(A \subset/ B) \or/ (B \subset/ A)`.  In this case, both `\subset/`
-        * and `\or/` could be States:.
-        *
-        * However, something like `\set[x]{x}:suchThat{x \lt/ 1}` is something that is
-        * reasonable to write but `\set:suchThat` is a Defines:
-        *
-        * Thus, the code below that reports an error for any States: used in a non-States:
-        * context isn't actually needed.
-        *
-       override fun getStatesUsedInNonStatesContextErrors(): List<ValueSourceTracker<ParseError>> {
-           val errors = mutableListOf<ValueSourceTracker<ParseError>>()
-           val signaturesWithStates = getSignaturesWithStates().map { it.value.form }.toSet()
-           for (vst in allGroups) {
-               val group = vst.value.original
-               val tracker = vst.tracker ?: newLocationTracker()
-               for (err in findInvalidUsesOfStatesSigs(group, signaturesWithStates, tracker)) {
-                   errors.add(
-                       ValueSourceTracker(value = err, source = vst.source, tracker = vst.tracker))
-               }
-           }
-           return errors
-       }
-    */
 }
-
-/*
-private fun findInvalidUsesOfStatesSigs(
-node: Phase2Node, statesSignatures: Set<String>, tracker: LocationTracker
-): List<ParseError> {
-val result = mutableListOf<ParseError>()
-findInvalidUsesOfStatesSigsImpl(node, statesSignatures, tracker, result)
-return result
-}
-
-private fun findInvalidUsesOfStatesSigsImpl(
-node: Phase2Node,
-statesSignatures: Set<String>,
-tracker: LocationTracker,
-result: MutableList<ParseError>
-) {
-if (node is Statement) {
-    when (val validation = node.texTalkRoot
-    ) {
-        is ValidationSuccess -> {
-            findInvalidUsesOfStatesSigs(
-                node, validation.value, null, statesSignatures, tracker, result)
-        }
-        is ValidationFailure -> {
-            // do not process statements that have parse errors
-        }
-    }
-} else {
-    node.forEach { findInvalidUsesOfStatesSigsImpl(it, statesSignatures, tracker, result) }
-}
-}
-
-private fun findInvalidUsesOfStatesSigs(
-statement: Statement,
-node: TexTalkNode,
-parentNonStatesSig: String?,
-statesSignatures: Set<String>,
-tracker: LocationTracker,
-result: MutableList<ParseError>
-) {
-if (node is Command) {
-    val sig = node.signature()
-    if (parentNonStatesSig != null && statesSignatures.contains(sig)) {
-        val location = tracker.getLocationOf(statement) ?: Location(row = -1, column = -1)
-        result.add(
-            ParseError(
-                message =
-                    "The signature '$sig' (since it is a `States:`) can only be used within `States:` but it is used within '$parentNonStatesSig'",
-                row = location.row,
-                column = location.column))
-    }
-
-    if (statesSignatures.contains(sig)) {
-        // node is a States: command
-        // use parentNonStatesSig = null since the parent of the children of node are within a
-        // States:
-        node.forEach {
-            findInvalidUsesOfStatesSigs(statement, it, null, statesSignatures, tracker, result)
-        }
-    } else {
-        node.forEach {
-            findInvalidUsesOfStatesSigs(statement, it, sig, statesSignatures, tracker, result)
-        }
-    }
-} else {
-    node.forEach {
-        findInvalidUsesOfStatesSigs(
-            statement, it, parentNonStatesSig, statesSignatures, tracker, result)
-    }
-}
-}
-*/
 
 private fun getSignaturesWithin(node: TexTalkNode): List<String> {
     val result = mutableListOf<String>()
@@ -1787,84 +1623,6 @@ private fun getOutputSymbols(topLevelGroup: TopLevelGroup): Set<String> {
     return result
 }
 
-fun getPatternsToWrittenAs(
-    defines: List<DefinesGroup>, states: List<StatesGroup>, axioms: List<AxiomGroup>
-): Map<OperatorTexTalkNode, WrittenAsForm> {
-    val allDefines = mutableListOf<DefinesGroup>()
-    allDefines.addAll(defines)
-
-    val allStates = mutableListOf<StatesGroup>()
-    allStates.addAll(states)
-
-    val result = mutableMapOf<OperatorTexTalkNode, WrittenAsForm>()
-    for (rep in allStates) {
-        val writtenAs =
-            rep.writtenSection.forms.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
-
-        val validation = rep.id.texTalkRoot
-        if (validation is ValidationSuccess) {
-            val exp = validation.value
-            if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
-                result[exp.children[0] as OperatorTexTalkNode] =
-                    WrittenAsForm(target = null, form = writtenAs)
-            } else if (exp.children.size == 1 && exp.children[0] is Command) {
-                result[
-                    OperatorTexTalkNode(
-                        lhs = null, command = exp.children[0] as Command, rhs = null)] =
-                    WrittenAsForm(target = null, form = writtenAs)
-            }
-        }
-    }
-
-    for (axiom in axioms) {
-        val validation = axiom.id?.texTalkRoot
-        if (validation is ValidationSuccess) {
-            val exp = validation.value
-            val name = axiom.axiomSection.names.getOrNull(0)
-            val writtenAs =
-                if (name != null) {
-                    "\\textrm{${name.removeSurrounding("\"", "\"")}}"
-                } else {
-                    exp.toCode()
-                }
-            if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
-                result[exp.children[0] as OperatorTexTalkNode] =
-                    WrittenAsForm(target = null, form = writtenAs)
-            } else if (exp.children.size == 1 && exp.children[0] is Command) {
-                val cmd = exp.children[0] as Command
-                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] =
-                    WrittenAsForm(target = null, form = writtenAs)
-            }
-        }
-    }
-
-    for (def in allDefines) {
-        val writtenAs =
-            def.writtenSection.forms.getOrNull(0)?.removeSurrounding("\"", "\"") ?: continue
-
-        val validation = def.id.texTalkRoot
-        val target =
-            if (def.definesSection.targets.isNotEmpty()) {
-                def.definesSection.targets[0].toCode(false, 0).getCode()
-            } else {
-                null
-            }
-        if (validation is ValidationSuccess) {
-            val exp = validation.value
-            if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
-                result[exp.children[0] as OperatorTexTalkNode] =
-                    WrittenAsForm(target = target, form = writtenAs)
-            } else if (exp.children.size == 1 && exp.children[0] is Command) {
-                val cmd = exp.children[0] as Command
-                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] =
-                    WrittenAsForm(target = target, form = writtenAs)
-            }
-        }
-    }
-
-    return result
-}
-
 private fun <T> Boolean.thenUse(value: () -> List<T>) =
     if (this) {
         value()
@@ -1883,303 +1641,6 @@ fun isOperatorName(text: String): Boolean {
         }
     }
     return true
-}
-
-private fun getOperatorIdentifiers(node: Phase2Node): Set<String> {
-    val result = mutableSetOf<String>()
-    getOperatorIdentifiersImpl(node, result)
-    return result
-}
-
-private fun maybeAddAbstractionAsOperatorIdentifier(abs: Abstraction, result: MutableSet<String>) {
-    if (!abs.isEnclosed &&
-        !abs.isVarArgs &&
-        abs.subParams == null &&
-        abs.parts.size == 1 &&
-        abs.parts[0].params == null &&
-        abs.parts[0].subParams == null &&
-        abs.parts[0].tail == null &&
-        abs.parts[0].name.type == ChalkTalkTokenType.Name &&
-        isOperatorName(abs.parts[0].name.text)) {
-        // it is of a 'simple' form like *, **, etc.
-        result.add(abs.parts[0].name.text)
-    }
-}
-
-private fun maybeAddTupleAsOperator(tuple: Tuple, result: MutableSet<String>) {
-    for (item in tuple.items) {
-        if (item is Abstraction) {
-            maybeAddAbstractionAsOperatorIdentifier(item, result)
-        }
-    }
-}
-
-private fun getOperatorIdentifiersImpl(node: Phase2Node, result: MutableSet<String>) {
-    if (node is AbstractionNode) {
-        maybeAddAbstractionAsOperatorIdentifier(node.abstraction, result)
-    } else if (node is TupleNode) {
-        maybeAddTupleAsOperator(node.tuple, result)
-    } else if (node is AssignmentNode) {
-        val assign = node.assignment
-        if (assign.rhs is Abstraction) {
-            maybeAddAbstractionAsOperatorIdentifier(assign.rhs, result)
-        } else if (assign.rhs is Tuple) {
-            maybeAddTupleAsOperator(assign.rhs, result)
-        }
-
-        if (assign.lhs.type == ChalkTalkTokenType.Name && isOperatorName(assign.lhs.text)) {
-            result.add(assign.lhs.text)
-        }
-    }
-    node.forEach { getOperatorIdentifiersImpl(it, result) }
-}
-
-private fun getInnerDefinedSignatures(clauses: List<Clause>): Set<String> {
-    val result = mutableSetOf<String>()
-    for (clause in clauses) {
-        if (clause is Statement) {
-            when (val validation = clause.texTalkRoot
-            ) {
-                is ValidationSuccess -> {
-                    getInnerDefinedSignaturesImpl(validation.value, false, result)
-                }
-            }
-        }
-    }
-    return result
-}
-
-private fun getInnerDefinedSignaturesImpl(
-    node: TexTalkNode, isInColonEqualsRhs: Boolean, result: MutableSet<String>
-) {
-    if (node is ColonEqualsTexTalkNode) {
-        getInnerDefinedSignaturesImpl(
-            node = node.lhs, isInColonEqualsRhs = isInColonEqualsRhs, result)
-        getInnerDefinedSignaturesImpl(node = node.rhs, isInColonEqualsRhs = true, result)
-    } else if (!isInColonEqualsRhs && node is TextTexTalkNode && isOperatorName(node.text)) {
-        result.add(node.text)
-    } else {
-        node.forEach { getInnerDefinedSignaturesImpl(it, isInColonEqualsRhs, result) }
-    }
-}
-
-private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): List<String> {
-    return if (node.children.size == 1 &&
-        node.children[0] is ColonEqualsTexTalkNode &&
-        (node.children[0] as ColonEqualsTexTalkNode).lhs.items.size == 1 &&
-        (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.size == 1 &&
-        (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] is GroupTexTalkNode &&
-        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
-            .parameters
-            .items
-            .size == 1 &&
-        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
-                .parameters
-                .items[0]
-            .children
-            .size == 1 &&
-        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
-                .parameters
-                .items[0]
-            .children[0] is OperatorTexTalkNode &&
-        (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[0] as GroupTexTalkNode)
-                    .parameters
-                    .items[0]
-                .children[0] as OperatorTexTalkNode)
-            .command is TextTexTalkNode &&
-        ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                            0] as GroupTexTalkNode)
-                        .parameters
-                        .items[0]
-                    .children[0] as OperatorTexTalkNode)
-                .command as TextTexTalkNode)
-            .tokenType == TexTalkTokenType.Operator) {
-        // match -f := ...
-        listOf(
-            ((((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                                0] as GroupTexTalkNode)
-                            .parameters
-                            .items[0]
-                        .children[0] as OperatorTexTalkNode)
-                    .command as TextTexTalkNode)
-                .text)
-    } else if (node.children.isNotEmpty() &&
-        node.children[0] is ColonEqualsTexTalkNode &&
-        (node.children[0] as ColonEqualsTexTalkNode).lhs.items.isNotEmpty() &&
-        (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children.isNotEmpty() &&
-        (node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-            0] is OperatorTexTalkNode &&
-        ((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                0] as OperatorTexTalkNode)
-            .command is TextTexTalkNode) {
-        // match `a + b := ...`
-        listOf(
-            (((node.children[0] as ColonEqualsTexTalkNode).lhs.items[0].children[
-                        0] as OperatorTexTalkNode)
-                    .command as TextTexTalkNode)
-                .text)
-    } else if (node.children.size == 1 && node.children[0] is ColonEqualsTexTalkNode) {
-        val colonEquals = node.children[0] as ColonEqualsTexTalkNode
-        val lhs = colonEquals.lhs.items.firstOrNull()
-        if (lhs != null &&
-            lhs.children.size == 1 &&
-            lhs.children[0] is mathlingua.frontend.textalk.TupleNode) {
-            val tuple = lhs.children[0] as mathlingua.frontend.textalk.TupleNode
-            tuple.params.items
-                .filter { it.children.size == 1 && it.children[0] is TextTexTalkNode }
-                .map { (it.children[0] as TextTexTalkNode).text }
-        } else if (lhs != null) {
-            val id =
-                IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
-                    .signature(newLocationTracker())
-                    ?.form
-            if (id == null) {
-                emptyList()
-            } else {
-                listOf(id)
-            }
-        } else {
-            emptyList()
-        }
-    } else {
-        emptyList()
-    }
-}
-
-private fun getOperatorIdentifiersFromTargets(
-    targets: List<Target>, tracker: LocationTracker?
-): List<Signature> {
-    val result = mutableListOf<Signature>()
-    for (target in targets) {
-        for (op in getOperatorIdentifiers(target)) {
-            result.add(
-                Signature(
-                    form = op,
-                    location = tracker?.getLocationOf(target) ?: Location(row = -1, column = -1)))
-        }
-    }
-    return result
-}
-
-// an 'inner' signature is a signature that is only within scope of the given top level group
-fun getInnerDefinedSignatures(group: TopLevelGroup, tracker: LocationTracker?): Set<Signature> {
-    val result = mutableSetOf<Signature>()
-
-    val usingSection =
-        when (group) {
-            is DefinesGroup -> {
-                group.usingSection
-            }
-            is StatesGroup -> {
-                group.usingSection
-            }
-            is TheoremGroup -> {
-                group.usingSection
-            }
-            is ConjectureGroup -> {
-                group.usingSection
-            }
-            is AxiomGroup -> {
-                group.usingSection
-            }
-            else -> {
-                null
-            }
-        }
-
-    if (usingSection != null) {
-        for (clause in usingSection.clauses.clauses) {
-            if (clause is Statement) {
-                val location = tracker?.getLocationOf(clause) ?: Location(-1, -1)
-                when (val validation = clause.texTalkRoot
-                ) {
-                    is ValidationSuccess -> {
-                        for (sigForm in getUsingDefinedSignature(validation.value)) {
-                            result.add(Signature(form = sigForm, location = location))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    val requiringSection =
-        when (group) {
-            is DefinesGroup -> group.givenSection
-            is StatesGroup -> group.givenSection
-            else -> null
-        }
-
-    if (requiringSection != null) {
-        for (target in requiringSection.targets) {
-            result.addAll(
-                findOperatorNamesWithin(target).map {
-                    Signature(
-                        form = it,
-                        location = tracker?.getLocationOf(target)
-                                ?: Location(row = -1, column = -1))
-                })
-        }
-    }
-
-    if (group is DefinesGroup) {
-        if (group.whenSection != null) {
-            val location = tracker?.getLocationOf(group.whenSection) ?: Location(-1, -1)
-            result.addAll(
-                getInnerDefinedSignatures(group.whenSection.clauses.clauses).map {
-                    Signature(form = it, location = location)
-                })
-        }
-
-        result.addAll(getOperatorIdentifiersFromTargets(group.definesSection.targets, tracker))
-    } else if (group is StatesGroup) {
-        if (group.whenSection != null) {
-            val location = tracker?.getLocationOf(group.whenSection) ?: Location(-1, -1)
-            result.addAll(
-                getInnerDefinedSignatures(group.whenSection.clauses.clauses).map {
-                    Signature(form = it, location = location)
-                })
-        }
-    } else if (group is TheoremGroup) {
-        if (group.givenSection != null) {
-            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
-        }
-    } else if (group is AxiomGroup) {
-        if (group.givenSection != null) {
-            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
-        }
-    } else if (group is ConjectureGroup) {
-        if (group.givenSection != null) {
-            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
-        }
-    }
-    return result
-}
-
-private fun findOperatorNamesWithin(target: Target): List<String> {
-    val result = mutableListOf<String>()
-    findOperatorNamesWithinImpl(target, result)
-    return result
-}
-
-private fun findOperatorNamesWithinImpl(node: Phase2Node, result: MutableList<String>) {
-    if (node is Identifier && isOperatorName(node.name)) {
-        result.add(node.name)
-    } else if (node is AssignmentNode) {
-        findOperatorNamesWithinImpl(node.assignment, result)
-    } else if (node is TupleNode) {
-        findOperatorNamesWithinImpl(node.tuple, result)
-    } else if (node is AbstractionNode) {
-        findOperatorNamesWithinImpl(node.abstraction, result)
-    }
-    node.forEach { findOperatorNamesWithinImpl(it, result) }
-}
-
-private fun findOperatorNamesWithinImpl(node: Phase1Node, result: MutableList<String>) {
-    if (node is Phase1Token && isOperatorName(node.text)) {
-        result.add(node.text)
-    }
-    node.forEach { findOperatorNamesWithinImpl(it, result) }
 }
 
 private fun findAllPhase1Statements(node: Phase1Node): List<Phase1Token> {

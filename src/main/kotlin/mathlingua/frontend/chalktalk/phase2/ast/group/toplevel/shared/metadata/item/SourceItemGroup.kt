@@ -38,7 +38,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class SourceItemGroup(
+internal data class SourceItemGroup(
     val sourceSection: SourceItemSection,
     val pageSection: PageItemSection?,
     val offsetSection: OffsetItemSection?,
@@ -81,9 +81,9 @@ data class SourceItemGroup(
                 contentSection = contentSection?.transform(chalkTransformer) as ContentItemSection))
 }
 
-fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
+internal fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
 
-fun validateSourceItemGroup(
+internal fun validateSourceItemGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     validateGroup(node.resolve(), errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->

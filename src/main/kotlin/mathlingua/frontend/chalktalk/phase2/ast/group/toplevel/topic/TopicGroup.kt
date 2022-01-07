@@ -37,7 +37,7 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
-data class TopicGroup(
+internal data class TopicGroup(
     val id: String?,
     val topicSection: TopicSection,
     val contentSection: ContentSection,
@@ -75,9 +75,9 @@ data class TopicGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isTopicGroup(node: Phase1Node) = firstSectionMatchesName(node, "Topic")
+internal fun isTopicGroup(node: Phase1Node) = firstSectionMatchesName(node, "Topic")
 
-fun validateTopicGroup(
+internal fun validateTopicGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

@@ -38,7 +38,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class PiecewiseGroup(
+internal data class PiecewiseGroup(
     val piecewiseSection: PiecewiseSection,
     val whenThen: List<WhenThenPair>,
     val elseSection: ElseSection?
@@ -78,9 +78,9 @@ data class PiecewiseGroup(
                 elseSection = elseSection?.transform(chalkTransformer) as ElseSection?))
 }
 
-fun isPiecewiseGroup(node: Phase1Node) = firstSectionMatchesName(node, "piecewise")
+internal fun isPiecewiseGroup(node: Phase1Node) = firstSectionMatchesName(node, "piecewise")
 
-fun validatePiecewiseGroup(
+internal fun validatePiecewiseGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

@@ -38,7 +38,21 @@ import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGroup>>) {
+internal interface SymbolAnalyzer {
+    fun findInvalidTypes(grp: TopLevelGroup, tracker: MutableLocationTracker): List<ParseError>
+    fun getTypePaths(startSignature: String): List<List<String>>
+}
+
+internal fun newSymbolAnalyzer(
+    defines: List<Pair<ValueSourceTracker<Signature>, DefinesGroup>>
+): SymbolAnalyzer {
+    return SymbolAnalyzerImpl(defines)
+}
+
+// -----------------------------------------------------------------------------
+
+private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGroup>>) :
+    SymbolAnalyzer {
     private val signatureMap = mutableMapOf<String, Set<String>>()
 
     init {
@@ -141,7 +155,7 @@ class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGr
         node.forEach { getAllTypesImpl(it, target, result) }
     }
 
-    data class NameAndStatement(val name: String, val statement: Statement)
+    private data class NameAndStatement(val name: String, val statement: Statement)
 
     private fun findAllNames(node: Phase2Node): List<NameAndStatement> {
         val result = mutableListOf<NameAndStatement>()
@@ -193,7 +207,9 @@ class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGr
         }
     }
 
-    fun findInvalidTypes(grp: TopLevelGroup, tracker: MutableLocationTracker): List<ParseError> {
+    override fun findInvalidTypes(
+        grp: TopLevelGroup, tracker: MutableLocationTracker
+    ): List<ParseError> {
         val group = normalize(grp, tracker)
         val errors = mutableListOf<ParseError>()
         val names = findAllNames(group)
@@ -235,7 +251,7 @@ class SymbolAnalyzer(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGr
         return typeSet
     }
 
-    fun getTypePaths(startSignature: String): List<List<String>> {
+    override fun getTypePaths(startSignature: String): List<List<String>> {
         val path = mutableListOf<String>()
         val result = mutableListOf<List<String>>()
         getTypePathsImpl(startSignature, path, result)

@@ -25,7 +25,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-class StatesSection : Phase2Node {
+internal class StatesSection : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -38,7 +38,7 @@ class StatesSection : Phase2Node {
         chalkTransformer(this)
 }
 
-fun validateStatesSection(
+internal fun validateStatesSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

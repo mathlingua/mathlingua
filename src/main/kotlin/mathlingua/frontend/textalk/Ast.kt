@@ -16,7 +16,7 @@
 
 package mathlingua.frontend.textalk
 
-enum class TexTalkNodeType {
+internal enum class TexTalkNodeType {
     Token,
     Identifier,
     Operator,
@@ -40,14 +40,14 @@ enum class TexTalkNodeType {
     Sequence
 }
 
-interface TexTalkNode {
+internal interface TexTalkNode {
     val type: TexTalkNodeType
     fun toCode(interceptor: (node: TexTalkNode) -> String? = { null }): String
     fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit)
     fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode
 }
 
-data class IsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
+internal data class IsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
     TexTalkNode {
 
     override val type: TexTalkNodeType
@@ -78,7 +78,7 @@ data class IsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexT
                 rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
 
-data class InTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
+internal data class InTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
     TexTalkNode {
 
     override val type: TexTalkNodeType
@@ -109,8 +109,9 @@ data class InTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexT
                 rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
 
-data class ColonEqualsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
-    TexTalkNode {
+internal data class ColonEqualsTexTalkNode(
+    val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode
+) : TexTalkNode {
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.ColonEquals
@@ -140,7 +141,7 @@ data class ColonEqualsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: Param
                 rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
 
-data class CommandPart(
+internal data class CommandPart(
     val name: TextTexTalkNode,
     val square: GroupTexTalkNode?,
     val subSup: SubSupTexTalkNode?,
@@ -216,7 +217,7 @@ data class CommandPart(
                     namedGroups.map { it.transform(transformer) as NamedGroupTexTalkNode }))
 }
 
-data class Command(val parts: List<CommandPart>, val hasSuffix: Boolean) : TexTalkNode {
+internal data class Command(val parts: List<CommandPart>, val hasSuffix: Boolean) : TexTalkNode {
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Command
@@ -249,7 +250,7 @@ data class Command(val parts: List<CommandPart>, val hasSuffix: Boolean) : TexTa
             Command(parts = parts.map { it.transform(transformer) as CommandPart }, hasSuffix))
 }
 
-data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode {
+internal data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode {
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Expression
@@ -279,7 +280,7 @@ data class ExpressionTexTalkNode(val children: List<TexTalkNode>) : TexTalkNode 
         transformer(ExpressionTexTalkNode(children = children.map { it.transform(transformer) }))
 }
 
-data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTalkNode {
+internal data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTalkNode {
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Parameters
@@ -314,7 +315,7 @@ data class ParametersTexTalkNode(val items: List<ExpressionTexTalkNode>) : TexTa
                 items = items.map { it.transform(transformer) as ExpressionTexTalkNode }))
 }
 
-data class TupleNode(val params: ParametersTexTalkNode) : TexTalkNode {
+internal data class TupleNode(val params: ParametersTexTalkNode) : TexTalkNode {
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Tuple
 
@@ -339,7 +340,8 @@ data class TupleNode(val params: ParametersTexTalkNode) : TexTalkNode {
         TupleNode(params = params.transform(transformer) as ParametersTexTalkNode)
 }
 
-data class SequenceNode(val mapping: MappingNode, val subGroup: GroupTexTalkNode) : TexTalkNode {
+internal data class SequenceNode(val mapping: MappingNode, val subGroup: GroupTexTalkNode) :
+    TexTalkNode {
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.Sequence
 
@@ -376,7 +378,7 @@ data class SequenceNode(val mapping: MappingNode, val subGroup: GroupTexTalkNode
             subGroup = subGroup.transform(transformer) as GroupTexTalkNode)
 }
 
-data class MappingNode(
+internal data class MappingNode(
     val name: TextTexTalkNode, val subGroup: GroupTexTalkNode?, val parenGroup: GroupTexTalkNode?
 ) : TexTalkNode {
     override val type: TexTalkNodeType
@@ -423,7 +425,7 @@ data class MappingNode(
             parenGroup = parenGroup?.transform(transformer) as GroupTexTalkNode?)
 }
 
-data class GroupTexTalkNode(
+internal data class GroupTexTalkNode(
     override val type: TexTalkNodeType, val parameters: ParametersTexTalkNode, val isVarArg: Boolean
 ) : TexTalkNode {
 
@@ -477,8 +479,9 @@ data class GroupTexTalkNode(
                 isVarArg = isVarArg))
 }
 
-data class NamedGroupTexTalkNode(val name: TextTexTalkNode, val groups: List<GroupTexTalkNode>) :
-    TexTalkNode {
+internal data class NamedGroupTexTalkNode(
+    val name: TextTexTalkNode, val groups: List<GroupTexTalkNode>
+) : TexTalkNode {
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.NamedGroup
@@ -510,7 +513,8 @@ data class NamedGroupTexTalkNode(val name: TextTexTalkNode, val groups: List<Gro
                 groups = groups.map { it.transform(transformer) as GroupTexTalkNode }))
 }
 
-data class SubSupTexTalkNode(val sub: GroupTexTalkNode?, val sup: GroupTexTalkNode?) : TexTalkNode {
+internal data class SubSupTexTalkNode(val sub: GroupTexTalkNode?, val sup: GroupTexTalkNode?) :
+    TexTalkNode {
 
     override val type: TexTalkNodeType
         get() = TexTalkNodeType.SubSup
@@ -563,7 +567,7 @@ data class SubSupTexTalkNode(val sub: GroupTexTalkNode?, val sup: GroupTexTalkNo
                 sup = sup?.transform(transformer) as GroupTexTalkNode?))
 }
 
-data class TextTexTalkNode(
+internal data class TextTexTalkNode(
     override val type: TexTalkNodeType,
     val tokenType: TexTalkTokenType,
     val text: String,
@@ -590,7 +594,7 @@ data class TextTexTalkNode(
         transformer(this)
 }
 
-data class OperatorTexTalkNode(
+internal data class OperatorTexTalkNode(
     val lhs: TexTalkNode?, val command: TexTalkNode, val rhs: TexTalkNode?
 ) : TexTalkNode {
 
@@ -645,7 +649,7 @@ data class OperatorTexTalkNode(
                 rhs = rhs?.transform(transformer)))
 }
 
-data class TexTalkToken(
+internal data class TexTalkToken(
     val text: String, val tokenType: TexTalkTokenType, val row: Int, val column: Int
 ) : TexTalkNode {
 
@@ -667,7 +671,7 @@ data class TexTalkToken(
         transformer(this)
 }
 
-enum class TexTalkTokenType {
+internal enum class TexTalkTokenType {
     Backslash,
     LParen,
     RParen,
@@ -689,7 +693,7 @@ enum class TexTalkTokenType {
     Invalid
 }
 
-fun getTexTalkAncestry(root: TexTalkNode, node: TexTalkNode): List<TexTalkNode> {
+internal fun getTexTalkAncestry(root: TexTalkNode, node: TexTalkNode): List<TexTalkNode> {
     val path = mutableListOf<TexTalkNode>()
     getTexTalkAncestryImpl(root, node, path)
     // 'node' itself shouldn't be in the ancestry

@@ -24,7 +24,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class StringItem(val text: String) : ResourceItem {
+internal data class StringItem(val text: String) : ResourceItem {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -37,9 +37,10 @@ data class StringItem(val text: String) : ResourceItem {
         chalkTransformer(this)
 }
 
-fun isStringItem(node: Phase1Node) = node is Phase1Token && node.type == ChalkTalkTokenType.String
+internal fun isStringItem(node: Phase1Node) =
+    node is Phase1Token && node.type == ChalkTalkTokenType.String
 
-fun validateStringItem(
+internal fun validateStringItem(
     node: Phase1Node,
     @Suppress("UNUSED_PARAMETER")
     errors: MutableList<ParseError>,

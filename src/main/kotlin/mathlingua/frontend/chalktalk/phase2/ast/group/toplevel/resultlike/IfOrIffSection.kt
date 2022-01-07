@@ -30,7 +30,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-interface IfOrIffSection {
+internal interface IfOrIffSection {
     fun isIf(): Boolean
     fun asIf(): IfSection
     fun isIff(): Boolean
@@ -39,11 +39,13 @@ interface IfOrIffSection {
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): IfOrIffSection
 }
 
-fun newIfOrIffSection(ifSection: IfSection): IfOrIffSection = IfOrIffSectionImpl(ifSection, null)
+internal fun newIfOrIffSection(ifSection: IfSection): IfOrIffSection =
+    IfOrIffSectionImpl(ifSection, null)
 
-fun newIfOrIffSection(iffSection: IffSection): IfOrIffSection = IfOrIffSectionImpl(null, iffSection)
+internal fun newIfOrIffSection(iffSection: IffSection): IfOrIffSection =
+    IfOrIffSectionImpl(null, iffSection)
 
-fun validateIfOrIffSection(
+internal fun validateIfOrIffSection(
     root: Phase1Node,
     sections: Map<String, Section>,
     errors: MutableList<ParseError>,

@@ -20,7 +20,7 @@ import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ParseError
 
 object BackEnd {
-    fun check(sourceCollection: SourceCollection): List<ValueSourceTracker<ParseError>> {
+    internal fun check(sourceCollection: SourceCollection): List<ValueSourceTracker<ParseError>> {
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         errors.addAll(checkParseErrors(sourceCollection))
         errors.addAll(checkUndefinedSignatures(sourceCollection))
@@ -31,11 +31,10 @@ object BackEnd {
         errors.addAll(checkColonEqualsRhs(sourceCollection))
         errors.addAll(checkInputOutputSymbolErrors(sourceCollection))
         errors.addAll(checkNonExpressesUsedInNonIsStatements(sourceCollection))
-        // errors.addAll(checkStatesUsedInNonStatesContext(sourceCollection))
         return errors
     }
 
-    fun checkUndefinedSignatures(sourceCollection: SourceCollection) =
+    private fun checkUndefinedSignatures(sourceCollection: SourceCollection) =
         sourceCollection.getUndefinedSignatures().map {
             ValueSourceTracker(
                 source = it.source,
@@ -47,7 +46,7 @@ object BackEnd {
                         column = it.value.location.column))
         }
 
-    fun checkDuplicateDefinedSignatures(sourceCollection: SourceCollection) =
+    private fun checkDuplicateDefinedSignatures(sourceCollection: SourceCollection) =
         sourceCollection.getDuplicateDefinedSignatures().map {
             ValueSourceTracker(
                 source = it.source,
@@ -59,11 +58,13 @@ object BackEnd {
                         column = it.value.location.column))
         }
 
-    fun checkInvalidTypes(sourceCollection: SourceCollection) = sourceCollection.findInvalidTypes()
+    private fun checkInvalidTypes(sourceCollection: SourceCollection) =
+        sourceCollection.findInvalidTypes()
 
-    fun checkParseErrors(sourceCollection: SourceCollection) = sourceCollection.getParseErrors()
+    private fun checkParseErrors(sourceCollection: SourceCollection) =
+        sourceCollection.getParseErrors()
 
-    fun checkDuplicateContent(
+    private fun checkDuplicateContent(
         sourceCollection: SourceCollection
     ): List<ValueSourceTracker<ParseError>> {
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
@@ -82,39 +83,33 @@ object BackEnd {
         return errors
     }
 
-    fun checkSymbolErrors(
+    private fun checkSymbolErrors(
         sourceCollection: SourceCollection
     ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getSymbolErrors()
     }
 
-    fun checkIsRhs(sourceCollection: SourceCollection): List<ValueSourceTracker<ParseError>> {
+    private fun checkIsRhs(
+        sourceCollection: SourceCollection
+    ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getIsRhsErrors()
     }
 
-    fun checkColonEqualsRhs(
+    private fun checkColonEqualsRhs(
         sourceCollection: SourceCollection
     ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getColonEqualsRhsErrors()
     }
 
-    fun checkInputOutputSymbolErrors(
+    private fun checkInputOutputSymbolErrors(
         sourceCollection: SourceCollection
     ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getInputOutputSymbolErrors()
     }
 
-    fun checkNonExpressesUsedInNonIsStatements(
+    private fun checkNonExpressesUsedInNonIsStatements(
         sourceCollection: SourceCollection
     ): List<ValueSourceTracker<ParseError>> {
         return sourceCollection.getNonExpressesUsedInNonIsNonInStatementsErrors()
     }
-
-    /*
-    fun checkStatesUsedInNonStatesContext(
-        sourceCollection: SourceCollection
-    ): List<ValueSourceTracker<ParseError>> {
-        return sourceCollection.getStatesUsedInNonStatesContextErrors()
-    }
-     */
 }

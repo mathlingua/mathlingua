@@ -56,13 +56,13 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewi
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-interface Clause : Phase2Node
+internal interface Clause : Phase2Node
 
-interface Target : Clause
+internal interface Target : Clause
 
-interface DefinesStatesOrViews : Clause
+internal interface DefinesStatesOrViews : Clause
 
-fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
+internal fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     if (node !is Group) {
         return false
     }
@@ -73,7 +73,7 @@ fun firstSectionMatchesName(node: Phase1Node, name: String): Boolean {
     } else sections[0].name.text == name
 }
 
-fun secondSectionMatchesName(node: Phase1Node, name: String): Boolean {
+internal fun secondSectionMatchesName(node: Phase1Node, name: String): Boolean {
     if (node !is Group) {
         return false
     }
@@ -84,7 +84,7 @@ fun secondSectionMatchesName(node: Phase1Node, name: String): Boolean {
     } else sections[1].name.text == name
 }
 
-fun sectionsMatchNames(node: Phase1Node, name1: String, name2: String): Boolean {
+internal fun sectionsMatchNames(node: Phase1Node, name1: String, name2: String): Boolean {
     if (node !is Group) {
         return false
     }
@@ -93,13 +93,15 @@ fun sectionsMatchNames(node: Phase1Node, name1: String, name2: String): Boolean 
     return node.sections.isNotEmpty() && node.sections[0].name.text == name1 && name2Index >= 0
 }
 
-fun toCode(writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1Node): CodeWriter {
+internal fun toCode(
+    writer: CodeWriter, isArg: Boolean, indent: Int, phase1Node: Phase1Node
+): CodeWriter {
     writer.writeIndent(isArg, indent)
     writer.writePhase1Node(phase1Node)
     return writer
 }
 
-fun toCode(
+internal fun toCode(
     writer: CodeWriter, isArg: Boolean, indent: Int, vararg sections: Phase2Node?
 ): CodeWriter {
     val nonNullSections = sections.filterNotNull()
@@ -142,7 +144,7 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isEqualityGroup, ::validateEqualityGroup),
         ValidationPair(::isHaveGroup, ::validateHaveGroup))
 
-fun validateClause(
+internal fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): Clause {
     val node = rawNode.resolve()

@@ -28,7 +28,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class NotSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class NotSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -50,7 +50,7 @@ data class NotSection(val clauses: ClauseListNode) : Phase2Node {
             NotSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun validateNotSection(
+internal fun validateNotSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

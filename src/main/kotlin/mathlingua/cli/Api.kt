@@ -17,7 +17,6 @@
 package mathlingua.cli
 
 import kotlinx.serialization.Serializable
-import mathlingua.backend.FileResult
 
 @Serializable data class FirstPathResponse(val path: String)
 
@@ -78,3 +77,23 @@ data class DecompositionResult(
 @Serializable data class CompletionItem(val name: String, val value: String)
 
 @Serializable data class Completions(val items: List<CompletionItem>)
+
+@Serializable
+data class EntityResult(
+    val id: String,
+    val relativePath: String,
+    val type: String,
+    val signature: String?,
+    val called: List<String>,
+    val rawHtml: String,
+    val renderedHtml: String,
+    val words: List<String>)
+
+@Serializable
+data class FileResult(
+    val relativePath: String,
+    val nextRelativePath: String?,
+    val previousRelativePath: String?,
+    val content: String,
+    val entities: List<EntityResult>,
+    val errors: List<ErrorResult>)

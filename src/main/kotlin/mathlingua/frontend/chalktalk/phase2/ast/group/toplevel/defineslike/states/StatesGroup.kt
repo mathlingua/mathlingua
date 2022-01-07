@@ -53,7 +53,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class StatesGroup(
+internal data class StatesGroup(
     override val signature: Signature?,
     override val id: IdStatement,
     val statesSection: StatesSection,
@@ -119,9 +119,9 @@ data class StatesGroup(
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
 }
 
-fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
+internal fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
 
-fun validateStatesGroup(
+internal fun validateStatesGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

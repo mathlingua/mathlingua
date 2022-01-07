@@ -30,8 +30,8 @@ import java.util.UUID
 import java.util.concurrent.Executors
 import mathlingua.cli.Logger
 import mathlingua.cli.VirtualFile
-import mathlingua.cli.VirtualFileImpl
 import mathlingua.cli.VirtualFileSystem
+import mathlingua.cli.newVirtualFile
 
 /**
  * Any code that use a class in a `java.*` package should be placed in this file. This is done to
@@ -39,9 +39,9 @@ import mathlingua.cli.VirtualFileSystem
  */
 
 /** Used to get a random UUID value. */
-fun getRandomUuid() = UUID.randomUUID().toString()
+internal fun getRandomUuid() = UUID.randomUUID().toString()
 
-fun md5Hash(input: String) =
+internal fun md5Hash(input: String) =
     MessageDigest.getInstance("MD5").digest(input.toByteArray()).joinToString("") {
         Integer.toHexString(it.toInt().and(0xFF)).uppercase()
     }
@@ -50,7 +50,7 @@ fun md5Hash(input: String) =
  * The Stack<T> class, backed by a [java.util.Stack] hides the usage of the JVM specific Stack so
  * that the rest of the code can utilize a Stack without directly using a java.util.Stack.
  */
-class Stack<T> {
+internal class Stack<T> {
     private val data = Stack<T>()
 
     fun push(value: T) {
@@ -68,7 +68,7 @@ class Stack<T> {
  * The Queue<T> class, backed by a [java.util.Queue] hides the usage of the JVM specific Queue so
  * that the rest of the code can utilize a Queue without directly using a java.util.Queue.
  */
-class Queue<T> : Iterable<T> {
+internal class Queue<T> : Iterable<T> {
     private val data = LinkedList<T>()
 
     fun offer(value: T) {
@@ -84,7 +84,7 @@ class Queue<T> : Iterable<T> {
     override fun iterator(): Iterator<T> = data.iterator()
 }
 
-fun startServer(port: Int, logger: Logger, processor: () -> Pair<String, String>) {
+internal fun startServer(port: Int, logger: Logger, processor: () -> Pair<String, String>) {
     val serverSocket = ServerSocket(port)
     val service = Executors.newCachedThreadPool()
     Runtime.getRuntime().addShutdownHook(Thread { service.shutdown() })
@@ -166,7 +166,7 @@ private class DiskFileSystem : VirtualFileSystem {
     val REAL_FILE_SEPARATOR = File.separator
     private val cwd =
         Paths.get(".").toAbsolutePath().normalize().toFile().absolutePath.split(REAL_FILE_SEPARATOR)
-    private val cwdFile = VirtualFileImpl(absolutePathParts = cwd, directory = true, this)
+    private val cwdFile = newVirtualFile(absolutePathParts = cwd, directory = true, this)
 
     private fun getAbsolutePath(relativePath: List<String>): List<String> {
         val absolutePath = mutableListOf<String>()
@@ -188,12 +188,12 @@ private class DiskFileSystem : VirtualFileSystem {
     }
 
     override fun getFile(relativePath: List<String>): VirtualFile {
-        return VirtualFileImpl(
+        return newVirtualFile(
             absolutePathParts = getAbsolutePath(relativePath), directory = false, fs = this)
     }
 
     override fun getDirectory(relativePath: List<String>): VirtualFile {
-        return VirtualFileImpl(
+        return newVirtualFile(
             absolutePathParts = getAbsolutePath(relativePath), directory = true, fs = this)
     }
 
@@ -219,7 +219,7 @@ private class DiskFileSystem : VirtualFileSystem {
     override fun listFiles(vf: VirtualFile): List<VirtualFile> {
         val children = vf.toFile().listFiles() ?: arrayOf()
         return children.sortedBy { it.name }.map {
-            VirtualFileImpl(
+            newVirtualFile(
                 absolutePathParts = it.absolutePath.split(File.separator),
                 directory = it.isDirectory,
                 this)

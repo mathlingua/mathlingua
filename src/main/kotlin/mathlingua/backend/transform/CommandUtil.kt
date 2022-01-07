@@ -34,7 +34,7 @@ import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-data class RootTarget<R, T>(val root: R, val target: T)
+internal data class RootTarget<R, T>(val root: R, val target: T)
 
 internal fun getCommandsToGlue(node: ExpressionTexTalkNode, location: Location): List<Command> {
     val cmds = mutableListOf<Command>()

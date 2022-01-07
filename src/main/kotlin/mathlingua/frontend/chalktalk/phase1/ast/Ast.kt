@@ -16,14 +16,14 @@
 
 package mathlingua.frontend.chalktalk.phase1.ast
 
-interface Phase1Node {
+internal interface Phase1Node {
     fun forEach(fn: (node: Phase1Node) -> Unit)
     fun toCode(): String
     fun resolve(): Phase1Node
     fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node
 }
 
-data class Root(val groups: List<GroupOrBlockComment>) : Phase1Node {
+internal data class Root(val groups: List<GroupOrBlockComment>) : Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = groups.forEach(fn)
 
@@ -49,7 +49,7 @@ data class Root(val groups: List<GroupOrBlockComment>) : Phase1Node {
         transformer(Root(groups = groups.map { it.transform(transformer) as Group }))
 }
 
-data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
+internal data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = fn(chalkTalkTarget)
 
@@ -95,7 +95,7 @@ data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
             Argument(chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target))
 }
 
-data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node {
+internal data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)

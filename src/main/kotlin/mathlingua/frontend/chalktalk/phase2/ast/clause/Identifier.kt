@@ -27,7 +27,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
+internal data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -40,9 +40,10 @@ data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
         chalkTransformer(this)
 }
 
-fun isIdentifier(node: Phase1Node) = node is Phase1Token && node.type === ChalkTalkTokenType.Name
+internal fun isIdentifier(node: Phase1Node) =
+    node is Phase1Token && node.type === ChalkTalkTokenType.Name
 
-fun validateIdentifier(
+internal fun validateIdentifier(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

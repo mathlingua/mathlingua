@@ -33,14 +33,16 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class SiteGroup(val siteItemSection: SiteItemSection, val nameItemSection: NameItemSection?) :
+internal data class SiteGroup(
+    val siteItemSection: SiteItemSection, val nameItemSection: NameItemSection?
+) :
     TwoPartNode<SiteItemSection, NameItemSection?>(siteItemSection, nameItemSection, ::SiteGroup),
     MetaDataItem,
     ResourceItem
 
-fun isSiteGroup(node: Phase1Node) = firstSectionMatchesName(node, "site")
+internal fun isSiteGroup(node: Phase1Node) = firstSectionMatchesName(node, "site")
 
-fun validateSiteGroup(
+internal fun validateSiteGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

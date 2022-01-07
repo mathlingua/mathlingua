@@ -35,7 +35,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class ForAllGroup(
+internal data class ForAllGroup(
     val forAllSection: ForAllSection,
     val suchThatSection: SuchThatSection?,
     val thenSection: ThenSection
@@ -44,9 +44,9 @@ data class ForAllGroup(
         forAllSection, suchThatSection, thenSection, ::ForAllGroup),
     Clause
 
-fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "forAll")
+internal fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "forAll")
 
-fun validateForGroup(
+internal fun validateForGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

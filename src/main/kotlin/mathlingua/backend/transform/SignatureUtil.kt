@@ -36,7 +36,7 @@ import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-data class Signature(val form: String, val location: Location)
+internal data class Signature(val form: String, val location: Location)
 
 internal fun locateAllSignatures(
     node: Phase2Node, ignoreLhsEqual: Boolean, locationTracker: MutableLocationTracker

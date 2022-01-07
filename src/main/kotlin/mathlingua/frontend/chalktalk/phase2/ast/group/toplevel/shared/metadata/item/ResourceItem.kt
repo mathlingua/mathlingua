@@ -24,9 +24,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-interface ResourceItem : Phase2Node
+internal interface ResourceItem : Phase2Node
 
-fun validateResourceItem(
+internal fun validateResourceItem(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ): ResourceItem =
     when {

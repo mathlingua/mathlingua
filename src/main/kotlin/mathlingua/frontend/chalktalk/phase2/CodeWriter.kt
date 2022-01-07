@@ -17,8 +17,6 @@
 package mathlingua.frontend.chalktalk.phase2
 
 import kotlin.random.Random
-import mathlingua.backend.getInnerDefinedSignatures
-import mathlingua.backend.getPatternsToWrittenAs
 import mathlingua.backend.transform.Expansion
 import mathlingua.backend.transform.expandAsWritten
 import mathlingua.backend.transform.findAllStatementSignatures
@@ -61,7 +59,7 @@ import org.intellij.markdown.flavours.commonmark.CommonMarkFlavourDescriptor
 import org.intellij.markdown.html.HtmlGenerator
 import org.intellij.markdown.parser.MarkdownParser
 
-interface CodeWriter {
+internal interface CodeWriter {
     fun generateCode(node: Phase2Node): String
     fun append(node: Phase2Node, hasDot: Boolean, indent: Int)
     fun writeHeader(header: String)
@@ -91,13 +89,13 @@ interface CodeWriter {
     fun getCode(): String
 }
 
-const val IS = " is "
+private const val IS = " is "
 
-const val IN = " in "
+private const val IN = " in "
 
-data class BlockCommentSection(val text: String, val isMathlinguaCode: Boolean)
+private data class BlockCommentSection(val text: String, val isMathlinguaCode: Boolean)
 
-open class HtmlCodeWriter(
+internal open class HtmlCodeWriter(
     val defines: List<DefinesGroup>,
     val states: List<StatesGroup>,
     val axioms: List<AxiomGroup>,
@@ -1000,7 +998,7 @@ open class HtmlCodeWriter(
     private fun shouldExpand() = defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty()
 }
 
-class MathLinguaCodeWriter(
+internal class MathLinguaCodeWriter(
     val defines: List<DefinesGroup>, val states: List<StatesGroup>, val axioms: List<AxiomGroup>
 ) : CodeWriter {
     private val builder = StringBuilder()

@@ -30,7 +30,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class CalledSection(val forms: List<String>) : Phase2Node {
+internal data class CalledSection(val forms: List<String>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -54,9 +54,9 @@ data class CalledSection(val forms: List<String>) : Phase2Node {
         chalkTransformer(this)
 }
 
-fun isCalledSection(sec: Section) = sec.name.text == "written"
+internal fun isCalledSection(sec: Section) = sec.name.text == "written"
 
-fun validateCalledSection(
+internal fun validateCalledSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

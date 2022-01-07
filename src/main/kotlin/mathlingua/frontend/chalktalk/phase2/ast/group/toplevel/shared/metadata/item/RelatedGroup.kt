@@ -30,12 +30,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class RelatedGroup(val relatedSection: RelatedSection) :
+internal data class RelatedGroup(val relatedSection: RelatedSection) :
     OnePartNode<RelatedSection>(relatedSection, ::RelatedGroup), MetaDataItem
 
-fun isRelatedGroup(node: Phase1Node) = firstSectionMatchesName(node, "related")
+internal fun isRelatedGroup(node: Phase1Node) = firstSectionMatchesName(node, "related")
 
-fun validateRelatedGroup(
+internal fun validateRelatedGroup(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

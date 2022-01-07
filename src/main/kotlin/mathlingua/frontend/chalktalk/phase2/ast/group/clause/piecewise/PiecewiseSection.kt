@@ -24,7 +24,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-class PiecewiseSection : Phase2Node {
+internal class PiecewiseSection : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -37,9 +37,9 @@ class PiecewiseSection : Phase2Node {
         chalkTransformer(this)
 }
 
-fun isPiecewiseSection(section: Section) = section.name.text == "piecewise"
+internal fun isPiecewiseSection(section: Section) = section.name.text == "piecewise"
 
-fun validatePiecewiseSection(
+internal fun validatePiecewiseSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

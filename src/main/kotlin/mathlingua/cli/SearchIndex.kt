@@ -21,10 +21,22 @@ import mathlingua.backend.SourceFile
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.newMutableMultiSet
 
-data class SearchIndex(val fs: VirtualFileSystem) {
+internal interface SearchIndex {
+    fun add(sf: SourceFile)
+    fun remove(path: List<String>)
+    fun search(query: String): List<List<String>>
+}
+
+internal fun newSearchIndex(fs: VirtualFileSystem): SearchIndex {
+    return SearchIndexImpl(fs)
+}
+
+// -----------------------------------------------------------------------------
+
+private data class SearchIndexImpl(val fs: VirtualFileSystem) : SearchIndex {
     private val searchIndex = mutableMapOf<String, MutableMultiSet<List<String>>>()
 
-    fun add(sf: SourceFile) {
+    override fun add(sf: SourceFile) {
         when (val validation = sf.validation
         ) {
             is ValidationSuccess -> {
@@ -42,7 +54,7 @@ data class SearchIndex(val fs: VirtualFileSystem) {
         }
     }
 
-    fun remove(path: List<String>) {
+    override fun remove(path: List<String>) {
         val keysToRemove = mutableListOf<String>()
         for (word in searchIndex.keys) {
             val key = word.lowercase()
@@ -60,7 +72,7 @@ data class SearchIndex(val fs: VirtualFileSystem) {
         }
     }
 
-    fun search(query: String): List<List<String>> {
+    override fun search(query: String): List<List<String>> {
         val terms =
             query.lowercase().split(" ").map { it.trim().lowercase() }.filter { it.isNotEmpty() }
 

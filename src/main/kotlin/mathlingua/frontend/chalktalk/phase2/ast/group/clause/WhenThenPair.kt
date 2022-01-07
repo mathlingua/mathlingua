@@ -17,4 +17,4 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.clause
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 
-data class WhenThenPair(val whenSection: WhenSection, val thenSection: ThenSection)
+internal data class WhenThenPair(val whenSection: WhenSection, val thenSection: ThenSection)

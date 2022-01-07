@@ -29,7 +29,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-data class HaveSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class HaveSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -51,9 +51,9 @@ data class HaveSection(val clauses: ClauseListNode) : Phase2Node {
             HaveSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
-fun isHaveSection(sec: Section) = sec.name.text == "have"
+internal fun isHaveSection(sec: Section) = sec.name.text == "have"
 
-fun validateHaveSection(
+internal fun validateHaveSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {

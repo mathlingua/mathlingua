@@ -19,8 +19,8 @@ package mathlingua.backend
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ParseError
 
-object BackEnd {
-    internal fun check(sourceCollection: SourceCollection): List<ValueSourceTracker<ParseError>> {
+internal object BackEnd {
+    fun check(sourceCollection: SourceCollection): List<ValueSourceTracker<ParseError>> {
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         errors.addAll(checkParseErrors(sourceCollection))
         errors.addAll(checkUndefinedSignatures(sourceCollection))

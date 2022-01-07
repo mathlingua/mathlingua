@@ -267,17 +267,3 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
 
     private fun isDigitIdentifierChar(c: Char) = Regex("[0-9]+").matches("$c")
 }
-
-fun isOpChar(c: Char) =
-    (c == '!' ||
-        c == '@' ||
-        c == '%' ||
-        c == '&' ||
-        c == '*' ||
-        c == '-' ||
-        c == '+' ||
-        c == '=' ||
-        c == '|' ||
-        c == '/' ||
-        c == '<' ||
-        c == '>')

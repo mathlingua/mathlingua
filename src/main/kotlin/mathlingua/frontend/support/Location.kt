@@ -27,6 +27,12 @@ interface MutableLocationTracker : LocationTracker {
     fun setLocationOf(node: Phase2Node, location: Location)
 }
 
+internal fun newLocationTracker(): MutableLocationTracker {
+    return MutableLocationTrackerImpl()
+}
+
+//////////////////////////////////////////////////////////////////////////////////
+
 private class MutableLocationTrackerImpl : MutableLocationTracker {
     private val map: MutableMap<Int, Location> = mutableMapOf()
 
@@ -39,8 +45,4 @@ private class MutableLocationTrackerImpl : MutableLocationTracker {
     }
 
     private fun Phase2Node.id() = System.identityHashCode(this)
-}
-
-fun newLocationTracker(): MutableLocationTracker {
-    return MutableLocationTrackerImpl()
 }

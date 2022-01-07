@@ -238,6 +238,8 @@ fun newSourceCollection(fs: VirtualFileSystem, filesOrDirs: List<VirtualFile>): 
     return SourceCollectionImpl(fs, sources)
 }
 
+fun newSourceCollectionFromCwd(fs: VirtualFileSystem) = newSourceCollection(fs, listOf(fs.cwd()))
+
 fun findMathLinguaFiles(files: List<VirtualFile>): List<VirtualFile> {
     val result = mutableListOf<VirtualFile>()
     for (file in files) {

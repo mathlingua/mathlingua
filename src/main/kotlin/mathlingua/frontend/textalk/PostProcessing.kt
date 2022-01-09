@@ -16,8 +16,8 @@
 
 package mathlingua.frontend.textalk
 
-import mathlingua.Stack
 import mathlingua.frontend.support.ParseError
+import mathlingua.newStack
 
 /*
  * The following is the algorithm for parsing operators and identifying their arguments.
@@ -177,7 +177,7 @@ import mathlingua.frontend.support.ParseError
  *    '(\a \plus \b) \times c' or '\a \plus (\b \times \c)'.
  */
 
-internal fun parseOperators(root: ExpressionTexTalkNode): TexTalkParseResult {
+internal fun parseOperators(root: ExpressionTexTalkNode) =
     try {
         val isRhsExpressions = findIsRhsExpressions(root)
         val funcCallRoot = identifyIdentifierFunctionCalls(root)
@@ -187,12 +187,11 @@ internal fun parseOperators(root: ExpressionTexTalkNode): TexTalkParseResult {
         val final = runShuntingYard(idInfixOpRoot, isRhsExpressions)
 
         val resultRoot = final as ExpressionTexTalkNode
-        return TexTalkParseResult(root = resultRoot, errors = emptyList())
+        TexTalkParseResult(root = resultRoot, errors = emptyList())
     } catch (e: ParseException) {
-        return TexTalkParseResult(
+        TexTalkParseResult(
             root = ExpressionTexTalkNode(children = emptyList()), errors = listOf(e.parseError))
     }
-}
 
 // -----------------------------------------------------------------------------
 
@@ -548,8 +547,8 @@ private fun runShuntingYard(root: TexTalkNode, isNodeRhsExpressions: Set<Express
     }
 
 private fun toPostfixForm(nodes: List<TexTalkNode>): List<TexTalkNode> {
-    val argStack = Stack<TexTalkNode>()
-    val opStack = Stack<TexTalkNode>()
+    val argStack = newStack<TexTalkNode>()
+    val opStack = newStack<TexTalkNode>()
 
     for (a in nodes) {
         if (!isSpecialOperator(a)) {
@@ -606,7 +605,7 @@ private fun toPostfixForm(nodes: List<TexTalkNode>): List<TexTalkNode> {
 }
 
 private fun postfixToTree(nodes: List<TexTalkNode>): List<TexTalkNode> {
-    val stack = Stack<TexTalkNode>()
+    val stack = newStack<TexTalkNode>()
     for (n in nodes) {
         if (isSpecialOperator(n)) {
             if (stack.isEmpty()) {

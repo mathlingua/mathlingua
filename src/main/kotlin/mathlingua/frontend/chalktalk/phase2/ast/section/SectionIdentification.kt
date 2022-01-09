@@ -16,12 +16,12 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.section
 
-import mathlingua.Queue
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase1.ast.getColumn
 import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.support.ParseError
+import mathlingua.newQueue
 
 fun <T, U> ensureNonNull(value: T?, default: U, builder: (value: T) -> U) =
     if (value == null) {
@@ -63,12 +63,12 @@ internal fun identifySections(
     // the pattern is used for error messages
     val pattern = patternBuilder.toString()
 
-    val sectionQueue = Queue<Section>()
+    val sectionQueue = newQueue<Section>()
     for (s in sections) {
         sectionQueue.offer(s)
     }
 
-    val expectedQueue = Queue<String>()
+    val expectedQueue = newQueue<String>()
     for (e in expected) {
         expectedQueue.offer(e)
     }

@@ -16,10 +16,10 @@
 
 package mathlingua.frontend.chalktalk.phase1
 
-import mathlingua.Stack
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.support.ParseError
+import mathlingua.newStack
 
 internal interface ChalkTalkLexer {
     fun hasNext(): Boolean
@@ -50,7 +50,7 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
         var line = 0
         var column = -1
 
-        val levStack = Stack<Int>()
+        val levStack = newStack<Int>()
         levStack.push(0)
 
         var numOpen = 0

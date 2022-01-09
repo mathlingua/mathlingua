@@ -25,7 +25,6 @@ import java.net.SocketException
 import java.nio.file.Paths
 import java.security.MessageDigest
 import java.util.LinkedList
-import java.util.Stack
 import java.util.UUID
 import java.util.concurrent.Executors
 import mathlingua.cli.Logger
@@ -50,36 +49,58 @@ internal fun md5Hash(input: String) =
  * The Stack<T> class, backed by a [java.util.Stack] hides the usage of the JVM specific Stack so
  * that the rest of the code can utilize a Stack without directly using a java.util.Stack.
  */
-internal class Stack<T> {
-    private val data = Stack<T>()
+internal interface Stack<T> {
+    fun push(value: T)
+    fun peek(): T
+    fun pop(): T
+    fun isEmpty(): Boolean
+}
 
-    fun push(value: T) {
+internal fun <T> newStack(): Stack<T> {
+    return StackImpl()
+}
+
+private class StackImpl<T> : Stack<T> {
+    private val data = java.util.Stack<T>()
+
+    override fun push(value: T) {
         data.push(value)
     }
 
-    fun peek(): T = data.peek()
+    override fun peek(): T = data.peek()
 
-    fun pop(): T = data.pop()
+    override fun pop(): T = data.pop()
 
-    fun isEmpty() = data.isEmpty()
+    override fun isEmpty() = data.isEmpty()
+}
+
+internal interface Queue<T> : Iterable<T> {
+    fun offer(value: T)
+    fun peek(): T
+    fun poll(): T
+    fun isEmpty(): Boolean
+}
+
+internal fun <T> newQueue(): Queue<T> {
+    return QueueImpl()
 }
 
 /**
  * The Queue<T> class, backed by a [java.util.Queue] hides the usage of the JVM specific Queue so
  * that the rest of the code can utilize a Queue without directly using a java.util.Queue.
  */
-internal class Queue<T> : Iterable<T> {
+private class QueueImpl<T> : Queue<T> {
     private val data = LinkedList<T>()
 
-    fun offer(value: T) {
+    override fun offer(value: T) {
         data.offer(value)
     }
 
-    fun peek(): T = data.peek()
+    override fun peek(): T = data.peek()
 
-    fun poll(): T = data.poll()
+    override fun poll(): T = data.poll()
 
-    fun isEmpty() = data.isEmpty()
+    override fun isEmpty() = data.isEmpty()
 
     override fun iterator(): Iterator<T> = data.iterator()
 }

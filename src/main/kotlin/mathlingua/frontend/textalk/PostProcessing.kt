@@ -28,7 +28,7 @@ import mathlingua.newStack
  *
  * Definitions:
  * - Special operator: An operator composed of one or more special characters (*,+,-,/,...)
- * - Command: A sequence starting with \ (for example, \plus, \in, \otimes{X})
+ * - Command: A sequence starting with \ (for example, \plus, \in, \times{X})
  * - Command operator: A command that is interpreted as an operator.  For example '\in'
  *                     in the input '\pi \in X'
  * - Command value: A command that is interpreted as a value. For example, '\pi' in
@@ -39,7 +39,7 @@ import mathlingua.newStack
  *    Reading left to right, identify any identifier functions calls such as `f(x)`.
  *    These consist of a TextTexTalkNode and a GroupTexTalkNode side-by-side and are
  *    different from `\f{x}` in that that is a command.  Those two nodes should be
- *    group together in a sythetic group so that, for example,
+ *    grouped together in a synthetic group so that, for example,
  *       f(x) > 0
  *    is treated as
  *       {f(x)} > 0
@@ -144,7 +144,7 @@ import mathlingua.newStack
  *      Interpretation: '\times' is an infix operator with {-y} its left value and z
  *                      its right value.
  * 5. ** identify infix special operators **
- *    At this point there is only a single value (either in parentheses or an individual item
+ *    At this point there is only a single value (either in parentheses or an individual item)
  *    between any two special operators in the input.  Perform the shunting hard algorithm
  *    to parse the input into a tree structure using the following precedence and associativity.
  *
@@ -156,7 +156,7 @@ import mathlingua.newStack
  *      ^
  *      * /
  *      + -
- *      any custom special operator (such as !, **, ++, \oplus etc.)
+ *      any custom special operator (such as !, **, ++, \plus etc.)
  *
  *    Any operator with ... as a prefix or suffix has its precedence determined by the
  *    associated operator.  That is, ...+ will have the precedence of + while ...* will
@@ -169,7 +169,7 @@ import mathlingua.newStack
  *    Note custom special operators are assumed to be left associative and have the highest
  *    binding after := and =
  *
- *    Also note, at this point the only operators that need evaluation from a associativity
+ *    Also note, at this point the only operators that need evaluation from an associativity
  *    or precedence perspective are special operators since command operators have already
  *    been identified and the algorithm requires the user to explicitly use parentheses to
  *    describe how they are parsed from an associativity and precedence perspective.
@@ -194,34 +194,6 @@ internal fun parseOperators(root: ExpressionTexTalkNode) =
     }
 
 // -----------------------------------------------------------------------------
-
-// updates statements of the form `* is \something` so that the `*` is marked
-// as an identifier instead of an operator
-private fun isLhsOperatorToName(root: ExpressionTexTalkNode) =
-    root.transform {
-        if (it is IsTexTalkNode) {
-            val lhs = mutableListOf<ExpressionTexTalkNode>()
-            for (left in it.lhs.items) {
-                if (left.children.size == 1 &&
-                    left.children[0] is TextTexTalkNode &&
-                    (left.children[0] as TextTexTalkNode).tokenType == TexTalkTokenType.Operator) {
-                    val op = left.children[0] as TextTexTalkNode
-                    lhs.add(
-                        ExpressionTexTalkNode(
-                            children =
-                                listOf(
-                                    op.copy(
-                                        type = TexTalkNodeType.Identifier,
-                                        tokenType = TexTalkTokenType.Identifier))))
-                } else {
-                    lhs.add(left)
-                }
-            }
-            IsTexTalkNode(lhs = ParametersTexTalkNode(items = lhs), rhs = it.rhs)
-        } else {
-            it
-        }
-    }
 
 private class ParseException(val parseError: ParseError) : Exception(parseError.message)
 
@@ -453,15 +425,6 @@ private fun identifyInfixCommandOperators(
                     newChildren.add(section[1])
                     newChildren.add(section[0])
                 } else {
-                    /*
-                    throw ParseException(
-                        ParseError(
-                            message =
-                                "Multiple infix operators cannot be side by side ('${it.toCode()}').  " +
-                                    "They can only be one of the forms: '\\x \\op/ \\y', '\\x \\op/ y', 'x \\op/ \\y', or 'x \\op/ y'",
-                            row = -1,
-                            column = -1))
-                     */
                     newChildren.addAll(section)
                 }
             }

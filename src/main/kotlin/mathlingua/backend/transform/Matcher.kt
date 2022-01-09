@@ -657,7 +657,6 @@ private fun expandAsWrittenImplImpl(
                     i < expansion.length &&
                     expansion[i] == '?') {
                     isValid = true
-                    i++ // move past the ?
                     break
                 } else {
                     innerTextBuffer.append(c)

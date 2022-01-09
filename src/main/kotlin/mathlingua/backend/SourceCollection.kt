@@ -43,8 +43,6 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.Tuple
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
-import mathlingua.frontend.chalktalk.phase2.HtmlCodeWriter
-import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.Document
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
@@ -71,6 +69,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theore
 import mathlingua.frontend.chalktalk.phase2.getCalledNames
 import mathlingua.frontend.chalktalk.phase2.getInnerDefinedSignatures
 import mathlingua.frontend.chalktalk.phase2.getPatternsToWrittenAs
+import mathlingua.frontend.chalktalk.phase2.newHtmlCodeWriter
+import mathlingua.frontend.chalktalk.phase2.newMathLinguaCodeWriter
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.MutableLocationTracker
@@ -993,7 +993,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         html: Boolean, literal: Boolean, doExpand: Boolean, aliasDefines: List<DefinesGroup>
     ) =
         if (html) {
-            HtmlCodeWriter(
+            newHtmlCodeWriter(
                 defines =
                     doExpand.thenUse {
                         definesGroups.map { it.value.normalized }.plus(aliasDefines)
@@ -1002,7 +1002,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 axioms = doExpand.thenUse { axiomGroups.map { it.value.normalized } },
                 literal = literal)
         } else {
-            MathLinguaCodeWriter(
+            newMathLinguaCodeWriter(
                 defines =
                     doExpand.thenUse {
                         definesGroups.map { it.value.normalized }.plus(aliasDefines)

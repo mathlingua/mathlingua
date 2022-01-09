@@ -17,7 +17,7 @@
 package mathlingua.frontend.chalktalk.phase2.ast.common
 
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.MathLinguaCodeWriter
+import mathlingua.frontend.chalktalk.phase2.newMathLinguaCodeWriter
 
 internal interface Phase2Node {
     fun forEach(fn: (node: Phase2Node) -> Unit)
@@ -25,7 +25,8 @@ internal interface Phase2Node {
         isArg: Boolean,
         indent: Int,
         writer: CodeWriter =
-            MathLinguaCodeWriter(defines = emptyList(), states = emptyList(), axioms = emptyList())
+            newMathLinguaCodeWriter(
+                defines = emptyList(), states = emptyList(), axioms = emptyList())
     ): CodeWriter
     fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node
 }

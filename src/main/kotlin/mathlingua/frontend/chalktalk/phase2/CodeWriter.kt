@@ -89,13 +89,30 @@ internal interface CodeWriter {
     fun getCode(): String
 }
 
+internal fun newHtmlCodeWriter(
+    defines: List<DefinesGroup>,
+    states: List<StatesGroup>,
+    axioms: List<AxiomGroup>,
+    literal: Boolean
+): CodeWriter {
+    return HtmlCodeWriter(defines, states, axioms, literal)
+}
+
+internal fun newMathLinguaCodeWriter(
+    defines: List<DefinesGroup>, states: List<StatesGroup>, axioms: List<AxiomGroup>
+): CodeWriter {
+    return MathLinguaCodeWriter(defines, states, axioms)
+}
+
+// ------------------------------------------------------------------------------------------------------------------
+
 private const val IS = " is "
 
 private const val IN = " in "
 
 private data class BlockCommentSection(val text: String, val isMathlinguaCode: Boolean)
 
-internal open class HtmlCodeWriter(
+private open class HtmlCodeWriter(
     val defines: List<DefinesGroup>,
     val states: List<StatesGroup>,
     val axioms: List<AxiomGroup>,
@@ -998,7 +1015,7 @@ internal open class HtmlCodeWriter(
     private fun shouldExpand() = defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty()
 }
 
-internal class MathLinguaCodeWriter(
+private class MathLinguaCodeWriter(
     val defines: List<DefinesGroup>, val states: List<StatesGroup>, val axioms: List<AxiomGroup>
 ) : CodeWriter {
     private val builder = StringBuilder()

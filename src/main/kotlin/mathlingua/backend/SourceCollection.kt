@@ -1465,12 +1465,19 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return errors
     }
 
+    private fun isSignatureTopLevel(exp: TexTalkNode, signature: String) =
+        exp is ExpressionTexTalkNode &&
+            exp.children.size == 1 &&
+            exp.children[0] is Command &&
+            (exp.children[0] as Command).signature() == signature
+
     override fun getNonExpressesUsedInNonIsNonInStatementsErrors():
         List<ValueSourceTracker<ParseError>> {
         val errors = mutableListOf<ValueSourceTracker<ParseError>>()
         val signaturesWithoutExpresses =
             getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
         val statesSigs = statesGroups.mapNotNull { it.value.original.signature?.form }.toSet()
+        val axiomSigs = axiomGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         for (vst in allGroups) {
             val group = vst.value.normalized
             val tracker = vst.tracker ?: newLocationTracker()
@@ -1479,7 +1486,10 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 val stmt = stmtPair.first
                 val exp = stmtPair.second
                 for (sig in getSignaturesWithin(exp)) {
-                    if (signaturesWithoutExpresses.contains(sig) && !statesSigs.contains(sig)) {
+                    if (signaturesWithoutExpresses.contains(sig) &&
+                        !statesSigs.contains(sig) &&
+                        // a top level axiom signature is allowed
+                        !(axiomSigs.contains(sig) && isSignatureTopLevel(exp, sig))) {
                         val location =
                             tracker.getLocationOf(stmt) ?: Location(row = -1, column = -1)
                         errors.add(

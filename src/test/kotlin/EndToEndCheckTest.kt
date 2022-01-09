@@ -3491,57 +3491,6 @@ internal class EndToEndCheckTest {
             expectedNumErrors = 1)
     }
 
-    /*
-     * Originally, it was thought that a States: could only be used in another states.
-     * For example, `(A \subset/ B) \or/ (B \subset/ A)`.  In this case, both `\subset/`
-     * and `\or/` could be States:.
-     *
-     * However, something like `\set[x]{x}:suchThat{x \lt/ 1}` is something that is
-     * reasonable to write but `\set:suchThat` is a Defines:
-     *
-     * Thus, the test below shouldn't actually report errors for `States:` used as
-     * arguments to a non-States:
-
-    @Test
-    fun `check reports errors for States signatures used in non-States contexts`() {
-        runCheckTest(
-            files =
-                listOf(
-                    PathAndContent(
-                        path = listOf("content", "file1.math"),
-                        content =
-                            """
-                    [\some.states]
-                    States:
-                    that: "something"
-                    written: "something"
-
-
-                    [\f{x}]
-                    Defines: y
-                    means: "something"
-                    written: "something"
-
-
-                    [\something]
-                    Defines: X
-                    means: 'X is \f{\some.states}'
-                    written: "something"
-                """.trimIndent())),
-            expectedOutput =
-                """
-                ERROR: content/file1.math (Line: 15, Column: 8)
-                The signature '\some.states' (since it is a `States:`) can only be used within `States:` but it is used within '\f'
-
-                FAILED
-                Processed 1 file
-                1 error detected
-            """.trimIndent(),
-            expectedExitCode = 1,
-            expectedNumErrors = 1)
-    }
-     */
-
     @Test
     fun `check does not report errors for States signatures used in States contexts`() {
         runCheckTest(
@@ -3566,6 +3515,35 @@ internal class EndToEndCheckTest {
                     [\something]
                     Defines: X
                     means: '\f{\some.states}'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for axioms used Defines in top-level statements`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\some.axiom]
+                    Axiom:
+                    then: "something"
+
+
+                    [\something]
+                    Defines: X
+                    means: '\some.axiom'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =

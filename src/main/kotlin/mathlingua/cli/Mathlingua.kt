@@ -386,10 +386,25 @@ private fun renderAll(
         decompose(fs = fs, sourceCollection = newSourceCollectionFromCwd(fs = fs), mlgFiles = null)
     val data = Json.encodeToString(decomp)
 
+    val errors = mutableListOf<ErrorResult>()
+
+    val docContentDir = File(docDir, "content")
+    val contentDir = File("content")
+    contentDir.copyRecursively(docContentDir, overwrite = true) { file, ioException ->
+        errors.add(
+            ErrorResult(
+                relativePath = file.toRelativeString(contentDir),
+                message =
+                    "Failed to copy ${file.toRelativeString(contentDir)} to the docs directory: ${ioException.message}",
+                row = 0,
+                column = 0))
+        OnErrorAction.SKIP
+    }
+
     val dataFile = File(docDir, "data.js")
     dataFile.writeText("window.MATHLINGUA_DATA = $data")
     logger.log("Wrote docs${File.separator}data.js")
 
-    return Pair(
-        decomp.collectionResult.fileResults.map { it.relativePath }, decomp.collectionResult.errors)
+    errors.addAll(decomp.collectionResult.errors)
+    return Pair(decomp.collectionResult.fileResults.map { it.relativePath }, errors)
 }

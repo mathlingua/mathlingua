@@ -32,7 +32,7 @@ set +e
 
 # run the tests
 echo "Running the tests..."
-./node_modules/.bin/cypress "${1:-open}" --env PORT="${RESOLVED_CLIENT_PORT}"
+./node_modules/.bin/cypress "${1:-run}" --env PORT="${RESOLVED_CLIENT_PORT}"
 EXIT_CODE=$?
 
 if [ -z "${NO_SERVER}" ]

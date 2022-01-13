@@ -1,17 +1,23 @@
 ::
-<div style="margin-left: 27%;
-            transform: scale(0.7);
-            margin-top: -0.75em;
-            margin-bottom: -1.5em;
-            filter: drop-shadow(rgba(0, 0, 0, 0.9) -1px 1px 1px);">
-  <img src="./content/mathlingua-icon.svg" />
-</div>
-
 # The MathLingua Language
 
 *MathLingua is a language to create precise,
 automatically analyzed, beautifully rendered, collections
 of mathematical knowledge.*
+
+<style>
+  .icon {
+    transform: scale(0.15);
+    margin-top: -20em;
+    margin-bottom: -20em;
+    margin-left: -2.5em;
+    margin-right: 0;
+    padding: 0;
+  }
+</style>
+<div class="icon">
+  <img src="./content/mathlingua-icon.png" />
+</div>
 
 ## The Problem
 

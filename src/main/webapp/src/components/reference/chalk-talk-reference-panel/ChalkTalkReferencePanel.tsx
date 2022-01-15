@@ -3,7 +3,13 @@ import './ChalkTalkReferencePanel.css';
 import { ref } from '../Reference';
 import { getDocItems } from './ChalkTalkReference';
 
-export const ChalkTalkReferencePanel = () => {
+export interface ChalkTalkReferencePanelProps {
+  onLoad: () => void;
+}
+
+export const ChalkTalkReferencePanel = (props: ChalkTalkReferencePanelProps) => {
+  props.onLoad();
+
   let content = `<div class='chalkTalkReferenceTitle'>Structural Language Reference</div>`;
   content += '<p><b>Note:</b> This document is still a work in progress and is not complete.</p>';
 

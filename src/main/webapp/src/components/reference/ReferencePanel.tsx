@@ -14,7 +14,12 @@ using:
 . 'x - y := x \\real.-/ y'
 . 'x < y := x \\real.lt/ y'`;
 
-export const ReferencePanel = () => {
+export interface ReferencePanelProps {
+  onLoad: () => void;
+}
+
+export const ReferencePanel = (props: ReferencePanelProps) => {
+  props.onLoad();
   return (
     <div className={styles.referenceBody}>
       <div className={styles.referenceContent}>

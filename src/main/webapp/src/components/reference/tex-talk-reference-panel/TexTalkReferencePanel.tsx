@@ -3,7 +3,13 @@ import './TexTalkReferencePanel.css';
 import { ref } from '../Reference';
 import { getDocItems } from './TexTalkReference';
 
-export const TexTalkReferencePanel = () => {
+export interface TexTalkReferencePanelProps {
+  onLoad: () => void;
+}
+
+export const TexTalkReferencePanel = (props: TexTalkReferencePanelProps) => {
+  props.onLoad();
+
   let content = `<div class='texTalkReferenceTitle'>Expression Language Reference</div>`;
   content += '<p><b>Note:</b> This document is still a work in progress and is not complete.</p>';
 

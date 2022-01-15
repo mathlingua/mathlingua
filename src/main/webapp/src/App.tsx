@@ -16,19 +16,35 @@ const showBanner = false;
 
 export const App = () => {
   const [allowAnalytics, setAllowAnalytics] = useState(false);
+
+  const pageViewed = (path: string) => {
+    if (allowAnalytics) {
+      if (!analyticsInitialized) {
+        // ReactGA.initialize('');
+        analyticsInitialized = true;
+      }
+//    ReactGA.event('page_view', {
+//      page_title: path
+//    });
+    }
+  };
+
   return (
     <HashRouter hashType="slash">
       <ErrorBoundary>
         <div className={styles.contentPanel}>
           <Switch>
             <Route exact path="/help">
-              <ReferencePanel />
+              <ReferencePanel
+                onLoad={() => pageViewed('/help')}/>
             </Route>
             <Route exact path="/help/expressionLanguage">
-              <TexTalkReferencePanel />
+              <TexTalkReferencePanel
+                onLoad={() => pageViewed('/help/expressionLanguage')}/>
             </Route>
             <Route exact path="/help/structuralLanguage">
-              <ChalkTalkReferencePanel />
+              <ChalkTalkReferencePanel
+                onLoad={() => pageViewed('/help/structuralLanguage')}/>
             </Route>
             <Route
               path="/:relativePath(.*)"
@@ -39,17 +55,7 @@ export const App = () => {
                       pathname: path,
                     })
                   }
-                  onLocationChanged={(path) => {
-                    if (allowAnalytics) {
-                      if (!analyticsInitialized) {
-                        // ReactGA.initialize('G-JPSYF6C3L8');
-                        analyticsInitialized = true;
-                      }
-//                    ReactGA.event('page_view', {
-//                      page_title: path
-//                    });
-                    }
-                  }}
+                  onLocationChanged={(path) => pageViewed(path)}
                 />
               )}
             />

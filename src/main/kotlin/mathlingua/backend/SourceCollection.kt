@@ -137,7 +137,7 @@ internal fun SourceFile.toFileResult(
 }
 
 internal fun isMathLinguaFile(file: VirtualFile) =
-    !file.isDirectory() && file.absolutePath().last().endsWith(".math")
+    !file.isDirectory() && file.absolutePath().endsWith(".math")
 
 internal fun buildSourceFile(file: VirtualFile): SourceFile {
     val content = file.readText()
@@ -283,7 +283,8 @@ private class SourcePathComparator : Comparator<VirtualFile> {
             return 0
         }
 
-        return STRING_PARTS_COMPARATOR.compare(file1!!.absolutePath(), file2!!.absolutePath())
+        return STRING_PARTS_COMPARATOR.compare(
+            file1!!.absolutePathParts(), file2!!.absolutePathParts())
     }
 }
 
@@ -928,7 +929,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
     override fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>> {
-        val sourceFile = sourceFiles[file.absolutePath().joinToString("/")]
+        val sourceFile = sourceFiles[file.absolutePathParts().joinToString("/")]
         return if (sourceFile != null) {
             prettyPrint(sourceFile.validation, html, literal, doExpand)
         } else {

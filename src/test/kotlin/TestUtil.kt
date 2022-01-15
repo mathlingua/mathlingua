@@ -17,7 +17,6 @@
 package mathlingua
 
 import com.tylerthrailkill.helpers.prettyprint.pp
-import java.io.File
 import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileException
 import mathlingua.cli.VirtualFileSystem
@@ -46,8 +45,7 @@ fun loadTestCases(type: GoldenType): List<TestCase> {
     val fs = newDiskFileSystem()
     val root = fs.getDirectory(listOf("src", "test", "resources", "goldens", type.name.lowercase()))
     if (!root.exists()) {
-        throw VirtualFileException(
-            "Golden root directory ${root.absolutePath().joinToString(File.separator)} does not exist")
+        throw VirtualFileException("Golden root directory ${root.absolutePath()} does not exist")
     }
     loadTestCasesImpl(fs, root, result)
     return result
@@ -59,7 +57,7 @@ private fun containsInputDotMath(dir: VirtualFile): Boolean {
     }
 
     for (child in dir.listFiles()) {
-        if (child.absolutePath().lastOrNull() == "input.math") {
+        if (child.absolutePathParts().lastOrNull() == "input.math") {
             return true
         }
     }
@@ -72,7 +70,7 @@ private fun loadTestCasesImpl(
     if (file.isDirectory() && containsInputDotMath(file)) {
         result.add(
             TestCase(
-                name = file.absolutePath().last(),
+                name = file.absolutePathParts().last(),
                 input = fs.getFile(file.relativePath().split("/").plus("input.math")),
                 phase1Output =
                     fs.getFile(file.relativePath().split("/").plus("phase1-output.math")),

@@ -218,13 +218,11 @@ private class DiskFileSystem : VirtualFileSystem {
             absolutePathParts = getAbsolutePath(relativePath), directory = true, fs = this)
     }
 
+    override fun getFileSeparator() = REAL_FILE_SEPARATOR
+
     override fun cwd() = cwdFile
 
-    private fun VirtualFile.toFile(): File {
-        val absPath = this.absolutePath()
-        val joined = absPath.joinToString(File.separator)
-        return File(joined).normalize()
-    }
+    private fun VirtualFile.toFile() = File(this.absolutePath()).normalize()
 
     override fun relativePath(vf: VirtualFile) =
         vf.toFile().toRelativeString(cwdFile.toFile()).split(File.separator).joinToString(SLASH)

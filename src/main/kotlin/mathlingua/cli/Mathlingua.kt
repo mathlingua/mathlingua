@@ -173,8 +173,7 @@ private fun getErrorOutput(
         val err = errors[i]
         if (json) {
             builder.append("{")
-            builder.append(
-                "  \"file\": \"${err.source.file.absolutePath().joinToString(File.separator).jsonSanitize()}\",")
+            builder.append("  \"file\": \"${err.source.file.absolutePath().jsonSanitize()}\",")
             builder.append("  \"type\": \"ERROR\",")
             builder.append("  \"message\": \"${err.value.message.jsonSanitize()}\",")
             builder.append("  \"failedLine\": \"\",")
@@ -219,8 +218,7 @@ private fun exportFile(
     raw: Boolean
 ): List<ValueSourceTracker<ParseError>> {
     if (!target.exists()) {
-        val message =
-            "ERROR: The file ${target.absolutePath().joinToString(File.separator)} does not exist"
+        val message = "ERROR: The file ${target.absolutePath()} does not exist"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -231,9 +229,8 @@ private fun exportFile(
                 tracker = null))
     }
 
-    if (target.isDirectory() || !target.absolutePath().last().endsWith(".math")) {
-        val message =
-            "ERROR: The path ${target.absolutePath().joinToString(File.separator)} is not a .math file"
+    if (target.isDirectory() || !target.absolutePath().endsWith(".math")) {
+        val message = "ERROR: The path ${target.absolutePath()} is not a .math file"
         logger.log(message)
         return listOf(
             ValueSourceTracker(
@@ -345,7 +342,7 @@ private fun renderAll(
         }
     val jarPath = uriPrefix.replace("jar:file:", "")
 
-    val docDir = File(getDocsDirectory(fs).absolutePath().joinToString(File.separator))
+    val docDir = File(getDocsDirectory(fs).absolutePath())
     docDir.mkdirs()
 
     val cnameFile = File("CNAME")

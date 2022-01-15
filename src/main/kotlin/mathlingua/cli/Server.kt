@@ -17,6 +17,7 @@
 package mathlingua.cli
 
 import io.javalin.Javalin
+import io.javalin.http.staticfiles.Location
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -62,6 +63,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
 
     val app = Javalin.create().start(port)
     app.config.addStaticFiles("/assets")
+    app.config.addStaticFiles(fs.cwd().absolutePath(), Location.EXTERNAL)
     app.before("/") { ctx ->
         try {
             logger.log("Re-analyzing the MathLingua code.")

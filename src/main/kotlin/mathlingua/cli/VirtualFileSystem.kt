@@ -19,7 +19,8 @@ package mathlingua.cli
 internal class VirtualFileException(message: String) : Exception(message)
 
 interface VirtualFile {
-    fun absolutePath(): List<String>
+    fun absolutePath(): String
+    fun absolutePathParts(): List<String>
     fun relativePath(): String
     fun isDirectory(): Boolean
     fun exists(): Boolean
@@ -34,6 +35,7 @@ interface VirtualFileSystem {
     fun getFileOrDirectory(path: String): VirtualFile
     fun getFile(relativePath: List<String>): VirtualFile
     fun getDirectory(relativePath: List<String>): VirtualFile
+    fun getFileSeparator(): String
     fun cwd(): VirtualFile
     fun relativePath(vf: VirtualFile): String
     fun exists(vf: VirtualFile): Boolean
@@ -63,7 +65,9 @@ private data class VirtualFileImpl(
     private val directory: Boolean,
     private val fs: VirtualFileSystem
 ) : VirtualFile {
-    override fun absolutePath() = absolutePathParts
+    override fun absolutePath() = absolutePathParts().joinToString(fs.getFileSeparator())
+
+    override fun absolutePathParts() = absolutePathParts
 
     override fun relativePath() = fs.relativePath(this)
 
@@ -131,10 +135,12 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
             absolutePathParts = getAbsolutePath(relativePath), directory = true, fs = this)
     }
 
+    override fun getFileSeparator() = SLASH
+
     override fun cwd() = cwdFile
 
     override fun relativePath(vf: VirtualFile): String {
-        val vfParts = vf.absolutePath()
+        val vfParts = vf.absolutePathParts()
         var i = 0
         while (i < cwd.size && i < vfParts.size && cwd[i] == vfParts[i]) {
             i++
@@ -148,7 +154,7 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
 
     override fun exists(vf: VirtualFile): Boolean {
         var tail = root
-        for (part in vf.absolutePath()) {
+        for (part in vf.absolutePathParts()) {
             if (!tail.children.containsKey(part)) {
                 return false
             }
@@ -159,7 +165,7 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
 
     override fun mkdirs(vf: VirtualFile): Boolean {
         var tail = root
-        for (part in vf.absolutePath()) {
+        for (part in vf.absolutePathParts()) {
             if (!tail.children.containsKey(part)) {
                 val child =
                     MemoryFileNode(
@@ -201,24 +207,24 @@ private class MemoryFileSystem(private val cwd: List<String>) : VirtualFileSyste
     }
 
     override fun readText(vf: VirtualFile) =
-        getMemoryNode(vf.absolutePath(), createAsFile = false).content
+        getMemoryNode(vf.absolutePathParts(), createAsFile = false).content
 
     override fun writeText(vf: VirtualFile, content: String) {
-        getMemoryNode(vf.absolutePath(), createAsFile = true).content = content
+        getMemoryNode(vf.absolutePathParts(), createAsFile = true).content = content
     }
 
     override fun listFiles(vf: VirtualFile): List<VirtualFile> {
-        val node = getMemoryNode(vf.absolutePath(), createAsFile = false)
+        val node = getMemoryNode(vf.absolutePathParts(), createAsFile = false)
         return node.children.values.map {
             val parts = mutableListOf<String>()
-            parts.addAll(vf.absolutePath())
+            parts.addAll(vf.absolutePathParts())
             parts.add(it.name)
             VirtualFileImpl(absolutePathParts = parts, directory = it.isDirectory, fs = this)
         }
     }
 
     override fun delete(vf: VirtualFile): Boolean {
-        val path = vf.absolutePath()
+        val path = vf.absolutePathParts()
         val parentPath = path.filterIndexed { index, _ -> index < path.size - 1 }
         val parent = getMemoryNode(parentPath, createAsFile = true)
         val name = path.last()

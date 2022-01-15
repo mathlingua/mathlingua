@@ -8,6 +8,9 @@ import { ReferencePanel } from './components/reference/ReferencePanel';
 import { TexTalkReferencePanel } from './components/reference/tex-talk-reference-panel/TexTalkReferencePanel';
 import { ChalkTalkReferencePanel } from './components/reference/chalk-talk-reference-panel/ChalkTalkReferencePanel';
 
+// import ReactGA from 'react-ga4';
+// ReactGA.initialize('G-JPSYF6C3L8');
+
 export const App = () => {
   return (
     <HashRouter hashType="slash">
@@ -32,6 +35,11 @@ export const App = () => {
                       pathname: path,
                     })
                   }
+                  onLocationChanged={(path) => {
+//                    ReactGA.event('page_view', {
+//                      page_title: path
+//                    });
+                  }}
                 />
               )}
             />

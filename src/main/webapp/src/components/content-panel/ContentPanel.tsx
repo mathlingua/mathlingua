@@ -31,12 +31,17 @@ function getHashLocation(location: {
 
 export interface ContentPanelProps {
   redirect: (relativePath: string) => void;
+  onLocationChanged: (path: string) => void;
 }
 
 export const ContentPanel = (props: ContentPanelProps) => {
   const hashLocation = getHashLocation(useLocation());
   const isEditMode = useAppSelector(selectIsEditMode);
   const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
+
+  useEffect(() => {
+    props.onLocationChanged(hashLocation.viewedPath);
+  }, [hashLocation]);
 
   useEffect(() => {
     if (hashLocation.viewedPath === '') {

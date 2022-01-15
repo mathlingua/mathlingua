@@ -9,6 +9,8 @@ object-assign
  * License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License)
  */
 
+/*! For license information please see index.js.LICENSE.txt */
+
 /*!***************************************************
 * mark.js v8.11.1
 * https://markjs.io/

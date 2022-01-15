@@ -1,6 +1,6 @@
 import styles from './App.module.css';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
 import { HashRouter, Switch, Route } from 'react-router-dom';
 import { ContentPanel } from './components/content-panel/ContentPanel';
@@ -9,23 +9,33 @@ import { TexTalkReferencePanel } from './components/reference/tex-talk-reference
 import { ChalkTalkReferencePanel } from './components/reference/chalk-talk-reference-panel/ChalkTalkReferencePanel';
 
 import CookieConsent from 'react-cookie-consent';
+import * as api from './services/api';
 
-// import ReactGA from 'react-ga4';
+import ReactGA from 'react-ga4';
 let analyticsInitialized = false;
-const showBanner = false;
 
 export const App = () => {
   const [allowAnalytics, setAllowAnalytics] = useState(false);
+  const [googleAnalyticsId, setGoogleAnalyticsId] = useState(null as null | string);
+
+  useEffect(() => {
+    api.getConfiguration().then(config => {
+      const id = config.googleAnalyticsId;
+      if (id) {
+        setGoogleAnalyticsId(id);
+      }
+    });
+  }, []);
 
   const pageViewed = (path: string) => {
-    if (allowAnalytics) {
+    if (allowAnalytics && googleAnalyticsId) {
       if (!analyticsInitialized) {
-        // ReactGA.initialize('');
+        ReactGA.initialize(googleAnalyticsId);
         analyticsInitialized = true;
       }
-//    ReactGA.event('page_view', {
-//      page_title: path
-//    });
+      ReactGA.event('page_view', {
+        page_title: path
+      });
     }
   };
 
@@ -62,7 +72,7 @@ export const App = () => {
           </Switch>
         </div>
         {
-          showBanner ?
+          googleAnalyticsId ?
           <CookieConsent
             buttonText='I agree'
             buttonStyle={{
@@ -88,7 +98,7 @@ export const App = () => {
             }}
             onAccept={() => setAllowAnalytics(true)}
             onDecline={() => setAllowAnalytics(false)}
-            debug={true}>
+            debug={false}>
             If you agree, this site will use cookies to analyze its traffic.
           </CookieConsent> : null
         }

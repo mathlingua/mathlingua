@@ -86,6 +86,7 @@ internal fun decompose(
     return DecompositionResult(
         gitHubUrl = getGitHubUrl(),
         signatureIndex = buildSignatureIndex(sourceCollection),
+        configuration = loadConfiguration(),
         collectionResult =
             CollectionResult(
                 fileResults = fileResults,

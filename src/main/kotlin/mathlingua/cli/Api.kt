@@ -72,7 +72,8 @@ data class CollectionResult(val fileResults: List<FileResult>, val errors: List<
 data class DecompositionResult(
     val collectionResult: CollectionResult,
     val gitHubUrl: String?,
-    val signatureIndex: SignatureIndex)
+    val signatureIndex: SignatureIndex,
+    val configuration: Configuration)
 
 @Serializable data class CompletionItem(val name: String, val value: String)
 
@@ -97,3 +98,5 @@ data class FileResult(
     val content: String,
     val entities: List<EntityResult>,
     val errors: List<ErrorResult>)
+
+@Serializable data class Configuration(val googleAnalyticsId: String?)

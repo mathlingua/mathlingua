@@ -318,6 +318,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
             exitProcess(0)
         }
         .get("/api/completions") { ctx -> ctx.json(COMPLETIONS) }
+        .get("/api/configuration") { ctx -> ctx.json(loadConfiguration()) }
         .get("/api/*") { ctx -> ctx.status(400) }
 
     if (onStart != null) {

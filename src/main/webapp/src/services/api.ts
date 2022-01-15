@@ -49,6 +49,11 @@ export interface DecompositionResult {
   gitHubUrl?: string;
   collectionResult: CollectionResult;
   signatureIndex: SignatureIndex;
+  configuration: Configuration;
+}
+
+export interface Configuration {
+  googleAnalyticsId?: string;
 }
 
 export interface CheckResponse {
@@ -85,6 +90,7 @@ interface ApiClient {
   getGitHubUrl(): Promise<string | undefined>;
   getFirstPath(): Promise<string>;
   getSignatureIndex(): Promise<SignatureIndex>;
+  getConfiguration(): Promise<Configuration>;
 }
 
 function notifyOfError(error: string) {
@@ -188,6 +194,16 @@ class NetworkApiClient implements ApiClient {
       return { entries: [] };
     }
   }
+
+  async getConfiguration(): Promise<Configuration> {
+    try {
+      const res = await axios.get('/api/configuration');
+      return res.data;
+    } catch (error: any) {
+      notifyOfError(error.message);
+      return {};
+    }
+  }
 }
 
 class StaticApiClient implements ApiClient {
@@ -200,6 +216,7 @@ class StaticApiClient implements ApiClient {
   private checkResponse: CheckResponse;
   private gitHubUrl: string | undefined;
   private signatureIndex: SignatureIndex;
+  private configuration: Configuration;
 
   constructor(data: DecompositionResult) {
     this.searchClient = new Search(data);
@@ -241,6 +258,7 @@ class StaticApiClient implements ApiClient {
 
     this.gitHubUrl = data.gitHubUrl;
     this.signatureIndex = data.signatureIndex;
+    this.configuration = data.configuration;
   }
 
   async getAllPaths(): Promise<string[]> {
@@ -283,6 +301,10 @@ class StaticApiClient implements ApiClient {
 
   async getSignatureIndex(): Promise<SignatureIndex> {
     return this.signatureIndex;
+  }
+
+  async getConfiguration(): Promise<Configuration> {
+    return this.configuration;
   }
 }
 
@@ -341,6 +363,10 @@ export async function getGitHubUrl(): Promise<string | undefined> {
 
 export async function getSignatureIndex(): Promise<SignatureIndex> {
   return getClient().getSignatureIndex();
+}
+
+export async function getConfiguration(): Promise<Configuration> {
+  return getClient().getConfiguration();
 }
 
 export async function writeFileResult(path: string, content: string) {

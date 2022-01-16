@@ -1,3 +1,8 @@
+import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import 'react-tabs/style/react-tabs.css';
+
+import styles from './ContentPanel.module.css';
+
 import { useLocation } from 'react-router';
 import { Page } from '../page/Page';
 import { SidePanel } from '../side-panel/SidePanel';
@@ -13,6 +18,9 @@ import { isOnMobile } from '../../support/util';
 import * as api from '../../services/api';
 import { TopBar } from '../topbar/TopBar';
 import { SignatureIndex } from '../signature-index/SignatureIndex';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faTimes } from '@fortawesome/free-solid-svg-icons';
+import { selectedTabPathUpdated, selectSelectedTabPath } from '../../store/selectedTabPathSlice';
 
 export interface HashLocation {
   viewedPath: string;
@@ -144,7 +152,8 @@ const ThreeColumnContent = (props: {
                 : { width: '100%', float: 'right' }
             }
           >
-            <SidePanel viewedPath={props.hashLocation.viewedPath} />
+            <SidePanel viewedPath={props.hashLocation.viewedPath}
+                       onOpenFileInTab={() => {}} />
           </div>
         ) : null}
       </div>
@@ -185,6 +194,47 @@ const TwoColumnContent = (props: {
   hashLocation: HashLocation;
   isSidePanelVisible: boolean;
 }) => {
+  const dispatch = useAppDispatch();
+  const [locations, setLocations] = useState([] as HashLocation[]);
+
+  const getViewedLocationIndex = (path: string) => {
+    return locations.findIndex(location =>
+      location.viewedPath === path);
+  };
+
+  const [selectedIndex, setSelectedIndex] = useState(
+    Math.max(0, getViewedLocationIndex(props.hashLocation.viewedPath)));
+
+  const selectIndex = (index: number) => {
+    setSelectedIndex(index);
+    const location = locations[index];
+    if (location) {
+      dispatch(selectedTabPathUpdated(location.viewedPath));
+    }
+  };
+
+  useEffect(() => {
+    const viewedLocation = props.hashLocation;
+    const viewedLocationIndex = getViewedLocationIndex(viewedLocation.viewedPath);
+    if (locations.length === 0) {
+      setLocations([viewedLocation]);
+    } else if (viewedLocationIndex >= 0) {
+      // the selected path is already in the list so just switch to it
+      selectIndex(viewedLocationIndex);
+    } else {
+      const newLocations: HashLocation[] = [];
+      locations.filter(location =>
+        location.viewedPath !== viewedLocation.viewedPath).forEach((location, index) => {
+          if (index === selectedIndex) {
+            newLocations.push(viewedLocation);
+          } else {
+            newLocations.push(location);
+          }
+        });
+      setLocations(newLocations);
+    }
+  }, [props.hashLocation]);
+
   return (
     <div
       style={{
@@ -196,21 +246,100 @@ const TwoColumnContent = (props: {
     >
       <div style={{ width: props.isSidePanelVisible ? '20%' : '0' }}>
         {props.isSidePanelVisible ? (
-          <SidePanel viewedPath={props.hashLocation.viewedPath} />
+          <SidePanel viewedPath={props.hashLocation.viewedPath}
+                     onOpenFileInTab={(path: string) => {
+                       const index = getViewedLocationIndex(path);
+                       if (index >= 0) {
+                        selectIndex(index);
+                       } else {
+                         //  the path isn't in the list so add it
+                         setLocations(locations.concat({
+                           viewedPath: path,
+                           targetId: ''
+                         }));
+                       }
+                     }} />
         ) : null}
       </div>
       <div
-        style={{
+        style={locations.length === 1 ? {
           width: props.isSidePanelVisible ? '80%' : '100%',
-          border: 'none',
           marginTop: '0.5em',
+          borderTop: 'solid',
+          borderTopWidth: '1px',
+          borderTopColor: '#aaaaaa',
+        } : {
+          width: props.isSidePanelVisible ? '80%' : '100%',
+          marginTop: '0.5em',
+          border: 'none',
         }}
       >
-        <Page
-          viewedPath={props.hashLocation.viewedPath}
-          targetId={props.hashLocation.targetId}
-        />
+        <TabbedView locations={locations}
+                    selectedIndex={selectedIndex}
+                    setSelectedIndex={selectIndex}
+                    onClose={(path) => {
+                      setLocations(locations.filter(location =>
+                        location.viewedPath !== path))
+                    }} />
       </div>
     </div>
+  );
+};
+
+const getLastPathLocation = (path: string) => {
+  const parts = path.split('/');
+  if (parts.length === 0) {
+    return path;
+  }
+
+  return parts[parts.length - 1];
+}
+
+const TabbedView = (props: {
+  selectedIndex: number | undefined;
+  locations: HashLocation[];
+  onClose: (path: string) => void;
+  setSelectedIndex: (index: number) => void;
+}) => {
+  if (props.locations.length === 1) {
+    const location = props.locations[0];
+    return (
+      <Page
+        viewedPath={location.viewedPath}
+        targetId={location.targetId}
+      />
+    );
+  }
+
+  return (
+    <Tabs selectedIndex={props.selectedIndex}
+          onSelect={(index) => props.setSelectedIndex(index)}>
+      <TabList style={{ margin: '0' }}>
+        {
+          props.locations.map((location, index) =>
+            <Tab key={index}
+                 selectedClassName={styles.selectedTab}>
+              {getLastPathLocation(location.viewedPath)}
+              <button className={styles.button}>
+                <FontAwesomeIcon
+                  icon={faTimes}
+                  style={{
+                    filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+                  }}
+                  onClick={() => props.onClose(location.viewedPath)}
+                />
+              </button>
+            </Tab>)
+        }
+      </TabList>
+      {
+        props.locations.map((location, index) => <TabPanel key={index}>
+          <Page
+            viewedPath={location.viewedPath}
+            targetId={location.targetId}
+          />
+        </TabPanel>)
+      }
+    </Tabs>
   );
 };

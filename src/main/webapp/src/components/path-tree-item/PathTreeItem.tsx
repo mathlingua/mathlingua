@@ -24,6 +24,8 @@ import {
   faCaretRight,
   faCaretDown,
 } from '@fortawesome/free-solid-svg-icons';
+import { faWindowMaximize } from '@fortawesome/free-regular-svg-icons';
+import { selectedTabPathUpdated, selectSelectedTabPath } from '../../store/selectedTabPathSlice';
 
 export interface PathTreeNode {
   name: string;
@@ -36,6 +38,7 @@ export interface PathTreeNode {
 export interface PathTreeItemProps {
   node: PathTreeNode;
   viewedPath: string;
+  onOpenFileInTab: (path: string) => void;
 }
 
 export const PathTreeItem = (props: PathTreeItemProps) => {
@@ -45,6 +48,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
       (props.node.name === 'content' ||
         props.viewedPath.startsWith(props.node.path))
   );
+  const selectedTabPath = useAppSelector(selectSelectedTabPath);
   const isEditMode = useAppSelector(selectIsEditMode);
   const allErrorResults = useAppSelector(selectErrorResults);
   const [inputName, setInputName] = useState('');
@@ -138,6 +142,24 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
   const getEditButtons = () => {
     return isEditMode ? (
       <span>
+        <button
+          className={styles.button}
+          style={{
+            display:
+              props.node.path !== 'content' && !isEditing && !isDeleting && !props.node.isDir
+                ? 'inline'
+                : 'none',
+          }}
+          onClick={() => {
+            props.onOpenFileInTab(props.node.path);
+          }}>
+          <FontAwesomeIcon
+            icon={faWindowMaximize}
+            style={{
+              filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+            }}
+          />
+        </button>
         <button
           className={styles.button}
           style={{
@@ -322,6 +344,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
                 key={child.name}
                 node={child}
                 viewedPath={props.viewedPath}
+                onOpenFileInTab={props.onOpenFileInTab}
               />
             ))}
           </ul>
@@ -354,7 +377,9 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             to={`/${props.node.path}`}
             key={props.node.name}
             className={
-              props.viewedPath === props.node.path ||
+              (props.viewedPath === props.node.path &&
+                (!selectedTabPath || selectedTabPath === props.node.path)) ||
+              (selectedTabPath === props.node.path) ||
               (props.viewedPath === '' && props.node.isFirstMathFile)
                 ? `${styles.link} ${styles.selected}`
                 : styles.link
@@ -363,6 +388,7 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
               if (isOnMobile()) {
                 dispatch(sidePanelVisibilityChanged(false));
               }
+              dispatch(selectedTabPathUpdated(props.node.path))
             }}
           >
             {name}

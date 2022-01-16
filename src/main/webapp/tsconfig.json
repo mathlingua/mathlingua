@@ -7,7 +7,6 @@
       "esnext"
     ],
     "types": [
-      "@testing-library/jest-dom",
       "jest",
       "cypress"
     ],

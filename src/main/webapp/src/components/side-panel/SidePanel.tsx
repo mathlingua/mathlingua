@@ -7,10 +7,10 @@ import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import { ErrorView } from '../error-view/ErrorView';
 import { PathTreeItem, PathTreeNode } from '../path-tree-item/PathTreeItem';
 import { selectIsEditMode } from '../../store/isEditModeSlice';
-import { Link } from 'react-router-dom';
 
 export interface SidePanelProps {
   viewedPath: string;
+  onOpenFileInTab: (path: string) => void;
 }
 
 export const SidePanel = (props: SidePanelProps) => {
@@ -57,6 +57,7 @@ export const SidePanel = (props: SidePanelProps) => {
       key={node.name}
       node={node}
       viewedPath={props.viewedPath}
+      onOpenFileInTab={props.onOpenFileInTab}
     />
   ));
 
@@ -70,7 +71,8 @@ export const SidePanel = (props: SidePanelProps) => {
         isFirstMathFile: false,
         children: [],
       }}
-      viewedPath={props.viewedPath}/>);
+      viewedPath={props.viewedPath}
+      onOpenFileInTab={props.onOpenFileInTab} />);
   }
 
   const sidePanel = (

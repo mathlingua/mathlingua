@@ -7,6 +7,7 @@ import sidePanelVisibleReducer from './sidePanelVisibleSlice';
 import queryReducer from './querySlice';
 import isEditModeReducer from './isEditModeSlice';
 import errorResultsReducer from './errorResultsSlice';
+import selectedTabPathReducer from './selectedTabPathSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     query: queryReducer,
     isEditMode: isEditModeReducer,
     errorResults: errorResultsReducer,
+    selectedTabPath: selectedTabPathReducer
   },
   middleware: [thunkMiddleware],
 });

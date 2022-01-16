@@ -440,6 +440,9 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
             borderRight: 'solid',
             borderRightWidth: '1px',
             borderRightColor: '#dddddd',
+            borderLeft: 'solid',
+            borderLeftWidth: '1px',
+            borderLeftColor: '#aaaaaa',
           }}
           commands={[
             {

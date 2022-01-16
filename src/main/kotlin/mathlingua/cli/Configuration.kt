@@ -17,10 +17,6 @@
 package mathlingua.cli
 
 internal fun loadConfiguration(): Configuration {
-    val gaId = System.getenv("GOOGLE_ANALYTICS_ID")
+    val gaId = System.getenv("MLG_GOOGLE_ANALYTICS_ID")
     return Configuration(googleAnalyticsId = gaId)
-}
-
-fun main() {
-    println(System.getenv("GOOGLE_ANALYTICS_ID"))
 }

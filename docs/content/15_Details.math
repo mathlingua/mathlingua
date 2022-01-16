@@ -29,6 +29,8 @@ specifically identifies the following:
 * `is` descriptions that are invalid as described below
 * `is` descriptions that are circular as described below
 * using definitions with the wrong number of input parameters
+* concrete concepts used in an abstract setting
+* abstract concepts used in a concrete setting
 * text that does not conform to the MathLingua grammar
 
 ### Invalid `is` Descriptions

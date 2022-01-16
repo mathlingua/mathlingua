@@ -16,6 +16,22 @@ In this section, we`\'`ll build such a collection of
 knowledge from scratch to illustrate how MathLingua can
 be used.
 
+## Prerequisites
+
+To follow this tour, complete the
+[Getting Started](#/content/20_Getting_Started.math)
+section to install the MathLingua tooling.
+
+Use the *getting started from scratch* approach (rather
+than starting from Math Codex) since in this tour we will
+be writing all of our definitions from scratch to show you
+how to do so if your want.
+
+However, when using MathLingua in the future, you can use
+Math Codex as a starting point to save you time writing
+common definitions so you can focus your documents on your
+areas of interest.
+
 ## Text Blocks
 
 Before continuing, this document itself is written in
@@ -261,6 +277,35 @@ $X \times X \times Y$.
 
 Last, if a `-?` was used instead, then any parens around an
 expression will be removed.
+
+Further, notice that the `Defines:` form above has an
+`expresses:` section while the definition
+`\function:on{A}:to{B}` above has a `means:` section.
+
+A `Defines:` with a `means:` section defines an abstract
+concept while one with an `expresses:` defines a
+single concrete object.
+
+Concrete objects can be used in expressions while
+abstract concepts can be used on the right hand side of
+an `is` statement.
+
+That is, it is valid to say
+```
+(X \set.product/ X) + A
+```
+or
+```
+X is \function:on{A}:to{B}
+```
+but it is invalid to say
+```
+\function:on{A}:to{B} + X
+```
+or
+```
+A is X \set.product/ X
+```
 
 Now we define what a binary operation on a set is:
 

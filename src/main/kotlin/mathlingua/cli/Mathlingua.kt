@@ -35,7 +35,7 @@ import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 import mathlingua.getRandomUuid
 
-const val MATHLINGUA_VERSION = "0.15.0"
+const val MATHLINGUA_VERSION = "0.15.1"
 
 object Mathlingua {
     fun check(fs: VirtualFileSystem, logger: Logger, files: List<VirtualFile>, json: Boolean): Int {

@@ -15,7 +15,7 @@ import (
 	"strings"
 )
 
-const MATHLINGUA_VERSION = "0.15.0"
+const MATHLINGUA_VERSION = "0.15.1"
 
 const MLG_NAME = "mlg"
 const NEW_MLG_NAME = "mlg.new"

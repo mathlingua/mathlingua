@@ -3,7 +3,7 @@
 # stop on first error
 set -e
 
-MLG_VERSION="0.15.0"
+MLG_VERSION="0.15.1"
 
 echo "Building release ${MLG_VERSION}"
 

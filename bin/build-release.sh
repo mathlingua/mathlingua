@@ -66,5 +66,20 @@ echo "Updating the documentation's mlg"
 mkdir -p documentation
 cp release/mlg-${MLG_VERSION}-darwin-arm64 documentation/mlg
 
+if command -v codesign &> /dev/null
+then
+  echo "Signing the binary documentation/mlg"
+  codesign -s - documentation/mlg
+
+  for file in $(ls release/mlg-*-darwin-*)
+  do
+    echo "Signing the binary ${file}"
+    codesign -s - ${file}
+  done
+else
+  echo "WARNING: Could not sign the binaries since 'codesign' does not exist."
+  echo "         Build the binaries on a MacOS system to be able to sign the binaries."
+fi
+
 echo "Building the documentation"
 ./bin/build-docs.sh

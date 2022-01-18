@@ -414,12 +414,13 @@ func main() {
 				os.Exit(1)
 			}
 
-			for index, version := range versions {
-				if index == 0 {
-					fmt.Println(version + " (latest)")
-				} else {
-					fmt.Println(version)
-				}
+			for _, version := range versions {
+			    var suffix = ""
+			    if version == MATHLINGUA_VERSION {
+			        suffix += " (current)"
+			    }
+
+				fmt.Println(version + suffix)
 			}
 
 			os.Exit(0)

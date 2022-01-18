@@ -23,10 +23,16 @@ class RenderedComponent extends React.Component<RenderedComponentProps> {
   }
 
   componentDidMount() {
+    // For some reason, on initial page load LaTeX is not rendered.
+    // Calling renderLatex twice is an attempt to address this.
+    renderLatex(this.ref.current);
     renderLatex(this.ref.current);
   }
 
   componentDidUpdate() {
+    // For some reason, on initial page load LaTeX is not rendered.
+    // Calling renderLatex twice is an attempt to address this.
+    renderLatex(this.ref.current);
     renderLatex(this.ref.current);
   }
 

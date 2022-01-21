@@ -2,52 +2,43 @@ package main
 
 import (
 	"bufio"
+	"crypto/md5"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"path"
-	"path/filepath"
-	"runtime"
 	"strings"
 )
 
 const MATHLINGUA_VERSION = "0.15.1"
 
-const MLG_NAME = "mlg"
-const NEW_MLG_NAME = "mlg.new"
+const DOT_MLG_NAME = ".mlg"
 const MATHLINGUA_JAR_NAME = "mathlingua.jar"
+const HASH_FILE_NAME = "hash"
 
-type Release struct {
-	mlgUrl string
-	jarUrl string
-}
-
-func getBinPath() (string, error) {
+func getDotMlgPath() (string, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return "", err
 	}
-	return path.Join(cwd, ".bin"), nil
+	return path.Join(cwd, DOT_MLG_NAME), nil
+}
+
+func getPathWithinDotMlgDir(name string) (string, error) {
+	dotMlgDir, err := getDotMlgPath()
+	if err != nil {
+		return "", err
+	}
+	return path.Join(dotMlgDir, name), nil
 }
 
 func getMathLinguaJarPath() (string, error) {
-	binPath, err := getBinPath()
-	if err != nil {
-		return "", err
-	}
-	return path.Join(binPath, MATHLINGUA_JAR_NAME), nil
-}
-
-func getNewMlgPath() (string, error) {
-	binPath, err := getBinPath()
-	if err != nil {
-		return "", err
-	}
-	return path.Join(binPath, NEW_MLG_NAME), nil
+	return getPathWithinDotMlgDir(MATHLINGUA_JAR_NAME)
 }
 
 func runMathLingua(args []string) (int, error) {
@@ -107,12 +98,14 @@ func getLatestVersion() (string, error) {
 }
 
 // version is either "latest" or of the form "x.x.x"
-func getRelease(version string) (Release, error) {
+// the string returned is the url for the mathlingua.jar file
+// for the given version
+func getRelease(version string) (string, error) {
 	versionString := ""
 	if version == "latest" {
 		latestVersion, err := getLatestVersion()
 		if err != nil {
-			return Release{}, err
+			return "", err
 		}
 		versionString = "-" + latestVersion
 	} else {
@@ -121,48 +114,20 @@ func getRelease(version string) (Release, error) {
 
 	allUrls, err := getAllUrls()
 	if err != nil {
-		return Release{}, err
+		return "", err
 	}
 
-	mlgUrl := ""
 	jarUrl := ""
-
-	osString := "-" + runtime.GOOS
-	archString := "-" + runtime.GOARCH
-
-	// The following, for example, looks for a url that contains
-	// `mlg`, `-darwin`, `-amd64`, and `-0.11.0` to find the URL.
-	//
-	// That way, if, in the future, if the order of the name of
-	// items in a executable name changes, this code will still
-	// be able to identify the URL.
-	//
-	// That is, `mlg-0.11.0-darwin-amd64` and
-	// `mlg-darwin-amd64-0.11.0` will both be identified using the
-	// logic below.
-	//
-	// This provides freedom to change the format of executable
-	// names in the future (to a small degree) if needed.
-
 	for _, url := range allUrls {
-		if mlgUrl == "" &&
-			strings.Contains(url, "mlg") &&
-			strings.Contains(url, osString) &&
-			strings.Contains(url, archString) &&
-			strings.Contains(url, versionString) {
-			mlgUrl = url
-		} else if jarUrl == "" &&
-			strings.Contains(url, "mathlingua") &&
+		if strings.Contains(url, "mathlingua") &&
 			strings.Contains(url, versionString) &&
 			strings.HasSuffix(url, ".jar") {
 			jarUrl = url
+			break
 		}
 	}
 
-	return Release{
-		mlgUrl: mlgUrl,
-		jarUrl: jarUrl,
-	}, nil
+	return jarUrl, nil
 }
 
 func getAllVersions() ([]string, error) {
@@ -261,19 +226,26 @@ func downloadUrl(url string, to string) error {
 	return os.Rename(outPath, to)
 }
 
-func ensureMathLinguaJarExists(programName string, programArgs []string,
-	version string, isUpdating bool) (bool, error) {
-	binDir, err := getBinPath()
+func ensureDirExists(dir string) error {
+	_, err := os.Stat(dir)
+	if os.IsNotExist(err) {
+		err := os.MkdirAll(dir, 0755)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func ensureMathLinguaJarExists(version string, isUpdating bool) (bool, error) {
+	dotMlgDir, err := getDotMlgPath()
 	if err != nil {
 		return false, err
 	}
 
-	_, err = os.Stat(binDir)
-	if os.IsNotExist(err) {
-		err := os.MkdirAll(binDir, 0755)
-		if err != nil {
-			return false, err
-		}
+	err = ensureDirExists(dotMlgDir)
+	if err != nil {
+		return false, err
 	}
 
 	jarfile, err := getMathLinguaJarPath()
@@ -294,12 +266,12 @@ func ensureMathLinguaJarExists(programName string, programArgs []string,
 			fmt.Println("Downloading version " + version + " of MathLingua core...")
 		}
 
-		release, err := getRelease(version)
+		jarUrl, err := getRelease(version)
 		if err != nil {
 			return false, err
 		}
 
-		if release.jarUrl == "" {
+		if jarUrl == "" {
 			if version == "latest" {
 				return false, errors.New("ERROR: Unable to find the latest version of MathLingua")
 			} else {
@@ -308,42 +280,16 @@ func ensureMathLinguaJarExists(programName string, programArgs []string,
 		}
 
 		// download the mathlingua.jar file
-		downloadUrl(release.jarUrl, jarfile)
-
-		// if the user is not running `mlg update`, don't attempt to
-		// replace the mlg script.  We just want to get a jarfile
-		// that aligns with the version of the `mlg` exectuable
-		// the user already has
-		if !isUpdating {
-			return true, nil
-		}
-
-		if release.mlgUrl == "" {
+		err = downloadUrl(jarUrl, jarfile)
+		if err != nil {
 			if version == "latest" {
-				fmt.Println("WARNING: Unable to find the latest version of mlg")
+				return false, errors.New("ERROR: An error occurred downloading the latest version of MathLingua")
 			} else {
-				fmt.Println("WARNING: Unable to find version " + version + " of mlg")
+				return false, errors.New("ERROR: An error occurred downloading version " + version + " of MathLingua")
 			}
 		}
 
-		// if the version of mlg could not be found continue with the
-		// existing version of mlg and run the jarfile.
-		// Note: a warning is still printed above in this case.
-		if release.mlgUrl == "" {
-			return true, nil
-		}
-
-		// otherwise, the version of mlg could be found, so install it
-		newMlgPath, err := getNewMlgPath()
-		if err != nil {
-			return false, err
-		}
-
-		downloadUrl(release.mlgUrl, newMlgPath)
-		os.Chmod(newMlgPath, 0755)
-
-		_, err = runCommand(newMlgPath, programArgs)
-		return false, err
+		return true, nil
 	}
 
 	return true, nil
@@ -366,25 +312,126 @@ func copy(src, dest string) error {
 	return err
 }
 
-func main() {
-	programName := filepath.Base(os.Args[0])
+func storeHashValue(path, hash string) error {
+	file, err := os.Create(path)
+	if err != nil {
+		return err
+	}
 
-	newMlgPath, err := getNewMlgPath()
+	defer file.Close()
+
+	_, err = file.WriteString(hash)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func loadHashValue(path string) (string, error) {
+	if _, err := os.Stat(path); errors.Is(err, os.ErrNotExist) {
+		return "", nil
+	}
+
+	content, err := ioutil.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+
+	return string(content), nil
+}
+
+func getFileHash(path string) (string, error) {
+	file, err := os.Open(path)
+	if err != nil {
+		return "", err
+	}
+
+	defer file.Close()
+
+	hash := md5.New()
+	_, err = io.Copy(hash, file)
+
+	if err != nil {
+		return "", err
+	}
+
+	result := fmt.Sprintf("%x", hash.Sum(nil))
+	return result, nil
+}
+
+func deleteFile(path string) error {
+	err := os.Remove(path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return nil
+		} else {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func main() {
+	programPath := os.Args[0]
+
+	dotMlgDir, err := getDotMlgPath()
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
 
-	if programName == NEW_MLG_NAME {
-		copy(newMlgPath, MLG_NAME)
-	} else {
-		_, err := os.Stat(newMlgPath)
-		if err == nil {
-			os.Remove(newMlgPath)
+	err = ensureDirExists(dotMlgDir)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	mathlinguaJarFile, err := getMathLinguaJarPath()
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	programHash, err := getFileHash(programPath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	hashFile, err := getPathWithinDotMlgDir(HASH_FILE_NAME)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	storedHash, err := loadHashValue(hashFile)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	if programHash != storedHash {
+		// This occurs if the user has downloaded a new mlg binary file.
+		// Thus, in this case, delete the hash and mathlingua.jar files
+		// so the jar file for the new mlg file is downloaded.
+
+		err := deleteFile(hashFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
+		err = deleteFile(mathlinguaJarFile)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
 		}
 	}
 
 	args := os.Args[1:]
+
 	// when mlg is initially run, it will download version MATHLINGUA_VERSION
 	version := MATHLINGUA_VERSION
 	isUpdating := false
@@ -392,9 +439,9 @@ func main() {
 		if args[0] == "update" {
 			isUpdating = true
 
-			// remove the .bin directory so that the specified
+			// remove the DOT_MLG_NAME directory so that the specified
 			// version or the latest version is downloaded
-			os.RemoveAll(".bin")
+			os.RemoveAll(DOT_MLG_NAME)
 
 			if len(args) >= 2 {
 				// use the version given if specified
@@ -415,24 +462,22 @@ func main() {
 			}
 
 			for _, version := range versions {
-			    var suffix = ""
-			    if version == MATHLINGUA_VERSION {
-			        suffix += " (current)"
-			    }
-
-				fmt.Println(version + suffix)
+				fmt.Println(version)
 			}
 
 			os.Exit(0)
 		}
 	}
 
-	programArgs := args
-	if isUpdating {
-		programArgs = []string{"version"}
+	runJarFile, err := ensureMathLinguaJarExists(version, isUpdating)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
 
-	runJarFile, err := ensureMathLinguaJarExists(programName, programArgs, version, isUpdating)
+	// Store the hash of the mlg file so that on the next run of mlg the
+	// mathlingua.jar file doesn't get downloaded again.
+	err = storeHashValue(hashFile, programHash)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
@@ -440,6 +485,11 @@ func main() {
 
 	if !runJarFile {
 		os.Exit(0)
+	}
+
+	programArgs := args
+	if isUpdating {
+		programArgs = []string{"version"}
 	}
 
 	exitCode, err := runMathLingua(programArgs)

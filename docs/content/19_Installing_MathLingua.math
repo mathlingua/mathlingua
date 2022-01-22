@@ -1,46 +1,44 @@
 ::
 # Installing MathLingua
 
-To author MathLingua documents, you will need to install the
-MathLingua command line tool `mlg` as well as a Java Runtime
-Environment version 8 or higher.  Mac OS, Linux, and Windows
-platforms are all supported.
+To author MathLingua documents, you need to install `mlg`,
+the MathLingua command line tool, and have a Java Runtime
+Environment (version 8 or higher) on your computer.
 
-See the [Java documentation](https://www.oracle.com/java/technologies/downloads/)
-for instructions on how to install a Java Runtime Environment
-on your system.
+To install `mlg`, simply download the latest release for
+your particular computer from the
+[MathLingua releases page](https://github.com/DominicKramer/mathlingua/releases).
 
-To install the MathLingua command line tool `mlg`, simply
-download the latest release for your particular computer
-from the MathLingua [releases page](https://github.com/DominicKramer/mathlingua/releases).
-
-For example, for a 64-bit computer running OS X download
+For example, for a 64-bit computer running MacOS, download
 ```
 mlg-<version>-darwin-amd64
 ```
 
 Next, save that executable file to the directory where
-you want to write your MathLingua documents.  You can rename
-the executable to `mlg` (or `mlg.exe` on Windows) to make it
-easier to use.
+you want to write your MathLingua documents and make the
+file executable on MacOS and Linux systems, for example
+using,
 
-## MacOS Problems and Solutions
+```
+chomd +x <downloaded mlg file>
+```
 
-On MacOS, running the `mlg` command may cause a popup window
-to appear stating that the app cannot be verified or, when
-running `mlg` in the command prompt, it will be immediately
-closed with a message saying it was `killed`.
+**Note:** You can rename the executable to `mlg` (or `mlg.exe`
+on Windows) to make it easier to use.
 
-This occurs because `mlg` is not notorized by Apple.  To use
-`mlg` follow the "If you want to open an app that hasn`\'`t
-been notarized or is from an unidentified developer" section in
-[Safely open apps on your Mac](https://support.apple.com/en-us/HT202491).
+Next, see the [Java documentation](https://www.oracle.com/java/technologies/downloads/)
+for instructions on how to install a Java Runtime Environment.
 
-**Note:** If running `mlg` causes it to immediately close with
-a message saying it was `killed` after trying the steps above,
-you may need to restart your computer.
+## Using `mlg` in a Git Repository
 
-If you want to inspect `mlg` before using it, the full source
-code for it and the MathLingua language is open source and can
-be found on [GitHub](https://github.com/DominicKramer/mathlingua).
+If the `mlg` file downloaded above is stored in a Git
+repository, add `.mlg` to the repository's `.gitignore`
+file.
+
+This is needed because the `.mlg` directory is a location
+where `mlg` stores files it needs to run, but those files
+should not be stored in version control.
+
+For other version control systems, use the appropriate
+method for that system to ignore the `.mlg` directory.
 ::

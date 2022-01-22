@@ -65,6 +65,10 @@ chmod +x release/*
 
 ./bin/build-assets.sh
 
+echo "Updating the documentation's mlg"
+mkdir -p documentation
+cp release/mlg-${MLG_VERSION}-darwin-arm64 documentation/mlg
+
 # sign the MacOS binaries if possible and notarize them if
 # the --notarize option is specified
 if command -v codesign &> /dev/null
@@ -113,6 +117,9 @@ then
     echo "             -u ${MLG_DEV_APPLE_EMAIL} \\"
     echo "             -p \"@keychain:altool\""
   else
+    echo "Ad-hoc signing the binary documentation/mlg"
+    codesign -s - documentation/mlg
+
     for file in $(ls release/mlg-*-darwin-*)
     do
       echo "Ad-hoc signing the binary ${file}"
@@ -123,10 +130,6 @@ else
   echo "WARNING: Could not sign the binaries since 'codesign' does not exist."
   echo "         Build the binaries on a MacOS system to be able to sign the binaries."
 fi
-
-echo "Updating the documentation's mlg"
-mkdir -p documentation
-cp release/mlg-${MLG_VERSION}-darwin-arm64 documentation/mlg
 
 echo "Building the documentation"
 ./bin/build-docs.sh

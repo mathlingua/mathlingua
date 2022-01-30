@@ -81,6 +81,7 @@ Document(
                )
                givenSection = null
                whenSection = null
+               extendingSection = null
                meansSection = MeansSection(
                  clauses = ClauseListNode(
                    clauses = [

@@ -62,6 +62,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.ExtendingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
@@ -430,6 +431,8 @@ internal val DEFAULT_CONJECTURE_SECTION = ConjectureSection(names = emptyList())
 
 internal val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
+internal val DEFAULT_EXTENDING_SECTION = ExtendingSection(isStatement = DEFAULT_STATEMENT)
+
 internal val DEFAULT_PROOF_SECTION = ProofSection(text = "")
 
 internal val DEFAULT_IF_OR_IFF_SECTION = newIfOrIffSection(DEFAULT_IF_SECTION)
@@ -571,6 +574,7 @@ internal val DEFAULT_DEFINES_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
+        extendingSection = DEFAULT_EXTENDING_SECTION,
         meansSection = DEFAULT_MEANS_SECTION,
         expressesSection = DEFAULT_EXPRESSED_SECTION,
         viewingSection = DEFAULT_VIEWING_SECTION,

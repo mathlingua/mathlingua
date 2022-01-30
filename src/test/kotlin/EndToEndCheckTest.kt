@@ -1829,7 +1829,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors of duplicate base types when duplicate base types exist`() {
+    fun `check reports errors of duplicate base types when duplicate base types exist not including extending`() {
         runCheckTest(
             files =
                 listOf(
@@ -1868,6 +1868,56 @@ internal class EndToEndCheckTest {
                 {\something}, {\something.else}
 
                 ERROR: content/file1.math (Line: 19, Column: 3)
+                'X' has more than one base type: {\something, \something.else}
+                Found type paths:
+                {\something}, {\something.else}
+
+                FAILED
+                Processed 1 file
+                2 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 2)
+    }
+
+    @Test
+    fun `check reports errors of duplicate base types when duplicate base types exist including extending`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something]
+                    Defines: X
+                    means: "something"
+                    written: "something"
+                    called: "something"
+
+
+                    [\something.else]
+                    Defines: X
+                    means: "something else"
+                    written: "something else"
+                    called: "something else"
+
+
+                    [\f{x}]
+                    Defines: X
+                    extending: 'X is \something'
+                    means: 'X is \something.else'
+                    written: "f"
+                    called: "f"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 17, Column: 12)
+                'X' has more than one base type: {\something, \something.else}
+                Found type paths:
+                {\something}, {\something.else}
+
+                ERROR: content/file1.math (Line: 18, Column: 8)
                 'X' has more than one base type: {\something, \something.else}
                 Found type paths:
                 {\something}, {\something.else}

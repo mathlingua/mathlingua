@@ -1279,6 +1279,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     definesSection = DefinesSection(targets = emptyList()),
                     givenSection = null,
                     whenSection = null,
+                    extendingSection = null,
                     meansSection = MeansSection(clauses = ClauseListNode(clauses = emptyList())),
                     expressesSection = null,
                     viewingSection = null,
@@ -1707,6 +1708,7 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                                 definesSection = DefinesSection(targets = emptyList()),
                                 givenSection = null,
                                 whenSection = null,
+                                extendingSection = null,
                                 meansSection =
                                     MeansSection(clauses = ClauseListNode(clauses = emptyList())),
                                 expressesSection = null,

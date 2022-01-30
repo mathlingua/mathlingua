@@ -35,8 +35,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.ExtendingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateExtendingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateViewingSection
@@ -70,6 +72,7 @@ internal data class DefinesGroup(
     val definesSection: DefinesSection,
     val givenSection: GivenSection?,
     val whenSection: WhenSection?,
+    val extendingSection: ExtendingSection?,
     val meansSection: MeansSection?,
     val expressesSection: ExpressesSection?,
     val viewingSection: ViewingSection?,
@@ -87,6 +90,9 @@ internal data class DefinesGroup(
         }
         if (whenSection != null) {
             fn(whenSection)
+        }
+        if (extendingSection != null) {
+            fn(extendingSection)
         }
         if (meansSection != null) {
             fn(meansSection)
@@ -115,6 +121,7 @@ internal data class DefinesGroup(
                 definesSection,
                 givenSection,
                 whenSection,
+                extendingSection,
                 meansSection,
                 expressesSection,
                 viewingSection,
@@ -139,6 +146,8 @@ internal data class DefinesGroup(
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                extendingSection =
+                    extendingSection?.transform(chalkTransformer) as ExtendingSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
                 expressesSection =
                     expressesSection?.transform(chalkTransformer) as ExpressesSection?,
@@ -164,6 +173,7 @@ internal fun validateDefinesGroup(
                     "Defines",
                     "given?",
                     "when?",
+                    "extending?",
                     "means?",
                     "expresses?",
                     "viewing?",
@@ -187,6 +197,10 @@ internal fun validateDefinesGroup(
                         whenSection =
                             ifNonNull(sections["when"]) {
                                 validateWhenSection(it, errors, tracker)
+                            },
+                        extendingSection =
+                            ifNonNull(sections["extending"]) {
+                                validateExtendingSection(it, errors, tracker)
                             },
                         meansSection =
                             ifNonNull(sections["means"]) {

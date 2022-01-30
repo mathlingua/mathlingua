@@ -21,5 +21,5 @@ rm -f build/releases/*.jar
 cp build/releases/*.jar release
 
 echo "Updating the documentation's mathlingua.jar"
-mkdir -p documentation/.bin
-cp build/releases/*.jar documentation/.bin/mathlingua.jar
+mkdir -p documentation/.mlg
+cp build/releases/*.jar documentation/.mlg/mathlingua.jar

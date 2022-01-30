@@ -37,6 +37,10 @@ echo "Removing old release"
 rm -Rf release
 mkdir -p release
 
+rm -f documentation/mlg
+rm -Rf documentation/.mlg
+rm -Rf documentation/.bin
+
 echo "Building the launcher"
 cd mlg
 
@@ -132,4 +136,9 @@ else
 fi
 
 echo "Building the documentation"
+# Store the md5 hash of the new mlg executable in the documentation/.mlg/hash file
+# without line terminators.  Otherwise, when mlg is run, it will think it needs to
+# download the latest published version, and thus the dev version won't be used.
+mkdir -p documentation/.mlg
+md5 documentation/mlg | sed 's|MD5 (documentation/mlg) = ||' | tr -d '\n\r' > documentation/.mlg/hash
 ./bin/build-docs.sh

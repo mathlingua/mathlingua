@@ -93,8 +93,8 @@ when:
 then:
 . '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
 using:
-. 'x - y := x \real.-/ y'
-. 'x < y := x \real.lt/ y'
+. '(+, -, *, /) := \real.arithmetic'
+. '(<, <=, >, >=) := \real.orderings'
 
 
 ::
@@ -113,8 +113,8 @@ when:
 then:
 . '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
 using:
-. 'x - y := x \real.-/ y'
-. 'x < y := x \real.lt/ y'
+. '(+, -, *, /) := \real.arithmetic'
+. '(<, <=, >, >=) := \real.orderings'
 ```
 
 Note that MathLingua provides a clear syntax that is as

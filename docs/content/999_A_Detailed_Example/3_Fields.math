@@ -20,8 +20,8 @@ section to one where the operation of the group is
 
 [\abelian.group]
 Defines: G := (X, *, e)
+extending: 'G is \group'
 means:
-. 'G is \group'
 . forAll: x, y
   suchThat: 'x, y in X'
   then: 'x * y = y * x'
@@ -43,8 +43,8 @@ exluding the additive identity $0$, is an Abelian group.
 [A \set.minus/ B]
 Defines: C := {c}
 when: 'A, B is \set'
+extending: 'C is \set'
 expresses:
-. 'C is \set'
 . 'c in A'
 . not: 'c in B'
 written: "A? \backslash B?"
@@ -66,8 +66,8 @@ multiplicative inverse, namely $1/x$.
 
 [\field]
 Defines: F := (X, +, *, 0, 1)
+extending: '(X, +, 0) is \abelian.group'
 means:
-. '(X, +, 0) is \abelian.group'
 . '(X \set.minus/ 0, *, 1) is \abelian.group'
 . forAll: x, y, z
   suchThat: 'x, y, z in X'
@@ -92,6 +92,7 @@ given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x in X'
+extending: 'y in F'
 expresses:
 . 'x + y = 0'
 written: "-x?"
@@ -104,6 +105,7 @@ given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x, y in X'
+extending: 'f is \binary.operation:on{F}'
 expresses:
 . 'f(x, y) := x + \additive.inverse:of{y}:inField{F}'
 written: "x+? - y+?"
@@ -131,6 +133,7 @@ when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x in X'
 . 'x \neq/ 0'
+extending: 'y in F'
 expresses:
 . 'x * y = 1'
 written: "x+?^{-1}"
@@ -143,6 +146,7 @@ given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x, y in X'
+extending: 'f is \binary.operation:on{F}'
 expresses:
 . 'f(x, y) := x * \multiplicative.inverse:of{y}:inField{F}'
 written: "x? y+?^{-1}"
@@ -162,8 +166,8 @@ $x < y$ for two real numbers $x$ and $y$.
 
 [\ordered.field]
 Defines: F := (X, +, *, 0, 1, <)
+extending: '(X, +, *, 0, 1) is \field'
 means:
-. '(X, +, *, 0, 1) is \field'
 . forAll: x, y, z
   suchThat: 'x, y, z in X'
   then:
@@ -207,6 +211,7 @@ any real number $x$.
 Defines: x
 given: (X, +, *, 0, 1, <)
 when: 'F := (X, +, *, 0, 1, <) is \ordered.field'
+extending: 'x in F'
 means:
 . '0 < x'
 written: "\textrm{Positive}"

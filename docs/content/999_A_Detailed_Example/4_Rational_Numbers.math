@@ -11,8 +11,8 @@ Before continuing, we need to define "set builder notation".
 
 [\set[x...]:where{within}:suchThat{cond}...]
 Defines: Y := {y...}
+extending: 'Y is \set'
 expresses:
-. 'Y is \set'
 . 'y... := x...'
 written:
 . "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"
@@ -33,6 +33,7 @@ existence.  As such we describe them informally.
 
 [\integers.set]
 Defines: N
+extending: 'N is \set'
 expresses:
 . "The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$} "
 viewing:
@@ -66,6 +67,7 @@ and so we simply state their existence below.
 
 [x \integers.+/ y]
 Defines: z
+extending: 'z is \integer'
 expresses: "The addition of two integers"
 written: "x+? + y+?"
 called: "Integer Addition"
@@ -73,6 +75,7 @@ called: "Integer Addition"
 
 [x \integers.-/ y]
 Defines: z
+extending: 'z is \integer'
 expresses: "The difference of two integers"
 written: "x+? - y+?"
 called: "Integer Subtraction"
@@ -80,6 +83,7 @@ called: "Integer Subtraction"
 
 [x \integers.*/ y]
 Defines: z
+extending: 'z is \integer'
 expresses: "The product of two integers"
 written: "x+? y+?"
 called: "Integer Multiplication"
@@ -123,6 +127,7 @@ denominator.
 
 [\rationals.set]
 Defines: Q
+extending: 'Q is \set'
 expresses: 'Q := \set[x, p, q]:where{x := (p, q)}
                               :suchThat{p in \integers.set}
                                        {q in \integers.set}'
@@ -147,9 +152,8 @@ as the product of $a$ and the multiplicative inverse of $b$
 
 [\Rational{a, b}]
 Defines: x
-expresses:
-. 'x in \rationals.set'
-. 'x := (a, b)'
+extending: 'x in \rationals.set'
+expresses: 'x := (a, b)'
 written: "\frac{a?}{b?}"
 called: "Rational"
 
@@ -167,6 +171,7 @@ given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
+extending: 'z is \integer'
 expresses:
 . 'z := \Rational{p1 * q2 + p2*q1, q1 * q2}'
 using:
@@ -182,6 +187,7 @@ given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
+extending: 'z is \integer'
 expresses:
 . 'z := \Rational{p1 * p2, q1 * q2}'
 using:
@@ -204,8 +210,8 @@ above becomes a field.
 
 [\rationals.field]
 Defines: Q := (X, +, *, 0, 1)
+extending: 'Q is \field'
 means:
-. 'Q is \field'
 . 'X := \rationals.set'
 . 'x + y := x \rational.+/ y'
 . 'x * y := x \rational.*/ y'
@@ -239,8 +245,7 @@ the set of rational numbers is an ordered set.
 
 [\rationals.ordered.set]
 Defines: Q := (X, <)
-means:
-. 'X := \rationals.set'
-. 'x < y := x \rational.lt/ y'
+extending: 'X := \rationals.set'
+means: 'x < y := x \rational.lt/ y'
 written: "\mathbb{Q}"
 called: "Rationals as an Ordered Set"

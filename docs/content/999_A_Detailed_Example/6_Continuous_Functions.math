@@ -16,8 +16,8 @@ close two real numbers are.
 
 [\real.abs(x)]
 Defines: f(x)
+extending: 'f(x) is \function:on{\real.numbers}:to{\real.numbers}'
 expresses:
-. 'f(x) is \function:on{\real.numbers}:to{\real.numbers}'
 . piecewise:
   when: 'x is \positive:within{\real.numbers}'
   then: 'f(x) := x'
@@ -46,6 +46,7 @@ we won`\'`t be discussing such intervals here.
 
 [\open.interval{a, b}]
 Defines: I
+extending: 'I is \set'
 expresses:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.lt/ x}
@@ -56,6 +57,7 @@ called: "The Open Interval from $a?$ to $b?$"
 
 [\closed.interval{a, b}]
 Defines: I
+extending: 'I is \set'
 expresses:
 . 'I := \set[x]:where{x in \real.numbers}
                :suchThat{a \real.leq/ x}
@@ -88,8 +90,8 @@ given: a, b
 when:
 . 'I := \open.interval{a, b}'
 . 'c in I'
+extending: 'f is \function:on{I}:to{R}'
 means:
-. 'f is \function:on{I}:to{R}'
 . 'f(c) = \function.limit[x]_{c}{f(x)}'
 using:
 . 'R := \real.numbers'
@@ -108,9 +110,12 @@ Defines: f(x)
 given: a, b
 when:
 . 'I := \open.interval{a, b}'
+extending: 'f is \function:on{I}:to{R}'
 means:
 . forAll: c
   suchThat: 'c in I'
   then: 'f is \continuous.function:on{I}:at{c}'
+using:
+. 'R := \real.numbers'
 written: "\textrm{Continuous Function on } I?"
 

@@ -13,6 +13,7 @@ operation defined next.
 [\binary.relation:on{A}]
 Defines: R
 when: 'A is \set'
+extending: 'R is \set'
 means: 'R \subset/ {A \set.product/ A}'
 written: "\textrm{Binary Relation on } A?"
 Metadata:
@@ -57,8 +58,8 @@ number system will turn out to be an ordered set.
 
 [\ordered.set]
 Defines: (S, <)
+extending: 'S is \set'
 means:
-. 'S is \set'
 . '< is \binary.relation:on{S}'
 . forAll: x, y
   suchThat: 'x, y in S'
@@ -151,6 +152,7 @@ given: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
+extending: 'b in X'
 means:
 . forAll: x
   suchThat: 'x in E'
@@ -166,8 +168,8 @@ Any ordered set that has an upper bound is said to be
 
 [\bounded.above.set]
 Defines: X := (E, <)
+extending: 'X is \ordered.set'
 means:
-. 'X is \ordered.set'
 . exists: b
   suchThat:
   . 'b is \upper.bound:of{X}'
@@ -188,8 +190,8 @@ the maximum of a set.
 [\supremum:of{X}]
 Defines: beta
 when: 'X is \bounded.above.set'
+extending: 'beta is \upper.bound:of{X}'
 expresses:
-. 'beta is \upper.bound:of{X}'
 . forAll: b
   suchThat: 'b is \upper.bound:of{X}'
   then: 'b \geq{X}/ beta'
@@ -210,6 +212,7 @@ given: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
+extending: 'b in X'
 means:
 . forAll: x
   suchThat: 'x in E'
@@ -224,8 +227,8 @@ Any set with a lower bound is said to be *bounded below*.
 
 [\bounded.below.set]
 Defines: X := (E, <)
+extending: 'X is \ordered.set'
 means:
-. 'X is \ordered.set'
 . exists: b
   suchThat:
   . 'b is \lower.bound:of{X}'
@@ -246,8 +249,8 @@ the minimum of a set.
 [\infimum:of{X}]
 Defines: alpha
 when: 'X is \bounded.above.set'
+extending: 'alpha is \lower.bound:of{X}'
 expresses:
-. 'alpha is \lower.bound:of{X}'
 . forAll: a
   suchThat: 'a is \lower.bound:of{X}'
   then: 'a \leq{X}/ alpha'
@@ -267,8 +270,8 @@ a set to be empty or non-empty.
 
 [\empty.set]
 Defines: X
+extending: 'X is \set'
 expresses:
-. 'X is \set'
 . not:
   . exists: x
     suchThat:
@@ -278,8 +281,8 @@ written: "\textrm{Empty Set}"
 
 [\nonempty.set]
 Defines: X
+extending: 'X is \set'
 means:
-. 'X is \set'
 . not: 'X := \empty.set'
 written: "\textrm{Non-Empty Set}"
 
@@ -292,8 +295,8 @@ as follows:
 
 [\least.upper.bound.property.set]
 Defines: X := (S, <)
+extending: 'X is \ordered.set'
 means:
-. 'X is \ordered.set'
 . forAll: E
   suchThat:
   . 'E is \nonempty.set'

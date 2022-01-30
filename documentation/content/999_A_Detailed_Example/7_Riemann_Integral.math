@@ -17,6 +17,7 @@ bounded functions.
 Defines: f(x)
 given: a, b
 when: 'I := \closed.interval{a, b}'
+extending: 'f is \function:on{I}:to{R}'
 means:
 . 'f is \function:on{I}:to{\real.numbers}'
 . exists: M
@@ -25,6 +26,7 @@ means:
   . forAll: t
     suchThat: 't in I'
     then: '\real.abs(f(t)) \real.leq/ M'
+using: 'R := \real.numbers'
 written: "\textrm{Bounded Real Function on } I?"
 
 
@@ -64,8 +66,7 @@ a *partition* of a closed interval.
 [\partition:of{I}:size{n}]
 Defines: X := {x_{i}}_{i}
 given: a, b
-when:
-. 'I := \closed.interval{a, b}'
+when: 'I := \closed.interval{a, b}'
 means:
 . 'X is \finite.real.sequence:size{n}'
 . 'x_{0} = a'
@@ -105,6 +106,7 @@ when:
   . 'j \integers.leq/ b'
   then:
   . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
+extending: 'L is \real'
 expresses:
 . 'L := S(b)'
 written: "\displaystyle \sum_{i? = a?}^{b?} f?"
@@ -129,6 +131,7 @@ when:
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
+extending: 'L is \real'
 expresses:
 . 'L := \infimum:of{\set[x]:where{f(x)}
                            :suchThat{x \real.geq/ x_{i - 1}}
@@ -156,6 +159,7 @@ when:
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
+extending: 'L is \real'
 expresses:
 . 'L := \supremum:of{\set[x]:where{f(x)}
                             :suchThat{x \real.geq/ x_{i - 1}}
@@ -183,6 +187,7 @@ when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+extending: 'S is \real'
 expresses:
 . 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
@@ -206,6 +211,7 @@ when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+extending: 'S is \real'
 expresses:
 . 'S := \finite.sum[i]_{0}^{n}{M_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
@@ -232,6 +238,7 @@ given: I
 when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
+extending: 'S is \real'
 expresses:
 . 'S := \supremum:of{\set[P, n]:where{L(f, P)}
                                :suchThat{P is \partition:of{I}:size{n}}}'
@@ -247,6 +254,7 @@ given: I
 when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
+extending: 'S is \real'
 expresses:
 . 'S := \infimum:of{\set[P, n]:where{U(f, P)}
                               :suchThat{P is \partition:of{I}:size{n}}}'
@@ -270,9 +278,11 @@ same number.
 
 [\riemann.integralble.function:on{a, b}]
 Defines: f(x)
+extending: 'f is \function:on{R}:to{R}'
 means:
 . '\lower.darboux.integral:of{f}:on{a, b} =
    \upper.darboux.integral:of{f}:on{a, b}'
+using: 'R := \real.numbers'
 written: "\textrm{Riemann integrable Function on } [a?, b?]"
 called: "Riemann Integrable Function on $[a?, b?]$"
 
@@ -288,8 +298,8 @@ Riemann Integrable.
 
 [\definite.integral[x]_{a}^{b}:of{f}]
 Defines: S
-when:
-. 'f is \riemann.integralble.function:on{a, b}'
+when: 'f is \riemann.integralble.function:on{a, b}'
+extending: 'S is \real'
 expresses:
 . 'S := \lower.darboux.integral:of{f}:on{a, b}'
 written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
@@ -316,11 +326,13 @@ given: a, b
 when:
 . 'I := \open.interval{a, b}'
 . 'f is \function:on{I}:to{\real.numbers}'
+extending: 'F(x) is \function:on{I}:to{R}'
 means:
 . forAll: t
   suchThat: 't in I'
   then:
   . '\derivative:of{F}:at{t} = f(t)'
+using: 'R := \real.numbers'
 written: "\textrm{Indefinite Integral of } f? \textrm{ on } A?"
 called: "Indefinite Integral of $f?$ on $A?$"
 

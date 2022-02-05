@@ -46,10 +46,11 @@ internal val COMPLETIONS =
                 CompletionItem(name = "not", value = "not:"),
                 CompletionItem(name = "or", value = "or:"),
                 CompletionItem(name = "piecewise", value = "piecewise:"),
+                CompletionItem(name = "generated", value = "generated:\nfrom:\nwhen?:"),
                 CompletionItem(
                     name = "Defines:",
                     value =
-                        "Defines:\ngiven?:\nwhen?:\nmeans:\nevaluated?:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
+                        "Defines:\ngiven?:\nwhen?:\nextending?:\nmeans:\nexpresses:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
                 ),
                 CompletionItem(
                     name = "States",

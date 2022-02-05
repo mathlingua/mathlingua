@@ -27,6 +27,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.and.AndGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrGroup
@@ -57,7 +58,8 @@ internal data class MeansSection(val clauses: ClauseListNode) : Phase2Node {
             clauses.clauses[0] !is AndGroup &&
             clauses.clauses[0] !is OrGroup &&
             clauses.clauses[0] !is PiecewiseGroup &&
-            clauses.clauses[0] !is NotGroup) {
+            clauses.clauses[0] !is NotGroup &&
+            clauses.clauses[0] !is GeneratedGroup) {
             writer.append(clauses.clauses[0], false, 1)
         } else {
             if (clauses.clauses.isNotEmpty()) {

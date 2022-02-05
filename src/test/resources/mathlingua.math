@@ -122,6 +122,45 @@ written: "\textrm{semigroup}"
 called: "semigroup"
 
 
+[\x]
+Defines: x
+extending: 'x is \set'
+means: "something"
+written: "x"
+
+
+[\y]
+Defines: (y, z, w)
+extending:
+. '(y, z) is \set'
+. '(y, w) is \set'
+. '(z, w) is \set'
+means: "something"
+written: "y"
+
+
+[\nat]
+Defines: n
+means:
+. generated:
+  from:
+  . 0
+  . succ(n)
+written: "nat"
+
+
+[\nat2]
+Defines: n
+means:
+. generated:
+  from:
+  . 0
+  . succ(n)
+  when:
+  . 'n is \nat2'
+written: "nat2"
+
+
 [\some.thing{A}:on{B}:to{C}]
 States:
 when: 'A, B, C is \something'

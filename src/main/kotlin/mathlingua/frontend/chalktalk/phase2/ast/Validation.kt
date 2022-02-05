@@ -53,6 +53,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.Exists
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedFromSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotGroup
@@ -431,7 +434,7 @@ internal val DEFAULT_CONJECTURE_SECTION = ConjectureSection(names = emptyList())
 
 internal val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
-internal val DEFAULT_EXTENDING_SECTION = ExtendingSection(isStatement = DEFAULT_STATEMENT)
+internal val DEFAULT_EXTENDING_SECTION = ExtendingSection(statements = emptyList())
 
 internal val DEFAULT_PROOF_SECTION = ProofSection(text = "")
 
@@ -582,3 +585,13 @@ internal val DEFAULT_DEFINES_GROUP =
         writtenSection = DEFAULT_WRITTEN_SECTION,
         calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION)
+
+internal val DEFAULT_GENERATED_SECTION = GeneratedSection()
+
+internal val DEFAULT_GENERATED_FROM_SECTION = GeneratedFromSection(forms = emptyList())
+
+internal val DEFAULT_GENERATED_GROUP =
+    GeneratedGroup(
+        generatedSection = DEFAULT_GENERATED_SECTION,
+        generatedFromSection = DEFAULT_GENERATED_FROM_SECTION,
+        whenSection = DEFAULT_WHEN_SECTION)

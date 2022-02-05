@@ -35,6 +35,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.isExis
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.validateExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.isForGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.validateForGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.isGeneratedGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.validateGeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.isIffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.validateIffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.isNotGroup
@@ -142,7 +144,8 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isMembershipGroup, ::validateMembershipGroup),
         ValidationPair(::isViewingAsGroup, ::validateViewingAsGroup),
         ValidationPair(::isEqualityGroup, ::validateEqualityGroup),
-        ValidationPair(::isHaveGroup, ::validateHaveGroup))
+        ValidationPair(::isHaveGroup, ::validateHaveGroup),
+        ValidationPair(::isGeneratedGroup, ::validateGeneratedGroup))
 
 internal fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

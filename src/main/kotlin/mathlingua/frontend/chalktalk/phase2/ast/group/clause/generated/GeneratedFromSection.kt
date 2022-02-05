@@ -30,7 +30,9 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class GeneratedFromSection(val forms: List<AbstractionNode>) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) = forms.forEach(fn)
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        forms.forEach(fn)
+    }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)

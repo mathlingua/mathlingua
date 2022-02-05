@@ -32,6 +32,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
@@ -515,6 +516,21 @@ private fun checkVarsImplPhase2Node(
                 vars.add(v)
             }
             varsToRemove.addAll(forAllVars)
+        }
+        is GeneratedGroup -> {
+            val fromVars =
+                node.generatedFromSection.forms.map { getVarsPhase2Node(node = it) }.flatten()
+            for (v in fromVars) {
+                if (vars.hasConflict(v)) {
+                    errors.add(
+                        ParseError(
+                            message = "Duplicate defined symbol '$v' in `from:`",
+                            row = location.row,
+                            column = location.column))
+                }
+                vars.add(v)
+            }
+            varsToRemove.addAll(fromVars)
         }
         is EqualityGroup -> {
             val betweenVars =

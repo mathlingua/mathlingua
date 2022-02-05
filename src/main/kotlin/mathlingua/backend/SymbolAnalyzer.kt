@@ -266,7 +266,7 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature
             signatureMap[startSignature]!!.isNotEmpty()) {
             for (subSignature in signatureMap[startSignature]!!) {
                 if (path.contains(subSignature)) {
-                    throw RuntimeException("Type cycle detected")
+                    throw RuntimeException("Type cycle detected for signature $subSignature")
                 }
                 getTypePathsImpl(subSignature, path, result)
             }

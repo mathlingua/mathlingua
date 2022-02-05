@@ -58,6 +58,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.Generated
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.MatchingGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.MatchingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.WithSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrGroup
@@ -595,3 +598,10 @@ internal val DEFAULT_GENERATED_GROUP =
         generatedSection = DEFAULT_GENERATED_SECTION,
         generatedFromSection = DEFAULT_GENERATED_FROM_SECTION,
         whenSection = DEFAULT_WHEN_SECTION)
+
+internal val DEFAULT_WITH_SECTION = WithSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+
+internal val DEFAULT_MATCHING_SECTION = MatchingSection(targets = emptyList())
+
+internal val DEFAULT_MATCHING_GROUP =
+    MatchingGroup(matchingSection = DEFAULT_MATCHING_SECTION, withSection = DEFAULT_WITH_SECTION)

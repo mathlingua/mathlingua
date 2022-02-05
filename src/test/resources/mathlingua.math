@@ -161,6 +161,15 @@ means:
 written: "nat2"
 
 
+[\z]
+Defines: f(x)
+expresses:
+. matching: n
+  with:
+  . 'f(n) := 0'
+written: "f(x)"
+
+
 [\some.thing{A}:on{B}:to{C}]
 States:
 when: 'A, B, C is \something'

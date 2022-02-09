@@ -49,6 +49,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.isTheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateTheoremGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.SpecifyGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.isSpecifyGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.validateSpecifyGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.isTopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.validateTopicGroup
@@ -71,6 +74,7 @@ internal data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
     fun resources() = groups.filterIsInstance<ResourceGroup>()
     fun topics() = groups.filterIsInstance<TopicGroup>()
     fun notes() = groups.filterIsInstance<NoteGroup>()
+    fun specifies() = groups.filterIsInstance<SpecifyGroup>()
     fun blockComments() = groups.filterIsInstance<TopLevelBlockComment>()
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -129,6 +133,9 @@ internal fun validateDocument(
             }
             isResourceGroup(group) -> {
                 allGroups.add(validateResourceGroup(group, errors, tracker))
+            }
+            isSpecifyGroup(group) -> {
+                allGroups.add(validateSpecifyGroup(group, errors, tracker))
             }
             isBlockComment(group) -> {
                 allGroups.add(TopLevelBlockComment(group as BlockComment))

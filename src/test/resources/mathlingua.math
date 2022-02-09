@@ -313,3 +313,16 @@ Metadata:
 . resources:
   . site: "some.site.com"
     name: "Some Name"
+
+
+Specify:
+. zero:
+  is: '\x'
+. positiveInt:
+  is: '\x'
+. negativeInt:
+  is: '\x'
+. positiveFloat:
+  is: '\x'
+. negativeFloat:
+  is: '\x'

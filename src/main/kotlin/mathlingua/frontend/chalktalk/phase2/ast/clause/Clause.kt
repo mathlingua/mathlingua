@@ -119,7 +119,7 @@ internal fun toCode(
     return writer
 }
 
-private data class ValidationPair<T>(
+internal data class ValidationPair<T>(
     val matches: (node: Phase1Node) -> Boolean,
     val validate:
         (node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) -> T)

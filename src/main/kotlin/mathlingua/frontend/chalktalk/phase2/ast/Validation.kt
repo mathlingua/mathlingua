@@ -122,6 +122,19 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.s
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.SourceItemSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.StringSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.TopicsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.IsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.SpecifyGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.SpecifySection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.negativeFloat.NegativeFloatGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.negativeFloat.NegativeFloatSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.negativeInt.NegativeIntGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.negativeInt.NegativeIntSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.positiveFloat.PositiveFloatGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.positiveFloat.PositiveFloatSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.positiveInt.PositiveIntGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.positiveInt.PositiveIntSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.zero.ZeroGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.zero.ZeroSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.ContentSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicSection
@@ -605,3 +618,38 @@ internal val DEFAULT_MATCHING_SECTION = MatchingSection(targets = emptyList())
 
 internal val DEFAULT_MATCHING_GROUP =
     MatchingGroup(matchingSection = DEFAULT_MATCHING_SECTION, withSection = DEFAULT_WITH_SECTION)
+
+internal val DEFAULT_NEGATIVE_FLOAT_SECTION = NegativeFloatSection()
+
+internal val DEFAULT_POSITIVE_FLOAT_SECTION = PositiveFloatSection()
+
+internal val DEFAULT_POSITIVE_INT_SECTION = PositiveIntSection()
+
+internal val DEFAULT_NEGATIVE_INT_SECTION = NegativeIntSection()
+
+internal val DEFAULT_ZERO_SECTION = ZeroSection()
+
+internal val DEFAULT_IS_SECTION = IsSection(statement = DEFAULT_STATEMENT)
+
+internal val DEFAULT_ZERO_GROUP =
+    ZeroGroup(zeroSection = DEFAULT_ZERO_SECTION, isSection = DEFAULT_IS_SECTION)
+
+internal val DEFAULT_POSITIVE_INT_GROUP =
+    PositiveIntGroup(
+        positiveIntSection = DEFAULT_POSITIVE_INT_SECTION, isSection = DEFAULT_IS_SECTION)
+
+internal val DEFAULT_NEGATIVE_INT_GROUP =
+    NegativeIntGroup(
+        negativeIntSection = DEFAULT_NEGATIVE_INT_SECTION, isSection = DEFAULT_IS_SECTION)
+
+internal val DEFAULT_POSITIVE_FLOAT_GROUP =
+    PositiveFloatGroup(
+        positiveFloatSection = DEFAULT_POSITIVE_FLOAT_SECTION, isSection = DEFAULT_IS_SECTION)
+
+internal val DEFAULT_NEGATIVE_FLOAT_GROUP =
+    NegativeFloatGroup(
+        negativeFloatSection = DEFAULT_NEGATIVE_FLOAT_SECTION, isSection = DEFAULT_IS_SECTION)
+
+internal val DEFAULT_SPECIFY_SECTION = SpecifySection(numberGroups = emptyList())
+
+internal val DEFAULT_SPECIFY_GROUP = SpecifyGroup(specifySection = DEFAULT_SPECIFY_SECTION)

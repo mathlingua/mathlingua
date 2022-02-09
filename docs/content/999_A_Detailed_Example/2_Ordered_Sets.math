@@ -13,8 +13,8 @@ operation defined next.
 [\binary.relation:on{A}]
 Defines: R
 when: 'A is \set'
-extending: 'R is \set'
-means: 'R \subset/ {A \set.product/ A}'
+means: 'R is \set'
+satisfying: 'R \subset/ {A \set.product/ A}'
 written: "\textrm{Binary Relation on } A?"
 Metadata:
 . overview: "Two elements $a, b \in A$ are said to be related
@@ -58,8 +58,8 @@ number system will turn out to be an ordered set.
 
 [\ordered.set]
 Defines: (S, <)
-extending: 'S is \set'
-means:
+means: 'S is \set'
+satisfying:
 . '< is \binary.relation:on{S}'
 . forAll: x, y
   suchThat: 'x, y in S'
@@ -152,8 +152,8 @@ given: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
-extending: 'b in X'
-means:
+means: 'b in X'
+satisfying:
 . forAll: x
   suchThat: 'x in E'
   then: 'x \leq{X}/ b'
@@ -168,8 +168,8 @@ Any ordered set that has an upper bound is said to be
 
 [\bounded.above.set]
 Defines: X := (E, <)
-extending: 'X is \ordered.set'
-means:
+means: 'X is \ordered.set'
+satisfying:
 . exists: b
   suchThat:
   . 'b is \upper.bound:of{X}'
@@ -190,8 +190,8 @@ the maximum of a set.
 [\supremum:of{X}]
 Defines: beta
 when: 'X is \bounded.above.set'
-extending: 'beta is \upper.bound:of{X}'
-expresses:
+means: 'beta is \upper.bound:of{X}'
+expressing:
 . forAll: b
   suchThat: 'b is \upper.bound:of{X}'
   then: 'b \geq{X}/ beta'
@@ -212,8 +212,8 @@ given: E, (S, <)
 when:
 . 'X := (S, <) is \ordered.set'
 . 'E \subset/ S'
-extending: 'b in X'
-means:
+means: 'b in X'
+satisfying:
 . forAll: x
   suchThat: 'x in E'
   then: 'x \geq{X}/ b'
@@ -227,8 +227,8 @@ Any set with a lower bound is said to be *bounded below*.
 
 [\bounded.below.set]
 Defines: X := (E, <)
-extending: 'X is \ordered.set'
-means:
+means: 'X is \ordered.set'
+satisfying:
 . exists: b
   suchThat:
   . 'b is \lower.bound:of{X}'
@@ -249,8 +249,8 @@ the minimum of a set.
 [\infimum:of{X}]
 Defines: alpha
 when: 'X is \bounded.above.set'
-extending: 'alpha is \lower.bound:of{X}'
-expresses:
+means: 'alpha is \lower.bound:of{X}'
+expressing:
 . forAll: a
   suchThat: 'a is \lower.bound:of{X}'
   then: 'a \leq{X}/ alpha'
@@ -270,8 +270,8 @@ a set to be empty or non-empty.
 
 [\empty.set]
 Defines: X
-extending: 'X is \set'
-expresses:
+means: 'X is \set'
+expressing:
 . not:
   . exists: x
     suchThat:
@@ -281,8 +281,8 @@ written: "\textrm{Empty Set}"
 
 [\nonempty.set]
 Defines: X
-extending: 'X is \set'
-means:
+means: 'X is \set'
+satisfying:
 . not: 'X := \empty.set'
 written: "\textrm{Non-Empty Set}"
 
@@ -295,8 +295,8 @@ as follows:
 
 [\least.upper.bound.property.set]
 Defines: X := (S, <)
-extending: 'X is \ordered.set'
-means:
+means: 'X is \ordered.set'
+satisfying:
 . forAll: E
   suchThat:
   . 'E is \nonempty.set'

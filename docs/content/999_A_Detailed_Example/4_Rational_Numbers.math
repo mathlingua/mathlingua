@@ -11,8 +11,8 @@ Before continuing, we need to define "set builder notation".
 
 [\set[x...]:where{within}:suchThat{cond}...]
 Defines: Y := {y...}
-extending: 'Y is \set'
-expresses:
+means: 'Y is \set'
+expressing:
 . 'y... := x...'
 written:
 . "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"
@@ -33,8 +33,8 @@ existence.  As such we describe them informally.
 
 [\integers.set]
 Defines: N
-extending: 'N is \set'
-expresses:
+means: 'N is \set'
+expressing:
 . "The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$} "
 viewing:
 . as: '\set'
@@ -67,24 +67,24 @@ and so we simply state their existence below.
 
 [x \integers.+/ y]
 Defines: z
-extending: 'z is \integer'
-expresses: "The addition of two integers"
+means: 'z is \integer'
+expressing: "The addition of two integers"
 written: "x+? + y+?"
 called: "Integer Addition"
 
 
 [x \integers.-/ y]
 Defines: z
-extending: 'z is \integer'
-expresses: "The difference of two integers"
+means: 'z is \integer'
+expressing: "The difference of two integers"
 written: "x+? - y+?"
 called: "Integer Subtraction"
 
 
 [x \integers.*/ y]
 Defines: z
-extending: 'z is \integer'
-expresses: "The product of two integers"
+means: 'z is \integer'
+expressing: "The product of two integers"
 written: "x+? y+?"
 called: "Integer Multiplication"
 
@@ -127,10 +127,10 @@ denominator.
 
 [\rationals.set]
 Defines: Q
-extending: 'Q is \set'
-expresses: 'Q := \set[x, p, q]:where{x := (p, q)}
-                              :suchThat{p in \integers.set}
-                                       {q in \integers.set}'
+means: 'Q is \set'
+expressing: 'Q := \set[x, p, q]:where{x := (p, q)}
+                               :suchThat{p in \integers.set}
+                                        {q in \integers.set}'
 written: "\mathbb{Q}"
 called: "Rationals"
 
@@ -152,8 +152,8 @@ as the product of $a$ and the multiplicative inverse of $b$
 
 [\Rational{a, b}]
 Defines: x
-extending: 'x in \rationals.set'
-expresses: 'x := (a, b)'
+means: 'x in \rationals.set'
+expressing: 'x := (a, b)'
 written: "\frac{a?}{b?}"
 called: "Rational"
 
@@ -171,8 +171,8 @@ given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
-extending: 'z is \integer'
-expresses:
+means: 'z is \integer'
+expressing:
 . 'z := \Rational{p1 * q2 + p2*q1, q1 * q2}'
 using:
 . 'a * b := a \integers.*/ b'
@@ -187,8 +187,8 @@ given: p1, q1, p2, q2
 when:
 . 'x := \Rational{p1, q1}'
 . 'y := \Rational{p2, q2}'
-extending: 'z is \integer'
-expresses:
+means: 'z is \integer'
+expressing:
 . 'z := \Rational{p1 * p2, q1 * q2}'
 using:
 . 'a * b := a \integers.*/ b'
@@ -210,8 +210,8 @@ above becomes a field.
 
 [\rationals.field]
 Defines: Q := (X, +, *, 0, 1)
-extending: 'Q is \field'
-means:
+means: 'Q is \field'
+satisfying:
 . 'X := \rationals.set'
 . 'x + y := x \rational.+/ y'
 . 'x * y := x \rational.*/ y'
@@ -245,7 +245,7 @@ the set of rational numbers is an ordered set.
 
 [\rationals.ordered.set]
 Defines: Q := (X, <)
-extending: 'X := \rationals.set'
-means: 'x < y := x \rational.lt/ y'
+means: 'X := \rationals.set'
+satisfying: 'x < y := x \rational.lt/ y'
 written: "\mathbb{Q}"
 called: "Rationals as an Ordered Set"

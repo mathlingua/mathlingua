@@ -15,8 +15,8 @@ rational numbers.
 
 [\real.numbers]
 Defines: R := (X, +, *, 0, 1, <)
-extending: 'R is \ordered.field'
-expresses:
+means: 'R is \ordered.field'
+expressing:
 . '\rationals.set \subset/ X'
 viewing:
 . as: '\set'
@@ -57,8 +57,8 @@ to define those concepts in the real numbers.
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
-extending: 'f is \binary.operation:on{X}'
-expresses: 'f(x, y) := x + y'
+means: 'f is \binary.operation:on{X}'
+expressing: 'f(x, y) := x + y'
 written: "x+? + y+?"
 called: "Real Addition of $x?$ and $y?$"
 
@@ -67,8 +67,8 @@ called: "Real Addition of $x?$ and $y?$"
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
-extending: 'f is \binary.operation:on{X}'
-expresses: 'f(x, y) := x + inv(y)'
+means: 'f is \binary.operation:on{X}'
+expressing: 'f(x, y) := x + inv(y)'
 using:
 . 'inv(a) := \additive.inverse:of{a}:inField{R}'
 written: "x? - y?"
@@ -79,8 +79,8 @@ called: "Real Difference of $x?$ and $y?$"
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
-extending: 'f is \binary.operation:on{X}'
-expresses: 'f(x, y) := x * y'
+means: 'f is \binary.operation:on{X}'
+expressing: 'f(x, y) := x * y'
 written: "x+? y+?"
 called: "Real Multiplication of $x?$ and $y?$"
 
@@ -89,8 +89,8 @@ called: "Real Multiplication of $x?$ and $y?$"
 Defines: f(x, y)
 given: R := (X, +, *, 0, 1, <)
 when: 'R := \real.numbers'
-extending: 'f is \binary.operation:on{X}'
-expresses: 'f(x, y) := x * inv(y)'
+means: 'f is \binary.operation:on{X}'
+expressing: 'f(x, y) := x * inv(y)'
 using:
 . 'inv(a) := \multiplicative.inverse:of{a}:inField{R}'
 written: "\frac{x-?}{y-?}"
@@ -99,7 +99,7 @@ called: "Real Division of $x?$ by $y?$"
 
 [\real.arithmetic]
 Defines: (+, -, *, /)
-expresses:
+expressing:
 . 'x + y := x \real.+/ y'
 . 'x - y := x \real.-/ y'
 . 'x * y := x \real.*/ y'
@@ -110,7 +110,7 @@ called: "\textrm{real arithmetic}"
 
 [\real.orderings]
 Defines: (<, <=, >, >=)
-expresses:
+expressing:
 . 'x < y := x \real.lt/ y'
 . 'x <= y := x \real.leq/ y'
 . 'x > y := x \real.gt/ y'
@@ -129,8 +129,8 @@ real number $y$, namely $\frac{x}{y}$.
 [\real.frac{x}{y}]
 Defines: z
 when: 'x, y is \real'
-extending: 'z is \real'
-expresses:
+means: 'z is \real'
+expressing:
 . 'z := x \real.div/ y'
 written: "\frac{x-?}{y-?}"
 called: "Real Division of $x?$ by $y?$"

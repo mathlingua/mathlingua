@@ -17,8 +17,8 @@ when:
 . 'I := \open.interval{a, b}'
 . 'f is \function:on{I}:to{\real.numbers}'
 . 'c in I'
-extending: 'L is \real'
-expresses:
+means: 'L is \real'
+expressing:
 . 'L := \function.limit[x]_{c}{
     \real.frac{f(x) - f(c)}{x - c}}'
 using:

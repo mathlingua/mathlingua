@@ -35,7 +35,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.ExtendingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateExtendingSection
@@ -72,9 +72,9 @@ internal data class DefinesGroup(
     val definesSection: DefinesSection,
     val givenSection: GivenSection?,
     val whenSection: WhenSection?,
-    val extendingSection: ExtendingSection?,
     val meansSection: MeansSection?,
-    val expressesSection: ExpressesSection?,
+    val satisfyingSection: SatisfyingSection?,
+    val expressingSection: ExpressingSection?,
     val viewingSection: ViewingSection?,
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
@@ -91,14 +91,14 @@ internal data class DefinesGroup(
         if (whenSection != null) {
             fn(whenSection)
         }
-        if (extendingSection != null) {
-            fn(extendingSection)
-        }
         if (meansSection != null) {
             fn(meansSection)
         }
-        if (expressesSection != null) {
-            fn(expressesSection)
+        if (satisfyingSection != null) {
+            fn(satisfyingSection)
+        }
+        if (expressingSection != null) {
+            fn(expressingSection)
         }
         if (viewingSection != null) {
             fn(viewingSection)
@@ -121,9 +121,9 @@ internal data class DefinesGroup(
                 definesSection,
                 givenSection,
                 whenSection,
-                extendingSection,
                 meansSection,
-                expressesSection,
+                satisfyingSection,
+                expressingSection,
                 viewingSection,
                 usingSection,
                 writtenSection,
@@ -146,11 +146,11 @@ internal data class DefinesGroup(
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
-                extendingSection =
-                    extendingSection?.transform(chalkTransformer) as ExtendingSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
-                expressesSection =
-                    expressesSection?.transform(chalkTransformer) as ExpressesSection?,
+                satisfyingSection =
+                    satisfyingSection?.transform(chalkTransformer) as SatisfyingSection?,
+                expressingSection =
+                    expressingSection?.transform(chalkTransformer) as ExpressingSection?,
                 viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
@@ -173,9 +173,9 @@ internal fun validateDefinesGroup(
                     "Defines",
                     "given?",
                     "when?",
-                    "extending?",
                     "means?",
-                    "expresses?",
+                    "satisfying?",
+                    "expressing?",
                     "viewing?",
                     "using?",
                     "written",
@@ -198,16 +198,16 @@ internal fun validateDefinesGroup(
                             ifNonNull(sections["when"]) {
                                 validateWhenSection(it, errors, tracker)
                             },
-                        extendingSection =
-                            ifNonNull(sections["extending"]) {
-                                validateExtendingSection(it, errors, tracker)
-                            },
                         meansSection =
                             ifNonNull(sections["means"]) {
-                                validateMeansSection(it, errors, tracker)
+                                validateExtendingSection(it, errors, tracker)
                             },
-                        expressesSection =
-                            ifNonNull(sections["expresses"]) {
+                        satisfyingSection =
+                            ifNonNull(sections["satisfying"]) {
+                                validateSatisfiesSection(it, errors, tracker)
+                            },
+                        expressingSection =
+                            ifNonNull(sections["expressing"]) {
                                 validateExpressesSection(it, errors, tracker)
                             },
                         viewingSection =
@@ -235,11 +235,11 @@ internal fun validateDefinesGroup(
                 if (funcArgsError != null) {
                     errors.add(funcArgsError)
                     DEFAULT_DEFINES_GROUP
-                } else if (def.meansSection != null && def.expressesSection != null) {
+                } else if (def.satisfyingSection != null && def.expressingSection != null) {
                     errors.add(
                         ParseError(
                             message =
-                                "A `Defines:` cannot have both a `means:` and an `expresses:` section",
+                                "A `Defines:` cannot have both a `satisfying:` and an `expressing:` section",
                             row = getRow(node),
                             column = getColumn(node)))
                     DEFAULT_DEFINES_GROUP

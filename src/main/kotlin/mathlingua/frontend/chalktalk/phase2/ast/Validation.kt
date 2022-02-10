@@ -68,13 +68,13 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.ExtendingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ExpressesSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ExpressingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.ThatSection
@@ -359,7 +359,7 @@ internal val DEFAULT_PIECEWISE_SECTION = PiecewiseSection()
 
 internal val DEFAULT_NOTE_SECTION = NoteSection()
 
-internal val DEFAULT_EXPRESSED_SECTION = ExpressesSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_EXPRESSING_SECTION = ExpressingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 internal val DEFAULT_PROVIDED_SECTION = ProvidedSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
@@ -369,7 +369,7 @@ internal val DEFAULT_USING_SECTION = UsingSection(clauses = DEFAULT_CLAUSE_LIST_
 
 internal val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
-internal val DEFAULT_MEANS_SECTION = MeansSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+internal val DEFAULT_SATISFYING_SECTION = SatisfyingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 internal val DEFAULT_STATES_SECTION = StatesSection()
 
@@ -450,7 +450,7 @@ internal val DEFAULT_CONJECTURE_SECTION = ConjectureSection(names = emptyList())
 
 internal val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList())
 
-internal val DEFAULT_EXTENDING_SECTION = ExtendingSection(statements = emptyList())
+internal val DEFAULT_EXTENDING_SECTION = MeansSection(statements = emptyList())
 
 internal val DEFAULT_PROOF_SECTION = ProofSection(text = "")
 
@@ -593,9 +593,9 @@ internal val DEFAULT_DEFINES_GROUP =
         definesSection = DEFAULT_DEFINES_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        extendingSection = DEFAULT_EXTENDING_SECTION,
-        meansSection = DEFAULT_MEANS_SECTION,
-        expressesSection = DEFAULT_EXPRESSED_SECTION,
+        meansSection = DEFAULT_EXTENDING_SECTION,
+        satisfyingSection = DEFAULT_SATISFYING_SECTION,
+        expressingSection = DEFAULT_EXPRESSING_SECTION,
         viewingSection = DEFAULT_VIEWING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,

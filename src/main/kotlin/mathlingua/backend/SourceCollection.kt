@@ -59,7 +59,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Calle
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.MeansSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
@@ -578,7 +578,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                             value =
                                 ParseError(
                                     message =
-                                        "The right-hand-side of an `is` cannot reference a `Defines:` with an `expresses:` section but found '${sig.form}'",
+                                        "The right-hand-side of an `is` cannot reference a `Defines:` with an `expressing:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
                             source = svt.source,
@@ -649,7 +649,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                             value =
                                 ParseError(
                                     message =
-                                        "The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '${sig.form}'",
+                                        "The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
                             source = svt.source,
@@ -675,7 +675,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                             value =
                                 ParseError(
                                     message =
-                                        "The right-hand-side of an `:=` cannot reference a `Defines:` without an `expresses:` section but found '${sig.form}'",
+                                        "The right-hand-side of an `:=` cannot reference a `Defines:` without an `expressing:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
                             source = svt.source,
@@ -705,7 +705,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             val def = svt.value.original
             if (def is HasSignature) {
                 val sig = def.signature ?: continue
-                if (def !is DefinesGroup || def.expressesSection == null) {
+                if (def !is DefinesGroup || def.expressingSection == null) {
                     result.add(
                         ValueSourceTracker(value = sig, source = svt.source, tracker = svt.tracker))
                 }
@@ -718,7 +718,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         val result = mutableListOf<ValueSourceTracker<Signature>>()
         for (svt in definesGroups) {
             val def = svt.value.original
-            if (def.expressesSection != null && def.signature != null) {
+            if (def.expressingSection != null && def.signature != null) {
                 result.add(
                     ValueSourceTracker(
                         value = def.signature, source = svt.source, tracker = svt.tracker))
@@ -1163,11 +1163,11 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             }
         }
 
-        for (clause in rhsMatchedDefines.meansSection?.clauses?.clauses ?: emptyList()) {
+        for (clause in rhsMatchedDefines.satisfyingSection?.clauses?.clauses ?: emptyList()) {
             maybeIdentifyFromNameToColonEquals(clause)
         }
 
-        for (clause in rhsMatchedDefines.expressesSection?.clauses?.clauses ?: emptyList()) {
+        for (clause in rhsMatchedDefines.expressingSection?.clauses?.clauses ?: emptyList()) {
             maybeIdentifyFromNameToColonEquals(clause)
         }
 
@@ -1279,9 +1279,10 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     definesSection = DefinesSection(targets = emptyList()),
                     givenSection = null,
                     whenSection = null,
-                    extendingSection = null,
-                    meansSection = MeansSection(clauses = ClauseListNode(clauses = emptyList())),
-                    expressesSection = null,
+                    meansSection = null,
+                    satisfyingSection =
+                        SatisfyingSection(clauses = ClauseListNode(clauses = emptyList())),
+                    expressingSection = null,
                     viewingSection = null,
                     usingSection = null,
                     writtenSection = WrittenSection(forms = listOf("\"${stmtText}\"")),
@@ -1455,7 +1456,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                                 value =
                                     ParseError(
                                         message =
-                                            "A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found '${sym}'",
+                                            "A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found '${sym}'",
                                         row = location.row,
                                         column = location.column),
                                 source = vst.source,
@@ -1499,7 +1500,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                                 value =
                                     ParseError(
                                         message =
-                                            "Cannot use '$sig' in a non-`is` or non-`in` statement since its definition doesn't have an `expresses:` section",
+                                            "Cannot use '$sig' in a non-`is` or non-`in` statement since its definition doesn't have an `expressing:` section",
                                         row = location.row,
                                         column = location.column),
                                 source = vst.source,
@@ -1571,11 +1572,11 @@ private fun getMeansExpressesSections(topLevelGroup: TopLevelGroup) =
     when (topLevelGroup) {
         is DefinesGroup -> {
             val result = mutableListOf<Phase2Node>()
-            if (topLevelGroup.meansSection != null) {
-                result.add(topLevelGroup.meansSection)
+            if (topLevelGroup.satisfyingSection != null) {
+                result.add(topLevelGroup.satisfyingSection)
             }
-            if (topLevelGroup.expressesSection != null) {
-                result.add(topLevelGroup.expressesSection)
+            if (topLevelGroup.expressingSection != null) {
+                result.add(topLevelGroup.expressingSection)
             }
             result
         }
@@ -1708,10 +1709,11 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                                 definesSection = DefinesSection(targets = emptyList()),
                                 givenSection = null,
                                 whenSection = null,
-                                extendingSection = null,
-                                meansSection =
-                                    MeansSection(clauses = ClauseListNode(clauses = emptyList())),
-                                expressesSection = null,
+                                meansSection = null,
+                                satisfyingSection =
+                                    SatisfyingSection(
+                                        clauses = ClauseListNode(clauses = emptyList())),
+                                expressingSection = null,
                                 viewingSection = null,
                                 usingSection = null,
                                 writtenSection = WrittenSection(forms = listOf(rhs.toCode())),

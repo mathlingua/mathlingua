@@ -6,9 +6,9 @@ For pattern:
 Defines:
 given?:
 when?:
-extending?:
 means?:
-expresses?:
+satisfying?:
+expressing?:
 viewing?:
 using?:
 written:

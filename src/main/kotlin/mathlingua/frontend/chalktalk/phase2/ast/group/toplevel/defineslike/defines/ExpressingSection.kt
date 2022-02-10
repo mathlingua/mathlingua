@@ -18,7 +18,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXPRESSED_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXPRESSING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
@@ -28,12 +28,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ExpressesSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class ExpressingSection(val clauses: ClauseListNode) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("expresses")
+        writer.writeHeader("expressing")
         if (clauses.clauses.size == 1 && clauses.clauses[0] is Text) {
             writer.append(clauses.clauses.first(), false, 1)
         } else {
@@ -47,14 +47,14 @@ internal data class ExpressesSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ExpressesSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            ExpressingSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
 }
 
 internal fun validateExpressesSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "expresses", DEFAULT_EXPRESSED_SECTION) {
-            ExpressesSection(clauses = validateClauseListNode(it, errors, tracker))
+        validateSection(node.resolve(), errors, "expressing", DEFAULT_EXPRESSING_SECTION) {
+            ExpressingSection(clauses = validateClauseListNode(it, errors, tracker))
         }
     }

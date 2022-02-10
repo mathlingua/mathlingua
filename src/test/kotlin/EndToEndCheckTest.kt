@@ -92,7 +92,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: X
+                    satisfying: X
                     written: "X"
                     called: "X"
 
@@ -123,7 +123,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: X
+                    satisfying: X
                     written: "X"
                     called: "X"
 
@@ -157,7 +157,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: X
+                    satisfying: X
                     written: "X"
                     called: "X"
 
@@ -188,14 +188,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: X
+                    satisfying: X
                     written: "X"
                     called: "X"
 
 
                     [\something]
                     Defines: f(x)
-                    means: f
+                    satisfying: f
                     written: "f"
                     called: "f"
 
@@ -229,14 +229,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: X
+                    satisfying: X
                     written: "X"
                     called: "X"
 
 
                     [\something.else]
                     Defines: f(x)
-                    means: f
+                    satisfying: f
                     written: "f"
                     called: "f"
 
@@ -435,7 +435,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: x
-                    means:
+                    satisfying:
                     . exists: y, y
                       suchThat: 'x'
                     written: ""
@@ -465,7 +465,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: x
-                    means:
+                    satisfying:
                     . existsUnique: y, y
                       suchThat: 'x'
                     written: ""
@@ -495,7 +495,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: x
-                    means:
+                    satisfying:
                     . forAll: y, y
                       then: 'x'
                     written: ""
@@ -525,7 +525,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: x
-                    means:
+                    satisfying:
                     . exists: y
                       suchThat:
                       . forAll: y
@@ -557,7 +557,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: x
-                    means:
+                    satisfying:
                     . existsUnique: y
                       suchThat:
                       . forAll: y
@@ -589,7 +589,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: x
-                    means:
+                    satisfying:
                     . forAll: y
                       then:
                       . exists: y
@@ -621,7 +621,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: x
-                    means:
+                    satisfying:
                     . forAll: y
                       then:
                       . existsUnique: y
@@ -679,7 +679,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: X
+                    satisfying: X
                     written: "X"
                     called: "X"
 
@@ -716,7 +716,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: X
+                    satisfying: X
                     written: "X"
                     called: "X"
 
@@ -747,7 +747,7 @@ internal class EndToEndCheckTest {
                             """
                     [\function:on{A}:to{B}]
                     Defines: f(x)
-                    means: "a function on A? to B?"
+                    satisfying: "a function on A? to B?"
                     written: "X"
                     called: "X"
 
@@ -784,7 +784,7 @@ internal class EndToEndCheckTest {
                             """
                     [\function:on{A}:to{B}]
                     Defines: f(x)
-                    means: "a function on A? to B?"
+                    satisfying: "a function on A? to B?"
                     written: "X"
                     called: "X"
 
@@ -815,7 +815,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something{x}]
                     Defines: X
-                    means: 'X'
+                    satisfying: 'X'
                     written: "X"
                     called: "X"
 
@@ -849,7 +849,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something{x}]
                     Defines: X
-                    means: 'X'
+                    satisfying: 'X'
                     written: "X"
                     called: "X"
 
@@ -880,7 +880,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something{x, y, z}]
                     Defines: X
-                    means: 'X'
+                    satisfying: 'X'
                     written: "X"
                     called: "X"
 
@@ -914,7 +914,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something{x, y, z}]
                     Defines: X
-                    means: 'X'
+                    satisfying: 'X'
                     written: "X"
                     called: "X"
 
@@ -945,7 +945,7 @@ internal class EndToEndCheckTest {
                             """
                         [\some.function(x)]
                         Defines: f
-                        means: "something"
+                        satisfying: "something"
                         written: "something"
                         called: "something"
                 """.trimIndent())),
@@ -973,7 +973,7 @@ internal class EndToEndCheckTest {
                             """
                         [\some.function(x)]
                         Defines: f(x)
-                        means: "something"
+                        satisfying: "something"
                         written: "something"
                         called: "something"
                 """.trimIndent())),
@@ -998,7 +998,7 @@ internal class EndToEndCheckTest {
                             """
                         [\some.function(x)]
                         Defines: f(x)
-                        means:
+                        satisfying:
                         . forAll: x
                           then: x
                         written: "something"
@@ -1052,7 +1052,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses:
+                    expressing:
                     . 'x'
                     . 'X'
                     . 'f'
@@ -1086,7 +1086,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses:
+                    expressing:
                     . 'x'
                     . 'X'
                     . 'f'
@@ -1120,7 +1120,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1150,7 +1150,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1180,7 +1180,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1210,7 +1210,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1240,7 +1240,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1270,7 +1270,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1300,7 +1300,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1330,7 +1330,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something[x]{f}]
                     Defines: X
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
                     called: "something"
 
@@ -1360,14 +1360,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
 
                     [\something.else]
                     Defines: f(x)
-                    means: 'f(x) is \something'
+                    satisfying: 'f(x) is \something'
                     written: "something else"
                     called: "something else"
                 """.trimIndent())),
@@ -1392,14 +1392,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
 
                     [\something.else]
                     Defines: {x_{i}}_{i}
-                    means:
+                    satisfying:
                     . '{x_{i}}_{i} is \something'
                     . '{x_{i}}_{i}'
                     . 'x_{i}'
@@ -1427,7 +1427,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1435,7 +1435,7 @@ internal class EndToEndCheckTest {
                     [\something.else{f(x)}]
                     Defines: X
                     when: 'f(x) is \something'
-                    means:
+                    satisfying:
                     . 'f(x) = 0'
                     written: "something else"
                     called: "something else"
@@ -1443,7 +1443,7 @@ internal class EndToEndCheckTest {
 
                     [\another.thing{f(x)}]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'f(x) = 0'
                     written: "another thing"
                     called: "another thing"
@@ -1469,7 +1469,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1477,7 +1477,7 @@ internal class EndToEndCheckTest {
                     [\something.else{{x_{i}}_{i}}]
                     Defines: X
                     when: '{x_{i}}_{i} is \something'
-                    means:
+                    satisfying:
                     . '{x_{i}}_{i} = 0'
                     written: "something else"
                     called: "something else"
@@ -1485,7 +1485,7 @@ internal class EndToEndCheckTest {
 
                     [\another.thing{{x_{i}}_{i}}]
                     Defines: X
-                    means:
+                    satisfying:
                     . '{x_{i}}_{i} = 0'
                     written: "another thing"
                     called: "another thing"
@@ -1511,7 +1511,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: f(x)
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1521,7 +1521,7 @@ internal class EndToEndCheckTest {
                     when:
                     . 'f(t) is \something'
                     . 'f(u) is \something'
-                    means:
+                    satisfying:
                     . 'f(v) = 0'
                     written: "something else"
                     called: "something else"
@@ -1529,7 +1529,7 @@ internal class EndToEndCheckTest {
 
                     [\another.thing{{x_{i}}_{i}}]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'x_{t} = 0'
                     written: "another thing"
                     called: "another thing"
@@ -1561,7 +1561,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: f(x)
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1569,7 +1569,7 @@ internal class EndToEndCheckTest {
                     [\something.else{{x_{i}}_{i}}]
                     Defines: X
                     when: '{x_{j}}_{j} is \something'
-                    means:
+                    satisfying:
                     . '{x_{k}}_{k}'
                     . '{x_{t}}_{t}'
                     written: "something else"
@@ -1580,7 +1580,7 @@ internal class EndToEndCheckTest {
                     Defines: X
                     when:
                     . '{x_{j}}_{j}'
-                    means: "something"
+                    satisfying: "something"
                     written: "another thing"
                     called: "another thing"
                 """.trimIndent())),
@@ -1614,7 +1614,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1622,7 +1622,7 @@ internal class EndToEndCheckTest {
                     [\something.else{{x_{i}}_{j}}]
                     Defines: X
                     when: '{x_{i}}_{j} is \something'
-                    means:
+                    satisfying:
                     . '{x_{i}}_{j} := 0'
                     written: "something else"
                     called: "something else"
@@ -1663,7 +1663,7 @@ internal class EndToEndCheckTest {
                             """
                     [\f]
                     Defines: X := (a, b)
-                    means:
+                    satisfying:
                     . 'X = a'
                     . 'X = b'
                     written: "something"
@@ -1690,7 +1690,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1698,7 +1698,7 @@ internal class EndToEndCheckTest {
                     [\some.function{S}]
                     Defines: beta
                     when: 'S is \something'
-                    means: "something"
+                    satisfying: "something"
                     using: 'x := x'
                     written: "something"
                     called: "something"
@@ -1772,7 +1772,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1781,7 +1781,7 @@ internal class EndToEndCheckTest {
                     Defines: Y
                     given: S, <
                     when: 'X := (S, <) is \something'
-                    means: "something"
+                    satisfying: "something"
                     written: "f"
                     called: "f"
                 """.trimIndent())),
@@ -1806,7 +1806,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -1829,7 +1829,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors of duplicate base types when duplicate base types exist not including extending`() {
+    fun `check reports errors of duplicate base types when duplicate base types exist not including means`() {
         runCheckTest(
             files =
                 listOf(
@@ -1839,14 +1839,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
                     called: "something else"
 
@@ -1881,7 +1881,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors of duplicate base types when duplicate base types exist including extending`() {
+    fun `check reports errors of duplicate base types when duplicate base types exist including means`() {
         runCheckTest(
             files =
                 listOf(
@@ -1891,33 +1891,33 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
                     called: "something else"
 
 
                     [\f{x}]
                     Defines: X
-                    extending: 'X is \something'
-                    means: 'X is \something.else'
+                    means: 'X is \something'
+                    satisfying: 'X is \something.else'
                     written: "f"
                     called: "f"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 17, Column: 12)
+                ERROR: content/file1.math (Line: 17, Column: 8)
                 'X' has more than one base type: {\something, \something.else}
                 Found type paths:
                 {\something}, {\something.else}
 
-                ERROR: content/file1.math (Line: 18, Column: 8)
+                ERROR: content/file1.math (Line: 18, Column: 13)
                 'X' has more than one base type: {\something, \something.else}
                 Found type paths:
                 {\something}, {\something.else}
@@ -1941,14 +1941,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     viewing:
                     . as: '\something'
                       via: 'X'
@@ -1986,28 +1986,28 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
                     called: "something else"
 
 
                     [\another]
                     Defines: X
-                    means: "another"
+                    satisfying: "another"
                     written: "another"
                     called: "another"
 
 
                     [\f]
                     Defines: (S, <)
-                    means:
+                    satisfying:
                     . 'S is \something'
                     . '< is \something.else'
                     . '0 < 1'
@@ -2040,28 +2040,28 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
                     called: "something else"
 
 
                     [\another]
                     Defines: (X, Y)
-                    means: "another"
+                    satisfying: "another"
                     written: "another"
                     called: "another"
 
 
                     [\f]
                     Defines: (S, <)
-                    means:
+                    satisfying:
                     . 'S is \something'
                     . '< is \something.else'
                     . '0 < 1'
@@ -2095,7 +2095,7 @@ internal class EndToEndCheckTest {
                     [\something]
                     Defines: X
                     given: a, b
-                    means: 'X := (a, b)'
+                    satisfying: 'X := (a, b)'
                     written: "something"
                     called: "something"
 
@@ -2130,7 +2130,7 @@ internal class EndToEndCheckTest {
                     [\something]
                     Defines: X
                     when: '(a, b)'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
 
@@ -2182,7 +2182,7 @@ internal class EndToEndCheckTest {
                     [\something]
                     Defines: f(x, y)
                     given: R := (X, *)
-                    means: 'f(x, y) := x * y'
+                    satisfying: 'f(x, y) := x * y'
                     written: "something"
                     called: "something"
                 """.trimIndent())),
@@ -2209,7 +2209,7 @@ internal class EndToEndCheckTest {
                     Defines: A
                     given: X, {x_{i}}_{i}
                     when: 'X := {x_{i}}_{i} is \something'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                     called: "something"
                 """.trimIndent())),
@@ -2234,13 +2234,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: f(x)
-                    means: 'f(t)'
+                    satisfying: 'f(t)'
                     written: "something"
                     called: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 3, Column: 8)
+                ERROR: content/file1.math (Line: 3, Column: 13)
                 Undefined symbol 't'
 
                 FAILED
@@ -2262,7 +2262,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: f(x)
-                    means: 'f(x)'
+                    satisfying: 'f(x)'
                     written: "something"
                     called: "something"
                 """.trimIndent())),
@@ -2287,13 +2287,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: {x_{i}}_{i}
-                    means: 'x_{j}'
+                    satisfying: 'x_{j}'
                     written: "something"
                     called: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 3, Column: 8)
+                ERROR: content/file1.math (Line: 3, Column: 13)
                 Undefined symbol 'j'
 
                 FAILED
@@ -2315,7 +2315,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: {x_{i}}_{i}
-                    means: 'x_{i}'
+                    satisfying: 'x_{i}'
                     written: "something"
                     called: "something"
                 """.trimIndent())),
@@ -2342,7 +2342,7 @@ internal class EndToEndCheckTest {
                     Defines: x
                     given: u, v, -, a, b
                     when: 'a - b := a ** b'
-                    means:
+                    satisfying:
                     . 'u - v'
                     written: "something"
                 """.trimIndent())),
@@ -2370,7 +2370,7 @@ internal class EndToEndCheckTest {
                             """
                     [a ** b]
                     Defines: x
-                    means: "something"
+                    satisfying: "something"
                     written: "a?? +++ b??"
 
 
@@ -2378,7 +2378,7 @@ internal class EndToEndCheckTest {
                     Defines: x
                     given: u, v, -, a, b
                     when: 'a - b := a ** b'
-                    means:
+                    satisfying:
                     . 'u - v'
                     written: "something"
                 """.trimIndent())),
@@ -2403,19 +2403,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    expresses: 'X := 0'
+                    expressing: 'X := 0'
                     written: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: 'X is \something'
+                    satisfying: 'X is \something'
                     written: "something else"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 8)
-                The right-hand-side of an `is` cannot reference a `Defines:` with an `expresses:` section but found '\something'
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                The right-hand-side of an `is` cannot reference a `Defines:` with an `expressing:` section but found '\something'
 
                 FAILED
                 Processed 1 file
@@ -2436,13 +2436,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: 'X is \something'
+                    satisfying: 'X is \something'
                     written: "something else"
                 """.trimIndent())),
             expectedOutput =
@@ -2466,22 +2466,22 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: 'X := \something'
+                    satisfying: 'X := \something'
                     written: "something else"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 8)
-                The right-hand-side of an `:=` cannot reference a `Defines:` without an `expresses:` section but found '\something'
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                The right-hand-side of an `:=` cannot reference a `Defines:` without an `expressing:` section but found '\something'
 
-                ERROR: content/file1.math (Line: 9, Column: 8)
-                Cannot use '\something' in a non-`is` or non-`in` statement since its definition doesn't have an `expresses:` section
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                Cannot use '\something' in a non-`is` or non-`in` statement since its definition doesn't have an `expressing:` section
 
                 FAILED
                 Processed 1 file
@@ -2502,13 +2502,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something]
                     Defines: X
-                    expresses: 'X := 0'
+                    expressing: 'X := 0'
                     written: "something"
 
 
                     [\something.else]
                     Defines: X
-                    means: 'X := \something'
+                    satisfying: 'X := \something'
                     written: "something else"
                 """.trimIndent())),
             expectedOutput =
@@ -2522,7 +2522,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for id input var used in lhs of is statement in means`() {
+    fun `check reports errors for id input var used in lhs of is statement in satisfying`() {
         runCheckTest(
             files =
                 listOf(
@@ -2532,19 +2532,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something{A}]
                     Defines: X
-                    means: 'A is \something.else'
+                    satisfying: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 8)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2565,14 +2565,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something{A}]
                     Defines: X
                     when: 'A is \something.else'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -2586,7 +2586,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for id input var used in lhs of colon equals statement in means`() {
+    fun `check reports errors for id input var used in lhs of colon equals statement in satisfying`() {
         runCheckTest(
             files =
                 listOf(
@@ -2596,19 +2596,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something{A}]
                     Defines: X
-                    means: 'A := \something.else'
+                    satisfying: 'A := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 8)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2629,14 +2629,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something{A}]
                     Defines: X
                     when: 'A := \something.else'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -2660,19 +2660,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something{A}]
                     Defines: X
-                    expresses: 'A is \something.else'
+                    expressing: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 12)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2693,19 +2693,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something{A}]
                     Defines: X
-                    expresses: 'A := \something.else'
+                    expressing: 'A := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 12)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2716,7 +2716,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for given section input var used in lhs of is statement in means`() {
+    fun `check reports errors for given section input var used in lhs of is statement in satisfying`() {
         runCheckTest(
             files =
                 listOf(
@@ -2726,20 +2726,20 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
                     given: A
-                    means: 'A is \something.else'
+                    satisfying: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 10, Column: 8)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 10, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2760,7 +2760,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
@@ -2768,7 +2768,7 @@ internal class EndToEndCheckTest {
                     Defines: X
                     given: A
                     when: 'A is \something.else'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -2782,7 +2782,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors for given section input var used in lhs of colon equals statement in means`() {
+    fun `check reports errors for given section input var used in lhs of colon equals statement in satisfying`() {
         runCheckTest(
             files =
                 listOf(
@@ -2792,20 +2792,20 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
                     given: A
-                    means: 'A := \something.else'
+                    satisfying: 'A := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 10, Column: 8)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 10, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2826,7 +2826,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
@@ -2834,7 +2834,7 @@ internal class EndToEndCheckTest {
                     Defines: X
                     given: A
                     when: 'A := \something.else'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -2858,20 +2858,20 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
                     given: A
-                    expresses: 'A is \something.else'
+                    expressing: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 10, Column: 12)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 10, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2892,20 +2892,20 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
                     given: A
-                    expresses: 'A := \something.else'
+                    expressing: 'A := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 10, Column: 12)
-                A `means:` or `expresses:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
+                ERROR: content/file1.math (Line: 10, Column: 13)
+                A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
                 Processed 1 file
@@ -2926,14 +2926,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
                     when: 'X is \something.else'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -2950,7 +2950,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for Defines section var used in lhs of is statement in means`() {
+    fun `check does not report errors for Defines section var used in lhs of is statement in satisfying`() {
         runCheckTest(
             files =
                 listOf(
@@ -2960,13 +2960,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
-                    means: 'X is \something.else'
+                    satisfying: 'X is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -2990,13 +2990,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
-                    expresses: 'X is \something.else'
+                    expressing: 'X is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3020,14 +3020,14 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
                     when: 'X := \something.else'
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3044,7 +3044,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for Defines section var used in lhs of colon equals statement in means`() {
+    fun `check does not report errors for Defines section var used in lhs of colon equals statement in satisfying`() {
         runCheckTest(
             files =
                 listOf(
@@ -3054,13 +3054,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
-                    means: 'X := \something.else'
+                    satisfying: 'X := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3084,13 +3084,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    expresses: "something else"
+                    expressing: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
-                    expresses: 'X := \something.else'
+                    expressing: 'X := \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3104,7 +3104,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors for id input vars also declared in Defines used in lhs of is statement in means`() {
+    fun `check does not report errors for id input vars also declared in Defines used in lhs of is statement in satisfying`() {
         runCheckTest(
             files =
                 listOf(
@@ -3114,7 +3114,7 @@ internal class EndToEndCheckTest {
                             """
                     [\real.numbers]
                     Defines: R
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
 
 
@@ -3122,7 +3122,7 @@ internal class EndToEndCheckTest {
                     Defines: f(x, y)
                     given: R := (X, +, *, 0, 1, <)
                     when: 'R is \real.numbers'
-                    means: 'f(x, y) := x + y'
+                    satisfying: 'f(x, y) := x + y'
                     written: "x?? + y??"
                     called: "real addition of x? and y?"
                 """.trimIndent())),
@@ -3147,7 +3147,7 @@ internal class EndToEndCheckTest {
                             """
                     [\real.numbers]
                     Defines: R
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
 
 
@@ -3155,7 +3155,7 @@ internal class EndToEndCheckTest {
                     Defines: f(x, y)
                     given: R := (X, +, *, 0, 1, <)
                     when: 'R is \real.numbers'
-                    expresses: 'f(x, y) := x + y'
+                    expressing: 'f(x, y) := x + y'
                     written: "x?? + y??"
                     called: "real addition of x? and y?"
                 """.trimIndent())),
@@ -3180,13 +3180,13 @@ internal class EndToEndCheckTest {
                             """
                     [a \integers.+/ b]
                     Defines: f(a, b)
-                    expresses: "something"
+                    expressing: "something"
                     written: "a? + b?"
 
 
                     [a \integers.-/ b]
                     Defines: f(a, b)
-                    expresses: "something"
+                    expressing: "something"
                     written: "a? - b?"
 
 
@@ -3213,7 +3213,7 @@ internal class EndToEndCheckTest {
                       . 'j \integers.leq/ b'
                       then:
                       . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
-                    expresses:
+                    expressing:
                     . 'L := S(b)'
                     written: "\displaystyle \sum_{i? = a?}^{b?} f?"
                     called: "finite sum of f? from a? to b?"
@@ -3239,19 +3239,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
-                    means: '\something.else'
+                    satisfying: '\something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 8)
-                Cannot use '\something.else' in a non-`is` or non-`in` statement since its definition doesn't have an `expresses:` section
+                ERROR: content/file1.math (Line: 9, Column: 13)
+                Cannot use '\something.else' in a non-`is` or non-`in` statement since its definition doesn't have an `expressing:` section
 
                 FAILED
                 Processed 1 file
@@ -3272,13 +3272,13 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\something]
                     Defines: X
-                    means: 'X is \something.else'
+                    satisfying: 'X is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3302,7 +3302,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
@@ -3329,7 +3329,7 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'X in \something.else'
                     . 'X in \some.states'
                     . 'X in \some.axiom'
@@ -3346,19 +3346,19 @@ internal class EndToEndCheckTest {
                 No matching definition found for \some.theorem
 
                 ERROR: content/file1.math (Line: 31, Column: 3)
-                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\something.else'
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\something.else'
 
                 ERROR: content/file1.math (Line: 32, Column: 3)
-                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.states'
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.states'
 
                 ERROR: content/file1.math (Line: 33, Column: 3)
-                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.axiom'
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.axiom'
 
                 ERROR: content/file1.math (Line: 34, Column: 3)
-                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.conjecture'
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.conjecture'
 
                 ERROR: content/file1.math (Line: 35, Column: 3)
-                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\some.theorem'
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.theorem'
 
                 FAILED
                 Processed 1 file
@@ -3379,7 +3379,7 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
@@ -3406,35 +3406,35 @@ internal class EndToEndCheckTest {
 
                     [\something1]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'X is \something.else'
                     written: "something"
 
 
                     [\something2]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'X is \some.states'
                     written: "something"
 
 
                     [\something3]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'X is \some.axiom'
                     written: "something"
 
 
                     [\something4]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'X is \some.conjecture'
                     written: "something"
 
 
                     [\something5]
                     Defines: X
-                    means:
+                    satisfying:
                     . 'X is \some.theorem'
                     written: "something"
                 """.trimIndent())),
@@ -3477,19 +3477,19 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\f{x}]
                     Defines: y
-                    expresses: "something"
+                    expressing: "something"
                     written: "something"
 
 
                     [\something]
                     Defines: X
-                    means: 'X in \f{\something.else}'
+                    satisfying: 'X in \f{\something.else}'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3513,25 +3513,25 @@ internal class EndToEndCheckTest {
                             """
                     [\something.else]
                     Defines: X
-                    means: "something else"
+                    satisfying: "something else"
                     written: "something else"
 
 
                     [\f{x}]
                     Defines: y
-                    means: "something"
+                    satisfying: "something"
                     written: "something"
 
 
                     [\something]
                     Defines: X
-                    means: 'X in \f{\something.else}'
+                    satisfying: 'X in \f{\something.else}'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 15, Column: 8)
-                The right-hand-side of an `in` cannot reference a `Defines:` without an `expresses:` section but found '\f'
+                ERROR: content/file1.math (Line: 15, Column: 13)
+                The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\f'
 
                 FAILED
                 Processed 1 file
@@ -3564,7 +3564,7 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: X
-                    means: '\f{\some.states}'
+                    satisfying: '\f{\some.states}'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3593,7 +3593,7 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: X
-                    means: '\some.axiom'
+                    satisfying: '\some.axiom'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =

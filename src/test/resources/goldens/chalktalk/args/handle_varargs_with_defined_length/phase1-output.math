@@ -1,7 +1,7 @@
 [\f{x...}]
 Defines:
 . X...#x...
-means:
+satisfying:
 . 'X is \something'
 . "something for X...#x..."
 written:

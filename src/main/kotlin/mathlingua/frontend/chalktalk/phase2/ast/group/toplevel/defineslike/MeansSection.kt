@@ -37,12 +37,12 @@ import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.TupleNode
 
-internal data class ExtendingSection(val statements: List<Statement>) : Phase2Node {
+internal data class MeansSection(val statements: List<Statement>) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = statements.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("extending")
+        writer.writeHeader("means")
         if (statements.size == 1) {
             val stmt = statements.first()
             writer.writeIndent(false, 1)
@@ -61,7 +61,7 @@ internal data class ExtendingSection(val statements: List<Statement>) : Phase2No
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ExtendingSection(
+            MeansSection(
                 statements = statements.map { it.transform(chalkTransformer) as Statement }))
 }
 
@@ -111,7 +111,7 @@ internal fun validateExtendingSection(
                         errors.addAll(validationErrors)
                         DEFAULT_EXTENDING_SECTION
                     } else {
-                        ExtendingSection(statements = statements)
+                        MeansSection(statements = statements)
                     }
                 }
             }

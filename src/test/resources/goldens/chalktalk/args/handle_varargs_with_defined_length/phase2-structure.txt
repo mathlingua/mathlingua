@@ -81,8 +81,8 @@ Document(
                )
                givenSection = null
                whenSection = null
-               extendingSection = null
-               meansSection = MeansSection(
+               meansSection = null
+               satisfyingSection = SatisfyingSection(
                  clauses = ClauseListNode(
                    clauses = [
                                Statement(
@@ -144,7 +144,7 @@ Document(
                              ]
                  )
                )
-               expressesSection = null
+               expressingSection = null
                viewingSection = null
                usingSection = null
                writtenSection = WrittenSection(

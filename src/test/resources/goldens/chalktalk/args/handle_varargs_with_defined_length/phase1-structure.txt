@@ -34,7 +34,7 @@ Root(
                             ),
                             Section(
                               name = Phase1Token(
-                                text = "means"
+                                text = "satisfying"
                                 type = ChalkTalkTokenType.Name
                                 row = 2
                                 column = 0

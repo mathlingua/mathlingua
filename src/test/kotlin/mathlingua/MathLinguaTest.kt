@@ -44,20 +44,20 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: X
             where: '\something'
-            means: '\something'
+            satisfying: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
             where: '\something'
-            means: '\something.else'
+            satisfying: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
             where: 'something'
-            means:
+            satisfying:
             . if: X
               then: '\something.else'
             written: "something"
@@ -79,26 +79,26 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: X
             where: 'X is \something'
-            means: '\something'
+            satisfying: '\something'
             written: "something"
 
             [\another.name]
             Defines: X
             where: 'X is \something'
-            means: '\something'
+            satisfying: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
             where: 'X is \something'
-            means: '\something.else'
+            satisfying: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
             where: 'X is \something'
-            means:
+            satisfying:
             . if: X
               then: '\something.else'
             written: "something"
@@ -128,28 +128,28 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "finite set"
 
 
             [\infinite.set]
             Defines: X
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "infinite set"
 
 
             [\finite.set]
             Defines: Y
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "finite set"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            means:
+            satisfying:
             . 'X is \something'
             . if: X
               then: '\something.else'
@@ -177,20 +177,20 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: X
             where: 'X is \something'
-            means: '\something'
+            satisfying: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
             where: 'X is \something'
-            means: '\something.else'
+            satisfying: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
             where: 'X is \something'
-            means:
+            satisfying:
             . if: X
               then: '\something.else'
             written: "something"
@@ -198,7 +198,7 @@ internal class MathLinguaTest {
             [\another.name]
             Defines: X
             where: 'X is \something'
-            means: '\something'
+            satisfying: '\something'
             written: "something"
         """.trimIndent(),
                 """
@@ -227,20 +227,20 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: X
             where: 'X is \something'
-            means: '\something'
+            satisfying: '\something'
             written: "something"
 
             [\infinite.set]
             Defines: X
             where: 'X is \something'
-            means: '\something.else'
+            satisfying: '\something.else'
             written: "something"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
             where: 'X is \something'
-            means:
+            satisfying:
             . if: X
               then: '\something.else'
             written: "something"
@@ -253,7 +253,7 @@ internal class MathLinguaTest {
             [\finite.set]
             Defines: Y
             where: 'X is \something'
-            means: '\yet.something.else'
+            satisfying: '\yet.something.else'
             written: "something"
         """.trimIndent())
 
@@ -276,21 +276,21 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "finite set"
 
 
             [\infinite.set]
             Defines: X
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "infinite set"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            means:
+            satisfying:
             . 'X is \something'
             . if: X
               then: '\something.else'
@@ -327,21 +327,21 @@ internal class MathLinguaTest {
                 """
             [\finite.set]
             Defines: X
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "finite set"
 
 
             [\infinite.set]
             Defines: X
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "infinite set"
         """.trimIndent(),
                 """
             [\set]
             Defines: X
-            means:
+            satisfying:
             . 'X is \something'
             . if: X
               then: '\something.else'
@@ -355,7 +355,7 @@ internal class MathLinguaTest {
 
             [\set]
             Defines: Y
-            means: 'X is \something'
+            satisfying: 'X is \something'
             written: "something"
             called: "set"
         """.trimIndent())

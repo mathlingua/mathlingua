@@ -17,8 +17,8 @@ bounded functions.
 Defines: f(x)
 given: a, b
 when: 'I := \closed.interval{a, b}'
-extending: 'f is \function:on{I}:to{R}'
-means:
+means: 'f is \function:on{I}:to{R}'
+satisfying:
 . 'f is \function:on{I}:to{\real.numbers}'
 . exists: M
   suchThat:
@@ -45,7 +45,7 @@ define next.
 [\finite.real.sequence:size{n}]
 Defines: X := {x_{i}}_{i}
 when: 'n is \integer'
-means:
+satisfying:
 . forAll: j
   suchThat:
   . 'j is \integer'
@@ -67,7 +67,7 @@ a *partition* of a closed interval.
 Defines: X := {x_{i}}_{i}
 given: a, b
 when: 'I := \closed.interval{a, b}'
-means:
+satisfying:
 . 'X is \finite.real.sequence:size{n}'
 . 'x_{0} = a'
 . 'x_{n} = b'
@@ -106,8 +106,8 @@ when:
   . 'j \integers.leq/ b'
   then:
   . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
-extending: 'L is \real'
-expresses:
+means: 'L is \real'
+expressing:
 . 'L := S(b)'
 written: "\displaystyle \sum_{i? = a?}^{b?} f?"
 called: "Finite Sum of $f$ from $a?$ to $b?$"
@@ -131,8 +131,8 @@ when:
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
-extending: 'L is \real'
-expresses:
+means: 'L is \real'
+expressing:
 . 'L := \infimum:of{\set[x]:where{f(x)}
                            :suchThat{x \real.geq/ x_{i - 1}}
                                     {x \real.leq/ x_{i}}}'
@@ -159,8 +159,8 @@ when:
 . 'i is \integer'
 . 'i \integers.geq/ 1'
 . 'i \integers.leq/ n'
-extending: 'L is \real'
-expresses:
+means: 'L is \real'
+expressing:
 . 'L := \supremum:of{\set[x]:where{f(x)}
                             :suchThat{x \real.geq/ x_{i - 1}}
                                      {x \real.leq/ x_{i}}}'
@@ -187,8 +187,8 @@ when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
-extending: 'S is \real'
-expresses:
+means: 'S is \real'
+expressing:
 . 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
 . 'm_{i} := \infimum:of{f}:over{P}:at{i}'
@@ -211,8 +211,8 @@ when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
 . 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
-extending: 'S is \real'
-expresses:
+means: 'S is \real'
+expressing:
 . 'S := \finite.sum[i]_{0}^{n}{M_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
 . 'M_{i} := \supremum:of{f}:over{P}:at{i}'
@@ -238,8 +238,8 @@ given: I
 when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-extending: 'S is \real'
-expresses:
+means: 'S is \real'
+expressing:
 . 'S := \supremum:of{\set[P, n]:where{L(f, P)}
                                :suchThat{P is \partition:of{I}:size{n}}}'
 using:
@@ -254,8 +254,8 @@ given: I
 when:
 . 'I := \closed.interval{a, b}'
 . 'f is \bounded.real.function:on{I}'
-extending: 'S is \real'
-expresses:
+means: 'S is \real'
+expressing:
 . 'S := \infimum:of{\set[P, n]:where{U(f, P)}
                               :suchThat{P is \partition:of{I}:size{n}}}'
 using:
@@ -278,8 +278,8 @@ same number.
 
 [\riemann.integralble.function:on{a, b}]
 Defines: f(x)
-extending: 'f is \function:on{R}:to{R}'
-means:
+means: 'f is \function:on{R}:to{R}'
+satisfying:
 . '\lower.darboux.integral:of{f}:on{a, b} =
    \upper.darboux.integral:of{f}:on{a, b}'
 using: 'R := \real.numbers'
@@ -299,8 +299,8 @@ Riemann Integrable.
 [\definite.integral[x]_{a}^{b}:of{f}]
 Defines: S
 when: 'f is \riemann.integralble.function:on{a, b}'
-extending: 'S is \real'
-expresses:
+means: 'S is \real'
+expressing:
 . 'S := \lower.darboux.integral:of{f}:on{a, b}'
 written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
 called: "Definite Integral of $f?$ from $a?$ to $b?$"
@@ -326,8 +326,8 @@ given: a, b
 when:
 . 'I := \open.interval{a, b}'
 . 'f is \function:on{I}:to{\real.numbers}'
-extending: 'F(x) is \function:on{I}:to{R}'
-means:
+means: 'F(x) is \function:on{I}:to{R}'
+satisfying:
 . forAll: t
   suchThat: 't in I'
   then:

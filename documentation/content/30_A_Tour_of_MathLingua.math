@@ -66,7 +66,7 @@ set as follows:
 ```math
 [\set]
 Defines: S := {s}
-means: "A collection of things"
+satisfying: "A collection of things"
 written: "\textrm{Set}"
 called: "Set"
 ```
@@ -76,7 +76,7 @@ and is rendered as
 
 [\set]
 Defines: S := {s}
-means:
+satisfying:
 . "$s$ is well defined"
 . "A well defined collection of things"
 written: "\textrm{Set}"
@@ -96,7 +96,7 @@ the form `f(x)` is used for function like objects,
 `{x_{i}}_{i}` is used for sequence-like objects, and
 `(X, Y, *)` for tuples.
 
-Further, we use text in double quotes in the `means:`
+Further, we use text in double quotes in the `satisfying:`
 section because we are informally describing what a set
 is.  Formal statements, on the other hand, are enclosed
 in single quotes as we`\'`ll see later.
@@ -110,7 +110,7 @@ binary operation is a type of function.
 [\function:on{A}:to{B}]
 Defines: f(x)
 when: 'A, B is \set'
-means:
+satisfying:
 . 'x in A'
 . forAll: a
   suchThat: 'a in A'
@@ -129,7 +129,7 @@ which is rendered as:
 [\function:on{A}:to{B}]
 Defines: f(x)
 when: 'A, B is \set'
-means:
+satisfying:
 . 'x in A'
 . forAll: a
   suchThat: 'a in A'
@@ -221,7 +221,7 @@ do that using the MathLingua text:
 [A \set.product/ B]
 Defines: X := {x, y}
 when: 'A, B is \set'
-expresses:
+expressing:
 . 'x in A'
 . 'y in B'
 written: "A? \times B?"
@@ -233,7 +233,7 @@ that is rendered as
 [A \set.product/ B]
 Defines: X := {x, y}
 when: 'A, B is \set'
-expresses:
+expressing:
 . 'x in A'
 . 'y in B'
 written: "A+? \times B+?"
@@ -279,11 +279,11 @@ Last, if a `-?` was used instead, then any parens around an
 expression will be removed.
 
 Further, notice that the `Defines:` form above has an
-`expresses:` section while the definition
-`\function:on{A}:to{B}` above has a `means:` section.
+`expressing:` section while the definition
+`\function:on{A}:to{B}` above has a `satisfying:` section.
 
-A `Defines:` with a `means:` section defines an abstract
-concept while one with an `expresses:` defines a
+A `Defines:` with a `satisfying:` section defines an abstract
+concept while one with an `expressing:` defines a
 single concrete object.
 
 Concrete objects can be used in expressions while
@@ -395,7 +395,7 @@ Now we can define a group:
 ```math
 [\group]
 Defines: G := (X, *, e)
-means:
+satisfying:
 . 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
@@ -432,7 +432,7 @@ that is rendered as
 
 [\group]
 Defines: G := (X, *, e)
-means:
+satisfying:
 . 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
@@ -527,7 +527,7 @@ given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
-expresses:
+expressing:
 . 'x * y = e'
 . 'y * x = e'
 written: "x+?^{-1}"
@@ -543,7 +543,7 @@ given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
-expresses:
+expressing:
 . 'x * y = e'
 . 'y * x = e'
 written: "{x+?}^{-1}"

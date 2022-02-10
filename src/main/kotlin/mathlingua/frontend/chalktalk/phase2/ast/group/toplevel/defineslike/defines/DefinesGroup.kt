@@ -235,6 +235,17 @@ internal fun validateDefinesGroup(
                 if (funcArgsError != null) {
                     errors.add(funcArgsError)
                     DEFAULT_DEFINES_GROUP
+                } else if (def.satisfyingSection == null &&
+                    def.expressingSection == null &&
+                    def.meansSection == null) {
+                    errors.add(
+                        ParseError(
+                            message =
+                                "If a `Defines:` doesn't have a `satisfying:` or `expressing:` section, " +
+                                    "then it must have a `means:` section",
+                            row = getRow(node),
+                            column = getColumn(node)))
+                    DEFAULT_DEFINES_GROUP
                 } else if (def.satisfyingSection != null && def.expressingSection != null) {
                     errors.add(
                         ParseError(

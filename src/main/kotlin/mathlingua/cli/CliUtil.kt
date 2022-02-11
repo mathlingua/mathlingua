@@ -67,15 +67,14 @@ internal val COMPLETIONS =
                 ),
                 CompletionItem(
                     name = "Axiom",
-                    value = "Axiom:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:",
+                    value = "Axiom:\ngiven?:\nwhen?:\nthen:\niff?:\nusing?:\nMetadata?:",
                 ),
                 CompletionItem(
                     name = "Conjecture",
-                    value = "Conjecture:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nMetadata?:",
-                ),
+                    value = "Conjecture:\ngiven?:\nwhen?:\nthen:\niff?:\nusing?:\nMetadata?:"),
                 CompletionItem(
                     name = "Theorem",
-                    value = "Theorem:\ngiven?:\nif?:\niff?:\nthen:\nusing?:\nProof?:\nMetadata?:",
+                    value = "Theorem:\ngiven?:\nwhen?:\nthen:\niff?:\nusing?:\nProof?:\nMetadata?:",
                 ),
                 CompletionItem(name = "Topic", value = "Topic:\ncontent:\nMetadata?:"),
                 CompletionItem(name = "Note", value = "Note:\ncontent:\nMetadata?:")))

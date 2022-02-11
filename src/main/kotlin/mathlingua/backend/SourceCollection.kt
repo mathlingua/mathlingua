@@ -52,6 +52,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
@@ -1404,6 +1405,32 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
 
         for (pair in conjectureGroups) {
             processConjectures(pair)
+        }
+
+        /*
+         * For a Defines: with a generated: section, create synthetic
+         * defines so that the constructors in the generated: section
+         * can be resolved as valid signatures.
+         */
+        for (def in definesGroups) {
+            val outerSig = def.value.original.signature ?: continue
+            val satisfyingSection = def.value.original.satisfyingSection
+            if (satisfyingSection != null) {
+                for (clause in satisfyingSection.clauses.clauses) {
+                    if (clause is GeneratedGroup) {
+                        for (form in clause.generatedFromSection.forms) {
+                            val innerSig =
+                                "${outerSig.form}.${form.abstraction.toCode().replace(Regex("\\(.*?\\)"), "")}"
+                            val vst =
+                                ValueSourceTracker(
+                                    source = def.source,
+                                    tracker = def.tracker,
+                                    value = Signature(innerSig, outerSig.location))
+                            result.add(Pair(vst, def.value))
+                        }
+                    }
+                }
+            }
         }
 
         return result.map { Pair(first = it.first, second = it.second.normalized) }

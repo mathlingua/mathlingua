@@ -3737,4 +3737,38 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report errors commands introduced inductively in a Defines`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\natural]
+                    Defines: n
+                    satisfying:
+                    . generated:
+                      from: 0, succ(x)
+                      when: 'x is \natural'
+                    written: "\textrm{natural}"
+
+
+                    [\something]
+                    Defines: X
+                    means:
+                    . 'X := \natural.succ(\natural.0)'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

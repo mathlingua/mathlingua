@@ -20,6 +20,7 @@ import mathlingua.backend.WrittenAsForm
 import mathlingua.backend.isOperatorName
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
+import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
@@ -34,6 +35,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
@@ -106,6 +108,39 @@ internal fun getPatternsToWrittenAs(
 ): Map<OperatorTexTalkNode, WrittenAsForm> {
     val allDefines = mutableListOf<DefinesGroup>()
     allDefines.addAll(defines)
+
+    /*
+     * For a Defines: with a generated: section, create synthetic
+     * defines so that the constructors in the generated: section
+     * can be resolved as valid signatures.
+     */
+    for (def in defines) {
+        val outerSig = def.signature ?: continue
+        val satisfyingSection = def.satisfyingSection
+        if (satisfyingSection != null) {
+            for (clause in satisfyingSection.clauses.clauses) {
+                if (clause is GeneratedGroup) {
+                    for (form in clause.generatedFromSection.forms) {
+                        val innerSig =
+                            "${outerSig.form}.${form.abstraction.toCode().replace(Regex("\\(.*?\\)"), "")}"
+                        when (val validation =
+                            FrontEnd.parse(
+                                """
+                            [$innerSig]
+                            Defines: X
+                            expressing: ""
+                            written: "$innerSig"
+                        """.trimIndent())
+                        ) {
+                            is ValidationSuccess -> {
+                                allDefines.addAll(validation.value.defines())
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     val allStates = mutableListOf<StatesGroup>()
     allStates.addAll(states)

@@ -50,7 +50,7 @@ internal val COMPLETIONS =
                 CompletionItem(
                     name = "Defines:",
                     value =
-                        "Defines:\ngiven?:\nwhen?:\nmeans?:\nsatisfies:\nexpresses:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
+                        "Defines:\ngiven?:\nwhen?:\nmeans?:\nsatisfying:\nexpressing:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
                 ),
                 CompletionItem(
                     name = "States",

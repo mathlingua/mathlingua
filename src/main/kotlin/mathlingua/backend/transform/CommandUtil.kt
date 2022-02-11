@@ -40,10 +40,13 @@ internal fun getCommandsToGlue(node: ExpressionTexTalkNode, location: Location):
     val cmds = mutableListOf<Command>()
     for (n in node.children) {
         if (n !is Command) {
-            throw Error(
-                "Unexpected non-Command node: ${n.toCode()} (${location.row+1}, ${location.column+1})")
+            if (n !is TextTexTalkNode || (n.text != ":Defines:" && n.text != ":States:")) {
+                println(
+                    "Unexpected non-Command node: ${n.toCode()} (${location.row + 1}, ${location.column + 1})")
+            }
+        } else {
+            cmds.add(n)
         }
-        cmds.add(n)
     }
     return glueCommands(cmds)
 }

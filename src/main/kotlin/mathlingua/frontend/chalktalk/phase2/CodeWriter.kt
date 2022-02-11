@@ -842,7 +842,7 @@ private open class HtmlCodeWriter(
                     writeDirect("<span class='mathlingua-is'>is</span>")
                     writeSpace()
                     builder.append(
-                        "$$$${rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
+                        "$$$${rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }").replace(":Defines:", "\\textrm{:Defines:}").replace(":States:", "\\textrm{:States:}")}$$$")
                 }
             } else if (stmtWithoutGroups.contains(IN)) {
                 val index = stmtWithoutGroups.indexOf(IN)

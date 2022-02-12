@@ -692,32 +692,3 @@ internal enum class TexTalkTokenType {
     DotDotDot,
     Invalid
 }
-
-internal fun getTexTalkAncestry(root: TexTalkNode, node: TexTalkNode): List<TexTalkNode> {
-    val path = mutableListOf<TexTalkNode>()
-    getTexTalkAncestryImpl(root, node, path)
-    // 'node' itself shouldn't be in the ancestry
-    if (path.isNotEmpty()) {
-        path.removeAt(path.size - 1)
-    }
-    return path.reversed()
-}
-
-private fun getTexTalkAncestryImpl(
-    root: TexTalkNode, node: TexTalkNode, path: MutableList<TexTalkNode>
-) {
-    if (root == node) {
-        path.add(node)
-        return
-    }
-
-    path.add(root)
-    root.forEach {
-        if (path.isEmpty() || path.last() != node) {
-            getTexTalkAncestryImpl(it, node, path)
-        }
-    }
-    if (path.isEmpty() || path.last() != node) {
-        path.removeAt(path.size - 1)
-    }
-}

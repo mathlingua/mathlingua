@@ -25,9 +25,6 @@ satisfying:
 . forAll: x, y
   suchThat: 'x, y in X'
   then: 'x * y = y * x'
-viewing:
-. as: '\group'
-  via: 'G'
 written: "\textrm{Abelian Group}"
 
 
@@ -73,9 +70,6 @@ satisfying:
   suchThat: 'x, y, z in X'
   then:
   . 'x*(y + z) = x*y + x*z'
-viewing:
-. as: '\set'
-  via: 'X'
 written: "\textrm{Field}"
 
 
@@ -181,9 +175,6 @@ satisfying:
     . '0 < y'
     then:
     . '0 < x * y'
-viewing:
-. as: '\field'
-  via: '(X, +, *, 0, 1)'
 written: "\textrm{Ordered Field}"
 
 

@@ -18,11 +18,6 @@ Defines: R := (X, +, *, 0, 1, <)
 means: 'R is \ordered.field'
 expressing:
 . '\rationals.set \subset/ X'
-viewing:
-. as: '\set'
-  via: 'X'
-. membership:
-  through: 'X'
 written: "\mathbb{R}"
 called: "The Real Numbers"
 

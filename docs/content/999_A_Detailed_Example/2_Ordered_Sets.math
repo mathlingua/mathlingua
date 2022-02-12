@@ -173,11 +173,6 @@ satisfying:
 . exists: b
   suchThat:
   . 'b is \upper.bound:of{X}'
-viewing:
-. as: '\set'
-  via: 'E'
-. membership:
-  through: 'E'
 written: "\textrm{Bounded Above}"
 
 
@@ -232,11 +227,6 @@ satisfying:
 . exists: b
   suchThat:
   . 'b is \lower.bound:of{X}'
-viewing:
-. as: '\set'
-  via: 'E'
-. membership:
-  through: 'E'
 written: "\textrm{Bounded Below}"
 
 

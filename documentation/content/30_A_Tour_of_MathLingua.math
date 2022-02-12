@@ -112,6 +112,7 @@ Defines: f(x)
 when: 'A, B is \set'
 satisfying:
 . 'x in A'
+. 'f(x) in B'
 . forAll: a
   suchThat: 'a in A'
   then:
@@ -131,6 +132,7 @@ Defines: f(x)
 when: 'A, B is \set'
 satisfying:
 . 'x in A'
+. 'f(x) in B'
 . forAll: a
   suchThat: 'a in A'
   then:
@@ -395,8 +397,8 @@ Now we can define a group:
 ```math
 [\group]
 Defines: G := (X, *, e)
+means: 'X is \set'
 satisfying:
-. 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
 . forAll: x
@@ -416,8 +418,6 @@ satisfying:
     . 'y in X'
     . 'x * y = e'
 viewing:
-. as: '\set'
-  via: 'X'
 . membership:
   through: 'X'
 written: "\textrm{group}"
@@ -432,8 +432,8 @@ that is rendered as
 
 [\group]
 Defines: G := (X, *, e)
+means: 'X is \set'
 satisfying:
-. 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
 . forAll: x
@@ -453,8 +453,6 @@ satisfying:
     . 'y in X'
     . 'x * y = e'
 viewing:
-. as: '\set'
-  via: 'X'
 . membership:
   through: 'X'
 written: "\textrm{group}"
@@ -527,6 +525,7 @@ given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
+means: 'y in G'
 expressing:
 . 'x * y = e'
 . 'y * x = e'
@@ -543,6 +542,7 @@ given: X, *, e
 when:
 . 'G := (X, *, e) is \group'
 . 'x in X'
+means: 'y in G'
 expressing:
 . 'x * y = e'
 . 'y * x = e'

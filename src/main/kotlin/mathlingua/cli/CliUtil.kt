@@ -77,7 +77,13 @@ internal val COMPLETIONS =
                     value = "Theorem:\ngiven?:\nwhen?:\nthen:\niff?:\nusing?:\nProof?:\nMetadata?:",
                 ),
                 CompletionItem(name = "Topic", value = "Topic:\ncontent:\nMetadata?:"),
-                CompletionItem(name = "Note", value = "Note:\ncontent:\nMetadata?:")))
+                CompletionItem(name = "Note", value = "Note:\ncontent:\nMetadata?:"),
+                CompletionItem(name = "Specify", value = "Specify:"),
+                CompletionItem(name = "zero", value = "zero:\nis:"),
+                CompletionItem(name = "positiveInt", value = "positiveInt:\nis:"),
+                CompletionItem(name = "negativeInt", value = "negativeInt:\nis:"),
+                CompletionItem(name = "positiveFloat", value = "positiveFloat:\nis:"),
+                CompletionItem(name = "negativeFloat", value = "negativeFloat:\nis:")))
 
 internal fun getGitHubUrl(): String? {
     val pro =

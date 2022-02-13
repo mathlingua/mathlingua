@@ -75,7 +75,7 @@ data class DecompositionResult(
     val signatureIndex: SignatureIndex,
     val configuration: Configuration)
 
-@Serializable data class CompletionItem(val name: String, val value: String)
+@Serializable data class CompletionItem(val name: String, val parts: List<String>)
 
 @Serializable data class Completions(val items: List<CompletionItem>)
 

@@ -26,6 +26,12 @@ import { DebouncedFunc } from 'lodash';
 import { errorResultsUpdated } from '../../store/errorResultsSlice';
 import { AppDispatch } from '../../store/store';
 
+interface AceCompletion {
+  value: string;
+  caption?: string;
+  score?: number;
+}
+
 let BASE_COMPLETIONS: api.CompletionItem[] = [];
 if (!api.isStatic()) {
   // the static version of the site doesn't allow editing and doesn't have a backend running
@@ -362,39 +368,124 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
     }
   }
 
+  private getEssentialIndent(line: string) {
+    let i = 0;
+    while (i < line.length && (line[i] === ' ' || line[i] === '.')) {
+      i++;
+    }
+    return i;
+  }
+
   private setupCompletions() {
     langTools.setCompleters();
     langTools.addCompleter({
       getCompletions: async (
         editor: any,
         session: {},
-        pos: { column: number },
+        pos: { row: number; column: number },
         prefix: string,
         callback: (n: null, arr: any[]) => void
       ) => {
-        if (prefix.length === 0) {
-          return callback(null, []);
+        const curIndent = this.getEssentialIndent(editor.session.getLine(pos.row));
+        let sections: string[] = [];
+        let prevRow = pos.row - 1;
+        while (prevRow >= 0) {
+          const tmpLine: string = editor.session.getLine(prevRow);
+          if (tmpLine.trim().length === 0 || tmpLine.trim().startsWith('[')) {
+            break;
+          }
+          const indent = this.getEssentialIndent(tmpLine);
+          if (indent === curIndent) {
+            sections.unshift(tmpLine.substring(curIndent).replace('?:', ':').replace(/:.*/, ':'));
+          }
+          prevRow--;
         }
-        const column = pos.column;
-        let indent = '\n';
-        for (let i = 0; i < column - prefix.length; i++) {
-          indent += ' ';
-        }
+
         const remoteCompletions = (
           await api.getSignatureSuffixes(`\\${prefix}`)
         ).map((suffix) => ({
           name: prefix + suffix,
           value: prefix + suffix,
         }));
-        callback(
-          null,
-          BASE_COMPLETIONS.concat(remoteCompletions).map((item) => {
-            return {
-              name: item.name.replace(/\\/, ''),
-              value: item.value.replace(/\\/, '').replace(/\n/g, indent),
-            };
-          })
-        );
+
+        let completions: AceCompletion[] = [];
+        let completionIndex = 1;
+
+        if (sections.length > 0) {
+          for (const comp of BASE_COMPLETIONS) {
+            let allMatching = true;
+            let j = 0;
+            for (let i=0; i<sections.length; i++) {
+              let found = false;
+              while (j < comp.parts.length) {
+                const normalizedPart = comp.parts[j++]?.replace('[]\n', '').replace('?:', ':');
+                if (sections[i] === normalizedPart) {
+                  found = true;
+                  break;
+                }
+              }
+
+              if (!found) {
+                allMatching = false;
+                break;
+              }
+            }
+
+            if (allMatching) {
+              const firstSection = sections[0]?.replace('[]\n', '').replace('?:', ':');
+              if (firstSection) {
+                const index = comp.parts.map(p =>
+                  p.replace('[]\n', '').replace('?:', ':')).indexOf(firstSection);
+                if (index >= 0) {
+                  for (let k=0; k<index; k++) {
+                    if (comp.parts[k].indexOf('?') === -1) {
+                      // there is a non-optional section
+                      allMatching = false;
+                      break;
+                    }
+                  }
+                }
+              }
+            }
+
+            if (allMatching) {
+              for (let i = 0; i < comp.parts.length; i++) {
+                const target = comp.parts[i]?.replace('[]\n', '')?.replace('?:', ':');
+                if (target === sections[sections.length - 1]) {
+                  for (let j=i+1; j<comp.parts.length; j++) {
+                    completions.push({
+                      value: comp.parts[j],
+                      score: 1.0/(completionIndex++),
+                    });
+                  }
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        if (prefix) {
+          for (const comp of BASE_COMPLETIONS) {
+            const first = comp.parts[0]?.replace('[]\n', '')?.replace('?:', ':');
+            if (first && first.startsWith(prefix)) {
+              completions.push({
+                value: comp.parts[0],
+                score: 1.0/(completionIndex++),
+              });
+            }
+          }
+        } else if (sections.length === 0) {
+          completions = completions.concat(BASE_COMPLETIONS.map(comp => ({
+            value: comp.parts[0],
+          })));
+        }
+
+        if (prefix !== '') {
+          completions = completions.concat(remoteCompletions);
+        }
+
+        callback(null, completions);
       },
     });
   }
@@ -430,6 +521,10 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
           showPrintMargin={false}
           enableBasicAutocompletion={true}
           enableLiveAutocompletion={false}
+          tabSize={2}
+          setOptions={{
+            useSoftTabs: true,
+          }}
           fontSize="100%"
           style={{
             fontFamily: "'Inconsolata', monospace",

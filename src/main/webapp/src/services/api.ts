@@ -73,7 +73,7 @@ export interface GitHubUrlResponse {
 
 export interface CompletionItem {
   name: string;
-  value: string;
+  parts: string[];
 }
 
 export interface Completions {

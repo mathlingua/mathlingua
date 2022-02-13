@@ -37,53 +37,99 @@ internal val COMPLETIONS =
     Completions(
         items =
             listOf(
-                CompletionItem(name = "and", value = "and:"),
-                CompletionItem(name = "exists", value = "exists:\nsuchThat:"),
-                CompletionItem(name = "existsUnique", value = "existsUnique:\nsuchThat:"),
-                CompletionItem(name = "forAll", value = "forAll:\nsuchThat?:\nthen:"),
-                CompletionItem(name = "if", value = "if:\nthen:"),
-                CompletionItem(name = "iff", value = "iff:\nthen:"),
-                CompletionItem(name = "not", value = "not:"),
-                CompletionItem(name = "or", value = "or:"),
-                CompletionItem(name = "piecewise", value = "piecewise:"),
-                CompletionItem(name = "generated", value = "generated:\nfrom:\nwhen?:"),
+                CompletionItem(name = "and", parts = listOf("and:")),
+                CompletionItem(name = "exists", parts = listOf("exists:", "suchThat:")),
+                CompletionItem(name = "existsUnique", parts = listOf("existsUnique:", "suchThat:")),
+                CompletionItem(name = "forAll", parts = listOf("forAll:", "suchThat?:", "then:")),
+                CompletionItem(name = "if", parts = listOf("if:", "then:")),
+                CompletionItem(name = "iff", parts = listOf("iff:", "then:")),
+                CompletionItem(name = "not", parts = listOf("not:")),
+                CompletionItem(name = "or", parts = listOf("or:")),
+                CompletionItem(name = "piecewise", parts = listOf("piecewise:")),
+                CompletionItem(name = "generated", parts = listOf("generated:", "from:", "when?:")),
                 CompletionItem(
                     name = "Defines:",
-                    value =
-                        "Defines:\ngiven?:\nwhen?:\nmeans?:\nsatisfying:\nexpressing:\nviewing?:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
+                    parts =
+                        listOf(
+                            "Defines:",
+                            "given?:",
+                            "when?:",
+                            "means?:",
+                            "satisfying:",
+                            "expressing:",
+                            "viewing?:",
+                            "using?:",
+                            "written:",
+                            "called?:",
+                            "Metadata?:"),
                 ),
                 CompletionItem(
                     name = "States",
-                    value =
-                        "States:\ngiven?:\nwhen?:\nthat:\nusing?:\nwritten:\ncalled?:\nMetadata?:",
+                    parts =
+                        listOf(
+                            "States:",
+                            "given?:",
+                            "when?:",
+                            "that:",
+                            "using?:",
+                            "written:",
+                            "called?:",
+                            "Metadata?:"),
                 ),
-                CompletionItem(name = "equality", value = "equality:\nbetween:\nprovided:"),
-                CompletionItem(name = "membership", value = "membership:\nthrough:"),
-                CompletionItem(name = "as", value = "as:\nvia:\nby?:"),
+                CompletionItem(
+                    name = "equality", parts = listOf("equality:", "between:", "provided:")),
+                CompletionItem(name = "membership", parts = listOf("membership:", "through:")),
+                CompletionItem(name = "as", parts = listOf("as:", "via:", "by?:")),
                 CompletionItem(
                     name = "Resource",
-                    value =
-                        "Resource:\n. type? = \"\"\n. name? = \"\"\n. author? = \"\"\n. homepage? = \"\"\n. url? = \"\"\n. offset? = \"\"\nMetadata?:",
+                    parts =
+                        listOf(
+                            "Resource:\n. type? = \"\"\n. name? = \"\"\n. author? = \"\"\n. homepage? = \"\"\n. url? = \"\"\n. offset? = \"\"\nMetadata?:"),
                 ),
                 CompletionItem(
                     name = "Axiom",
-                    value = "Axiom:\ngiven?:\nwhen?:\nthen:\niff?:\nusing?:\nMetadata?:",
+                    parts =
+                        listOf(
+                            "Axiom:",
+                            "given?:",
+                            "when?:",
+                            "then:",
+                            "iff?:",
+                            "using?:",
+                            "Metadata?:"),
                 ),
                 CompletionItem(
                     name = "Conjecture",
-                    value = "Conjecture:\ngiven?:\nwhen?:\nthen:\niff?:\nusing?:\nMetadata?:"),
+                    parts =
+                        listOf(
+                            "Conjecture:",
+                            "given?:",
+                            "when?:",
+                            "then:",
+                            "iff?:",
+                            "using?:",
+                            "Metadata?:")),
                 CompletionItem(
                     name = "Theorem",
-                    value = "Theorem:\ngiven?:\nwhen?:\nthen:\niff?:\nusing?:\nProof?:\nMetadata?:",
+                    parts =
+                        listOf(
+                            "Theorem:",
+                            "given?:",
+                            "when?:",
+                            "then:",
+                            "iff?:",
+                            "using?:",
+                            "Proof?:",
+                            "Metadata?:"),
                 ),
-                CompletionItem(name = "Topic", value = "Topic:\ncontent:\nMetadata?:"),
-                CompletionItem(name = "Note", value = "Note:\ncontent:\nMetadata?:"),
-                CompletionItem(name = "Specify", value = "Specify:"),
-                CompletionItem(name = "zero", value = "zero:\nis:"),
-                CompletionItem(name = "positiveInt", value = "positiveInt:\nis:"),
-                CompletionItem(name = "negativeInt", value = "negativeInt:\nis:"),
-                CompletionItem(name = "positiveFloat", value = "positiveFloat:\nis:"),
-                CompletionItem(name = "negativeFloat", value = "negativeFloat:\nis:")))
+                CompletionItem(name = "Topic", parts = listOf("Topic:", "content:", "Metadata?:")),
+                CompletionItem(name = "Note", parts = listOf("Note:", "content:", "Metadata?:")),
+                CompletionItem(name = "Specify", parts = listOf("Specify:")),
+                CompletionItem(name = "zero", parts = listOf("zero:", "is:")),
+                CompletionItem(name = "positiveInt", parts = listOf("positiveInt:", "is:")),
+                CompletionItem(name = "negativeInt", parts = listOf("negativeInt:", "is:")),
+                CompletionItem(name = "positiveFloat", parts = listOf("positiveFloat:", "is:")),
+                CompletionItem(name = "negativeFloat", parts = listOf("negativeFloat:", "is:"))))
 
 internal fun getGitHubUrl(): String? {
     val pro =

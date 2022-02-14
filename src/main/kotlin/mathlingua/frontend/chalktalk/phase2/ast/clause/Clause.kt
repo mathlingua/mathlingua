@@ -49,14 +49,14 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.isPiecewi
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.validatePiecewiseGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.isDefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.isEqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.validateEqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.isMembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.validateMembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.isViewingAsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.validateViewingAsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.isEqualityGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality.validateEqualityGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.isMembershipGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership.validateMembershipGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.isViewingAsGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.validateViewingAsGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 

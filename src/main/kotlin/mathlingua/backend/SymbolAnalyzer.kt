@@ -27,7 +27,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewGroup
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
@@ -66,16 +66,16 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature
                     getDefSignatures(def, name, pair.first.tracker ?: newLocationTracker()))
             }
 
-            if (def.viewingSection != null) {
-                var asSection: ViewingAsGroup? = null
-                for (clause in def.viewingSection.clauses.clauses) {
-                    if (clause is ViewingAsGroup) {
-                        asSection = clause
+            if (def.providingSection != null) {
+                var viewGroup: ViewGroup? = null
+                for (clause in def.providingSection.clauses.clauses) {
+                    if (clause is ViewGroup) {
+                        viewGroup = clause
                         break
                     }
                 }
-                if (asSection != null) {
-                    when (val root = asSection.viewingAsSection.statement.texTalkRoot
+                if (viewGroup != null) {
+                    when (val root = viewGroup.viewAsSection.statement.texTalkRoot
                     ) {
                         is ValidationSuccess -> {
                             if (root.value.children.size == 1 &&

@@ -145,7 +145,7 @@ Document(
                  )
                )
                expressingSection = null
-               viewingSection = null
+               providingSection = null
                usingSection = null
                writtenSection = WrittenSection(
                  forms = [

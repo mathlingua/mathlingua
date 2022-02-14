@@ -37,11 +37,11 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.MeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.ProvidingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.validateViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateExtendingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.ViewingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
@@ -75,7 +75,7 @@ internal data class DefinesGroup(
     val meansSection: MeansSection?,
     val satisfyingSection: SatisfyingSection?,
     val expressingSection: ExpressingSection?,
-    val viewingSection: ViewingSection?,
+    val providingSection: ProvidingSection?,
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
     val calledSection: CalledSection?,
@@ -100,8 +100,8 @@ internal data class DefinesGroup(
         if (expressingSection != null) {
             fn(expressingSection)
         }
-        if (viewingSection != null) {
-            fn(viewingSection)
+        if (providingSection != null) {
+            fn(providingSection)
         }
         if (usingSection != null) {
             fn(usingSection)
@@ -124,7 +124,7 @@ internal data class DefinesGroup(
                 meansSection,
                 satisfyingSection,
                 expressingSection,
-                viewingSection,
+                providingSection,
                 usingSection,
                 writtenSection,
                 calledSection,
@@ -151,7 +151,8 @@ internal data class DefinesGroup(
                     satisfyingSection?.transform(chalkTransformer) as SatisfyingSection?,
                 expressingSection =
                     expressingSection?.transform(chalkTransformer) as ExpressingSection?,
-                viewingSection = viewingSection?.transform(chalkTransformer) as ViewingSection?,
+                providingSection =
+                    providingSection?.transform(chalkTransformer) as ProvidingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 calledSection = calledSection?.transform(chalkTransformer) as CalledSection?,
@@ -176,7 +177,7 @@ internal fun validateDefinesGroup(
                     "means?",
                     "satisfying?",
                     "expressing?",
-                    "viewing?",
+                    "providing?",
                     "using?",
                     "written",
                     "called?",
@@ -210,8 +211,8 @@ internal fun validateDefinesGroup(
                             ifNonNull(sections["expressing"]) {
                                 validateExpressesSection(it, errors, tracker)
                             },
-                        viewingSection =
-                            ifNonNull(sections["viewing"]) {
+                        providingSection =
+                            ifNonNull(sections["providing"]) {
                                 validateViewingSection(it, errors, tracker)
                             },
                         usingSection =

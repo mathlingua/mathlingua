@@ -14,23 +14,23 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EQUALITY_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MEMBERSHIP_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal class EqualitySection : Phase2Node {
+internal class MembershipSection : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("equality")
+        writer.writeHeader("membership")
         return writer
     }
 
@@ -38,11 +38,11 @@ internal class EqualitySection : Phase2Node {
         chalkTransformer(this)
 }
 
-internal fun validateEqualitySection(
+internal fun validateMembershipSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "equality", DEFAULT_EQUALITY_SECTION) {
-            EqualitySection()
+        validateSection(node.resolve(), errors, "membership", DEFAULT_MEMBERSHIP_SECTION) {
+            MembershipSection()
         }
     }

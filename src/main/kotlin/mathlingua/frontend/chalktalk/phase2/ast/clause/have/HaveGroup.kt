@@ -23,8 +23,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_HAVE_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.BySection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.validateBySection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.BySection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.validateBySection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.track

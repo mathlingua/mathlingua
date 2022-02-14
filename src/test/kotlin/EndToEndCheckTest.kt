@@ -1931,7 +1931,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors of duplicate base types when viewing-as causes no duplicate base types`() {
+    fun `check does not report errors of duplicate base types when providing-view-as causes no duplicate base types`() {
         runCheckTest(
             files =
                 listOf(
@@ -1949,8 +1949,9 @@ internal class EndToEndCheckTest {
                     [\something.else]
                     Defines: X
                     satisfying: "something else"
-                    viewing:
-                    . as: '\something'
+                    providing:
+                    . view:
+                      as: '\something'
                       via: 'X'
                     written: "something else"
                     called: "something else"
@@ -2011,8 +2012,9 @@ internal class EndToEndCheckTest {
                     . 'S is \something'
                     . '< is \something.else'
                     . '0 < 1'
-                    viewing:
-                    . as: '\another'
+                    providing:
+                    . view:
+                      as: '\another'
                       via: 'S'
                     . membership:
                       through: 'S'
@@ -2065,8 +2067,9 @@ internal class EndToEndCheckTest {
                     . 'S is \something'
                     . '< is \something.else'
                     . '0 < 1'
-                    viewing:
-                    . as: '\another'
+                    providing:
+                    . view:
+                      as: '\another'
                       via: 'S'
                     . membership:
                       through: 'S'

@@ -112,8 +112,9 @@ satisfying:
 . forAll: x, y, z
   suchThat: 'x, y, z in X'
   then: '(x*y)*z = x*(y*z)'
-viewing:
-. as: '\set'
+providing:
+. view:
+  as: '\set'
   via: 'X'
   by: '\some.theorem'
 . membership:

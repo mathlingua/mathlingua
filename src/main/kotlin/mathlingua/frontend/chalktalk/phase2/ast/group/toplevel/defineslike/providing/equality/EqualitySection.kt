@@ -14,43 +14,35 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THROUGH_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
-import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EQUALITY_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ThroughSection(val statement: Statement) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(statement)
-    }
+internal class EqualitySection : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("through")
-        writer.append(statement, false, 1)
+        writer.writeHeader("equality")
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(ThroughSection(statement = chalkTransformer(statement) as Statement))
+        chalkTransformer(this)
 }
 
-internal fun validateThroughSection(
+internal fun validateEqualitySection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, DEFAULT_THROUGH_SECTION) {
-            validateSingleArg(it, errors, DEFAULT_THROUGH_SECTION, "statement") {
-                ThroughSection(statement = validateStatement(it, errors, tracker))
-            }
+        validateSection(node.resolve(), errors, "equality", DEFAULT_EQUALITY_SECTION) {
+            EqualitySection()
         }
     }

@@ -57,7 +57,7 @@ internal val COMPLETIONS =
                             "means?:",
                             "satisfying:",
                             "expressing:",
-                            "viewing?:",
+                            "providing?:",
                             "using?:",
                             "written:",
                             "called?:",
@@ -79,7 +79,8 @@ internal val COMPLETIONS =
                 CompletionItem(
                     name = "equality", parts = listOf("equality:", "between:", "provided:")),
                 CompletionItem(name = "membership", parts = listOf("membership:", "through:")),
-                CompletionItem(name = "as", parts = listOf("as:", "via:", "by?:")),
+                CompletionItem(name = "view", parts = listOf("view:", "as:", "via:", "by?:")),
+                CompletionItem(name = "symbols", parts = listOf("symbols:", "expressing?:")),
                 CompletionItem(
                     name = "Resource",
                     parts =

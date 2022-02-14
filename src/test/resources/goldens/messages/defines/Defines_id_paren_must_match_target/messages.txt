@@ -9,7 +9,7 @@ when?:
 means?:
 satisfying?:
 expressing?:
-viewing?:
+providing?:
 using?:
 written:
 called?:
@@ -30,7 +30,7 @@ when?:
 means?:
 satisfying?:
 expressing?:
-viewing?:
+providing?:
 using?:
 written:
 called?:
@@ -51,7 +51,7 @@ when?:
 means?:
 satisfying?:
 expressing?:
-viewing?:
+providing?:
 using?:
 written:
 called?:
@@ -72,7 +72,7 @@ when?:
 means?:
 satisfying?:
 expressing?:
-viewing?:
+providing?:
 using?:
 written:
 called?:
@@ -93,7 +93,7 @@ when?:
 means?:
 satisfying?:
 expressing?:
-viewing?:
+providing?:
 using?:
 written:
 called?:
@@ -114,7 +114,7 @@ when?:
 means?:
 satisfying?:
 expressing?:
-viewing?:
+providing?:
 using?:
 written:
 called?:

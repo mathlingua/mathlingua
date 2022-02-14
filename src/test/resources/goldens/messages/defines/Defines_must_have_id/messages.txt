@@ -9,7 +9,7 @@ when?:
 means?:
 satisfying?:
 expressing?:
-viewing?:
+providing?:
 using?:
 written:
 called?:

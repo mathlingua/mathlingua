@@ -14,35 +14,43 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.membership
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MEMBERSHIP_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_BY_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
+import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal class MembershipSection : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
+internal data class BySection(val statement: Statement) : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {
+        fn(statement)
+    }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("membership")
+        writer.writeHeader("by")
+        writer.append(statement, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(this)
+        chalkTransformer(BySection(statement = chalkTransformer(statement) as Statement))
 }
 
-internal fun validateMembershipSection(
+internal fun validateBySection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "membership", DEFAULT_MEMBERSHIP_SECTION) {
-            MembershipSection()
+        validateSection(node.resolve(), errors, "by", DEFAULT_BY_SECTION) {
+            validateSingleArg(it, errors, DEFAULT_BY_SECTION, "statement") {
+                BySection(statement = validateStatement(it, errors, tracker))
+            }
         }
     }

@@ -61,8 +61,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Writt
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewAsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas.ViewingAsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
@@ -1284,7 +1284,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     satisfyingSection =
                         SatisfyingSection(clauses = ClauseListNode(clauses = emptyList())),
                     expressingSection = null,
-                    viewingSection = null,
+                    providingSection = null,
                     usingSection = null,
                     writtenSection = WrittenSection(forms = listOf("\"${stmtText}\"")),
                     calledSection = CalledSection(forms = emptyList()),
@@ -1580,7 +1580,7 @@ private fun getNonIsNonInStatementsNonInAsSections(
                 // if they are of the form `... is ...`
             }
         }
-    } else if (node !is ViewingAsSection) {
+    } else if (node !is ViewAsSection) {
         node.forEach { getNonIsNonInStatementsNonInAsSections(it, result) }
     }
 }
@@ -1741,7 +1741,7 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                                     SatisfyingSection(
                                         clauses = ClauseListNode(clauses = emptyList())),
                                 expressingSection = null,
-                                viewingSection = null,
+                                providingSection = null,
                                 usingSection = null,
                                 writtenSection = WrittenSection(forms = listOf(rhs.toCode())),
                                 calledSection = CalledSection(forms = emptyList()),

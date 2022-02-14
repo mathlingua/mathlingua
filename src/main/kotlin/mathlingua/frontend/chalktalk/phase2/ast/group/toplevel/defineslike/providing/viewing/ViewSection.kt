@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 The MathLingua Authors
+ * Copyright 2022 The MathLingua Authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,43 +14,36 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.viewingas
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
+import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEWED_AS_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
-import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEW_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ViewingAsSection(val statement: Statement) : Phase2Node {
-    override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(statement)
-    }
+internal class ViewSection : Phase2Node {
+    override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("as")
-        writer.append(statement, false, 1)
+        writer.writeHeader("view")
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(ViewingAsSection(statement = chalkTransformer(statement) as Statement))
+        chalkTransformer(this)
 }
 
-internal fun validateViewingAsSection(
+internal fun isViewSection(section: Section) = section.name.text == "view"
+
+internal fun validateViewSection(
     node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
 ) =
     track(node, tracker) {
-        validateSection(node.resolve(), errors, "as", DEFAULT_VIEWED_AS_SECTION) {
-            validateSingleArg(it, errors, DEFAULT_VIEWED_AS_SECTION, "statement") {
-                ViewingAsSection(statement = validateStatement(it, errors, tracker))
-            }
-        }
+        validateSection(node.resolve(), errors, "view", DEFAULT_VIEW_SECTION) { ViewSection() }
     }

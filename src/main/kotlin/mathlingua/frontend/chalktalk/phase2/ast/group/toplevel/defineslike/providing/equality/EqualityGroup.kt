@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.viewing.equality
+package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_BETWEEN_SECTION

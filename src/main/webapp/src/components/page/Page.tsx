@@ -28,7 +28,7 @@ import { AppDispatch } from '../../store/store';
 
 interface AceCompletion {
   value: string;
-  caption?: string;
+  caption: string;
   score?: number;
 }
 
@@ -404,8 +404,8 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
         const remoteCompletions = (
           await api.getSignatureSuffixes(`\\${prefix}`)
         ).map((suffix) => ({
-          name: prefix + suffix,
           value: prefix + suffix,
+          caption: prefix + suffix,
         }));
 
         let completions: AceCompletion[] = [];
@@ -453,8 +453,12 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
                 const target = comp.parts[i]?.replace('[]\n', '')?.replace('?:', ':');
                 if (target === sections[sections.length - 1]) {
                   for (let j=i+1; j<comp.parts.length; j++) {
+                    const partWithoutQuestion = comp.parts[j]?.replace('[]\n', '')?.replace('?:', ':');
                     completions.push({
-                      value: comp.parts[j],
+                      value: partWithoutQuestion,
+                      caption: (comp.parts[j].indexOf('?:') >= 0 ?
+                        `${partWithoutQuestion} (optional)` :
+                        comp.parts[j]),
                       score: 1.0/(completionIndex++),
                     });
                   }
@@ -469,16 +473,26 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
           for (const comp of BASE_COMPLETIONS) {
             const first = comp.parts[0]?.replace('[]\n', '')?.replace('?:', ':');
             if (first && first.startsWith(prefix)) {
+              const partWithoutQuestion = comp.parts[0]?.replace('[]\n', '')?.replace('?:', ':');
               completions.push({
                 value: comp.parts[0],
+                caption: (comp.parts[0].indexOf('?:') >= 0 ?
+                        `${partWithoutQuestion} (optional)` :
+                        comp.parts[0]),
                 score: 1.0/(completionIndex++),
               });
             }
           }
         } else if (sections.length === 0) {
-          completions = completions.concat(BASE_COMPLETIONS.map(comp => ({
-            value: comp.parts[0],
-          })));
+          completions = completions.concat(BASE_COMPLETIONS.map(comp => {
+            const partWithoutQuestion = comp.parts[0]?.replace('[]\n', '')?.replace('?:', ':');
+            return {
+              caption: (comp.parts[0].indexOf('?:') >= 0 ?
+                        `${partWithoutQuestion} (optional)` :
+                        comp.parts[0]),
+              value: comp.parts[0],
+            };
+          }));
         }
 
         if (prefix !== '') {

@@ -36,8 +36,9 @@ Defines: N
 means: 'N is \set'
 expressing:
 . "The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$} "
-viewing:
-. as: '\set'
+providing:
+. view:
+  as: '\set'
   via: 'N'
 . membership:
   through: 'N'

@@ -759,8 +759,15 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     vst.tracker ?: newLocationTracker())
             for (sig in usedSigs) {
                 if (!globalDefinedSigs.contains(sig.form) && !innerSigs.contains(sig.form)) {
-                    result.add(
-                        ValueSourceTracker(value = sig, source = vst.source, tracker = vst.tracker))
+                    // TODO: Right now operators are not marked as undefined signatures because
+                    //       they will (in the feature) be resolved using types.  However, that
+                    //       resolution algorithm is not implemented.  Thus, until it is
+                    //       implemented we do not report errors for unknown operators.
+                    if (!isOperatorName(sig.form)) {
+                        result.add(
+                            ValueSourceTracker(
+                                value = sig, source = vst.source, tracker = vst.tracker))
+                    }
                 }
             }
         }

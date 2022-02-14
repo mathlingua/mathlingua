@@ -73,8 +73,9 @@ satisfying:
     . 'y < z'
     then:
     . 'x < z'
-viewing:
-. as: '\set'
+providing:
+. view:
+  as: '\set'
   via: 'S'
 . membership:
   through: 'S'

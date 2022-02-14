@@ -417,7 +417,7 @@ satisfying:
     suchThat:
     . 'y in X'
     . 'x * y = e'
-viewing:
+providing:
 . membership:
   through: 'X'
 written: "\textrm{group}"
@@ -452,7 +452,7 @@ satisfying:
     suchThat:
     . 'y in X'
     . 'x * y = e'
-viewing:
+providing:
 . membership:
   through: 'X'
 written: "\textrm{group}"
@@ -467,7 +467,7 @@ Notice we included a `Metadata:resources:` section that included
 the source `@GroupTheoryJsMilne` on page 7.
 
 There is a new section we used in this definition that wasn`\'`t
-used previously, the `viewing:` section.  This is used to describe
+used previously, the `providing:` section.  This is used to describe
 how to interpret the object being defined, in this case a group.
 
 The construct:

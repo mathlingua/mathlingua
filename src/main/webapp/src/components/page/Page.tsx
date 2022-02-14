@@ -397,6 +397,8 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
           const indent = this.getEssentialIndent(tmpLine);
           if (indent === curIndent) {
             sections.unshift(tmpLine.substring(curIndent).replace('?:', ':').replace(/:.*/, ':'));
+          } else if (curIndent < indent) {
+            break;
           }
           prevRow--;
         }

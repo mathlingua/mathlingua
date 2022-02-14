@@ -39,8 +39,6 @@ expressing:
       . '\real.abs(f(t) - f(c)) < epsilon'
 using:
 . 'R := \real.numbers'
-. 'x - y := x \real.-/ y'
-. 'x < y := x \real.lt/ y'
 written:
 . "\displaystyle \lim_{x? \rightarrow c?} f?"
 . "f? \rightarrow L? \textrm{ as } x? \rightarrow c?"

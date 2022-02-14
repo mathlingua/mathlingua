@@ -175,9 +175,6 @@ when:
 means: 'z is \integer'
 expressing:
 . 'z := \Rational{p1 * q2 + p2*q1, q1 * q2}'
-using:
-. 'a * b := a \integers.*/ b'
-. 'a + b := a \integers.+/ b'
 written: "x+? + y+?"
 called: "Rational Addition"
 
@@ -191,8 +188,6 @@ when:
 means: 'z is \integer'
 expressing:
 . 'z := \Rational{p1 * p2, q1 * q2}'
-using:
-. 'a * b := a \integers.*/ b'
 written: "x+? y+?"
 called: "Rational Multiplication"
 

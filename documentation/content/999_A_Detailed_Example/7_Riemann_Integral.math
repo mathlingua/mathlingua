@@ -136,8 +136,6 @@ expressing:
 . 'L := \infimum:of{\set[x]:where{f(x)}
                            :suchThat{x \real.geq/ x_{i - 1}}
                                     {x \real.leq/ x_{i}}}'
-using:
-. 'x - y := x \integers.-/ y'
 written: "m_{i?, P?, f?}"
 called: "Infimum of $f?$ over partition $P?$ at index $i?$"
 
@@ -164,8 +162,6 @@ expressing:
 . 'L := \supremum:of{\set[x]:where{f(x)}
                             :suchThat{x \real.geq/ x_{i - 1}}
                                      {x \real.leq/ x_{i}}}'
-using:
-. 'x - y := x \integers.-/ y'
 written: "M_{i?, P?, f?}"
 called: "Supremum of $f?$ over partition $P?$ at index $i?$"
 
@@ -192,7 +188,6 @@ expressing:
 . 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
 using:
 . 'm_{i} := \infimum:of{f}:over{P}:at{i}'
-. 'p * q := p \real.*/ q'
 written: "L(f?, P?)"
 called: "Lower Dorboux Sum of $f?$ over $P?$"
 

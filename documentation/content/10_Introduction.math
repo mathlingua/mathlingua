@@ -92,9 +92,6 @@ when:
 . 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
 then:
 . '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
-using:
-. '(+, -, *, /) := \real.arithmetic'
-. '(<, <=, >, >=) := \real.orderings'
 
 
 ::
@@ -112,9 +109,6 @@ when:
 . 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
 then:
 . '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
-using:
-. '(+, -, *, /) := \real.arithmetic'
-. '(<, <=, >, >=) := \real.orderings'
 ```
 
 Note that MathLingua provides a clear syntax that is as

@@ -331,8 +331,11 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
             </form>
           ) : (
             <span>
+              <span style={{ fontWeight: 'normal' }}>
+                {getErrorStats(allErrorResults)}
+              </span>
+              {' '}
               {name}
-              {getErrorStats(allErrorResults)}
             </span>
           )}
           {!isEditing ? getEditButtons() : null}
@@ -391,8 +394,11 @@ export const PathTreeItem = (props: PathTreeItemProps) => {
               dispatch(selectedTabPathUpdated(props.node.path))
             }}
           >
+            <span style={{ fontWeight: 'normal' }}>
+              {getErrorStats(allErrorResults)}
+            </span>
+            {' '}
             {name}
-            {getErrorStats(allErrorResults)}
           </Link>
         )}
         {!isEditing ? getEditButtons() : null}

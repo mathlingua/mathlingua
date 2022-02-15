@@ -84,6 +84,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.MembershipSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.SymbolsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.SymbolsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.WhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ThroughSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViaSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewAsSection
@@ -371,6 +372,8 @@ internal val DEFAULT_THAT_SECTION = ThatSection(clauses = DEFAULT_CLAUSE_LIST_NO
 internal val DEFAULT_USING_SECTION = UsingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 internal val DEFAULT_WHEN_SECTION = WhenSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
+
+internal val DEFAULT_WHERE_SECTION = WhereSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
 internal val DEFAULT_SATISFYING_SECTION = SatisfyingSection(clauses = DEFAULT_CLAUSE_LIST_NODE)
 
@@ -663,5 +666,4 @@ internal val DEFAULT_SPECIFY_GROUP = SpecifyGroup(specifySection = DEFAULT_SPECI
 internal val DEFAULT_SYMBOLS_SECTION = SymbolsSection(targets = emptyList())
 
 internal val DEFAULT_SYMBOLS_GROUP =
-    SymbolsGroup(
-        symbolsSection = DEFAULT_SYMBOLS_SECTION, expressingSection = DEFAULT_EXPRESSING_SECTION)
+    SymbolsGroup(symbolsSection = DEFAULT_SYMBOLS_SECTION, whereSection = DEFAULT_WHERE_SECTION)

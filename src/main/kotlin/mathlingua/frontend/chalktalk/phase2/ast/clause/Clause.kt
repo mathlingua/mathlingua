@@ -53,6 +53,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.validateEqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.isMembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.validateMembershipGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.isSymbolsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.validateSymbolsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.isViewingAsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.validateViewingAsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
@@ -148,7 +150,8 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isEqualityGroup, ::validateEqualityGroup),
         ValidationPair(::isHaveGroup, ::validateHaveGroup),
         ValidationPair(::isGeneratedGroup, ::validateGeneratedGroup),
-        ValidationPair(::isMatchingGroup, ::validateMatchingGroup))
+        ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
+        ValidationPair(::isSymbolsGroup, ::validateSymbolsGroup))
 
 internal fun validateClause(
     rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker

@@ -22,8 +22,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SYMBOLS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ExpressingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateExpressesSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
@@ -33,10 +31,9 @@ import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class SymbolsGroup(
-    val symbolsSection: SymbolsSection, val expressingSection: ExpressingSection?
+    val symbolsSection: SymbolsSection, val whereSection: WhereSection?
 ) :
-    TwoPartNode<SymbolsSection, ExpressingSection?>(
-        symbolsSection, expressingSection, ::SymbolsGroup),
+    TwoPartNode<SymbolsSection, WhereSection?>(symbolsSection, whereSection, ::SymbolsGroup),
     Clause
 
 internal fun isSymbolsGroup(node: Phase1Node) = firstSectionMatchesName(node, "symbols")
@@ -46,18 +43,15 @@ internal fun validateSymbolsGroup(
 ) =
     track(node, tracker) {
         validateGroup(node.resolve(), errors, "symbols", DEFAULT_SYMBOLS_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_SYMBOLS_GROUP, listOf("symbols", "expressing?")) {
+            identifySections(group, errors, DEFAULT_SYMBOLS_GROUP, listOf("symbols", "where?")) {
             sections ->
                 SymbolsGroup(
                     symbolsSection =
                         ensureNonNull(sections["symbols"], DEFAULT_SYMBOLS_SECTION) {
                             validateSymbolsSection(it, errors, tracker)
                         },
-                    expressingSection =
-                        ifNonNull(sections["expressing"]) {
-                            validateExpressesSection(it, errors, tracker)
-                        })
+                    whereSection =
+                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) })
             }
         }
     }

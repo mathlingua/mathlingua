@@ -80,7 +80,7 @@ internal val COMPLETIONS =
                     name = "equality", parts = listOf("equality:", "between:", "provided:")),
                 CompletionItem(name = "membership", parts = listOf("membership:", "through:")),
                 CompletionItem(name = "view", parts = listOf("view:", "as:", "via:", "by?:")),
-                CompletionItem(name = "symbols", parts = listOf("symbols:", "expressing?:")),
+                CompletionItem(name = "symbols", parts = listOf("symbols:", "where?:")),
                 CompletionItem(
                     name = "Resource",
                     parts =

@@ -28,14 +28,12 @@ Root(
                                                                        row = 2
                                                                        column = 8
                                                                      )
-                                                                     onNewLine = false
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
-                                         onNewLine = true
                                        ),
                                        Argument(
                                          chalkTalkTarget = Group(
@@ -55,14 +53,12 @@ Root(
                                                                        row = 3
                                                                        column = 12
                                                                      )
-                                                                     onNewLine = false
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
-                                         onNewLine = true
                                        )
                                      ]
                             )

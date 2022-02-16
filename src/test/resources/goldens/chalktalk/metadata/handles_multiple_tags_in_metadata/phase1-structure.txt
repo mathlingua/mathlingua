@@ -27,7 +27,6 @@ Root(
                                            row = 2
                                            column = 2
                                          )
-                                         onNewLine = true
                                        )
                                      ]
                             ),
@@ -57,7 +56,6 @@ Root(
                                                                        row = 5
                                                                        column = 4
                                                                      )
-                                                                     onNewLine = true
                                                                    ),
                                                                    Argument(
                                                                      chalkTalkTarget = Phase1Token(
@@ -66,7 +64,6 @@ Root(
                                                                        row = 6
                                                                        column = 4
                                                                      )
-                                                                     onNewLine = true
                                                                    ),
                                                                    Argument(
                                                                      chalkTalkTarget = Phase1Token(
@@ -75,14 +72,12 @@ Root(
                                                                        row = 7
                                                                        column = 4
                                                                      )
-                                                                     onNewLine = true
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
-                                         onNewLine = true
                                        )
                                      ]
                             )

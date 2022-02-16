@@ -1,1 +1,3 @@
-Theorem:then: f(abc...)
+Theorem:
+then:
+. f(abc...)

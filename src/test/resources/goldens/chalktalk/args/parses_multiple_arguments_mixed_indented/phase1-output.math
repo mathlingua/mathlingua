@@ -1,4 +1,8 @@
-Theorem:then: a, b
+Theorem:
+then:
+. a
+. b
 . c
-. d, e
+. d
+. e
 . f

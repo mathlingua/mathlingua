@@ -69,7 +69,6 @@ Root(
                                                                                ]
                                                                        subParams = null
                                                                      )
-                                                                     onNewLine = false
                                                                    )
                                                                  ]
                                                         ),
@@ -100,14 +99,12 @@ Root(
                                                                                ]
                                                                        subParams = null
                                                                      )
-                                                                     onNewLine = false
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
-                                         onNewLine = true
                                        )
                                      ]
                             )

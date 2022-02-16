@@ -17,7 +17,6 @@ Root(
                                            row = 1
                                            column = 7
                                          )
-                                         onNewLine = false
                                        )
                                      ]
                             ),
@@ -36,7 +35,6 @@ Root(
                                            row = 3
                                            column = 2
                                          )
-                                         onNewLine = true
                                        )
                                      ]
                             )

@@ -1,9 +1,8 @@
 [id]
 Resource:
-. name: "some name"
-
+. name:
+  . "some name"
 . author:
   . "author1"
   . "author2"
   . "author3"
-

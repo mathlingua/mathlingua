@@ -1,1 +1,3 @@
-Theorem:then: f(x, y, z)
+Theorem:
+then:
+. f(x, y, z)

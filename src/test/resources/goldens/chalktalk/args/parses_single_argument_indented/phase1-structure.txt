@@ -39,7 +39,6 @@ Root(
                                                    ]
                                            subParams = null
                                          )
-                                         onNewLine = true
                                        )
                                      ]
                             )

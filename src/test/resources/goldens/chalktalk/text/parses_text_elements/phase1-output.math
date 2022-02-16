@@ -1,7 +1,10 @@
 [A]
-Defines: B
+Defines:
+. B
 satisfying:
 . 'B is \something'
 . "C"
-written: "something"
-called: "A?"
+written:
+. "something"
+called:
+. "A?"

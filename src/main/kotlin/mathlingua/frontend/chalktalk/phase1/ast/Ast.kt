@@ -49,32 +49,29 @@ internal data class Root(val groups: List<GroupOrBlockComment>) : Phase1Node {
         transformer(Root(groups = groups.map { it.transform(transformer) as Group }))
 }
 
-internal data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
+internal data class Argument(val chalkTalkTarget: Phase1Target, val onNewLine: Boolean) :
+    Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = fn(chalkTalkTarget)
 
     fun print(buffer: StringBuilder, level: Int) {
         when (chalkTalkTarget) {
-            is Group -> chalkTalkTarget.print(buffer, level, true)
+            is Group -> chalkTalkTarget.print(buffer, level, onNewLine)
             is Phase1Token -> {
-                buffer.append(buildIndent(level, true))
+                buffer.append(buildIndent(level, onNewLine))
                 buffer.append(chalkTalkTarget.text)
-                buffer.append("\n")
             }
             is Abstraction -> {
-                buffer.append(buildIndent(level, true))
+                buffer.append(buildIndent(level, onNewLine))
                 buffer.append(chalkTalkTarget.toCode())
-                buffer.append("\n")
             }
             is Assignment -> {
-                buffer.append(buildIndent(level, true))
+                buffer.append(buildIndent(level, onNewLine))
                 buffer.append(chalkTalkTarget.toCode())
-                buffer.append("\n")
             }
             is Tuple -> {
-                buffer.append(buildIndent(level, true))
+                buffer.append(buildIndent(level, onNewLine))
                 buffer.append(chalkTalkTarget.toCode())
-                buffer.append("\n")
             }
             is AbstractionPart -> {
                 throw RuntimeException("Argument.print: Unexpected AbstractionPart encountered")
@@ -92,7 +89,9 @@ internal data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
         transformer(
-            Argument(chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target))
+            Argument(
+                chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target,
+                onNewLine = onNewLine))
 }
 
 internal data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node {
@@ -105,9 +104,29 @@ internal data class Section(val name: Phase1Token, val args: List<Argument>) : P
     fun print(buffer: StringBuilder, level: Int, fromArg: Boolean) {
         buffer.append(buildIndent(level, fromArg))
         buffer.append(name.text)
-        buffer.append(":\n")
+        buffer.append(":")
+        var first = true
         for (arg in args) {
-            arg.print(buffer, level + 1)
+            if (arg.onNewLine) {
+                buffer.append("\n")
+            } else {
+                if (first) {
+                    buffer.append(" ")
+                } else {
+                    buffer.append(", ")
+                }
+            }
+            arg.print(
+                buffer,
+                if (arg.onNewLine) {
+                    level + 1
+                } else {
+                    0
+                })
+            first = false
+        }
+        if (args.isNotEmpty()) {
+            buffer.append("\n")
         }
     }
 

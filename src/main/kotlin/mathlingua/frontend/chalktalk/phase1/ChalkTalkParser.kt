@@ -125,7 +125,7 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         val args = mutableListOf<Argument>()
         while (hasNext() && !has(ChalkTalkTokenType.Begin)) {
-            val arg = argument()
+            val arg = argument(onNewLine = false)
             arg ?: break
             args.add(arg)
 
@@ -156,17 +156,17 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         val grp = group()
         if (grp != null) {
-            return listOf(Argument(grp))
+            return listOf(Argument(grp, onNewLine = true))
         }
 
         val argList = mutableListOf<Argument>()
-        val valueArg = argument()
+        val valueArg = argument(onNewLine = true)
         if (valueArg != null) {
             argList.add(valueArg)
 
             while (has(ChalkTalkTokenType.Comma)) {
                 next() // absorb the comma
-                val v = argument()
+                val v = argument(onNewLine = false)
                 v ?: break
                 argList.add(v)
             }
@@ -185,18 +185,18 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
         }
     }
 
-    private fun argument(): Argument? {
+    private fun argument(onNewLine: Boolean): Argument? {
         val literal = token(ChalkTalkTokenType.Statement) ?: token(ChalkTalkTokenType.String)
         if (literal != null) {
-            return Argument(literal)
+            return Argument(literal, onNewLine)
         }
 
         val target = tupleItem()
         if (target == null) {
             addError("Expected a name, abstraction, tuple, aggregate, or assignment")
-            return Argument(INVALID)
+            return Argument(INVALID, onNewLine)
         }
-        return Argument(target)
+        return Argument(target, onNewLine)
     }
 
     private fun assignment(): Assignment? {

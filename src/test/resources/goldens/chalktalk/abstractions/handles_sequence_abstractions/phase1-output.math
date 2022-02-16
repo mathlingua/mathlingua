@@ -1,6 +1,4 @@
-Theorem:
-then:
-. forAll:
-  . {a_k}_k
-  then:
-  . "something"
+Theorem:then:
+. forAll: {a_k}_k
+  then: "something"
+

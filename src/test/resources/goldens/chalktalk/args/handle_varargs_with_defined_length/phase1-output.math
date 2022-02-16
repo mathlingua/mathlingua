@@ -1,10 +1,7 @@
 [\f{x...}]
-Defines:
-. X...#x...
+Defines: X...#x...
 satisfying:
 . 'X is \something'
 . "something for X...#x..."
-written:
-. "something"
-called:
-. "something"
+written: "something"
+called: "something"

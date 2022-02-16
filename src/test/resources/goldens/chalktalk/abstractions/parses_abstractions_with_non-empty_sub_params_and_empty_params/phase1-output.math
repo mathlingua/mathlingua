@@ -1,6 +1,4 @@
-Theorem:
-then:
-. forAll:
-  . a_{n, m}()
-  then:
-  . b
+Theorem:then:
+. forAll: a_{n, m}()
+  then: b
+

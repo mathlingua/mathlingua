@@ -29,6 +29,7 @@ Root(
                                                    ]
                                            subParams = null
                                          )
+                                         onNewLine = false
                                        )
                                      ]
                             ),
@@ -47,6 +48,7 @@ Root(
                                            row = 3
                                            column = 2
                                          )
+                                         onNewLine = true
                                        ),
                                        Argument(
                                          chalkTalkTarget = Phase1Token(
@@ -55,6 +57,7 @@ Root(
                                            row = 4
                                            column = 2
                                          )
+                                         onNewLine = true
                                        )
                                      ]
                             ),
@@ -73,6 +76,7 @@ Root(
                                            row = 5
                                            column = 9
                                          )
+                                         onNewLine = false
                                        )
                                      ]
                             ),
@@ -91,6 +95,7 @@ Root(
                                            row = 6
                                            column = 8
                                          )
+                                         onNewLine = false
                                        )
                                      ]
                             )

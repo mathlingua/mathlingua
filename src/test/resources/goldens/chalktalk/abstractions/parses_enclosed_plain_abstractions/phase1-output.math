@@ -1,6 +1,4 @@
-Theorem:
-then:
-. forAll:
-  . {f}
-  then:
-  . x
+Theorem:then:
+. forAll: {f}
+  then: x
+

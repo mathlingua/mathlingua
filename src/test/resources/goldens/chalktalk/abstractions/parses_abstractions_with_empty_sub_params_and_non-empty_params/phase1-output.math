@@ -1,6 +1,4 @@
-Theorem:
-then:
-. forAll:
-  . a_{}(x, y)
-  then:
-  . b
+Theorem:then:
+. forAll: a_{}(x, y)
+  then: b
+

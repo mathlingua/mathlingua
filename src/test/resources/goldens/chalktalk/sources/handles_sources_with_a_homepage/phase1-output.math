@@ -1,6 +1,6 @@
 [id]
 Resource:
-. name:
-  . "some name"
-. homepage:
-  . "some.homepage.com"
+. name: "some name"
+
+. homepage: "some.homepage.com"
+

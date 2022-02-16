@@ -64,6 +64,7 @@ Root(
                                                                                      )
                                                                                    ]
                                                                      )
+                                                                     onNewLine = false
                                                                    )
                                                                  ]
                                                         ),
@@ -82,12 +83,14 @@ Root(
                                                                        row = 3
                                                                        column = 8
                                                                      )
+                                                                     onNewLine = false
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
+                                         onNewLine = true
                                        )
                                      ]
                             )

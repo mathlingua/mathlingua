@@ -27,6 +27,7 @@ Root(
                                            row = 2
                                            column = 2
                                          )
+                                         onNewLine = true
                                        )
                                      ]
                             ),
@@ -56,12 +57,14 @@ Root(
                                                                        row = 5
                                                                        column = 4
                                                                      )
+                                                                     onNewLine = true
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
+                                         onNewLine = true
                                        )
                                      ]
                             )

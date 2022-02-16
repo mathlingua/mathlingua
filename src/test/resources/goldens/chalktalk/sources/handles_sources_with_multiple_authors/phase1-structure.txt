@@ -28,12 +28,14 @@ Root(
                                                                        row = 2
                                                                        column = 8
                                                                      )
+                                                                     onNewLine = false
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
+                                         onNewLine = true
                                        ),
                                        Argument(
                                          chalkTalkTarget = Group(
@@ -53,6 +55,7 @@ Root(
                                                                        row = 4
                                                                        column = 4
                                                                      )
+                                                                     onNewLine = true
                                                                    ),
                                                                    Argument(
                                                                      chalkTalkTarget = Phase1Token(
@@ -61,6 +64,7 @@ Root(
                                                                        row = 5
                                                                        column = 4
                                                                      )
+                                                                     onNewLine = true
                                                                    ),
                                                                    Argument(
                                                                      chalkTalkTarget = Phase1Token(
@@ -69,12 +73,14 @@ Root(
                                                                        row = 6
                                                                        column = 4
                                                                      )
+                                                                     onNewLine = true
                                                                    )
                                                                  ]
                                                         )
                                                       ]
                                            id = null
                                          )
+                                         onNewLine = true
                                        )
                                      ]
                             )

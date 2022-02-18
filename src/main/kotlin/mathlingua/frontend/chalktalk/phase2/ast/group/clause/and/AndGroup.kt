@@ -24,27 +24,24 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class AndGroup(val andSection: AndSection) :
-    OnePartNode<AndSection>(andSection, ::AndGroup), Clause
+internal data class AndGroup(
+    val andSection: AndSection, override val row: Int, override val column: Int
+) : OnePartNode<AndSection>(andSection, row, column, ::AndGroup), Clause
 
 internal fun isAndGroup(node: Phase1Node) = firstSectionMatchesName(node, "and")
 
-internal fun validateAndGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "and", DEFAULT_AND_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_AND_GROUP, listOf("and")) { sections ->
-                AndGroup(
-                    andSection =
-                        ensureNonNull(sections["and"], DEFAULT_AND_SECTION) {
-                            validateAndSection(it, errors, tracker)
-                        })
-            }
+internal fun validateAndGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "and", DEFAULT_AND_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_AND_GROUP, listOf("and")) { sections ->
+            AndGroup(
+                andSection =
+                    ensureNonNull(sections["and"], DEFAULT_AND_SECTION) {
+                        validateAndSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

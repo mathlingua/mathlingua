@@ -27,30 +27,33 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.NumberGro
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.validateIsSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ZeroGroup(val zeroSection: ZeroSection, val isSection: IsSection) :
-    TwoPartNode<ZeroSection, IsSection>(zeroSection, isSection, ::ZeroGroup), NumberGroup
+internal data class ZeroGroup(
+    val zeroSection: ZeroSection,
+    val isSection: IsSection,
+    override val row: Int,
+    override val column: Int
+) :
+    TwoPartNode<ZeroSection, IsSection>(zeroSection, isSection, row, column, ::ZeroGroup),
+    NumberGroup
 
 internal fun isZeroGroup(node: Phase1Node) = firstSectionMatchesName(node, "zero")
 
-internal fun validateZeroGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "zero", DEFAULT_ZERO_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_ZERO_GROUP, listOf("zero", "is")) { sections ->
-                ZeroGroup(
-                    zeroSection =
-                        ensureNonNull(sections["zero"], DEFAULT_ZERO_SECTION) {
-                            validateZeroSection(it, errors, tracker)
-                        },
+internal fun validateZeroGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "zero", DEFAULT_ZERO_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_ZERO_GROUP, listOf("zero", "is")) { sections ->
+            ZeroGroup(
+                zeroSection =
+                    ensureNonNull(sections["zero"], DEFAULT_ZERO_SECTION) {
+                        validateZeroSection(it, errors)
+                    },
+                isSection =
                     ensureNonNull(sections["is"], DEFAULT_IS_SECTION) {
-                        validateIsSection(it, errors, tracker)
-                    })
-            }
+                        validateIsSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

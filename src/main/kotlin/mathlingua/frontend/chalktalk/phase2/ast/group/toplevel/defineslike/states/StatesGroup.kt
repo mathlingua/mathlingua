@@ -48,9 +48,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class StatesGroup(
@@ -63,7 +61,9 @@ internal data class StatesGroup(
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
     val calledSection: CalledSection?,
-    override val metaDataSection: MetaDataSection?
+    override val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -116,59 +116,51 @@ internal data class StatesGroup(
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 calledSection = calledSection?.transform(chalkTransformer) as CalledSection?,
-                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+                row = row,
+                column = column))
 }
 
 internal fun isStatesGroup(node: Phase1Node) = firstSectionMatchesName(node, "States")
 
-internal fun validateStatesGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "States", DEFAULT_STATES_GROUP) { group ->
-            identifySections(
-                group,
-                errors,
-                DEFAULT_STATES_GROUP,
-                listOf(
-                    "States",
-                    "given?",
-                    "when?",
-                    "that",
-                    "using?",
-                    "written",
-                    "called?",
-                    "Metadata?")) { sections ->
-                val id = getId(group, errors, tracker)
-                StatesGroup(
-                    signature = id.signature(tracker),
-                    id = id,
-                    statesSection =
-                        ensureNonNull(sections["States"], DEFAULT_STATES_SECTION) {
-                            validateStatesSection(it, errors, tracker)
-                        },
-                    givenSection =
-                        ifNonNull(sections["given"]) { validateGivenSection(it, errors, tracker) },
-                    whenSection =
-                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    thatSection =
-                        ensureNonNull(sections["that"], DEFAULT_THAT_SECTION) {
-                            validateThatSection(it, errors, tracker)
-                        },
-                    usingSection =
-                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
-                    writtenSection =
-                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
-                            validateWrittenSection(it, errors, tracker)
-                        },
-                    calledSection =
-                        ifNonNull(sections["called"]) {
-                            validateCalledSection(it, errors, tracker)
-                        },
-                    metaDataSection =
-                        ifNonNull(sections["Metadata"]) {
-                            validateMetaDataSection(it, errors, tracker)
-                        })
-            }
+internal fun validateStatesGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "States", DEFAULT_STATES_GROUP) { group ->
+        identifySections(
+            group,
+            errors,
+            DEFAULT_STATES_GROUP,
+            listOf(
+                "States",
+                "given?",
+                "when?",
+                "that",
+                "using?",
+                "written",
+                "called?",
+                "Metadata?")) { sections ->
+            val id = getId(group, errors)
+            StatesGroup(
+                signature = id.signature(),
+                id = id,
+                statesSection =
+                    ensureNonNull(sections["States"], DEFAULT_STATES_SECTION) {
+                        validateStatesSection(it, errors)
+                    },
+                givenSection = ifNonNull(sections["given"]) { validateGivenSection(it, errors) },
+                whenSection = ifNonNull(sections["when"]) { validateWhenSection(it, errors) },
+                thatSection =
+                    ensureNonNull(sections["that"], DEFAULT_THAT_SECTION) {
+                        validateThatSection(it, errors)
+                    },
+                usingSection = ifNonNull(sections["using"]) { validateUsingSection(it, errors) },
+                writtenSection =
+                    ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                        validateWrittenSection(it, errors)
+                    },
+                calledSection = ifNonNull(sections["called"]) { validateCalledSection(it, errors) },
+                metaDataSection =
+                    ifNonNull(sections["Metadata"]) { validateMetaDataSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

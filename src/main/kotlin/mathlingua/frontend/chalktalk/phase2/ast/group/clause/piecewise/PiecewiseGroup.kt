@@ -15,8 +15,6 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_PIECEWISE_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
@@ -33,15 +31,15 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSectio
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.isWhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class PiecewiseGroup(
     val piecewiseSection: PiecewiseSection,
     val whenThen: List<WhenThenPair>,
-    val elseSection: ElseSection?
+    val elseSection: ElseSection?,
+    override val row: Int,
+    override val column: Int
 ) : Clause {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -75,67 +73,67 @@ internal data class PiecewiseGroup(
                             whenSection = chalkTransformer(it.whenSection) as WhenSection,
                             thenSection = chalkTransformer(it.thenSection) as ThenSection)
                     },
-                elseSection = elseSection?.transform(chalkTransformer) as ElseSection?))
+                elseSection = elseSection?.transform(chalkTransformer) as ElseSection?,
+                row,
+                column))
 }
 
 internal fun isPiecewiseGroup(node: Phase1Node) = firstSectionMatchesName(node, "piecewise")
 
-internal fun validatePiecewiseGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "piecewise", DEFAULT_PIECEWISE_GROUP) { group ->
-            if (group.sections.isEmpty() || !isPiecewiseSection(group.sections.first())) {
-                errors.add(
-                    ParseError(
-                        message = "Expected an piecewise: section",
-                        row = getRow(node),
-                        column = getColumn(node)))
-                return@validateGroup DEFAULT_PIECEWISE_GROUP
-            }
-
-            val piecewiseSection = validatePiecewiseSection(group.sections.first(), errors, tracker)
-            val whenToList = mutableListOf<WhenThenPair>()
-            var elseSection: ElseSection? = null
-
-            var i = 1
-            while (i < group.sections.size) {
-                val sec = group.sections[i]
-                if (!isWhenSection(sec)) {
-                    break
-                }
-                i++
-
-                val whenSection = validateWhenSection(sec, errors, tracker)
-                if (i >= group.sections.size || !isThenSection(group.sections[i])) {
-                    errors.add(
-                        ParseError(
-                            message = "A when: section must have an then: section",
-                            row = getRow(sec),
-                            column = getColumn(sec)))
-                    break
-                }
-
-                val thenSection = validateThenSection(group.sections[i++], errors, tracker)
-                whenToList.add(WhenThenPair(whenSection, thenSection))
-            }
-
-            if (i < group.sections.size && isElseSection(group.sections[i])) {
-                elseSection = validateElseSection(group.sections[i++], errors, tracker)
-            }
-
-            while (i < group.sections.size) {
-                val sec = group.sections[i++]
-                errors.add(
-                    ParseError(
-                        message = "Unexpected section ${sec.name.text}",
-                        row = getRow(sec),
-                        column = getColumn(sec)))
-            }
-
-            PiecewiseGroup(
-                piecewiseSection = piecewiseSection,
-                whenThen = whenToList,
-                elseSection = elseSection)
+internal fun validatePiecewiseGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "piecewise", DEFAULT_PIECEWISE_GROUP) { group ->
+        if (group.sections.isEmpty() || !isPiecewiseSection(group.sections.first())) {
+            errors.add(
+                ParseError(
+                    message = "Expected an piecewise: section",
+                    row = node.row,
+                    column = node.column))
+            return@validateGroup DEFAULT_PIECEWISE_GROUP
         }
+
+        val piecewiseSection = validatePiecewiseSection(group.sections.first(), errors)
+        val whenToList = mutableListOf<WhenThenPair>()
+        var elseSection: ElseSection? = null
+
+        var i = 1
+        while (i < group.sections.size) {
+            val sec = group.sections[i]
+            if (!isWhenSection(sec)) {
+                break
+            }
+            i++
+
+            val whenSection = validateWhenSection(sec, errors)
+            if (i >= group.sections.size || !isThenSection(group.sections[i])) {
+                errors.add(
+                    ParseError(
+                        message = "A when: section must have an then: section",
+                        row = sec.row,
+                        column = sec.column))
+                break
+            }
+
+            val thenSection = validateThenSection(group.sections[i++], errors)
+            whenToList.add(WhenThenPair(whenSection, thenSection))
+        }
+
+        if (i < group.sections.size && isElseSection(group.sections[i])) {
+            elseSection = validateElseSection(group.sections[i++], errors)
+        }
+
+        while (i < group.sections.size) {
+            val sec = group.sections[i++]
+            errors.add(
+                ParseError(
+                    message = "Unexpected section ${sec.name.text}",
+                    row = sec.row,
+                    column = sec.column))
+        }
+
+        PiecewiseGroup(
+            piecewiseSection = piecewiseSection,
+            whenThen = whenToList,
+            elseSection = elseSection,
+            row = node.row,
+            column = node.column)
     }

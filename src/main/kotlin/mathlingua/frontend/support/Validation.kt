@@ -14,9 +14,6 @@
 
 package mathlingua.frontend.support
 
-import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 
 internal data class ParseError(override val message: String, val row: Int, val column: Int) :
@@ -35,11 +32,7 @@ internal data class ValidationFailureImpl<T>(val errs: List<ParseError>) :
 
 internal fun <T> validationSuccess(value: T): ValidationSuccess<T> = ValidationSuccessImpl(value)
 
-internal fun <T : Phase2Node> validationSuccess(
-    tracker: MutableLocationTracker, phase1Node: Phase1Node, phase2Node: T
-): ValidationSuccess<T> {
-    tracker.setLocationOf(
-        phase2Node, Location(row = getRow(phase1Node), column = getColumn(phase1Node)))
+internal fun <T : Phase2Node> validationSuccess(phase2Node: T): ValidationSuccess<T> {
     return ValidationSuccessImpl(phase2Node)
 }
 

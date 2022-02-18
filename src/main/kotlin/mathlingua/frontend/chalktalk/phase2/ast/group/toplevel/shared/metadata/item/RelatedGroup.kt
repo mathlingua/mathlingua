@@ -25,27 +25,24 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.s
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateRelatedSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class RelatedGroup(val relatedSection: RelatedSection) :
-    OnePartNode<RelatedSection>(relatedSection, ::RelatedGroup), MetaDataItem
+internal data class RelatedGroup(
+    val relatedSection: RelatedSection, override val row: Int, override val column: Int
+) : OnePartNode<RelatedSection>(relatedSection, row, column, ::RelatedGroup), MetaDataItem
 
 internal fun isRelatedGroup(node: Phase1Node) = firstSectionMatchesName(node, "related")
 
-internal fun validateRelatedGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "related", DEFAULT_RELATED_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_RELATED_GROUP, listOf("related")) { sections ->
-                RelatedGroup(
-                    relatedSection =
-                        ensureNonNull(sections["related"], DEFAULT_RELATED_SECTION) {
-                            validateRelatedSection(it, errors, tracker)
-                        })
-            }
+internal fun validateRelatedGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "related", DEFAULT_RELATED_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_RELATED_GROUP, listOf("related")) { sections ->
+            RelatedGroup(
+                relatedSection =
+                    ensureNonNull(sections["related"], DEFAULT_RELATED_SECTION) {
+                        validateRelatedSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

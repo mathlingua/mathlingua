@@ -11,6 +11,8 @@ Root(
                               )
                               args = [
                                      ]
+                              row = 0
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -35,10 +37,16 @@ Root(
                                                        subParams = null
                                                        params = null
                                                        tail = null
+                                                       row = 1
+                                                       column = 6
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 1
+                                           column = 6
                                          )
+                                         row = 1
+                                         column = 6
                                        ),
                                        Argument(
                                          chalkTalkTarget = Abstraction(
@@ -55,10 +63,16 @@ Root(
                                                        subParams = null
                                                        params = null
                                                        tail = null
+                                                       row = 1
+                                                       column = 9
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 1
+                                           column = 9
                                          )
+                                         row = 1
+                                         column = 9
                                        ),
                                        Argument(
                                          chalkTalkTarget = Abstraction(
@@ -75,10 +89,16 @@ Root(
                                                        subParams = null
                                                        params = null
                                                        tail = null
+                                                       row = 2
+                                                       column = 2
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 2
+                                           column = 2
                                          )
+                                         row = 2
+                                         column = 2
                                        ),
                                        Argument(
                                          chalkTalkTarget = Abstraction(
@@ -95,10 +115,16 @@ Root(
                                                        subParams = null
                                                        params = null
                                                        tail = null
+                                                       row = 3
+                                                       column = 2
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 3
+                                           column = 2
                                          )
+                                         row = 3
+                                         column = 2
                                        ),
                                        Argument(
                                          chalkTalkTarget = Abstraction(
@@ -115,10 +141,16 @@ Root(
                                                        subParams = null
                                                        params = null
                                                        tail = null
+                                                       row = 3
+                                                       column = 5
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 3
+                                           column = 5
                                          )
+                                         row = 3
+                                         column = 5
                                        ),
                                        Argument(
                                          chalkTalkTarget = Abstraction(
@@ -135,15 +167,27 @@ Root(
                                                        subParams = null
                                                        params = null
                                                        tail = null
+                                                       row = 4
+                                                       column = 2
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 4
+                                           column = 2
                                          )
+                                         row = 4
+                                         column = 2
                                        )
                                      ]
+                              row = 1
+                              column = 0
                             )
                           ]
                id = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

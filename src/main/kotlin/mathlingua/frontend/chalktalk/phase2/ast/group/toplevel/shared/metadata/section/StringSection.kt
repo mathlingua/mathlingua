@@ -19,17 +19,15 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STRING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class StringSection(val name: String, val values: List<String>) : Phase2Node {
+internal data class StringSection(
+    val name: String, val values: List<String>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -53,25 +51,25 @@ internal data class StringSection(val name: String, val values: List<String>) : 
 }
 
 internal fun validateStringSection(
-    name: String, node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
+    name: String, node: Phase1Node, errors: MutableList<ParseError>
 ) =
-    track(node, tracker) {
-        validateSection(node, errors, name, DEFAULT_STRING_SECTION) { section ->
-            if (section.args.isNotEmpty() &&
-                !section.args.all {
-                    it.chalkTalkTarget is Phase1Token &&
-                        it.chalkTalkTarget.type == ChalkTalkTokenType.String
-                }) {
-                errors.add(
-                    ParseError(
-                        message = "Expected a list of strings",
-                        row = getRow(section),
-                        column = getColumn(section)))
-                DEFAULT_STRING_SECTION
-            } else {
-                StringSection(
-                    name = name,
-                    values = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
-            }
+    validateSection(node, errors, name, DEFAULT_STRING_SECTION) { section ->
+        if (section.args.isNotEmpty() &&
+            !section.args.all {
+                it.chalkTalkTarget is Phase1Token &&
+                    it.chalkTalkTarget.type == ChalkTalkTokenType.String
+            }) {
+            errors.add(
+                ParseError(
+                    message = "Expected a list of strings",
+                    row = section.row,
+                    column = section.column))
+            DEFAULT_STRING_SECTION
+        } else {
+            StringSection(
+                name = name,
+                values = section.args.map { (it.chalkTalkTarget as Phase1Token).text },
+                row = node.row,
+                column = node.column)
         }
     }

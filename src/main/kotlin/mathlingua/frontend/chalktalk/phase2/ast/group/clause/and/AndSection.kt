@@ -23,12 +23,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class AndSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class AndSection(
+    val clauses: ClauseListNode, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -47,14 +47,12 @@ internal data class AndSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            AndSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            AndSection(
+                clauses = clauses.transform(chalkTransformer) as ClauseListNode, row, column))
 }
 
-internal fun validateAndSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "and", DEFAULT_AND_SECTION) {
-            AndSection(clauses = validateClauseListNode(it, errors, tracker))
-        }
+internal fun validateAndSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "and", DEFAULT_AND_SECTION) {
+        AndSection(
+            clauses = validateClauseListNode(it, errors), row = node.row, column = node.column)
     }

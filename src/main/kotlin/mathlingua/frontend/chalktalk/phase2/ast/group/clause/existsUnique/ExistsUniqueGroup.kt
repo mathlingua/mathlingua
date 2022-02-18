@@ -27,38 +27,36 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.SuchThatSect
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.validateSuchThatSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class ExistsUniqueGroup(
-    val existsUniqueSection: ExistsUniqueSection, val suchThatSection: SuchThatSection
+    val existsUniqueSection: ExistsUniqueSection,
+    val suchThatSection: SuchThatSection,
+    override val row: Int,
+    override val column: Int
 ) :
     TwoPartNode<ExistsUniqueSection, SuchThatSection>(
-        existsUniqueSection, suchThatSection, ::ExistsUniqueGroup),
+        existsUniqueSection, suchThatSection, row, column, ::ExistsUniqueGroup),
     Clause
 
 internal fun isExistsUniqueGroup(node: Phase1Node) = firstSectionMatchesName(node, "existsUnique")
 
-internal fun validateExistsUniqueGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "existsUnique", DEFAULT_EXISTS_UNIQUE_GROUP) {
-        group ->
-            identifySections(
-                group, errors, DEFAULT_EXISTS_UNIQUE_GROUP, listOf("existsUnique", "suchThat")) {
-            sections ->
-                ExistsUniqueGroup(
-                    existsUniqueSection =
-                        ensureNonNull(sections["existsUnique"], DEFAULT_EXISTS_UNIQUE_SECTION) {
-                            validateExistsUniqueSection(it, errors, tracker)
-                        },
-                    suchThatSection =
-                        ensureNonNull(sections["suchThat"], DEFAULT_SUCH_THAT_SECTION) {
-                            validateSuchThatSection(it, errors, tracker)
-                        })
-            }
+internal fun validateExistsUniqueGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "existsUnique", DEFAULT_EXISTS_UNIQUE_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_EXISTS_UNIQUE_GROUP, listOf("existsUnique", "suchThat")) {
+        sections ->
+            ExistsUniqueGroup(
+                existsUniqueSection =
+                    ensureNonNull(sections["existsUnique"], DEFAULT_EXISTS_UNIQUE_SECTION) {
+                        validateExistsUniqueSection(it, errors)
+                    },
+                suchThatSection =
+                    ensureNonNull(sections["suchThat"], DEFAULT_SUCH_THAT_SECTION) {
+                        validateSuchThatSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

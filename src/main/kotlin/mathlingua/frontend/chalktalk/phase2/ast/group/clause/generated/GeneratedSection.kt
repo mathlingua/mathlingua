@@ -21,12 +21,10 @@ import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_GENERATED_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal class GeneratedSection : Phase2Node {
+internal data class GeneratedSection(override val row: Int, override val column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,11 +39,7 @@ internal class GeneratedSection : Phase2Node {
 
 internal fun isGeneratedSection(section: Section) = section.name.text == "generated"
 
-internal fun validateGeneratedSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "generated", DEFAULT_GENERATED_SECTION) {
-            GeneratedSection()
-        }
+internal fun validateGeneratedSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "generated", DEFAULT_GENERATED_SECTION) {
+        GeneratedSection(node.row, node.column)
     }

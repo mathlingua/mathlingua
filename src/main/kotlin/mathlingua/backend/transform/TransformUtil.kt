@@ -22,7 +22,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.hasChild
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationSuccess
@@ -35,12 +34,12 @@ import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-internal fun normalize(node: Phase2Node, tracker: MutableLocationTracker): Phase2Node {
+internal fun normalize(node: Phase2Node): Phase2Node {
     var result = node
-    result = commaSeparateCompoundCommands(result, result, tracker).root
-    result = separateIsStatements(result, result, tracker).root
-    result = separateInfixOperatorStatements(result, result, tracker).root
-    return glueCommands(result, result, tracker).root
+    result = commaSeparateCompoundCommands(result, result).root
+    result = separateIsStatements(result, result).root
+    result = separateInfixOperatorStatements(result, result).root
+    return glueCommands(result, result).root
 }
 
 // replaces anything of the form `x is \a \b \c` as `x \a.b.c`
@@ -60,7 +59,7 @@ internal fun normalize(node: TexTalkNode, location: Location): TexTalkNode {
 }
 
 internal fun separateInfixOperatorStatements(
-    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
+    root: Phase2Node, follow: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
@@ -78,11 +77,9 @@ internal fun separateInfixOperatorStatements(
                                         val stmt =
                                             Statement(
                                                 text = expanded.toCode(),
-                                                texTalkRoot = validationSuccess(expanded))
-                                        val location = tracker.getLocationOf(c)
-                                        if (location != null) {
-                                            tracker.setLocationOf(stmt, location)
-                                        }
+                                                texTalkRoot = validationSuccess(expanded),
+                                                row = c.row,
+                                                column = c.column)
                                         newClauses.add(stmt)
                                     }
                                 }
@@ -92,7 +89,8 @@ internal fun separateInfixOperatorStatements(
                             newClauses.add(c)
                         }
                     }
-                    val result = ClauseListNode(clauses = newClauses)
+                    val result =
+                        ClauseListNode(clauses = newClauses, row = it.row, column = it.column)
                     if (newFollow == null && hasChild(it, follow)) {
                         newFollow = result
                     }
@@ -106,7 +104,7 @@ internal fun separateInfixOperatorStatements(
 }
 
 internal fun commaSeparateCompoundCommands(
-    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
+    root: Phase2Node, follow: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
@@ -118,7 +116,7 @@ internal fun commaSeparateCompoundCommands(
                             it.texTalkRoot.value.transform { texTalkNode ->
                                 if (texTalkNode is IsTexTalkNode) {
                                     val newExpressions = mutableListOf<ExpressionTexTalkNode>()
-                                    val location = tracker.getLocationOf(root) ?: Location(-1, -1)
+                                    val location = Location(it.row, it.column)
                                     for (exp in texTalkNode.rhs.items) {
                                         newExpressions.addAll(
                                             getCommandsToGlue(exp, location).map { cmd ->
@@ -135,7 +133,9 @@ internal fun commaSeparateCompoundCommands(
                         val newStatement =
                             Statement(
                                 text = newRoot.toCode(),
-                                texTalkRoot = validationSuccess(newRoot as ExpressionTexTalkNode))
+                                texTalkRoot = validationSuccess(newRoot as ExpressionTexTalkNode),
+                                row = it.row,
+                                column = it.column)
                         if (newFollow == null && hasChild(it, follow)) {
                             newFollow = newStatement
                         }
@@ -146,17 +146,13 @@ internal fun commaSeparateCompoundCommands(
                 } else {
                     it
                 }
-            val location = tracker.getLocationOf(it)
-            if (location != null) {
-                tracker.setLocationOf(result, location)
-            }
             result
         }
     return RootTarget(root = newRoot, target = newFollow ?: follow)
 }
 
 internal fun separateIsStatements(
-    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
+    root: Phase2Node, follow: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
@@ -176,11 +172,9 @@ internal fun separateIsStatements(
                                         val stmt =
                                             Statement(
                                                 text = expRoot.toCode(),
-                                                texTalkRoot = validationSuccess(expRoot))
-                                        val location = tracker.getLocationOf(clause)
-                                        if (location != null) {
-                                            tracker.setLocationOf(stmt, location)
-                                        }
+                                                texTalkRoot = validationSuccess(expRoot),
+                                                row = clause.row,
+                                                column = clause.column)
                                         stmt
                                     })
                             }
@@ -188,7 +182,8 @@ internal fun separateIsStatements(
                             newClauses.add(clause)
                         }
                     }
-                    val result = ClauseListNode(clauses = newClauses)
+                    val result =
+                        ClauseListNode(clauses = newClauses, row = it.row, column = it.column)
                     if (newFollow == null && hasChild(it, follow)) {
                         newFollow = result
                     }

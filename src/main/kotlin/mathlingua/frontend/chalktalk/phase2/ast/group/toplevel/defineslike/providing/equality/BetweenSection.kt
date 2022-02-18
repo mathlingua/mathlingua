@@ -17,19 +17,17 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_BETWEEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class BetweenSection(val targets: List<Target>) : Phase2Node {
+internal data class BetweenSection(
+    val targets: List<Target>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,33 +39,34 @@ internal data class BetweenSection(val targets: List<Target>) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            BetweenSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
+            BetweenSection(
+                targets = targets.map { it.transform(chalkTransformer) as Target }, row, column))
 }
 
 internal fun validateBetweenSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        val result =
-            validateTargetSection(
-                node.resolve(),
-                errors,
-                "between",
-                DEFAULT_BETWEEN_SECTION,
-                tracker,
-                ::BetweenSection)
-        if (result == DEFAULT_BETWEEN_SECTION) {
-            result
+    node: Phase1Node, errors: MutableList<ParseError>
+): BetweenSection {
+    val result =
+        validateTargetSection(
+            node.resolve(),
+            errors,
+            "between",
+            DEFAULT_BETWEEN_SECTION,
+            node.row,
+            node.column,
+            ::BetweenSection)
+    return if (result == DEFAULT_BETWEEN_SECTION) {
+        result
+    } else {
+        if (result.targets.size != 2) {
+            errors.add(
+                ParseError(
+                    message = "A between: section must have exactly two between: sections",
+                    row = node.row,
+                    column = node.column))
+            DEFAULT_BETWEEN_SECTION
         } else {
-            if (result.targets.size != 2) {
-                errors.add(
-                    ParseError(
-                        message = "A between: section must have exactly two between: sections",
-                        row = getRow(node),
-                        column = getColumn(node)))
-                DEFAULT_BETWEEN_SECTION
-            } else {
-                result
-            }
+            result
         }
     }
+}

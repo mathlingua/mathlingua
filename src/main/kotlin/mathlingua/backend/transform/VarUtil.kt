@@ -45,7 +45,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theore
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
@@ -102,12 +101,10 @@ internal fun renameVarsTexTalkNode(texTalkNode: TexTalkNode, map: Map<String, St
         }
     }
 
-internal fun checkVarsPhase2Node(
-    topLevel: TopLevelGroup, node: Phase2Node, tracker: LocationTracker
-): Set<ParseError> {
+internal fun checkVarsPhase2Node(topLevel: TopLevelGroup, node: Phase2Node): Set<ParseError> {
     val errors = mutableListOf<ParseError>()
     val vars = VarMultiSet()
-    checkVarsImplPhase2Node(topLevel, node, vars, tracker, errors)
+    checkVarsImplPhase2Node(topLevel, node, vars, errors)
     return errors.toSet()
 }
 
@@ -409,20 +406,14 @@ private fun getVarsImplTexTalkNode(
 // -----------------------------------------------------------------------------
 
 private fun checkVarsImplPhase2Node(
-    topLevel: TopLevelGroup,
-    node: Phase2Node,
-    vars: VarMultiSet,
-    tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    topLevel: TopLevelGroup, node: Phase2Node, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val varsToRemove = VarMultiSet()
-    val location =
-        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
+    val location = Location(node.row, node.column)
 
     if (node is DefinesGroup) {
-        varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
-        varsToRemove.addAll(
-            checkDefineSectionVars(topLevel, node.definesSection, vars, tracker, errors))
+        varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, errors))
+        varsToRemove.addAll(checkDefineSectionVars(node.definesSection, vars, errors))
     }
 
     val givenSection =
@@ -436,7 +427,7 @@ private fun checkVarsImplPhase2Node(
         }
 
     if (givenSection != null) {
-        varsToRemove.addAll(checkGivenSectionVars(topLevel, givenSection, vars, tracker, errors))
+        varsToRemove.addAll(checkGivenSectionVars(givenSection, vars, errors))
     }
 
     val whenSection =
@@ -450,16 +441,14 @@ private fun checkVarsImplPhase2Node(
         }
 
     if (whenSection != null) {
-        varsToRemove.addAll(
-            checkWhenSectionVars(
-                node = whenSection, vars = vars, tracker = tracker, errors = errors))
+        varsToRemove.addAll(checkWhenSectionVars(node = whenSection, vars = vars, errors = errors))
     }
 
     // verify the `using:` section clauses are of the correct form and add the left-hand-side
     // symbols to the known symbols in `vars`
     if (node is HasUsingSection && node.usingSection != null) {
         for (clause in node.usingSection!!.clauses.clauses) {
-            val clauseLocation = tracker.getLocationOf(clause) ?: Location(-1, -1)
+            val clauseLocation = Location(clause.row, clause.column)
             if (clause !is Statement) {
                 errors.add(
                     ParseError(
@@ -500,7 +489,7 @@ private fun checkVarsImplPhase2Node(
 
     when (node) {
         is StatesGroup -> {
-            varsToRemove.addAll(checkVarsImplIdStatement(topLevel, node.id, vars, tracker, errors))
+            varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, errors))
         }
         is ForAllGroup -> {
             val forAllVars =
@@ -578,11 +567,11 @@ private fun checkVarsImplPhase2Node(
             varsToRemove.addAll(existsVars)
         }
         is Statement -> {
-            varsToRemove.addAll(checkVarsImplStatement(topLevel, node, vars, tracker, errors))
+            varsToRemove.addAll(checkVarsImplStatement(topLevel, node, vars, errors))
         }
     }
 
-    node.forEach { checkVarsImplPhase2Node(topLevel, it, vars, tracker, errors) }
+    node.forEach { checkVarsImplPhase2Node(topLevel, it, vars, errors) }
     for (v in varsToRemove.toList()) {
         vars.remove(v)
     }
@@ -619,7 +608,7 @@ private fun getLeftHandSideVars(statement: Statement): List<Var> {
 }
 
 private fun checkWhenSectionVars(
-    node: WhenSection, vars: VarMultiSet, tracker: LocationTracker, errors: MutableList<ParseError>
+    node: WhenSection, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val whenVars = VarMultiSet()
     for (clause in node.clauses.clauses) {
@@ -633,36 +622,30 @@ private fun checkWhenSectionVars(
                 else -> emptyList()
             }
         vars.addAll(clauseVars)
-        whenVars.addAll(
-            checkColonEqualsRhsSymbols(clause, tracker = tracker, vars = vars, errors = errors))
+        whenVars.addAll(checkColonEqualsRhsSymbols(clause, vars = vars, errors = errors))
         vars.removeAll(clauseVars)
     }
     return whenVars.toList()
 }
 
 private fun checkColonEqualsRhsSymbols(
-    node: Phase2Node, tracker: LocationTracker, vars: VarMultiSet, errors: MutableList<ParseError>
+    node: Phase2Node, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val result = VarMultiSet()
     if (node is Statement) {
-        result.addAll(
-            checkColonEqualsRhsSymbols(
-                statement = node, tracker = tracker, vars = vars, errors = errors))
+        result.addAll(checkColonEqualsRhsSymbols(statement = node, vars = vars, errors = errors))
     }
-    node.forEach { checkColonEqualsRhsSymbols(it, tracker, vars, errors) }
+    node.forEach { checkColonEqualsRhsSymbols(it, vars, errors) }
     return result.toList()
 }
 
 private fun checkColonEqualsRhsSymbols(
-    statement: Statement,
-    tracker: LocationTracker,
-    vars: VarMultiSet,
-    errors: MutableList<ParseError>
+    statement: Statement, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val result = VarMultiSet()
     val validation = statement.texTalkRoot
     if (validation is ValidationSuccess) {
-        val location = tracker.getLocationOf(statement) ?: Location(-1, -1)
+        val location = Location(statement.row, statement.column)
         result.addAll(
             checkColonEqualsRhsSymbols(
                 node = validation.value, location = location, vars = vars, errors = errors))
@@ -696,14 +679,9 @@ private fun checkColonEqualsRhsSymbols(
 }
 
 private fun checkDefineSectionVars(
-    topLevel: TopLevelGroup,
-    node: DefinesSection,
-    vars: VarMultiSet,
-    tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    node: DefinesSection, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
-    val location =
-        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
+    val location = Location(node.row, node.column)
     val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
@@ -719,14 +697,9 @@ private fun checkDefineSectionVars(
 }
 
 private fun checkGivenSectionVars(
-    topLevel: TopLevelGroup,
-    node: GivenSection,
-    vars: VarMultiSet,
-    tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    node: GivenSection, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
-    val location =
-        tracker.getLocationOf(node) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
+    val location = Location(node.row, node.column)
     val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
@@ -745,11 +718,10 @@ private fun checkVarsImplStatement(
     topLevel: TopLevelGroup,
     statement: Statement,
     vars: VarMultiSet,
-    tracker: LocationTracker,
     errors: MutableList<ParseError>
 ): List<Var> {
     return if (statement.texTalkRoot is ValidationSuccess) {
-        val location = tracker.getLocationOf(statement) ?: Location(-1, -1)
+        val location = Location(statement.row, statement.column)
         // ensure statements like 'f(x, y) := x + y' do not use
         // undefined symbols.  In this case, the left-hand side of
         // := introduces new symbols for the right hand-side
@@ -1121,15 +1093,10 @@ private fun checkVarsImplTexTalkNode(
 }
 
 private fun checkVarsImplIdStatement(
-    topLevel: TopLevelGroup,
-    id: IdStatement,
-    vars: VarMultiSet,
-    tracker: LocationTracker,
-    errors: MutableList<ParseError>
+    id: IdStatement, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     return if (id.texTalkRoot is ValidationSuccess) {
-        val location =
-            tracker.getLocationOf(id) ?: tracker.getLocationOf(topLevel) ?: Location(-1, -1)
+        val location = Location(id.row, id.column)
         // Do not add variables in parens because they will be added
         // in the description in a Defines section
         //

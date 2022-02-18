@@ -22,12 +22,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TOPICS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringItem
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateStringItem
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class TopicsSection(val items: List<StringItem>) : Phase2Node {
+internal data class TopicsSection(
+    val items: List<StringItem>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -45,14 +45,12 @@ internal data class TopicsSection(val items: List<StringItem>) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(TopicsSection(items = items.map { chalkTransformer(it) as StringItem }))
+        chalkTransformer(
+            TopicsSection(items = items.map { chalkTransformer(it) as StringItem }, row, column))
 }
 
-internal fun validateTopicsSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node, errors, "topics", DEFAULT_TOPICS_SECTION) { section ->
-            TopicsSection(items = section.args.map { validateStringItem(it, errors, tracker) })
-        }
+internal fun validateTopicsSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node, errors, "topics", DEFAULT_TOPICS_SECTION) { section ->
+        TopicsSection(
+            items = section.args.map { validateStringItem(it, errors) }, node.row, node.column)
     }

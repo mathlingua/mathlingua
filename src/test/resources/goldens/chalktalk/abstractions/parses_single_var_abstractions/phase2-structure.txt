@@ -6,6 +6,8 @@ Document(
                theoremSection = TheoremSection(
                  names = [
                          ]
+                 row = 0
+                 column = 0
                )
                givenSection = null
                whenSection = null
@@ -34,18 +36,32 @@ Document(
                                                           )
                                                         ]
                                                tail = null
+                                               row = 1
+                                               column = 6
                                              )
                                            ]
                                    subParams = null
+                                   row = 1
+                                   column = 6
                                  )
+                                 row = 1
+                                 column = 6
                                )
                              ]
+                   row = 1
+                   column = 0
                  )
+                 row = 1
+                 column = 0
                )
                iffSection = null
                usingSection = null
                proofSection = null
                metaDataSection = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

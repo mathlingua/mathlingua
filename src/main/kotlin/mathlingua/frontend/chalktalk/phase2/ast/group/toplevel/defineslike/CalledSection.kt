@@ -20,17 +20,15 @@ import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.Section
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CALLED_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class CalledSection(val forms: List<String>) : Phase2Node {
+internal data class CalledSection(
+    val forms: List<String>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -56,24 +54,23 @@ internal data class CalledSection(val forms: List<String>) : Phase2Node {
 
 internal fun isCalledSection(sec: Section) = sec.name.text == "written"
 
-internal fun validateCalledSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "called", DEFAULT_CALLED_SECTION) { section ->
-            if (section.args.isEmpty() ||
-                !section.args.all {
-                    it.chalkTalkTarget is Phase1Token &&
-                        it.chalkTalkTarget.type == ChalkTalkTokenType.String
-                }) {
-                errors.add(
-                    ParseError(
-                        message = "Expected a list of strings",
-                        row = getRow(section),
-                        column = getColumn(section)))
-                DEFAULT_CALLED_SECTION
-            } else {
-                CalledSection(forms = section.args.map { (it.chalkTalkTarget as Phase1Token).text })
-            }
+internal fun validateCalledSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "called", DEFAULT_CALLED_SECTION) { section ->
+        if (section.args.isEmpty() ||
+            !section.args.all {
+                it.chalkTalkTarget is Phase1Token &&
+                    it.chalkTalkTarget.type == ChalkTalkTokenType.String
+            }) {
+            errors.add(
+                ParseError(
+                    message = "Expected a list of strings",
+                    row = section.row,
+                    column = section.column))
+            DEFAULT_CALLED_SECTION
+        } else {
+            CalledSection(
+                forms = section.args.map { (it.chalkTalkTarget as Phase1Token).text },
+                node.row,
+                node.column)
         }
     }

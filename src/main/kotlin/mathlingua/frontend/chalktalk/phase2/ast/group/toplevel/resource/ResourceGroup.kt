@@ -30,16 +30,16 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
 internal data class ResourceGroup(
     val id: String,
     val resourceSection: ResourceSection,
-    override val metaDataSection: MetaDataSection?
+    override val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : TopLevelGroup(metaDataSection) {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -55,7 +55,7 @@ internal data class ResourceGroup(
             writer,
             isArg,
             indent,
-            IdStatement(id, validationFailure(emptyList())),
+            IdStatement(id, validationFailure(emptyList()), row, column),
             resourceSection,
             metaDataSection)
 
@@ -64,33 +64,30 @@ internal data class ResourceGroup(
             ResourceGroup(
                 id = id,
                 resourceSection = resourceSection.transform(chalkTransformer) as ResourceSection,
-                metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection))
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as? MetaDataSection,
+                row = row,
+                column = column))
 }
 
 internal fun isResourceGroup(node: Phase1Node) = firstSectionMatchesName(node, "Resource")
 
-internal fun validateResourceGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "Resource", DEFAULT_RESOURCE_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_RESOURCE_GROUP, listOf("Resource", "Metadata?")) {
-            sections ->
-                if (group.id == null) {
-                    DEFAULT_RESOURCE_GROUP
-                } else {
-                    ResourceGroup(
-                        id = group.id.text.removeSurrounding("[", "]"),
-                        resourceSection =
-                            ensureNonNull(sections["Resource"], DEFAULT_RESOURCE_SECTION) {
-                                validateResourceSection(it, errors, tracker)
-                            },
-                        metaDataSection =
-                            ifNonNull(sections["Metadata"]) {
-                                validateMetaDataSection(it, errors, tracker)
-                            })
-                }
+internal fun validateResourceGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "Resource", DEFAULT_RESOURCE_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_RESOURCE_GROUP, listOf("Resource", "Metadata?")) {
+        sections ->
+            if (group.id == null) {
+                DEFAULT_RESOURCE_GROUP
+            } else {
+                ResourceGroup(
+                    id = group.id.text.removeSurrounding("[", "]"),
+                    resourceSection =
+                        ensureNonNull(sections["Resource"], DEFAULT_RESOURCE_SECTION) {
+                            validateResourceSection(it, errors)
+                        },
+                    metaDataSection =
+                        ifNonNull(sections["Metadata"]) { validateMetaDataSection(it, errors) },
+                    row = node.row,
+                    column = node.column)
             }
         }
     }

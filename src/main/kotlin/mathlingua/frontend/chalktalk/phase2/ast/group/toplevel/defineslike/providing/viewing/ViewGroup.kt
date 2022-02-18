@@ -29,45 +29,42 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class ViewGroup(
     val viewSection: ViewSection,
     val viewAsSection: ViewAsSection,
     val viaSection: ViaSection,
-    val bySection: BySection?
+    val bySection: BySection?,
+    override val row: Int,
+    override val column: Int
 ) :
     FourPartNode<ViewSection, ViewAsSection, ViaSection, BySection?>(
-        viewSection, viewAsSection, viaSection, bySection, ::ViewGroup),
+        viewSection, viewAsSection, viaSection, bySection, row, column, ::ViewGroup),
     Clause
 
 internal fun isViewingAsGroup(node: Phase1Node) = firstSectionMatchesName(node, "view")
 
-internal fun validateViewingAsGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "view", DEFAULT_VIEW_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_VIEW_GROUP, listOf("view", "as", "via", "by?")) { sections ->
-                ViewGroup(
-                    viewSection =
-                        ensureNonNull(sections["view"], DEFAULT_VIEW_SECTION) {
-                            validateViewSection(it, errors, tracker)
-                        },
-                    viewAsSection =
-                        ensureNonNull(sections["as"], DEFAULT_VIEW_AS_SECTION) {
-                            validateViewingAsSection(it, errors, tracker)
-                        },
-                    viaSection =
-                        ensureNonNull(sections["via"], DEFAULT_VIA_SECTION) {
-                            validateViaSection(it, errors, tracker)
-                        },
-                    bySection =
-                        ifNonNull(sections["by"]) { validateBySection(it, errors, tracker) })
-            }
+internal fun validateViewingAsGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "view", DEFAULT_VIEW_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_VIEW_GROUP, listOf("view", "as", "via", "by?")) {
+        sections ->
+            ViewGroup(
+                viewSection =
+                    ensureNonNull(sections["view"], DEFAULT_VIEW_SECTION) {
+                        validateViewSection(it, errors)
+                    },
+                viewAsSection =
+                    ensureNonNull(sections["as"], DEFAULT_VIEW_AS_SECTION) {
+                        validateViewingAsSection(it, errors)
+                    },
+                viaSection =
+                    ensureNonNull(sections["via"], DEFAULT_VIA_SECTION) {
+                        validateViaSection(it, errors)
+                    },
+                bySection = ifNonNull(sections["by"]) { validateBySection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

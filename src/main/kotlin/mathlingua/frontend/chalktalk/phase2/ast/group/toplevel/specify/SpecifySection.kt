@@ -17,8 +17,6 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SPECIFY_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ZERO_GROUP
@@ -34,12 +32,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.positiveI
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.positiveInt.validatePositiveIntGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.zero.isZeroGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.zero.validateZeroGroup
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class SpecifySection(val numberGroups: List<NumberGroup>) : Phase2Node {
+internal data class SpecifySection(
+    val numberGroups: List<NumberGroup>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         numberGroups.forEach(fn)
     }
@@ -57,27 +55,26 @@ internal data class SpecifySection(val numberGroups: List<NumberGroup>) : Phase2
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(
             SpecifySection(
-                numberGroups = numberGroups.map { it.transform(chalkTransformer) as NumberGroup }))
+                numberGroups = numberGroups.map { it.transform(chalkTransformer) as NumberGroup },
+                row,
+                column))
     }
 }
 
-internal fun validateSpecifySection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node, errors, "Specify", DEFAULT_SPECIFY_SECTION) {
-            if (it.args.isEmpty()) {
-                errors.add(
-                    ParseError(
-                        message = "Expected at least one specification but none",
-                        row = getRow(node),
-                        column = getColumn(node)))
-                DEFAULT_SPECIFY_SECTION
-            } else {
-                SpecifySection(
-                    numberGroups =
-                        it.args.map { arg -> validateNumberGroup(arg.resolve(), errors, tracker) })
-            }
+internal fun validateSpecifySection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node, errors, "Specify", DEFAULT_SPECIFY_SECTION) {
+        if (it.args.isEmpty()) {
+            errors.add(
+                ParseError(
+                    message = "Expected at least one specification but none",
+                    row = node.row,
+                    column = node.column))
+            DEFAULT_SPECIFY_SECTION
+        } else {
+            SpecifySection(
+                numberGroups = it.args.map { arg -> validateNumberGroup(arg.resolve(), errors) },
+                node.row,
+                node.column)
         }
     }
 
@@ -89,21 +86,19 @@ private val NUMBER_GROUP_VALIDATORS =
         ValidationPair(::isNegativeIntGroup, ::validateNegativeIntGroup),
         ValidationPair(::isPositiveIntGroup, ::validatePositiveIntGroup))
 
-private fun validateNumberGroup(
-    rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-): NumberGroup {
+private fun validateNumberGroup(rawNode: Phase1Node, errors: MutableList<ParseError>): NumberGroup {
     val node = rawNode.resolve()
 
     for (pair in NUMBER_GROUP_VALIDATORS) {
         if (pair.matches(node)) {
-            return pair.validate(node, errors, tracker)
+            return pair.validate(node, errors)
         }
     }
 
     errors.add(
         ParseError(
             message = "Unrecognized specification.  Perhaps there is a typo.",
-            row = getRow(rawNode),
-            column = getColumn(rawNode)))
+            row = rawNode.row,
+            column = rawNode.column))
     return DEFAULT_ZERO_GROUP
 }

@@ -20,7 +20,6 @@ import kotlin.math.max
 import mathlingua.backend.WrittenAsForm
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
@@ -58,14 +57,10 @@ internal fun Command.signature(): String {
     return builder.toString()
 }
 
-internal fun IdStatement.signature(locationTracker: MutableLocationTracker): Signature? {
-    val signatures =
-        findAllStatementSignatures(
-            stmt = this.toStatement(), ignoreLhsEqual = false, locationTracker = locationTracker)
+internal fun IdStatement.signature(): Signature? {
+    val signatures = findAllStatementSignatures(stmt = this.toStatement(), ignoreLhsEqual = false)
     val form = signatures.toList().firstOrNull()?.form ?: return null
-    return Signature(
-        form = form,
-        location = locationTracker.getLocationOf(this) ?: Location(row = -1, column = -1))
+    return Signature(form = form, location = Location(this.row, this.column))
 }
 
 internal data class Substitutions(

@@ -20,7 +20,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.hasChild
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.support.validationSuccess
@@ -51,13 +50,11 @@ internal fun getCommandsToGlue(node: ExpressionTexTalkNode, location: Location):
     return glueCommands(cmds)
 }
 
-internal fun locateAllCommands(
-    phase2Node: Phase2Node, tracker: MutableLocationTracker
-): List<Command> {
+internal fun locateAllCommands(phase2Node: Phase2Node): List<Command> {
     var root = phase2Node
-    root = separateIsStatements(root, root, tracker).root
-    root = separateInfixOperatorStatements(root, root, tracker).root
-    root = glueCommands(root, root, tracker).root
+    root = separateIsStatements(root, root).root
+    root = separateInfixOperatorStatements(root, root).root
+    root = glueCommands(root, root).root
 
     val commands = mutableListOf<Command>()
     findCommandsImpl(root, commands)
@@ -88,7 +85,11 @@ internal fun replaceCommands(
                     val newRoot =
                         replaceCommands(
                             root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
-                    Statement(text = newRoot.toCode(), texTalkRoot = validationSuccess(newRoot))
+                    Statement(
+                        text = newRoot.toCode(),
+                        texTalkRoot = validationSuccess(newRoot),
+                        it.row,
+                        it.column)
                 }
             }
         }
@@ -121,7 +122,7 @@ internal fun replaceCommands(
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
 internal fun glueCommands(
-    root: Phase2Node, follow: Phase2Node, tracker: MutableLocationTracker
+    root: Phase2Node, follow: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
@@ -139,8 +140,7 @@ internal fun glueCommands(
                         throw Error("Expected 'is' node $isNode to only contain a single rhs item")
                     }
                     val cmds =
-                        getCommandsToGlue(
-                            isNode.rhs.items[0], tracker.getLocationOf(root) ?: Location(-1, -1))
+                        getCommandsToGlue(isNode.rhs.items[0], Location(root.row, root.column))
                     val gluedCmds = glueCommands(cmds)
                     if (gluedCmds.size != 1) {
                         throw Error("Expected 'is' node $isNode to have only one glued rhs command")
@@ -158,11 +158,11 @@ internal fun glueCommands(
                                                         ExpressionTexTalkNode(
                                                             children = listOf(gluedCmds[0])))))))
                     val result =
-                        Statement(text = newExp.toCode(), texTalkRoot = validationSuccess(newExp))
-                    val location = tracker.getLocationOf(it)
-                    if (location != null) {
-                        tracker.setLocationOf(result, location)
-                    }
+                        Statement(
+                            text = newExp.toCode(),
+                            texTalkRoot = validationSuccess(newExp),
+                            it.row,
+                            it.column)
                     if (newFollow == null && hasChild(it, follow)) {
                         newFollow = result
                     }

@@ -13,11 +13,31 @@ internal class SectionIdentificationTest {
     fun identifiesUniqueRequiredSectionNames() {
         val sections =
             listOf(
-                Section(Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("given", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("where", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("then", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("using", ChalkTalkTokenType.Name, -1, -1), emptyList()))
+                Section(
+                    Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("given", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("where", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("then", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("using", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1))
         val ids = identifySections(sections, "Theorem", "given", "where", "then", "using")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "given", "where", "then", "using"))
     }
@@ -26,11 +46,31 @@ internal class SectionIdentificationTest {
     fun identifiesUniqueOptionalAllSuppliedSectionNames() {
         val sections =
             listOf(
-                Section(Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("given", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("where", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("then", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("using", ChalkTalkTokenType.Name, -1, -1), emptyList()))
+                Section(
+                    Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("given", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("where", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("then", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("using", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1))
         val ids = identifySections(sections, "Theorem", "given?", "where?", "then", "using?")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "given", "where", "then", "using"))
     }
@@ -39,9 +79,21 @@ internal class SectionIdentificationTest {
     fun identifiesUniqueOptionalSomeOmittedSectionNames() {
         val sections =
             listOf(
-                Section(Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("then", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("using", ChalkTalkTokenType.Name, -1, -1), emptyList()))
+                Section(
+                    Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("then", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("using", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1))
         val ids = identifySections(sections, "Theorem", "given?", "where?", "then", "using?")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "then", "using"))
     }
@@ -50,12 +102,36 @@ internal class SectionIdentificationTest {
     fun identifiesDuplicateOptionalAllSuppliedSectionNames() {
         val sections =
             listOf(
-                Section(Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("given", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("where", ChalkTalkTokenType.Name, 1, 1), emptyList()),
-                Section(Phase1Token("then", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("using", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("where", ChalkTalkTokenType.Name, 2, 2), emptyList()))
+                Section(
+                    Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("given", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("where", ChalkTalkTokenType.Name, 1, 1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("then", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("using", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("where", ChalkTalkTokenType.Name, 2, 2),
+                    emptyList(),
+                    row = -1,
+                    column = -1))
         val ids =
             identifySections(sections, "Theorem", "given?", "where?", "then", "using?", "where?")
         assertThat(ids.keys)
@@ -68,10 +144,26 @@ internal class SectionIdentificationTest {
     fun identifiesDuplicateOptionalFirstOmittedSectionNames() {
         val sections =
             listOf(
-                Section(Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("then", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("using", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("where", ChalkTalkTokenType.Name, 2, 2), emptyList()))
+                Section(
+                    Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("then", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("using", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("where", ChalkTalkTokenType.Name, 2, 2),
+                    emptyList(),
+                    row = -1,
+                    column = -1))
         val ids =
             identifySections(sections, "Theorem", "given?", "where?", "then", "using?", "where?")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "then", "using", "where1"))
@@ -82,10 +174,26 @@ internal class SectionIdentificationTest {
     fun identifiesDuplicateOptionalSecondOmittedSectionNames() {
         val sections =
             listOf(
-                Section(Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("where", ChalkTalkTokenType.Name, 1, 1), emptyList()),
-                Section(Phase1Token("then", ChalkTalkTokenType.Name, -1, -1), emptyList()),
-                Section(Phase1Token("using", ChalkTalkTokenType.Name, -1, -1), emptyList()))
+                Section(
+                    Phase1Token("Theorem", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("where", ChalkTalkTokenType.Name, 1, 1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("then", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1),
+                Section(
+                    Phase1Token("using", ChalkTalkTokenType.Name, -1, -1),
+                    emptyList(),
+                    row = -1,
+                    column = -1))
         val ids =
             identifySections(sections, "Theorem", "given?", "where?", "then", "using?", "where?")
         assertThat(ids.keys).isEqualTo(setOf("Theorem", "where", "then", "using"))

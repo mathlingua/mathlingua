@@ -16,14 +16,21 @@
 
 package mathlingua.frontend.chalktalk.phase1.ast
 
-internal interface Phase1Node {
+internal interface HasLocation {
+    val row: Int
+    val column: Int
+}
+
+internal interface Phase1Node : HasLocation {
     fun forEach(fn: (node: Phase1Node) -> Unit)
     fun toCode(): String
     fun resolve(): Phase1Node
     fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node
 }
 
-internal data class Root(val groups: List<GroupOrBlockComment>) : Phase1Node {
+internal data class Root(
+    val groups: List<GroupOrBlockComment>, override val row: Int, override val column: Int
+) : Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = groups.forEach(fn)
 
@@ -46,10 +53,12 @@ internal data class Root(val groups: List<GroupOrBlockComment>) : Phase1Node {
     override fun resolve() = this
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
-        transformer(Root(groups = groups.map { it.transform(transformer) as Group }))
+        transformer(Root(groups = groups.map { it.transform(transformer) as Group }, row, column))
 }
 
-internal data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
+internal data class Argument(
+    val chalkTalkTarget: Phase1Target, override val row: Int, override val column: Int
+) : Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = fn(chalkTalkTarget)
 
@@ -92,10 +101,15 @@ internal data class Argument(val chalkTalkTarget: Phase1Target) : Phase1Node {
 
     override fun transform(transformer: (node: Phase1Node) -> Phase1Node) =
         transformer(
-            Argument(chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target))
+            Argument(
+                chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target,
+                row,
+                column))
 }
 
-internal data class Section(val name: Phase1Token, val args: List<Argument>) : Phase1Node {
+internal data class Section(
+    val name: Phase1Token, val args: List<Argument>, override val row: Int, override val column: Int
+) : Phase1Node {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) {
         fn(name)
@@ -123,5 +137,7 @@ internal data class Section(val name: Phase1Token, val args: List<Argument>) : P
         transformer(
             Section(
                 name = name.transform(transformer) as Phase1Token,
-                args = args.map { it.transform(transformer) as Argument }))
+                args = args.map { it.transform(transformer) as Argument },
+                row,
+                column))
 }

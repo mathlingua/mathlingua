@@ -31,9 +31,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
@@ -41,7 +39,9 @@ internal data class TopicGroup(
     val id: String?,
     val topicSection: TopicSection,
     val contentSection: ContentSection,
-    override val metaDataSection: MetaDataSection?
+    override val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : TopLevelGroup(metaDataSection) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(topicSection)
@@ -60,7 +60,7 @@ internal data class TopicGroup(
             if (id == null) {
                 null
             } else {
-                IdStatement(text = id, texTalkRoot = validationFailure(emptyList()))
+                IdStatement(text = id, texTalkRoot = validationFailure(emptyList()), row, column)
             },
             topicSection,
             contentSection,
@@ -72,33 +72,31 @@ internal data class TopicGroup(
                 id = id,
                 topicSection = topicSection.transform(chalkTransformer) as TopicSection,
                 contentSection = contentSection.transform(chalkTransformer) as ContentSection,
-                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+                row,
+                column))
 }
 
 internal fun isTopicGroup(node: Phase1Node) = firstSectionMatchesName(node, "Topic")
 
-internal fun validateTopicGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "Topic", DEFAULT_TOPIC_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_TOPIC_GROUP, listOf("Topic", "content", "Metadata?")) {
-            sections ->
-                TopicGroup(
-                    id = group.id?.text?.removeSurrounding("[", "]"),
-                    topicSection =
-                        ensureNonNull(sections["Topic"], DEFAULT_ENTRY_SECTION) {
-                            validateTopicSection(it, errors, tracker)
-                        },
-                    contentSection =
-                        ensureNonNull(sections["content"], DEFAULT_CONTENT_SECTION) {
-                            validateContentSection(it, errors, tracker)
-                        },
-                    metaDataSection =
-                        ifNonNull(sections["Metadata"]) {
-                            validateMetaDataSection(it, errors, tracker)
-                        })
-            }
+internal fun validateTopicGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "Topic", DEFAULT_TOPIC_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_TOPIC_GROUP, listOf("Topic", "content", "Metadata?")) {
+        sections ->
+            TopicGroup(
+                id = group.id?.text?.removeSurrounding("[", "]"),
+                topicSection =
+                    ensureNonNull(sections["Topic"], DEFAULT_ENTRY_SECTION) {
+                        validateTopicSection(it, errors)
+                    },
+                contentSection =
+                    ensureNonNull(sections["content"], DEFAULT_CONTENT_SECTION) {
+                        validateContentSection(it, errors)
+                    },
+                metaDataSection =
+                    ifNonNull(sections["Metadata"]) { validateMetaDataSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

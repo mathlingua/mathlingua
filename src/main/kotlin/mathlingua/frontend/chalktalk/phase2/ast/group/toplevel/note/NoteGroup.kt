@@ -33,9 +33,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.validateCon
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
 
@@ -43,7 +41,9 @@ internal data class NoteGroup(
     val id: String?,
     val noteSection: NoteSection,
     val contentSection: ContentSection,
-    override val metaDataSection: MetaDataSection?
+    override val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : TopLevelGroup(metaDataSection) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(noteSection)
@@ -62,7 +62,7 @@ internal data class NoteGroup(
             if (id == null) {
                 null
             } else {
-                IdStatement(text = id, texTalkRoot = validationFailure(emptyList()))
+                IdStatement(text = id, texTalkRoot = validationFailure(emptyList()), row, column)
             },
             noteSection,
             contentSection,
@@ -74,33 +74,30 @@ internal data class NoteGroup(
                 id = id,
                 noteSection = noteSection.transform(chalkTransformer) as NoteSection,
                 contentSection = contentSection.transform(chalkTransformer) as ContentSection,
-                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+                row = row,
+                column = column))
 }
 
 internal fun isNoteGroup(node: Phase1Node) = firstSectionMatchesName(node, "Note")
 
-internal fun validateNoteGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "Note", DEFAULT_NOTE_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_NOTE_GROUP, listOf("Note", "content", "Metadata?")) {
-            sections ->
-                NoteGroup(
-                    id = group.id?.text?.removeSurrounding("[", "]"),
-                    noteSection =
-                        ensureNonNull(sections["Note"], DEFAULT_NOTE_SECTION) {
-                            validateNoteSection(it, errors, tracker)
-                        },
-                    contentSection =
-                        ensureNonNull(sections["content"], DEFAULT_CONTENT_SECTION) {
-                            validateContentSection(it, errors, tracker)
-                        },
-                    metaDataSection =
-                        ifNonNull(sections["Metadata"]) {
-                            validateMetaDataSection(it, errors, tracker)
-                        })
-            }
+internal fun validateNoteGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "Note", DEFAULT_NOTE_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_NOTE_GROUP, listOf("Note", "content", "Metadata?")) { sections ->
+            NoteGroup(
+                id = group.id?.text?.removeSurrounding("[", "]"),
+                noteSection =
+                    ensureNonNull(sections["Note"], DEFAULT_NOTE_SECTION) {
+                        validateNoteSection(it, errors)
+                    },
+                contentSection =
+                    ensureNonNull(sections["content"], DEFAULT_CONTENT_SECTION) {
+                        validateContentSection(it, errors)
+                    },
+                metaDataSection =
+                    ifNonNull(sections["Metadata"]) { validateMetaDataSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

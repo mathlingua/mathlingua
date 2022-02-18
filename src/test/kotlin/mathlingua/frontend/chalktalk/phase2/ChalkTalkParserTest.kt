@@ -21,18 +21,14 @@ import assertk.assertions.isEqualTo
 import assertk.assertions.isFalse
 import assertk.assertions.isInstanceOf
 import assertk.assertions.isNotNull
-import assertk.assertions.isTrue
 import mathlingua.GoldenType
 import mathlingua.OVERWRITE_GOLDEN_FILES
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
-import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.validateDocument
-import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.newLocationTracker
 import mathlingua.loadTestCases
 import mathlingua.serialize
 import org.junit.jupiter.api.DynamicTest
@@ -59,8 +55,7 @@ internal class ChalkTalkParserTest {
                 assertThat(result.errors).isEqualTo(emptyList<ParseError>())
                 assertThat(result.root).isNotNull()
 
-                val tracker = newLocationTracker()
-                val validation = validateDocument(result.root!!, tracker)
+                val validation = validateDocument(result.root!!)
                 if (validation is ValidationFailure) {
                     for (err in validation.errors) {
                         println(err)
@@ -80,16 +75,7 @@ internal class ChalkTalkParserTest {
                     assertThat(actualOutput).isEqualTo(it.phase2Output.readText().trim())
                     assertThat(actualStructure).isEqualTo(it.phase2Structure.readText())
                 }
-
-                assertTrackerContainsNode(tracker, doc)
             }
         }
-    }
-
-    private fun assertTrackerContainsNode(tracker: LocationTracker, node: Phase2Node) {
-        assertThat(tracker.hasLocationOf(node)).isTrue()
-        assertThat(tracker.getLocationOf(node)).isNotNull()
-
-        node.forEach { assertTrackerContainsNode(tracker, it) }
     }
 }

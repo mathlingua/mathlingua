@@ -45,9 +45,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.LocationTracker
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
@@ -244,9 +242,7 @@ private fun getInnerDefinedSignaturesImpl(
 }
 
 // an 'inner' signature is a signature that is only within scope of the given top level group
-internal fun getInnerDefinedSignatures(
-    group: TopLevelGroup, tracker: LocationTracker?
-): Set<Signature> {
+internal fun getInnerDefinedSignatures(group: TopLevelGroup): Set<Signature> {
     val result = mutableSetOf<Signature>()
 
     val usingSection =
@@ -274,7 +270,7 @@ internal fun getInnerDefinedSignatures(
     if (usingSection != null) {
         for (clause in usingSection.clauses.clauses) {
             if (clause is Statement) {
-                val location = tracker?.getLocationOf(clause) ?: Location(-1, -1)
+                val location = Location(clause.row, clause.column)
                 when (val validation = clause.texTalkRoot
                 ) {
                     is ValidationSuccess -> {
@@ -298,27 +294,24 @@ internal fun getInnerDefinedSignatures(
         for (target in requiringSection.targets) {
             result.addAll(
                 findOperatorNamesWithin(target).map {
-                    Signature(
-                        form = it,
-                        location = tracker?.getLocationOf(target)
-                                ?: Location(row = -1, column = -1))
+                    Signature(form = it, location = Location(target.row, target.column))
                 })
         }
     }
 
     if (group is DefinesGroup) {
         if (group.whenSection != null) {
-            val location = tracker?.getLocationOf(group.whenSection) ?: Location(-1, -1)
+            val location = Location(group.whenSection.row, group.whenSection.column)
             result.addAll(
                 getInnerDefinedSignatures(group.whenSection.clauses.clauses).map {
                     Signature(form = it, location = location)
                 })
         }
 
-        result.addAll(getOperatorIdentifiersFromTargets(group.definesSection.targets, tracker))
+        result.addAll(getOperatorIdentifiersFromTargets(group.definesSection.targets))
     } else if (group is StatesGroup) {
         if (group.whenSection != null) {
-            val location = tracker?.getLocationOf(group.whenSection) ?: Location(-1, -1)
+            val location = Location(group.whenSection.row, group.whenSection.column)
             result.addAll(
                 getInnerDefinedSignatures(group.whenSection.clauses.clauses).map {
                     Signature(form = it, location = location)
@@ -326,15 +319,15 @@ internal fun getInnerDefinedSignatures(
         }
     } else if (group is TheoremGroup) {
         if (group.givenSection != null) {
-            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets))
         }
     } else if (group is AxiomGroup) {
         if (group.givenSection != null) {
-            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets))
         }
     } else if (group is ConjectureGroup) {
         if (group.givenSection != null) {
-            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets, tracker))
+            result.addAll(getOperatorIdentifiersFromTargets(group.givenSection.targets))
         }
     }
     return result
@@ -366,16 +359,11 @@ private fun findOperatorNamesWithinImpl(node: Phase1Node, result: MutableList<St
     node.forEach { findOperatorNamesWithinImpl(it, result) }
 }
 
-private fun getOperatorIdentifiersFromTargets(
-    targets: List<Target>, tracker: LocationTracker?
-): List<Signature> {
+private fun getOperatorIdentifiersFromTargets(targets: List<Target>): List<Signature> {
     val result = mutableListOf<Signature>()
     for (target in targets) {
         for (op in getOperatorIdentifiers(target)) {
-            result.add(
-                Signature(
-                    form = op,
-                    location = tracker?.getLocationOf(target) ?: Location(row = -1, column = -1)))
+            result.add(Signature(form = op, location = Location(target.row, target.column)))
         }
     }
     return result
@@ -474,8 +462,8 @@ private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): List<String> 
                 .map { (it.children[0] as TextTexTalkNode).text }
         } else if (lhs != null) {
             val id =
-                IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
-                    .signature(newLocationTracker())
+                IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs), -1, -1)
+                    .signature()
                     ?.form
             if (id == null) {
                 emptyList()

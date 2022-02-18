@@ -73,13 +73,10 @@ import mathlingua.frontend.chalktalk.phase2.getPatternsToWrittenAs
 import mathlingua.frontend.chalktalk.phase2.newHtmlCodeWriter
 import mathlingua.frontend.chalktalk.phase2.newMathLinguaCodeWriter
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.LocationTracker
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
@@ -146,8 +143,7 @@ internal fun buildSourceFile(file: VirtualFile): SourceFile {
         file = file, content = content, validation = FrontEnd.parseWithLocations(content))
 }
 
-internal data class ValueSourceTracker<T>(
-    val value: T, val source: SourceFile, val tracker: MutableLocationTracker?)
+internal data class ValueAndSource<T>(val value: T, val source: SourceFile)
 
 internal data class Page(val sourceFile: SourceFile, val fileResult: FileResult)
 
@@ -155,17 +151,17 @@ internal data class WrittenAsForm(val target: String?, val form: String)
 
 internal interface SourceCollection {
     fun size(): Int
-    fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>>
-    fun getDuplicateDefinedSignatures(): List<ValueSourceTracker<Signature>>
-    fun getUndefinedSignatures(): Set<ValueSourceTracker<Signature>>
-    fun findInvalidTypes(): List<ValueSourceTracker<ParseError>>
-    fun getParseErrors(): List<ValueSourceTracker<ParseError>>
-    fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>>
-    fun getSymbolErrors(): List<ValueSourceTracker<ParseError>>
-    fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>>
-    fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>>
-    fun getInputOutputSymbolErrors(): List<ValueSourceTracker<ParseError>>
-    fun getNonExpressesUsedInNonIsNonInStatementsErrors(): List<ValueSourceTracker<ParseError>>
+    fun getDefinedSignatures(): Set<ValueAndSource<Signature>>
+    fun getDuplicateDefinedSignatures(): List<ValueAndSource<Signature>>
+    fun getUndefinedSignatures(): Set<ValueAndSource<Signature>>
+    fun findInvalidTypes(): List<ValueAndSource<ParseError>>
+    fun getParseErrors(): List<ValueAndSource<ParseError>>
+    fun getDuplicateContent(): List<ValueAndSource<TopLevelGroup>>
+    fun getSymbolErrors(): List<ValueAndSource<ParseError>>
+    fun getIsRhsErrors(): List<ValueAndSource<ParseError>>
+    fun getColonEqualsRhsErrors(): List<ValueAndSource<ParseError>>
+    fun getInputOutputSymbolErrors(): List<ValueAndSource<ParseError>>
+    fun getNonExpressesUsedInNonIsNonInStatementsErrors(): List<ValueAndSource<ParseError>>
     fun prettyPrint(
         file: VirtualFile, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>>
@@ -338,12 +334,12 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
     private val signatureToTopLevelGroup = mutableMapOf<String, TopLevelGroup>()
     private val signatureToRelativePath = mutableMapOf<String, String>()
 
-    private val allGroups = mutableListOf<ValueSourceTracker<Normalized<TopLevelGroup>>>()
-    private val definesGroups = mutableListOf<ValueSourceTracker<Normalized<DefinesGroup>>>()
-    private val statesGroups = mutableListOf<ValueSourceTracker<Normalized<StatesGroup>>>()
-    private val axiomGroups = mutableListOf<ValueSourceTracker<Normalized<AxiomGroup>>>()
-    private val theoremGroups = mutableListOf<ValueSourceTracker<Normalized<TheoremGroup>>>()
-    private val conjectureGroups = mutableListOf<ValueSourceTracker<Normalized<ConjectureGroup>>>()
+    private val allGroups = mutableListOf<ValueAndSource<Normalized<TopLevelGroup>>>()
+    private val definesGroups = mutableListOf<ValueAndSource<Normalized<DefinesGroup>>>()
+    private val statesGroups = mutableListOf<ValueAndSource<Normalized<StatesGroup>>>()
+    private val axiomGroups = mutableListOf<ValueAndSource<Normalized<AxiomGroup>>>()
+    private val theoremGroups = mutableListOf<ValueAndSource<Normalized<TheoremGroup>>>()
+    private val conjectureGroups = mutableListOf<ValueAndSource<Normalized<ConjectureGroup>>>()
 
     init {
         // add all the sources
@@ -489,253 +485,214 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
 
             definesGroups.addAll(
                 validation.value.document.defines().map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         source = sf,
-                        tracker = validation.value.tracker,
                         value =
-                            Normalized(
-                                original = it,
-                                normalized =
-                                    normalize(it, validation.value.tracker) as DefinesGroup))
+                            Normalized(original = it, normalized = normalize(it) as DefinesGroup))
                 })
 
             statesGroups.addAll(
                 validation.value.document.states().map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         source = sf,
-                        tracker = validation.value.tracker,
                         value =
-                            Normalized(
-                                original = it,
-                                normalized =
-                                    normalize(it, validation.value.tracker) as StatesGroup))
+                            Normalized(original = it, normalized = normalize(it) as StatesGroup))
                 })
 
             axiomGroups.addAll(
                 validation.value.document.axioms().map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         source = sf,
-                        tracker = validation.value.tracker,
-                        value =
-                            Normalized(
-                                original = it,
-                                normalized = normalize(it, validation.value.tracker) as AxiomGroup))
+                        value = Normalized(original = it, normalized = normalize(it) as AxiomGroup))
                 })
 
             theoremGroups.addAll(
                 validation.value.document.theorems().map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         source = sf,
-                        tracker = validation.value.tracker,
                         value =
-                            Normalized(
-                                original = it,
-                                normalized =
-                                    normalize(it, validation.value.tracker) as TheoremGroup))
+                            Normalized(original = it, normalized = normalize(it) as TheoremGroup))
                 })
 
             conjectureGroups.addAll(
                 validation.value.document.conjectures().map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         source = sf,
-                        tracker = validation.value.tracker,
                         value =
                             Normalized(
-                                original = it,
-                                normalized =
-                                    normalize(it, validation.value.tracker) as ConjectureGroup))
+                                original = it, normalized = normalize(it) as ConjectureGroup))
                 })
 
             allGroups.addAll(
                 validation.value.document.groups.map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         source = sf,
-                        tracker = validation.value.tracker,
                         value =
-                            Normalized(
-                                original = it,
-                                normalized =
-                                    normalize(it, validation.value.tracker) as TopLevelGroup))
+                            Normalized(original = it, normalized = normalize(it) as TopLevelGroup))
                 })
         }
     }
 
     override fun size() = sourceFiles.size
 
-    override fun getIsRhsErrors(): List<ValueSourceTracker<ParseError>> {
-        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+    override fun getIsRhsErrors(): List<ValueAndSource<ParseError>> {
+        val result = mutableListOf<ValueAndSource<ParseError>>()
         val sigsWithExpresses = getSignaturesWithExpressesSection().map { it.value.form }.toSet()
         val theoremSigs = theoremGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         val axiomSigs = axiomGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         val conjectureSigs = axiomGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         val statesSigs = statesGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         for (svt in allGroups) {
-            val rhsIsSigs =
-                findIsRhsSignatures(svt.value.normalized, svt.tracker ?: newLocationTracker())
+            val rhsIsSigs = findIsRhsSignatures(svt.value.normalized)
             for (sig in rhsIsSigs) {
                 if (sigsWithExpresses.contains(sig.form)) {
                     result.add(
-                        ValueSourceTracker(
+                        ValueAndSource(
                             value =
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `is` cannot reference a `Defines:` with an `expressing:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
-                            source = svt.source,
-                            tracker = svt.tracker))
+                            source = svt.source))
                 }
 
                 if (theoremSigs.contains(sig.form)) {
                     result.add(
-                        ValueSourceTracker(
+                        ValueAndSource(
                             value =
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `is` cannot reference a `Theorem:` but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
-                            source = svt.source,
-                            tracker = svt.tracker))
+                            source = svt.source))
                 }
 
                 if (axiomSigs.contains(sig.form)) {
                     result.add(
-                        ValueSourceTracker(
+                        ValueAndSource(
                             value =
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `is` cannot reference a `Axiom:` but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
-                            source = svt.source,
-                            tracker = svt.tracker))
+                            source = svt.source))
                 }
 
                 if (conjectureSigs.contains(sig.form)) {
                     result.add(
-                        ValueSourceTracker(
+                        ValueAndSource(
                             value =
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `is` cannot reference a `Conjecture:` but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
-                            source = svt.source,
-                            tracker = svt.tracker))
+                            source = svt.source))
                 }
 
                 if (statesSigs.contains(sig.form)) {
                     result.add(
-                        ValueSourceTracker(
+                        ValueAndSource(
                             value =
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `is` cannot reference a `States:` but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
-                            source = svt.source,
-                            tracker = svt.tracker))
+                            source = svt.source))
                 }
             }
 
             val sigsWithoutExpresses =
                 getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
-            val rhsInSigs =
-                findInRhsSignatures(svt.value.normalized, svt.tracker ?: newLocationTracker())
+            val rhsInSigs = findInRhsSignatures(svt.value.normalized)
             for (sig in rhsInSigs) {
                 if (sigsWithoutExpresses.contains(sig.form)) {
                     result.add(
-                        ValueSourceTracker(
+                        ValueAndSource(
                             value =
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
-                            source = svt.source,
-                            tracker = svt.tracker))
+                            source = svt.source))
                 }
             }
         }
         return result
     }
 
-    override fun getColonEqualsRhsErrors(): List<ValueSourceTracker<ParseError>> {
-        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+    override fun getColonEqualsRhsErrors(): List<ValueAndSource<ParseError>> {
+        val result = mutableListOf<ValueAndSource<ParseError>>()
         val sigsWithoutExpresses =
             getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
         for (svt in allGroups) {
-            val rhsSigs =
-                findColonEqualsRhsSignatures(
-                    svt.value.normalized, svt.tracker ?: newLocationTracker())
+            val rhsSigs = findColonEqualsRhsSignatures(svt.value.normalized)
             for (sig in rhsSigs) {
                 if (sigsWithoutExpresses.contains(sig.form)) {
                     result.add(
-                        ValueSourceTracker(
+                        ValueAndSource(
                             value =
                                 ParseError(
                                     message =
                                         "The right-hand-side of an `:=` cannot reference a `Defines:` without an `expressing:` section but found '${sig.form}'",
                                     row = sig.location.row,
                                     column = sig.location.column),
-                            source = svt.source,
-                            tracker = svt.tracker))
+                            source = svt.source))
                 }
             }
         }
         return result
     }
 
-    private fun getSignaturesWithStates(): List<ValueSourceTracker<Signature>> {
-        val result = mutableListOf<ValueSourceTracker<Signature>>()
+    private fun getSignaturesWithStates(): List<ValueAndSource<Signature>> {
+        val result = mutableListOf<ValueAndSource<Signature>>()
         for (svt in statesGroups) {
             val def = svt.value.original
             if (def.signature != null) {
-                result.add(
-                    ValueSourceTracker(
-                        value = def.signature, source = svt.source, tracker = svt.tracker))
+                result.add(ValueAndSource(value = def.signature, source = svt.source))
             }
         }
         return result
     }
 
-    private fun getSignaturesWithoutExpressesSection(): List<ValueSourceTracker<Signature>> {
-        val result = mutableListOf<ValueSourceTracker<Signature>>()
+    private fun getSignaturesWithoutExpressesSection(): List<ValueAndSource<Signature>> {
+        val result = mutableListOf<ValueAndSource<Signature>>()
         for (svt in allGroups) {
             val def = svt.value.original
             if (def is HasSignature) {
                 val sig = def.signature ?: continue
                 if (def !is DefinesGroup || def.expressingSection == null) {
-                    result.add(
-                        ValueSourceTracker(value = sig, source = svt.source, tracker = svt.tracker))
+                    result.add(ValueAndSource(value = sig, source = svt.source))
                 }
             }
         }
         return result
     }
 
-    private fun getSignaturesWithExpressesSection(): List<ValueSourceTracker<Signature>> {
-        val result = mutableListOf<ValueSourceTracker<Signature>>()
+    private fun getSignaturesWithExpressesSection(): List<ValueAndSource<Signature>> {
+        val result = mutableListOf<ValueAndSource<Signature>>()
         for (svt in definesGroups) {
             val def = svt.value.original
             if (def.expressingSection != null && def.signature != null) {
-                result.add(
-                    ValueSourceTracker(
-                        value = def.signature, source = svt.source, tracker = svt.tracker))
+                result.add(ValueAndSource(value = def.signature, source = svt.source))
             }
         }
         return result
     }
 
-    override fun getDefinedSignatures(): Set<ValueSourceTracker<Signature>> {
-        val result = mutableSetOf<ValueSourceTracker<Signature>>()
+    override fun getDefinedSignatures(): Set<ValueAndSource<Signature>> {
+        val result = mutableSetOf<ValueAndSource<Signature>>()
         result.addAll(getAllDefinedSignatures().map { it.first })
         return result
     }
 
-    override fun getDuplicateDefinedSignatures(): List<ValueSourceTracker<Signature>> {
-        val duplicates = mutableListOf<ValueSourceTracker<Signature>>()
+    override fun getDuplicateDefinedSignatures(): List<ValueAndSource<Signature>> {
+        val duplicates = mutableListOf<ValueAndSource<Signature>>()
         val found = mutableSetOf<String>()
         for (sig in getAllDefinedSignatures().map { it.first }) {
             if (found.contains(sig.value.form)) {
@@ -746,17 +703,12 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return duplicates
     }
 
-    override fun getUndefinedSignatures(): Set<ValueSourceTracker<Signature>> {
-        val result = mutableSetOf<ValueSourceTracker<Signature>>()
+    override fun getUndefinedSignatures(): Set<ValueAndSource<Signature>> {
+        val result = mutableSetOf<ValueAndSource<Signature>>()
         val globalDefinedSigs = getDefinedSignatures().map { it.value.form }.toSet()
         for (vst in allGroups) {
-            val innerSigs =
-                getInnerDefinedSignatures(vst.value.normalized, vst.tracker).map { it.form }.toSet()
-            val usedSigs =
-                locateAllSignatures(
-                    vst.value.normalized,
-                    ignoreLhsEqual = true,
-                    vst.tracker ?: newLocationTracker())
+            val innerSigs = getInnerDefinedSignatures(vst.value.normalized).map { it.form }.toSet()
+            val usedSigs = locateAllSignatures(vst.value.normalized, ignoreLhsEqual = true)
             for (sig in usedSigs) {
                 if (!globalDefinedSigs.contains(sig.form) && !innerSigs.contains(sig.form)) {
                     // TODO: Right now operators are not marked as undefined signatures because
@@ -764,9 +716,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     //       resolution algorithm is not implemented.  Thus, until it is
                     //       implemented we do not report errors for unknown operators.
                     if (!isOperatorName(sig.form)) {
-                        result.add(
-                            ValueSourceTracker(
-                                value = sig, source = vst.source, tracker = vst.tracker))
+                        result.add(ValueAndSource(value = sig, source = vst.source))
                     }
                 }
             }
@@ -774,8 +724,8 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return result
     }
 
-    override fun findInvalidTypes(): List<ValueSourceTracker<ParseError>> {
-        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+    override fun findInvalidTypes(): List<ValueAndSource<ParseError>> {
+        val result = mutableListOf<ValueAndSource<ParseError>>()
         val defs =
             getAllDefinedSignatures().filter { it.second is DefinesGroup }.map {
                 Pair(it.first, it.second as DefinesGroup)
@@ -786,9 +736,8 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             val parse = newChalkTalkParser().parse(lexer)
             result.addAll(
                 parse.errors.map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         source = sf.value,
-                        tracker = null,
                         value =
                             ParseError(
                                 message = it.message,
@@ -804,9 +753,8 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     val texTalkResult = newTexTalkParser().parse(texTalkLexer)
                     result.addAll(
                         texTalkResult.errors.map {
-                            ValueSourceTracker(
+                            ValueAndSource(
                                 source = sf.value,
-                                tracker = null,
                                 value =
                                     ParseError(
                                         message = it.message,
@@ -822,15 +770,13 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             when (val validation = sf.value.validation
             ) {
                 is ValidationSuccess -> {
-                    val tracker = validation.value.tracker
                     val doc = validation.value.document
                     for (grp in doc.groups) {
-                        val errors = analyzer.findInvalidTypes(grp, tracker)
+                        val errors = analyzer.findInvalidTypes(grp)
                         result.addAll(
                             errors.map {
-                                ValueSourceTracker(
+                                ValueAndSource(
                                     source = sf.value,
-                                    tracker = tracker,
                                     value =
                                         ParseError(
                                             message = it.message,
@@ -842,7 +788,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     for (pair in findAllStatements(doc)) {
                         val stmt = pair.first
                         val aliasDefines = pair.second
-                        val location = tracker.getLocationOf(stmt) ?: Location(row = 0, column = 0)
+                        val location = Location(stmt.row, stmt.column)
                         for (node in findAllTexTalkNodes(stmt)) {
                             val expansion =
                                 expandAsWritten(
@@ -858,9 +804,8 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                                             axioms = axiomGroups.map { it.value.normalized }))
                             result.addAll(
                                 expansion.errors.map {
-                                    ValueSourceTracker(
+                                    ValueAndSource(
                                         source = sf.value,
-                                        tracker = tracker,
                                         value =
                                             ParseError(
                                                 message = it,
@@ -878,16 +823,14 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return result
     }
 
-    override fun getParseErrors(): List<ValueSourceTracker<ParseError>> {
-        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+    override fun getParseErrors(): List<ValueAndSource<ParseError>> {
+        val result = mutableListOf<ValueAndSource<ParseError>>()
         for (sf in sourceFiles) {
             val validation = sf.value.validation
             when (validation) {
                 is ValidationFailure -> {
                     result.addAll(
-                        validation.errors.map {
-                            ValueSourceTracker(source = sf.value, tracker = null, value = it)
-                        })
+                        validation.errors.map { ValueAndSource(source = sf.value, value = it) })
                 }
                 is ValidationSuccess -> {
                     val doc = validation.value.document
@@ -905,10 +848,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     for (vald in allSigRoot) {
                         if (vald is ValidationFailure) {
                             result.addAll(
-                                vald.errors.map {
-                                    ValueSourceTracker(
-                                        source = sf.value, tracker = null, value = it)
-                                })
+                                vald.errors.map { ValueAndSource(source = sf.value, value = it) })
                         }
                     }
                 }
@@ -917,17 +857,13 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return result
     }
 
-    override fun getDuplicateContent(): List<ValueSourceTracker<TopLevelGroup>> {
-        val result = mutableListOf<ValueSourceTracker<TopLevelGroup>>()
+    override fun getDuplicateContent(): List<ValueAndSource<TopLevelGroup>> {
+        val result = mutableListOf<ValueAndSource<TopLevelGroup>>()
         val allContent = mutableSetOf<String>()
         for (group in allGroups) {
             val content = group.value.normalized.toCode(false, 0).getCode().trim()
             if (allContent.contains(content)) {
-                result.add(
-                    ValueSourceTracker(
-                        source = group.source,
-                        tracker = group.tracker,
-                        value = group.value.normalized))
+                result.add(ValueAndSource(source = group.source, value = group.value.normalized))
             }
             allContent.add(content)
         }
@@ -1029,7 +965,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             TheoremGroup(
                 signature = null,
                 id = null,
-                theoremSection = TheoremSection(names = emptyList()),
+                theoremSection = TheoremSection(names = emptyList(), row = -1, column = -1),
                 givenSection = null,
                 whenSection = null,
                 thenSection =
@@ -1040,11 +976,19 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                                     listOf(
                                         Statement(
                                             text = exp.toCode(),
-                                            texTalkRoot = validationSuccess(exp))))),
+                                            texTalkRoot = validationSuccess(exp),
+                                            row = -1,
+                                            column = -1)),
+                                row = -1,
+                                column = -1),
+                        row = -1,
+                        column = -1),
                 iffSection = null,
                 proofSection = null,
                 usingSection = null,
-                metaDataSection = null)
+                metaDataSection = null,
+                row = -1,
+                column = -1)
         val expanded = tmpTheorem.toCode(false, 0, writer).getCode()
         return when (val validation = FrontEnd.parse(expanded)
         ) {
@@ -1229,7 +1173,12 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                         it
                     }
                 } as ExpressionTexTalkNode
-            val id = IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+            val id =
+                IdStatement(
+                    text = lhs.toCode(),
+                    texTalkRoot = validationSuccess(lhs),
+                    row = -1,
+                    column = -1)
             val syntheticDefines = rhsDef.copy(id = id)
             aliasDefines.add(syntheticDefines)
         }
@@ -1279,23 +1228,34 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
 
         val stmtText = getExpandedText(rhs, aliasDefines)
         if (stmtText != null) {
-            val id = IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+            val id =
+                IdStatement(
+                    text = lhs.toCode(),
+                    texTalkRoot = validationSuccess(lhs),
+                    row = -1,
+                    column = -1)
             val syntheticDefines =
                 DefinesGroup(
-                    signature = id.signature(newLocationTracker()),
+                    signature = id.signature(),
                     id = id,
-                    definesSection = DefinesSection(targets = emptyList()),
+                    definesSection = DefinesSection(targets = emptyList(), row = -1, column = -1),
                     givenSection = null,
                     whenSection = null,
                     meansSection = null,
                     satisfyingSection =
-                        SatisfyingSection(clauses = ClauseListNode(clauses = emptyList())),
+                        SatisfyingSection(
+                            clauses = ClauseListNode(clauses = emptyList(), row = -1, column = -1),
+                            row = -1,
+                            column = -1),
                     expressingSection = null,
                     providingSection = null,
                     usingSection = null,
-                    writtenSection = WrittenSection(forms = listOf("\"${stmtText}\"")),
-                    calledSection = CalledSection(forms = emptyList()),
-                    metaDataSection = null)
+                    writtenSection =
+                        WrittenSection(forms = listOf("\"${stmtText}\""), row = -1, column = -1),
+                    calledSection = CalledSection(forms = emptyList(), row = -1, column = -1),
+                    metaDataSection = null,
+                    row = -1,
+                    column = -1)
             aliasDefines.add(syntheticDefines)
         }
     }
@@ -1328,68 +1288,54 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return getWriter(html, literal, doExpand, aliasDefines).generateCode(node)
     }
 
-    override fun getSymbolErrors(): List<ValueSourceTracker<ParseError>> {
-        val result = mutableListOf<ValueSourceTracker<ParseError>>()
+    override fun getSymbolErrors(): List<ValueAndSource<ParseError>> {
+        val result = mutableListOf<ValueAndSource<ParseError>>()
         for (grp in allGroups) {
-            val tracker = grp.tracker ?: newLocationTracker()
-            val errs = checkVarsPhase2Node(grp.value.original, grp.value.normalized, tracker)
-            result.addAll(
-                errs.map { ValueSourceTracker(value = it, source = grp.source, tracker = tracker) })
+            val errs = checkVarsPhase2Node(grp.value.original, grp.value.normalized)
+            result.addAll(errs.map { ValueAndSource(value = it, source = grp.source) })
         }
         return result
     }
 
-    private fun getAllDefinedSignatures():
-        List<Pair<ValueSourceTracker<Signature>, TopLevelGroup>> {
-        val result =
-            mutableListOf<Pair<ValueSourceTracker<Signature>, Normalized<out TopLevelGroup>>>()
+    private fun getAllDefinedSignatures(): List<Pair<ValueAndSource<Signature>, TopLevelGroup>> {
+        val result = mutableListOf<Pair<ValueAndSource<Signature>, Normalized<out TopLevelGroup>>>()
 
-        fun processDefines(pair: ValueSourceTracker<Normalized<DefinesGroup>>) {
+        fun processDefines(pair: ValueAndSource<Normalized<DefinesGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst =
-                    ValueSourceTracker(
-                        source = pair.source, tracker = pair.tracker, value = signature)
+                val vst = ValueAndSource(source = pair.source, value = signature)
                 result.add(Pair(vst, pair.value))
             }
         }
 
-        fun processStates(pair: ValueSourceTracker<Normalized<StatesGroup>>) {
+        fun processStates(pair: ValueAndSource<Normalized<StatesGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst =
-                    ValueSourceTracker(
-                        source = pair.source, tracker = pair.tracker, value = signature)
+                val vst = ValueAndSource(source = pair.source, value = signature)
                 result.add(Pair(vst, pair.value))
             }
         }
 
-        fun processAxiom(pair: ValueSourceTracker<Normalized<AxiomGroup>>) {
+        fun processAxiom(pair: ValueAndSource<Normalized<AxiomGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst =
-                    ValueSourceTracker(
-                        source = pair.source, tracker = pair.tracker, value = signature)
+                val vst = ValueAndSource(source = pair.source, value = signature)
                 result.add(Pair(vst, pair.value))
             }
         }
 
-        fun processTheorems(pair: ValueSourceTracker<Normalized<TheoremGroup>>) {
+        fun processTheorems(pair: ValueAndSource<Normalized<TheoremGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst =
-                    ValueSourceTracker(
-                        source = pair.source, tracker = pair.tracker, value = signature)
+                val vst = ValueAndSource(source = pair.source, value = signature)
                 result.add(Pair(vst, pair.value))
             }
         }
 
-        fun processConjectures(pair: ValueSourceTracker<Normalized<ConjectureGroup>>) {
+        fun processConjectures(pair: ValueAndSource<Normalized<ConjectureGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst =
-                    ValueSourceTracker(
-                        source = pair.source, tracker = pair.tracker, value = signature)
+                val vst = ValueAndSource(source = pair.source, value = signature)
                 result.add(Pair(vst, pair.value))
             }
         }
@@ -1429,9 +1375,8 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                             val innerSig =
                                 "${outerSig.form}.${form.abstraction.toCode().replace(Regex("\\(.*?\\)"), "")}"
                             val vst =
-                                ValueSourceTracker(
+                                ValueAndSource(
                                     source = def.source,
-                                    tracker = def.tracker,
                                     value = Signature(innerSig, outerSig.location))
                             result.add(Pair(vst, def.value))
                         }
@@ -1443,11 +1388,10 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return result.map { Pair(first = it.first, second = it.second.normalized) }
     }
 
-    override fun getInputOutputSymbolErrors(): List<ValueSourceTracker<ParseError>> {
-        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+    override fun getInputOutputSymbolErrors(): List<ValueAndSource<ParseError>> {
+        val errors = mutableListOf<ValueAndSource<ParseError>>()
         for (vst in allGroups) {
             val group = vst.value.normalized
-            val tracker = vst.tracker ?: newLocationTracker()
 
             val inputs = getInputSymbols(group)
             val outputs = getOutputSymbols(group)
@@ -1455,46 +1399,44 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             val whenSection = getWhenSection(group)
             if (whenSection != null) {
                 val usedSymbols =
-                    findIsLhsSymbols(whenSection, tracker)
+                    findIsLhsSymbols(whenSection)
                         .toMutableList()
-                        .plus(findColonEqualsLhsSymbols(whenSection, tracker))
+                        .plus(findColonEqualsLhsSymbols(whenSection))
                 for (pair in usedSymbols) {
                     val sym = pair.first
                     val location = pair.second
                     if (outputs.contains(sym)) {
                         errors.add(
-                            ValueSourceTracker(
+                            ValueAndSource(
                                 value =
                                     ParseError(
                                         message =
                                             "A `when:` section cannot describe a symbol introduced in a `Defines:` section but found '${sym}'",
                                         row = location.row,
                                         column = location.column),
-                                source = vst.source,
-                                tracker = vst.tracker))
+                                source = vst.source))
                     }
                 }
             }
 
             for (meansOrEval in getMeansExpressesSections(group)) {
                 val usedSymbols =
-                    findIsLhsSymbols(meansOrEval, tracker)
+                    findIsLhsSymbols(meansOrEval)
                         .toMutableList()
-                        .plus(findColonEqualsLhsSymbols(meansOrEval, tracker))
+                        .plus(findColonEqualsLhsSymbols(meansOrEval))
                 for (pair in usedSymbols) {
                     val sym = pair.first
                     val location = pair.second
                     if (inputs.contains(sym) && !outputs.contains(sym)) {
                         errors.add(
-                            ValueSourceTracker(
+                            ValueAndSource(
                                 value =
                                     ParseError(
                                         message =
                                             "A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found '${sym}'",
                                         row = location.row,
                                         column = location.column),
-                                source = vst.source,
-                                tracker = vst.tracker))
+                                source = vst.source))
                     }
                 }
             }
@@ -1509,15 +1451,14 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             (exp.children[0] as Command).signature() == signature
 
     override fun getNonExpressesUsedInNonIsNonInStatementsErrors():
-        List<ValueSourceTracker<ParseError>> {
-        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+        List<ValueAndSource<ParseError>> {
+        val errors = mutableListOf<ValueAndSource<ParseError>>()
         val signaturesWithoutExpresses =
             getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
         val statesSigs = statesGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         val axiomSigs = axiomGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         for (vst in allGroups) {
             val group = vst.value.normalized
-            val tracker = vst.tracker ?: newLocationTracker()
 
             for (stmtPair in getNonIsNonInStatementsNonInAsSections(group)) {
                 val stmt = stmtPair.first
@@ -1527,18 +1468,16 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                         !statesSigs.contains(sig) &&
                         // a top level axiom signature is allowed
                         !(axiomSigs.contains(sig) && isSignatureTopLevel(exp, sig))) {
-                        val location =
-                            tracker.getLocationOf(stmt) ?: Location(row = -1, column = -1)
+                        val location = Location(stmt.row, stmt.column)
                         errors.add(
-                            ValueSourceTracker(
+                            ValueAndSource(
                                 value =
                                     ParseError(
                                         message =
                                             "Cannot use '$sig' in a non-`is` or non-`in` statement since its definition doesn't have an `expressing:` section",
                                         row = location.row,
                                         column = location.column),
-                                source = vst.source,
-                                tracker = vst.tracker))
+                                source = vst.source))
                     }
                 }
             }
@@ -1735,24 +1674,38 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                         val lhs = lhsItems[i]
                         val rhs = rhsItems[i]
                         val id =
-                            IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs))
+                            IdStatement(
+                                text = lhs.toCode(),
+                                texTalkRoot = validationSuccess(lhs),
+                                row = -1,
+                                column = -1)
                         val syntheticDefines =
                             DefinesGroup(
-                                signature = id.signature(newLocationTracker()),
+                                signature = id.signature(),
                                 id = id,
-                                definesSection = DefinesSection(targets = emptyList()),
+                                definesSection =
+                                    DefinesSection(targets = emptyList(), row = -1, column = -1),
                                 givenSection = null,
                                 whenSection = null,
                                 meansSection = null,
                                 satisfyingSection =
                                     SatisfyingSection(
-                                        clauses = ClauseListNode(clauses = emptyList())),
+                                        clauses =
+                                            ClauseListNode(
+                                                clauses = emptyList(), row = -1, column = -1),
+                                        row = -1,
+                                        column = -1),
                                 expressingSection = null,
                                 providingSection = null,
                                 usingSection = null,
-                                writtenSection = WrittenSection(forms = listOf(rhs.toCode())),
-                                calledSection = CalledSection(forms = emptyList()),
-                                metaDataSection = null)
+                                writtenSection =
+                                    WrittenSection(
+                                        forms = listOf(rhs.toCode()), row = -1, column = -1),
+                                calledSection =
+                                    CalledSection(forms = emptyList(), row = -1, column = -1),
+                                metaDataSection = null,
+                                row = -1,
+                                column = -1)
                         aliases.add(syntheticDefines)
                     }
                 }
@@ -1804,22 +1757,17 @@ private fun findAllTexTalkNodesImpl(node: Phase2Node, result: MutableList<TexTal
     node.forEach { findAllTexTalkNodesImpl(it, result) }
 }
 
-private fun findIsRhsSignatures(
-    node: Phase2Node, locationTracker: LocationTracker
-): List<Signature> {
+private fun findIsRhsSignatures(node: Phase2Node): List<Signature> {
     val result = mutableListOf<Signature>()
-    findIsRhsSignatures(node, locationTracker, result)
+    findIsRhsSignatures(node, result)
     return result
 }
 
-private fun findIsRhsSignatures(
-    node: Phase2Node, locationTracker: LocationTracker, rhsIsSignatures: MutableList<Signature>
-) {
+private fun findIsRhsSignatures(node: Phase2Node, rhsIsSignatures: MutableList<Signature>) {
     if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
-                val location =
-                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                val location = Location(node.row, node.column)
                 findIsRhsSignatures(node.texTalkRoot.value, location, rhsIsSignatures)
             }
             else -> {
@@ -1827,7 +1775,7 @@ private fun findIsRhsSignatures(
             }
         }
     } else {
-        node.forEach { findIsRhsSignatures(it, locationTracker, rhsIsSignatures) }
+        node.forEach { findIsRhsSignatures(it, rhsIsSignatures) }
     }
 }
 
@@ -1848,22 +1796,17 @@ private fun findIsRhsSignatures(
     }
 }
 
-private fun findInRhsSignatures(
-    node: Phase2Node, locationTracker: LocationTracker
-): List<Signature> {
+private fun findInRhsSignatures(node: Phase2Node): List<Signature> {
     val result = mutableListOf<Signature>()
-    findInRhsSignatures(node, locationTracker, result)
+    findInRhsSignatures(node, result)
     return result
 }
 
-private fun findInRhsSignatures(
-    node: Phase2Node, locationTracker: LocationTracker, rhsInSignatures: MutableList<Signature>
-) {
+private fun findInRhsSignatures(node: Phase2Node, rhsInSignatures: MutableList<Signature>) {
     if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
-                val location =
-                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                val location = Location(node.row, node.column)
                 findInRhsSignatures(node.texTalkRoot.value, location, rhsInSignatures)
             }
             else -> {
@@ -1871,7 +1814,7 @@ private fun findInRhsSignatures(
             }
         }
     } else {
-        node.forEach { findInRhsSignatures(it, locationTracker, rhsInSignatures) }
+        node.forEach { findInRhsSignatures(it, rhsInSignatures) }
     }
 }
 
@@ -1892,22 +1835,19 @@ private fun findInRhsSignatures(
     }
 }
 
-private fun findColonEqualsRhsSignatures(
-    node: Phase2Node, locationTracker: LocationTracker
-): List<Signature> {
+private fun findColonEqualsRhsSignatures(node: Phase2Node): List<Signature> {
     val result = mutableListOf<Signature>()
-    findColonEqualsRhsSignatures(node, locationTracker, result)
+    findColonEqualsRhsSignatures(node, result)
     return result
 }
 
 private fun findColonEqualsRhsSignatures(
-    node: Phase2Node, locationTracker: LocationTracker, rhsIsSignatures: MutableList<Signature>
+    node: Phase2Node, rhsIsSignatures: MutableList<Signature>
 ) {
     if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
-                val location =
-                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                val location = Location(node.row, node.column)
                 findColonEqualsRhsSignatures(node.texTalkRoot.value, location, rhsIsSignatures)
             }
             else -> {
@@ -1915,7 +1855,7 @@ private fun findColonEqualsRhsSignatures(
             }
         }
     } else {
-        node.forEach { findColonEqualsRhsSignatures(it, locationTracker, rhsIsSignatures) }
+        node.forEach { findColonEqualsRhsSignatures(it, rhsIsSignatures) }
     }
 }
 
@@ -1936,24 +1876,17 @@ private fun findColonEqualsRhsSignatures(
     }
 }
 
-private fun findIsLhsSymbols(
-    node: Phase2Node, locationTracker: LocationTracker
-): List<Pair<String, Location>> {
+private fun findIsLhsSymbols(node: Phase2Node): List<Pair<String, Location>> {
     val result = mutableListOf<Pair<String, Location>>()
-    findIsLhsSymbols(node, locationTracker, result)
+    findIsLhsSymbols(node, result)
     return result
 }
 
-private fun findIsLhsSymbols(
-    node: Phase2Node,
-    locationTracker: LocationTracker,
-    lhsIsSymbols: MutableList<Pair<String, Location>>
-) {
+private fun findIsLhsSymbols(node: Phase2Node, lhsIsSymbols: MutableList<Pair<String, Location>>) {
     if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
-                val location =
-                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                val location = Location(node.row, node.column)
                 findIsLhsSymbols(node.texTalkRoot.value, location, lhsIsSymbols)
             }
             else -> {
@@ -1961,7 +1894,7 @@ private fun findIsLhsSymbols(
             }
         }
     } else {
-        node.forEach { findIsLhsSymbols(it, locationTracker, lhsIsSymbols) }
+        node.forEach { findIsLhsSymbols(it, lhsIsSymbols) }
     }
 }
 
@@ -1984,24 +1917,19 @@ private fun findIsLhsSymbols(
     }
 }
 
-private fun findColonEqualsLhsSymbols(
-    node: Phase2Node, locationTracker: LocationTracker
-): List<Pair<String, Location>> {
+private fun findColonEqualsLhsSymbols(node: Phase2Node): List<Pair<String, Location>> {
     val result = mutableListOf<Pair<String, Location>>()
-    findColonEqualsLhsSymbols(node, locationTracker, result)
+    findColonEqualsLhsSymbols(node, result)
     return result
 }
 
 private fun findColonEqualsLhsSymbols(
-    node: Phase2Node,
-    locationTracker: LocationTracker,
-    lhsColonEqualsSymbols: MutableList<Pair<String, Location>>
+    node: Phase2Node, lhsColonEqualsSymbols: MutableList<Pair<String, Location>>
 ) {
     if (node is Statement) {
         when (node.texTalkRoot) {
             is ValidationSuccess -> {
-                val location =
-                    locationTracker.getLocationOf(node) ?: Location(row = -1, column = -1)
+                val location = Location(node.row, node.column)
                 findColonEqualsLhsSymbols(node.texTalkRoot.value, location, lhsColonEqualsSymbols)
             }
             else -> {
@@ -2009,7 +1937,7 @@ private fun findColonEqualsLhsSymbols(
             }
         }
     } else {
-        node.forEach { findColonEqualsLhsSymbols(it, locationTracker, lhsColonEqualsSymbols) }
+        node.forEach { findColonEqualsLhsSymbols(it, lhsColonEqualsSymbols) }
     }
 }
 

@@ -11,6 +11,8 @@ Root(
                               )
                               args = [
                                      ]
+                              row = 0
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -42,15 +44,27 @@ Root(
                                                                   )
                                                                 ]
                                                        tail = null
+                                                       row = 1
+                                                       column = 6
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 1
+                                           column = 6
                                          )
+                                         row = 1
+                                         column = 6
                                        )
                                      ]
+                              row = 1
+                              column = 0
                             )
                           ]
                id = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

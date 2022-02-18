@@ -25,35 +25,35 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class ExistsGroup(
-    val existsSection: ExistsSection, val suchThatSection: SuchThatSection
+    val existsSection: ExistsSection,
+    val suchThatSection: SuchThatSection,
+    override val row: Int,
+    override val column: Int
 ) :
-    TwoPartNode<ExistsSection, SuchThatSection>(existsSection, suchThatSection, ::ExistsGroup),
+    TwoPartNode<ExistsSection, SuchThatSection>(
+        existsSection, suchThatSection, row, column, ::ExistsGroup),
     Clause
 
 internal fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
 
-internal fun validateExistsGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "exists", DEFAULT_EXISTS_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_EXISTS_GROUP, listOf("exists", "suchThat")) {
-            sections ->
-                ExistsGroup(
-                    existsSection =
-                        ensureNonNull(sections["exists"], DEFAULT_EXISTS_SECTION) {
-                            validateExistsSection(it, errors, tracker)
-                        },
-                    suchThatSection =
-                        ensureNonNull(sections["suchThat"], DEFAULT_SUCH_THAT_SECTION) {
-                            validateSuchThatSection(it, errors, tracker)
-                        })
-            }
+internal fun validateExistsGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "exists", DEFAULT_EXISTS_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_EXISTS_GROUP, listOf("exists", "suchThat")) {
+        sections ->
+            ExistsGroup(
+                existsSection =
+                    ensureNonNull(sections["exists"], DEFAULT_EXISTS_SECTION) {
+                        validateExistsSection(it, errors)
+                    },
+                suchThatSection =
+                    ensureNonNull(sections["suchThat"], DEFAULT_SUCH_THAT_SECTION) {
+                        validateSuchThatSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

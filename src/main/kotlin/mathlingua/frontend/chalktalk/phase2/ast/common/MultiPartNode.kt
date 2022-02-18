@@ -50,41 +50,58 @@ internal abstract class ZeroPartNode(val node: Phase1Node) : Phase2Node {
         chalkTransformer(this)
 }
 
-internal abstract class OnePartNode<S : Phase2Node?>(s: S, builder: (s: S) -> Phase2Node) :
+internal abstract class OnePartNode<S : Phase2Node?>(
+    s: S, row: Int, column: Int, builder: (s: S, row: Int, column: Int) -> Phase2Node
+) :
     MultiPartNode(
         listOf(s),
         {
             @Suppress("UNCHECKED_CAST")
-            builder(it[0] as S)
+            builder(it[0] as S, row, column)
         })
 
 internal abstract class TwoPartNode<S1 : Phase2Node?, S2 : Phase2Node?>(
-    s1: S1, s2: S2, builder: (s1: S1, s2: S2) -> Phase2Node
+    s1: S1,
+    s2: S2,
+    row: Int,
+    column: Int,
+    builder: (s1: S1, s2: S2, row: Int, column: Int) -> Phase2Node
 ) :
     MultiPartNode(
         listOf(s1, s2),
         {
             @Suppress("UNCHECKED_CAST")
-            builder(it[0] as S1, it[1] as S2)
+            builder(it[0] as S1, it[1] as S2, row, column)
         })
 
 internal abstract class ThreePartNode<S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node?>(
-    s1: S1, s2: S2, s3: S3, builder: (s1: S1, s2: S2, s3: S3) -> Phase2Node
+    s1: S1,
+    s2: S2,
+    s3: S3,
+    row: Int,
+    column: Int,
+    builder: (s1: S1, s2: S2, s3: S3, row: Int, column: Int) -> Phase2Node
 ) :
     MultiPartNode(
         listOf(s1, s2, s3),
         {
             @Suppress("UNCHECKED_CAST")
-            builder(it[0] as S1, it[1] as S2, it[2] as S3)
+            builder(it[0] as S1, it[1] as S2, it[2] as S3, row, column)
         })
 
 internal abstract class FourPartNode<
     S1 : Phase2Node?, S2 : Phase2Node?, S3 : Phase2Node?, S4 : Phase2Node?>(
-    s1: S1, s2: S2, s3: S3, s4: S4, builder: (s1: S1, s2: S2, s3: S3, s4: S4) -> Phase2Node
+    s1: S1,
+    s2: S2,
+    s3: S3,
+    s4: S4,
+    row: Int,
+    column: Int,
+    builder: (s1: S1, s2: S2, s3: S3, s4: S4, row: Int, column: Int) -> Phase2Node
 ) :
     MultiPartNode(
         listOf(s1, s2, s3, s4),
         {
             @Suppress("UNCHECKED_CAST")
-            builder(it[0] as S1, it[1] as S2, it[2] as S3, it[3] as S4)
+            builder(it[0] as S1, it[1] as S2, it[2] as S3, it[3] as S4, row, column)
         })

@@ -19,8 +19,8 @@ package mathlingua.backend
 import mathlingua.frontend.support.ParseError
 
 internal object BackEnd {
-    fun check(sourceCollection: SourceCollection): List<ValueSourceTracker<ParseError>> {
-        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+    fun check(sourceCollection: SourceCollection): List<ValueAndSource<ParseError>> {
+        val errors = mutableListOf<ValueAndSource<ParseError>>()
         errors.addAll(sourceCollection.getParseErrors())
         errors.addAll(checkUndefinedSignatures(sourceCollection))
         errors.addAll(checkDuplicateDefinedSignatures(sourceCollection))
@@ -35,9 +35,8 @@ internal object BackEnd {
 
     private fun checkUndefinedSignatures(sourceCollection: SourceCollection) =
         sourceCollection.getUndefinedSignatures().map {
-            ValueSourceTracker(
+            ValueAndSource(
                 source = it.source,
-                tracker = it.tracker,
                 value =
                     ParseError(
                         message = "Undefined signature '${it.value.form}'",
@@ -47,9 +46,8 @@ internal object BackEnd {
 
     private fun checkDuplicateDefinedSignatures(sourceCollection: SourceCollection) =
         sourceCollection.getDuplicateDefinedSignatures().map {
-            ValueSourceTracker(
+            ValueAndSource(
                 source = it.source,
-                tracker = it.tracker,
                 value =
                     ParseError(
                         message = "Duplicate defined signature '${it.value.form}'",

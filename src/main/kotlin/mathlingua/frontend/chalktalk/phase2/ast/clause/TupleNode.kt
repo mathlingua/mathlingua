@@ -20,24 +20,19 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Tuple
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TUPLE
 import mathlingua.frontend.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class TupleNode(val tuple: Tuple) : ZeroPartNode(tuple), Target
+internal data class TupleNode(val tuple: Tuple, override val row: Int, override val column: Int) :
+    ZeroPartNode(tuple), Target
 
 internal fun isTuple(node: Phase1Node) = node is Tuple
 
-internal fun validateTupleNode(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateByTransform(
-            node = node.resolve(),
-            errors = errors,
-            default = DEFAULT_TUPLE,
-            message = "Expected a tuple",
-            transform = { it as? Tuple },
-            builder = ::TupleNode)
-    }
+internal fun validateTupleNode(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateByTransform(
+        node = node.resolve(),
+        errors = errors,
+        default = DEFAULT_TUPLE,
+        message = "Expected a tuple",
+        transform = { it as? Tuple },
+        builder = ::TupleNode)

@@ -18,8 +18,6 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Section
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_IF_OR_IFF_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.IfSection
@@ -27,7 +25,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateIfSectio
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.validateIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal interface IfOrIffSection {
@@ -46,13 +43,10 @@ internal fun newIfOrIffSection(iffSection: IffSection): IfOrIffSection =
     IfOrIffSectionImpl(null, iffSection)
 
 internal fun validateIfOrIffSection(
-    root: Phase1Node,
-    sections: Map<String, Section>,
-    errors: MutableList<ParseError>,
-    tracker: MutableLocationTracker
+    root: Phase1Node, sections: Map<String, Section>, errors: MutableList<ParseError>
 ): IfOrIffSection? {
-    val ifSection = ifNonNull(sections["if"]) { validateIfSection(it, errors, tracker) }
-    val iffSection = ifNonNull(sections["iff"]) { validateIffSection(it, errors, tracker) }
+    val ifSection = ifNonNull(sections["if"]) { validateIfSection(it, errors) }
+    val iffSection = ifNonNull(sections["iff"]) { validateIffSection(it, errors) }
 
     return if (ifSection == null && iffSection == null) {
         null
@@ -60,8 +54,8 @@ internal fun validateIfOrIffSection(
         errors.add(
             ParseError(
                 message = "Either an 'if' or 'iff' section must be specified but not both",
-                row = getRow(root),
-                column = getColumn(root)))
+                row = root.row,
+                column = root.column))
         DEFAULT_IF_OR_IFF_SECTION
     } else if (ifSection != null) {
         newIfOrIffSection(ifSection)

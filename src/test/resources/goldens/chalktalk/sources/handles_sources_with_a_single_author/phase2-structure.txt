@@ -10,7 +10,11 @@ Document(
                                values = [
                                           ""some name""
                                         ]
+                               row = 2
+                               column = 2
                              )
+                             row = 2
+                             column = 2
                            ),
                            StringSectionGroup(
                              section = StringSection(
@@ -18,11 +22,21 @@ Document(
                                values = [
                                           ""author1""
                                         ]
+                               row = 3
+                               column = 2
                              )
+                             row = 3
+                             column = 2
                            )
                          ]
+                 row = 1
+                 column = 0
                )
                metaDataSection = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

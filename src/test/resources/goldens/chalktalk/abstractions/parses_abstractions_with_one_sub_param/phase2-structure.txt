@@ -6,6 +6,8 @@ Document(
                theoremSection = TheoremSection(
                  names = [
                          ]
+                 row = 0
+                 column = 0
                )
                givenSection = null
                whenSection = null
@@ -30,12 +32,20 @@ Document(
                                                                subParams = null
                                                                params = null
                                                                tail = null
+                                                               row = 2
+                                                               column = 10
                                                              )
                                                            ]
                                                    subParams = null
+                                                   row = 2
+                                                   column = 10
                                                  )
+                                                 row = 2
+                                                 column = 10
                                                )
                                              ]
+                                   row = 2
+                                   column = 2
                                  )
                                  suchThatSection = null
                                  thenSection = ThenSection(
@@ -56,22 +66,42 @@ Document(
                                                                  subParams = null
                                                                  params = null
                                                                  tail = null
+                                                                 row = 3
+                                                                 column = 8
                                                                )
                                                              ]
                                                      subParams = null
+                                                     row = 3
+                                                     column = 8
                                                    )
+                                                   row = 3
+                                                   column = 8
                                                  )
                                                ]
+                                     row = 3
+                                     column = 2
                                    )
+                                   row = 3
+                                   column = 2
                                  )
+                                 row = 2
+                                 column = 2
                                )
                              ]
+                   row = 1
+                   column = 0
                  )
+                 row = 1
+                 column = 0
                )
                iffSection = null
                usingSection = null
                proofSection = null
                metaDataSection = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

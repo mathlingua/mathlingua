@@ -20,25 +20,20 @@ import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ABSTRACTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class AbstractionNode(val abstraction: Abstraction) :
-    ZeroPartNode(abstraction), Target
+internal data class AbstractionNode(
+    val abstraction: Abstraction, override val row: Int, override val column: Int
+) : ZeroPartNode(abstraction), Target
 
 internal fun isAbstraction(node: Phase1Node) = node is Abstraction
 
-internal fun validateAbstractionNode(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateByTransform(
-            node = node.resolve(),
-            errors = errors,
-            default = DEFAULT_ABSTRACTION,
-            message = "Expected an abstraction",
-            transform = { it as? Abstraction },
-            builder = ::AbstractionNode)
-    }
+internal fun validateAbstractionNode(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateByTransform(
+        node = node.resolve(),
+        errors = errors,
+        default = DEFAULT_ABSTRACTION,
+        message = "Expected an abstraction",
+        transform = { it as? Abstraction },
+        builder = ::AbstractionNode)

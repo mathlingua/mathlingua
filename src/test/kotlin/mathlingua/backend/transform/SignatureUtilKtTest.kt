@@ -25,7 +25,6 @@ import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.newLocationTracker
 import org.junit.jupiter.api.Test
 
 internal class SignatureUtilKtTest {
@@ -39,10 +38,9 @@ internal class SignatureUtilKtTest {
         assertThat(defines.size).isEqualTo(1)
         val def = defines[0]
         val stmt = def.id.toStatement()
-        val signatures =
-            findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
+        val signatures = findAllStatementSignatures(stmt, ignoreLhsEqual = false)
         assertThat(signatures)
-            .isEqualTo(setOf(Signature(form = "\\xyz", location = Location(row = -1, column = -1))))
+            .isEqualTo(setOf(Signature(form = "\\xyz", location = Location(row = 0, column = 0))))
     }
 
     @Test
@@ -72,9 +70,8 @@ internal class SignatureUtilKtTest {
         assertThat(defines.size).isEqualTo(1)
         val def = defines[0]
         val stmt = def.id.toStatement()
-        val signatures =
-            findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
+        val signatures = findAllStatementSignatures(stmt, ignoreLhsEqual = false)
         assertThat(signatures)
-            .isEqualTo(setOf(Signature(form = "\\abc", location = Location(row = -1, column = -1))))
+            .isEqualTo(setOf(Signature(form = "\\abc", location = Location(row = 0, column = 0))))
     }
 }

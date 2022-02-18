@@ -20,16 +20,14 @@ import mathlingua.frontend.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
 import mathlingua.frontend.chalktalk.phase2.ast.Document
 import mathlingua.frontend.chalktalk.phase2.ast.validateDocument
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.support.validationFailure
 import mathlingua.frontend.support.validationSuccess
 
-internal data class Parse(val document: Document, val tracker: MutableLocationTracker)
+internal data class Parse(val document: Document)
 
 /*
  * Represents a front end of MathLingua processing, specifically the lexing
@@ -59,12 +57,9 @@ internal object FrontEnd {
         if (root == null || allErrors.isNotEmpty()) {
             return validationFailure(allErrors)
         }
-
-        val tracker = newLocationTracker()
-        return when (val documentValidation = validateDocument(root, tracker)
+        return when (val documentValidation = validateDocument(root)
         ) {
-            is ValidationSuccess ->
-                validationSuccess(Parse(document = documentValidation.value, tracker = tracker))
+            is ValidationSuccess -> validationSuccess(Parse(document = documentValidation.value))
             is ValidationFailure -> {
                 allErrors.addAll(documentValidation.errors)
                 validationFailure(allErrors)

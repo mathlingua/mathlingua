@@ -27,37 +27,35 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.validateThroughSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class MembershipGroup(
-    val membershipSection: MembershipSection, val throughSection: ThroughSection
+    val membershipSection: MembershipSection,
+    val throughSection: ThroughSection,
+    override val row: Int,
+    override val column: Int
 ) :
     TwoPartNode<MembershipSection, ThroughSection>(
-        membershipSection, throughSection, ::MembershipGroup),
+        membershipSection, throughSection, row, column, ::MembershipGroup),
     Clause
 
 internal fun isMembershipGroup(node: Phase1Node) = firstSectionMatchesName(node, "membership")
 
-internal fun validateMembershipGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "membership", DEFAULT_MEMBERSHIP_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_MEMBERSHIP_GROUP, listOf("membership", "through")) {
-            sections ->
-                MembershipGroup(
-                    membershipSection =
-                        ensureNonNull(sections["membership"], DEFAULT_MEMBERSHIP_SECTION) {
-                            validateMembershipSection(it, errors, tracker)
-                        },
-                    throughSection =
-                        ensureNonNull(sections["through"], DEFAULT_THROUGH_SECTION) {
-                            validateThroughSection(it, errors, tracker)
-                        })
-            }
+internal fun validateMembershipGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "membership", DEFAULT_MEMBERSHIP_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_MEMBERSHIP_GROUP, listOf("membership", "through")) { sections ->
+            MembershipGroup(
+                membershipSection =
+                    ensureNonNull(sections["membership"], DEFAULT_MEMBERSHIP_SECTION) {
+                        validateMembershipSection(it, errors)
+                    },
+                throughSection =
+                    ensureNonNull(sections["through"], DEFAULT_THROUGH_SECTION) {
+                        validateThroughSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

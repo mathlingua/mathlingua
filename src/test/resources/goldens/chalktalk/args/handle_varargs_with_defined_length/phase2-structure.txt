@@ -54,6 +54,8 @@ Document(
                                 ]
                    )
                  )
+                 row = 0
+                 column = 0
                )
                definesSection = DefinesSection(
                  targets = [
@@ -72,12 +74,20 @@ Document(
                                              subParams = null
                                              params = null
                                              tail = null
+                                             row = 1
+                                             column = 9
                                            )
                                          ]
                                  subParams = null
+                                 row = 1
+                                 column = 9
                                )
+                               row = 1
+                               column = 9
                              )
                            ]
+                 row = 1
+                 column = 0
                )
                givenSection = null
                whenSection = null
@@ -137,12 +147,20 @@ Document(
                                                 ]
                                    )
                                  )
+                                 row = 3
+                                 column = 2
                                ),
                                Text(
                                  text = ""something for X...#x...""
+                                 row = 4
+                                 column = 2
                                )
                              ]
+                   row = 2
+                   column = 0
                  )
+                 row = 2
+                 column = 0
                )
                expressingSection = null
                providingSection = null
@@ -151,13 +169,21 @@ Document(
                  forms = [
                            ""something""
                          ]
+                 row = 5
+                 column = 0
                )
                calledSection = CalledSection(
                  forms = [
                            ""something""
                          ]
+                 row = 6
+                 column = 0
                )
                metaDataSection = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

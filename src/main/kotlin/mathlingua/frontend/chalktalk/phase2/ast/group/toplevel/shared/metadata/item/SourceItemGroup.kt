@@ -35,14 +35,15 @@ import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class SourceItemGroup(
     val sourceSection: SourceItemSection,
     val pageSection: PageItemSection?,
     val offsetSection: OffsetItemSection?,
-    val contentSection: ContentItemSection?
+    val contentSection: ContentItemSection?,
+    override val row: Int,
+    override val column: Int
 ) : MetaDataItem, ResourceItem {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(sourceSection)
@@ -78,14 +79,14 @@ internal data class SourceItemGroup(
                 sourceSection = sourceSection.transform(chalkTransformer) as SourceItemSection,
                 pageSection = pageSection?.transform(chalkTransformer) as PageItemSection,
                 offsetSection = offsetSection?.transform(chalkTransformer) as OffsetItemSection,
-                contentSection = contentSection?.transform(chalkTransformer) as ContentItemSection))
+                contentSection = contentSection?.transform(chalkTransformer) as ContentItemSection,
+                row = row,
+                column = column))
 }
 
 internal fun isSourceItemGroup(node: Phase1Node) = firstSectionMatchesName(node, "source")
 
-internal fun validateSourceItemGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
+internal fun validateSourceItemGroup(node: Phase1Node, errors: MutableList<ParseError>) =
     validateGroup(node.resolve(), errors, "source", DEFAULT_SOURCE_ITEM_GROUP) { group ->
         identifySections(
             group,
@@ -95,17 +96,14 @@ internal fun validateSourceItemGroup(
             SourceItemGroup(
                 sourceSection =
                     ensureNonNull(sections["source"], DEFAULT_SOURCE_ITEM_SECTION) {
-                        validateSourceItemSection(it, errors, tracker)
+                        validateSourceItemSection(it, errors)
                     },
-                pageSection =
-                    ifNonNull(sections["page"]) { validatePageItemSection(it, errors, tracker) },
+                pageSection = ifNonNull(sections["page"]) { validatePageItemSection(it, errors) },
                 offsetSection =
-                    ifNonNull(sections["offset"]) {
-                        validateOffsetItemSection(it, errors, tracker)
-                    },
+                    ifNonNull(sections["offset"]) { validateOffsetItemSection(it, errors) },
                 contentSection =
-                    ifNonNull(sections["content"]) {
-                        validateContentItemSection(it, errors, tracker)
-                    })
+                    ifNonNull(sections["content"]) { validateContentItemSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

@@ -27,31 +27,31 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class IffGroup(val iffSection: IffSection, val thenSection: ThenSection) :
-    TwoPartNode<IffSection, ThenSection>(iffSection, thenSection, ::IffGroup), Clause
+internal data class IffGroup(
+    val iffSection: IffSection,
+    val thenSection: ThenSection,
+    override val row: Int,
+    override val column: Int
+) : TwoPartNode<IffSection, ThenSection>(iffSection, thenSection, row, column, ::IffGroup), Clause
 
 internal fun isIffGroup(node: Phase1Node) = firstSectionMatchesName(node, "iff")
 
-internal fun validateIffGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "iff", DEFAULT_IFF_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_IFF_GROUP, listOf("iff", "then")) { sections ->
-                IffGroup(
-                    iffSection =
-                        ensureNonNull(sections["iff"], DEFAULT_IFF_SECTION) {
-                            validateIffSection(it, errors, tracker)
-                        },
-                    thenSection =
-                        ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
-                            validateThenSection(it, errors, tracker)
-                        })
-            }
+internal fun validateIffGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "iff", DEFAULT_IFF_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_IFF_GROUP, listOf("iff", "then")) { sections ->
+            IffGroup(
+                iffSection =
+                    ensureNonNull(sections["iff"], DEFAULT_IFF_SECTION) {
+                        validateIffSection(it, errors)
+                    },
+                thenSection =
+                    ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                        validateThenSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

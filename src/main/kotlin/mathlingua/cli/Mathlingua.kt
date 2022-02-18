@@ -24,7 +24,7 @@ import kotlinx.serialization.json.Json
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
-import mathlingua.backend.ValueSourceTracker
+import mathlingua.backend.ValueAndSource
 import mathlingua.backend.buildSourceFile
 import mathlingua.backend.findMathLinguaFiles
 import mathlingua.backend.newSourceCollection
@@ -50,12 +50,10 @@ object Mathlingua {
         }
     }
 
-    private fun export(
-        fs: VirtualFileSystem, logger: Logger
-    ): List<ValueSourceTracker<ParseError>> {
+    private fun export(fs: VirtualFileSystem, logger: Logger): List<ValueAndSource<ParseError>> {
         val files = findMathLinguaFiles(listOf(getContentDirectory(fs)))
 
-        val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+        val errors = mutableListOf<ValueAndSource<ParseError>>()
         for (target in files) {
             errors.addAll(
                 exportFile(
@@ -86,11 +84,9 @@ object Mathlingua {
         logger.log(
             getErrorOutput(
                 errors.map {
-                    ValueSourceTracker(
+                    ValueAndSource(
                         value = ParseError(message = it.message, row = it.row, column = it.column),
-                        source = buildSourceFile(fs.getFileOrDirectory(it.relativePath)),
-                        tracker = null,
-                    )
+                        source = buildSourceFile(fs.getFileOrDirectory(it.relativePath)))
                 },
                 files.size,
                 false))
@@ -163,7 +159,7 @@ private fun getDocsDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("do
 private fun getContentDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("content"))
 
 private fun getErrorOutput(
-    errors: List<ValueSourceTracker<ParseError>>, numFilesProcessed: Int, json: Boolean
+    errors: List<ValueAndSource<ParseError>>, numFilesProcessed: Int, json: Boolean
 ): String {
     val builder = StringBuilder()
     if (json) {
@@ -216,33 +212,31 @@ private fun exportFile(
     stdout: Boolean,
     noExpand: Boolean,
     raw: Boolean
-): List<ValueSourceTracker<ParseError>> {
+): List<ValueAndSource<ParseError>> {
     if (!target.exists()) {
         val message = "ERROR: The file ${target.absolutePath()} does not exist"
         logger.log(message)
         return listOf(
-            ValueSourceTracker(
+            ValueAndSource(
                 value = ParseError(message = message, row = -1, column = -1),
                 source =
                     SourceFile(
-                        file = target, content = "", validation = validationFailure(emptyList())),
-                tracker = null))
+                        file = target, content = "", validation = validationFailure(emptyList()))))
     }
 
     if (target.isDirectory() || !target.absolutePath().endsWith(".math")) {
         val message = "ERROR: The path ${target.absolutePath()} is not a .math file"
         logger.log(message)
         return listOf(
-            ValueSourceTracker(
+            ValueAndSource(
                 value = ParseError(message = message, row = -1, column = -1),
                 source =
                     SourceFile(
-                        file = target, content = "", validation = validationFailure(emptyList())),
-                tracker = null))
+                        file = target, content = "", validation = validationFailure(emptyList()))))
     }
 
     val sourceCollection = newSourceCollection(fs, listOf(fs.cwd()))
-    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+    val errors = mutableListOf<ValueAndSource<ParseError>>()
     val elements = getUnifiedRenderedTopLevelElements(target, sourceCollection, noExpand, errors)
 
     val contentBuilder = StringBuilder()
@@ -291,7 +285,7 @@ private fun getUnifiedRenderedTopLevelElements(
     f: VirtualFile,
     sourceCollection: SourceCollection,
     noexpand: Boolean,
-    errors: MutableList<ValueSourceTracker<ParseError>>
+    errors: MutableList<ValueAndSource<ParseError>>
 ): List<Pair<String, Phase2Node?>> {
     val codeElements = mutableListOf<Pair<String, Phase2Node?>>()
     val elements = getCompleteRenderedTopLevelElements(f, sourceCollection, noexpand, errors)

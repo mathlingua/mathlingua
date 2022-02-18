@@ -28,6 +28,8 @@ internal interface ChalkTalkLexer {
     fun peekPeek(): Phase1Token
     fun next(): Phase1Token
     fun errors(): List<ParseError>
+    fun row(): Int
+    fun column(): Int
 }
 
 internal fun newChalkTalkLexer(text: String): ChalkTalkLexer {
@@ -506,4 +508,18 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
     }
 
     override fun errors() = this.errors
+
+    override fun row() =
+        if (this.index < this.chalkTalkTokens.size) {
+            peek().row
+        } else {
+            -1
+        }
+
+    override fun column() =
+        if (this.index < this.chalkTalkTokens.size) {
+            peek().column
+        } else {
+            -1
+        }
 }

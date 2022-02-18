@@ -21,12 +21,11 @@ import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_POSITIVE_INT_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal class PositiveIntSection : Phase2Node {
+internal data class PositiveIntSection(override val row: Int, override val column: Int) :
+    Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,11 +40,7 @@ internal class PositiveIntSection : Phase2Node {
 
 internal fun isPositiveIntSection(section: Section) = section.name.text == "positiveInt"
 
-internal fun validatePositiveIntSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "positiveInt", DEFAULT_POSITIVE_INT_SECTION) {
-            PositiveIntSection()
-        }
+internal fun validatePositiveIntSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "positiveInt", DEFAULT_POSITIVE_INT_SECTION) {
+        PositiveIntSection(node.row, node.column)
     }

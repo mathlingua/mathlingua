@@ -27,37 +27,36 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.NumberGro
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.validateIsSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class NegativeFloatGroup(
-    val negativeFloatSection: NegativeFloatSection, val isSection: IsSection
+    val negativeFloatSection: NegativeFloatSection,
+    val isSection: IsSection,
+    override val row: Int,
+    override val column: Int
 ) :
     TwoPartNode<NegativeFloatSection, IsSection>(
-        negativeFloatSection, isSection, ::NegativeFloatGroup),
+        negativeFloatSection, isSection, row, column, ::NegativeFloatGroup),
     NumberGroup
 
 internal fun isNegativeFloatGroup(node: Phase1Node) = firstSectionMatchesName(node, "negativeFloat")
 
-internal fun validateNegativeFloatGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "negativeFloat", DEFAULT_NEGATIVE_FLOAT_GROUP) {
-        group ->
-            identifySections(
-                group, errors, DEFAULT_NEGATIVE_FLOAT_GROUP, listOf("negativeFloat", "is")) {
-            sections ->
-                NegativeFloatGroup(
-                    negativeFloatSection =
-                        ensureNonNull(sections["negativeFloat"], DEFAULT_NEGATIVE_FLOAT_SECTION) {
-                            validateNegativeFloatSection(it, errors, tracker)
-                        },
+internal fun validateNegativeFloatGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "negativeFloat", DEFAULT_NEGATIVE_FLOAT_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_NEGATIVE_FLOAT_GROUP, listOf("negativeFloat", "is")) {
+        sections ->
+            NegativeFloatGroup(
+                negativeFloatSection =
+                    ensureNonNull(sections["negativeFloat"], DEFAULT_NEGATIVE_FLOAT_SECTION) {
+                        validateNegativeFloatSection(it, errors)
+                    },
+                isSection =
                     ensureNonNull(sections["is"], DEFAULT_IS_SECTION) {
-                        validateIsSection(it, errors, tracker)
-                    })
-            }
+                        validateIsSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

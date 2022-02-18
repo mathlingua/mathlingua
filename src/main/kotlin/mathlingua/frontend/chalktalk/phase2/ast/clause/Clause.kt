@@ -18,8 +18,6 @@ package mathlingua.frontend.chalktalk.phase2.ast.clause
 
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_IF_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.clause.have.isHaveGroup
@@ -59,7 +57,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.validateViewingAsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.isStatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.validateStatesGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal interface Clause : Phase2Node
@@ -123,8 +120,7 @@ internal fun toCode(
 
 internal data class ValidationPair<T>(
     val matches: (node: Phase1Node) -> Boolean,
-    val validate:
-        (node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker) -> T)
+    val validate: (node: Phase1Node, errors: MutableList<ParseError>) -> T)
 
 private val CLAUSE_VALIDATORS =
     listOf(
@@ -153,21 +149,19 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
         ValidationPair(::isSymbolsGroup, ::validateSymbolsGroup))
 
-internal fun validateClause(
-    rawNode: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-): Clause {
+internal fun validateClause(rawNode: Phase1Node, errors: MutableList<ParseError>): Clause {
     val node = rawNode.resolve()
 
     for (pair in CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
-            return pair.validate(node, errors, tracker)
+            return pair.validate(node, errors)
         }
     }
 
     errors.add(
         ParseError(
             message = "Unrecognized clause.  Perhaps there is a typo.",
-            row = getRow(rawNode),
-            column = getColumn(rawNode)))
+            row = rawNode.row,
+            column = rawNode.column))
     return DEFAULT_IF_GROUP
 }

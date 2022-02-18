@@ -14,35 +14,4 @@
 
 package mathlingua.frontend.support
 
-import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-
 internal data class Location(val row: Int, val column: Int)
-
-internal interface LocationTracker {
-    fun hasLocationOf(node: Phase2Node): Boolean
-    fun getLocationOf(node: Phase2Node): Location?
-}
-
-internal interface MutableLocationTracker : LocationTracker {
-    fun setLocationOf(node: Phase2Node, location: Location)
-}
-
-internal fun newLocationTracker(): MutableLocationTracker {
-    return MutableLocationTrackerImpl()
-}
-
-//////////////////////////////////////////////////////////////////////////////////
-
-private class MutableLocationTrackerImpl : MutableLocationTracker {
-    private val map: MutableMap<Int, Location> = mutableMapOf()
-
-    override fun hasLocationOf(node: Phase2Node) = map.containsKey(node.id())
-
-    override fun getLocationOf(node: Phase2Node) = map[node.id()]
-
-    override fun setLocationOf(node: Phase2Node, location: Location) {
-        map[node.id()] = location
-    }
-
-    private fun Phase2Node.id() = System.identityHashCode(this)
-}

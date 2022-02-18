@@ -6,6 +6,8 @@ Document(
                theoremSection = TheoremSection(
                  names = [
                          ]
+                 row = 0
+                 column = 0
                )
                givenSection = null
                whenSection = null
@@ -27,10 +29,16 @@ Document(
                                                subParams = null
                                                params = null
                                                tail = null
+                                               row = 1
+                                               column = 6
                                              )
                                            ]
                                    subParams = null
+                                   row = 1
+                                   column = 6
                                  )
+                                 row = 1
+                                 column = 6
                                ),
                                AbstractionNode(
                                  abstraction = Abstraction(
@@ -47,10 +55,16 @@ Document(
                                                subParams = null
                                                params = null
                                                tail = null
+                                               row = 1
+                                               column = 9
                                              )
                                            ]
                                    subParams = null
+                                   row = 1
+                                   column = 9
                                  )
+                                 row = 1
+                                 column = 9
                                ),
                                AbstractionNode(
                                  abstraction = Abstraction(
@@ -67,18 +81,32 @@ Document(
                                                subParams = null
                                                params = null
                                                tail = null
+                                               row = 1
+                                               column = 12
                                              )
                                            ]
                                    subParams = null
+                                   row = 1
+                                   column = 12
                                  )
+                                 row = 1
+                                 column = 12
                                )
                              ]
+                   row = 1
+                   column = 0
                  )
+                 row = 1
+                 column = 0
                )
                iffSection = null
                usingSection = null
                proofSection = null
                metaDataSection = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

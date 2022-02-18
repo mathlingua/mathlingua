@@ -27,35 +27,35 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.NumberGro
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.validateIsSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class PositiveIntGroup(
-    val positiveIntSection: PositiveIntSection, val isSection: IsSection
+    val positiveIntSection: PositiveIntSection,
+    val isSection: IsSection,
+    override val row: Int,
+    override val column: Int
 ) :
-    TwoPartNode<PositiveIntSection, IsSection>(positiveIntSection, isSection, ::PositiveIntGroup),
+    TwoPartNode<PositiveIntSection, IsSection>(
+        positiveIntSection, isSection, row, column, ::PositiveIntGroup),
     NumberGroup
 
 internal fun isPositiveIntGroup(node: Phase1Node) = firstSectionMatchesName(node, "positiveInt")
 
-internal fun validatePositiveIntGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "positiveInt", DEFAULT_POSITIVE_INT_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_POSITIVE_INT_GROUP, listOf("positiveInt", "is")) {
-            sections ->
-                PositiveIntGroup(
-                    positiveIntSection =
-                        ensureNonNull(sections["positiveInt"], DEFAULT_POSITIVE_INT_SECTION) {
-                            validatePositiveIntSection(it, errors, tracker)
-                        },
+internal fun validatePositiveIntGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "positiveInt", DEFAULT_POSITIVE_INT_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_POSITIVE_INT_GROUP, listOf("positiveInt", "is")) {
+        sections ->
+            PositiveIntGroup(
+                positiveIntSection =
+                    ensureNonNull(sections["positiveInt"], DEFAULT_POSITIVE_INT_SECTION) {
+                        validatePositiveIntSection(it, errors)
+                    },
+                isSection =
                     ensureNonNull(sections["is"], DEFAULT_IS_SECTION) {
-                        validateIsSection(it, errors, tracker)
-                    })
-            }
+                        validateIsSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

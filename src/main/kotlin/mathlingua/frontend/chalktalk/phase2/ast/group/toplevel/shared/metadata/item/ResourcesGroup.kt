@@ -25,28 +25,24 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.s
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateResourcesSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ResourcesGroup(val resourcesSection: ResourcesSection) :
-    OnePartNode<ResourcesSection>(resourcesSection, ::ResourcesGroup), MetaDataItem
+internal data class ResourcesGroup(
+    val resourcesSection: ResourcesSection, override val row: Int, override val column: Int
+) : OnePartNode<ResourcesSection>(resourcesSection, row, column, ::ResourcesGroup), MetaDataItem
 
 internal fun isResourcesGroup(node: Phase1Node) = firstSectionMatchesName(node, "resources")
 
-internal fun validateResourcesGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node, errors, "resources", DEFAULT_RESOURCES_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_RESOURCES_GROUP, listOf("resources")) {
-            sections ->
-                ResourcesGroup(
-                    resourcesSection =
-                        ensureNonNull(sections["resources"], DEFAULT_RESOURCES_SECTION) {
-                            validateResourcesSection(it, errors, tracker)
-                        })
-            }
+internal fun validateResourcesGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node, errors, "resources", DEFAULT_RESOURCES_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_RESOURCES_GROUP, listOf("resources")) { sections ->
+            ResourcesGroup(
+                resourcesSection =
+                    ensureNonNull(sections["resources"], DEFAULT_RESOURCES_SECTION) {
+                        validateResourcesSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

@@ -22,12 +22,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_GIVEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class GivenSection(val targets: List<Target>) : Phase2Node {
+internal data class GivenSection(
+    val targets: List<Target>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -39,15 +39,15 @@ internal data class GivenSection(val targets: List<Target>) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            GivenSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
+            GivenSection(
+                targets = targets.map { it.transform(chalkTransformer) as Target }, row, column))
 }
 
-internal fun validateGivenSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateTargetSection(node.resolve(), errors, "given", DEFAULT_GIVEN_SECTION, tracker) {
-        targets ->
-            GivenSection(targets = targets)
-        }
+internal fun validateGivenSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateTargetSection(
+        node.resolve(), errors, "given", DEFAULT_GIVEN_SECTION, node.row, node.column) {
+    targets,
+    row,
+    column ->
+        GivenSection(targets = targets, row, column)
     }

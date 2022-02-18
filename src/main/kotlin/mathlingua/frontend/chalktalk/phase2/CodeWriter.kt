@@ -49,7 +49,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
@@ -298,7 +297,7 @@ private open class HtmlCodeWriter(
                                     // be rendered since the single form that the item is called is
                                     // used
                                     // as the title
-                                    CalledSection(forms = emptyList())
+                                    CalledSection(forms = emptyList(), node.row, node.column)
                                 } else {
                                     node.calledSection
                                 })
@@ -325,7 +324,9 @@ private open class HtmlCodeWriter(
                             // since
                             // the called form is used as the title
                             if (it.getCalled().size == 1) {
-                                it.copy(calledSection = CalledSection(forms = emptyList()))
+                                it.copy(
+                                    calledSection =
+                                        CalledSection(forms = emptyList(), node.row, node.column))
                             } else {
                                 it
                             }
@@ -355,7 +356,7 @@ private open class HtmlCodeWriter(
                             theoremSection =
                                 if (node.theoremSection.names.size == 1) {
                                     // the single name is already listed as the title
-                                    TheoremSection(names = emptyList())
+                                    TheoremSection(names = emptyList(), node.row, node.column)
                                 } else {
                                     node.theoremSection
                                 })
@@ -391,7 +392,7 @@ private open class HtmlCodeWriter(
                             axiomSection =
                                 if (node.axiomSection.names.size == 1) {
                                     // the single name is already listed as the title
-                                    AxiomSection(names = emptyList())
+                                    AxiomSection(names = emptyList(), node.row, node.column)
                                 } else {
                                     node.axiomSection
                                 })
@@ -419,7 +420,7 @@ private open class HtmlCodeWriter(
                             conjectureSection =
                                 if (node.conjectureSection.names.size == 1) {
                                     // the single name is already listed as the title
-                                    ConjectureSection(names = emptyList())
+                                    ConjectureSection(names = emptyList(), node.row, node.column)
                                 } else {
                                     node.conjectureSection
                                 })
@@ -731,8 +732,7 @@ private open class HtmlCodeWriter(
     }
 
     private fun appendDropdownForStatement(stmt: Statement, dropdownIndex: Long) {
-        val signatures =
-            findAllStatementSignatures(stmt, ignoreLhsEqual = false, newLocationTracker())
+        val signatures = findAllStatementSignatures(stmt, ignoreLhsEqual = false)
         if (signatures.isNotEmpty()) {
             builder.append(
                 "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex-CUSTOM_SUFFIX'>")
@@ -777,7 +777,7 @@ private open class HtmlCodeWriter(
             builder.append("</div>")
             if (root is ValidationSuccess) {
                 appendDropdownForStatement(
-                    Statement(stmtText, validationSuccess(root.value)), dropdownIndex)
+                    Statement(stmtText, validationSuccess(root.value), -1, -1), dropdownIndex)
             }
             return
         }
@@ -880,7 +880,7 @@ private open class HtmlCodeWriter(
         }
         builder.append("</div>")
         if (root is ValidationSuccess) {
-            val stmt = Statement(text = stmtText, texTalkRoot = root)
+            val stmt = Statement(text = stmtText, texTalkRoot = root, -1, -1)
             appendDropdownForStatement(stmt, dropdownIndex)
         }
     }
@@ -971,8 +971,7 @@ private open class HtmlCodeWriter(
     }
 
     override fun beginTopLevel(topLevelGroup: TopLevelGroup, label: String) {
-        innerDefinedSignatures.addAll(
-            getInnerDefinedSignatures(topLevelGroup, null).map { it.form })
+        innerDefinedSignatures.addAll(getInnerDefinedSignatures(topLevelGroup).map { it.form })
         builder.append("<div id='$label-CUSTOM_SUFFIX'>")
         builder.append("<div class='mathlingua-top-level'>")
     }

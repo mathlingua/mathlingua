@@ -28,41 +28,38 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWh
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class GeneratedGroup(
     val generatedSection: GeneratedSection,
     val generatedFromSection: GeneratedFromSection,
-    val whenSection: WhenSection?
+    val whenSection: WhenSection?,
+    override val row: Int,
+    override val column: Int
 ) :
     ThreePartNode<GeneratedSection, GeneratedFromSection, WhenSection?>(
-        generatedSection, generatedFromSection, whenSection, ::GeneratedGroup),
+        generatedSection, generatedFromSection, whenSection, row, column, ::GeneratedGroup),
     Clause
 
 internal fun isGeneratedGroup(node: Phase1Node) = firstSectionMatchesName(node, "generated")
 
-internal fun validateGeneratedGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "generated", DEFAULT_GENERATED_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_GENERATED_GROUP, listOf("generated", "from", "when?")) {
-            sections ->
-                GeneratedGroup(
-                    generatedSection =
-                        ensureNonNull(sections["generated"], DEFAULT_GENERATED_SECTION) {
-                            validateGeneratedSection(it, errors, tracker)
-                        },
-                    generatedFromSection =
-                        ensureNonNull(sections["from"], DEFAULT_GENERATED_FROM_SECTION) {
-                            validateGeneratedFromSection(it, errors, tracker)
-                        },
-                    whenSection =
-                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) })
-            }
+internal fun validateGeneratedGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "generated", DEFAULT_GENERATED_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_GENERATED_GROUP, listOf("generated", "from", "when?")) {
+        sections ->
+            GeneratedGroup(
+                generatedSection =
+                    ensureNonNull(sections["generated"], DEFAULT_GENERATED_SECTION) {
+                        validateGeneratedSection(it, errors)
+                    },
+                generatedFromSection =
+                    ensureNonNull(sections["from"], DEFAULT_GENERATED_FROM_SECTION) {
+                        validateGeneratedFromSection(it, errors)
+                    },
+                whenSection = ifNonNull(sections["when"]) { validateWhenSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

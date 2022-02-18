@@ -17,7 +17,7 @@
 package mathlingua.cli
 
 import mathlingua.backend.SourceCollection
-import mathlingua.backend.ValueSourceTracker
+import mathlingua.backend.ValueAndSource
 import mathlingua.backend.findMathLinguaFiles
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
@@ -37,10 +37,10 @@ internal fun decompose(
 ): DecompositionResult {
     val resolvedMlgFiles = mlgFiles ?: findMathLinguaFiles(listOf(fs.cwd()))
     val fileResults = mutableListOf<FileResult>()
-    val errors = mutableListOf<ValueSourceTracker<ParseError>>()
+    val errors = mutableListOf<ValueAndSource<ParseError>>()
     for (i in resolvedMlgFiles.indices) {
         val f = resolvedMlgFiles[i]
-        val fErrors = mutableListOf<ValueSourceTracker<ParseError>>()
+        val fErrors = mutableListOf<ValueAndSource<ParseError>>()
         val elements =
             getCompleteRenderedTopLevelElements(
                 f = f, sourceCollection = sourceCollection, noexpand = false, errors = fErrors)

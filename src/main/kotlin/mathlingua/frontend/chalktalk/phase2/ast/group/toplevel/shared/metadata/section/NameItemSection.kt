@@ -19,19 +19,17 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_NAME_ITEM_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.indentedStringSection
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class NameItemSection(val name: String) : Phase2Node {
+internal data class NameItemSection(
+    val name: String, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter) =
@@ -42,23 +40,16 @@ internal data class NameItemSection(val name: String) : Phase2Node {
     }
 }
 
-internal fun validateNameItemSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node, errors, "name", DEFAULT_NAME_ITEM_SECTION) { section ->
-            validateSingleArg(section, errors, DEFAULT_NAME_ITEM_SECTION, "string") { arg ->
-                val resolved = arg.resolve()
-                if (resolved !is Phase1Token || resolved.type != ChalkTalkTokenType.String) {
-                    errors.add(
-                        ParseError(
-                            message = "Expected a string",
-                            row = getRow(node),
-                            column = getColumn(node)))
-                    DEFAULT_NAME_ITEM_SECTION
-                } else {
-                    NameItemSection(name = resolved.text)
-                }
+internal fun validateNameItemSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node, errors, "name", DEFAULT_NAME_ITEM_SECTION) { section ->
+        validateSingleArg(section, errors, DEFAULT_NAME_ITEM_SECTION, "string") { arg ->
+            val resolved = arg.resolve()
+            if (resolved !is Phase1Token || resolved.type != ChalkTalkTokenType.String) {
+                errors.add(
+                    ParseError(message = "Expected a string", row = node.row, column = node.column))
+                DEFAULT_NAME_ITEM_SECTION
+            } else {
+                NameItemSection(name = resolved.text, node.row, node.column)
             }
         }
     }

@@ -25,12 +25,20 @@ Root(
                                                        subParams = null
                                                        params = null
                                                        tail = null
+                                                       row = 1
+                                                       column = 9
                                                      )
                                                    ]
                                            subParams = null
+                                           row = 1
+                                           column = 9
                                          )
+                                         row = 1
+                                         column = 9
                                        )
                                      ]
+                              row = 1
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -47,6 +55,8 @@ Root(
                                            row = 3
                                            column = 2
                                          )
+                                         row = 3
+                                         column = 2
                                        ),
                                        Argument(
                                          chalkTalkTarget = Phase1Token(
@@ -55,8 +65,12 @@ Root(
                                            row = 4
                                            column = 2
                                          )
+                                         row = 4
+                                         column = 2
                                        )
                                      ]
+                              row = 2
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -73,8 +87,12 @@ Root(
                                            row = 5
                                            column = 9
                                          )
+                                         row = 5
+                                         column = 9
                                        )
                                      ]
+                              row = 5
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -91,8 +109,12 @@ Root(
                                            row = 6
                                            column = 8
                                          )
+                                         row = 6
+                                         column = 8
                                        )
                                      ]
+                              row = 6
+                              column = 0
                             )
                           ]
                id = Phase1Token(
@@ -101,6 +123,10 @@ Root(
                  row = 0
                  column = 0
                )
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

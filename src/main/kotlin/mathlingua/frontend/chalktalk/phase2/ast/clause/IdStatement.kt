@@ -19,14 +19,15 @@ package mathlingua.frontend.chalktalk.phase2.ast.clause
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 
 internal data class IdStatement(
-    val text: String, val texTalkRoot: Validation<ExpressionTexTalkNode>
+    val text: String,
+    val texTalkRoot: Validation<ExpressionTexTalkNode>,
+    override val row: Int,
+    override val column: Int
 ) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
@@ -39,13 +40,11 @@ internal data class IdStatement(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(this)
 
-    fun toStatement() = Statement(text = text, texTalkRoot = texTalkRoot)
+    fun toStatement() = Statement(text = text, texTalkRoot = texTalkRoot, row, column)
 }
 
-internal fun validateIdStatement(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        val statement = validateStatement(node.resolve(), errors, tracker)
-        IdStatement(text = statement.text, texTalkRoot = statement.texTalkRoot)
-    }
+internal fun validateIdStatement(node: Phase1Node, errors: MutableList<ParseError>): IdStatement {
+    val statement = validateStatement(node.resolve(), errors)
+    return IdStatement(
+        text = statement.text, texTalkRoot = statement.texTalkRoot, node.row, node.column)
+}

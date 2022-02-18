@@ -14,27 +14,11 @@
 
 package mathlingua.frontend.support
 
-import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-
 internal data class ParseError(override val message: String, val row: Int, val column: Int) :
     RuntimeException(message)
 
 internal sealed class Validation<out T>
 
-internal abstract class ValidationSuccess<T>(val value: T) : Validation<T>()
+internal data class ValidationSuccess<T>(val value: T) : Validation<T>()
 
-internal abstract class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()
-
-internal data class ValidationSuccessImpl<T>(val v: T) : ValidationSuccess<T>(v)
-
-internal data class ValidationFailureImpl<T>(val errs: List<ParseError>) :
-    ValidationFailure<T>(errs)
-
-internal fun <T> validationSuccess(value: T): ValidationSuccess<T> = ValidationSuccessImpl(value)
-
-internal fun <T : Phase2Node> validationSuccess(phase2Node: T): ValidationSuccess<T> {
-    return ValidationSuccessImpl(phase2Node)
-}
-
-internal fun <T> validationFailure(errors: List<ParseError>): ValidationFailure<T> =
-    ValidationFailureImpl(errors)
+internal data class ValidationFailure<T>(val errors: List<ParseError>) : Validation<T>()

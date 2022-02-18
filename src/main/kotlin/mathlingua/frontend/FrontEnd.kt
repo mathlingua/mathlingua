@@ -24,10 +24,6 @@ import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.validationFailure
-import mathlingua.frontend.support.validationSuccess
-
-internal data class Parse(val document: Document)
 
 /*
  * Represents a front end of MathLingua processing, specifically the lexing
@@ -37,14 +33,7 @@ internal data class Parse(val document: Document)
  * The BackEnd handles such dependencies.
  */
 internal object FrontEnd {
-    fun parse(input: String): Validation<Document> =
-        when (val validation = parseWithLocations(input)
-        ) {
-            is ValidationSuccess -> validationSuccess(validation.value.document)
-            is ValidationFailure -> validationFailure(validation.errors)
-        }
-
-    fun parseWithLocations(input: String): Validation<Parse> {
+    fun parse(input: String): Validation<Document> {
         val lexer = newChalkTalkLexer(input)
 
         val allErrors = mutableListOf<ParseError>()
@@ -55,14 +44,14 @@ internal object FrontEnd {
         allErrors.addAll(errors)
 
         if (root == null || allErrors.isNotEmpty()) {
-            return validationFailure(allErrors)
+            return ValidationFailure(allErrors)
         }
         return when (val documentValidation = validateDocument(root)
         ) {
-            is ValidationSuccess -> validationSuccess(Parse(document = documentValidation.value))
+            is ValidationSuccess -> ValidationSuccess(documentValidation.value)
             is ValidationFailure -> {
                 allErrors.addAll(documentValidation.errors)
-                validationFailure(allErrors)
+                ValidationFailure(allErrors)
             }
         }
     }

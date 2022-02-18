@@ -24,7 +24,6 @@ import mathlingua.frontend.chalktalk.phase2.hasChild
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
@@ -77,7 +76,7 @@ internal fun separateInfixOperatorStatements(
                                         val stmt =
                                             Statement(
                                                 text = expanded.toCode(),
-                                                texTalkRoot = validationSuccess(expanded),
+                                                texTalkRoot = ValidationSuccess(expanded),
                                                 row = c.row,
                                                 column = c.column)
                                         newClauses.add(stmt)
@@ -133,7 +132,7 @@ internal fun commaSeparateCompoundCommands(
                         val newStatement =
                             Statement(
                                 text = newRoot.toCode(),
-                                texTalkRoot = validationSuccess(newRoot as ExpressionTexTalkNode),
+                                texTalkRoot = ValidationSuccess(newRoot as ExpressionTexTalkNode),
                                 row = it.row,
                                 column = it.column)
                         if (newFollow == null && hasChild(it, follow)) {
@@ -172,7 +171,7 @@ internal fun separateIsStatements(
                                         val stmt =
                                             Statement(
                                                 text = expRoot.toCode(),
-                                                texTalkRoot = validationSuccess(expRoot),
+                                                texTalkRoot = ValidationSuccess(expRoot),
                                                 row = clause.row,
                                                 column = clause.column)
                                         stmt

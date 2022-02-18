@@ -25,8 +25,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
-import mathlingua.frontend.support.validationFailure
-import mathlingua.frontend.support.validationSuccess
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
@@ -80,9 +80,9 @@ internal fun validateStatement(node: Phase1Node, errors: MutableList<ParseError>
 
         val validation: Validation<ExpressionTexTalkNode> =
             if (texTalkErrors.isEmpty()) {
-                validationSuccess(result.root)
+                ValidationSuccess(result.root)
             } else {
-                validationFailure(texTalkErrors)
+                ValidationFailure(texTalkErrors)
             }
 
         errors.addAll(texTalkErrors)

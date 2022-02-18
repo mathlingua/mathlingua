@@ -141,7 +141,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.ContentSect
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicSection
 import mathlingua.frontend.support.ParseError
-import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.support.ValidationFailure
 
 internal fun <T, U : HasLocation> validateByTransform(
     node: Phase1Node,
@@ -322,10 +322,10 @@ internal val DEFAULT_IDENTIFIER =
 
 internal val DEFAULT_ID_STATEMENT =
     IdStatement(
-        text = "INVALID", texTalkRoot = validationFailure(emptyList()), row = -1, column = -1)
+        text = "INVALID", texTalkRoot = ValidationFailure(emptyList()), row = -1, column = -1)
 
 internal val DEFAULT_STATEMENT =
-    Statement(text = "INVALID", texTalkRoot = validationFailure(emptyList()), row = -1, column = -1)
+    Statement(text = "INVALID", texTalkRoot = ValidationFailure(emptyList()), row = -1, column = -1)
 
 internal val DEFAULT_TEXT = Text(text = "INVALID", row = -1, column = -1)
 

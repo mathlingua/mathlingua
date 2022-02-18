@@ -56,8 +56,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.validateTop
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
-import mathlingua.frontend.support.validationFailure
-import mathlingua.frontend.support.validationSuccess
+import mathlingua.frontend.support.ValidationFailure
+import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
@@ -103,7 +103,7 @@ internal fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     val errors = ArrayList<ParseError>()
     if (node !is Root) {
         errors.add(ParseError("Expected a Root", node.row, node.column))
-        return validationFailure(errors)
+        return ValidationFailure(errors)
     }
 
     val allGroups = mutableListOf<TopLevelGroup>()
@@ -171,6 +171,6 @@ internal fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     }
 
     return if (errors.isNotEmpty()) {
-        validationFailure(errors)
-    } else validationSuccess(Document(groups = allGroups, rawNode.row, rawNode.column))
+        ValidationFailure(errors)
+    } else ValidationSuccess(Document(groups = allGroups, rawNode.row, rawNode.column))
 }

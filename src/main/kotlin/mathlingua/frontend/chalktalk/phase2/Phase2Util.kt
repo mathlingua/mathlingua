@@ -46,7 +46,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theore
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
@@ -462,7 +461,7 @@ private fun getUsingDefinedSignature(node: ExpressionTexTalkNode): List<String> 
                 .map { (it.children[0] as TextTexTalkNode).text }
         } else if (lhs != null) {
             val id =
-                IdStatement(text = lhs.toCode(), texTalkRoot = validationSuccess(lhs), -1, -1)
+                IdStatement(text = lhs.toCode(), texTalkRoot = ValidationSuccess(lhs), -1, -1)
                     .signature()
                     ?.form
             if (id == null) {

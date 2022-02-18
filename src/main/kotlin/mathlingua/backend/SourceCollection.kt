@@ -35,7 +35,6 @@ import mathlingua.cli.getAllWords
 import mathlingua.cli.newAutoComplete
 import mathlingua.cli.newSearchIndex
 import mathlingua.frontend.FrontEnd
-import mathlingua.frontend.Parse
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
@@ -77,7 +76,6 @@ import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
@@ -94,7 +92,7 @@ import mathlingua.frontend.textalk.newTexTalkParser
 import mathlingua.md5Hash
 
 internal data class SourceFile(
-    val file: VirtualFile, val content: String, val validation: Validation<Parse>)
+    val file: VirtualFile, val content: String, val validation: Validation<Document>)
 
 internal fun SourceFile.toFileResult(
     nextRelativePath: String?, previousRelativePath: String?, sourceCollection: SourceCollection
@@ -109,7 +107,7 @@ internal fun SourceFile.toFileResult(
             when (val validation = this.validation
             ) {
                 is ValidationSuccess -> {
-                    val doc = validation.value.document
+                    val doc = validation.value
                     doc.groups.map { it.toEntityResult(relativePath, sourceCollection) }
                 }
                 else -> {
@@ -139,8 +137,7 @@ internal fun isMathLinguaFile(file: VirtualFile) =
 
 internal fun buildSourceFile(file: VirtualFile): SourceFile {
     val content = file.readText()
-    return SourceFile(
-        file = file, content = content, validation = FrontEnd.parseWithLocations(content))
+    return SourceFile(file = file, content = content, validation = FrontEnd.parse(content))
 }
 
 internal data class ValueAndSource<T>(val value: T, val source: SourceFile)
@@ -419,7 +416,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         when (val validation = sf.validation
         ) {
             is ValidationSuccess -> {
-                val doc = validation.value.document
+                val doc = validation.value
                 val docDefines = doc.defines().toSet()
                 val docStates = doc.states().toSet()
                 val docAxioms = doc.axioms().toSet()
@@ -438,7 +435,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     }
                 }
 
-                for (grp in validation.value.document.groups) {
+                for (grp in validation.value.groups) {
                     for (word in getAllWords(grp)) {
                         wordAutoComplete.remove(word)
                     }
@@ -466,13 +463,13 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         searchIndex.add(sf)
         val validation = sf.validation
         if (validation is ValidationSuccess) {
-            for (grp in validation.value.document.groups) {
+            for (grp in validation.value.groups) {
                 for (word in getAllWords(grp)) {
                     wordAutoComplete.add(word)
                 }
             }
 
-            for (grp in validation.value.document.groups) {
+            for (grp in validation.value.groups) {
                 if (grp is HasSignature && grp.signature != null) {
                     val key = grp.signature!!.form
                     signatureToTopLevelGroup[key] = grp
@@ -484,7 +481,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             }
 
             definesGroups.addAll(
-                validation.value.document.defines().map {
+                validation.value.defines().map {
                     ValueAndSource(
                         source = sf,
                         value =
@@ -492,7 +489,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 })
 
             statesGroups.addAll(
-                validation.value.document.states().map {
+                validation.value.states().map {
                     ValueAndSource(
                         source = sf,
                         value =
@@ -500,14 +497,14 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 })
 
             axiomGroups.addAll(
-                validation.value.document.axioms().map {
+                validation.value.axioms().map {
                     ValueAndSource(
                         source = sf,
                         value = Normalized(original = it, normalized = normalize(it) as AxiomGroup))
                 })
 
             theoremGroups.addAll(
-                validation.value.document.theorems().map {
+                validation.value.theorems().map {
                     ValueAndSource(
                         source = sf,
                         value =
@@ -515,7 +512,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 })
 
             conjectureGroups.addAll(
-                validation.value.document.conjectures().map {
+                validation.value.conjectures().map {
                     ValueAndSource(
                         source = sf,
                         value =
@@ -524,7 +521,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 })
 
             allGroups.addAll(
-                validation.value.document.groups.map {
+                validation.value.groups.map {
                     ValueAndSource(
                         source = sf,
                         value =
@@ -770,7 +767,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             when (val validation = sf.value.validation
             ) {
                 is ValidationSuccess -> {
-                    val doc = validation.value.document
+                    val doc = validation.value
                     for (grp in doc.groups) {
                         val errors = analyzer.findInvalidTypes(grp)
                         result.addAll(
@@ -833,7 +830,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                         validation.errors.map { ValueAndSource(source = sf.value, value = it) })
                 }
                 is ValidationSuccess -> {
-                    val doc = validation.value.document
+                    val doc = validation.value
 
                     val allDefines = mutableListOf<DefinesGroup>()
                     allDefines.addAll(doc.defines())
@@ -884,11 +881,11 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
     private fun prettyPrint(
         input: String, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>> {
-        return prettyPrint(FrontEnd.parseWithLocations(input), html, literal, doExpand)
+        return prettyPrint(FrontEnd.parse(input), html, literal, doExpand)
     }
 
     private fun prettyPrint(
-        validation: Validation<Parse>, html: Boolean, literal: Boolean, doExpand: Boolean
+        validation: Validation<Document>, html: Boolean, literal: Boolean, doExpand: Boolean
     ): Pair<List<Pair<String, Phase2Node?>>, List<ParseError>> {
         val content: List<Pair<String, Phase2Node?>> =
             when (validation) {
@@ -919,10 +916,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 }
                 is ValidationSuccess ->
                     prettyPrint(
-                        doc = validation.value.document,
-                        html = html,
-                        literal = literal,
-                        doExpand = doExpand)
+                        doc = validation.value, html = html, literal = literal, doExpand = doExpand)
             }
 
         return when (validation) {
@@ -976,7 +970,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                                     listOf(
                                         Statement(
                                             text = exp.toCode(),
-                                            texTalkRoot = validationSuccess(exp),
+                                            texTalkRoot = ValidationSuccess(exp),
                                             row = -1,
                                             column = -1)),
                                 row = -1,
@@ -1176,7 +1170,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             val id =
                 IdStatement(
                     text = lhs.toCode(),
-                    texTalkRoot = validationSuccess(lhs),
+                    texTalkRoot = ValidationSuccess(lhs),
                     row = -1,
                     column = -1)
             val syntheticDefines = rhsDef.copy(id = id)
@@ -1231,7 +1225,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             val id =
                 IdStatement(
                     text = lhs.toCode(),
-                    texTalkRoot = validationSuccess(lhs),
+                    texTalkRoot = ValidationSuccess(lhs),
                     row = -1,
                     column = -1)
             val syntheticDefines =
@@ -1676,7 +1670,7 @@ private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<Defin
                         val id =
                             IdStatement(
                                 text = lhs.toCode(),
-                                texTalkRoot = validationSuccess(lhs),
+                                texTalkRoot = ValidationSuccess(lhs),
                                 row = -1,
                                 column = -1)
                         val syntheticDefines =

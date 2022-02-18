@@ -32,7 +32,7 @@ import mathlingua.backend.newSourceCollectionFromCwd
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
 import mathlingua.frontend.support.ParseError
-import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.support.ValidationFailure
 import mathlingua.getRandomUuid
 
 const val MATHLINGUA_VERSION = "0.15.1"
@@ -221,7 +221,7 @@ private fun exportFile(
                 value = ParseError(message = message, row = -1, column = -1),
                 source =
                     SourceFile(
-                        file = target, content = "", validation = validationFailure(emptyList()))))
+                        file = target, content = "", validation = ValidationFailure(emptyList()))))
     }
 
     if (target.isDirectory() || !target.absolutePath().endsWith(".math")) {
@@ -232,7 +232,7 @@ private fun exportFile(
                 value = ParseError(message = message, row = -1, column = -1),
                 source =
                     SourceFile(
-                        file = target, content = "", validation = validationFailure(emptyList()))))
+                        file = target, content = "", validation = ValidationFailure(emptyList()))))
     }
 
     val sourceCollection = newSourceCollection(fs, listOf(fs.cwd()))

@@ -32,7 +32,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.ParseError
-import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.support.ValidationFailure
 
 internal data class ResourceGroup(
     val id: String,
@@ -55,7 +55,7 @@ internal data class ResourceGroup(
             writer,
             isArg,
             indent,
-            IdStatement(id, validationFailure(emptyList()), row, column),
+            IdStatement(id, ValidationFailure(emptyList()), row, column),
             resourceSection,
             metaDataSection)
 

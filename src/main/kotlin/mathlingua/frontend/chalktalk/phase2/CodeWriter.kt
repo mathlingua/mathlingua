@@ -49,7 +49,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
@@ -777,7 +776,7 @@ private open class HtmlCodeWriter(
             builder.append("</div>")
             if (root is ValidationSuccess) {
                 appendDropdownForStatement(
-                    Statement(stmtText, validationSuccess(root.value), -1, -1), dropdownIndex)
+                    Statement(stmtText, ValidationSuccess(root.value), -1, -1), dropdownIndex)
             }
             return
         }

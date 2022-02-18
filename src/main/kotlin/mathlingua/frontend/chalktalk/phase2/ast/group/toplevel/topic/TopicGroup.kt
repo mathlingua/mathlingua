@@ -33,7 +33,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.ParseError
-import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.support.ValidationFailure
 
 internal data class TopicGroup(
     val id: String?,
@@ -60,7 +60,7 @@ internal data class TopicGroup(
             if (id == null) {
                 null
             } else {
-                IdStatement(text = id, texTalkRoot = validationFailure(emptyList()), row, column)
+                IdStatement(text = id, texTalkRoot = ValidationFailure(emptyList()), row, column)
             },
             topicSection,
             contentSection,

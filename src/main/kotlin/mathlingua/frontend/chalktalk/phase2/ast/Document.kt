@@ -21,8 +21,6 @@ import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Root
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
@@ -56,7 +54,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.TopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.isTopicGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topic.validateTopicGroup
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.validationFailure
@@ -64,7 +61,9 @@ import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
-internal data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
+internal data class Document(
+    val groups: List<TopLevelGroup>, override val row: Int, override val column: Int
+) : Phase2Node {
 
     fun defines() = groups.filterIsInstance<DefinesGroup>()
     fun states() = groups.filterIsInstance<StatesGroup>()
@@ -91,18 +90,19 @@ internal data class Document(val groups: List<TopLevelGroup>) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node): Phase2Node {
         return chalkTransformer(
-            Document(groups = groups.map { it.transform(chalkTransformer) as TopLevelGroup }))
+            Document(
+                groups = groups.map { it.transform(chalkTransformer) as TopLevelGroup },
+                row,
+                column))
     }
 }
 
-internal fun validateDocument(
-    rawNode: Phase1Node, tracker: MutableLocationTracker
-): Validation<Document> {
+internal fun validateDocument(rawNode: Phase1Node): Validation<Document> {
     val node = rawNode.resolve()
 
     val errors = ArrayList<ParseError>()
     if (node !is Root) {
-        errors.add(ParseError("Expected a Root", getRow(node), getColumn(node)))
+        errors.add(ParseError("Expected a Root", node.row, node.column))
         return validationFailure(errors)
     }
 
@@ -111,41 +111,41 @@ internal fun validateDocument(
     for (group in node.groups) {
         when {
             isTheoremGroup(group) -> {
-                allGroups.add(validateTheoremGroup(group, errors, tracker))
+                allGroups.add(validateTheoremGroup(group, errors))
             }
             isAxiomGroup(group) -> {
-                allGroups.add(validateAxiomGroup(group, errors, tracker))
+                allGroups.add(validateAxiomGroup(group, errors))
             }
             isConjectureGroup(group) -> {
-                allGroups.add(validateConjectureGroup(group, errors, tracker))
+                allGroups.add(validateConjectureGroup(group, errors))
             }
             isDefinesGroup(group) -> {
-                allGroups.add(validateDefinesGroup(group, errors, tracker))
+                allGroups.add(validateDefinesGroup(group, errors))
             }
             isStatesGroup(group) -> {
-                allGroups.add(validateStatesGroup(group, errors, tracker))
+                allGroups.add(validateStatesGroup(group, errors))
             }
             isTopicGroup(group) -> {
-                allGroups.add(validateTopicGroup(group, errors, tracker))
+                allGroups.add(validateTopicGroup(group, errors))
             }
             isNoteGroup(group) -> {
-                allGroups.add(validateNoteGroup(group, errors, tracker))
+                allGroups.add(validateNoteGroup(group, errors))
             }
             isResourceGroup(group) -> {
-                allGroups.add(validateResourceGroup(group, errors, tracker))
+                allGroups.add(validateResourceGroup(group, errors))
             }
             isSpecifyGroup(group) -> {
-                allGroups.add(validateSpecifyGroup(group, errors, tracker))
+                allGroups.add(validateSpecifyGroup(group, errors))
             }
             isBlockComment(group) -> {
-                allGroups.add(TopLevelBlockComment(group as BlockComment))
+                allGroups.add(TopLevelBlockComment(group as BlockComment, group.row, group.column))
             }
             else -> {
                 errors.add(
                     ParseError(
                         "Expected a top level group but found " + group.toCode(),
-                        getRow(group),
-                        getColumn(group)))
+                        group.row,
+                        group.column))
             }
         }
     }
@@ -158,14 +158,13 @@ internal fun validateDocument(
                 val parse = newTexTalkParser().parse(lexer)
                 val idBefore = parse.root.toCode()
                 val idAfter =
-                    normalize(parse.root, Location(row = getRow(group), column = getColumn(group)))
-                        .toCode()
+                    normalize(parse.root, Location(row = group.row, column = group.column)).toCode()
                 if (idBefore != idAfter) {
                     errors.add(
                         ParseError(
                             message = "A command in an id cannot be of the form \\x \\y ...",
-                            row = getRow(group),
-                            column = getColumn(group)))
+                            row = group.row,
+                            column = group.column))
                 }
             }
         }
@@ -173,5 +172,5 @@ internal fun validateDocument(
 
     return if (errors.isNotEmpty()) {
         validationFailure(errors)
-    } else validationSuccess(tracker, rawNode, Document(groups = allGroups))
+    } else validationSuccess(Document(groups = allGroups, rawNode.row, rawNode.column))
 }

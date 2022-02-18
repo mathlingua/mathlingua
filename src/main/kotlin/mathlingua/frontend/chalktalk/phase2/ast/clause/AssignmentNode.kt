@@ -20,24 +20,20 @@ import mathlingua.frontend.chalktalk.phase1.ast.Assignment
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ASSIGNMENT
 import mathlingua.frontend.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class AssignmentNode(val assignment: Assignment) : ZeroPartNode(assignment), Target
+internal data class AssignmentNode(
+    val assignment: Assignment, override val row: Int, override val column: Int
+) : ZeroPartNode(assignment), Target
 
 internal fun isAssignment(node: Phase1Node) = node is Assignment
 
-internal fun validateAssignmentNode(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateByTransform(
-            node = node.resolve(),
-            errors = errors,
-            default = DEFAULT_ASSIGNMENT,
-            message = "Expected an assignment",
-            transform = { it as? Assignment },
-            builder = ::AssignmentNode)
-    }
+internal fun validateAssignmentNode(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateByTransform(
+        node = node.resolve(),
+        errors = errors,
+        default = DEFAULT_ASSIGNMENT,
+        message = "Expected an assignment",
+        transform = { it as? Assignment },
+        builder = ::AssignmentNode)

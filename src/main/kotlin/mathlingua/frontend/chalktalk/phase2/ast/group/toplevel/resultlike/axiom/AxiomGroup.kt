@@ -46,9 +46,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class AxiomGroup(
@@ -60,7 +58,9 @@ internal data class AxiomGroup(
     val thenSection: ThenSection,
     val iffSection: IffSection?,
     override val usingSection: UsingSection?,
-    override val metaDataSection: MetaDataSection?
+    override val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -112,46 +112,39 @@ internal data class AxiomGroup(
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                 iffSection = iffSection?.transform(chalkTransformer) as IffSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
-                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+                row,
+                column))
 }
 
 internal fun isAxiomGroup(node: Phase1Node) = firstSectionMatchesName(node, "Axiom")
 
-internal fun validateAxiomGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "Axiom", DEFAULT_AXIOM_GROUP) { group ->
-            val id = getOptionalId(group, errors, tracker)
-            identifySections(
-                group,
-                errors,
-                DEFAULT_AXIOM_GROUP,
-                listOf("Axiom", "given?", "when?", "then", "iff?", "using?", "Metadata?")) {
-            sections ->
-                AxiomGroup(
-                    signature = id?.signature(tracker),
-                    id = id,
-                    axiomSection =
-                        ensureNonNull(sections["Axiom"], DEFAULT_AXIOM_SECTION) {
-                            validateAxiomSection(it, errors, tracker)
-                        },
-                    givenSection =
-                        ifNonNull(sections["given"]) { validateGivenSection(it, errors, tracker) },
-                    whenSection =
-                        ifNonNull(sections["when"]) { validateWhenSection(it, errors, tracker) },
-                    thenSection =
-                        ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
-                            validateThenSection(it, errors, tracker)
-                        },
-                    iffSection =
-                        ifNonNull(sections["iff"]) { validateIffSection(it, errors, tracker) },
-                    usingSection =
-                        ifNonNull(sections["using"]) { validateUsingSection(it, errors, tracker) },
-                    metaDataSection =
-                        ifNonNull(sections["Metadata"]) {
-                            validateMetaDataSection(it, errors, tracker)
-                        })
-            }
+internal fun validateAxiomGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "Axiom", DEFAULT_AXIOM_GROUP) { group ->
+        val id = getOptionalId(group, errors)
+        identifySections(
+            group,
+            errors,
+            DEFAULT_AXIOM_GROUP,
+            listOf("Axiom", "given?", "when?", "then", "iff?", "using?", "Metadata?")) { sections ->
+            AxiomGroup(
+                signature = id?.signature(),
+                id = id,
+                axiomSection =
+                    ensureNonNull(sections["Axiom"], DEFAULT_AXIOM_SECTION) {
+                        validateAxiomSection(it, errors)
+                    },
+                givenSection = ifNonNull(sections["given"]) { validateGivenSection(it, errors) },
+                whenSection = ifNonNull(sections["when"]) { validateWhenSection(it, errors) },
+                thenSection =
+                    ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                        validateThenSection(it, errors)
+                    },
+                iffSection = ifNonNull(sections["iff"]) { validateIffSection(it, errors) },
+                usingSection = ifNonNull(sections["using"]) { validateUsingSection(it, errors) },
+                metaDataSection =
+                    ifNonNull(sections["Metadata"]) { validateMetaDataSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

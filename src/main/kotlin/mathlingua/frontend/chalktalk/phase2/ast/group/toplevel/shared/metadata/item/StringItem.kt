@@ -21,10 +21,10 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class StringItem(val text: String) : ResourceItem {
+internal data class StringItem(val text: String, override val row: Int, override val column: Int) :
+    ResourceItem {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -44,6 +44,4 @@ internal fun validateStringItem(
     node: Phase1Node,
     @Suppress("UNUSED_PARAMETER")
     errors: MutableList<ParseError>,
-    @Suppress("UNUSED_PARAMETER")
-    tracker: MutableLocationTracker
-) = StringItem(text = (node.resolve() as Phase1Token).text)
+) = StringItem(text = (node.resolve() as Phase1Token).text, node.row, node.column)

@@ -26,13 +26,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.MembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.SymbolsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewGroup
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ProvidingSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class ProvidingSection(
+    val clauses: ClauseListNode, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -47,34 +46,30 @@ internal data class ProvidingSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ProvidingSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            ProvidingSection(
+                clauses = clauses.transform(chalkTransformer) as ClauseListNode, row, column))
 }
 
-internal fun validateViewingSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "providing", DEFAULT_PROVIDING_SECTION) {
-            val clauses = validateClauseListNode(it, errors, tracker)
-            val errorCountBefore = errors.size
-            for (clause in clauses.clauses) {
-                if (clause !is MembershipGroup &&
-                    clause !is ViewGroup &&
-                    clause !is EqualityGroup &&
-                    clause !is SymbolsGroup) {
-                    val location = tracker.getLocationOf(clause) ?: Location(row = -1, column = -1)
-                    errors.add(
-                        ParseError(
-                            message =
-                                "Expected either a symbols:, membership:, view:, or equality: group",
-                            row = location.row,
-                            column = location.column))
-                }
+internal fun validateViewingSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "providing", DEFAULT_PROVIDING_SECTION) {
+        val clauses = validateClauseListNode(it, errors)
+        val errorCountBefore = errors.size
+        for (clause in clauses.clauses) {
+            if (clause !is MembershipGroup &&
+                clause !is ViewGroup &&
+                clause !is EqualityGroup &&
+                clause !is SymbolsGroup) {
+                errors.add(
+                    ParseError(
+                        message =
+                            "Expected either a symbols:, membership:, view:, or equality: group",
+                        row = clause.row,
+                        column = clause.column))
             }
-            if (errors.size != errorCountBefore) {
-                DEFAULT_PROVIDING_SECTION
-            } else {
-                ProvidingSection(clauses = clauses)
-            }
+        }
+        if (errors.size != errorCountBefore) {
+            DEFAULT_PROVIDING_SECTION
+        } else {
+            ProvidingSection(clauses = clauses, node.row, node.column)
         }
     }

@@ -22,12 +22,12 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_IDENTIFIER
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class Identifier(val name: String, val isVarArgs: Boolean) : Target {
+internal data class Identifier(
+    val name: String, val isVarArgs: Boolean, override val row: Int, override val column: Int
+) : Target {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -43,22 +43,19 @@ internal data class Identifier(val name: String, val isVarArgs: Boolean) : Targe
 internal fun isIdentifier(node: Phase1Node) =
     node is Phase1Token && node.type === ChalkTalkTokenType.Name
 
-internal fun validateIdentifier(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateByTransform(
-            node = node.resolve(),
-            errors = errors,
-            default = DEFAULT_IDENTIFIER,
-            message = "Expected an identifier",
-            transform = {
-                if (it is Phase1Token && it.type == ChalkTalkTokenType.Name) {
-                    it
-                } else {
-                    null
-                }
-            }) {
-            Identifier(name = it.text.removeSuffix("..."), isVarArgs = it.text.endsWith("..."))
-        }
+internal fun validateIdentifier(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateByTransform(
+        node = node.resolve(),
+        errors = errors,
+        default = DEFAULT_IDENTIFIER,
+        message = "Expected an identifier",
+        transform = {
+            if (it is Phase1Token && it.type == ChalkTalkTokenType.Name) {
+                it
+            } else {
+                null
+            }
+        }) { n, row, column ->
+        Identifier(
+            name = n.text.removeSuffix("..."), isVarArgs = n.text.endsWith("..."), row, column)
     }

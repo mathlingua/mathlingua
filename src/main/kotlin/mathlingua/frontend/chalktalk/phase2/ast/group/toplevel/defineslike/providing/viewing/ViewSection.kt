@@ -21,12 +21,10 @@ import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEW_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal class ViewSection : Phase2Node {
+internal data class ViewSection(override val row: Int, override val column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,9 +39,7 @@ internal class ViewSection : Phase2Node {
 
 internal fun isViewSection(section: Section) = section.name.text == "view"
 
-internal fun validateViewSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "view", DEFAULT_VIEW_SECTION) { ViewSection() }
+internal fun validateViewSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "view", DEFAULT_VIEW_SECTION) {
+        ViewSection(node.row, node.column)
     }

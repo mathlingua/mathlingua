@@ -30,43 +30,39 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.validateSuch
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class ForAllGroup(
     val forAllSection: ForAllSection,
     val suchThatSection: SuchThatSection?,
-    val thenSection: ThenSection
+    val thenSection: ThenSection,
+    override val row: Int,
+    override val column: Int
 ) :
     ThreePartNode<ForAllSection, SuchThatSection?, ThenSection>(
-        forAllSection, suchThatSection, thenSection, ::ForAllGroup),
+        forAllSection, suchThatSection, thenSection, row, column, ::ForAllGroup),
     Clause
 
 internal fun isForGroup(node: Phase1Node) = firstSectionMatchesName(node, "forAll")
 
-internal fun validateForGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "forAll", DEFAULT_FOR_ALL_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_FOR_ALL_GROUP, listOf("forAll", "suchThat?", "then")) {
-            sections ->
-                ForAllGroup(
-                    forAllSection =
-                        ensureNonNull(sections["forAll"], DEFAULT_FOR_ALL_SECTION) {
-                            validateForSection(it, errors, tracker)
-                        },
-                    suchThatSection =
-                        ifNonNull(sections["suchThat"]) {
-                            validateSuchThatSection(it, errors, tracker)
-                        },
-                    thenSection =
-                        ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
-                            validateThenSection(it, errors, tracker)
-                        })
-            }
+internal fun validateForGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "forAll", DEFAULT_FOR_ALL_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_FOR_ALL_GROUP, listOf("forAll", "suchThat?", "then")) {
+        sections ->
+            ForAllGroup(
+                forAllSection =
+                    ensureNonNull(sections["forAll"], DEFAULT_FOR_ALL_SECTION) {
+                        validateForSection(it, errors)
+                    },
+                suchThatSection =
+                    ifNonNull(sections["suchThat"]) { validateSuchThatSection(it, errors) },
+                thenSection =
+                    ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                        validateThenSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

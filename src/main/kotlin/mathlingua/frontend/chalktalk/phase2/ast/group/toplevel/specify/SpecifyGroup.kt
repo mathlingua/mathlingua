@@ -26,14 +26,14 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal interface NumberGroup : Phase2Node
 
-internal data class SpecifyGroup(val specifySection: SpecifySection) : TopLevelGroup(null) {
+internal data class SpecifyGroup(
+    val specifySection: SpecifySection, override val row: Int, override val column: Int
+) : TopLevelGroup(null) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(specifySection)
     }
@@ -42,22 +42,21 @@ internal data class SpecifyGroup(val specifySection: SpecifySection) : TopLevelG
         topLevelToCode(this, writer, isArg, indent, null, specifySection, metaDataSection)
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(SpecifyGroup(specifySection.transform(chalkTransformer) as SpecifySection))
+        chalkTransformer(
+            SpecifyGroup(specifySection.transform(chalkTransformer) as SpecifySection, row, column))
 }
 
 internal fun isSpecifyGroup(node: Phase1Node) = firstSectionMatchesName(node, "Specify")
 
-internal fun validateSpecifyGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "Specify", DEFAULT_SPECIFY_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_SPECIFY_GROUP, listOf("Specify")) { sections ->
-                SpecifyGroup(
-                    specifySection =
-                        ensureNonNull(sections["Specify"], DEFAULT_SPECIFY_SECTION) {
-                            validateSpecifySection(it, errors, tracker)
-                        })
-            }
+internal fun validateSpecifyGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "Specify", DEFAULT_SPECIFY_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_SPECIFY_GROUP, listOf("Specify")) { sections ->
+            SpecifyGroup(
+                specifySection =
+                    ensureNonNull(sections["Specify"], DEFAULT_SPECIFY_SECTION) {
+                        validateSpecifySection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

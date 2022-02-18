@@ -25,27 +25,24 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.s
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateTopicsSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class TopicsGroup(val topicsSection: TopicsSection) :
-    OnePartNode<TopicsSection>(topicsSection, ::TopicsGroup), MetaDataItem
+internal data class TopicsGroup(
+    val topicsSection: TopicsSection, override val row: Int, override val column: Int
+) : OnePartNode<TopicsSection>(topicsSection, row, column, ::TopicsGroup), MetaDataItem
 
 internal fun isTopicsGroup(node: Phase1Node) = firstSectionMatchesName(node, "topics")
 
-internal fun validateTopicsGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "topics", DEFAULT_TOPICS_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_TOPICS_GROUP, listOf("topics")) { sections ->
-                TopicsGroup(
-                    topicsSection =
-                        ensureNonNull(sections["topics"], DEFAULT_TOPICS_SECTION) {
-                            validateTopicsSection(it, errors, tracker)
-                        })
-            }
+internal fun validateTopicsGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "topics", DEFAULT_TOPICS_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_TOPICS_GROUP, listOf("topics")) { sections ->
+            TopicsGroup(
+                topicsSection =
+                    ensureNonNull(sections["topics"], DEFAULT_TOPICS_SECTION) {
+                        validateTopicsSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

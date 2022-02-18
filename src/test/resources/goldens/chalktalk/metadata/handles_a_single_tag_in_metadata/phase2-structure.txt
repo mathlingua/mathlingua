@@ -6,6 +6,8 @@ Document(
                theoremSection = TheoremSection(
                  names = [
                          ]
+                 row = 0
+                 column = 0
                )
                givenSection = null
                whenSection = null
@@ -14,9 +16,15 @@ Document(
                    clauses = [
                                Text(
                                  text = ""something""
+                                 row = 2
+                                 column = 2
                                )
                              ]
+                   row = 1
+                   column = 0
                  )
+                 row = 1
+                 column = 0
                )
                iffSection = null
                usingSection = null
@@ -29,10 +37,20 @@ Document(
                                values = [
                                           ""a""
                                         ]
+                               row = 4
+                               column = 2
                              )
+                             row = 4
+                             column = 2
                            )
                          ]
+                 row = 3
+                 column = 0
                )
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

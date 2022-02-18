@@ -24,27 +24,24 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class OrGroup(val orSection: OrSection) :
-    OnePartNode<OrSection>(orSection, ::OrGroup), Clause
+internal data class OrGroup(
+    val orSection: OrSection, override val row: Int, override val column: Int
+) : OnePartNode<OrSection>(orSection, row, column, ::OrGroup), Clause
 
 internal fun isOrGroup(node: Phase1Node) = firstSectionMatchesName(node, "or")
 
-internal fun validateOrGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "or", DEFAULT_OR_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_OR_GROUP, listOf("or")) { sections ->
-                OrGroup(
-                    orSection =
-                        ensureNonNull(sections["or"], DEFAULT_OR_SECTION) {
-                            validateOrSection(it, errors, tracker)
-                        })
-            }
+internal fun validateOrGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "or", DEFAULT_OR_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_OR_GROUP, listOf("or")) { sections ->
+            OrGroup(
+                orSection =
+                    ensureNonNull(sections["or"], DEFAULT_OR_SECTION) {
+                        validateOrSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

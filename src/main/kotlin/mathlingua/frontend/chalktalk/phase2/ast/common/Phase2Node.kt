@@ -16,10 +16,11 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.common
 
+import mathlingua.frontend.chalktalk.phase1.ast.HasLocation
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.newMathLinguaCodeWriter
 
-internal interface Phase2Node {
+internal interface Phase2Node : HasLocation {
     fun forEach(fn: (node: Phase2Node) -> Unit)
     fun toCode(
         isArg: Boolean,

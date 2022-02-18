@@ -26,12 +26,15 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class IfGroup(val ifSection: IfSection, val thenSection: ThenSection) : Clause {
+internal data class IfGroup(
+    val ifSection: IfSection,
+    val thenSection: ThenSection,
+    override val row: Int,
+    override val column: Int
+) : Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(ifSection)
         fn(thenSection)
@@ -47,26 +50,26 @@ internal data class IfGroup(val ifSection: IfSection, val thenSection: ThenSecti
         chalkTransformer(
             IfGroup(
                 ifSection = ifSection.transform(chalkTransformer) as IfSection,
-                thenSection = thenSection.transform(chalkTransformer) as ThenSection))
+                thenSection = thenSection.transform(chalkTransformer) as ThenSection,
+                row,
+                column))
 }
 
 internal fun isIfGroup(node: Phase1Node) = firstSectionMatchesName(node, "if")
 
-internal fun validateIfGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "if", DEFAULT_IF_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_IF_GROUP, listOf("if", "then")) { sections ->
-                IfGroup(
-                    ifSection =
-                        ensureNonNull(sections["if"], DEFAULT_IF_SECTION) {
-                            validateIfSection(it, errors, tracker)
-                        },
-                    thenSection =
-                        ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
-                            validateThenSection(it, errors, tracker)
-                        })
-            }
+internal fun validateIfGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "if", DEFAULT_IF_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_IF_GROUP, listOf("if", "then")) { sections ->
+            IfGroup(
+                ifSection =
+                    ensureNonNull(sections["if"], DEFAULT_IF_SECTION) {
+                        validateIfSection(it, errors)
+                    },
+                thenSection =
+                    ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
+                        validateThenSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

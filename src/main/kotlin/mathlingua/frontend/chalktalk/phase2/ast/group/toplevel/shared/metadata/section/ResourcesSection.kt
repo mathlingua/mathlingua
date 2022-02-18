@@ -23,12 +23,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.ResourceItem
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.StringItem
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.item.validateResourceItem
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ResourcesSection(val items: List<ResourceItem>) : Phase2Node {
+internal data class ResourcesSection(
+    val items: List<ResourceItem>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = items.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -47,14 +47,12 @@ internal data class ResourcesSection(val items: List<ResourceItem>) : Phase2Node
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ResourcesSection(items = items.map { chalkTransformer(it) as ResourceItem }))
+            ResourcesSection(
+                items = items.map { chalkTransformer(it) as ResourceItem }, row, column))
 }
 
-internal fun validateResourcesSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node, errors, "resources", DEFAULT_RESOURCES_SECTION) { section ->
-            ResourcesSection(items = section.args.map { validateResourceItem(it, errors, tracker) })
-        }
+internal fun validateResourcesSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node, errors, "resources", DEFAULT_RESOURCES_SECTION) { section ->
+        ResourcesSection(
+            items = section.args.map { validateResourceItem(it, errors) }, node.row, node.column)
     }

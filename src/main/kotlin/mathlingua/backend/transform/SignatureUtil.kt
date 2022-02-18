@@ -21,7 +21,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.section.TextSection
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
@@ -38,37 +37,29 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal data class Signature(val form: String, val location: Location)
 
-internal fun locateAllSignatures(
-    node: Phase2Node, ignoreLhsEqual: Boolean, locationTracker: MutableLocationTracker
-): Set<Signature> {
+internal fun locateAllSignatures(node: Phase2Node, ignoreLhsEqual: Boolean): Set<Signature> {
     val signatures = mutableSetOf<Signature>()
-    findAllSignaturesImpl(
-        normalize(node, locationTracker), ignoreLhsEqual, signatures, locationTracker)
+    findAllSignaturesImpl(normalize(node), ignoreLhsEqual, signatures)
     return signatures
 }
 
 // -----------------------------------------------------------------------------
 
 private fun findAllSignaturesImpl(
-    node: Phase2Node,
-    ignoreLhsEqual: Boolean,
-    signatures: MutableSet<Signature>,
-    locationTracker: MutableLocationTracker
+    node: Phase2Node, ignoreLhsEqual: Boolean, signatures: MutableSet<Signature>
 ) {
     if (node is Statement) {
-        signatures.addAll(findAllStatementSignatures(node, ignoreLhsEqual, locationTracker))
+        signatures.addAll(findAllStatementSignatures(node, ignoreLhsEqual))
     } else if (node is IdStatement) {
-        findAllSignaturesImpl(node.toStatement(), ignoreLhsEqual, signatures, locationTracker)
+        findAllSignaturesImpl(node.toStatement(), ignoreLhsEqual, signatures)
     } else if (node is TextSection) {
         val sig = getSignature(node)
         if (sig != null) {
-            signatures.add(
-                Signature(
-                    form = sig, location = locationTracker.getLocationOf(node) ?: Location(-1, -1)))
+            signatures.add(Signature(form = sig, Location(node.row, node.column)))
         }
     }
 
-    node.forEach { findAllSignaturesImpl(it, ignoreLhsEqual, signatures, locationTracker) }
+    node.forEach { findAllSignaturesImpl(it, ignoreLhsEqual, signatures) }
 }
 
 private fun getSignature(section: TextSection): String? {
@@ -79,21 +70,15 @@ private fun getSignature(section: TextSection): String? {
     return match.groupValues[1]
 }
 
-internal fun findAllStatementSignatures(
-    stmt: Statement, ignoreLhsEqual: Boolean, locationTracker: MutableLocationTracker
-): Set<Signature> {
-    val gluedStmt = glueCommands(stmt, stmt, locationTracker).root as Statement
+internal fun findAllStatementSignatures(stmt: Statement, ignoreLhsEqual: Boolean): Set<Signature> {
+    val gluedStmt = glueCommands(stmt, stmt).root as Statement
     return when (val rootValidation = gluedStmt.texTalkRoot
     ) {
         is ValidationSuccess -> {
             val expressionNode = rootValidation.value
             val signatures = mutableSetOf<Signature>()
             findAllSignaturesImpl(
-                expressionNode,
-                ignoreLhsEqual,
-                false,
-                signatures,
-                locationTracker.getLocationOf(stmt) ?: Location(-1, -1))
+                expressionNode, ignoreLhsEqual, false, signatures, Location(stmt.row, stmt.column))
             signatures
         }
         is ValidationFailure -> emptySet()

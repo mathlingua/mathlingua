@@ -28,43 +28,41 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateProvidedSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class EqualityGroup(
     val equalitySection: EqualitySection,
     val betweenSection: BetweenSection,
-    val providedSection: ProvidedSection
+    val providedSection: ProvidedSection,
+    override val row: Int,
+    override val column: Int
 ) :
     ThreePartNode<EqualitySection, BetweenSection, ProvidedSection>(
-        equalitySection, betweenSection, providedSection, ::EqualityGroup),
+        equalitySection, betweenSection, providedSection, row, column, ::EqualityGroup),
     Clause
 
 internal fun isEqualityGroup(node: Phase1Node) = firstSectionMatchesName(node, "equality")
 
-internal fun validateEqualityGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "equality", DEFAULT_EQUALITY_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_EQUALITY_GROUP, listOf("equality", "between", "provided")) {
-            sections ->
-                EqualityGroup(
-                    equalitySection =
-                        ensureNonNull(sections["equality"], DEFAULT_EQUALITY_SECTION) {
-                            validateEqualitySection(it, errors, tracker)
-                        },
-                    betweenSection =
-                        ensureNonNull(sections["between"], DEFAULT_BETWEEN_SECTION) {
-                            validateBetweenSection(it, errors, tracker)
-                        },
-                    providedSection =
-                        ensureNonNull(sections["provided"], DEFAULT_PROVIDED_SECTION) {
-                            validateProvidedSection(it, errors, tracker)
-                        })
-            }
+internal fun validateEqualityGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "equality", DEFAULT_EQUALITY_GROUP) { group ->
+        identifySections(
+            group, errors, DEFAULT_EQUALITY_GROUP, listOf("equality", "between", "provided")) {
+        sections ->
+            EqualityGroup(
+                equalitySection =
+                    ensureNonNull(sections["equality"], DEFAULT_EQUALITY_SECTION) {
+                        validateEqualitySection(it, errors)
+                    },
+                betweenSection =
+                    ensureNonNull(sections["between"], DEFAULT_BETWEEN_SECTION) {
+                        validateBetweenSection(it, errors)
+                    },
+                providedSection =
+                    ensureNonNull(sections["provided"], DEFAULT_PROVIDED_SECTION) {
+                        validateProvidedSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

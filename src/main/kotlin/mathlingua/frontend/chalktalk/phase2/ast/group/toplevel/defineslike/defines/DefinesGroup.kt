@@ -19,8 +19,6 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_DEFINES_SECTION
@@ -54,11 +52,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.LocationTracker
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
@@ -79,7 +73,9 @@ internal data class DefinesGroup(
     override val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
     val calledSection: CalledSection?,
-    override val metaDataSection: MetaDataSection?
+    override val metaDataSection: MetaDataSection?,
+    override val row: Int,
+    override val column: Int
 ) : TopLevelGroup(metaDataSection), HasUsingSection, HasSignature, DefinesStatesOrViews {
 
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
@@ -156,115 +152,94 @@ internal data class DefinesGroup(
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 calledSection = calledSection?.transform(chalkTransformer) as CalledSection?,
-                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?))
+                metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
+                row = row,
+                column = column))
 }
 
 internal fun isDefinesGroup(node: Phase1Node) = firstSectionMatchesName(node, "Defines")
 
-internal fun validateDefinesGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "Defines", DEFAULT_DEFINES_GROUP) { group ->
-            identifySections(
-                group,
-                errors,
-                DEFAULT_DEFINES_GROUP,
-                listOf(
-                    "Defines",
-                    "given?",
-                    "when?",
-                    "means?",
-                    "satisfying?",
-                    "expressing?",
-                    "providing?",
-                    "using?",
-                    "written",
-                    "called?",
-                    "Metadata?")) { sections ->
-                val id = getId(group, errors, tracker)
-                val def =
-                    DefinesGroup(
-                        signature = id.signature(tracker),
-                        id = id,
-                        definesSection =
-                            ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
-                                validateDefinesSection(it, errors, tracker)
-                            },
-                        givenSection =
-                            ifNonNull(sections["given"]) {
-                                validateGivenSection(it, errors, tracker)
-                            },
-                        whenSection =
-                            ifNonNull(sections["when"]) {
-                                validateWhenSection(it, errors, tracker)
-                            },
-                        meansSection =
-                            ifNonNull(sections["means"]) {
-                                validateExtendingSection(it, errors, tracker)
-                            },
-                        satisfyingSection =
-                            ifNonNull(sections["satisfying"]) {
-                                validateSatisfiesSection(it, errors, tracker)
-                            },
-                        expressingSection =
-                            ifNonNull(sections["expressing"]) {
-                                validateExpressesSection(it, errors, tracker)
-                            },
-                        providingSection =
-                            ifNonNull(sections["providing"]) {
-                                validateViewingSection(it, errors, tracker)
-                            },
-                        usingSection =
-                            ifNonNull(sections["using"]) {
-                                validateUsingSection(it, errors, tracker)
-                            },
-                        writtenSection =
-                            ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
-                                validateWrittenSection(it, errors, tracker)
-                            },
-                        calledSection =
-                            ifNonNull(sections["called"]) {
-                                validateCalledSection(it, errors, tracker)
-                            },
-                        metaDataSection =
-                            ifNonNull(sections["Metadata"]) {
-                                validateMetaDataSection(it, errors, tracker)
-                            })
+internal fun validateDefinesGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "Defines", DEFAULT_DEFINES_GROUP) { group ->
+        identifySections(
+            group,
+            errors,
+            DEFAULT_DEFINES_GROUP,
+            listOf(
+                "Defines",
+                "given?",
+                "when?",
+                "means?",
+                "satisfying?",
+                "expressing?",
+                "providing?",
+                "using?",
+                "written",
+                "called?",
+                "Metadata?")) { sections ->
+            val id = getId(group, errors)
+            val def =
+                DefinesGroup(
+                    signature = id.signature(),
+                    id = id,
+                    definesSection =
+                        ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
+                            validateDefinesSection(it, errors)
+                        },
+                    givenSection =
+                        ifNonNull(sections["given"]) { validateGivenSection(it, errors) },
+                    whenSection = ifNonNull(sections["when"]) { validateWhenSection(it, errors) },
+                    meansSection =
+                        ifNonNull(sections["means"]) { validateExtendingSection(it, errors) },
+                    satisfyingSection =
+                        ifNonNull(sections["satisfying"]) { validateSatisfiesSection(it, errors) },
+                    expressingSection =
+                        ifNonNull(sections["expressing"]) { validateExpressesSection(it, errors) },
+                    providingSection =
+                        ifNonNull(sections["providing"]) { validateViewingSection(it, errors) },
+                    usingSection =
+                        ifNonNull(sections["using"]) { validateUsingSection(it, errors) },
+                    writtenSection =
+                        ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
+                            validateWrittenSection(it, errors)
+                        },
+                    calledSection =
+                        ifNonNull(sections["called"]) { validateCalledSection(it, errors) },
+                    metaDataSection =
+                        ifNonNull(sections["Metadata"]) { validateMetaDataSection(it, errors) },
+                    row = node.row,
+                    column = node.column)
 
-                val funcArgsError = checkIfFunctionSignatureMatchDefines(def, tracker)
-                if (funcArgsError != null) {
-                    errors.add(funcArgsError)
-                    DEFAULT_DEFINES_GROUP
-                } else if (def.satisfyingSection == null &&
-                    def.expressingSection == null &&
-                    def.meansSection == null) {
-                    errors.add(
-                        ParseError(
-                            message =
-                                "If a `Defines:` doesn't have a `satisfying:` or `expressing:` section, " +
-                                    "then it must have a `means:` section",
-                            row = getRow(node),
-                            column = getColumn(node)))
-                    DEFAULT_DEFINES_GROUP
-                } else if (def.satisfyingSection != null && def.expressingSection != null) {
-                    errors.add(
-                        ParseError(
-                            message =
-                                "A `Defines:` cannot have both a `satisfying:` and an `expressing:` section",
-                            row = getRow(node),
-                            column = getColumn(node)))
-                    DEFAULT_DEFINES_GROUP
-                } else {
-                    def
-                }
+            val funcArgsError = checkIfFunctionSignatureMatchDefines(def)
+            if (funcArgsError != null) {
+                errors.add(funcArgsError)
+                DEFAULT_DEFINES_GROUP
+            } else if (def.satisfyingSection == null &&
+                def.expressingSection == null &&
+                def.meansSection == null) {
+                errors.add(
+                    ParseError(
+                        message =
+                            "If a `Defines:` doesn't have a `satisfying:` or `expressing:` section, " +
+                                "then it must have a `means:` section",
+                        row = node.row,
+                        column = node.column))
+                DEFAULT_DEFINES_GROUP
+            } else if (def.satisfyingSection != null && def.expressingSection != null) {
+                errors.add(
+                    ParseError(
+                        message =
+                            "A `Defines:` cannot have both a `satisfying:` and an `expressing:` section",
+                        row = node.row,
+                        column = node.column))
+                DEFAULT_DEFINES_GROUP
+            } else {
+                def
             }
         }
     }
 
-internal fun checkIfFunctionSignatureMatchDefines(
-    defines: DefinesGroup, tracker: LocationTracker
-): ParseError? {
+internal fun checkIfFunctionSignatureMatchDefines(defines: DefinesGroup): ParseError? {
     val idArgs =
         when (val validation = defines.id.texTalkRoot
         ) {
@@ -293,8 +268,6 @@ internal fun checkIfFunctionSignatureMatchDefines(
         }
             ?: return null
 
-    val location = tracker.getLocationOf(defines.definesSection) ?: Location(row = -1, column = -1)
-
     var hasParenArgs = false
     for (target in defines.definesSection.targets) {
         if (target is AbstractionNode) {
@@ -312,8 +285,8 @@ internal fun checkIfFunctionSignatureMatchDefines(
                     return ParseError(
                         message =
                             "Expected function arguments '${idArgs.joinToString(", ").trim()}' but found '${defArgs.joinToString(", ").trim()}'",
-                        row = location.row,
-                        column = location.column)
+                        row = defines.definesSection.row,
+                        column = defines.definesSection.column)
                 }
             }
         }
@@ -323,8 +296,8 @@ internal fun checkIfFunctionSignatureMatchDefines(
         return ParseError(
             message =
                 "Expected a definition of a function with arguments '${idArgs.joinToString(", ").trim()}'",
-            row = location.row,
-            column = location.column)
+            row = defines.definesSection.row,
+            column = defines.definesSection.column)
     }
 
     return null

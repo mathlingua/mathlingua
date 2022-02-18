@@ -11,6 +11,8 @@ Root(
                               )
                               args = [
                                      ]
+                              row = 0
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -72,12 +74,20 @@ Root(
                                                                                               )
                                                                                             ]
                                                                                    tail = null
+                                                                                   row = 2
+                                                                                   column = 10
                                                                                  )
                                                                                ]
                                                                        subParams = null
+                                                                       row = 2
+                                                                       column = 10
                                                                      )
+                                                                     row = 2
+                                                                     column = 10
                                                                    )
                                                                  ]
+                                                          row = 2
+                                                          column = 2
                                                         ),
                                                         Section(
                                                           name = Phase1Token(
@@ -102,21 +112,39 @@ Root(
                                                                                    subParams = null
                                                                                    params = null
                                                                                    tail = null
+                                                                                   row = 3
+                                                                                   column = 8
                                                                                  )
                                                                                ]
                                                                        subParams = null
+                                                                       row = 3
+                                                                       column = 8
                                                                      )
+                                                                     row = 3
+                                                                     column = 8
                                                                    )
                                                                  ]
+                                                          row = 3
+                                                          column = 2
                                                         )
                                                       ]
                                            id = null
+                                           row = 2
+                                           column = 2
                                          )
+                                         row = 2
+                                         column = 2
                                        )
                                      ]
+                              row = 1
+                              column = 0
                             )
                           ]
                id = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

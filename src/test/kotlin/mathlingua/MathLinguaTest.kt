@@ -111,13 +111,7 @@ internal class MathLinguaTest {
 
         val sourceCollection = newSourceCollectionFromContent(input)
         val locations =
-            sourceCollection.getDuplicateContent().mapNotNull {
-                if (it.tracker != null) {
-                    it.tracker.getLocationOf(it.value)
-                } else {
-                    null
-                }
-            }
+            sourceCollection.getDuplicateContent().map { Location(it.value.row, it.value.column) }
         assertThat(locations).isEmpty()
     }
 
@@ -208,14 +202,7 @@ internal class MathLinguaTest {
         """.trimIndent())
 
         val collection = newSourceCollectionFromContent(input)
-        val dups =
-            collection.getDuplicateContent().mapNotNull {
-                if (it.tracker != null) {
-                    it.tracker.getLocationOf(it.value)
-                } else {
-                    null
-                }
-            }
+        val dups = collection.getDuplicateContent().map { Location(it.value.row, it.value.column) }
         assertThat(dups).isEmpty()
     }
 
@@ -258,14 +245,7 @@ internal class MathLinguaTest {
         """.trimIndent())
 
         val collection = newSourceCollectionFromContent(input)
-        val dups =
-            collection.getDuplicateContent().mapNotNull {
-                if (it.tracker != null) {
-                    it.tracker.getLocationOf(it.value)
-                } else {
-                    null
-                }
-            }
+        val dups = collection.getDuplicateContent().map { Location(it.value.row, it.value.column) }
         assertThat(dups).isEmpty()
     }
 

@@ -22,12 +22,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SYMBOLS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class SymbolsSection(val targets: List<Target>) : Phase2Node {
+internal data class SymbolsSection(
+    val targets: List<Target>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -39,15 +39,15 @@ internal data class SymbolsSection(val targets: List<Target>) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            SymbolsSection(targets = targets.map { it.transform(chalkTransformer) as Target }))
+            SymbolsSection(
+                targets = targets.map { it.transform(chalkTransformer) as Target }, row, column))
 }
 
-internal fun validateSymbolsSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateTargetSection(
-            node.resolve(), errors, "symbols", DEFAULT_SYMBOLS_SECTION, tracker) { targets ->
-            SymbolsSection(targets = targets)
-        }
+internal fun validateSymbolsSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateTargetSection(
+        node.resolve(), errors, "symbols", DEFAULT_SYMBOLS_SECTION, node.row, node.column) {
+    targets,
+    row,
+    column ->
+        SymbolsSection(targets = targets, row, column)
     }

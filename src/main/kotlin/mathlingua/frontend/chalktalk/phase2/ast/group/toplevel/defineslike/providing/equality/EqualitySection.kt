@@ -20,12 +20,10 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EQUALITY_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal class EqualitySection : Phase2Node {
+internal data class EqualitySection(override val row: Int, override val column: Int) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -38,11 +36,7 @@ internal class EqualitySection : Phase2Node {
         chalkTransformer(this)
 }
 
-internal fun validateEqualitySection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "equality", DEFAULT_EQUALITY_SECTION) {
-            EqualitySection()
-        }
+internal fun validateEqualitySection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "equality", DEFAULT_EQUALITY_SECTION) {
+        EqualitySection(node.row, node.column)
     }

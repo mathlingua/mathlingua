@@ -22,13 +22,13 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_BY_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class BySection(val statement: Statement) : Phase2Node {
+internal data class BySection(
+    val statement: Statement, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
@@ -41,16 +41,13 @@ internal data class BySection(val statement: Statement) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(BySection(statement = chalkTransformer(statement) as Statement))
+        chalkTransformer(
+            BySection(statement = chalkTransformer(statement) as Statement, row, column))
 }
 
-internal fun validateBySection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "by", DEFAULT_BY_SECTION) {
-            validateSingleArg(it, errors, DEFAULT_BY_SECTION, "statement") {
-                BySection(statement = validateStatement(it, errors, tracker))
-            }
+internal fun validateBySection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "by", DEFAULT_BY_SECTION) {
+        validateSingleArg(it, errors, DEFAULT_BY_SECTION, "statement") {
+            BySection(statement = validateStatement(it, errors), node.row, node.column)
         }
     }

@@ -57,6 +57,9 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
     val errors = mutableListOf<ParseError>()
 
     fun root(): Root {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         val groups = mutableListOf<GroupOrBlockComment>()
         while (hasNext()) {
             while (true) {
@@ -78,10 +81,13 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
             addError("Unrecognized token " + next.text, next)
         }
 
-        return Root(groups)
+        return Root(groups, row, column)
     }
 
     private fun blockComment(): BlockComment? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         if (has(ChalkTalkTokenType.Linebreak)) {
             next() // absorb the line break
         }
@@ -90,10 +96,13 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
             return null
         }
 
-        return BlockComment(next().text)
+        return BlockComment(next().text, row, column)
     }
 
     private fun group(): Group? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         if (has(ChalkTalkTokenType.Linebreak)) {
             next() // absorb the line break
         }
@@ -112,10 +121,13 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
             sections.add(sec)
         }
 
-        return if (sections.isEmpty()) null else Group(sections, id)
+        return if (sections.isEmpty()) null else Group(sections, id, row, column)
     }
 
     private fun section(): Section? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)) {
             return null
         }
@@ -144,7 +156,7 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         expect(ChalkTalkTokenType.End)
 
-        return Section(name, args)
+        return Section(name, args, row, column)
     }
 
     private fun argumentList(): List<Argument>? {
@@ -154,9 +166,12 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         expect(ChalkTalkTokenType.DotSpace)
 
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         val grp = group()
         if (grp != null) {
-            return listOf(Argument(grp))
+            return listOf(Argument(grp, row, column))
         }
 
         val argList = mutableListOf<Argument>()
@@ -186,20 +201,26 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
     }
 
     private fun argument(): Argument? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         val literal = token(ChalkTalkTokenType.Statement) ?: token(ChalkTalkTokenType.String)
         if (literal != null) {
-            return Argument(literal)
+            return Argument(literal, row, column)
         }
 
         val target = tupleItem()
         if (target == null) {
             addError("Expected a name, abstraction, tuple, aggregate, or assignment")
-            return Argument(INVALID)
+            return Argument(INVALID, -1, -1)
         }
-        return Argument(target)
+        return Argument(target, row, column)
     }
 
     private fun assignment(): Assignment? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         if (!hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.ColonEquals)) {
             return null
         }
@@ -211,10 +232,13 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
             addError("A := must be followed by a argument", colonEquals)
             rhs = INVALID
         }
-        return Assignment(name, rhs)
+        return Assignment(name, rhs, row, column)
     }
 
     private fun abstraction(): Abstraction? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         var isEnclosed = false
         var openCurly: Phase1Token? = null
         if (has(ChalkTalkTokenType.LCurly)) {
@@ -263,11 +287,14 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
         return if (!isEnclosed && parts.isEmpty()) {
             null
         } else {
-            Abstraction(isEnclosed, isVarArgs, parts, subParams)
+            Abstraction(isEnclosed, isVarArgs, parts, subParams, row, column)
         }
     }
 
     private fun abstractionPart(): AbstractionPart? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         if (!has(ChalkTalkTokenType.Name)) {
             return null
         }
@@ -313,7 +340,7 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
             tail = abstractionPart()
         }
 
-        return AbstractionPart(id, subParams, names, tail)
+        return AbstractionPart(id, subParams, names, tail, row, column)
     }
 
     private fun name(): Phase1Token {
@@ -330,6 +357,9 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
     }
 
     private fun tuple(): Tuple? {
+        val row = chalkTalkLexer.row()
+        val column = chalkTalkLexer.column()
+
         if (!has(ChalkTalkTokenType.LParen)) {
             return null
         }
@@ -351,7 +381,7 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
         }
         expect(ChalkTalkTokenType.RParen)
 
-        return Tuple(items)
+        return Tuple(items, row, column)
     }
 
     private fun assignmentRhs(): AssignmentRhs? {

@@ -6,11 +6,19 @@ Document(
                  names = [
                            ""A name""
                          ]
+                 row = 1
+                 column = 0
                )
                contentSection = ContentSection(
                  text = ""This is a topic""
+                 row = 2
+                 column = 0
                )
                metaDataSection = null
+               row = 1
+               column = 0
              )
            ]
+  row = 1
+  column = 0
 )

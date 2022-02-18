@@ -17,19 +17,14 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXTENDING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATEMENT
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.LocationTracker
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
@@ -37,7 +32,9 @@ import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.TupleNode
 
-internal data class MeansSection(val statements: List<Statement>) : Phase2Node {
+internal data class MeansSection(
+    val statements: List<Statement>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = statements.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -62,57 +59,52 @@ internal data class MeansSection(val statements: List<Statement>) : Phase2Node {
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             MeansSection(
-                statements = statements.map { it.transform(chalkTransformer) as Statement }))
+                statements = statements.map { it.transform(chalkTransformer) as Statement },
+                row,
+                column))
 }
 
-internal fun validateExtendingSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, DEFAULT_EXTENDING_SECTION) {
-            if (it.args.isEmpty()) {
-                errors.add(
-                    ParseError(
-                        message = "Expected at least 1 statements but found 0",
-                        row = getRow(node),
-                        column = getColumn(node)))
+internal fun validateExtendingSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, DEFAULT_EXTENDING_SECTION) {
+        if (it.args.isEmpty()) {
+            errors.add(
+                ParseError(
+                    message = "Expected at least 1 statements but found 0",
+                    row = node.row,
+                    column = node.column))
+            DEFAULT_EXTENDING_SECTION
+        } else {
+            val errorsBefore = errors.size
+            val statements =
+                it.args.map { arg ->
+                    val statement = validateStatement(arg, errors)
+                    if (statement.texTalkRoot !is ValidationSuccess ||
+                        statement.texTalkRoot.value.children.size != 1 ||
+                        (statement.texTalkRoot.value.children[0] !is IsTexTalkNode &&
+                            statement.texTalkRoot.value.children[0] !is InTexTalkNode &&
+                            statement.texTalkRoot.value.children[0] !is ColonEqualsTexTalkNode)) {
+                        errors.add(
+                            ParseError(
+                                message = "Expected an 'is', 'in', or ':=' statement",
+                                row = arg.row,
+                                column = arg.column))
+                        DEFAULT_STATEMENT
+                    } else {
+                        statement
+                    }
+                }
+
+            if (errors.size != errorsBefore) {
                 DEFAULT_EXTENDING_SECTION
             } else {
-                val errorsBefore = errors.size
-                val statements =
-                    it.args.map { arg ->
-                        val statement = validateStatement(arg, errors, tracker)
-                        if (statement.texTalkRoot !is ValidationSuccess ||
-                            statement.texTalkRoot.value.children.size != 1 ||
-                            (statement.texTalkRoot.value.children[0] !is IsTexTalkNode &&
-                                statement.texTalkRoot.value.children[0] !is InTexTalkNode &&
-                                statement.texTalkRoot.value.children[
-                                    0] !is ColonEqualsTexTalkNode)) {
-                            errors.add(
-                                ParseError(
-                                    message = "Expected an 'is', 'in', or ':=' statement",
-                                    row = getRow(arg),
-                                    column = getColumn(arg)))
-                            DEFAULT_STATEMENT
-                        } else {
-                            statement
-                        }
-                    }
-
-                if (errors.size != errorsBefore) {
+                val validationErrors =
+                    verifyStatementsForms(
+                        statements, Location(row = node.row, column = node.column))
+                if (validationErrors.isNotEmpty()) {
+                    errors.addAll(validationErrors)
                     DEFAULT_EXTENDING_SECTION
                 } else {
-                    val validationErrors =
-                        verifyStatementsForms(
-                            statements,
-                            tracker,
-                            Location(row = getRow(node), column = getColumn(node)))
-                    if (validationErrors.isNotEmpty()) {
-                        errors.addAll(validationErrors)
-                        DEFAULT_EXTENDING_SECTION
-                    } else {
-                        MeansSection(statements = statements)
-                    }
+                    MeansSection(statements = statements, node.row, node.column)
                 }
             }
         }
@@ -121,7 +113,7 @@ internal fun validateExtendingSection(
 // thus function assumes each statement is of the form `... is ...` or
 // `... in ...`, or `... := ...`
 private fun verifyStatementsForms(
-    statements: List<Statement>, tracker: LocationTracker, fallbackLocation: Location
+    statements: List<Statement>, fallbackLocation: Location
 ): List<ParseError> {
     if (statements.isEmpty()) {
         return listOf(
@@ -143,13 +135,12 @@ private fun verifyStatementsForms(
     for (stmt in statements) {
         val first = (stmt.texTalkRoot as ValidationSuccess).value.children[0]
         if (first !is IsTexTalkNode) {
-            val location = tracker.getLocationOf(stmt) ?: fallbackLocation
             errors.add(
                 ParseError(
                     message =
                         "If multiple statements are provided they all must be `is` statements",
-                    row = location.row,
-                    column = location.column))
+                    row = stmt.row,
+                    column = stmt.column))
         }
     }
 
@@ -166,12 +157,11 @@ private fun verifyStatementsForms(
             first.lhs.items[0].children[0] is TupleNode) {
             null
         } else {
-            val location = tracker.getLocationOf(it) ?: fallbackLocation
             ParseError(
                 message =
                     "If multiple `is` statements are provided, they must be of the form `(...) is ...`",
-                row = location.row,
-                column = location.column)
+                row = it.row,
+                column = it.column)
         }
     }
 }

@@ -28,12 +28,20 @@ Root(
                                                                        row = 2
                                                                        column = 8
                                                                      )
+                                                                     row = 2
+                                                                     column = 8
                                                                    )
                                                                  ]
+                                                          row = 2
+                                                          column = 2
                                                         )
                                                       ]
                                            id = null
+                                           row = 2
+                                           column = 2
                                          )
+                                         row = 2
+                                         column = 2
                                        ),
                                        Argument(
                                          chalkTalkTarget = Group(
@@ -53,14 +61,24 @@ Root(
                                                                        row = 3
                                                                        column = 8
                                                                      )
+                                                                     row = 3
+                                                                     column = 8
                                                                    )
                                                                  ]
+                                                          row = 3
+                                                          column = 2
                                                         )
                                                       ]
                                            id = null
+                                           row = 3
+                                           column = 2
                                          )
+                                         row = 3
+                                         column = 2
                                        )
                                      ]
+                              row = 1
+                              column = 0
                             )
                           ]
                id = Phase1Token(
@@ -69,6 +87,10 @@ Root(
                  row = 0
                  column = 0
                )
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

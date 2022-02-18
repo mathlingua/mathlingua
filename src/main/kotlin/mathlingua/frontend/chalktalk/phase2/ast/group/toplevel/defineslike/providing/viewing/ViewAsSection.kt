@@ -22,13 +22,13 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_VIEW_AS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ViewAsSection(val statement: Statement) : Phase2Node {
+internal data class ViewAsSection(
+    val statement: Statement, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(statement)
     }
@@ -41,16 +41,13 @@ internal data class ViewAsSection(val statement: Statement) : Phase2Node {
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(ViewAsSection(statement = chalkTransformer(statement) as Statement))
+        chalkTransformer(
+            ViewAsSection(statement = chalkTransformer(statement) as Statement, row, column))
 }
 
-internal fun validateViewingAsSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "as", DEFAULT_VIEW_AS_SECTION) {
-            validateSingleArg(it, errors, DEFAULT_VIEW_AS_SECTION, "statement") {
-                ViewAsSection(statement = validateStatement(it, errors, tracker))
-            }
+internal fun validateViewingAsSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "as", DEFAULT_VIEW_AS_SECTION) {
+        validateSingleArg(it, errors, DEFAULT_VIEW_AS_SECTION, "statement") {
+            ViewAsSection(statement = validateStatement(it, errors), node.row, node.column)
         }
     }

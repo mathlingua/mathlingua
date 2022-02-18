@@ -28,7 +28,9 @@ import mathlingua.getRandomUuid
 
 internal abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
-internal class TopLevelBlockComment(val blockComment: BlockComment) : TopLevelGroup(null) {
+internal class TopLevelBlockComment(
+    val blockComment: BlockComment, override val row: Int, override val column: Int
+) : TopLevelGroup(null) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {

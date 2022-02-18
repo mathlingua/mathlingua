@@ -23,12 +23,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WHEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class WhenSection(
+    val clauses: ClauseListNode, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -43,16 +43,13 @@ internal data class WhenSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            WhenSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            WhenSection(
+                clauses = clauses.transform(chalkTransformer) as ClauseListNode, row, column))
 }
 
 internal fun isWhenSection(sec: Section) = sec.name.text == "when"
 
-internal fun validateWhenSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "when", DEFAULT_WHEN_SECTION) {
-            WhenSection(clauses = validateClauseListNode(it, errors, tracker))
-        }
+internal fun validateWhenSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "when", DEFAULT_WHEN_SECTION) {
+        WhenSection(clauses = validateClauseListNode(it, errors), node.row, node.column)
     }

@@ -27,31 +27,31 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.validateBySection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class HaveGroup(val haveSection: HaveSection, val bySection: BySection) :
-    TwoPartNode<HaveSection, BySection>(haveSection, bySection, ::HaveGroup), Clause
+internal data class HaveGroup(
+    val haveSection: HaveSection,
+    val bySection: BySection,
+    override val row: Int,
+    override val column: Int
+) : TwoPartNode<HaveSection, BySection>(haveSection, bySection, row, column, ::HaveGroup), Clause
 
 internal fun isHaveGroup(node: Phase1Node) = firstSectionMatchesName(node, "have")
 
-internal fun validateHaveGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "have", DEFAULT_HAVE_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_HAVE_GROUP, listOf("have", "by")) { sections ->
-                HaveGroup(
-                    haveSection =
-                        ensureNonNull(sections["have"], DEFAULT_HAVE_SECTION) {
-                            validateHaveSection(it, errors, tracker)
-                        },
-                    bySection =
-                        ensureNonNull(sections["by"], DEFAULT_BY_SECTION) {
-                            validateBySection(it, errors, tracker)
-                        })
-            }
+internal fun validateHaveGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "have", DEFAULT_HAVE_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_HAVE_GROUP, listOf("have", "by")) { sections ->
+            HaveGroup(
+                haveSection =
+                    ensureNonNull(sections["have"], DEFAULT_HAVE_SECTION) {
+                        validateHaveSection(it, errors)
+                    },
+                bySection =
+                    ensureNonNull(sections["by"], DEFAULT_BY_SECTION) {
+                        validateBySection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

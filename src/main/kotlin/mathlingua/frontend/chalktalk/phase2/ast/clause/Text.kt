@@ -22,12 +22,11 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TEXT
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class Text(val text: String) : Clause {
+internal data class Text(val text: String, override val row: Int, override val column: Int) :
+    Clause {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -43,20 +42,16 @@ internal data class Text(val text: String) : Clause {
 internal fun isText(node: Phase1Node) =
     node is Phase1Token && node.type === ChalkTalkTokenType.String
 
-internal fun validateText(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateByTransform(
-            node = node.resolve(),
-            errors = errors,
-            default = DEFAULT_TEXT,
-            message = "Expected text",
-            transform = {
-                if (it is Phase1Token && it.type == ChalkTalkTokenType.String) {
-                    it
-                } else {
-                    null
-                }
-            }) { Text(text = it.text) }
-    }
+internal fun validateText(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateByTransform(
+        node = node.resolve(),
+        errors = errors,
+        default = DEFAULT_TEXT,
+        message = "Expected text",
+        transform = {
+            if (it is Phase1Token && it.type == ChalkTalkTokenType.String) {
+                it
+            } else {
+                null
+            }
+        }) { n, row, column -> Text(text = n.text, row, column) }

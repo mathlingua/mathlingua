@@ -30,6 +30,7 @@ internal fun buildIndent(level: Int, isArg: Boolean): String {
     return buffer.toString()
 }
 
+/*
 internal fun getRow(node: Phase1Node): Int {
     if (node is Phase1Token) {
         return node.row
@@ -61,3 +62,4 @@ internal fun getColumn(node: Phase1Node): Int {
     }
     return colResult
 }
+*/

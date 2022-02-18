@@ -24,12 +24,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class ProvidedSection(val clauses: ClauseListNode) : Phase2Node {
+internal data class ProvidedSection(
+    val clauses: ClauseListNode, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -48,16 +48,13 @@ internal data class ProvidedSection(val clauses: ClauseListNode) : Phase2Node {
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            ProvidedSection(clauses = clauses.transform(chalkTransformer) as ClauseListNode))
+            ProvidedSection(
+                clauses = clauses.transform(chalkTransformer) as ClauseListNode, row, column))
 }
 
 internal fun isProvidedSection(sec: Section) = sec.name.text == "provided"
 
-internal fun validateProvidedSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "provided", DEFAULT_PROVIDED_SECTION) {
-            ProvidedSection(clauses = validateClauseListNode(it, errors, tracker))
-        }
+internal fun validateProvidedSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "provided", DEFAULT_PROVIDED_SECTION) {
+        ProvidedSection(clauses = validateClauseListNode(it, errors), node.row, node.column)
     }

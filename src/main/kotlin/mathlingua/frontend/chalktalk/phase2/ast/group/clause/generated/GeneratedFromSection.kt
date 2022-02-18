@@ -17,19 +17,16 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_GENERATED_FROM_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
-import mathlingua.frontend.support.Location
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal data class GeneratedFromSection(val forms: List<AbstractionNode>) : Phase2Node {
+internal data class GeneratedFromSection(
+    val forms: List<AbstractionNode>, override val row: Int, override val column: Int
+) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         forms.forEach(fn)
     }
@@ -47,38 +44,36 @@ internal data class GeneratedFromSection(val forms: List<AbstractionNode>) : Pha
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
             GeneratedFromSection(
-                forms = forms.map { it.transform(chalkTransformer) as AbstractionNode }))
+                forms = forms.map { it.transform(chalkTransformer) as AbstractionNode },
+                row,
+                column))
 }
 
-internal fun validateGeneratedFromSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateTargetSection(
-            node.resolve(), errors, "from", DEFAULT_GENERATED_FROM_SECTION, tracker) { targets ->
-            var errorFound = false
-            for (target in targets) {
-                if (target !is AbstractionNode ||
-                    target.abstraction.isVarArgs ||
-                    target.abstraction.isEnclosed ||
-                    target.abstraction.parts.size > 1 ||
-                    target.abstraction.subParams != null) {
-                    errorFound = true
-                    val location =
-                        tracker.getLocationOf(target)
-                            ?: Location(row = getRow(node), column = getColumn(node))
-                    errors.add(
-                        ParseError(
-                            message = "Expected a target of the form `X` or `f(x)`",
-                            row = location.row,
-                            column = location.column))
-                }
+internal fun validateGeneratedFromSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateTargetSection(
+        node.resolve(), errors, "from", DEFAULT_GENERATED_FROM_SECTION, node.row, node.column) {
+    targets,
+    row,
+    column ->
+        var errorFound = false
+        for (target in targets) {
+            if (target !is AbstractionNode ||
+                target.abstraction.isVarArgs ||
+                target.abstraction.isEnclosed ||
+                target.abstraction.parts.size > 1 ||
+                target.abstraction.subParams != null) {
+                errorFound = true
+                errors.add(
+                    ParseError(
+                        message = "Expected a target of the form `X` or `f(x)`",
+                        row = node.row,
+                        column = node.column))
             }
+        }
 
-            if (errorFound) {
-                DEFAULT_GENERATED_FROM_SECTION
-            } else {
-                GeneratedFromSection(forms = targets.map { it as AbstractionNode })
-            }
+        if (errorFound) {
+            DEFAULT_GENERATED_FROM_SECTION
+        } else {
+            GeneratedFromSection(forms = targets.map { it as AbstractionNode }, row, column)
         }
     }

@@ -18,8 +18,6 @@ package mathlingua.frontend.chalktalk.phase2.ast.section
 
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.Section
-import mathlingua.frontend.chalktalk.phase1.ast.getColumn
-import mathlingua.frontend.chalktalk.phase1.ast.getRow
 import mathlingua.frontend.support.ParseError
 import mathlingua.newQueue
 
@@ -110,8 +108,8 @@ internal fun identifySections(
                     "' but found '" +
                     nextSection.name.text +
                     "'",
-                getRow(nextSection),
-                getColumn(nextSection))
+                nextSection.row,
+                nextSection.column)
         }
     }
 
@@ -119,8 +117,8 @@ internal fun identifySections(
         val peek = sectionQueue.peek()
         throw ParseError(
             "For pattern:\n\n" + pattern + "\nUnexpected Section '" + peek.name.text + "'",
-            getRow(peek),
-            getColumn(peek))
+            peek.row,
+            peek.column)
     }
 
     var nextExpected: String? = null
@@ -136,8 +134,8 @@ internal fun identifySections(
     var startColumn = -1
     if (sections.isNotEmpty()) {
         val sect = sections[0]
-        startRow = getRow(sect)
-        startColumn = getColumn(sect)
+        startRow = sect.row
+        startColumn = sect.column
     }
 
     if (nextExpected != null) {

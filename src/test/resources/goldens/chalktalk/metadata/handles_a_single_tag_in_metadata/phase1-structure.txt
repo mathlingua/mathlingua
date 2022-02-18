@@ -11,6 +11,8 @@ Root(
                               )
                               args = [
                                      ]
+                              row = 0
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -27,8 +29,12 @@ Root(
                                            row = 2
                                            column = 2
                                          )
+                                         row = 2
+                                         column = 2
                                        )
                                      ]
+                              row = 1
+                              column = 0
                             ),
                             Section(
                               name = Phase1Token(
@@ -56,17 +62,31 @@ Root(
                                                                        row = 5
                                                                        column = 4
                                                                      )
+                                                                     row = 5
+                                                                     column = 4
                                                                    )
                                                                  ]
+                                                          row = 4
+                                                          column = 2
                                                         )
                                                       ]
                                            id = null
+                                           row = 4
+                                           column = 2
                                          )
+                                         row = 4
+                                         column = 2
                                        )
                                      ]
+                              row = 3
+                              column = 0
                             )
                           ]
                id = null
+               row = 0
+               column = 0
              )
            ]
+  row = 0
+  column = 0
 )

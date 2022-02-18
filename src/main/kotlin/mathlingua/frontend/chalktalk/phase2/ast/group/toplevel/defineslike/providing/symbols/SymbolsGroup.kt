@@ -25,33 +25,32 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class SymbolsGroup(
-    val symbolsSection: SymbolsSection, val whereSection: WhereSection?
+    val symbolsSection: SymbolsSection,
+    val whereSection: WhereSection?,
+    override val row: Int,
+    override val column: Int
 ) :
-    TwoPartNode<SymbolsSection, WhereSection?>(symbolsSection, whereSection, ::SymbolsGroup),
+    TwoPartNode<SymbolsSection, WhereSection?>(
+        symbolsSection, whereSection, row, column, ::SymbolsGroup),
     Clause
 
 internal fun isSymbolsGroup(node: Phase1Node) = firstSectionMatchesName(node, "symbols")
 
-internal fun validateSymbolsGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "symbols", DEFAULT_SYMBOLS_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_SYMBOLS_GROUP, listOf("symbols", "where?")) {
-            sections ->
-                SymbolsGroup(
-                    symbolsSection =
-                        ensureNonNull(sections["symbols"], DEFAULT_SYMBOLS_SECTION) {
-                            validateSymbolsSection(it, errors, tracker)
-                        },
-                    whereSection =
-                        ifNonNull(sections["where"]) { validateWhereSection(it, errors, tracker) })
-            }
+internal fun validateSymbolsGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "symbols", DEFAULT_SYMBOLS_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_SYMBOLS_GROUP, listOf("symbols", "where?")) {
+        sections ->
+            SymbolsGroup(
+                symbolsSection =
+                    ensureNonNull(sections["symbols"], DEFAULT_SYMBOLS_SECTION) {
+                        validateSymbolsSection(it, errors)
+                    },
+                whereSection = ifNonNull(sections["where"]) { validateWhereSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

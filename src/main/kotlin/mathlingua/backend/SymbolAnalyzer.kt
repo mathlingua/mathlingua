@@ -28,10 +28,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.newLocationTracker
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
@@ -39,19 +37,19 @@ import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal interface SymbolAnalyzer {
-    fun findInvalidTypes(grp: TopLevelGroup, tracker: MutableLocationTracker): List<ParseError>
+    fun findInvalidTypes(grp: TopLevelGroup): List<ParseError>
     fun getTypePaths(startSignature: String): List<List<String>>
 }
 
 internal fun newSymbolAnalyzer(
-    defines: List<Pair<ValueSourceTracker<Signature>, DefinesGroup>>
+    defines: List<Pair<ValueAndSource<Signature>, DefinesGroup>>
 ): SymbolAnalyzer {
     return SymbolAnalyzerImpl(defines)
 }
 
 // -----------------------------------------------------------------------------
 
-private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature>, DefinesGroup>>) :
+private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, DefinesGroup>>) :
     SymbolAnalyzer {
     private val signatureMap = mutableMapOf<String, Set<String>>()
 
@@ -62,8 +60,7 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature
             val name = getTargetName(def.definesSection.targets[0])
             val defSignatures = mutableSetOf<String>()
             if (name != null) {
-                defSignatures.addAll(
-                    getDefSignatures(def, name, pair.first.tracker ?: newLocationTracker()))
+                defSignatures.addAll(getDefSignatures(def, name))
             }
 
             if (def.providingSection != null) {
@@ -117,11 +114,9 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature
         }
     }
 
-    private fun getAllTypes(
-        node: Phase2Node, target: String, tracker: MutableLocationTracker
-    ): List<Command> {
+    private fun getAllTypes(node: Phase2Node, target: String): List<Command> {
         val result = mutableListOf<Command>()
-        getAllTypesImpl(normalize(node, tracker), target, result)
+        getAllTypesImpl(normalize(node), target, result)
         return result
     }
 
@@ -207,15 +202,13 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature
         }
     }
 
-    override fun findInvalidTypes(
-        grp: TopLevelGroup, tracker: MutableLocationTracker
-    ): List<ParseError> {
-        val group = normalize(grp, tracker)
+    override fun findInvalidTypes(grp: TopLevelGroup): List<ParseError> {
+        val group = normalize(grp)
         val errors = mutableListOf<ParseError>()
         val names = findAllNames(group)
         for (name in names) {
             val allPaths = mutableListOf<List<String>>()
-            for (sig in getDefSignatures(group, name.name, tracker)) {
+            for (sig in getDefSignatures(group, name.name)) {
                 allPaths.addAll(getTypePaths(sig))
             }
             val baseTypes = mutableSetOf<String>()
@@ -223,7 +216,6 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature
                 baseTypes.add(path.last())
             }
             if (baseTypes.size > 1) {
-                val location = tracker.getLocationOf(name.statement)
                 val builder = StringBuilder()
                 builder.append(
                     "'${name.name}' has more than one base type: {${baseTypes.toList().joinToString(", ")}}\n")
@@ -233,17 +225,15 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueSourceTracker<Signature
                 errors.add(
                     ParseError(
                         message = builder.toString(),
-                        row = location?.row ?: -1,
-                        column = location?.column ?: -1))
+                        row = name.statement.row,
+                        column = name.statement.column))
             }
         }
         return errors
     }
 
-    private fun getDefSignatures(
-        node: Phase2Node, name: String, tracker: MutableLocationTracker
-    ): Set<String> {
-        val commands = getAllTypes(node, name, tracker)
+    private fun getDefSignatures(node: Phase2Node, name: String): Set<String> {
+        val commands = getAllTypes(node, name)
         val typeSet = mutableSetOf<String>()
         for (cmd in commands) {
             typeSet.add(cmd.signature())

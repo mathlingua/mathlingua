@@ -18,7 +18,7 @@ package mathlingua.cli
 
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.SourceFile
-import mathlingua.backend.ValueSourceTracker
+import mathlingua.backend.ValueAndSource
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.validationFailure
@@ -171,7 +171,7 @@ internal fun getCompleteRenderedTopLevelElements(
     f: VirtualFile,
     sourceCollection: SourceCollection,
     noexpand: Boolean,
-    errors: MutableList<ValueSourceTracker<ParseError>>
+    errors: MutableList<ValueAndSource<ParseError>>
 ): List<RenderedTopLevelElement> {
     val result = mutableListOf<RenderedTopLevelElement>()
     val expandedPair =
@@ -180,11 +180,10 @@ internal fun getCompleteRenderedTopLevelElements(
         sourceCollection.prettyPrint(file = f, html = true, literal = true, doExpand = false)
     errors.addAll(
         expandedPair.second.map {
-            ValueSourceTracker(
+            ValueAndSource(
                 value = it,
                 source =
-                    SourceFile(file = f, content = "", validation = validationFailure(emptyList())),
-                tracker = null)
+                    SourceFile(file = f, content = "", validation = validationFailure(emptyList())))
         })
     for (i in 0 until expandedPair.first.size) {
         result.add(

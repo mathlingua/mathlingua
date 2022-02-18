@@ -21,12 +21,11 @@ import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_POSITIVE_FLOAT_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
-internal class PositiveFloatSection : Phase2Node {
+internal data class PositiveFloatSection(override val row: Int, override val column: Int) :
+    Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -41,11 +40,7 @@ internal class PositiveFloatSection : Phase2Node {
 
 internal fun isPositiveFloatSection(section: Section) = section.name.text == "positiveFloat"
 
-internal fun validatePositiveFloatSection(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateSection(node.resolve(), errors, "positiveFloat", DEFAULT_POSITIVE_FLOAT_SECTION) {
-            PositiveFloatSection()
-        }
+internal fun validatePositiveFloatSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "positiveFloat", DEFAULT_POSITIVE_FLOAT_SECTION) {
+        PositiveFloatSection(node.row, node.column)
     }

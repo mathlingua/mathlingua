@@ -28,36 +28,33 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.s
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class SiteGroup(
-    val siteItemSection: SiteItemSection, val nameItemSection: NameItemSection?
+    val siteItemSection: SiteItemSection,
+    val nameItemSection: NameItemSection?,
+    override val row: Int,
+    override val column: Int
 ) :
-    TwoPartNode<SiteItemSection, NameItemSection?>(siteItemSection, nameItemSection, ::SiteGroup),
+    TwoPartNode<SiteItemSection, NameItemSection?>(
+        siteItemSection, nameItemSection, row, column, ::SiteGroup),
     MetaDataItem,
     ResourceItem
 
 internal fun isSiteGroup(node: Phase1Node) = firstSectionMatchesName(node, "site")
 
-internal fun validateSiteGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "site", DEFAULT_SITE_GROUP) { group ->
-            identifySections(group, errors, DEFAULT_SITE_GROUP, listOf("site", "name?")) {
-            sections ->
-                SiteGroup(
-                    siteItemSection =
-                        ensureNonNull(sections["site"], DEFAULT_SITE_ITEM_SECTION) {
-                            validateSiteItemSection(it, errors, tracker)
-                        },
-                    nameItemSection =
-                        ifNonNull(sections["name"]) {
-                            validateNameItemSection(it, errors, tracker)
-                        })
-            }
+internal fun validateSiteGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "site", DEFAULT_SITE_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_SITE_GROUP, listOf("site", "name?")) { sections ->
+            SiteGroup(
+                siteItemSection =
+                    ensureNonNull(sections["site"], DEFAULT_SITE_ITEM_SECTION) {
+                        validateSiteItemSection(it, errors)
+                    },
+                nameItemSection =
+                    ifNonNull(sections["name"]) { validateNameItemSection(it, errors) },
+                row = node.row,
+                column = node.column)
         }
     }

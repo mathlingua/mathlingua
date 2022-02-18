@@ -27,35 +27,35 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.NumberGro
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.validateIsSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
-import mathlingua.frontend.chalktalk.phase2.ast.track
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
-import mathlingua.frontend.support.MutableLocationTracker
 import mathlingua.frontend.support.ParseError
 
 internal data class NegativeIntGroup(
-    val negativeIntSection: NegativeIntSection, val isSection: IsSection
+    val negativeIntSection: NegativeIntSection,
+    val isSection: IsSection,
+    override val row: Int,
+    override val column: Int
 ) :
-    TwoPartNode<NegativeIntSection, IsSection>(negativeIntSection, isSection, ::NegativeIntGroup),
+    TwoPartNode<NegativeIntSection, IsSection>(
+        negativeIntSection, isSection, row, column, ::NegativeIntGroup),
     NumberGroup
 
 internal fun isNegativeIntGroup(node: Phase1Node) = firstSectionMatchesName(node, "negativeInt")
 
-internal fun validateNegativeIntGroup(
-    node: Phase1Node, errors: MutableList<ParseError>, tracker: MutableLocationTracker
-) =
-    track(node, tracker) {
-        validateGroup(node.resolve(), errors, "negativeInt", DEFAULT_NEGATIVE_INT_GROUP) { group ->
-            identifySections(
-                group, errors, DEFAULT_NEGATIVE_INT_GROUP, listOf("negativeInt", "is")) {
-            sections ->
-                NegativeIntGroup(
-                    negativeIntSection =
-                        ensureNonNull(sections["negativeInt"], DEFAULT_NEGATIVE_INT_SECTION) {
-                            validateNegativeIntSection(it, errors, tracker)
-                        },
+internal fun validateNegativeIntGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "negativeInt", DEFAULT_NEGATIVE_INT_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_NEGATIVE_INT_GROUP, listOf("negativeInt", "is")) {
+        sections ->
+            NegativeIntGroup(
+                negativeIntSection =
+                    ensureNonNull(sections["negativeInt"], DEFAULT_NEGATIVE_INT_SECTION) {
+                        validateNegativeIntSection(it, errors)
+                    },
+                isSection =
                     ensureNonNull(sections["is"], DEFAULT_IS_SECTION) {
-                        validateIsSection(it, errors, tracker)
-                    })
-            }
+                        validateIsSection(it, errors)
+                    },
+                row = node.row,
+                column = node.column)
         }
     }

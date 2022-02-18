@@ -21,7 +21,7 @@ import mathlingua.backend.SourceFile
 import mathlingua.backend.ValueAndSource
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.support.ParseError
-import mathlingua.frontend.support.validationFailure
+import mathlingua.frontend.support.ValidationFailure
 
 internal fun bold(text: String) = "\u001B[1m$text\u001B[0m".onWindowsReturn(text)
 
@@ -183,7 +183,7 @@ internal fun getCompleteRenderedTopLevelElements(
             ValueAndSource(
                 value = it,
                 source =
-                    SourceFile(file = f, content = "", validation = validationFailure(emptyList())))
+                    SourceFile(file = f, content = "", validation = ValidationFailure(emptyList())))
         })
     for (i in 0 until expandedPair.first.size) {
         result.add(

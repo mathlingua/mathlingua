@@ -41,7 +41,7 @@ private data class SearchIndexImpl(val fs: VirtualFileSystem) : SearchIndex {
         ) {
             is ValidationSuccess -> {
                 val relPath = sf.file.relativePath()
-                val doc = validation.value.document
+                val doc = validation.value
                 for (grp in doc.groups) {
                     for (word in getAllWords(grp)) {
                         val key = word.lowercase()

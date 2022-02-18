@@ -22,7 +22,6 @@ import mathlingua.frontend.chalktalk.phase2.hasChild
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
-import mathlingua.frontend.support.validationSuccess
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.CommandPart
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
@@ -87,7 +86,7 @@ internal fun replaceCommands(
                             root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
                     Statement(
                         text = newRoot.toCode(),
-                        texTalkRoot = validationSuccess(newRoot),
+                        texTalkRoot = ValidationSuccess(newRoot),
                         it.row,
                         it.column)
                 }
@@ -160,7 +159,7 @@ internal fun glueCommands(
                     val result =
                         Statement(
                             text = newExp.toCode(),
-                            texTalkRoot = validationSuccess(newExp),
+                            texTalkRoot = ValidationSuccess(newExp),
                             it.row,
                             it.column)
                     if (newFollow == null && hasChild(it, follow)) {

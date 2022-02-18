@@ -4,8 +4,8 @@ Document(
                signature = null
                id = IdStatement(
                  text = "A"
-                 texTalkRoot = ValidationSuccessImpl(
-                   v = ExpressionTexTalkNode(
+                 texTalkRoot = ValidationSuccess(
+                   value = ExpressionTexTalkNode(
                      children = [
                                   TextTexTalkNode(
                                     type = TexTalkNodeType.Identifier
@@ -59,8 +59,8 @@ Document(
                    clauses = [
                                Statement(
                                  text = "B is \something"
-                                 texTalkRoot = ValidationSuccessImpl(
-                                   v = ExpressionTexTalkNode(
+                                 texTalkRoot = ValidationSuccess(
+                                   value = ExpressionTexTalkNode(
                                      children = [
                                                   IsTexTalkNode(
                                                     lhs = ParametersTexTalkNode(

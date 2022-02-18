@@ -10,8 +10,8 @@ Document(
                )
                id = IdStatement(
                  text = "\f{x...}"
-                 texTalkRoot = ValidationSuccessImpl(
-                   v = ExpressionTexTalkNode(
+                 texTalkRoot = ValidationSuccess(
+                   value = ExpressionTexTalkNode(
                      children = [
                                   Command(
                                     parts = [
@@ -97,8 +97,8 @@ Document(
                    clauses = [
                                Statement(
                                  text = "X is \something"
-                                 texTalkRoot = ValidationSuccessImpl(
-                                   v = ExpressionTexTalkNode(
+                                 texTalkRoot = ValidationSuccess(
+                                   value = ExpressionTexTalkNode(
                                      children = [
                                                   IsTexTalkNode(
                                                     lhs = ParametersTexTalkNode(

@@ -37,9 +37,6 @@ internal data class ProvidingSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("providing")
-        if (clauses.clauses.isNotEmpty()) {
-            writer.writeNewline()
-        }
         writer.append(clauses, true, indent + 2)
         return writer
     }

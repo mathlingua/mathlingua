@@ -46,8 +46,9 @@ internal data class ViaSection(
 }
 
 internal fun validateViaSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateSection(node.resolve(), errors, "via", DEFAULT_VIA_SECTION) {
-        validateSingleArg(it, errors, DEFAULT_VIA_SECTION, "statement") {
-            ViaSection(statement = validateStatement(it, errors), node.row, node.column)
+    validateSection(node.resolve(), errors, "via", DEFAULT_VIA_SECTION) { sec ->
+        validateSingleArg(sec, errors, DEFAULT_VIA_SECTION, "statement") { arg ->
+            ViaSection(
+                statement = validateStatement(arg, errors, arg.isInline), node.row, node.column)
         }
     }

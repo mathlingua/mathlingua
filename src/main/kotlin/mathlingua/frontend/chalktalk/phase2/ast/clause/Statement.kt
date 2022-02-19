@@ -17,12 +17,13 @@
 package mathlingua.frontend.chalktalk.phase2.ast.clause
 
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.frontend.chalktalk.phase1.ast.Inlineable
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_STATEMENT
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
+import mathlingua.frontend.chalktalk.phase2.ast.validateByInlineableTransform
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
@@ -35,8 +36,9 @@ internal data class Statement(
     val text: String,
     val texTalkRoot: Validation<ExpressionTexTalkNode>,
     override val row: Int,
-    override val column: Int
-) : Clause {
+    override val column: Int,
+    override val isInline: Boolean
+) : Clause, Inlineable {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -52,19 +54,22 @@ internal data class Statement(
 internal fun isStatement(node: Phase1Node) =
     node is Phase1Token && node.type === ChalkTalkTokenType.Statement
 
-internal fun validateStatement(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateByTransform(
+internal fun validateStatement(
+    node: Phase1Node, errors: MutableList<ParseError>, isInline: Boolean
+): Statement =
+    validateByInlineableTransform(
         node = node.resolve(),
         errors = errors,
         default = DEFAULT_STATEMENT,
         message = "Expected a statement",
+        isInline = isInline,
         transform = {
             if (it is Phase1Token && it.type == ChalkTalkTokenType.Statement) {
                 it
             } else {
                 null
             }
-        }) { n, row, column ->
+        }) { n, row, column, inline ->
         // the text is of the form '...'
         // so the open and closing ' need to be trimmed
         val text = n.text.removeSurrounding("'", "'")
@@ -86,5 +91,5 @@ internal fun validateStatement(node: Phase1Node, errors: MutableList<ParseError>
             }
 
         errors.addAll(texTalkErrors)
-        Statement(text = text, texTalkRoot = validation, row, column)
+        Statement(text = text, texTalkRoot = validation, row, column, inline)
     }

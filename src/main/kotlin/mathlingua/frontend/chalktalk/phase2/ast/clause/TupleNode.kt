@@ -16,23 +16,31 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.clause
 
+import mathlingua.frontend.chalktalk.phase1.ast.Inlineable
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Tuple
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TUPLE
 import mathlingua.frontend.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
+import mathlingua.frontend.chalktalk.phase2.ast.validateByInlineableTransform
 import mathlingua.frontend.support.ParseError
 
-internal data class TupleNode(val tuple: Tuple, override val row: Int, override val column: Int) :
-    ZeroPartNode(tuple), Target
+internal data class TupleNode(
+    val tuple: Tuple,
+    override val row: Int,
+    override val column: Int,
+    override val isInline: Boolean
+) : ZeroPartNode(tuple), Target, Inlineable
 
 internal fun isTuple(node: Phase1Node) = node is Tuple
 
-internal fun validateTupleNode(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateByTransform(
+internal fun validateTupleNode(
+    node: Phase1Node, errors: MutableList<ParseError>, isInline: Boolean
+): TupleNode =
+    validateByInlineableTransform(
         node = node.resolve(),
         errors = errors,
         default = DEFAULT_TUPLE,
         message = "Expected a tuple",
+        isInline = isInline,
         transform = { it as? Tuple },
         builder = ::TupleNode)

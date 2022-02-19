@@ -58,7 +58,7 @@ internal fun validateIsSection(node: Phase1Node, errors: MutableList<ParseError>
             DEFAULT_IS_SECTION
         } else {
             val errBefore = errors.size
-            val statement = validateStatement(section.args[0], errors)
+            val statement = validateStatement(section.args[0], errors, section.args[0].isInline)
             if (errBefore != errors.size || statement.texTalkRoot !is ValidationSuccess) {
                 DEFAULT_IS_SECTION
             } else if (statement.texTalkRoot.value.children.size != 1 ||

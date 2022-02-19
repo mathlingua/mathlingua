@@ -40,15 +40,16 @@ internal data class MeansSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("means")
-        if (statements.size == 1) {
-            val stmt = statements.first()
-            writer.writeIndent(false, 1)
-            writer.writeStatement(stmt.text, stmt.texTalkRoot)
-        } else {
-            for (stmt in statements) {
-                if (statements.isNotEmpty()) {
-                    writer.writeNewline()
+        for (i in statements.indices) {
+            val stmt = statements[i]
+            if (stmt.isInline) {
+                if (i != 0) {
+                    writer.writeComma()
                 }
+                writer.writeSpace()
+                writer.writeStatement(stmt.text, stmt.texTalkRoot)
+            } else {
+                writer.writeNewline()
                 writer.writeIndent(true, 2)
                 writer.writeStatement(stmt.text, stmt.texTalkRoot)
             }
@@ -77,7 +78,7 @@ internal fun validateExtendingSection(node: Phase1Node, errors: MutableList<Pars
             val errorsBefore = errors.size
             val statements =
                 it.args.map { arg ->
-                    val statement = validateStatement(arg, errors)
+                    val statement = validateStatement(arg, errors, arg.isInline)
                     if (statement.texTalkRoot !is ValidationSuccess ||
                         statement.texTalkRoot.value.children.size != 1 ||
                         (statement.texTalkRoot.value.children[0] !is IsTexTalkNode &&

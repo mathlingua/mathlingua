@@ -46,8 +46,9 @@ internal data class ViewAsSection(
 }
 
 internal fun validateViewingAsSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateSection(node.resolve(), errors, "as", DEFAULT_VIEW_AS_SECTION) {
-        validateSingleArg(it, errors, DEFAULT_VIEW_AS_SECTION, "statement") {
-            ViewAsSection(statement = validateStatement(it, errors), node.row, node.column)
+    validateSection(node.resolve(), errors, "as", DEFAULT_VIEW_AS_SECTION) { sec ->
+        validateSingleArg(sec, errors, DEFAULT_VIEW_AS_SECTION, "statement") { arg ->
+            ViewAsSection(
+                statement = validateStatement(arg, errors, arg.isInline), node.row, node.column)
         }
     }

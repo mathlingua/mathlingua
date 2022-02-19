@@ -88,7 +88,8 @@ internal fun replaceCommands(
                         text = newRoot.toCode(),
                         texTalkRoot = ValidationSuccess(newRoot),
                         it.row,
-                        it.column)
+                        it.column,
+                        it.isInline)
                 }
             }
         }
@@ -161,7 +162,8 @@ internal fun glueCommands(
                             text = newExp.toCode(),
                             texTalkRoot = ValidationSuccess(newExp),
                             it.row,
-                            it.column)
+                            it.column,
+                            it.isInline)
                     if (newFollow == null && hasChild(it, follow)) {
                         newFollow = result
                     }

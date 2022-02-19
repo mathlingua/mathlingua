@@ -40,11 +40,12 @@ internal data class IdStatement(
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(this)
 
-    fun toStatement() = Statement(text = text, texTalkRoot = texTalkRoot, row, column)
+    fun toStatement() =
+        Statement(text = text, texTalkRoot = texTalkRoot, row, column, isInline = true)
 }
 
 internal fun validateIdStatement(node: Phase1Node, errors: MutableList<ParseError>): IdStatement {
-    val statement = validateStatement(node.resolve(), errors)
+    val statement = validateStatement(node.resolve(), errors, isInline = true)
     return IdStatement(
         text = statement.text, texTalkRoot = statement.texTalkRoot, node.row, node.column)
 }

@@ -34,9 +34,6 @@ internal data class WhereSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("where")
-        if (clauses.clauses.isNotEmpty()) {
-            writer.writeNewline()
-        }
         writer.append(clauses, true, indent + 2)
         return writer
     }

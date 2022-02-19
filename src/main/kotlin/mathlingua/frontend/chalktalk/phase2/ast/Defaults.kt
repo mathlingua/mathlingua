@@ -146,7 +146,8 @@ internal val DEFAULT_ABSTRACTION =
                 row = -1,
                 column = -1),
         row = -1,
-        column = -1)
+        column = -1,
+        isInline = false)
 
 internal val DEFAULT_TOKEN =
     Phase1Token(text = "INVALID", type = ChalkTalkTokenType.Invalid, row = -1, column = -1)
@@ -155,22 +156,32 @@ internal val DEFAULT_ASSIGNMENT =
     AssignmentNode(
         assignment = Assignment(lhs = DEFAULT_TOKEN, rhs = DEFAULT_TOKEN, row = -1, column = -1),
         row = -1,
-        column = -1)
+        column = -1,
+        isInline = false)
 
 internal val DEFAULT_IDENTIFIER =
-    Identifier(name = "INVALID", isVarArgs = false, row = -1, column = -1)
+    Identifier(name = "INVALID", isVarArgs = false, row = -1, column = -1, isInline = false)
 
 internal val DEFAULT_ID_STATEMENT =
     IdStatement(
         text = "INVALID", texTalkRoot = ValidationFailure(emptyList()), row = -1, column = -1)
 
 internal val DEFAULT_STATEMENT =
-    Statement(text = "INVALID", texTalkRoot = ValidationFailure(emptyList()), row = -1, column = -1)
+    Statement(
+        text = "INVALID",
+        texTalkRoot = ValidationFailure(emptyList()),
+        row = -1,
+        column = -1,
+        isInline = false)
 
-internal val DEFAULT_TEXT = Text(text = "INVALID", row = -1, column = -1)
+internal val DEFAULT_TEXT = Text(text = "INVALID", row = -1, column = -1, isInline = false)
 
 internal val DEFAULT_TUPLE =
-    TupleNode(tuple = Tuple(items = emptyList(), row = -1, column = -1), row = -1, column = -1)
+    TupleNode(
+        tuple = Tuple(items = emptyList(), row = -1, column = -1),
+        row = -1,
+        column = -1,
+        isInline = false)
 
 internal val DEFAULT_CLAUSE_LIST_NODE = ClauseListNode(clauses = emptyList(), row = -1, column = -1)
 

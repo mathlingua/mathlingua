@@ -34,9 +34,6 @@ internal data class ElseSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("else")
-        if (clauses.clauses.isNotEmpty()) {
-            writer.writeNewline()
-        }
         writer.append(clauses, true, indent + 2)
         return writer
     }

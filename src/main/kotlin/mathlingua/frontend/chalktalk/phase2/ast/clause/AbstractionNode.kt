@@ -17,23 +17,30 @@
 package mathlingua.frontend.chalktalk.phase2.ast.clause
 
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
+import mathlingua.frontend.chalktalk.phase1.ast.Inlineable
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_ABSTRACTION
 import mathlingua.frontend.chalktalk.phase2.ast.common.ZeroPartNode
-import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
+import mathlingua.frontend.chalktalk.phase2.ast.validateByInlineableTransform
 import mathlingua.frontend.support.ParseError
 
 internal data class AbstractionNode(
-    val abstraction: Abstraction, override val row: Int, override val column: Int
-) : ZeroPartNode(abstraction), Target
+    val abstraction: Abstraction,
+    override val row: Int,
+    override val column: Int,
+    override val isInline: Boolean
+) : ZeroPartNode(abstraction), Target, Inlineable
 
 internal fun isAbstraction(node: Phase1Node) = node is Abstraction
 
-internal fun validateAbstractionNode(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateByTransform(
+internal fun validateAbstractionNode(
+    node: Phase1Node, errors: MutableList<ParseError>, isInline: Boolean
+): AbstractionNode =
+    validateByInlineableTransform(
         node = node.resolve(),
         errors = errors,
         default = DEFAULT_ABSTRACTION,
         message = "Expected an abstraction",
+        isInline = isInline,
         transform = { it as? Abstraction },
         builder = ::AbstractionNode)

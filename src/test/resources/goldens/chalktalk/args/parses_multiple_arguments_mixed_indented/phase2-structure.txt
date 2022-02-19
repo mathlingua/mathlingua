@@ -39,6 +39,7 @@ Document(
                                  )
                                  row = 1
                                  column = 6
+                                 isInline = true
                                ),
                                AbstractionNode(
                                  abstraction = Abstraction(
@@ -65,6 +66,7 @@ Document(
                                  )
                                  row = 1
                                  column = 9
+                                 isInline = true
                                ),
                                AbstractionNode(
                                  abstraction = Abstraction(
@@ -91,6 +93,7 @@ Document(
                                  )
                                  row = 2
                                  column = 2
+                                 isInline = false
                                ),
                                AbstractionNode(
                                  abstraction = Abstraction(
@@ -117,6 +120,7 @@ Document(
                                  )
                                  row = 3
                                  column = 2
+                                 isInline = false
                                ),
                                AbstractionNode(
                                  abstraction = Abstraction(
@@ -143,6 +147,7 @@ Document(
                                  )
                                  row = 3
                                  column = 5
+                                 isInline = true
                                ),
                                AbstractionNode(
                                  abstraction = Abstraction(
@@ -169,6 +174,7 @@ Document(
                                  )
                                  row = 4
                                  column = 2
+                                 isInline = false
                                )
                              ]
                    row = 1

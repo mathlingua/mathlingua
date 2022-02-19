@@ -137,7 +137,7 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         val args = mutableListOf<Argument>()
         while (hasNext() && !has(ChalkTalkTokenType.Begin)) {
-            val arg = argument()
+            val arg = argument(isInline = true)
             arg ?: break
             args.add(arg)
 
@@ -171,17 +171,17 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
 
         val grp = group()
         if (grp != null) {
-            return listOf(Argument(grp, row, column))
+            return listOf(Argument(grp, row, column, isInline = false))
         }
 
         val argList = mutableListOf<Argument>()
-        val valueArg = argument()
+        val valueArg = argument(isInline = false)
         if (valueArg != null) {
             argList.add(valueArg)
 
             while (has(ChalkTalkTokenType.Comma)) {
                 next() // absorb the comma
-                val v = argument()
+                val v = argument(isInline = true)
                 v ?: break
                 argList.add(v)
             }
@@ -200,21 +200,21 @@ private class ParserWorker(private val chalkTalkLexer: ChalkTalkLexer) {
         }
     }
 
-    private fun argument(): Argument? {
+    private fun argument(isInline: Boolean): Argument? {
         val row = chalkTalkLexer.row()
         val column = chalkTalkLexer.column()
 
         val literal = token(ChalkTalkTokenType.Statement) ?: token(ChalkTalkTokenType.String)
         if (literal != null) {
-            return Argument(literal, row, column)
+            return Argument(literal, row, column, isInline)
         }
 
         val target = tupleItem()
         if (target == null) {
             addError("Expected a name, abstraction, tuple, aggregate, or assignment")
-            return Argument(INVALID, -1, -1)
+            return Argument(INVALID, -1, -1, false)
         }
-        return Argument(target, row, column)
+        return Argument(target, row, column, isInline)
     }
 
     private fun assignment(): Assignment? {

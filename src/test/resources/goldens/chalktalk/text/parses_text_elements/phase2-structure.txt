@@ -46,6 +46,7 @@ Document(
                                )
                                row = 1
                                column = 9
+                               isInline = true
                              )
                            ]
                  row = 1
@@ -111,11 +112,13 @@ Document(
                                  )
                                  row = 3
                                  column = 2
+                                 isInline = false
                                ),
                                Text(
                                  text = ""C""
                                  row = 4
                                  column = 2
+                                 isInline = false
                                )
                              ]
                    row = 2

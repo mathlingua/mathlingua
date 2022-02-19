@@ -122,14 +122,12 @@ internal data class ValidationPair<T>(
     val matches: (node: Phase1Node) -> Boolean,
     val validate: (node: Phase1Node, errors: MutableList<ParseError>) -> T)
 
+private data class InlineableValidationPair<T>(
+    val matches: (node: Phase1Node) -> Boolean,
+    val validate: (node: Phase1Node, errors: MutableList<ParseError>, isInline: Boolean) -> T)
+
 private val CLAUSE_VALIDATORS =
     listOf(
-        ValidationPair<Clause>(::isAbstraction, ::validateAbstractionNode),
-        ValidationPair(::isTuple, ::validateTupleNode),
-        ValidationPair(::isAssignment, ::validateAssignmentNode),
-        ValidationPair(::isIdentifier, ::validateIdentifier),
-        ValidationPair(::isStatement, ::validateStatement),
-        ValidationPair(::isText, ::validateText),
         ValidationPair(::isForGroup, ::validateForGroup),
         ValidationPair(::isExistsGroup, ::validateExistsGroup),
         ValidationPair(::isExistsUniqueGroup, ::validateExistsUniqueGroup),
@@ -149,12 +147,29 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
         ValidationPair(::isSymbolsGroup, ::validateSymbolsGroup))
 
-internal fun validateClause(rawNode: Phase1Node, errors: MutableList<ParseError>): Clause {
+private val INLINEABLE_CLAUSE_VALIDATORS =
+    listOf(
+        InlineableValidationPair(::isAbstraction, ::validateAbstractionNode),
+        InlineableValidationPair(::isTuple, ::validateTupleNode),
+        InlineableValidationPair(::isAssignment, ::validateAssignmentNode),
+        InlineableValidationPair(::isIdentifier, ::validateIdentifier),
+        InlineableValidationPair(::isStatement, ::validateStatement),
+        InlineableValidationPair(::isText, ::validateText))
+
+internal fun validateClause(
+    rawNode: Phase1Node, errors: MutableList<ParseError>, isInline: Boolean
+): Clause {
     val node = rawNode.resolve()
 
     for (pair in CLAUSE_VALIDATORS) {
         if (pair.matches(node)) {
             return pair.validate(node, errors)
+        }
+    }
+
+    for (pair in INLINEABLE_CLAUSE_VALIDATORS) {
+        if (pair.matches(node)) {
+            return pair.validate(node, errors, isInline) as Clause
         }
     }
 

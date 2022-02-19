@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast
 
+import mathlingua.frontend.chalktalk.phase1.ast.Argument
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Group
 import mathlingua.frontend.chalktalk.phase1.ast.HasLocation
@@ -39,6 +40,24 @@ internal fun <T, U : HasLocation> validateByTransform(
     val newNode = transform(node)
     return if (newNode != null) {
         builder(newNode, newNode.row, newNode.column)
+    } else {
+        errors.add(ParseError(message = message, row = node.row, column = node.column))
+        default
+    }
+}
+
+internal fun <T, U : HasLocation> validateByInlineableTransform(
+    node: Phase1Node,
+    errors: MutableList<ParseError>,
+    default: T,
+    message: String,
+    isInline: Boolean,
+    transform: (node: Phase1Node) -> U?,
+    builder: (node: U, row: Int, column: Int, isInline: Boolean) -> T
+): T {
+    val newNode = transform(node)
+    return if (newNode != null) {
+        builder(newNode, newNode.row, newNode.column, isInline)
     } else {
         errors.add(ParseError(message = message, row = node.row, column = node.column))
         default
@@ -122,7 +141,7 @@ internal fun <T> validateTargetSection(
             val targets = mutableListOf<Target>()
             for (arg in section.args) {
                 var shouldContinue = false
-                val clause = validateClause(arg, errors)
+                val clause = validateClause(arg, errors, arg.isInline)
                 if (clause is Target) {
                     targets.add(clause)
                     shouldContinue = true
@@ -167,7 +186,7 @@ internal fun <T> validateSingleArg(
     errors: MutableList<ParseError>,
     default: T,
     type: String,
-    builder: (arg: Phase1Node) -> T
+    builder: (arg: Argument) -> T
 ) =
     if (section.args.size != 1) {
         errors.add(

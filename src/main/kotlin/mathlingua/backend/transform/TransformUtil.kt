@@ -78,7 +78,8 @@ internal fun separateInfixOperatorStatements(
                                                 text = expanded.toCode(),
                                                 texTalkRoot = ValidationSuccess(expanded),
                                                 row = c.row,
-                                                column = c.column)
+                                                column = c.column,
+                                                isInline = c.isInline)
                                         newClauses.add(stmt)
                                     }
                                 }
@@ -134,7 +135,8 @@ internal fun commaSeparateCompoundCommands(
                                 text = newRoot.toCode(),
                                 texTalkRoot = ValidationSuccess(newRoot as ExpressionTexTalkNode),
                                 row = it.row,
-                                column = it.column)
+                                column = it.column,
+                                isInline = it.isInline)
                         if (newFollow == null && hasChild(it, follow)) {
                             newFollow = newStatement
                         }
@@ -173,7 +175,8 @@ internal fun separateIsStatements(
                                                 text = expRoot.toCode(),
                                                 texTalkRoot = ValidationSuccess(expRoot),
                                                 row = clause.row,
-                                                column = clause.column)
+                                                column = clause.column,
+                                                isInline = clause.isInline)
                                         stmt
                                     })
                             }

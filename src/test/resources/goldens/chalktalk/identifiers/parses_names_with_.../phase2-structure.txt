@@ -39,6 +39,7 @@ Document(
                                  )
                                  row = 1
                                  column = 6
+                                 isInline = true
                                )
                              ]
                    row = 1

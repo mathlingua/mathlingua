@@ -776,7 +776,8 @@ private open class HtmlCodeWriter(
             builder.append("</div>")
             if (root is ValidationSuccess) {
                 appendDropdownForStatement(
-                    Statement(stmtText, ValidationSuccess(root.value), -1, -1), dropdownIndex)
+                    Statement(stmtText, ValidationSuccess(root.value), -1, -1, false),
+                    dropdownIndex)
             }
             return
         }
@@ -879,7 +880,7 @@ private open class HtmlCodeWriter(
         }
         builder.append("</div>")
         if (root is ValidationSuccess) {
-            val stmt = Statement(text = stmtText, texTalkRoot = root, -1, -1)
+            val stmt = Statement(text = stmtText, texTalkRoot = root, -1, -1, false)
             appendDropdownForStatement(stmt, dropdownIndex)
         }
     }

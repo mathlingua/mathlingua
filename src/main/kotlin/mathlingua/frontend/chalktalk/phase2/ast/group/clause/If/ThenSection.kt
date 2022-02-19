@@ -21,7 +21,6 @@ import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THEN_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Text
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
@@ -35,14 +34,7 @@ internal data class ThenSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("then")
-        if (clauses.clauses.size == 1 && clauses.clauses[0] is Text) {
-            writer.append(clauses.clauses.first(), false, 1)
-        } else {
-            if (clauses.clauses.isNotEmpty()) {
-                writer.writeNewline()
-            }
-            writer.append(clauses, true, indent + 2)
-        }
+        writer.append(clauses, true, indent + 2)
         return writer
     }
 

@@ -47,6 +47,7 @@ Root(
                                          )
                                          row = 1
                                          column = 6
+                                         isInline = true
                                        ),
                                        Argument(
                                          chalkTalkTarget = Abstraction(
@@ -73,6 +74,7 @@ Root(
                                          )
                                          row = 1
                                          column = 9
+                                         isInline = true
                                        ),
                                        Argument(
                                          chalkTalkTarget = Abstraction(
@@ -99,6 +101,7 @@ Root(
                                          )
                                          row = 1
                                          column = 12
+                                         isInline = true
                                        )
                                      ]
                               row = 1

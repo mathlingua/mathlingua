@@ -31,6 +31,7 @@ Root(
                                          )
                                          row = 2
                                          column = 2
+                                         isInline = false
                                        )
                                      ]
                               row = 1
@@ -64,6 +65,7 @@ Root(
                                                                      )
                                                                      row = 5
                                                                      column = 4
+                                                                     isInline = false
                                                                    )
                                                                  ]
                                                           row = 4
@@ -76,6 +78,7 @@ Root(
                                          )
                                          row = 4
                                          column = 2
+                                         isInline = false
                                        )
                                      ]
                               row = 3

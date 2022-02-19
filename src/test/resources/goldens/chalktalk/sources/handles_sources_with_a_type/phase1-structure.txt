@@ -30,6 +30,7 @@ Root(
                                                                      )
                                                                      row = 2
                                                                      column = 8
+                                                                     isInline = true
                                                                    )
                                                                  ]
                                                           row = 2
@@ -42,6 +43,7 @@ Root(
                                          )
                                          row = 2
                                          column = 2
+                                         isInline = false
                                        ),
                                        Argument(
                                          chalkTalkTarget = Group(
@@ -63,6 +65,7 @@ Root(
                                                                      )
                                                                      row = 3
                                                                      column = 8
+                                                                     isInline = true
                                                                    )
                                                                  ]
                                                           row = 3
@@ -75,6 +78,7 @@ Root(
                                          )
                                          row = 3
                                          column = 2
+                                         isInline = false
                                        )
                                      ]
                               row = 1

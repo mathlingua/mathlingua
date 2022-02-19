@@ -1,5 +1,4 @@
 Theorem:
 then:
 . forAll: a_{n, m}(x, y)
-  then:
-  . b
+  then: b

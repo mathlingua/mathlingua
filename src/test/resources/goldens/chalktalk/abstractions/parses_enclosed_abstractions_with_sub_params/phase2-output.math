@@ -1,5 +1,4 @@
 Theorem:
 then:
 . forAll: {a_i}
-  then:
-  . x
+  then: x

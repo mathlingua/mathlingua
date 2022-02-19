@@ -18,6 +18,7 @@ Document(
                                  text = ""Let $x$ be something.""
                                  row = 3
                                  column = 2
+                                 isInline = false
                                )
                              ]
                    row = 2

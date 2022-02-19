@@ -28,6 +28,10 @@ internal interface Phase1Node : HasLocation {
     fun transform(transformer: (node: Phase1Node) -> Phase1Node): Phase1Node
 }
 
+internal interface Inlineable {
+    val isInline: Boolean
+}
+
 internal data class Root(
     val groups: List<GroupOrBlockComment>, override val row: Int, override val column: Int
 ) : Phase1Node {
@@ -57,8 +61,11 @@ internal data class Root(
 }
 
 internal data class Argument(
-    val chalkTalkTarget: Phase1Target, override val row: Int, override val column: Int
-) : Phase1Node {
+    val chalkTalkTarget: Phase1Target,
+    override val row: Int,
+    override val column: Int,
+    override val isInline: Boolean
+) : Phase1Node, Inlineable {
 
     override fun forEach(fn: (node: Phase1Node) -> Unit) = fn(chalkTalkTarget)
 
@@ -104,7 +111,8 @@ internal data class Argument(
             Argument(
                 chalkTalkTarget = chalkTalkTarget.transform(transformer) as Phase1Target,
                 row,
-                column))
+                column,
+                isInline))
 }
 
 internal data class Section(

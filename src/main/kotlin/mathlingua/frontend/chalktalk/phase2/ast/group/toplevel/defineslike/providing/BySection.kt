@@ -46,8 +46,9 @@ internal data class BySection(
 }
 
 internal fun validateBySection(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateSection(node.resolve(), errors, "by", DEFAULT_BY_SECTION) {
-        validateSingleArg(it, errors, DEFAULT_BY_SECTION, "statement") {
-            BySection(statement = validateStatement(it, errors), node.row, node.column)
+    validateSection(node.resolve(), errors, "by", DEFAULT_BY_SECTION) { sec ->
+        validateSingleArg(sec, errors, DEFAULT_BY_SECTION, "statement") { arg ->
+            BySection(
+                statement = validateStatement(arg, errors, arg.isInline), node.row, node.column)
         }
     }

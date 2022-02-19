@@ -22,16 +22,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SATISFYING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.IfGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.and.AndGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.ExistsGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.existsUnique.ExistsUniqueGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.forAll.ForAllGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseGroup
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.ParseError
 
@@ -43,6 +33,7 @@ internal data class SatisfyingSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("satisfying")
+        /*
         // A single means entry should be printed on the same line. That is,
         //   means: '...'
         // instead of
@@ -67,6 +58,8 @@ internal data class SatisfyingSection(
             }
             writer.append(clauses, true, indent + 2)
         }
+         */
+        writer.append(clauses, true, indent + 2)
         return writer
     }
 

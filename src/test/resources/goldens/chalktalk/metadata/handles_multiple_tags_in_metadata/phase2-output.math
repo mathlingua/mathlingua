@@ -1,5 +1,6 @@
 Theorem:
-then: "something"
+then:
+. "something"
 Metadata:
 . tag:
   . "a"

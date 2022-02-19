@@ -16,6 +16,7 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.clause
 
+import mathlingua.frontend.chalktalk.phase1.ast.Inlineable
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_CLAUSE_LIST_NODE
@@ -32,9 +33,16 @@ internal data class ClauseListNode(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         for (i in clauses.indices) {
-            writer.append(clauses[i], true, indent)
-            if (i != clauses.size - 1) {
+            val clause = clauses[i]
+            val isInline = clause is Inlineable && clause.isInline
+            if (isInline) {
+                if (i != 0) {
+                    writer.writeComma()
+                }
+                writer.append(clause, false, 1)
+            } else {
                 writer.writeNewline()
+                writer.append(clause, true, indent)
             }
         }
         return writer
@@ -58,7 +66,8 @@ internal fun validateClauseListNode(node: Phase1Node, errors: MutableList<ParseE
             DEFAULT_CLAUSE_LIST_NODE
         } else {
             ClauseListNode(
-                clauses = it.args.map { arg -> validateClause(arg.resolve(), errors) },
+                clauses =
+                    it.args.map { arg -> validateClause(arg.resolve(), errors, arg.isInline) },
                 row = node.row,
                 column = node.column)
         }

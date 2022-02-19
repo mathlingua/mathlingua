@@ -17,16 +17,21 @@
 package mathlingua.frontend.chalktalk.phase2.ast.clause
 
 import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
+import mathlingua.frontend.chalktalk.phase1.ast.Inlineable
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_TEXT
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
-import mathlingua.frontend.chalktalk.phase2.ast.validateByTransform
+import mathlingua.frontend.chalktalk.phase2.ast.validateByInlineableTransform
 import mathlingua.frontend.support.ParseError
 
-internal data class Text(val text: String, override val row: Int, override val column: Int) :
-    Clause {
+internal data class Text(
+    val text: String,
+    override val row: Int,
+    override val column: Int,
+    override val isInline: Boolean
+) : Clause, Inlineable {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
@@ -42,16 +47,19 @@ internal data class Text(val text: String, override val row: Int, override val c
 internal fun isText(node: Phase1Node) =
     node is Phase1Token && node.type === ChalkTalkTokenType.String
 
-internal fun validateText(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateByTransform(
+internal fun validateText(
+    node: Phase1Node, errors: MutableList<ParseError>, isInline: Boolean
+): Text =
+    validateByInlineableTransform(
         node = node.resolve(),
         errors = errors,
         default = DEFAULT_TEXT,
         message = "Expected text",
+        isInline = isInline,
         transform = {
             if (it is Phase1Token && it.type == ChalkTalkTokenType.String) {
                 it
             } else {
                 null
             }
-        }) { n, row, column -> Text(text = n.text, row, column) }
+        }) { n, row, column, inline -> Text(text = n.text, row, column, inline) }

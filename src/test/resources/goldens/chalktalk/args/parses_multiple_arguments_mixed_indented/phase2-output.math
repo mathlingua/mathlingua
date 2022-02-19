@@ -1,8 +1,5 @@
 Theorem:
-then:
-. a
-. b
+then: a, b
 . c
-. d
-. e
+. d, e
 . f

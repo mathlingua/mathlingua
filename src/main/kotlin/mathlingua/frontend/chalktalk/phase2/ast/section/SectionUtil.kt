@@ -16,38 +16,22 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.section
 
+import mathlingua.frontend.chalktalk.phase1.ast.Inlineable
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
-import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
-import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 
 internal fun appendTargetArgs(writer: CodeWriter, targets: List<Target>, indent: Int) {
-    var i = 0
-    while (i < targets.size) {
-        val lineItems = mutableListOf<Target>()
-        while (i < targets.size && canBeOnOneLine(targets[i])) {
-            lineItems.add(targets[i++])
-        }
-        if (lineItems.isEmpty()) {
-            writer.writeNewline()
-            writer.append(targets[i++], true, indent)
-        } else {
-            writer.writeSpace()
-            for (j in lineItems.indices) {
-                writer.append(lineItems[j], false, 0)
-                if (j != lineItems.size - 1) {
-                    writer.writeComma()
-                    writer.writeSpace()
-                }
+    for (i in targets.indices) {
+        val target = targets[i]
+        val isInline = target is Inlineable && target.isInline
+        if (isInline) {
+            if (i != 0) {
+                writer.writeComma()
             }
+            writer.append(target, false, 1)
+        } else {
+            writer.writeNewline()
+            writer.append(target, true, indent)
         }
     }
 }
-
-private fun canBeOnOneLine(target: Target) =
-    target is Identifier ||
-        target is TupleNode ||
-        target is AbstractionNode ||
-        target is AssignmentNode

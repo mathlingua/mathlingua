@@ -46,8 +46,9 @@ internal data class ThroughSection(
 }
 
 internal fun validateThroughSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateSection(node.resolve(), errors, DEFAULT_THROUGH_SECTION) {
-        validateSingleArg(it, errors, DEFAULT_THROUGH_SECTION, "statement") {
-            ThroughSection(statement = validateStatement(it, errors), node.row, node.column)
+    validateSection(node.resolve(), errors, DEFAULT_THROUGH_SECTION) { sec ->
+        validateSingleArg(sec, errors, DEFAULT_THROUGH_SECTION, "statement") { arg ->
+            ThroughSection(
+                statement = validateStatement(arg, errors, arg.isInline), node.row, node.column)
         }
     }

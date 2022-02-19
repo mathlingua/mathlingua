@@ -116,7 +116,7 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
 
     private fun getAllTypes(node: Phase2Node, target: String): List<Command> {
         val result = mutableListOf<Command>()
-        getAllTypesImpl(normalize(node), target, result)
+        getAllTypesImpl(node.normalize(), target, result)
         return result
     }
 
@@ -203,7 +203,7 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
     }
 
     override fun findInvalidTypes(grp: TopLevelGroup): List<ParseError> {
-        val group = normalize(grp)
+        val group = grp.normalize()
         val errors = mutableListOf<ParseError>()
         val names = findAllNames(group)
         for (name in names) {

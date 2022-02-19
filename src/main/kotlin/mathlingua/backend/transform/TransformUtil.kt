@@ -33,21 +33,21 @@ import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-internal fun normalize(node: Phase2Node): Phase2Node {
-    var result = node
-    result = commaSeparateCompoundCommands(result, result).root
-    result = separateIsStatements(result, result).root
-    result = separateInfixOperatorStatements(result, result).root
-    return glueCommands(result, result).root
+internal fun Phase2Node.normalize(): Phase2Node {
+    var result = this
+    result = result.commaSeparateCompoundCommands(result).root
+    result = result.separateIsStatements(result).root
+    result = result.separateInfixOperatorStatements(result).root
+    return result.glueCommands(result).root
 }
 
 // replaces anything of the form `x is \a \b \c` as `x \a.b.c`
-internal fun normalize(node: TexTalkNode, location: Location): TexTalkNode {
-    return node.transform {
+internal fun TexTalkNode.normalize(location: Location): TexTalkNode {
+    return this.transform {
         if (it is ExpressionTexTalkNode) {
             val allCmd = it.children.all { it is Command }
             if (allCmd) {
-                ExpressionTexTalkNode(children = getCommandsToGlue(it, location))
+                ExpressionTexTalkNode(children = it.getCommandsToGlue(location))
             } else {
                 it
             }
@@ -57,12 +57,12 @@ internal fun normalize(node: TexTalkNode, location: Location): TexTalkNode {
     }
 }
 
-internal fun separateInfixOperatorStatements(
-    root: Phase2Node, follow: Phase2Node
+internal fun Phase2Node.separateInfixOperatorStatements(
+    follow: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
-        root.transform {
+        this.transform {
             val result =
                 if (it is ClauseListNode) {
                     val newClauses = mutableListOf<Clause>()
@@ -103,12 +103,12 @@ internal fun separateInfixOperatorStatements(
     return RootTarget(root = newRoot, target = newFollow ?: follow)
 }
 
-internal fun commaSeparateCompoundCommands(
-    root: Phase2Node, follow: Phase2Node
+internal fun Phase2Node.commaSeparateCompoundCommands(
+    follow: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
-        root.transform {
+        this.transform {
             val result =
                 if (it is Statement) {
                     if (it.texTalkRoot is ValidationSuccess) {
@@ -119,7 +119,7 @@ internal fun commaSeparateCompoundCommands(
                                     val location = Location(it.row, it.column)
                                     for (exp in texTalkNode.rhs.items) {
                                         newExpressions.addAll(
-                                            getCommandsToGlue(exp, location).map { cmd ->
+                                            exp.getCommandsToGlue(location).map { cmd ->
                                                 ExpressionTexTalkNode(children = listOf(cmd))
                                             })
                                     }
@@ -152,12 +152,12 @@ internal fun commaSeparateCompoundCommands(
     return RootTarget(root = newRoot, target = newFollow ?: follow)
 }
 
-internal fun separateIsStatements(
-    root: Phase2Node, follow: Phase2Node
+internal fun Phase2Node.separateIsStatements(
+    follow: Phase2Node
 ): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
-        root.transform {
+        this.transform {
             val result =
                 if (it is ClauseListNode) {
                     val newClauses = mutableListOf<Clause>()
@@ -198,8 +198,8 @@ internal fun separateIsStatements(
     return RootTarget(root = newRoot, target = newFollow ?: follow)
 }
 
-internal fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, replacement: String) =
-    texTalkNode.transform {
+internal fun TexTalkNode.replaceSignatures(signature: String, replacement: String) =
+    this.transform {
         if (it is Command && it.signature() == signature) {
             TextTexTalkNode(
                 type = TexTalkNodeType.Identifier,
@@ -207,7 +207,7 @@ internal fun replaceSignatures(texTalkNode: TexTalkNode, signature: String, repl
                 text = replacement,
                 isVarArg = false)
         } else {
-            texTalkNode
+            this
         }
     }
 

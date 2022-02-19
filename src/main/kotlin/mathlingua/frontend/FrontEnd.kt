@@ -40,18 +40,19 @@ internal object FrontEnd {
         allErrors.addAll(lexer.errors())
 
         val parser = newChalkTalkParser()
-        val (root, errors) = parser.parse(lexer)
-        allErrors.addAll(errors)
+        val parse = parser.parse(lexer)
+        allErrors.addAll(parse.errors)
 
-        if (root == null || allErrors.isNotEmpty()) {
-            return ValidationFailure(allErrors)
-        }
-        return when (val documentValidation = validateDocument(root)
-        ) {
-            is ValidationSuccess -> ValidationSuccess(documentValidation.value)
-            is ValidationFailure -> {
-                allErrors.addAll(documentValidation.errors)
-                ValidationFailure(allErrors)
+        return if (parse.root == null || allErrors.isNotEmpty()) {
+            ValidationFailure(allErrors)
+        } else {
+            when (val documentValidation = validateDocument(parse.root)
+            ) {
+                is ValidationSuccess -> ValidationSuccess(documentValidation.value)
+                is ValidationFailure -> {
+                    allErrors.addAll(documentValidation.errors)
+                    ValidationFailure(allErrors)
+                }
             }
         }
     }

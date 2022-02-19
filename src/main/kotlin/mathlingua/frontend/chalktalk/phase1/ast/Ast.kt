@@ -16,6 +16,8 @@
 
 package mathlingua.frontend.chalktalk.phase1.ast
 
+import mathlingua.frontend.chalktalk.phase1.buildIndent
+
 internal interface HasLocation {
     val row: Int
     val column: Int

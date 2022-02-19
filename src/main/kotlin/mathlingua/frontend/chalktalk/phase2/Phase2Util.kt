@@ -17,7 +17,6 @@
 package mathlingua.frontend.chalktalk.phase2
 
 import mathlingua.backend.WrittenAsForm
-import mathlingua.backend.isOperatorName
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.FrontEnd
@@ -26,6 +25,7 @@ import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.Tuple
+import mathlingua.frontend.chalktalk.phase1.ast.isOperatorName
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause

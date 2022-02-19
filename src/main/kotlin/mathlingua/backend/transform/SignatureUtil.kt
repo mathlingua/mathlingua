@@ -37,9 +37,9 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal data class Signature(val form: String, val location: Location)
 
-internal fun locateAllSignatures(node: Phase2Node, ignoreLhsEqual: Boolean): Set<Signature> {
+internal fun Phase2Node.locateAllSignatures(ignoreLhsEqual: Boolean): Set<Signature> {
     val signatures = mutableSetOf<Signature>()
-    findAllSignaturesImpl(normalize(node), ignoreLhsEqual, signatures)
+    findAllSignaturesImpl(this.normalize(), ignoreLhsEqual, signatures)
     return signatures
 }
 
@@ -71,7 +71,7 @@ private fun getSignature(section: TextSection): String? {
 }
 
 internal fun findAllStatementSignatures(stmt: Statement, ignoreLhsEqual: Boolean): Set<Signature> {
-    val gluedStmt = glueCommands(stmt, stmt).root as Statement
+    val gluedStmt = stmt.glueCommands(stmt).root as Statement
     return when (val rootValidation = gluedStmt.texTalkRoot
     ) {
         is ValidationSuccess -> {

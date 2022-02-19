@@ -20,7 +20,6 @@ import mathlingua.backend.transform.GroupScope
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.checkVarsPhase2Node
 import mathlingua.backend.transform.expandAsWritten
-import mathlingua.backend.transform.getVarsPhase2Node
 import mathlingua.backend.transform.getVarsTexTalkNode
 import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
@@ -36,10 +35,9 @@ import mathlingua.cli.newAutoComplete
 import mathlingua.cli.newSearchIndex
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
-import mathlingua.frontend.chalktalk.phase1.ast.ChalkTalkTokenType
-import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.Tuple
+import mathlingua.frontend.chalktalk.phase1.ast.findAllPhase1Statements
+import mathlingua.frontend.chalktalk.phase1.ast.isOperatorName
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkLexer
 import mathlingua.frontend.chalktalk.phase1.newChalkTalkParser
 import mathlingua.frontend.chalktalk.phase2.ast.Document
@@ -50,6 +48,14 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.findAllStatements
+import mathlingua.frontend.chalktalk.phase2.ast.findAllTexTalkNodes
+import mathlingua.frontend.chalktalk.phase2.ast.findColonEqualsLhsSymbols
+import mathlingua.frontend.chalktalk.phase2.ast.findColonEqualsRhsSignatures
+import mathlingua.frontend.chalktalk.phase2.ast.findInRhsSignatures
+import mathlingua.frontend.chalktalk.phase2.ast.findIsLhsSymbols
+import mathlingua.frontend.chalktalk.phase2.ast.findIsRhsSignatures
+import mathlingua.frontend.chalktalk.phase2.ast.getNonIsNonInStatementsNonInAsSections
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
@@ -60,8 +66,11 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Writt
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewAsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.getInputSymbols
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.getMeansExpressesSections
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.getOutputSymbols
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.getWhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
@@ -79,14 +88,12 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
-import mathlingua.frontend.textalk.InTexTalkNode
-import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
-import mathlingua.frontend.textalk.isOpChar
+import mathlingua.frontend.textalk.getSignaturesWithin
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 import mathlingua.md5Hash
@@ -485,7 +492,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     ValueAndSource(
                         source = sf,
                         value =
-                            Normalized(original = it, normalized = normalize(it) as DefinesGroup))
+                            Normalized(original = it, normalized = it.normalize() as DefinesGroup))
                 })
 
             statesGroups.addAll(
@@ -493,14 +500,15 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     ValueAndSource(
                         source = sf,
                         value =
-                            Normalized(original = it, normalized = normalize(it) as StatesGroup))
+                            Normalized(original = it, normalized = it.normalize() as StatesGroup))
                 })
 
             axiomGroups.addAll(
                 validation.value.axioms().map {
                     ValueAndSource(
                         source = sf,
-                        value = Normalized(original = it, normalized = normalize(it) as AxiomGroup))
+                        value =
+                            Normalized(original = it, normalized = it.normalize() as AxiomGroup))
                 })
 
             theoremGroups.addAll(
@@ -508,7 +516,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     ValueAndSource(
                         source = sf,
                         value =
-                            Normalized(original = it, normalized = normalize(it) as TheoremGroup))
+                            Normalized(original = it, normalized = it.normalize() as TheoremGroup))
                 })
 
             conjectureGroups.addAll(
@@ -517,7 +525,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                         source = sf,
                         value =
                             Normalized(
-                                original = it, normalized = normalize(it) as ConjectureGroup))
+                                original = it, normalized = it.normalize() as ConjectureGroup))
                 })
 
             allGroups.addAll(
@@ -525,7 +533,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     ValueAndSource(
                         source = sf,
                         value =
-                            Normalized(original = it, normalized = normalize(it) as TopLevelGroup))
+                            Normalized(original = it, normalized = it.normalize() as TopLevelGroup))
                 })
         }
     }
@@ -540,7 +548,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         val conjectureSigs = axiomGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         val statesSigs = statesGroups.mapNotNull { it.value.original.signature?.form }.toSet()
         for (svt in allGroups) {
-            val rhsIsSigs = findIsRhsSignatures(svt.value.normalized)
+            val rhsIsSigs = svt.value.normalized.findIsRhsSignatures()
             for (sig in rhsIsSigs) {
                 if (sigsWithExpresses.contains(sig.form)) {
                     result.add(
@@ -605,7 +613,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
 
             val sigsWithoutExpresses =
                 getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
-            val rhsInSigs = findInRhsSignatures(svt.value.normalized)
+            val rhsInSigs = svt.value.normalized.findInRhsSignatures()
             for (sig in rhsInSigs) {
                 if (sigsWithoutExpresses.contains(sig.form)) {
                     result.add(
@@ -628,7 +636,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         val sigsWithoutExpresses =
             getSignaturesWithoutExpressesSection().map { it.value.form }.toSet()
         for (svt in allGroups) {
-            val rhsSigs = findColonEqualsRhsSignatures(svt.value.normalized)
+            val rhsSigs = svt.value.normalized.findColonEqualsRhsSignatures()
             for (sig in rhsSigs) {
                 if (sigsWithoutExpresses.contains(sig.form)) {
                     result.add(
@@ -705,7 +713,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         val globalDefinedSigs = getDefinedSignatures().map { it.value.form }.toSet()
         for (vst in allGroups) {
             val innerSigs = getInnerDefinedSignatures(vst.value.normalized).map { it.form }.toSet()
-            val usedSigs = locateAllSignatures(vst.value.normalized, ignoreLhsEqual = true)
+            val usedSigs = vst.value.normalized.locateAllSignatures(ignoreLhsEqual = true)
             for (sig in usedSigs) {
                 if (!globalDefinedSigs.contains(sig.form) && !innerSigs.contains(sig.form)) {
                     // TODO: Right now operators are not marked as undefined signatures because
@@ -744,7 +752,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
 
             val root = parse.root
             if (root != null) {
-                for (stmtNode in findAllPhase1Statements(root)) {
+                for (stmtNode in root.findAllPhase1Statements()) {
                     val text = stmtNode.text.removeSurrounding("'", "'")
                     val texTalkLexer = newTexTalkLexer(text)
                     val texTalkResult = newTexTalkParser().parse(texTalkLexer)
@@ -782,11 +790,11 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                             })
                     }
 
-                    for (pair in findAllStatements(doc)) {
+                    for (pair in doc.findAllStatements()) {
                         val stmt = pair.first
                         val aliasDefines = pair.second
                         val location = Location(stmt.row, stmt.column)
-                        for (node in findAllTexTalkNodes(stmt)) {
+                        for (node in stmt.findAllTexTalkNodes()) {
                             val expansion =
                                 expandAsWritten(
                                     target = null,
@@ -1195,12 +1203,12 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         // and lhsVars is the set containing only `x`
         val lhs = lhsItems[0]
         val lhsVars =
-            getVarsTexTalkNode(
-                texTalkNode = lhs,
-                isInLhsOfColonEqualsIsOrIn = true,
-                groupScope = GroupScope.InNone,
-                isInIdStatement = false,
-                forceIsPlaceholder = false)
+            lhs
+                .getVarsTexTalkNode(
+                    isInLhsOfColonEqualsIsOrIn = true,
+                    groupScope = GroupScope.InNone,
+                    isInIdStatement = false,
+                    forceIsPlaceholder = false)
                 .toSet()
                 .map { it.name }
 
@@ -1286,7 +1294,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
     override fun getSymbolErrors(): List<ValueAndSource<ParseError>> {
         val result = mutableListOf<ValueAndSource<ParseError>>()
         for (grp in allGroups) {
-            val errs = checkVarsPhase2Node(grp.value.original, grp.value.normalized)
+            val errs = grp.value.original.checkVarsPhase2Node(grp.value.normalized)
             result.addAll(errs.map { ValueAndSource(value = it, source = grp.source) })
         }
         return result
@@ -1388,15 +1396,16 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         for (vst in allGroups) {
             val group = vst.value.normalized
 
-            val inputs = getInputSymbols(group)
-            val outputs = getOutputSymbols(group)
+            val inputs = group.getInputSymbols()
+            val outputs = group.getOutputSymbols()
 
-            val whenSection = getWhenSection(group)
+            val whenSection = group.getWhenSection()
             if (whenSection != null) {
                 val usedSymbols =
-                    findIsLhsSymbols(whenSection)
+                    whenSection
+                        .findIsLhsSymbols()
                         .toMutableList()
-                        .plus(findColonEqualsLhsSymbols(whenSection))
+                        .plus(whenSection.findColonEqualsLhsSymbols())
                 for (pair in usedSymbols) {
                     val sym = pair.first
                     val location = pair.second
@@ -1414,11 +1423,12 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 }
             }
 
-            for (meansOrEval in getMeansExpressesSections(group)) {
+            for (meansOrEval in group.getMeansExpressesSections()) {
                 val usedSymbols =
-                    findIsLhsSymbols(meansOrEval)
+                    meansOrEval
+                        .findIsLhsSymbols()
                         .toMutableList()
-                        .plus(findColonEqualsLhsSymbols(meansOrEval))
+                        .plus(meansOrEval.findColonEqualsLhsSymbols())
                 for (pair in usedSymbols) {
                     val sym = pair.first
                     val location = pair.second
@@ -1455,10 +1465,10 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         for (vst in allGroups) {
             val group = vst.value.normalized
 
-            for (stmtPair in getNonIsNonInStatementsNonInAsSections(group)) {
+            for (stmtPair in group.getNonIsNonInStatementsNonInAsSections()) {
                 val stmt = stmtPair.first
                 val exp = stmtPair.second
-                for (sig in getSignaturesWithin(exp)) {
+                for (sig in exp.getSignaturesWithin()) {
                     if (signaturesWithoutExpresses.contains(sig) &&
                         !statesSigs.contains(sig) &&
                         // a top level axiom signature is allowed
@@ -1481,478 +1491,9 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
     }
 }
 
-private fun getSignaturesWithin(node: TexTalkNode): List<String> {
-    val result = mutableListOf<String>()
-    getSignaturesImpl(node, result)
-    return result
-}
-
-private fun getSignaturesImpl(node: TexTalkNode, result: MutableList<String>) {
-    if (node is Command) {
-        result.add(node.signature())
-    } else {
-        node.forEach { getSignaturesImpl(it, result) }
-    }
-}
-
-private fun getNonIsNonInStatementsNonInAsSections(
-    node: Phase2Node
-): List<Pair<Statement, TexTalkNode>> {
-    val result = mutableListOf<Pair<Statement, TexTalkNode>>()
-    getNonIsNonInStatementsNonInAsSections(node, result)
-    return result
-}
-
-private fun getNonIsNonInStatementsNonInAsSections(
-    node: Phase2Node, result: MutableList<Pair<Statement, TexTalkNode>>
-) {
-    if (node is Statement) {
-        when (val validation = node.texTalkRoot
-        ) {
-            is ValidationSuccess -> {
-                val exp = validation.value
-                if (exp.children.size != 1 ||
-                    (exp.children[0] !is IsTexTalkNode && exp.children[0] !is InTexTalkNode)) {
-                    result.add(Pair(node, exp))
-                }
-            }
-            else -> {
-                // invalid statements are not processed since it cannot be determined
-                // if they are of the form `... is ...`
-            }
-        }
-    } else if (node !is ViewAsSection) {
-        node.forEach { getNonIsNonInStatementsNonInAsSections(it, result) }
-    }
-}
-
-private fun getWhenSection(topLevelGroup: TopLevelGroup) =
-    when (topLevelGroup) {
-        is DefinesGroup -> topLevelGroup.whenSection
-        is StatesGroup -> topLevelGroup.whenSection
-        is TheoremGroup -> topLevelGroup.whenSection
-        is AxiomGroup -> topLevelGroup.whenSection
-        is ConjectureGroup -> topLevelGroup.whenSection
-        else -> null
-    }
-
-private fun getMeansExpressesSections(topLevelGroup: TopLevelGroup) =
-    when (topLevelGroup) {
-        is DefinesGroup -> {
-            val result = mutableListOf<Phase2Node>()
-            if (topLevelGroup.satisfyingSection != null) {
-                result.add(topLevelGroup.satisfyingSection)
-            }
-            if (topLevelGroup.expressingSection != null) {
-                result.add(topLevelGroup.expressingSection)
-            }
-            result
-        }
-        else -> emptyList()
-    }
-
-private fun getInputSymbols(topLevelGroup: TopLevelGroup): Set<String> {
-    val result = mutableSetOf<String>()
-    when (topLevelGroup) {
-        is DefinesGroup -> {
-            result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
-            if (topLevelGroup.givenSection != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
-            }
-        }
-        is StatesGroup -> {
-            result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
-            if (topLevelGroup.givenSection != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
-            }
-        }
-        is TheoremGroup -> {
-            if (topLevelGroup.id != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
-            }
-            if (topLevelGroup.givenSection != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
-            }
-        }
-        is AxiomGroup -> {
-            if (topLevelGroup.id != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
-            }
-            if (topLevelGroup.givenSection != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
-            }
-        }
-        is ConjectureGroup -> {
-            if (topLevelGroup.id != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.id).map { it.name })
-            }
-            if (topLevelGroup.givenSection != null) {
-                result.addAll(getVarsPhase2Node(topLevelGroup.givenSection).map { it.name })
-            }
-        }
-    }
-    return result
-}
-
-private fun getOutputSymbols(topLevelGroup: TopLevelGroup): Set<String> {
-    val result = mutableSetOf<String>()
-    when (topLevelGroup) {
-        is DefinesGroup -> {
-            result.addAll(getVarsPhase2Node(topLevelGroup.definesSection).map { it.name })
-        }
-    }
-    return result
-}
-
 private fun <T> Boolean.thenUse(value: () -> List<T>) =
     if (this) {
         value()
     } else {
         emptyList()
     }
-
-fun isOperatorName(text: String): Boolean {
-    var index = text.indexOf('_')
-    if (index < 0) {
-        index = text.length
-    }
-    for (i in 0 until index) {
-        if (!isOpChar(text[i])) {
-            return false
-        }
-    }
-    return true
-}
-
-private fun findAllPhase1Statements(node: Phase1Node): List<Phase1Token> {
-    val result = mutableListOf<Phase1Token>()
-    findAllPhase1StatementsImpl(node, result)
-    return result
-}
-
-private fun findAllPhase1StatementsImpl(node: Phase1Node, result: MutableList<Phase1Token>) {
-    if (node is Phase1Token && node.type == ChalkTalkTokenType.Statement) {
-        result.add(node)
-    }
-    node.forEach { findAllPhase1StatementsImpl(it, result) }
-}
-
-private fun findAllStatements(node: Phase2Node): List<Pair<Statement, List<DefinesGroup>>> {
-    val pairs = mutableListOf<Pair<Statement, HasUsingSection?>>()
-    findAllStatementsImpl(
-        node,
-        if (node is HasUsingSection) {
-            node
-        } else {
-            null
-        },
-        pairs)
-    return pairs.map {
-        val aliases = mutableListOf<DefinesGroup>()
-        val usingSection = it.second?.usingSection
-        if (usingSection != null) {
-            for (clause in usingSection.clauses.clauses) {
-                if (clause is Statement &&
-                    clause.texTalkRoot is ValidationSuccess &&
-                    clause.texTalkRoot.value.children.firstOrNull() is ColonEqualsTexTalkNode) {
-
-                    val colonEquals =
-                        clause.texTalkRoot.value.children.first() as ColonEqualsTexTalkNode
-                    val lhsItems = colonEquals.lhs.items
-                    val rhsItems = colonEquals.rhs.items
-                    if (lhsItems.size != rhsItems.size) {
-                        throw RuntimeException(
-                            "The left-hand-side and right-hand-side of a := must have the same number of " +
-                                "comma separated expressions")
-                    }
-                    for (i in lhsItems.indices) {
-                        val lhs = lhsItems[i]
-                        val rhs = rhsItems[i]
-                        val id =
-                            IdStatement(
-                                text = lhs.toCode(),
-                                texTalkRoot = ValidationSuccess(lhs),
-                                row = -1,
-                                column = -1)
-                        val syntheticDefines =
-                            DefinesGroup(
-                                signature = id.signature(),
-                                id = id,
-                                definesSection =
-                                    DefinesSection(targets = emptyList(), row = -1, column = -1),
-                                givenSection = null,
-                                whenSection = null,
-                                meansSection = null,
-                                satisfyingSection =
-                                    SatisfyingSection(
-                                        clauses =
-                                            ClauseListNode(
-                                                clauses = emptyList(), row = -1, column = -1),
-                                        row = -1,
-                                        column = -1),
-                                expressingSection = null,
-                                providingSection = null,
-                                usingSection = null,
-                                writtenSection =
-                                    WrittenSection(
-                                        forms = listOf(rhs.toCode()), row = -1, column = -1),
-                                calledSection =
-                                    CalledSection(forms = emptyList(), row = -1, column = -1),
-                                metaDataSection = null,
-                                row = -1,
-                                column = -1)
-                        aliases.add(syntheticDefines)
-                    }
-                }
-            }
-        }
-        Pair(first = it.first, second = aliases)
-    }
-}
-
-private fun findAllStatementsImpl(
-    node: Phase2Node,
-    hasUsingNode: HasUsingSection?,
-    result: MutableList<Pair<Statement, HasUsingSection?>>
-) {
-    if (node is Statement) {
-        result.add(Pair(node, hasUsingNode))
-    }
-    node.forEach {
-        findAllStatementsImpl(
-            it,
-            if (hasUsingNode != null) {
-                hasUsingNode
-            } else {
-                if (node is HasUsingSection) {
-                    node
-                } else {
-                    null
-                }
-            },
-            result)
-    }
-}
-
-private fun findAllTexTalkNodes(node: Phase2Node): List<TexTalkNode> {
-    val result = mutableListOf<TexTalkNode>()
-    findAllTexTalkNodesImpl(node, result)
-    return result
-}
-
-private fun findAllTexTalkNodesImpl(node: Phase2Node, result: MutableList<TexTalkNode>) {
-    if (node is Statement) {
-        when (val validation = node.texTalkRoot
-        ) {
-            is ValidationSuccess -> {
-                result.add(validation.value)
-            }
-        }
-    }
-    node.forEach { findAllTexTalkNodesImpl(it, result) }
-}
-
-private fun findIsRhsSignatures(node: Phase2Node): List<Signature> {
-    val result = mutableListOf<Signature>()
-    findIsRhsSignatures(node, result)
-    return result
-}
-
-private fun findIsRhsSignatures(node: Phase2Node, rhsIsSignatures: MutableList<Signature>) {
-    if (node is Statement) {
-        when (node.texTalkRoot) {
-            is ValidationSuccess -> {
-                val location = Location(node.row, node.column)
-                findIsRhsSignatures(node.texTalkRoot.value, location, rhsIsSignatures)
-            }
-            else -> {
-                // ignore statements that do not parse
-            }
-        }
-    } else {
-        node.forEach { findIsRhsSignatures(it, rhsIsSignatures) }
-    }
-}
-
-private fun findIsRhsSignatures(
-    node: TexTalkNode, location: Location, rhsIsSignatures: MutableList<Signature>
-) {
-    if (node is IsTexTalkNode) {
-        node.rhs.items.forEach { item ->
-            item.children.forEach { child ->
-                if (child is Command) {
-                    val signature = child.signature()
-                    rhsIsSignatures.add(Signature(form = signature, location = location))
-                }
-            }
-        }
-    } else {
-        node.forEach { findIsRhsSignatures(it, location, rhsIsSignatures) }
-    }
-}
-
-private fun findInRhsSignatures(node: Phase2Node): List<Signature> {
-    val result = mutableListOf<Signature>()
-    findInRhsSignatures(node, result)
-    return result
-}
-
-private fun findInRhsSignatures(node: Phase2Node, rhsInSignatures: MutableList<Signature>) {
-    if (node is Statement) {
-        when (node.texTalkRoot) {
-            is ValidationSuccess -> {
-                val location = Location(node.row, node.column)
-                findInRhsSignatures(node.texTalkRoot.value, location, rhsInSignatures)
-            }
-            else -> {
-                // ignore statements that do not parse
-            }
-        }
-    } else {
-        node.forEach { findInRhsSignatures(it, rhsInSignatures) }
-    }
-}
-
-private fun findInRhsSignatures(
-    node: TexTalkNode, location: Location, rhsInSignatures: MutableList<Signature>
-) {
-    if (node is InTexTalkNode) {
-        node.rhs.items.forEach { item ->
-            item.children.forEach { child ->
-                if (child is Command) {
-                    val signature = child.signature()
-                    rhsInSignatures.add(Signature(form = signature, location = location))
-                }
-            }
-        }
-    } else {
-        node.forEach { findInRhsSignatures(it, location, rhsInSignatures) }
-    }
-}
-
-private fun findColonEqualsRhsSignatures(node: Phase2Node): List<Signature> {
-    val result = mutableListOf<Signature>()
-    findColonEqualsRhsSignatures(node, result)
-    return result
-}
-
-private fun findColonEqualsRhsSignatures(
-    node: Phase2Node, rhsIsSignatures: MutableList<Signature>
-) {
-    if (node is Statement) {
-        when (node.texTalkRoot) {
-            is ValidationSuccess -> {
-                val location = Location(node.row, node.column)
-                findColonEqualsRhsSignatures(node.texTalkRoot.value, location, rhsIsSignatures)
-            }
-            else -> {
-                // ignore statements that do not parse
-            }
-        }
-    } else {
-        node.forEach { findColonEqualsRhsSignatures(it, rhsIsSignatures) }
-    }
-}
-
-private fun findColonEqualsRhsSignatures(
-    node: TexTalkNode, location: Location, rhsIsSignatures: MutableList<Signature>
-) {
-    if (node is ColonEqualsTexTalkNode) {
-        node.rhs.items.forEach { item ->
-            item.children.forEach { child ->
-                if (child is Command) {
-                    val signature = child.signature()
-                    rhsIsSignatures.add(Signature(form = signature, location = location))
-                }
-            }
-        }
-    } else {
-        node.forEach { findColonEqualsRhsSignatures(it, location, rhsIsSignatures) }
-    }
-}
-
-private fun findIsLhsSymbols(node: Phase2Node): List<Pair<String, Location>> {
-    val result = mutableListOf<Pair<String, Location>>()
-    findIsLhsSymbols(node, result)
-    return result
-}
-
-private fun findIsLhsSymbols(node: Phase2Node, lhsIsSymbols: MutableList<Pair<String, Location>>) {
-    if (node is Statement) {
-        when (node.texTalkRoot) {
-            is ValidationSuccess -> {
-                val location = Location(node.row, node.column)
-                findIsLhsSymbols(node.texTalkRoot.value, location, lhsIsSymbols)
-            }
-            else -> {
-                // ignore statements that do not parse
-            }
-        }
-    } else {
-        node.forEach { findIsLhsSymbols(it, lhsIsSymbols) }
-    }
-}
-
-private fun findIsLhsSymbols(
-    node: TexTalkNode, location: Location, lhsIsSymbols: MutableList<Pair<String, Location>>
-) {
-    if (node is IsTexTalkNode) {
-        node.lhs.items.forEach {
-            lhsIsSymbols.addAll(
-                getVarsTexTalkNode(
-                    it,
-                    isInLhsOfColonEqualsIsOrIn = false,
-                    groupScope = GroupScope.InNone,
-                    isInIdStatement = false,
-                    forceIsPlaceholder = false)
-                    .map { symbol -> Pair(symbol.name, location) })
-        }
-    } else {
-        node.forEach { findIsLhsSymbols(it, location, lhsIsSymbols) }
-    }
-}
-
-private fun findColonEqualsLhsSymbols(node: Phase2Node): List<Pair<String, Location>> {
-    val result = mutableListOf<Pair<String, Location>>()
-    findColonEqualsLhsSymbols(node, result)
-    return result
-}
-
-private fun findColonEqualsLhsSymbols(
-    node: Phase2Node, lhsColonEqualsSymbols: MutableList<Pair<String, Location>>
-) {
-    if (node is Statement) {
-        when (node.texTalkRoot) {
-            is ValidationSuccess -> {
-                val location = Location(node.row, node.column)
-                findColonEqualsLhsSymbols(node.texTalkRoot.value, location, lhsColonEqualsSymbols)
-            }
-            else -> {
-                // ignore statements that do not parse
-            }
-        }
-    } else {
-        node.forEach { findColonEqualsLhsSymbols(it, lhsColonEqualsSymbols) }
-    }
-}
-
-private fun findColonEqualsLhsSymbols(
-    node: TexTalkNode,
-    location: Location,
-    lhsColonEqualsSymbols: MutableList<Pair<String, Location>>
-) {
-    if (node is ColonEqualsTexTalkNode) {
-        node.lhs.items.forEach {
-            lhsColonEqualsSymbols.addAll(
-                getVarsTexTalkNode(
-                    it,
-                    isInLhsOfColonEqualsIsOrIn = true,
-                    groupScope = GroupScope.InNone,
-                    isInIdStatement = false,
-                    forceIsPlaceholder = false)
-                    .map { symbol -> Pair(symbol.name, location) })
-        }
-    } else {
-        node.forEach { findColonEqualsLhsSymbols(it, location, lhsColonEqualsSymbols) }
-    }
-}

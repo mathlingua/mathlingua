@@ -17,11 +17,11 @@
 package mathlingua.backend.transform
 
 import mathlingua.MutableMultiSet
-import mathlingua.backend.isOperatorName
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
 import mathlingua.frontend.chalktalk.phase1.ast.AbstractionPart
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
+import mathlingua.frontend.chalktalk.phase1.ast.isOperatorName
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
@@ -68,14 +68,13 @@ internal data class Var(val name: String, val isPlaceholder: Boolean) {
     }
 }
 
-internal fun getVarsPhase2Node(node: Phase2Node): List<Var> {
+internal fun Phase2Node.getVarsPhase2Node(): List<Var> {
     val vars = mutableListOf<Var>()
-    getVarsImplPhase2Node(node, vars)
+    getVarsImplPhase2Node(this, vars)
     return vars
 }
 
-internal fun getVarsTexTalkNode(
-    texTalkNode: TexTalkNode,
+internal fun TexTalkNode.getVarsTexTalkNode(
     isInLhsOfColonEqualsIsOrIn: Boolean,
     groupScope: GroupScope,
     isInIdStatement: Boolean,
@@ -83,17 +82,12 @@ internal fun getVarsTexTalkNode(
 ): List<Var> {
     val vars = mutableListOf<Var>()
     getVarsImplTexTalkNode(
-        texTalkNode,
-        vars,
-        isInLhsOfColonEqualsIsOrIn,
-        groupScope,
-        isInIdStatement,
-        forceIsPlaceholder)
+        this, vars, isInLhsOfColonEqualsIsOrIn, groupScope, isInIdStatement, forceIsPlaceholder)
     return vars
 }
 
-internal fun renameVarsTexTalkNode(texTalkNode: TexTalkNode, map: Map<String, String>) =
-    texTalkNode.transform {
+internal fun TexTalkNode.renameVarsTexTalkNode(map: Map<String, String>) =
+    this.transform {
         if (it is TextTexTalkNode) {
             it.copy(text = map[it.text] ?: it.text)
         } else {
@@ -101,10 +95,10 @@ internal fun renameVarsTexTalkNode(texTalkNode: TexTalkNode, map: Map<String, St
         }
     }
 
-internal fun checkVarsPhase2Node(topLevel: TopLevelGroup, node: Phase2Node): Set<ParseError> {
+internal fun TopLevelGroup.checkVarsPhase2Node(node: Phase2Node): Set<ParseError> {
     val errors = mutableListOf<ParseError>()
     val vars = VarMultiSet()
-    checkVarsImplPhase2Node(topLevel, node, vars, errors)
+    checkVarsImplPhase2Node(this, node, vars, errors)
     return errors.toSet()
 }
 
@@ -492,8 +486,7 @@ private fun checkVarsImplPhase2Node(
             varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, errors))
         }
         is ForAllGroup -> {
-            val forAllVars =
-                node.forAllSection.targets.map { getVarsPhase2Node(node = it) }.flatten()
+            val forAllVars = node.forAllSection.targets.map { it.getVarsPhase2Node() }.flatten()
             for (v in forAllVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -507,8 +500,7 @@ private fun checkVarsImplPhase2Node(
             varsToRemove.addAll(forAllVars)
         }
         is GeneratedGroup -> {
-            val fromVars =
-                node.generatedFromSection.forms.map { getVarsPhase2Node(node = it) }.flatten()
+            val fromVars = node.generatedFromSection.forms.map { it.getVarsPhase2Node() }.flatten()
             for (v in fromVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -522,8 +514,7 @@ private fun checkVarsImplPhase2Node(
             varsToRemove.addAll(fromVars)
         }
         is EqualityGroup -> {
-            val betweenVars =
-                node.betweenSection.targets.map { getVarsPhase2Node(node = it) }.flatten()
+            val betweenVars = node.betweenSection.targets.map { it.getVarsPhase2Node() }.flatten()
             for (v in betweenVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -537,8 +528,7 @@ private fun checkVarsImplPhase2Node(
             varsToRemove.addAll(betweenVars)
         }
         is ExistsGroup -> {
-            val existsVars =
-                node.existsSection.identifiers.map { getVarsPhase2Node(node = it) }.flatten()
+            val existsVars = node.existsSection.identifiers.map { it.getVarsPhase2Node() }.flatten()
             for (v in existsVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -553,7 +543,7 @@ private fun checkVarsImplPhase2Node(
         }
         is ExistsUniqueGroup -> {
             val existsVars =
-                node.existsUniqueSection.identifiers.map { getVarsPhase2Node(node = it) }.flatten()
+                node.existsUniqueSection.identifiers.map { it.getVarsPhase2Node() }.flatten()
             for (v in existsVars) {
                 if (vars.hasConflict(v)) {
                     errors.add(
@@ -596,8 +586,7 @@ private fun getLeftHandSideVars(statement: Statement): List<Var> {
         if (exp.children.size == 1 && exp.children[0] is ColonEqualsTexTalkNode) {
             val colonEquals = exp.children[0] as ColonEqualsTexTalkNode
             result.addAll(
-                getVarsTexTalkNode(
-                    texTalkNode = colonEquals.lhs,
+                colonEquals.lhs.getVarsTexTalkNode(
                     isInLhsOfColonEqualsIsOrIn = true,
                     groupScope = GroupScope.InNone,
                     isInIdStatement = false,
@@ -616,9 +605,9 @@ private fun checkWhenSectionVars(
         // then make sure `vars` is updated to include the introduced symbols
         val clauseVars =
             when (clause) {
-                is ForAllGroup -> getVarsPhase2Node(clause.forAllSection)
-                is ExistsGroup -> getVarsPhase2Node(clause.existsSection)
-                is ExistsUniqueGroup -> getVarsPhase2Node(clause.existsUniqueSection)
+                is ForAllGroup -> clause.forAllSection.getVarsPhase2Node()
+                is ExistsGroup -> clause.existsSection.getVarsPhase2Node()
+                is ExistsUniqueGroup -> clause.existsUniqueSection.getVarsPhase2Node()
                 else -> emptyList()
             }
         vars.addAll(clauseVars)
@@ -659,8 +648,7 @@ private fun checkColonEqualsRhsSymbols(
     val result = VarMultiSet()
     if (node is ColonEqualsTexTalkNode) {
         for (v in
-            getVarsTexTalkNode(
-                texTalkNode = node.rhs,
+            node.rhs.getVarsTexTalkNode(
                 isInLhsOfColonEqualsIsOrIn = false,
                 groupScope = GroupScope.InNone,
                 isInIdStatement = false,
@@ -682,7 +670,7 @@ private fun checkDefineSectionVars(
     node: DefinesSection, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val location = Location(node.row, node.column)
-    val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
+    val givenVars = node.targets.map { it.getVarsPhase2Node() }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(
@@ -700,7 +688,7 @@ private fun checkGivenSectionVars(
     node: GivenSection, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val location = Location(node.row, node.column)
-    val givenVars = node.targets.map { getVarsPhase2Node(node = it) }.flatten()
+    val givenVars = node.targets.map { it.getVarsPhase2Node() }.flatten()
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(
@@ -753,8 +741,7 @@ private fun checkVarsImplStatement(
                 if (child is OperatorTexTalkNode) {
                     if (child.lhs != null) {
                         names.addAll(
-                            getVarsTexTalkNode(
-                                texTalkNode = child.lhs,
+                            child.lhs.getVarsTexTalkNode(
                                 isInLhsOfColonEqualsIsOrIn = true,
                                 groupScope = GroupScope.InParen,
                                 isInIdStatement = false,
@@ -763,8 +750,7 @@ private fun checkVarsImplStatement(
 
                     if (child.rhs != null) {
                         names.addAll(
-                            getVarsTexTalkNode(
-                                texTalkNode = child.rhs,
+                            child.rhs.getVarsTexTalkNode(
                                 isInLhsOfColonEqualsIsOrIn = true,
                                 groupScope = GroupScope.InParen,
                                 isInIdStatement = false,
@@ -772,8 +758,7 @@ private fun checkVarsImplStatement(
                     }
                 } else if (child is GroupTexTalkNode) {
                     names.addAll(
-                        getVarsTexTalkNode(
-                            texTalkNode = child.parameters,
+                        child.parameters.getVarsTexTalkNode(
                             isInLhsOfColonEqualsIsOrIn = true,
                             groupScope =
                                 when (child.type) {
@@ -797,8 +782,7 @@ private fun checkVarsImplStatement(
                 } else {
                     // handle cases like `x \op/ y` and `\f(x)`
                     names.addAll(
-                        getVarsTexTalkNode(
-                            texTalkNode = child,
+                        child.getVarsTexTalkNode(
                             isInLhsOfColonEqualsIsOrIn = true,
                             groupScope = GroupScope.InNone,
                             isInIdStatement = false,
@@ -832,8 +816,7 @@ private fun checkVarsImplStatement(
             val isNode = root.children[0] as IsTexTalkNode
             val toRemove = mutableListOf<Var>()
             for (v in
-                getVarsTexTalkNode(
-                    texTalkNode = isNode.lhs,
+                isNode.lhs.getVarsTexTalkNode(
                     isInLhsOfColonEqualsIsOrIn = true,
                     groupScope = GroupScope.InNone,
                     isInIdStatement = false,
@@ -857,8 +840,7 @@ private fun checkVarsImplStatement(
             val isNode = root.children[0] as InTexTalkNode
             val toRemove = mutableListOf<Var>()
             for (v in
-                getVarsTexTalkNode(
-                    texTalkNode = isNode.lhs,
+                isNode.lhs.getVarsTexTalkNode(
                     isInLhsOfColonEqualsIsOrIn = true,
                     groupScope = GroupScope.InNone,
                     isInIdStatement = false,
@@ -977,8 +959,7 @@ private fun checkVarsImplTexTalkNode(
             // specified there are then available in the other groups
             if (part.square != null) {
                 val squareVars =
-                    getVarsTexTalkNode(
-                        texTalkNode = part.square,
+                    part.square.getVarsTexTalkNode(
                         isInLhsOfColonEqualsIsOrIn = isInLhsOfColonEqualsIsOrIn,
                         groupScope = GroupScope.InSquare,
                         isInIdStatement = false,
@@ -1112,8 +1093,7 @@ private fun checkVarsImplIdStatement(
         // skip variables in parens in ids (in \some.function(x)) in this
         // example.
         val idVars =
-            getVarsTexTalkNode(
-                texTalkNode = id.texTalkRoot.value,
+            id.texTalkRoot.value.getVarsTexTalkNode(
                 isInLhsOfColonEqualsIsOrIn = false,
                 groupScope = GroupScope.InNone,
                 isInIdStatement = true,

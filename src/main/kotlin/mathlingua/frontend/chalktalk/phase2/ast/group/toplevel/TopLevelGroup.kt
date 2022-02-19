@@ -17,11 +17,17 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel
 
 import mathlingua.backend.transform.Signature
+import mathlingua.backend.transform.getVarsPhase2Node
 import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.getRandomUuid
@@ -85,4 +91,82 @@ internal interface HasUsingSection {
 internal interface HasSignature {
     val signature: Signature?
     val id: IdStatement?
+}
+
+internal fun TopLevelGroup.getWhenSection() =
+    when (this) {
+        is DefinesGroup -> this.whenSection
+        is StatesGroup -> this.whenSection
+        is TheoremGroup -> this.whenSection
+        is AxiomGroup -> this.whenSection
+        is ConjectureGroup -> this.whenSection
+        else -> null
+    }
+
+internal fun TopLevelGroup.getMeansExpressesSections() =
+    when (this) {
+        is DefinesGroup -> {
+            val result = mutableListOf<Phase2Node>()
+            if (this.satisfyingSection != null) {
+                result.add(this.satisfyingSection)
+            }
+            if (this.expressingSection != null) {
+                result.add(this.expressingSection)
+            }
+            result
+        }
+        else -> emptyList()
+    }
+
+internal fun TopLevelGroup.getInputSymbols(): Set<String> {
+    val result = mutableSetOf<String>()
+    when (this) {
+        is DefinesGroup -> {
+            result.addAll(this.id.getVarsPhase2Node().map { it.name })
+            if (this.givenSection != null) {
+                result.addAll(this.givenSection.getVarsPhase2Node().map { it.name })
+            }
+        }
+        is StatesGroup -> {
+            result.addAll(this.id.getVarsPhase2Node().map { it.name })
+            if (this.givenSection != null) {
+                result.addAll(this.givenSection.getVarsPhase2Node().map { it.name })
+            }
+        }
+        is TheoremGroup -> {
+            if (this.id != null) {
+                result.addAll(this.id.getVarsPhase2Node().map { it.name })
+            }
+            if (this.givenSection != null) {
+                result.addAll(this.givenSection.getVarsPhase2Node().map { it.name })
+            }
+        }
+        is AxiomGroup -> {
+            if (this.id != null) {
+                result.addAll(this.id.getVarsPhase2Node().map { it.name })
+            }
+            if (this.givenSection != null) {
+                result.addAll(this.givenSection.getVarsPhase2Node().map { it.name })
+            }
+        }
+        is ConjectureGroup -> {
+            if (this.id != null) {
+                result.addAll(this.id.getVarsPhase2Node().map { it.name })
+            }
+            if (this.givenSection != null) {
+                result.addAll(this.givenSection.getVarsPhase2Node().map { it.name })
+            }
+        }
+    }
+    return result
+}
+
+internal fun TopLevelGroup.getOutputSymbols(): Set<String> {
+    val result = mutableSetOf<String>()
+    when (this) {
+        is DefinesGroup -> {
+            result.addAll(this.definesSection.getVarsPhase2Node().map { it.name })
+        }
+    }
+    return result
 }

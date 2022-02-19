@@ -158,7 +158,7 @@ internal fun validateDocument(rawNode: Phase1Node): Validation<Document> {
                 val parse = newTexTalkParser().parse(lexer)
                 val idBefore = parse.root.toCode()
                 val idAfter =
-                    normalize(parse.root, Location(row = group.row, column = group.column)).toCode()
+                    parse.root.normalize(Location(row = group.row, column = group.column)).toCode()
                 if (idBefore != idAfter) {
                     errors.add(
                         ParseError(

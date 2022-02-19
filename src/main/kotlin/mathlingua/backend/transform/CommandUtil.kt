@@ -34,9 +34,9 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal data class RootTarget<R, T>(val root: R, val target: T)
 
-internal fun getCommandsToGlue(node: ExpressionTexTalkNode, location: Location): List<Command> {
+internal fun ExpressionTexTalkNode.getCommandsToGlue(location: Location): List<Command> {
     val cmds = mutableListOf<Command>()
-    for (n in node.children) {
+    for (n in this.children) {
         if (n !is Command) {
             if (n !is TextTexTalkNode || (n.text != ":Defines:" && n.text != ":States:")) {
                 println(
@@ -49,30 +49,29 @@ internal fun getCommandsToGlue(node: ExpressionTexTalkNode, location: Location):
     return glueCommands(cmds)
 }
 
-internal fun locateAllCommands(phase2Node: Phase2Node): List<Command> {
-    var root = phase2Node
-    root = separateIsStatements(root, root).root
-    root = separateInfixOperatorStatements(root, root).root
-    root = glueCommands(root, root).root
+internal fun Phase2Node.locateAllCommands(): List<Command> {
+    var root = this
+    root = root.separateIsStatements(root).root
+    root = root.separateInfixOperatorStatements(root).root
+    root = root.glueCommands(root).root
 
     val commands = mutableListOf<Command>()
     findCommandsImpl(root, commands)
     return commands
 }
 
-internal fun findCommands(texTalkNode: TexTalkNode): List<Command> {
+internal fun TexTalkNode.findCommands(): List<Command> {
     val commands = mutableListOf<Command>()
-    findCommandsImpl(texTalkNode, commands)
+    findCommandsImpl(this, commands)
     return commands.distinct()
 }
 
-internal fun replaceCommands(
-    node: Phase2Node,
+internal fun Phase2Node.replaceCommands(
     cmdToReplacement: Map<Command, String>,
     shouldProcessChalk: (node: Phase2Node) -> Boolean,
     shouldProcessTex: (root: TexTalkNode, node: TexTalkNode) -> Boolean
 ) =
-    node.transform {
+    this.transform {
         if (!shouldProcessChalk(it) || it !is Statement) {
             it
         } else {
@@ -82,8 +81,8 @@ internal fun replaceCommands(
                 is ValidationSuccess -> {
                     val root = validation.value
                     val newRoot =
-                        replaceCommands(
-                            root, root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
+                        root.replaceCommands(
+                            root, cmdToReplacement, shouldProcessTex) as ExpressionTexTalkNode
                     Statement(
                         text = newRoot.toCode(),
                         texTalkRoot = ValidationSuccess(newRoot),
@@ -95,13 +94,12 @@ internal fun replaceCommands(
         }
     }
 
-internal fun replaceCommands(
-    texTalkNode: TexTalkNode,
+internal fun TexTalkNode.replaceCommands(
     root: TexTalkNode,
     cmdToReplacement: Map<Command, String>,
     shouldProcess: (root: TexTalkNode, node: TexTalkNode) -> Boolean
 ) =
-    texTalkNode.transform {
+    this.transform {
         if (!shouldProcess(root, it) || it !is Command) {
             it
         } else {
@@ -121,12 +119,10 @@ internal fun replaceCommands(
 // this function requires that `is` nodes are separated
 // that is 'x is \a, \b' is separated as 'x is \a' and
 // 'x is \b'
-internal fun glueCommands(
-    root: Phase2Node, follow: Phase2Node
-): RootTarget<Phase2Node, Phase2Node> {
+internal fun Phase2Node.glueCommands(follow: Phase2Node): RootTarget<Phase2Node, Phase2Node> {
     var newFollow: Phase2Node? = null
     val newRoot =
-        root.transform {
+        this.transform {
             val result =
                 if (it is Statement &&
                     it.texTalkRoot is ValidationSuccess &&
@@ -140,7 +136,7 @@ internal fun glueCommands(
                         throw Error("Expected 'is' node $isNode to only contain a single rhs item")
                     }
                     val cmds =
-                        getCommandsToGlue(isNode.rhs.items[0], Location(root.row, root.column))
+                        isNode.rhs.items[0].getCommandsToGlue(Location(this.row, this.column))
                     val gluedCmds = glueCommands(cmds)
                     if (gluedCmds.size != 1) {
                         throw Error("Expected 'is' node $isNode to have only one glued rhs command")

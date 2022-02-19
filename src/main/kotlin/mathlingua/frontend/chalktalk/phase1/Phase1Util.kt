@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.frontend.chalktalk.phase1.ast
+package mathlingua.frontend.chalktalk.phase1
 
 import kotlin.math.max
 
@@ -29,37 +29,3 @@ internal fun buildIndent(level: Int, isArg: Boolean): String {
     }
     return buffer.toString()
 }
-
-/*
-internal fun getRow(node: Phase1Node): Int {
-    if (node is Phase1Token) {
-        return node.row
-    }
-    var rowResult = -1
-    node.forEach {
-        if (rowResult == -1) {
-            val row = getRow(it)
-            if (row >= 0) {
-                rowResult = row
-            }
-        }
-    }
-    return rowResult
-}
-
-internal fun getColumn(node: Phase1Node): Int {
-    if (node is Phase1Token) {
-        return node.column
-    }
-    var colResult = -1
-    node.forEach {
-        if (colResult == -1) {
-            val col = getColumn(it)
-            if (col >= 0) {
-                colResult = col
-            }
-        }
-    }
-    return colResult
-}
-*/

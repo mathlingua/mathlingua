@@ -16,8 +16,12 @@
 
 package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel
 
+import mathlingua.backend.SourceCollection
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.getVarsPhase2Node
+import mathlingua.cli.EntityResult
+import mathlingua.cli.fixClassNameBug
+import mathlingua.cli.getAllWords
 import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
@@ -30,7 +34,9 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjec
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
+import mathlingua.frontend.chalktalk.phase2.getCalledNames
 import mathlingua.getRandomUuid
+import mathlingua.md5Hash
 
 internal abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
@@ -169,4 +175,27 @@ internal fun TopLevelGroup.getOutputSymbols(): Set<String> {
         }
     }
     return result
+}
+
+internal fun TopLevelGroup.toEntityResult(
+    relativePath: String, sourceCollection: SourceCollection
+): EntityResult {
+    val renderedHtml =
+        sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
+    val rawHtml =
+        sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = false)
+    return EntityResult(
+        id = md5Hash(this.toCode(false, 0).getCode()),
+        type = this.javaClass.simpleName,
+        signature =
+            if (this is HasSignature) {
+                this.signature?.form
+            } else {
+                null
+            },
+        rawHtml = fixClassNameBug(rawHtml),
+        renderedHtml = fixClassNameBug(renderedHtml),
+        words = getAllWords(this).toList(),
+        relativePath = relativePath,
+        called = this.getCalledNames())
 }

@@ -25,11 +25,9 @@ import mathlingua.backend.transform.locateAllSignatures
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
 import mathlingua.cli.EntityResult
-import mathlingua.cli.ErrorResult
 import mathlingua.cli.FileResult
 import mathlingua.cli.VirtualFile
 import mathlingua.cli.VirtualFileSystem
-import mathlingua.cli.fixClassNameBug
 import mathlingua.cli.getAllWords
 import mathlingua.cli.newAutoComplete
 import mathlingua.cli.newSearchIndex
@@ -75,7 +73,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremSection
-import mathlingua.frontend.chalktalk.phase2.getCalledNames
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.toEntityResult
 import mathlingua.frontend.chalktalk.phase2.getInnerDefinedSignatures
 import mathlingua.frontend.chalktalk.phase2.getPatternsToWrittenAs
 import mathlingua.frontend.chalktalk.phase2.newHtmlCodeWriter
@@ -96,62 +94,10 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.getSignaturesWithin
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
-import mathlingua.md5Hash
-
-internal data class SourceFile(
-    val file: VirtualFile, val content: String, val validation: Validation<Document>)
-
-internal fun SourceFile.toFileResult(
-    nextRelativePath: String?, previousRelativePath: String?, sourceCollection: SourceCollection
-): FileResult {
-    val relativePath = this.file.relativePath()
-    return FileResult(
-        relativePath = relativePath,
-        nextRelativePath = nextRelativePath,
-        previousRelativePath = previousRelativePath,
-        content = this.content,
-        entities =
-            when (val validation = this.validation
-            ) {
-                is ValidationSuccess -> {
-                    val doc = validation.value
-                    doc.groups.map { it.toEntityResult(relativePath, sourceCollection) }
-                }
-                else -> {
-                    emptyList()
-                }
-            },
-        errors =
-            when (val validation = this.validation
-            ) {
-                is ValidationFailure -> {
-                    validation.errors.map {
-                        ErrorResult(
-                            relativePath = relativePath,
-                            message = it.message,
-                            row = it.row,
-                            column = it.column)
-                    }
-                }
-                else -> {
-                    emptyList()
-                }
-            })
-}
-
-internal fun isMathLinguaFile(file: VirtualFile) =
-    !file.isDirectory() && file.absolutePath().endsWith(".math")
-
-internal fun buildSourceFile(file: VirtualFile): SourceFile {
-    val content = file.readText()
-    return SourceFile(file = file, content = content, validation = FrontEnd.parse(content))
-}
 
 internal data class ValueAndSource<T>(val value: T, val source: SourceFile)
 
 internal data class Page(val sourceFile: SourceFile, val fileResult: FileResult)
-
-internal data class WrittenAsForm(val target: String?, val form: String)
 
 internal interface SourceCollection {
     fun size(): Int
@@ -184,7 +130,7 @@ internal interface SourceCollection {
 internal fun newSourceCollection(
     fs: VirtualFileSystem, filesOrDirs: List<VirtualFile>
 ): SourceCollection {
-    val sources = findMathLinguaFiles(filesOrDirs).map { buildSourceFile(it) }
+    val sources = findMathLinguaFiles(filesOrDirs).map { it.buildSourceFile() }
     return SourceCollectionImpl(fs, sources)
 }
 
@@ -292,35 +238,12 @@ private class SourcePathComparator : Comparator<VirtualFile> {
 private val SOURCE_PATH_COMPARATOR = SourcePathComparator()
 
 private fun findMathLinguaFilesImpl(file: VirtualFile, result: MutableList<VirtualFile>) {
-    if (isMathLinguaFile(file)) {
+    if (file.isMathLinguaFile()) {
         result.add(file)
     }
     for (child in file.listFiles().sortedWith(SOURCE_PATH_COMPARATOR)) {
         findMathLinguaFilesImpl(child, result)
     }
-}
-
-private fun TopLevelGroup.toEntityResult(
-    relativePath: String, sourceCollection: SourceCollection
-): EntityResult {
-    val renderedHtml =
-        sourceCollection.prettyPrint(node = this, html = true, literal = false, doExpand = true)
-    val rawHtml =
-        sourceCollection.prettyPrint(node = this, html = true, literal = true, doExpand = false)
-    return EntityResult(
-        id = md5Hash(this.toCode(false, 0).getCode()),
-        type = this.javaClass.simpleName,
-        signature =
-            if (this is HasSignature) {
-                this.signature?.form
-            } else {
-                null
-            },
-        rawHtml = fixClassNameBug(rawHtml),
-        renderedHtml = fixClassNameBug(renderedHtml),
-        words = getAllWords(this).toList(),
-        relativePath = relativePath,
-        called = this.getCalledNames())
 }
 
 private data class Normalized<T>(val original: T, val normalized: T)

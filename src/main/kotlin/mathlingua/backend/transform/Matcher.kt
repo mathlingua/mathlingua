@@ -17,7 +17,7 @@
 package mathlingua.backend.transform
 
 import kotlin.math.max
-import mathlingua.backend.WrittenAsForm
+import mathlingua.frontend.chalktalk.phase2.WrittenAsForm
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode

@@ -19,8 +19,8 @@ package mathlingua.mathlingua.transform
 import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
-import mathlingua.backend.WrittenAsForm
 import mathlingua.backend.transform.expandAsWritten
+import mathlingua.frontend.chalktalk.phase2.WrittenAsForm
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode

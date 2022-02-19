@@ -16,7 +16,6 @@
 
 package mathlingua.frontend.chalktalk.phase2
 
-import mathlingua.backend.WrittenAsForm
 import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.FrontEnd
@@ -55,15 +54,17 @@ import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
-internal fun hasChild(node: Phase2Node, child: Phase2Node): Boolean {
-    if (node == child) {
+internal data class WrittenAsForm(val target: String?, val form: String)
+
+internal fun Phase2Node.hasChild(child: Phase2Node): Boolean {
+    if (this == child) {
         return true
     }
 
     var found = false
-    node.forEach {
+    this.forEach {
         if (!found) {
-            found = hasChild(it, child)
+            found = it.hasChild(child)
         }
     }
 

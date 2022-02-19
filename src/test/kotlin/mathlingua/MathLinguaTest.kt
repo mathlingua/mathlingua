@@ -4,11 +4,11 @@ import assertk.assertThat
 import assertk.assertions.isEmpty
 import assertk.assertions.isEqualTo
 import mathlingua.backend.SourceCollection
-import mathlingua.backend.WrittenAsForm
 import mathlingua.backend.newSourceCollection
 import mathlingua.backend.transform.Signature
 import mathlingua.cli.newMemoryFileSystem
 import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.chalktalk.phase2.WrittenAsForm
 import mathlingua.frontend.chalktalk.phase2.getPatternsToWrittenAs
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationSuccess

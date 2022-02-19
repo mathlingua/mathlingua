@@ -87,7 +87,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
                 println(pathAndContent.content)
                 file.writeText(pathAndContent.content)
                 println("Done writing to path ${pathAndContent.path}")
-                val newSource = buildSourceFile(file)
+                val newSource = file.buildSourceFile()
                 getSourceCollection().removeSource(pathAndContent.path)
                 getSourceCollection().addSource(newSource)
                 ctx.status(200)

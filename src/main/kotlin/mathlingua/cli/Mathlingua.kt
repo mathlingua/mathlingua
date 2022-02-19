@@ -86,7 +86,7 @@ object Mathlingua {
                 errors.map {
                     ValueAndSource(
                         value = ParseError(message = it.message, row = it.row, column = it.column),
-                        source = buildSourceFile(fs.getFileOrDirectory(it.relativePath)))
+                        source = fs.getFileOrDirectory(it.relativePath).buildSourceFile())
                 },
                 files.size,
                 false))

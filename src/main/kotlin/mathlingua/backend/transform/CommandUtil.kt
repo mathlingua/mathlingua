@@ -160,7 +160,7 @@ internal fun Phase2Node.glueCommands(follow: Phase2Node): RootTarget<Phase2Node,
                             it.row,
                             it.column,
                             it.isInline)
-                    if (newFollow == null && hasChild(it, follow)) {
+                    if (newFollow == null && it.hasChild(follow)) {
                         newFollow = result
                     }
                     result

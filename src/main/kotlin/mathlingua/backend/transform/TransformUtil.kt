@@ -91,7 +91,7 @@ internal fun Phase2Node.separateInfixOperatorStatements(
                     }
                     val result =
                         ClauseListNode(clauses = newClauses, row = it.row, column = it.column)
-                    if (newFollow == null && hasChild(it, follow)) {
+                    if (newFollow == null && it.hasChild(follow)) {
                         newFollow = result
                     }
                     result
@@ -137,7 +137,7 @@ internal fun Phase2Node.commaSeparateCompoundCommands(
                                 row = it.row,
                                 column = it.column,
                                 isInline = it.isInline)
-                        if (newFollow == null && hasChild(it, follow)) {
+                        if (newFollow == null && it.hasChild(follow)) {
                             newFollow = newStatement
                         }
                         newStatement
@@ -186,7 +186,7 @@ internal fun Phase2Node.separateIsStatements(
                     }
                     val result =
                         ClauseListNode(clauses = newClauses, row = it.row, column = it.column)
-                    if (newFollow == null && hasChild(it, follow)) {
+                    if (newFollow == null && it.hasChild(follow)) {
                         newFollow = result
                     }
                     result

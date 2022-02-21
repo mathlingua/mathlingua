@@ -3746,7 +3746,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors commands introduced inductively in a Defines`() {
+    fun `check does not report errors for commands introduced inductively in a Defines`() {
         runCheckTest(
             files =
                 listOf(
@@ -3768,6 +3768,41 @@ internal class EndToEndCheckTest {
                     means:
                     . 'X := \natural.succ(\natural.0)'
                     written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors for 'satisfying' commands used in 'is' expressions within an argument`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\f]
+                    Defines: X
+                    satisfying: "something"
+                    written: "something"
+
+
+                    [\g{x}]
+                    Defines: y
+                    expressing: "something"
+                    written: "something"
+
+
+                    Theorem:
+                    given: y
+                    then: '\g{y is \f}'
                 """.trimIndent())),
             expectedOutput =
                 """

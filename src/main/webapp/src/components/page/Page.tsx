@@ -47,7 +47,9 @@ interface Annotation {
 
 export interface PageProps {
   viewedPath: string;
+  viewedLine: number;
   targetId: string;
+  onOpenFileInTab: (path: string, line?: number) => void;
 }
 
 // needed to allow Command+s on Mac and Ctrl+s on other systems to
@@ -104,9 +106,11 @@ export const Page = (props: PageProps) => {
   return isEditMode ? (
     <SideBySideView
       relativePath={props.viewedPath}
+      viewedLine={props.viewedLine}
       errors={fileResult.errors}
       entities={fileResult.entities}
       targetId={props.targetId}
+      onOpenFileInTab={props.onOpenFileInTab}
     ></SideBySideView>
   ) : (
     <PageWithNavigationView
@@ -222,28 +226,69 @@ const RenderedContent = (props: {
 
 interface EditorViewProps {
   viewedPath: string;
+  viewedLine: number;
   onFileResultChanged(fileResult: api.FileResult | undefined): void;
   dispatch: AppDispatch;
+  onOpenFileInTab: (path: string, line?: number) => void;
 }
 
 interface EditorViewState {
   annotations: Annotation[];
+  menuX: number;
+  menuY: number;
+  showMenu: boolean;
+  usedSignatures: api.UsedSignature[];
 }
 
 class EditorView extends React.Component<EditorViewProps, EditorViewState> {
   private scheduledFunction: DebouncedFunc<any> | null = null;
   private editor: any;
+  private ref: any;
 
   constructor(props: EditorViewProps) {
     super(props);
     this.state = {
       annotations: [],
+      showMenu: false,
+      menuX: 0,
+      menuY: 0,
+      usedSignatures: []
     };
   }
 
   async componentDidMount() {
     this.setupCompletions();
     await this.initializeEditor();
+    if (this.ref && this.ref.refEditor) {
+      this.ref.refEditor.onclick = (e: any) => {
+        this.setState({
+          showMenu: false
+        });
+        this.forceUpdate();
+      };
+      this.ref.refEditor.oncontextmenu = async (e: any) => {
+        e.preventDefault();
+        const position  = this.editor.getCursorPosition();
+        const { pageX, pageY } = this.editor.renderer.textToScreenCoordinates(position.row, position.column);
+        const menuX = pageX;
+        const menuY = pageY + this.editor.renderer.lineHeight;
+        this.setState({
+          showMenu: true,
+          usedSignatures: await api.getUsedSignaturesAtRow(this.props.viewedPath, position.row),
+          menuX,
+          menuY,
+        });
+        this.forceUpdate();
+      };
+    }
+
+    this.gotoLine(this.props.viewedLine);
+  }
+
+  private gotoLine(line: number) {
+    this.editor.resize(true);
+    this.editor.scrollToLine(line, /* center */ false, /* animate */ true, () => {});
+    this.editor.gotoLine(line, 0, /* animate */ true);
   }
 
   shouldComponentUpdate(
@@ -509,11 +554,47 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
   render() {
     return (
       <div>
+        {
+          this.state.showMenu ?
+          <div style={{
+            position: 'fixed',
+            left: this.state.menuX, top:
+            this.state.menuY,
+            zIndex: 100,
+            border: 'solid',
+            borderWidth: '1px',
+            borderColor: 'rgba(230, 230, 230)',
+            borderRadius: '2px',
+            boxShadow: 'rgba(0, 0, 0, 0.1) 0px 3px 10px, inset 0 0 0 0 rgba(240, 240, 240, 0.5)',
+          }}>
+            {
+              this.state.usedSignatures.map(usedSig =>
+              <button key={usedSig.signature}
+                className={styles.editorMenuItem}
+                onClick={() => {
+                  if (usedSig.defPath === this.props.viewedPath) {
+                    // if the line to view is in the current editor
+                    // just scroll to the line and close the context menu
+                    this.gotoLine(usedSig.defRow);
+                    this.setState({
+                      showMenu: false
+                    });
+                    this.forceUpdate();
+                  } else {
+                    this.props.onOpenFileInTab(usedSig.defPath, usedSig.defRow);
+                  }
+                }}>
+                {usedSig.signature}
+              </button>)
+            }
+          </div> : null
+        }
         <AceEditor
           ref={(ref) => {
             const newEditor = ref?.editor;
             if (newEditor && newEditor !== this.editor) {
               this.editor = newEditor;
+              this.ref = ref;
             }
           }}
           mode="yaml"
@@ -581,9 +662,11 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
 
 const SideBySideView = (props: {
   relativePath: string;
+  viewedLine: number;
   errors: api.ErrorResult[];
   entities: api.EntityResult[];
   targetId: string;
+  onOpenFileInTab: (path: string, line?: number) => void;
 }) => {
   const [relativePath, setRelativePath] = useState(props.relativePath);
   const [errors, setErrors] = useState(props.errors);
@@ -606,7 +689,9 @@ const SideBySideView = (props: {
         <EditorView
           dispatch={dispatch}
           viewedPath={props.relativePath}
+          viewedLine={props.viewedLine}
           onFileResultChanged={onFileResultChanged}
+          onOpenFileInTab={props.onOpenFileInTab}
         />
       </div>
       <div

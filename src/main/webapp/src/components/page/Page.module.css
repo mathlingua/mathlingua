@@ -61,3 +61,19 @@ mark {
   color: #aaaaaa;
   font-size: 135%;
 }
+
+.editorMenuItem {
+  display: block;
+  padding: 1ex;
+  padding: 1ex;
+  border: none;
+  width: 100%;
+  font-family: 'Inconsolata', monospace;
+  background-color: #ffffff;
+  font-size: 1em;
+  text-align: left;
+}
+
+.editorMenuItem:hover {
+  background-color: #eeeeee;
+}

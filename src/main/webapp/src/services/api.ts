@@ -71,6 +71,16 @@ export interface GitHubUrlResponse {
   url?: string;
 }
 
+export interface UsedSignature {
+  signature: string;
+  defPath: string;
+  defRow: number;
+}
+
+export interface UsedSignaturesAtRowResponse {
+  signatures: UsedSignature[];
+}
+
 export interface CompletionItem {
   name: string;
   parts: string[];
@@ -480,5 +490,20 @@ export async function getCompletions(): Promise<Completions> {
   } catch (error: any) {
     notifyOfError(error.message);
     return { items: [] };
+  }
+}
+
+export async function getUsedSignaturesAtRow(path: string, row: number): Promise<UsedSignature[]> {
+  try {
+    const res = await axios.get('/api/usedSignaturesAtRow', {
+      params: {
+        path,
+        row
+      }
+    });
+    return res.data.signatures;
+  } catch (error: any) {
+    notifyOfError(error.message);
+    return [];
   }
 }

@@ -262,6 +262,32 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
                 ctx.status(500)
             }
         }
+        .get("/api/usedSignaturesAtRow") { ctx ->
+            try {
+                val path = ctx.queryParam("path", null)
+                val row = ctx.queryParam("row")?.toIntOrNull()
+                logger.log("Getting used signatures for $path at row $row")
+                if (path == null || row == null) {
+                    ctx.status(400)
+                } else {
+                    val usedSignatures = getSourceCollection().getUsedSignaturesAtRow(path, row)
+                    ctx.json(
+                        UsedSignaturesAtRowResponse(
+                            signatures =
+                                usedSignatures
+                                    .map {
+                                        UsedSignature(
+                                            signature = it.value.form,
+                                            defPath = it.source.file.relativePath(),
+                                            defRow = it.value.location.row)
+                                    }
+                                    .sortedBy { it.signature }))
+                }
+            } catch (err: Exception) {
+                err.printStackTrace()
+                ctx.status(500)
+            }
+        }
         .get("/api/search") { ctx ->
             try {
                 val query = ctx.queryParam("query") ?: ""

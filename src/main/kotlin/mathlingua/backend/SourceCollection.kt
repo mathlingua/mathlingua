@@ -125,6 +125,7 @@ internal interface SourceCollection {
     fun findWordSuffixesFor(word: String): List<String>
     fun findSignaturesSuffixesFor(prefix: String): List<String>
     fun search(query: String): List<SourceFile>
+    fun getUsedSignaturesAtRow(path: String, row: Int): List<ValueAndSource<Signature>>
 }
 
 internal fun newSourceCollection(
@@ -1412,6 +1413,19 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         }
         return errors
     }
+
+    override fun getUsedSignaturesAtRow(path: String, row: Int): List<ValueAndSource<Signature>> =
+        when (val validation = sourceFiles[path]?.validation
+        ) {
+            is ValidationSuccess -> {
+                val usedSignatures = validation.value.locateAllSignatures(ignoreLhsEqual = false)
+                val signaturesAtRow =
+                    usedSignatures.filter { it.location.row == row }.map { it.form }.toSet()
+
+                getDefinedSignatures().filter { it.value.form in signaturesAtRow }
+            }
+            else -> emptyList()
+        }
 }
 
 private fun <T> Boolean.thenUse(value: () -> List<T>) =

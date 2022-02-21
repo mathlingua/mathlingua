@@ -55,6 +55,10 @@ data class CheckError(val path: String, val message: String, val row: Int, val c
 
 @Serializable data class CompleteSignatureResponse(val suffixes: List<String>)
 
+@Serializable data class UsedSignature(val signature: String, val defPath: String, val defRow: Int)
+
+@Serializable data class UsedSignaturesAtRowResponse(val signatures: List<UsedSignature>)
+
 @Serializable data class SignatureIndex(val entries: List<SignatureIndexEntry>)
 
 @Serializable

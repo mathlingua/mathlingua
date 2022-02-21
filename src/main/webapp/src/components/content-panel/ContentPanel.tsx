@@ -20,20 +20,23 @@ import { TopBar } from '../topbar/TopBar';
 import { SignatureIndex } from '../signature-index/SignatureIndex';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
-import { selectedTabPathUpdated, selectSelectedTabPath } from '../../store/selectedTabPathSlice';
+import { selectedTabPathUpdated } from '../../store/selectedTabPathSlice';
 
 export interface HashLocation {
   viewedPath: string;
   targetId: string;
+  line: number;
 }
 
 function getHashLocation(location: {
   pathname: string;
   hash: string;
+  search: string;
 }): HashLocation {
   return {
     viewedPath: location.pathname.replace(/^\//, ''),
     targetId: location.hash.replace(/^#/, ''),
+    line: Number(location.search.replace(/^\?line=/, '') || 0)
   };
 }
 
@@ -176,7 +179,9 @@ const ThreeColumnContent = (props: {
           <SignatureIndex /> :
           <Page
             viewedPath={props.hashLocation.viewedPath}
+            viewedLine={props.hashLocation.line}
             targetId={props.hashLocation.targetId}
+            onOpenFileInTab={() => {}}
           />
         }
       </div>
@@ -222,18 +227,58 @@ const TwoColumnContent = (props: {
       // the selected path is already in the list so just switch to it
       selectIndex(viewedLocationIndex);
     } else {
-      const newLocations: HashLocation[] = [];
-      locations.filter(location =>
-        location.viewedPath !== viewedLocation.viewedPath).forEach((location, index) => {
-          if (index === selectedIndex) {
-            newLocations.push(viewedLocation);
-          } else {
-            newLocations.push(location);
-          }
-        });
+      const newSelectedIndex = selectedIndex >= locations.length ? 0 : selectedIndex;
+      // make a copy of the locations and update `selectedIndex` to point to `viewedLocation`
+      const newLocations: HashLocation[] = locations.map(location => ({
+        viewedPath: location.viewedPath,
+        targetId: location.targetId,
+        line: location.line
+      }));
+      newLocations[newSelectedIndex] = {
+        viewedPath: viewedLocation.viewedPath,
+        targetId: viewedLocation.targetId,
+        line: viewedLocation.line
+      };
       setLocations(newLocations);
+      setSelectedIndex(newSelectedIndex);
     }
   }, [props.hashLocation]);
+
+  const openFileInTab = (path: string, line?: number) => {
+    const index = getViewedLocationIndex(path);
+    if (index >= 0) {
+      if (line !== undefined) {
+        setLocations(locations.map((location, i) => {
+          if (i == index) {
+            return {
+              viewedPath: location.viewedPath,
+              targetId: location.targetId,
+              line
+            };
+          } else {
+            return location;
+          }
+        }));
+      }
+      selectIndex(index);
+    } else {
+      //  the path isn't in the list so add it
+      const newLocations = locations.concat({
+        viewedPath: path,
+        targetId: '',
+        line: line ?? 0
+      });
+      setLocations(newLocations);
+
+      // If `line !== undefined` then the opening of a new tab was because
+      // the user used the context menu to look for the definition of a
+      // signature.  In that case, a new tab was opened in the background as
+      // the last tab, so select that tab.
+      if (line !== undefined) {
+        setSelectedIndex(newLocations.length - 1);
+      }
+    }
+  };
 
   return (
     <div
@@ -247,18 +292,7 @@ const TwoColumnContent = (props: {
       <div style={{ width: props.isSidePanelVisible ? '20%' : '0' }}>
         {props.isSidePanelVisible ? (
           <SidePanel viewedPath={props.hashLocation.viewedPath}
-                     onOpenFileInTab={(path: string) => {
-                       const index = getViewedLocationIndex(path);
-                       if (index >= 0) {
-                        selectIndex(index);
-                       } else {
-                         //  the path isn't in the list so add it
-                         setLocations(locations.concat({
-                           viewedPath: path,
-                           targetId: ''
-                         }));
-                       }
-                     }} />
+                     onOpenFileInTab={openFileInTab} />
         ) : null}
       </div>
       <div
@@ -280,7 +314,8 @@ const TwoColumnContent = (props: {
                     onClose={(path) => {
                       setLocations(locations.filter(location =>
                         location.viewedPath !== path))
-                    }} />
+                    }}
+                    onOpenFileInTab={openFileInTab} />
       </div>
     </div>
   );
@@ -300,13 +335,16 @@ const TabbedView = (props: {
   locations: HashLocation[];
   onClose: (path: string) => void;
   setSelectedIndex: (index: number) => void;
+  onOpenFileInTab: (path: string, line?: number) => void;
 }) => {
   if (props.locations.length === 1) {
     const location = props.locations[0];
     return (
       <Page
         viewedPath={location.viewedPath}
+        viewedLine={location.line}
         targetId={location.targetId}
+        onOpenFileInTab={props.onOpenFileInTab}
       />
     );
   }
@@ -336,7 +374,9 @@ const TabbedView = (props: {
         props.locations.map((location, index) => <TabPanel key={index}>
           <Page
             viewedPath={location.viewedPath}
+            viewedLine={location.line}
             targetId={location.targetId}
+            onOpenFileInTab={props.onOpenFileInTab}
           />
         </TabPanel>)
       }

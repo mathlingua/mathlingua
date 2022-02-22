@@ -2088,6 +2088,127 @@ internal class EndToEndCheckTest {
     }
 
     @Test
+    fun `check does reports errors of base types that don't align with 'means' section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: A
+                    satisfying: "a"
+                    written: "a"
+
+
+                    [\A1]
+                    Defines: A1
+                    means: 'A1 is \A'
+                    satisfying: "a1"
+                    written: "a1"
+
+
+                    [\A2]
+                    Defines: A2
+                    means: 'A2 is \A'
+                    satisfying: "a2"
+                    written: "a2"
+
+
+                    [\B]
+                    Defines: B
+                    satisfying: "b"
+                    written: "b"
+
+
+                    [\f]
+                    Defines: f
+                    means: 'f is \B'
+                    satisfying:
+                    . 'f is \A1'
+                    . 'f is \A2'
+                    written: "f"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 29, Column: 8)
+                'f' has more than one base type: {\B, \A}
+                Found type paths:
+                {\B}, {\A1 -> \A}, {\A2 -> \A}
+
+                ERROR: content/file1.math (Line: 31, Column: 3)
+                'f' has more than one base type: {\B, \A}
+                Found type paths:
+                {\B}, {\A1 -> \A}, {\A2 -> \A}
+
+                ERROR: content/file1.math (Line: 32, Column: 3)
+                'f' has more than one base type: {\B, \A}
+                Found type paths:
+                {\B}, {\A1 -> \A}, {\A2 -> \A}
+
+                FAILED
+                Processed 1 file
+                3 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 3)
+    }
+
+    @Test
+    fun `check does not report errors of base types that align with 'means' section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: A
+                    satisfying: "a"
+                    written: "a"
+
+
+                    [\A1]
+                    Defines: A1
+                    means: 'A1 is \A'
+                    satisfying: "a1"
+                    written: "a1"
+
+
+                    [\A2]
+                    Defines: A2
+                    means: 'A2 is \A'
+                    satisfying: "a2"
+                    written: "a2"
+
+
+                    [\B]
+                    Defines: B
+                    satisfying: "b"
+                    written: "b"
+
+
+                    [\f]
+                    Defines: f
+                    means: 'f is \A'
+                    satisfying:
+                    . 'f is \A1'
+                    . 'f is \A2'
+                    written: "f"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
     fun `check reports errors if multiple 'is' statements exists in 'satisfying' without a 'means' section`() {
         runCheckTest(
             files =

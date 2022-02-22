@@ -110,9 +110,10 @@ binary operation is a type of function.
 [\function:on{A}:to{B}]
 Defines: f(x)
 when: 'A, B is \set'
-satisfying:
+means:
 . 'x in A'
 . 'f(x) in B'
+satisfying:
 . forAll: a
   suchThat: 'a in A'
   then:
@@ -224,6 +225,7 @@ do that using the MathLingua text:
 [A \set.product/ B]
 Defines: X := {x, y}
 when: 'A, B is \set'
+means: 'X is \set'
 expressing:
 . 'x in A'
 . 'y in B'
@@ -236,6 +238,7 @@ that is rendered as
 [A \set.product/ B]
 Defines: X := {x, y}
 when: 'A, B is \set'
+means: 'X is \set'
 expressing:
 . 'x in A'
 . 'y in B'

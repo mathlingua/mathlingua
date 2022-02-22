@@ -225,6 +225,7 @@ do that using the MathLingua text:
 [A \set.product/ B]
 Defines: X := {x, y}
 when: 'A, B is \set'
+means: 'X is \set'
 expressing:
 . 'x in A'
 . 'y in B'
@@ -237,6 +238,7 @@ that is rendered as
 [A \set.product/ B]
 Defines: X := {x, y}
 when: 'A, B is \set'
+means: 'X is \set'
 expressing:
 . 'x in A'
 . 'y in B'

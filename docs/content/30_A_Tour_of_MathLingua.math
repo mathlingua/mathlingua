@@ -130,9 +130,10 @@ which is rendered as:
 [\function:on{A}:to{B}]
 Defines: f(x)
 when: 'A, B is \set'
-satisfying:
+means:
 . 'x in A'
 . 'f(x) in B'
+satisfying:
 . forAll: a
   suchThat: 'a in A'
   then:

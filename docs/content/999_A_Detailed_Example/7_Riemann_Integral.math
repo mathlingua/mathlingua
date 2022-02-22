@@ -67,8 +67,9 @@ a *partition* of a closed interval.
 Defines: X := {x_{i}}_{i}
 given: a, b
 when: 'I := \closed.interval{a, b}'
-satisfying:
+means:
 . 'X is \finite.real.sequence:size{n}'
+satisfying:
 . 'x_{0} = a'
 . 'x_{n} = b'
 . forAll: j

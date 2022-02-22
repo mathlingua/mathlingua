@@ -17,6 +17,7 @@
 package mathlingua.backend
 
 import mathlingua.backend.transform.Signature
+import mathlingua.backend.transform.getVarsPhase2Node
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
@@ -24,6 +25,10 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
+import mathlingua.frontend.chalktalk.phase2.ast.clause.getLeftHandSideTargets
+import mathlingua.frontend.chalktalk.phase2.ast.clause.isColonEqualsStatement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.isInStatement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.isIsStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
@@ -38,6 +43,8 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal interface SymbolAnalyzer {
     fun findInvalidTypes(grp: TopLevelGroup): List<ParseError>
+    fun findMultipleIsStatementsWithoutMeansSection(defines: DefinesGroup): List<ParseError>
+    fun findInvalidMeansSection(defines: DefinesGroup): List<ParseError>
     fun getTypePaths(startSignature: String): List<List<String>>
 }
 
@@ -230,6 +237,93 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
             }
         }
         return errors
+    }
+
+    override fun findMultipleIsStatementsWithoutMeansSection(
+        defines: DefinesGroup
+    ): List<ParseError> {
+        if (defines.satisfyingSection == null) {
+            return emptyList()
+        }
+
+        val hasMeansWithIsOrIn =
+            defines.meansSection?.statements?.firstOrNull {
+                it.isIsStatement() || it.isInStatement()
+            } != null
+
+        val isOrInStatements = mutableListOf<Statement>()
+        for (clause in defines.satisfyingSection.clauses.clauses) {
+            if (clause is Statement && (clause.isIsStatement() || clause.isInStatement())) {
+                isOrInStatements.add(clause)
+            }
+        }
+
+        // if the 'satisfying' section doesn't contain an 'is' or 'in' statement then
+        // there aren't any errors for the check done by this particular function
+        if (isOrInStatements.isEmpty()) {
+            return emptyList()
+        }
+
+        // if the 'satisfying' section contains an 'is' or 'in' statement and the
+        // 'means' section has an 'is' or 'in' statement, then there aren't any errors
+        if (hasMeansWithIsOrIn) {
+            return emptyList()
+        }
+
+        return isOrInStatements.map {
+            ParseError(
+                message =
+                    "Since the `satisfying:` section contains the statement '${it.text}' then a `means:` section must be specified with an `is` or `in` statement.",
+                row = it.row,
+                column = it.column)
+        }
+    }
+
+    override fun findInvalidMeansSection(defines: DefinesGroup): List<ParseError> {
+        val means = defines.meansSection ?: return emptyList()
+
+        val result = mutableListOf<ParseError>()
+        if (means.statements.isEmpty()) {
+            return listOf(
+                ParseError(
+                    message = "Expected at least one statement",
+                    row = means.row,
+                    column = means.column))
+        }
+
+        for (stmt in means.statements) {
+            if (!stmt.isIsStatement() && !stmt.isInStatement() && !stmt.isColonEqualsStatement()) {
+                result.add(
+                    ParseError(
+                        message = "Expected an 'is', 'in', or ':=' statement",
+                        row = stmt.row,
+                        column = stmt.column))
+            }
+        }
+
+        if (result.isNotEmpty()) {
+            return result
+        }
+
+        val defVars = mutableSetOf<String>()
+        for (target in defines.definesSection.targets) {
+            defVars.addAll(target.getVarsPhase2Node().map { it.name })
+        }
+
+        for (stmt in means.statements) {
+            for (target in stmt.getLeftHandSideTargets() ?: emptyList()) {
+                for (name in target.getVarsPhase2Node().map { it.name }) {
+                    result.add(
+                        ParseError(
+                            message =
+                                "Cannot define name $name in an `is`, `in`, or `:=` statement that was not introduced in a `means:` section.",
+                            row = target.row,
+                            column = target.column))
+                }
+            }
+        }
+
+        return result
     }
 
     private fun getDefSignatures(node: Phase2Node, name: String): Set<String> {

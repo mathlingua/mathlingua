@@ -28,7 +28,10 @@ import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.Validation
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
+import mathlingua.frontend.textalk.InTexTalkNode
+import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 
@@ -92,4 +95,73 @@ internal fun validateStatement(
 
         errors.addAll(texTalkErrors)
         Statement(text = text, texTalkRoot = validation, row, column, inline)
+    }
+
+internal fun Statement.isIsStatement() =
+    when (val validation = this.texTalkRoot
+    ) {
+        is ValidationSuccess -> {
+            val root = validation.value
+            root.children.size == 1 && root.children[0] is IsTexTalkNode
+        }
+        is ValidationFailure -> false
+    }
+
+internal fun Statement.isInStatement() =
+    when (val validation = this.texTalkRoot
+    ) {
+        is ValidationSuccess -> {
+            val root = validation.value
+            root.children.size == 1 && root.children[0] is InTexTalkNode
+        }
+        is ValidationFailure -> false
+    }
+
+internal fun Statement.isColonEqualsStatement() =
+    when (val validation = this.texTalkRoot
+    ) {
+        is ValidationSuccess -> {
+            val root = validation.value
+            root.children.size == 1 && root.children[0] is ColonEqualsTexTalkNode
+        }
+        is ValidationFailure -> false
+    }
+
+internal fun Statement.getLeftHandSideTargets(): List<Target>? =
+    if (this.isIsStatement()) {
+        val isStatement = (this.texTalkRoot as ValidationSuccess).value.children[0] as IsTexTalkNode
+        val result = mutableListOf<Target>()
+        for (exp in isStatement.lhs.items) {
+            for (c in exp.children) {
+                if (c is Target) {
+                    result.add(c)
+                }
+            }
+        }
+        result
+    } else if (this.isInStatement()) {
+        val inStatement = (this.texTalkRoot as ValidationSuccess).value.children[0] as InTexTalkNode
+        val result = mutableListOf<Target>()
+        for (exp in inStatement.lhs.items) {
+            for (c in exp.children) {
+                if (c is Target) {
+                    result.add(c)
+                }
+            }
+        }
+        result
+    } else if (this.isColonEqualsStatement()) {
+        val colonEqualsStatement =
+            (this.texTalkRoot as ValidationSuccess).value.children[0] as ColonEqualsTexTalkNode
+        val result = mutableListOf<Target>()
+        for (exp in colonEqualsStatement.lhs.items) {
+            for (c in exp.children) {
+                if (c is Target) {
+                    result.add(c)
+                }
+            }
+        }
+        result
+    } else {
+        null
     }

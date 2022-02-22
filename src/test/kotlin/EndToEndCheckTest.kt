@@ -1367,7 +1367,7 @@ internal class EndToEndCheckTest {
 
                     [\something.else]
                     Defines: f(x)
-                    satisfying: 'f(x) is \something'
+                    means: 'f(x) is \something'
                     written: "something else"
                     called: "something else"
                 """.trimIndent())),
@@ -1399,8 +1399,9 @@ internal class EndToEndCheckTest {
 
                     [\something.else]
                     Defines: {x_{i}}_{i}
-                    satisfying:
+                    means:
                     . '{x_{i}}_{i} is \something'
+                    satisfying:
                     . '{x_{i}}_{i}'
                     . 'x_{i}'
                     written: "something else"
@@ -2008,8 +2009,8 @@ internal class EndToEndCheckTest {
 
                     [\f]
                     Defines: (S, <)
+                    means: 'S is \something'
                     satisfying:
-                    . 'S is \something'
                     . '< is \something.else'
                     . '0 < 1'
                     providing:
@@ -2063,8 +2064,8 @@ internal class EndToEndCheckTest {
 
                     [\f]
                     Defines: (S, <)
+                    means: 'S is \something'
                     satisfying:
-                    . 'S is \something'
                     . '< is \something.else'
                     . '0 < 1'
                     providing:
@@ -2075,6 +2076,232 @@ internal class EndToEndCheckTest {
                       through: 'S'
                     written: "\textrm{ordered set}"
                     called: "ordered set"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors if multiple 'is' statements exists in 'satisfying' without a 'means' section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: a
+                    satisfying: "something"
+                    written: "A"
+
+
+                    [\B]
+                    Defines: b
+                    means: 'b is \A'
+                    satisfying: "something"
+                    written: "B"
+
+
+                    [\C]
+                    Defines: c
+                    means: 'c is \A'
+                    satisfying: "something"
+                    written: "C"
+
+
+                    [\F]
+                    Defines: f
+                    satisfying:
+                    . 'f is \B'
+                    . 'f is \C'
+                    written: "F"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 24, Column: 3)
+                Since the `satisfying:` section contains the statement 'f is \B' then a `means:` section must be specified with an `is` or `in` statement.
+
+                ERROR: content/file1.math (Line: 25, Column: 3)
+                Since the `satisfying:` section contains the statement 'f is \C' then a `means:` section must be specified with an `is` or `in` statement.
+
+                FAILED
+                Processed 1 file
+                2 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 2)
+    }
+
+    @Test
+    fun `check reports errors if multiple 'in' statements exists in 'satisfying' without a 'means' section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: {a}
+                    expressing: "something"
+                    written: "A"
+
+
+                    [\B]
+                    Defines: {b}
+                    means: 'b in \A'
+                    expressing: "something"
+                    written: "B"
+
+
+                    [\C]
+                    Defines: {c}
+                    means: 'c in \A'
+                    expressing: "something"
+                    written: "C"
+
+
+                    [\F]
+                    Defines: f
+                    satisfying:
+                    . 'f in \B'
+                    . 'f in \C'
+                    written: "F"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 24, Column: 3)
+                Since the `satisfying:` section contains the statement 'f in \B' then a `means:` section must be specified with an `is` or `in` statement.
+
+                ERROR: content/file1.math (Line: 25, Column: 3)
+                Since the `satisfying:` section contains the statement 'f in \C' then a `means:` section must be specified with an `is` or `in` statement.
+
+                FAILED
+                Processed 1 file
+                2 errors detected
+        """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 2)
+    }
+
+    @Test
+    fun `check does not report errors if a 'means' section exists with an 'is' statement and no 'satisfying' section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: a
+                    satisfying: "something"
+                    written: "A"
+
+
+                    [\F]
+                    Defines: f
+                    means: 'f is \A'
+                    written: "F"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors if a 'means' section exists with an 'in' statement and no 'satisfying' section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: {a}
+                    expressing: "something"
+                    written: "A"
+
+
+                    [\F]
+                    Defines: f
+                    means: 'f in \A'
+                    written: "F"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors if a 'means' section exists with an 'is' statement and 'satisfying' section without 'is' or 'in'`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: a
+                    satisfying: "something"
+                    written: "A"
+
+
+                    [\F]
+                    Defines: f
+                    means: 'f is \A'
+                    satisfying: "something"
+                    written: "F"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors if a 'means' section exists with an 'in' statement and 'satisfying' section without 'is' or 'in'`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: {a}
+                    expressing: "something"
+                    written: "A"
+
+
+                    [\F]
+                    Defines: f
+                    means: 'f in \A'
+                    satisfying: "something"
+                    written: "F"
                 """.trimIndent())),
             expectedOutput =
                 """
@@ -2416,20 +2643,24 @@ internal class EndToEndCheckTest {
 
                     [\something.else]
                     Defines: X
+                    means: 'X is \something'
                     satisfying: 'X is \something'
                     written: "something else"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 13)
+                ERROR: content/file1.math (Line: 9, Column: 8)
+                The right-hand-side of an `is` cannot reference a `Defines:` with an `expressing:` section but found '\something'
+
+                ERROR: content/file1.math (Line: 10, Column: 13)
                 The right-hand-side of an `is` cannot reference a `Defines:` with an `expressing:` section but found '\something'
 
                 FAILED
                 Processed 1 file
-                1 error detected
+                2 errors detected
         """.trimIndent(),
             expectedExitCode = 1,
-            expectedNumErrors = 1)
+            expectedNumErrors = 2)
     }
 
     @Test
@@ -2449,7 +2680,7 @@ internal class EndToEndCheckTest {
 
                     [\something.else]
                     Defines: X
-                    satisfying: 'X is \something'
+                    means: 'X is \something'
                     written: "something else"
                 """.trimIndent())),
             expectedOutput =
@@ -2543,14 +2774,21 @@ internal class EndToEndCheckTest {
                     written: "something else"
 
 
+                    [\another.thing]
+                    Defines: X
+                    means: 'X is \something.else'
+                    written: "another thing"
+
+
                     [\something{A}]
                     Defines: X
+                    means: 'X is \another.thing'
                     satisfying: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 9, Column: 13)
+                ERROR: content/file1.math (Line: 16, Column: 13)
                 A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
@@ -2737,15 +2975,22 @@ internal class EndToEndCheckTest {
                     written: "something else"
 
 
+                    [\another.thing]
+                    Defines: X
+                    means: 'X is \something.else'
+                    written: "another thing"
+
+
                     [\something]
                     Defines: X
                     given: A
+                    means: 'A is \another.thing'
                     satisfying: 'A is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 10, Column: 13)
+                ERROR: content/file1.math (Line: 17, Column: 13)
                 A `satisfying:` or `expressing:` section cannot describe a symbol introduced in a [...] or `given:` section but found 'A'
 
                 FAILED
@@ -2971,8 +3216,15 @@ internal class EndToEndCheckTest {
                     written: "something else"
 
 
+                    [\another.thing]
+                    Defines: X
+                    means: 'X is \something.else'
+                    written: "another thing"
+
+
                     [\something]
                     Defines: X
+                    means: 'X is \another.thing'
                     satisfying: 'X is \something.else'
                     written: "something"
                 """.trimIndent())),
@@ -3285,7 +3537,7 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: X
-                    satisfying: 'X is \something.else'
+                    means: 'X is \something.else'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
@@ -3336,8 +3588,9 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: X
-                    satisfying:
+                    means:
                     . 'X in \something.else'
+                    satisfying:
                     . 'X in \some.states'
                     . 'X in \some.axiom'
                     . 'X in \some.conjecture'
@@ -3346,25 +3599,25 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 34, Column: 3)
+                ERROR: content/file1.math (Line: 35, Column: 3)
                 No matching definition found for \some.conjecture
 
-                ERROR: content/file1.math (Line: 35, Column: 3)
+                ERROR: content/file1.math (Line: 36, Column: 3)
                 No matching definition found for \some.theorem
 
                 ERROR: content/file1.math (Line: 31, Column: 3)
                 The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\something.else'
 
-                ERROR: content/file1.math (Line: 32, Column: 3)
+                ERROR: content/file1.math (Line: 33, Column: 3)
                 The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.states'
 
-                ERROR: content/file1.math (Line: 33, Column: 3)
+                ERROR: content/file1.math (Line: 34, Column: 3)
                 The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.axiom'
 
-                ERROR: content/file1.math (Line: 34, Column: 3)
+                ERROR: content/file1.math (Line: 35, Column: 3)
                 The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.conjecture'
 
-                ERROR: content/file1.math (Line: 35, Column: 3)
+                ERROR: content/file1.math (Line: 36, Column: 3)
                 The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\some.theorem'
 
                 FAILED
@@ -3413,35 +3666,35 @@ internal class EndToEndCheckTest {
 
                     [\something1]
                     Defines: X
-                    satisfying:
+                    means:
                     . 'X is \something.else'
                     written: "something"
 
 
                     [\something2]
                     Defines: X
-                    satisfying:
+                    means:
                     . 'X is \some.states'
                     written: "something"
 
 
                     [\something3]
                     Defines: X
-                    satisfying:
+                    means:
                     . 'X is \some.axiom'
                     written: "something"
 
 
                     [\something4]
                     Defines: X
-                    satisfying:
+                    means:
                     . 'X is \some.conjecture'
                     written: "something"
 
 
                     [\something5]
                     Defines: X
-                    satisfying:
+                    means:
                     . 'X is \some.theorem'
                     written: "something"
                 """.trimIndent())),
@@ -3494,8 +3747,15 @@ internal class EndToEndCheckTest {
                     written: "something"
 
 
+                    [\another.thing]
+                    Defines: X
+                    satisfying: "another thing"
+                    written: "another thing"
+
+
                     [\something]
                     Defines: X
+                    means: 'X is \another.thing'
                     satisfying: 'X in \f{\something.else}'
                     written: "something"
                 """.trimIndent())),
@@ -3532,12 +3792,12 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: X
-                    satisfying: 'X in \f{\something.else}'
+                    means: 'X in \f{\something.else}'
                     written: "something"
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 15, Column: 13)
+                ERROR: content/file1.math (Line: 15, Column: 8)
                 The right-hand-side of an `in` cannot reference a `Defines:` without an `expressing:` section but found '\f'
 
                 FAILED

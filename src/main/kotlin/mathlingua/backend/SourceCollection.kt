@@ -105,6 +105,8 @@ internal interface SourceCollection {
     fun getDuplicateDefinedSignatures(): List<ValueAndSource<Signature>>
     fun getUndefinedSignatures(): Set<ValueAndSource<Signature>>
     fun findInvalidTypes(): List<ValueAndSource<ParseError>>
+    fun findMultipleIsStatementsWithoutMeansSection(): List<ValueAndSource<ParseError>>
+    fun findInvalidMeansSection(): List<ValueAndSource<ParseError>>
     fun getParseErrors(): List<ValueAndSource<ParseError>>
     fun getDuplicateContent(): List<ValueAndSource<TopLevelGroup>>
     fun getSymbolErrors(): List<ValueAndSource<ParseError>>
@@ -747,6 +749,46 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 else -> {
                     // if parsing fails, then no further checking is needed
                 }
+            }
+        }
+        return result
+    }
+
+    override fun findMultipleIsStatementsWithoutMeansSection(): List<ValueAndSource<ParseError>> {
+        val result = mutableListOf<ValueAndSource<ParseError>>()
+        val defSigs = getAllDefinedSignatures()
+        val defs =
+            defSigs.filter { it.second is DefinesGroup }.map {
+                Pair(it.first, it.second as DefinesGroup)
+            }
+        val analyzer = newSymbolAnalyzer(defs)
+        for (ds in defSigs) {
+            val top = ds.second
+            if (top is DefinesGroup) {
+                result.addAll(
+                    analyzer.findMultipleIsStatementsWithoutMeansSection(top).map {
+                        ValueAndSource(value = it, source = ds.first.source)
+                    })
+            }
+        }
+        return result
+    }
+
+    override fun findInvalidMeansSection(): List<ValueAndSource<ParseError>> {
+        val result = mutableListOf<ValueAndSource<ParseError>>()
+        val defSigs = getAllDefinedSignatures()
+        val defs =
+            defSigs.filter { it.second is DefinesGroup }.map {
+                Pair(it.first, it.second as DefinesGroup)
+            }
+        val analyzer = newSymbolAnalyzer(defs)
+        for (ds in defSigs) {
+            val top = ds.second
+            if (top is DefinesGroup) {
+                result.addAll(
+                    analyzer.findInvalidMeansSection(top).map {
+                        ValueAndSource(value = it, source = ds.first.source)
+                    })
             }
         }
         return result

@@ -242,7 +242,7 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
     override fun findMultipleIsStatementsWithoutMeansSection(
         defines: DefinesGroup
     ): List<ParseError> {
-        if (defines.satisfyingSection == null) {
+        if (defines.satisfyingSection == null && defines.expressingSection == null) {
             return emptyList()
         }
 
@@ -252,7 +252,16 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
             } != null
 
         val isOrInStatements = mutableListOf<Statement>()
-        for (clause in defines.satisfyingSection.clauses.clauses) {
+        val clauses =
+            if (defines.satisfyingSection != null) {
+                defines.satisfyingSection.clauses.clauses
+            } else {
+                // the !! is explicitly needed since if `defines.expressingSection`
+                // is `null` then the logic above is wrong and so the code should
+                // fail fast and loud
+                defines.expressingSection!!.clauses.clauses
+            }
+        for (clause in clauses) {
             if (clause is Statement && (clause.isIsStatement() || clause.isInStatement())) {
                 isOrInStatements.add(clause)
             }
@@ -273,7 +282,7 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
         return isOrInStatements.map {
             ParseError(
                 message =
-                    "Since the `satisfying:` section contains the statement '${it.text}' then a `means:` section must be specified with an `is` or `in` statement.",
+                    "Since a `satisfying:` or `expressing:` section contains the statement '${it.text}' then a `means:` section must be specified with an `is` or `in` statement.",
                 row = it.row,
                 column = it.column)
         }

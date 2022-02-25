@@ -8,6 +8,7 @@ import queryReducer from './querySlice';
 import isEditModeReducer from './isEditModeSlice';
 import errorResultsReducer from './errorResultsSlice';
 import selectedTabPathReducer from './selectedTabPathSlice';
+import isFullscreenReducer from './isFullscreenSlice';
 
 export const store = configureStore({
   reducer: {
@@ -15,6 +16,7 @@ export const store = configureStore({
     paths: pathsReducer,
     query: queryReducer,
     isEditMode: isEditModeReducer,
+    isFullscreen: isFullscreenReducer,
     errorResults: errorResultsReducer,
     selectedTabPath: selectedTabPathReducer
   },

@@ -21,6 +21,12 @@ import { SignatureIndex } from '../signature-index/SignatureIndex';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTimes } from '@fortawesome/free-solid-svg-icons';
 import { selectedTabPathUpdated } from '../../store/selectedTabPathSlice';
+import { isFullscreenUpdated, selectIsFullscreen } from '../../store/isFullscreenSlice';
+import {
+  faCaretUp,
+  faCaretDown
+} from '@fortawesome/free-solid-svg-icons';
+
 
 export interface HashLocation {
   viewedPath: string;
@@ -49,6 +55,8 @@ export const ContentPanel = (props: ContentPanelProps) => {
   const hashLocation = getHashLocation(useLocation());
   const isEditMode = useAppSelector(selectIsEditMode);
   const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
+  const isFullscreen = useAppSelector(selectIsFullscreen);
+  const dispatch = useAppDispatch();
 
   useEffect(() => {
     props.onLocationChanged(hashLocation.viewedPath);
@@ -80,7 +88,33 @@ export const ContentPanel = (props: ContentPanelProps) => {
 
   return (
     <div>
-      <TopBar />
+      {isFullscreen ? null : <TopBar />}
+      {
+        isEditMode ?
+        <span style={{
+            position: 'absolute',
+            right: '0',
+            paddingTop: '2ex',
+            paddingRight: '1.5ex',
+          }}>
+          <button
+            style={{
+              border: 'none',
+              background: 'transparent',
+            }}
+            onClick={() => {
+              dispatch(isFullscreenUpdated(!isFullscreen))
+          }}>
+            <FontAwesomeIcon
+              icon={isFullscreen ? faCaretDown : faCaretUp}
+              style={{
+                filter: 'drop-shadow(0.45px 0.45px 0px rgba(0, 0, 0, 0.2))',
+                fontSize: '110%',
+              }}
+            />
+          </button>
+        </span> : null
+      }
       {innerPanel}
     </div>
   );

@@ -27,6 +27,8 @@ import {
   faCaretDown
 } from '@fortawesome/free-solid-svg-icons';
 
+import SplitPane from 'react-split-pane';
+const Pane = require('react-split-pane/lib/Pane');
 
 export interface HashLocation {
   viewedPath: string;
@@ -244,6 +246,19 @@ const TwoColumnContent = (props: {
   const [selectedIndex, setSelectedIndex] = useState(
     Math.max(0, getViewedLocationIndex(props.hashLocation.viewedPath)));
 
+  // the react-split-pane resizer for the side panel is 0.5em too
+  // high and the only way, it appears, to fix that is to find the
+  // resizer and change its style dynamically
+  useEffect(() => {
+    const divs = document.getElementsByTagName('div');
+    for (let i=0; i<divs.length; i++) {
+      const div = divs[i];
+      if (div?.dataset?.type === 'Resizer') {
+        div.style.marginTop = '0.5em';
+      }
+    }
+  }, []);
+
   const selectIndex = (index: number) => {
     setSelectedIndex(index);
     const location = locations[index];
@@ -314,34 +329,22 @@ const TwoColumnContent = (props: {
     }
   };
 
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        padding: '0',
-        margin: '0',
-      }}
-    >
-      <div style={{ width: props.isSidePanelVisible ? '20%' : '0' }}>
+  return <SplitPane>
+    <Pane initialSize='20%'>
+      <div>
         {props.isSidePanelVisible ? (
           <SidePanel viewedPath={props.hashLocation.viewedPath}
                      onOpenFileInTab={openFileInTab} />
         ) : null}
       </div>
-      <div
-        style={locations.length === 1 ? {
-          width: props.isSidePanelVisible ? '80%' : '100%',
+    </Pane>
+    <Pane>
+      <div style={{
           marginTop: '0.5em',
           borderTop: 'solid',
           borderTopWidth: '1px',
           borderTopColor: '#aaaaaa',
-        } : {
-          width: props.isSidePanelVisible ? '80%' : '100%',
-          marginTop: '0.5em',
-          border: 'none',
-        }}
-      >
+        }}>
         <TabbedView locations={locations}
                     selectedIndex={selectedIndex}
                     setSelectedIndex={selectIndex}
@@ -351,8 +354,8 @@ const TwoColumnContent = (props: {
                     }}
                     onOpenFileInTab={openFileInTab} />
       </div>
-    </div>
-  );
+    </Pane>
+  </SplitPane>;
 };
 
 const getLastPathLocation = (path: string) => {

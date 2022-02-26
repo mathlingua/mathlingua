@@ -3,7 +3,7 @@ import { BlockComment } from '../block-comment/BlockComment';
 import styles from './Page.module.css';
 
 import * as api from '../../services/api';
-import React, { Dispatch, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { ErrorView } from '../error-view/ErrorView';
 import { TopLevelEntityGroup } from '../top-level-entity-group/TopLevelEntityGroup';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
@@ -25,6 +25,9 @@ import { faAngleRight, faAngleLeft } from '@fortawesome/free-solid-svg-icons';
 import { DebouncedFunc } from 'lodash';
 import { errorResultsUpdated } from '../../store/errorResultsSlice';
 import { AppDispatch } from '../../store/store';
+
+import SplitPane from 'react-split-pane';
+const Pane = require('react-split-pane/lib/Pane');
 
 interface AceCompletion {
   value: string;
@@ -629,12 +632,7 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
             width: '100%',
             height: 'calc(100vh - 1.75em)',
             minHeight: 'calc(100vh - 1.75em)',
-            borderRight: 'solid',
-            borderRightWidth: '1px',
-            borderRightColor: '#dddddd',
-            borderLeft: 'solid',
-            borderLeftWidth: '1px',
-            borderLeftColor: '#aaaaaa',
+            border: 'none',
           }}
           commands={[
             {
@@ -681,31 +679,25 @@ const SideBySideView = (props: {
     }
   };
 
-  return (
-    <div
-      style={{ display: 'flex', flexDirection: 'row', background: '#ffffff' }}
-    >
-      <div style={{ width: '50%' }}>
-        <EditorView
-          dispatch={dispatch}
-          viewedPath={props.relativePath}
-          viewedLine={props.viewedLine}
-          onFileResultChanged={onFileResultChanged}
-          onOpenFileInTab={props.onOpenFileInTab}
-        />
-      </div>
-      <div
-        style={{
-          width: '50%',
-          maxHeight: 'calc(100vh - 1.75em)',
-          height: 'max-content',
+  return <SplitPane>
+    <Pane>
+      <EditorView
+        dispatch={dispatch}
+        viewedPath={props.relativePath}
+        viewedLine={props.viewedLine}
+        onFileResultChanged={onFileResultChanged}
+        onOpenFileInTab={props.onOpenFileInTab}
+      />
+    </Pane>
+    <Pane>
+      <div style={{
+          height: '100%',
           overflow: 'scroll',
           background: '#ffffff',
           borderTop: 'solid',
           borderTopColor: '#dddddd',
           borderTopWidth: '1px'
-        }}
-      >
+        }}>
         <RenderedContent
           relativePath={relativePath}
           errors={errors}
@@ -713,6 +705,6 @@ const SideBySideView = (props: {
           targetId={props.targetId}
         />
       </div>
-    </div>
-  );
+    </Pane>
+  </SplitPane>
 };

@@ -141,7 +141,7 @@ const ThreeColumnContent = (props: {
     return <div style={{
       marginTop: '0.75em',
       display: 'grid',
-      gridTemplateColumns: '2.5% auto 2.5%',
+      gridTemplateColumns: '2.5% 95% 2.5%',
     }}>
       <div>
         {

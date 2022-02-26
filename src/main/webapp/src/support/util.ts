@@ -1,3 +1,3 @@
 export function isOnMobile() {
-  return window.screen.width <= 1025;
+  return (window.innerWidth + 1)/(window.innerHeight + 1) < 1;
 }

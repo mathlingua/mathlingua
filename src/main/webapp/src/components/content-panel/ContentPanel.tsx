@@ -10,11 +10,8 @@ import { selectIsEditMode } from '../../store/isEditModeSlice';
 import { useAppDispatch, useAppSelector } from '../../support/hooks';
 import {
   selectSidePanelVisible,
-  sidePanelVisibilityChanged,
 } from '../../store/sidePanelVisibleSlice';
-// import { isOnMobile } from '../../support/util';
-import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { isOnMobile } from '../../support/util';
+import { useEffect, useRef, useState } from 'react';
 import * as api from '../../services/api';
 import { TopBar } from '../topbar/TopBar';
 import { SignatureIndex } from '../signature-index/SignatureIndex';
@@ -28,6 +25,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 import SplitPane from 'react-split-pane';
+import { isOnMobile } from '../../support/util';
 const Pane = require('react-split-pane/lib/Pane');
 
 export interface HashLocation {
@@ -126,90 +124,44 @@ const ThreeColumnContent = (props: {
   hashLocation: HashLocation;
   startedWithSidePanelVisible: boolean;
 }) => {
-  const dispatch = useAppDispatch();
-  const ref = useRef(null);
-
-  const isZoomedInEnoughToHideSidebar = useCallback(
-    () =>
-      isOnMobile() ||
-      (ref.current &&
-        (ref.current as any).clientWidth >= 0.75 * window.screen.width),
-    [ref]
-  );
-
   const isSidePanelVisible = useAppSelector(selectSidePanelVisible);
-  const [zoomedInEnoughToHideSidebar, setZoomedInEnoughToHideSidebar] =
-    useState(isZoomedInEnoughToHideSidebar());
+  const [isNarrow, setIsNarrow] = useState(isOnMobile());
 
   useEffect(() => {
-    const handleResize = () => {
-      const newZoomedIn = isZoomedInEnoughToHideSidebar();
-      if (props.startedWithSidePanelVisible) {
-        if (newZoomedIn) {
-          dispatch(sidePanelVisibilityChanged(false));
-        } else {
-          dispatch(sidePanelVisibilityChanged(true));
-        }
-      }
-      setZoomedInEnoughToHideSidebar(newZoomedIn);
+    const updateIsNarrow = () => {
+      setIsNarrow(isOnMobile());
     };
-
-    window.addEventListener('resize', handleResize);
-
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', updateIsNarrow);
+    return () => {
+      window.removeEventListener('resize', updateIsNarrow);
+    };
   }, []);
 
-  const centerWidth = '45em';
-  const sideWidth = `calc((100% - ${centerWidth}) / 2)`;
-  return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'row',
-        padding: 0,
-        margin: 0,
-      }}
-    >
-      <div
-        style={{
-          display:
-            !zoomedInEnoughToHideSidebar || isSidePanelVisible
-              ? 'block'
-              : 'none',
-          width: zoomedInEnoughToHideSidebar ? '100%' : sideWidth,
-          padding: 0,
-          marginLeft: 0,
-          marginBottom: 0,
-          marginTop: '0.25em',
-        }}
-      >
-        {isSidePanelVisible ? (
-          <div
-            style={
-              zoomedInEnoughToHideSidebar
-                ? {}
-                : { width: '100%', float: 'right' }
-            }
-          >
+  if (isNarrow && window.innerWidth < 1024) {
+    return <div style={{
+      marginTop: '0.75em',
+      display: 'grid',
+      gridTemplateColumns: '2.5% auto 2.5%',
+    }}>
+      <div>
+        {
+          isSidePanelVisible ?
+          <div style={{
+              position: 'fixed',
+              zIndex: '10',
+              background: '#ffffff',
+              borderColor: '#dddddd',
+              boxShadow: '0px 1px 5px rgba(0, 0, 0, .2)',
+              height: '100%',
+              width: 'max-content',
+              minWidth: 'fit-content',
+            }}>
             <SidePanel viewedPath={props.hashLocation.viewedPath}
                        onOpenFileInTab={() => {}} />
-          </div>
-        ) : null}
+          </div> : null
+        }
       </div>
-      <div
-        ref={ref}
-        style={{
-          width: isOnMobile()
-            ? isSidePanelVisible
-              ? '0%'
-              : centerWidth
-            : centerWidth,
-          maxWidth: '95%',
-          marginTop: zoomedInEnoughToHideSidebar ? '0.5em' : '1em',
-          marginLeft: 'auto',
-          marginRight: 'auto',
-        }}
-      >
+      <div>
         {
           (props.hashLocation.viewedPath === 'index') ?
           <SignatureIndex /> :
@@ -221,14 +173,34 @@ const ThreeColumnContent = (props: {
           />
         }
       </div>
-      <div
-        style={{
-          width: zoomedInEnoughToHideSidebar ? '0%' : sideWidth,
-          display: zoomedInEnoughToHideSidebar ? 'none' : 'block',
-        }}
-      ></div>
+      <div></div>
+    </div>;
+  }
+
+  return <div style={{
+    marginTop: '0.75em',
+    display: 'grid',
+    gridTemplateColumns: '22.5% auto 22.5%',
+  }}>
+    <div>
+      { isSidePanelVisible ?
+        <SidePanel viewedPath={props.hashLocation.viewedPath}
+                   onOpenFileInTab={() => {}} /> : null }
     </div>
-  );
+    <div>
+      {
+        (props.hashLocation.viewedPath === 'index') ?
+        <SignatureIndex /> :
+        <Page
+          viewedPath={props.hashLocation.viewedPath}
+          viewedLine={props.hashLocation.line}
+          targetId={props.hashLocation.targetId}
+          onOpenFileInTab={() => {}}
+        />
+      }
+    </div>
+    <div></div>
+  </div>;
 };
 
 const TwoColumnContent = (props: {

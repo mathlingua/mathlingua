@@ -257,7 +257,7 @@ const TwoColumnContent = (props: {
         div.style.marginTop = '0.5em';
       }
     }
-  }, []);
+  }, [props.isSidePanelVisible]);
 
   const selectIndex = (index: number) => {
     setSelectedIndex(index);
@@ -330,14 +330,12 @@ const TwoColumnContent = (props: {
   };
 
   return <SplitPane>
-    <Pane initialSize='20%'>
-      <div>
-        {props.isSidePanelVisible ? (
-          <SidePanel viewedPath={props.hashLocation.viewedPath}
-                     onOpenFileInTab={openFileInTab} />
-        ) : null}
-      </div>
-    </Pane>
+    {props.isSidePanelVisible ? (
+      <Pane initialSize='20%'>
+        <SidePanel viewedPath={props.hashLocation.viewedPath}
+                   onOpenFileInTab={openFileInTab} />
+      </Pane>
+    ) : null}
     <Pane>
       <div style={{
           marginTop: '0.5em',

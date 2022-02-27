@@ -17,16 +17,14 @@ bounded functions.
 Defines: f(x)
 given: a, b
 when: 'I := \closed.interval{a, b}'
-means: 'f is \function:on{I}:to{R}'
+means: 'f is \function:on{I}:to{\real.numbers}'
 satisfying:
-. 'f is \function:on{I}:to{\real.numbers}'
 . exists: M
+  where: 'M is \real'
   suchThat:
-  . 'M is \real'
   . forAll: t
-    suchThat: 't in I'
+    where: 't in I'
     then: '\real.abs(f(t)) \real.leq/ M'
-using: 'R := \real.numbers'
 written: "\textrm{Bounded Real Function on } I?"
 
 
@@ -47,8 +45,8 @@ Defines: X := {x_{i}}_{i}
 when: 'n is \integer'
 satisfying:
 . forAll: j
+  where: 'j is \integer'
   suchThat:
-  . 'j is \integer'
   . 'j \integers.geq/ 0'
   . 'j \integers.leq/ n'
   then:
@@ -73,8 +71,8 @@ satisfying:
 . 'x_{0} = a'
 . 'x_{n} = b'
 . forAll: j
+  where: 'j is \integer'
   suchThat:
-  . 'j is \integer'
   . 'j \integers.geq/ 1'
   . 'j \integers.leq/ n'
   then:
@@ -102,6 +100,7 @@ given: S(n)
 when:
 . 'S(a) := f(a)'
 . forAll: j
+  where: 'j is \integer'
   suchThat:
   . 'j \integers.gt/ a'
   . 'j \integers.leq/ b'
@@ -272,7 +271,7 @@ same number.
 ::
 
 
-[\riemann.integralble.function:on{a, b}]
+[\riemann.integrable.function:on{a, b}]
 Defines: f(x)
 means: 'f is \function:on{R}:to{R}'
 satisfying:
@@ -294,7 +293,7 @@ Riemann Integrable.
 
 [\definite.integral[x]_{a}^{b}:of{f}]
 Defines: S
-when: 'f is \riemann.integralble.function:on{a, b}'
+when: 'f is \riemann.integrable.function:on{a, b}'
 means: 'S is \real'
 expressing:
 . 'S := \lower.darboux.integral:of{f}:on{a, b}'
@@ -325,7 +324,7 @@ when:
 means: 'F(x) is \function:on{I}:to{R}'
 satisfying:
 . forAll: t
-  suchThat: 't in I'
+  where: 't in I'
   then:
   . '\derivative:of{F}:at{t} = f(t)'
 using: 'R := \real.numbers'

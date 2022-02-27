@@ -58,15 +58,16 @@ number system will turn out to be an ordered set.
 
 [\ordered.set]
 Defines: (S, <)
-means: 'S is \set'
-satisfying:
+means:
+. 'S is \set'
 . '< is \binary.relation:on{S}'
+satisfying:
 . forAll: x, y
-  suchThat: 'x, y in S'
+  where: 'x, y in S'
   then:
   . '\exactly.one.of{x < y}{y < x}{x = y}'
 . forAll: x, y, z
-  suchThat: 'x, y, z in S'
+  where: 'x, y, z in S'
   then:
   . if:
     . 'x < y'
@@ -156,7 +157,7 @@ when:
 means: 'b in X'
 satisfying:
 . forAll: x
-  suchThat: 'x in E'
+  where: 'x in E'
   then: 'x \leq{X}/ b'
 written: "\textrm{Upper Bound of } X?"
 
@@ -172,7 +173,7 @@ Defines: X := (E, <)
 means: 'X is \ordered.set'
 satisfying:
 . exists: b
-  suchThat:
+  where:
   . 'b is \upper.bound:of{X}'
 written: "\textrm{Bounded Above}"
 
@@ -189,7 +190,7 @@ when: 'X is \bounded.above.set'
 means: 'beta is \upper.bound:of{X}'
 expressing:
 . forAll: b
-  suchThat: 'b is \upper.bound:of{X}'
+  where: 'b is \upper.bound:of{X}'
   then: 'b \geq{X}/ beta'
 written: "\sup X?"
 called: "Supremum of $X?$"
@@ -211,7 +212,7 @@ when:
 means: 'b in X'
 satisfying:
 . forAll: x
-  suchThat: 'x in E'
+  where: 'x in E'
   then: 'x \geq{X}/ b'
 written: "\textrm{Lower Bound of } X?"
 
@@ -226,7 +227,7 @@ Defines: X := (E, <)
 means: 'X is \ordered.set'
 satisfying:
 . exists: b
-  suchThat:
+  where:
   . 'b is \lower.bound:of{X}'
 written: "\textrm{Bounded Below}"
 
@@ -243,7 +244,7 @@ when: 'X is \bounded.above.set'
 means: 'alpha is \lower.bound:of{X}'
 expressing:
 . forAll: a
-  suchThat: 'a is \lower.bound:of{X}'
+  where: 'a is \lower.bound:of{X}'
   then: 'a \leq{X}/ alpha'
 written: "\inf X?"
 called: "Infimum of $X?$"
@@ -265,7 +266,7 @@ means: 'X is \set'
 expressing:
 . not:
   . exists: x
-    suchThat:
+    where:
     . 'x in X'
 written: "\textrm{Empty Set}"
 
@@ -289,10 +290,11 @@ Defines: X := (S, <)
 means: 'X is \ordered.set'
 satisfying:
 . forAll: E
-  suchThat:
+  where:
   . 'E is \nonempty.set'
-  . 'E \subset/ S'
   . 'E is \bounded.above.set'
+  suchThat:
+  . 'E \subset/ S'
   then:
   . exists: b
     suchThat:

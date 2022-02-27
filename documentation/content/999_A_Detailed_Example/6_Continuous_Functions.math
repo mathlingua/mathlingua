@@ -90,11 +90,9 @@ given: a, b
 when:
 . 'I := \open.interval{a, b}'
 . 'c in I'
-means: 'f is \function:on{I}:to{R}'
+means: 'f is \function:on{I}:to{\real.numbers}'
 satisfying:
 . 'f(c) = \function.limit[x]_{c}{f(x)}'
-using:
-. 'R := \real.numbers'
 written: "\textrm{Continuous Function on } I? \textrm{ at } c?"
 
 
@@ -110,12 +108,10 @@ Defines: f(x)
 given: a, b
 when:
 . 'I := \open.interval{a, b}'
-means: 'f is \function:on{I}:to{R}'
+means: 'f is \function:on{I}:to{\real.numbers}'
 satisfying:
 . forAll: c
-  suchThat: 'c in I'
+  where: 'c in I'
   then: 'f is \continuous.function:on{I}:at{c}'
-using:
-. 'R := \real.numbers'
 written: "\textrm{Continuous Function on } I?"
 

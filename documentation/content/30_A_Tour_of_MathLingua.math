@@ -118,8 +118,8 @@ satisfying:
   suchThat: 'a in A'
   then:
   . existsUnique: b
+    where: 'b in B'
     suchThat:
-    . 'b in B'
     . 'f(a) = b'
 written: "f? : A? \rightarrow B?"
 called: "Function on $A?$ to $B?$"
@@ -139,8 +139,8 @@ satisfying:
   suchThat: 'a in A'
   then:
   . existsUnique: b
+    where: 'b in B'
     suchThat:
-    . 'b in B'
     . 'f(a) = b'
 written: "f? : A? \rightarrow B?"
 called: "Function on $A?$ to $B?$"
@@ -401,21 +401,22 @@ Now we can define a group:
 ```math
 [\group]
 Defines: G := (X, *, e)
-means: 'X is \set'
-satisfying:
+means:
+. 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
+satisfying:
 . forAll: x
-  suchThat: 'x in X'
+  where: 'x in X'
   then:
   . 'x * e = x'
   . 'e * x = x'
 . forAll: x, y, z
-  suchThat: 'x, y, z in X'
+  where: 'x, y, z in X'
   then:
   . '(x * y) * z = x * (y * z)'
 . forAll: x
-  suchThat: 'x in X'
+  where: 'x in X'
   then:
   . exists: y
     suchThat:
@@ -436,21 +437,22 @@ that is rendered as
 
 [\group]
 Defines: G := (X, *, e)
-means: 'X is \set'
-satisfying:
+means:
+. 'X is \set'
 . '* is \binary.operation:on{X}'
 . 'e in X'
+satisfying:
 . forAll: x
-  suchThat: 'x in X'
+  where: 'x in X'
   then:
   . 'x * e = x'
   . 'e * x = x'
 . forAll: x, y, z
-  suchThat: 'x, y, z in X'
+  where: 'x, y, z in X'
   then:
   . '(x * y) * z = x * (y * z)'
 . forAll: x
-  suchThat: 'x in X'
+  where: 'x in X'
   then:
   . exists: y
     suchThat:
@@ -746,7 +748,7 @@ States:
 when: 'A, B is \set'
 that:
 . forAll: a
-  suchThat: 'a in A'
+  where: 'a in A'
   then: 'a in B'
 written: "A? \subset B?"
 called: "$A?$ is a subset of $B?$"
@@ -760,7 +762,7 @@ States:
 when: 'A, B is \set'
 that:
 . forAll: a
-  suchThat: 'a in A'
+  where: 'a in A'
   then: 'a in B'
 written: "A? \subset B?"
 called: "$A?$ is a subset of $B?$"

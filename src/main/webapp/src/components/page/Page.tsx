@@ -630,8 +630,8 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
             fontFamily: "'Inconsolata', monospace",
             position: 'relative',
             width: '100%',
-            height: 'calc(100vh - 1.75em)',
-            minHeight: 'calc(100vh - 1.75em)',
+            height: '100vh',
+            minHeight: '100vh',
             border: 'none',
           }}
           commands={[
@@ -691,7 +691,7 @@ const SideBySideView = (props: {
     </Pane>
     <Pane>
       <div style={{
-          height: '100%',
+          height: '100vh',
           overflow: 'scroll',
           background: '#ffffff',
           borderTop: 'solid',

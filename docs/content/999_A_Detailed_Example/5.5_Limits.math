@@ -25,14 +25,14 @@ when:
 means: 'L is \real'
 expressing:
 . forAll: epsilon
-  suchThat: 'epsilon is \positive:within{R}'
+  where: 'epsilon is \positive:within{R}'
   then:
   . exists: delta
+    where: 'delta is \positive:within{R}'
     suchThat:
-    . 'delta is \positive:within{R}'
     . forAll: t
+      where: 't in I'
       suchThat:
-      . 't in I'
       . not: 't = c'
       . '\real.abs(t - c) < delta'
       then:

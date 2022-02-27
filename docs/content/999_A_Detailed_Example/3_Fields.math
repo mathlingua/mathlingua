@@ -23,7 +23,7 @@ Defines: G := (X, *, e)
 means: 'G is \group'
 satisfying:
 . forAll: x, y
-  suchThat: 'x, y in X'
+  where: 'x, y in X'
   then: 'x * y = y * x'
 written: "\textrm{Abelian Group}"
 
@@ -67,7 +67,7 @@ means: '(X, +, 0) is \abelian.group'
 satisfying:
 . '(X \set.minus/ 0, *, 1) is \abelian.group'
 . forAll: x, y, z
-  suchThat: 'x, y, z in X'
+  where: 'x, y, z in X'
   then:
   . 'x*(y + z) = x*y + x*z'
 written: "\textrm{Field}"
@@ -163,12 +163,12 @@ Defines: F := (X, +, *, 0, 1, <)
 means: '(X, +, *, 0, 1) is \field'
 satisfying:
 . forAll: x, y, z
-  suchThat: 'x, y, z in X'
+  where: 'x, y, z in X'
   then:
   . if: 'x < y'
     then: 'x + z < y + z'
 . forAll: x, y, z
-  suchThat: 'x, y, z in X'
+  where: 'x, y, z in X'
   then:
   . if:
     . '0 < x'

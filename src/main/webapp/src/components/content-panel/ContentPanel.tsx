@@ -147,7 +147,7 @@ const ThreeColumnContent = (props: {
         {
           isSidePanelVisible ?
           <div style={{
-              position: 'fixed',
+              position: 'relative',
               zIndex: '10',
               background: '#ffffff',
               borderColor: '#dddddd',
@@ -180,7 +180,7 @@ const ThreeColumnContent = (props: {
   return <div style={{
     marginTop: '0.75em',
     display: 'grid',
-    gridTemplateColumns: '22.5% auto 22.5%',
+    gridTemplateColumns: '22.5% 55% 22.5%',
   }}>
     <div>
       { isSidePanelVisible ?

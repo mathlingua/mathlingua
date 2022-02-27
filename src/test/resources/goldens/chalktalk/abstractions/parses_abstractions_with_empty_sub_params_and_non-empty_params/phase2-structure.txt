@@ -62,6 +62,7 @@ Document(
                                    row = 2
                                    column = 2
                                  )
+                                 whereSection = null
                                  suchThatSection = null
                                  thenSection = ThenSection(
                                    clauses = ClauseListNode(

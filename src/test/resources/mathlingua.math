@@ -259,9 +259,41 @@ then:
 
 Theorem:
 then:
+. forAll: x
+  where: 'x is \something'
+  suchThat: "something"
+  then: 'something'
+
+
+Theorem:
+then:
 . exists: x
   suchThat:
+  . 'x + 1 is \even'
+
+
+Theorem:
+then:
+. exists: x
+  where:
   . 'x is \something'
+  suchThat:
+  . 'x + 1 is \even'
+
+
+Theorem:
+then:
+. existsUnique: x
+  suchThat:
+  . 'x + 1 is \even'
+
+
+Theorem:
+then:
+. existsUnique: x
+  where:
+  . 'x is \something'
+  suchThat:
   . 'x + 1 is \even'
 
 

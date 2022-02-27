@@ -22,22 +22,26 @@ import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXISTS_UNIQUE_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
+import mathlingua.frontend.chalktalk.phase2.ast.common.ThreePartNode
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.validateSuchThatSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.WhereSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.validateWhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
+import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.ParseError
 
 internal data class ExistsUniqueGroup(
     val existsUniqueSection: ExistsUniqueSection,
-    val suchThatSection: SuchThatSection,
+    val whereSection: WhereSection?,
+    val suchThatSection: SuchThatSection?,
     override val row: Int,
     override val column: Int
 ) :
-    TwoPartNode<ExistsUniqueSection, SuchThatSection>(
-        existsUniqueSection, suchThatSection, row, column, ::ExistsUniqueGroup),
+    ThreePartNode<ExistsUniqueSection, WhereSection?, SuchThatSection?>(
+        existsUniqueSection, whereSection, suchThatSection, row, column, ::ExistsUniqueGroup),
     Clause
 
 internal fun isExistsUniqueGroup(node: Phase1Node) = firstSectionMatchesName(node, "existsUnique")
@@ -45,18 +49,34 @@ internal fun isExistsUniqueGroup(node: Phase1Node) = firstSectionMatchesName(nod
 internal fun validateExistsUniqueGroup(node: Phase1Node, errors: MutableList<ParseError>) =
     validateGroup(node.resolve(), errors, "existsUnique", DEFAULT_EXISTS_UNIQUE_GROUP) { group ->
         identifySections(
-            group, errors, DEFAULT_EXISTS_UNIQUE_GROUP, listOf("existsUnique", "suchThat")) {
-        sections ->
-            ExistsUniqueGroup(
-                existsUniqueSection =
-                    ensureNonNull(sections["existsUnique"], DEFAULT_EXISTS_UNIQUE_SECTION) {
-                        validateExistsUniqueSection(it, errors)
-                    },
-                suchThatSection =
-                    ensureNonNull(sections["suchThat"], DEFAULT_SUCH_THAT_SECTION) {
-                        validateSuchThatSection(it, errors)
-                    },
-                row = node.row,
-                column = node.column)
+            group,
+            errors,
+            DEFAULT_EXISTS_UNIQUE_GROUP,
+            listOf("existsUnique", "where?", "suchThat?")) { sections ->
+            val result =
+                ExistsUniqueGroup(
+                    existsUniqueSection =
+                        ensureNonNull(sections["existsUnique"], DEFAULT_EXISTS_UNIQUE_SECTION) {
+                            validateExistsUniqueSection(it, errors)
+                        },
+                    whereSection =
+                        ifNonNull(sections["where"]) { validateWhereSection(it, errors) },
+                    suchThatSection =
+                        ensureNonNull(sections["suchThat"], DEFAULT_SUCH_THAT_SECTION) {
+                            validateSuchThatSection(it, errors)
+                        },
+                    row = node.row,
+                    column = node.column)
+
+            if (result.whereSection == null && result.suchThatSection == null) {
+                errors.add(
+                    ParseError(
+                        message = "At least one of `where:` or `suchThat:` needs to be specified.",
+                        row = result.row,
+                        column = result.column))
+                DEFAULT_EXISTS_UNIQUE_GROUP
+            } else {
+                result
+            }
         }
     }

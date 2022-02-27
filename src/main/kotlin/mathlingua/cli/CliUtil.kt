@@ -38,9 +38,12 @@ internal val COMPLETIONS =
         items =
             listOf(
                 CompletionItem(name = "and", parts = listOf("and:")),
-                CompletionItem(name = "exists", parts = listOf("exists:", "suchThat:")),
-                CompletionItem(name = "existsUnique", parts = listOf("existsUnique:", "suchThat:")),
-                CompletionItem(name = "forAll", parts = listOf("forAll:", "suchThat?:", "then:")),
+                CompletionItem(name = "exists", parts = listOf("exists:", "where?:", "suchThat?:")),
+                CompletionItem(
+                    name = "existsUnique",
+                    parts = listOf("existsUnique:", "where?:", "suchThat?:")),
+                CompletionItem(
+                    name = "forAll", parts = listOf("forAll:", "where?:", "suchThat?:", "then:")),
                 CompletionItem(name = "if", parts = listOf("if:", "then:")),
                 CompletionItem(name = "iff", parts = listOf("iff:", "then:")),
                 CompletionItem(name = "not", parts = listOf("not:")),

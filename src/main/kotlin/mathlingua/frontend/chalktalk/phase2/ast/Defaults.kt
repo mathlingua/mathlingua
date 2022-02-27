@@ -247,6 +247,7 @@ internal val DEFAULT_EXISTS_UNIQUE_SECTION =
 internal val DEFAULT_EXISTS_GROUP =
     ExistsGroup(
         existsSection = DEFAULT_EXISTS_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION,
         row = -1,
         column = -1)
@@ -254,6 +255,7 @@ internal val DEFAULT_EXISTS_GROUP =
 internal val DEFAULT_EXISTS_UNIQUE_GROUP =
     ExistsUniqueGroup(
         existsUniqueSection = DEFAULT_EXISTS_UNIQUE_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION,
         row = -1,
         column = -1)
@@ -271,6 +273,7 @@ internal val DEFAULT_META_DATA_SECTION = MetaDataSection(items = emptyList(), ro
 internal val DEFAULT_FOR_ALL_GROUP =
     ForAllGroup(
         forAllSection = DEFAULT_FOR_ALL_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
         suchThatSection = DEFAULT_SUCH_THAT_SECTION,
         thenSection = DEFAULT_THEN_SECTION,
         row = -1,

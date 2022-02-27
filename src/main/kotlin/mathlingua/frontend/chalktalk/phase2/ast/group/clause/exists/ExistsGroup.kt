@@ -19,41 +19,57 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXISTS_GROUP
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXISTS_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_SUCH_THAT_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
+import mathlingua.frontend.chalktalk.phase2.ast.common.ThreePartNode
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.WhereSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.validateWhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
+import mathlingua.frontend.chalktalk.phase2.ast.section.ifNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.ParseError
 
 internal data class ExistsGroup(
     val existsSection: ExistsSection,
-    val suchThatSection: SuchThatSection,
+    val whereSection: WhereSection?,
+    val suchThatSection: SuchThatSection?,
     override val row: Int,
     override val column: Int
 ) :
-    TwoPartNode<ExistsSection, SuchThatSection>(
-        existsSection, suchThatSection, row, column, ::ExistsGroup),
+    ThreePartNode<ExistsSection, WhereSection?, SuchThatSection?>(
+        existsSection, whereSection, suchThatSection, row, column, ::ExistsGroup),
     Clause
 
 internal fun isExistsGroup(node: Phase1Node) = firstSectionMatchesName(node, "exists")
 
 internal fun validateExistsGroup(node: Phase1Node, errors: MutableList<ParseError>) =
     validateGroup(node.resolve(), errors, "exists", DEFAULT_EXISTS_GROUP) { group ->
-        identifySections(group, errors, DEFAULT_EXISTS_GROUP, listOf("exists", "suchThat")) {
+        identifySections(
+            group, errors, DEFAULT_EXISTS_GROUP, listOf("exists", "where?", "suchThat?")) {
         sections ->
-            ExistsGroup(
-                existsSection =
-                    ensureNonNull(sections["exists"], DEFAULT_EXISTS_SECTION) {
-                        validateExistsSection(it, errors)
-                    },
-                suchThatSection =
-                    ensureNonNull(sections["suchThat"], DEFAULT_SUCH_THAT_SECTION) {
-                        validateSuchThatSection(it, errors)
-                    },
-                row = node.row,
-                column = node.column)
+            val result =
+                ExistsGroup(
+                    existsSection =
+                        ensureNonNull(sections["exists"], DEFAULT_EXISTS_SECTION) {
+                            validateExistsSection(it, errors)
+                        },
+                    whereSection =
+                        ifNonNull(sections["where"]) { validateWhereSection(it, errors) },
+                    suchThatSection =
+                        ifNonNull(sections["suchThat"]) { validateSuchThatSection(it, errors) },
+                    row = node.row,
+                    column = node.column)
+
+            if (result.whereSection == null && result.suchThatSection == null) {
+                errors.add(
+                    ParseError(
+                        message = "At least one of `where:` or `suchThat:` needs to be specified.",
+                        row = result.row,
+                        column = result.column))
+                DEFAULT_EXISTS_GROUP
+            } else {
+                result
+            }
         }
     }

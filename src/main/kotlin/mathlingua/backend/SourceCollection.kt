@@ -1280,32 +1280,50 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         fun processStates(pair: ValueAndSource<Normalized<StatesGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst = ValueAndSource(source = pair.source, value = signature)
-                result.add(Pair(vst, pair.value))
+                result.add(
+                    Pair(ValueAndSource(source = pair.source, value = signature), pair.value))
             }
         }
 
         fun processAxiom(pair: ValueAndSource<Normalized<AxiomGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst = ValueAndSource(source = pair.source, value = signature)
-                result.add(Pair(vst, pair.value))
+                result.add(
+                    Pair(ValueAndSource(source = pair.source, value = signature), pair.value))
+                result.add(
+                    Pair(
+                        ValueAndSource(
+                            source = pair.source,
+                            value = signature.copy(form = signature.form + ":given")),
+                        pair.value))
             }
         }
 
         fun processTheorems(pair: ValueAndSource<Normalized<TheoremGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst = ValueAndSource(source = pair.source, value = signature)
-                result.add(Pair(vst, pair.value))
+                result.add(
+                    Pair(ValueAndSource(source = pair.source, value = signature), pair.value))
+                result.add(
+                    Pair(
+                        ValueAndSource(
+                            source = pair.source,
+                            value = signature.copy(form = signature.form + ":given")),
+                        pair.value))
             }
         }
 
         fun processConjectures(pair: ValueAndSource<Normalized<ConjectureGroup>>) {
             val signature = pair.value.normalized.signature
             if (signature != null) {
-                val vst = ValueAndSource(source = pair.source, value = signature)
-                result.add(Pair(vst, pair.value))
+                result.add(
+                    Pair(ValueAndSource(source = pair.source, value = signature), pair.value))
+                result.add(
+                    Pair(
+                        ValueAndSource(
+                            source = pair.source,
+                            value = signature.copy(form = signature.form + ":given")),
+                        pair.value))
             }
         }
 

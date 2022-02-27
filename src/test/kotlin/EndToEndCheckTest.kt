@@ -4384,4 +4384,90 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report errors for using axiom signatures correctly`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\some.axiom]
+                    Axiom:
+                    given: x
+                    then: x
+
+
+                    [\some.other.axiom]
+                    Axiom:
+                    given: x, y
+                    then: "something"
+
+
+                    [\f]
+                    Defines: X
+                    satisfying:
+                    . '\some.axiom'
+                    . '\some.axiom:given{X}'
+                    . '\some.other.axiom:given{X, X}'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check reports errors for using axiom signatures incorrectly`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\some.axiom]
+                    Axiom:
+                    then: "something"
+
+
+                    [\another.axiom]
+                    Axiom:
+                    given: x, y, z
+                    then: "something"
+
+
+                    [\f]
+                    Defines: X
+                    satisfying:
+                    . '\some.axiom:given{}'
+                    . '\some.axiom:given{X}'
+                    . '\another.axiom:given{X}'
+                    written: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 15, Column: 3)
+                No matching definition found for \some.axiom:given{}
+
+                ERROR: content/file1.math (Line: 16, Column: 3)
+                No matching definition found for \some.axiom:given{X}
+
+                ERROR: content/file1.math (Line: 17, Column: 3)
+                Expected exactly 3 arguments but found 1 for '{X}'
+
+                FAILED
+                Processed 1 file
+                3 errors detected
+            """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 3)
+    }
 }

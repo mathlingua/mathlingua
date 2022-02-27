@@ -53,6 +53,8 @@ import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
+import mathlingua.frontend.textalk.newTexTalkLexer
+import mathlingua.frontend.textalk.newTexTalkParser
 
 internal data class WrittenAsForm(val target: String?, val form: String)
 
@@ -163,6 +165,17 @@ internal fun getPatternsToWrittenAs(
         }
     }
 
+    fun addAxiomSignature(exp: ExpressionTexTalkNode, writtenAs: String) {
+        if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
+            result[exp.children[0] as OperatorTexTalkNode] =
+                WrittenAsForm(target = null, form = writtenAs)
+        } else if (exp.children.size == 1 && exp.children[0] is Command) {
+            val cmd = exp.children[0] as Command
+            result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] =
+                WrittenAsForm(target = null, form = writtenAs)
+        }
+    }
+
     for (axiom in axioms) {
         val validation = axiom.id?.texTalkRoot
         if (validation is ValidationSuccess) {
@@ -174,13 +187,20 @@ internal fun getPatternsToWrittenAs(
                 } else {
                     exp.toCode()
                 }
-            if (exp.children.size == 1 && exp.children[0] is OperatorTexTalkNode) {
-                result[exp.children[0] as OperatorTexTalkNode] =
-                    WrittenAsForm(target = null, form = writtenAs)
-            } else if (exp.children.size == 1 && exp.children[0] is Command) {
-                val cmd = exp.children[0] as Command
-                result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] =
-                    WrittenAsForm(target = null, form = writtenAs)
+            addAxiomSignature(exp, writtenAs)
+
+            if (axiom.givenSection != null && axiom.givenSection.targets.isNotEmpty()) {
+                val args =
+                    axiom
+                        .givenSection
+                        .targets
+                        .map { it.toCode(false, 0).getCode() }
+                        .joinToString(",")
+                val sigWithGiven = "${axiom.id.text}:given{${args}}"
+                val res = newTexTalkParser().parse(newTexTalkLexer(sigWithGiven))
+                if (res.errors.isEmpty()) {
+                    addAxiomSignature(res.root, writtenAs)
+                }
             }
         }
     }

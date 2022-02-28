@@ -75,9 +75,6 @@ satisfying:
     then:
     . 'x < z'
 providing:
-. view:
-  as: '\set'
-  via: 'S'
 . membership:
   through: 'S'
 written: "\textrm{Ordered Set}"

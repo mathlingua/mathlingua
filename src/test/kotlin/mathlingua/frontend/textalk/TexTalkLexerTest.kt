@@ -28,7 +28,7 @@ internal class TexTalkLexerTest {
     @Test
     fun `correctly identifies tokens`() {
         val text =
-            "G := (X, *, 0) + B, X is \\some[x]_a^b{x, y}.thing:on{A} $1 #2 abc...xyz +... ...+   in integer isomorphic 123 1.23 0.23:Defines::States:"
+            "G := (X, *, 0) + B, X is \\some[x]_a^b{x, y}.thing:on{A} $1 #2 abc...xyz +... ...+   in integer isomorphic 123 1.23 0.23:Type::Statement::Expression:"
         val lexer = newTexTalkLexer(text)
         val actual = mutableListOf<TexTalkToken>()
         while (lexer.hasNext()) {
@@ -125,15 +125,20 @@ internal class TexTalkLexerTest {
                 TexTalkToken(
                     text = "0.23", tokenType = TexTalkTokenType.Identifier, row = 0, column = 115),
                 TexTalkToken(
-                    text = ":Defines:",
+                    text = ":Type:",
                     tokenType = TexTalkTokenType.Identifier,
                     row = 0,
                     column = 119),
                 TexTalkToken(
-                    text = ":States:",
+                    text = ":Statement:",
                     tokenType = TexTalkTokenType.Identifier,
                     row = 0,
-                    column = 129))
+                    column = 126),
+                TexTalkToken(
+                    text = ":Expression:",
+                    tokenType = TexTalkTokenType.Identifier,
+                    row = 0,
+                    column = 138))
 
         assertThat(actual).isEqualTo(expected)
         assertThat(lexer.errors.size).isEqualTo(0)

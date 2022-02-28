@@ -35,9 +35,11 @@ internal fun newTexTalkLexer(text: String): TexTalkLexer {
 
 // ------------------------------------------------------------------------------------------------------------------ //
 
-const val DEFINES = ":Defines:"
+const val TYPE = ":Type:"
 
-const val STATES = ":States:"
+const val STATEMENT = ":Statement:"
+
+const val EXPRESSION = ":Expression:"
 
 private class TexTalkLexerImpl(text: String) : TexTalkLexer {
     override val errors = mutableListOf<ParseError>()
@@ -58,27 +60,21 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 column = 0
             } else if (c == ':' &&
                 i < text.length &&
-                text[i] == 'D' &&
+                text[i] == 'T' &&
                 i + 1 < text.length &&
-                text[i + 1] == 'e' &&
+                text[i + 1] == 'y' &&
                 i + 2 < text.length &&
-                text[i + 2] == 'f' &&
+                text[i + 2] == 'p' &&
                 i + 3 < text.length &&
-                text[i + 3] == 'i' &&
+                text[i + 3] == 'e' &&
                 i + 4 < text.length &&
-                text[i + 4] == 'n' &&
-                i + 5 < text.length &&
-                text[i + 5] == 'e' &&
-                i + 6 < text.length &&
-                text[i + 6] == 's' &&
-                i + 7 < text.length &&
-                text[i + 7] == ':') {
+                text[i + 4] == ':') {
                 val startLine = line
                 val startCol = column
-                column += DEFINES.length
-                i += DEFINES.length - 1
+                column += TYPE.length
+                i += TYPE.length - 1
                 this.tokens.add(
-                    TexTalkToken(DEFINES, TexTalkTokenType.Identifier, startLine, startCol))
+                    TexTalkToken(TYPE, TexTalkTokenType.Identifier, startLine, startCol))
             } else if (c == ':' &&
                 i < text.length &&
                 text[i] == 'S' &&
@@ -91,15 +87,50 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 i + 4 < text.length &&
                 text[i + 4] == 'e' &&
                 i + 5 < text.length &&
-                text[i + 5] == 's' &&
+                text[i + 5] == 'm' &&
                 i + 6 < text.length &&
-                text[i + 6] == ':') {
+                text[i + 6] == 'e' &&
+                i + 7 < text.length &&
+                text[i + 7] == 'n' &&
+                i + 8 < text.length &&
+                text[i + 8] == 't' &&
+                i + 9 < text.length &&
+                text[i + 9] == ':') {
                 val startLine = line
                 val startCol = column
-                column += STATES.length
-                i += STATES.length - 1
+                column += STATEMENT.length
+                i += STATEMENT.length - 1
                 this.tokens.add(
-                    TexTalkToken(STATES, TexTalkTokenType.Identifier, startLine, startCol))
+                    TexTalkToken(STATEMENT, TexTalkTokenType.Identifier, startLine, startCol))
+            } else if (c == ':' &&
+                i < text.length &&
+                text[i] == 'E' &&
+                i + 1 < text.length &&
+                text[i + 1] == 'x' &&
+                i + 2 < text.length &&
+                text[i + 2] == 'p' &&
+                i + 3 < text.length &&
+                text[i + 3] == 'r' &&
+                i + 4 < text.length &&
+                text[i + 4] == 'e' &&
+                i + 5 < text.length &&
+                text[i + 5] == 's' &&
+                i + 6 < text.length &&
+                text[i + 6] == 's' &&
+                i + 7 < text.length &&
+                text[i + 7] == 'i' &&
+                i + 8 < text.length &&
+                text[i + 8] == 'o' &&
+                i + 9 < text.length &&
+                text[i + 9] == 'n' &&
+                i + 10 < text.length &&
+                text[i + 10] == ':') {
+                val startLine = line
+                val startCol = column
+                column += EXPRESSION.length
+                i += EXPRESSION.length - 1
+                this.tokens.add(
+                    TexTalkToken(EXPRESSION, TexTalkTokenType.Identifier, startLine, startCol))
             } else if (c == '`') {
                 val startLine = line
                 val startCol = column

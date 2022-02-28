@@ -38,7 +38,7 @@ internal fun ExpressionTexTalkNode.getCommandsToGlue(location: Location): List<C
     val cmds = mutableListOf<Command>()
     for (n in this.children) {
         if (n !is Command) {
-            if (n !is TextTexTalkNode || (n.text != ":Defines:" && n.text != ":States:")) {
+            if (n !is TextTexTalkNode || (n.text != ":Type:" && n.text != ":Statement:" && n.text != ":Expression:")) {
                 println(
                     "Unexpected non-Command node: ${n.toCode()} (${location.row + 1}, ${location.column + 1})")
             }

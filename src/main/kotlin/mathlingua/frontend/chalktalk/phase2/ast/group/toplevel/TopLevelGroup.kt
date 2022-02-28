@@ -40,7 +40,7 @@ import mathlingua.md5Hash
 
 internal abstract class TopLevelGroup(open val metaDataSection: MetaDataSection?) : Phase2Node
 
-internal class TopLevelBlockComment(
+internal data class TopLevelBlockComment(
     val blockComment: BlockComment, override val row: Int, override val column: Int
 ) : TopLevelGroup(null) {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {}

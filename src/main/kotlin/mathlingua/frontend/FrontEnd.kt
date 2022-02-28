@@ -34,7 +34,13 @@ import mathlingua.frontend.support.ValidationSuccess
  */
 internal object FrontEnd {
     fun parse(input: String): Validation<Document> {
-        val lexer = newChalkTalkLexer(input)
+        val lexer =
+            newChalkTalkLexer(
+                if (input.trim().isEmpty()) {
+                    "::::"
+                } else {
+                    input
+                })
 
         val allErrors = mutableListOf<ParseError>()
         allErrors.addAll(lexer.errors())

@@ -17,11 +17,14 @@ package mathlingua.mathlingua
 import assertk.assertThat
 import assertk.assertions.isEqualTo
 import mathlingua.frontend.FrontEnd
+import mathlingua.frontend.chalktalk.phase1.ast.BlockComment
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelBlockComment
 import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 import mathlingua.newDiskFileSystem
+import org.jetbrains.kotlin.gradle.utils.`is`
 import org.junit.jupiter.api.Test
 
 internal class MathLinguaDataTest {
@@ -81,5 +84,20 @@ internal class MathLinguaDataTest {
         // This assertThat() is used so that the parse
         // errors are printed to the console.
         assertThat(builder.toString()).isEqualTo("")
+    }
+
+    @Test
+    fun `the frontend can handle empty files`() {
+        val validation = FrontEnd.parse("")
+        assertThat(validation is ValidationSuccess)
+        val doc = (validation as ValidationSuccess).value
+        val comments = doc.blockComments()
+        assertThat(comments.size).isEqualTo(1)
+        assertThat(comments.first())
+            .isEqualTo(
+                TopLevelBlockComment(
+                    blockComment = BlockComment(text = "::::", row = 0, column = 0),
+                    row = 0,
+                    column = 0))
     }
 }

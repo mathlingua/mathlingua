@@ -4470,4 +4470,62 @@ internal class EndToEndCheckTest {
             expectedExitCode = 1,
             expectedNumErrors = 3)
     }
+
+    @Test
+    fun `check does not report errors for multiple base types with a tuple with a means section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: (X, +, *, 0, 1)
+                    satisfying: "something"
+                    written: "A"
+
+
+                    [\B]
+                    Defines: Z := (X, +, *)
+                    means: 'Z is \A'
+                    written: "B"
+
+
+                    [\C]
+                    Defines: Z := (X, +, *)
+                    means: '(X, +, *) is \A'
+                    written: "C"
+
+
+                    [\D]
+                    Defines: Z := (X, +, *)
+                    means: '(X, +) is \A'
+                    written: "D"
+
+
+                    [\E]
+                    Defines: Z := (X, +, *)
+                    means: 'X is \A'
+                    written: "D"
+
+
+                    Theorem:
+                    given: Z
+                    then:
+                    . 'Z is \A'
+                    . 'Z is \B'
+                    . 'Z is \C'
+                    . 'Z is \D'
+                    . 'Z is \E'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

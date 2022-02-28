@@ -20,11 +20,14 @@ import mathlingua.backend.transform.Signature
 import mathlingua.backend.transform.getVarsPhase2Node
 import mathlingua.backend.transform.normalize
 import mathlingua.backend.transform.signature
+import mathlingua.frontend.chalktalk.phase1.ast.Tuple
+import mathlingua.frontend.chalktalk.phase1.ast.TupleItem
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
+import mathlingua.frontend.chalktalk.phase2.ast.clause.TupleNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.getLeftHandSideTargets
 import mathlingua.frontend.chalktalk.phase2.ast.clause.isColonEqualsStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.isInStatement
@@ -38,7 +41,9 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
+import mathlingua.frontend.textalk.ParametersTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal interface SymbolAnalyzer {
@@ -56,6 +61,17 @@ internal fun newSymbolAnalyzer(
 
 // -----------------------------------------------------------------------------
 
+private fun List<TupleItem>.startsWith(prefix: List<ExpressionTexTalkNode>): Boolean {
+    var i = 0
+    while (i < this.size && i < prefix.size) {
+        if (this[i].toCode() != prefix[i].toCode()) {
+            return false
+        }
+        i++
+    }
+    return i >= prefix.size
+}
+
 private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, DefinesGroup>>) :
     SymbolAnalyzer {
     private val signatureMap = mutableMapOf<String, Set<String>>()
@@ -68,6 +84,63 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
             val defSignatures = mutableSetOf<String>()
             if (name != null) {
                 defSignatures.addAll(getDefSignatures(def, name))
+            }
+
+            if (def.definesSection.targets.size == 1 && def.meansSection != null) {
+                val targetTuple =
+                    when (val first = def.definesSection.targets.first()
+                    ) {
+                        is TupleNode -> {
+                            first.tuple
+                        }
+                        is AssignmentNode -> {
+                            if (first.assignment.rhs is Tuple) {
+                                first.assignment.rhs
+                            } else {
+                                null
+                            }
+                        }
+                        else -> {
+                            null
+                        }
+                    }
+
+                fun ParametersTexTalkNode.first() =
+                    if (this.items.size == 1 && this.items.first().children.size == 1) {
+                        this.items.first().children.first()
+                    } else {
+                        null
+                    }
+
+                if (targetTuple != null) {
+                    for (stmt in def.meansSection.statements) {
+                        when (val validation = stmt.texTalkRoot
+                        ) {
+                            is ValidationSuccess -> {
+                                val exp = validation.value
+                                if (exp.children.size == 1) {
+                                    val expFirst = exp.children.first()
+                                    if (expFirst is IsTexTalkNode) {
+                                        val lhsFirst = expFirst.lhs.first()
+                                        val rhsFirst = expFirst.rhs.first()
+                                        if (lhsFirst is mathlingua.frontend.textalk.TupleNode &&
+                                            rhsFirst is Command &&
+                                            targetTuple.items.startsWith(lhsFirst.params.items)) {
+                                            defSignatures.add(rhsFirst.signature())
+                                        } else if (lhsFirst is TextTexTalkNode &&
+                                            lhsFirst.tokenType == TexTalkTokenType.Identifier &&
+                                            rhsFirst is Command &&
+                                            targetTuple.items.isNotEmpty() &&
+                                            lhsFirst.toCode() ==
+                                                targetTuple.items.first().toCode()) {
+                                            defSignatures.add(rhsFirst.signature())
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             if (def.providingSection != null) {

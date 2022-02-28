@@ -155,6 +155,7 @@ const ThreeColumnContent = (props: {
               height: '100%',
               width: 'max-content',
               minWidth: 'fit-content',
+              paddingTop: '0.3em',
             }}>
             <SidePanel viewedPath={props.hashLocation.viewedPath}
                        onOpenFileInTab={() => {}} />
@@ -182,7 +183,7 @@ const ThreeColumnContent = (props: {
     display: 'grid',
     gridTemplateColumns: '22.5% 55% 22.5%',
   }}>
-    <div>
+    <div style={{ marginTop: '-0.3em' }}>
       { isSidePanelVisible ?
         <SidePanel viewedPath={props.hashLocation.viewedPath}
                    onOpenFileInTab={() => {}} /> : null }

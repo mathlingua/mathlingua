@@ -1,17 +1,18 @@
 ul {
-  padding-left: 0.5em;
-  padding-top: 0.25em;
-  margin: 0;
+  padding-left: 0;
+  margin-left: 0;
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 li {
-  padding-left: 0em;
+  padding-left: 0;
+  margin-left: 0;
 }
 
 .triangle {
   background: unset;
   border: none;
-  margin: 0;
   padding-left: 0;
   padding-right: 1ex;
 }
@@ -29,20 +30,19 @@ li {
   display: block;
   padding-left: 1.25em;
   padding-right: 1.5em;
-  padding-top: 0em;
-  padding-bottom: 1.2em;
-  margin: 0;
   text-shadow: 0.45px 0.45px 0px rgba(0, 0, 0, 0.2);
 }
 
 .mathlinguaListDirItem {
   display: block;
-  padding-bottom: 1em;
+  margin-top: 0.6em;
+  margin-bottom: 0.6em;
 }
 
 .mathlinguaListFileItem {
   display: block;
-  margin-top: -0.25ex;
+  margin-top: 0.6em;
+  margin-bottom: 0.6em;
 }
 
 .selected {

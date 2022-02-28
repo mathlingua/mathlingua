@@ -3,9 +3,10 @@
   border-right: solid;
   border-width: 1px;
   border-color: #cfcfcf;
-  padding-top: 1em;
+  padding-top: 0;
   border-right: none;
   width: 100%;
+  margin-top: 0;
   margin-left: -0.5em;
 }
 

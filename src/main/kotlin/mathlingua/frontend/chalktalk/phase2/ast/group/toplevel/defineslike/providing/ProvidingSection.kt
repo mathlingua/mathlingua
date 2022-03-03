@@ -23,6 +23,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.EqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.memberSymbols.MemberSymbolsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.MembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.SymbolsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewGroup
@@ -55,11 +56,12 @@ internal fun validateViewingSection(node: Phase1Node, errors: MutableList<ParseE
             if (clause !is MembershipGroup &&
                 clause !is ViewGroup &&
                 clause !is EqualityGroup &&
-                clause !is SymbolsGroup) {
+                clause !is SymbolsGroup &&
+                clause !is MemberSymbolsGroup) {
                 errors.add(
                     ParseError(
                         message =
-                            "Expected either a symbols:, membership:, view:, or equality: group",
+                            "Expected either a symbols:, memberSymbols:, membership:, view:, or equality: group",
                         row = clause.row,
                         column = clause.column))
             }

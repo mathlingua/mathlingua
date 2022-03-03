@@ -49,6 +49,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.validateDefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.isEqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.validateEqualityGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.memberSymbols.isMemberSymbolsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.memberSymbols.validateMemberSymbolsGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.isMembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.validateMembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.isSymbolsGroup
@@ -145,7 +147,8 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isHaveGroup, ::validateHaveGroup),
         ValidationPair(::isGeneratedGroup, ::validateGeneratedGroup),
         ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
-        ValidationPair(::isSymbolsGroup, ::validateSymbolsGroup))
+        ValidationPair(::isSymbolsGroup, ::validateSymbolsGroup),
+        ValidationPair(::isMemberSymbolsGroup, ::validateMemberSymbolsGroup))
 
 private val INLINEABLE_CLAUSE_VALIDATORS =
     listOf(

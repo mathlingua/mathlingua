@@ -123,6 +123,17 @@ written: "\textrm{semigroup}"
 called: "semigroup"
 
 
+[\something]
+Defines: G := (X, *)
+satisfying: "something"
+providing:
+. symbols: *
+  where: 'x * y := x G::* y'
+. memberSymbols: *
+  where: 'x * y := x G::* y'
+written: "something"
+
+
 [\x]
 Defines: x
 means: 'x is \set'

@@ -71,6 +71,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.provi
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.BetweenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.EqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.EqualitySection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.memberSymbols.MemberSymbolsGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.memberSymbols.MemberSymbolsSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.MembershipGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.membership.MembershipSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.SymbolsGroup
@@ -612,6 +614,16 @@ internal val DEFAULT_SYMBOLS_SECTION = SymbolsSection(targets = emptyList(), row
 internal val DEFAULT_SYMBOLS_GROUP =
     SymbolsGroup(
         symbolsSection = DEFAULT_SYMBOLS_SECTION,
+        whereSection = DEFAULT_WHERE_SECTION,
+        row = -1,
+        column = -1)
+
+internal val DEFAULT_MEMBER_SYMBOLS_SECTION =
+    MemberSymbolsSection(targets = emptyList(), row = -1, column = -1)
+
+internal val DEFAULT_MEMBER_SYMBOLS_GROUP =
+    MemberSymbolsGroup(
+        memberSymbolsSection = DEFAULT_MEMBER_SYMBOLS_SECTION,
         whereSection = DEFAULT_WHERE_SECTION,
         row = -1,
         column = -1)

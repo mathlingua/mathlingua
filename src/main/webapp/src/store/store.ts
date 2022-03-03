@@ -9,6 +9,8 @@ import isEditModeReducer from './isEditModeSlice';
 import errorResultsReducer from './errorResultsSlice';
 import selectedTabPathReducer from './selectedTabPathSlice';
 import isFullscreenReducer from './isFullscreenSlice';
+import editorFontReducer from './editorFontSlice';
+import editorFontSizeReducer from './editorFontSizeSlice';
 
 export const store = configureStore({
   reducer: {
@@ -18,7 +20,9 @@ export const store = configureStore({
     isEditMode: isEditModeReducer,
     isFullscreen: isFullscreenReducer,
     errorResults: errorResultsReducer,
-    selectedTabPath: selectedTabPathReducer
+    selectedTabPath: selectedTabPathReducer,
+    editorFont: editorFontReducer,
+    editorFontSize: editorFontSizeReducer
   },
   middleware: [thunkMiddleware],
 });

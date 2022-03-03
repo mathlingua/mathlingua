@@ -27,6 +27,8 @@ import { errorResultsUpdated } from '../../store/errorResultsSlice';
 import { AppDispatch } from '../../store/store';
 
 import SplitPane from 'react-split-pane';
+import { selectEditorFont } from '../../store/editorFontSlice';
+import { selectEditorFontSize } from '../../store/editorFontSizeSlice';
 const Pane = require('react-split-pane/lib/Pane');
 
 interface AceCompletion {
@@ -233,6 +235,8 @@ interface EditorViewProps {
   onFileResultChanged(fileResult: api.FileResult | undefined): void;
   dispatch: AppDispatch;
   onOpenFileInTab: (path: string, line?: number) => void;
+  editorFont: string;
+  editorFontSize: string;
 }
 
 interface EditorViewState {
@@ -300,6 +304,8 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
   ) {
     return (
       nextProps.viewedPath !== this.props.viewedPath ||
+      nextProps.editorFont !== this.props.editorFont ||
+      nextProps.editorFontSize !== this.props.editorFontSize ||
       nextState.annotations !== this.state.annotations
     );
   }
@@ -625,9 +631,9 @@ class EditorView extends React.Component<EditorViewProps, EditorViewState> {
           setOptions={{
             useSoftTabs: true,
           }}
-          fontSize="100%"
+          fontSize={`${this.props.editorFontSize}px`}
           style={{
-            fontFamily: "'Inconsolata', monospace",
+            fontFamily: this.props.editorFont,
             position: 'relative',
             width: '100%',
             height: '100vh',
@@ -669,6 +675,8 @@ const SideBySideView = (props: {
   const [relativePath, setRelativePath] = useState(props.relativePath);
   const [errors, setErrors] = useState(props.errors);
   const [entities, setEntities] = useState(props.entities);
+  const editorFont = useAppSelector(selectEditorFont);
+  const editorFontSize = useAppSelector(selectEditorFontSize);
   const dispatch = useAppDispatch();
 
   const onFileResultChanged = (result: api.FileResult) => {
@@ -687,6 +695,8 @@ const SideBySideView = (props: {
         viewedLine={props.viewedLine}
         onFileResultChanged={onFileResultChanged}
         onOpenFileInTab={props.onOpenFileInTab}
+        editorFont={editorFont}
+        editorFontSize={editorFontSize}
       />
     </Pane>
     <Pane>

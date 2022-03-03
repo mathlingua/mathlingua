@@ -112,21 +112,13 @@ two elements is defined as the inverse operation of
 multiplication in the field.
 ::
 
-[x \neq/ y]
-States:
-that:
-. not: 'x = y'
-written: "x? \neq y?"
-called: "$x?$ is not equal to $y?$"
-
-
 [\multiplicative.inverse:of{x}:inField{F}]
 Defines: y
 given: (X, +, *, 0, 1)
 when:
 . 'F := (X, +, *, 0, 1) is \field'
 . 'x in X'
-. 'x \neq/ 0'
+. 'x != 0'
 means: 'y in F'
 expressing:
 . 'x * y = 1'

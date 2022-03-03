@@ -296,7 +296,7 @@ p {
 }
 
 .mathlingua-called .katex {
-  font: bold 1em Georgia, 'Times New Roman', Times, serif !important;
+  font: bold 1em !important;
 }
 
 .display-mode {

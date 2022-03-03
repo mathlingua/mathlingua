@@ -832,21 +832,14 @@ private open class HtmlCodeWriter(
                 val rhs = stmtText.substring(index + IS.length).trim()
                 val rhsResult = prettyPrintTexTalk(lhs, rhs)
                 if (rhsResult.matchedTarget) {
-                    builder.append(
-                        "$$$${rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
+                    builder.append("$$$${rhsResult.text.processMathLinguaKeywords()}$$$")
                 } else {
                     val lhsResult = prettyPrintTexTalk(lhs, lhs)
-                    builder.append(
-                        "$$$${lhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
+                    builder.append("$$$${lhsResult.text.processMathLinguaKeywords()}$$$")
                     writeSpace()
                     writeDirect("<span class='mathlingua-is'>is</span>")
                     writeSpace()
-                    builder.append(
-                        "$$$${rhsResult.text.replace(" in ", " \\in ")
-                            .replace(" is ", "\\textrm{ is }")
-                            .replace(":Type:", "\\textrm{:Type:}")
-                            .replace(":Statement:", "\\textrm{:Statement:}")
-                            .replace(":Expression:", "\\textrm{:Expression:}")}$$$")
+                    builder.append("$$$${rhsResult.text.processMathLinguaKeywords()}$$$")
                 }
             } else if (stmtWithoutGroups.contains(IN)) {
                 val index = stmtWithoutGroups.indexOf(IN)
@@ -854,26 +847,21 @@ private open class HtmlCodeWriter(
                 val rhs = stmtText.substring(index + IN.length).trim()
                 val rhsResult = prettyPrintTexTalk(lhs, rhs)
                 if (rhsResult.matchedTarget) {
-                    builder.append(
-                        "$$$${rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
+                    builder.append("$$$${rhsResult.text.processMathLinguaKeywords()}$$$")
                 } else {
                     val lhsResult = prettyPrintTexTalk(lhs, lhs)
                     builder.append("$$$")
-                    builder.append(
-                        lhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }"))
+                    builder.append(lhsResult.text.processMathLinguaKeywords())
                     writeDirect(" \\in ")
-                    builder.append(
-                        rhsResult.text.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }"))
+                    builder.append(rhsResult.text.processMathLinguaKeywords())
                     builder.append("$$$")
                 }
             } else {
                 if (root is ValidationSuccess &&
                     (defines.isNotEmpty() || states.isNotEmpty() || axioms.isNotEmpty())) {
-                    builder.append(
-                        "$$$${fullExpansion?.replace(" in ", " \\in ")?.replace(" is ", "\\textrm{ is }")}$$$")
+                    builder.append("$$$${fullExpansion?.processMathLinguaKeywords()}$$$")
                 } else {
-                    builder.append(
-                        "$$$${stmtText.replace(" in ", " \\in ").replace(" is ", "\\textrm{ is }")}$$$")
+                    builder.append("$$$${stmtText.processMathLinguaKeywords()}$$$")
                 }
             }
             builder.append("</span>")
@@ -1286,6 +1274,16 @@ private fun splitByMathlingua(text: String): List<TextRange> {
     }
     return result
 }
+
+private fun String.processMathLinguaKeywords() =
+    this.replace(" in ", " \\in ")
+        .replace(" notin ", " \\notin ")
+        .replace(" != ", " \\neq ")
+        .replace(" is ", "\\textrm{ is }")
+        .replace(" as ", "\\textrm{ as }")
+        .replace(":Type:", "\\textrm{:Type:}")
+        .replace(":Statement:", "\\textrm{:Statement:}")
+        .replace(":Expression:", "\\textrm{:Expression:}")
 
 private fun parseMarkdown(text: String): String {
     // a backlash needs to be handled speciallly, since if `\( x \)` is given to

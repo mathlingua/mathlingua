@@ -167,6 +167,15 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 i++
                 column++
                 // make sure not to match words that start with 'in' such as 'integers'
+            } else if (c == 'a' &&
+                i < text.length &&
+                text[i] == 's' &&
+                (i + 1 >= text.length || !isIdentifierChar(text[i + 1]))) {
+                this.tokens.add(TexTalkToken("as", TexTalkTokenType.As, line, column))
+                // skip the 's'
+                i++
+                column++
+                // make sure not to match words that start with 'in' such as 'integers'
             } else if (c == 'i' &&
                 i < text.length &&
                 text[i] == 'n' &&
@@ -175,11 +184,32 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 // skip the 'n'
                 i++
                 column++
+            } else if (c == 'n' &&
+                i < text.length &&
+                text[i] == 'o' &&
+                i + 1 < text.length &&
+                text[i + 1] == 't' &&
+                i + 2 < text.length &&
+                text[i + 2] == 'i' &&
+                i + 3 < text.length &&
+                text[i + 3] == 'n' &&
+                (i + 4 >= text.length || !isIdentifierChar(text[i + 4]))) {
+                this.tokens.add(TexTalkToken("notin", TexTalkTokenType.NotIn, line, column))
+                // skip the 'otin'
+                i += 4
+                column += 4
             } else if (c == ':' && i < text.length && text[i] == '=') {
                 this.tokens.add(TexTalkToken(":=", TexTalkTokenType.ColonEquals, line, column))
                 // skip the =
                 i++
                 column++
+            } else if (c == '!' && i < text.length && text[i] == '=') {
+                this.tokens.add(TexTalkToken("!=", TexTalkTokenType.NotEquals, line, column))
+                // skip the =
+                i++
+                column++
+            } else if (c == '=') {
+                this.tokens.add(TexTalkToken("=", TexTalkTokenType.Equals, line, column))
             } else if (c == '.' &&
                 i < text.length &&
                 text[i] == '.' &&

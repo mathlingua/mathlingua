@@ -4528,4 +4528,50 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report errors when using 'notin'`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    Theorem:
+                    given: x, X
+                    then: 'x notin X'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when using '!='`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    Theorem:
+                    given: x, X
+                    then: 'x != X'
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

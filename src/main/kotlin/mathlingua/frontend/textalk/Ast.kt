@@ -31,9 +31,12 @@ internal enum class TexTalkNodeType {
     SubSup,
     Parameters,
     Comma,
+    As,
     Is,
     In,
-    ColonColonEquals,
+    NotIn,
+    Equals,
+    NotEquals,
     ColonEquals,
     Mapping,
     Tuple,
@@ -45,6 +48,37 @@ internal interface TexTalkNode {
     fun toCode(interceptor: (node: TexTalkNode) -> String? = { null }): String
     fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit)
     fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode): TexTalkNode
+}
+
+internal data class AsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
+    TexTalkNode {
+
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.As
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val builder = StringBuilder()
+        builder.append(lhs.toCode(interceptor))
+        builder.append(" as ")
+        builder.append(rhs.toCode(interceptor))
+        return builder.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(
+            AsTexTalkNode(
+                lhs = lhs.transform(transformer) as ParametersTexTalkNode,
+                rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
 
 internal data class IsTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode) :
@@ -109,6 +143,38 @@ internal data class InTexTalkNode(val lhs: ParametersTexTalkNode, val rhs: Param
                 rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
 
+internal data class NotInTexTalkNode(
+    val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode
+) : TexTalkNode {
+
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.NotIn
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val builder = StringBuilder()
+        builder.append(lhs.toCode(interceptor))
+        builder.append(" notin ")
+        builder.append(rhs.toCode(interceptor))
+        return builder.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(
+            NotInTexTalkNode(
+                lhs = lhs.transform(transformer) as ParametersTexTalkNode,
+                rhs = rhs.transform(transformer) as ParametersTexTalkNode))
+}
+
 internal data class ColonEqualsTexTalkNode(
     val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode
 ) : TexTalkNode {
@@ -137,6 +203,70 @@ internal data class ColonEqualsTexTalkNode(
     override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
         transformer(
             ColonEqualsTexTalkNode(
+                lhs = lhs.transform(transformer) as ParametersTexTalkNode,
+                rhs = rhs.transform(transformer) as ParametersTexTalkNode))
+}
+
+internal data class EqualsTexTalkNode(
+    val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode
+) : TexTalkNode {
+
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.Equals
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val builder = StringBuilder()
+        builder.append(lhs.toCode(interceptor))
+        builder.append(" = ")
+        builder.append(rhs.toCode(interceptor))
+        return builder.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(
+            EqualsTexTalkNode(
+                lhs = lhs.transform(transformer) as ParametersTexTalkNode,
+                rhs = rhs.transform(transformer) as ParametersTexTalkNode))
+}
+
+internal data class NotEqualsTexTalkNode(
+    val lhs: ParametersTexTalkNode, val rhs: ParametersTexTalkNode
+) : TexTalkNode {
+
+    override val type: TexTalkNodeType
+        get() = TexTalkNodeType.NotEquals
+
+    override fun toCode(interceptor: (node: TexTalkNode) -> String?): String {
+        val res = interceptor(this)
+        if (res != null) {
+            return res
+        }
+
+        val builder = StringBuilder()
+        builder.append(lhs.toCode(interceptor))
+        builder.append(" != ")
+        builder.append(rhs.toCode(interceptor))
+        return builder.toString()
+    }
+
+    override fun forEach(fn: (texTalkNode: TexTalkNode) -> Unit) {
+        fn(lhs)
+        fn(rhs)
+    }
+
+    override fun transform(transformer: (texTalkNode: TexTalkNode) -> TexTalkNode) =
+        transformer(
+            NotEqualsTexTalkNode(
                 lhs = lhs.transform(transformer) as ParametersTexTalkNode,
                 rhs = rhs.transform(transformer) as ParametersTexTalkNode))
 }
@@ -686,9 +816,13 @@ internal enum class TexTalkTokenType {
     Colon,
     Underscore,
     Caret,
+    Equals,
+    NotEquals,
     ColonEquals,
+    As,
     Is,
     In,
+    NotIn,
     DotDotDot,
     Invalid
 }

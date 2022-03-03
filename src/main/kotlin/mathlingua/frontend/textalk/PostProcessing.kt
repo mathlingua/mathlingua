@@ -466,7 +466,8 @@ private fun getPrecedence(op: String): Int {
         // the ... operator is special and has high precedence
         op == "..." -> 5
         op == "=" -> 6
-        op == ":=" -> 7
+        op == "!=" -> 7
+        op == ":=" -> 8
         // operator ...+ has the precedence +
         // and ...* has the precedence of *
         op.contains("...") -> getPrecedence(op.replace("...", ""))

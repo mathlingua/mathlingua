@@ -17,6 +17,7 @@
 package mathlingua.frontend.chalktalk.phase2
 
 import mathlingua.backend.transform.Signature
+import mathlingua.backend.transform.getVarsPhase1Node
 import mathlingua.backend.transform.signature
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase1.ast.Abstraction
@@ -51,6 +52,7 @@ import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.GroupTexTalkNode
 import mathlingua.frontend.textalk.OperatorTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
+import mathlingua.frontend.textalk.TexTalkNodeType
 import mathlingua.frontend.textalk.TexTalkTokenType
 import mathlingua.frontend.textalk.TextTexTalkNode
 import mathlingua.frontend.textalk.newTexTalkLexer
@@ -225,6 +227,35 @@ internal fun getPatternsToWrittenAs(
                 val cmd = exp.children[0] as Command
                 result[OperatorTexTalkNode(lhs = null, command = cmd, rhs = null)] =
                     WrittenAsForm(target = target, form = writtenAs)
+            }
+        }
+    }
+
+    /*
+     * If a Defines: is of the form:
+     *
+     *    Defines: G := (X, *, e)
+     *    ...
+     *
+     * then create "writtenAs" forms for the introduced symbols G::X, G::*, G::e
+     */
+    for (def in allDefines) {
+        val targets = def.definesSection.targets
+        if (targets.isNotEmpty() && targets.first() is AssignmentNode) {
+            val assign = (targets.first() as AssignmentNode).assignment
+            val left = assign.lhs.text
+            for (right in assign.rhs.getVarsPhase1Node(isInPlaceholderScope = false)) {
+                val target = "$left::$right"
+                result[
+                    OperatorTexTalkNode(
+                        lhs = null,
+                        command =
+                            TextTexTalkNode(
+                                type = TexTalkNodeType.Operator,
+                                tokenType = TexTalkTokenType.Operator,
+                                text = target,
+                                isVarArg = false),
+                        rhs = null)] = WrittenAsForm(target = target, form = target)
             }
         }
     }

@@ -312,13 +312,42 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                     id.append(text[i++])
                     column++
                 }
-                if (i < text.length && text[i] == '?') {
-                    id.append(text[i++])
-                    column++
+
+                if (i < text.length &&
+                    text[i] == ':' &&
+                    i + 1 < text.length &&
+                    text[i + 1] == ':' &&
+                    i + 2 < text.length &&
+                    (isOpChar(text[i + 2]) || isIdentifierChar(text[i + 2]))) {
+                    id.append("::")
+                    i += 2
+                    column += 2
+                    if (isOpChar(text[i])) {
+                        while (i < text.length && isOpChar(text[i])) {
+                            id.append(text[i++])
+                            column++
+                        }
+                    } else if (isIdentifierChar(text[i])) {
+                        while (i < text.length && isIdentifierChar(text[i])) {
+                            id.append(text[i++])
+                            column++
+                        }
+                    } else {
+                        throw Exception(
+                            "Expected an operator char, digit, or identifier char but found '${text[i]}'")
+                    }
+                    this.tokens.add(
+                        TexTalkToken(
+                            id.toString(), TexTalkTokenType.Identifier, startLine, startColumn))
+                } else {
+                    if (i < text.length && text[i] == '?') {
+                        id.append(text[i++])
+                        column++
+                    }
+                    this.tokens.add(
+                        TexTalkToken(
+                            id.toString(), TexTalkTokenType.Identifier, startLine, startColumn))
                 }
-                this.tokens.add(
-                    TexTalkToken(
-                        id.toString(), TexTalkTokenType.Identifier, startLine, startColumn))
             } else if (isOpChar(c)) {
                 val startLine = line
                 val startColumn = column

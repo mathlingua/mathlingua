@@ -4574,4 +4574,33 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report errors when using form 'xyz colon-colon abc'`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\group]
+                    Defines: G := (X, *)
+                    satisfying: "something"
+                    providing:
+                    . symbols: *, X
+                      where:
+                      . 'a * b := a G::* b'
+                      . 'X := G::X'
+                    written: "\textrm{group}"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

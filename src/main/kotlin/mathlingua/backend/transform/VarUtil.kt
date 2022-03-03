@@ -74,6 +74,12 @@ internal fun Phase2Node.getVarsPhase2Node(): List<Var> {
     return vars
 }
 
+internal fun Phase1Node.getVarsPhase1Node(isInPlaceholderScope: Boolean): List<Var> {
+    val vars = mutableListOf<Var>()
+    getVarsImplPhase1Node(this, vars, isInPlaceholderScope)
+    return vars
+}
+
 internal fun TexTalkNode.getVarsTexTalkNode(
     isInLhsOfColonEqualsIsOrIn: Boolean,
     groupScope: GroupScope,
@@ -670,7 +676,18 @@ private fun checkDefineSectionVars(
     node: DefinesSection, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val location = Location(node.row, node.column)
-    val givenVars = node.targets.map { it.getVarsPhase2Node() }.flatten()
+    val givenVars = node.targets.map { it.getVarsPhase2Node() }.flatten().toMutableList()
+    /*
+     * If the target is of the form G := (X, *, e)
+     * then add G::X, G::*, and G::e as vars introduced.
+     */
+    if (node.targets.isNotEmpty() && node.targets.first() is AssignmentNode) {
+        val assign = (node.targets.first() as AssignmentNode).assignment
+        val left = assign.lhs.text
+        for (right in assign.rhs.getVarsPhase1Node(isInPlaceholderScope = false)) {
+            givenVars.add(Var(name = "$left::$right", isPlaceholder = false))
+        }
+    }
     for (v in givenVars) {
         if (vars.hasConflict(v)) {
             errors.add(

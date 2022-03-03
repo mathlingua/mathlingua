@@ -33,7 +33,7 @@ expressing:
     . forAll: t
       where: 't in I'
       suchThat:
-      . not: 't = c'
+      . 't != c'
       . '\real.abs(t - c) < delta'
       then:
       . '\real.abs(f(t) - f(c)) < epsilon'

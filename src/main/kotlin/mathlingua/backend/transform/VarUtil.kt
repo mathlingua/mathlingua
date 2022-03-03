@@ -685,7 +685,9 @@ private fun checkDefineSectionVars(
         val assign = (node.targets.first() as AssignmentNode).assignment
         val left = assign.lhs.text
         for (right in assign.rhs.getVarsPhase1Node(isInPlaceholderScope = false)) {
-            givenVars.add(Var(name = "$left::$right", isPlaceholder = false))
+            if (!right.isPlaceholder) {
+                givenVars.add(Var(name = "$left::${right.name}", isPlaceholder = false))
+            }
         }
     }
     for (v in givenVars) {

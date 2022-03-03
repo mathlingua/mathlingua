@@ -1284,6 +1284,11 @@ private fun String.processMathLinguaKeywords() =
         .replace(":Type:", "\\textrm{:Type:}")
         .replace(":Statement:", "\\textrm{:Statement:}")
         .replace(":Expression:", "\\textrm{:Expression:}")
+        // replace `a G::* b` with `a \:G\textrm{::}*\: b` so there is a space
+        // between the `a` and `G::*` and `b` but there are not any spaces between
+        // the `::` and `G` and `*`.
+        .replace(Regex("([A-Za-z0-9]+::[~!@#$%^&-+=*|/<>]+)"), "\\\\:$1\\\\:")
+        .replace("::", "\\textrm{::}")
 
 private fun parseMarkdown(text: String): String {
     // a backlash needs to be handled speciallly, since if `\( x \)` is given to

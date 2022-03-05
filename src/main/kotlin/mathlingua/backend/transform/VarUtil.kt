@@ -37,6 +37,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.WhereTargetSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.EqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
@@ -414,6 +415,10 @@ private fun checkVarsImplPhase2Node(
     if (node is DefinesGroup) {
         varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, errors))
         varsToRemove.addAll(checkDefineSectionVars(node.definesSection, vars, errors))
+        if (node.whereSection != null) {
+            varsToRemove.addAll(
+                checkWhereTargetSectionVars(node.whereSection, node.definesSection, vars, errors))
+        }
     }
 
     val givenSection =
@@ -701,6 +706,63 @@ private fun checkDefineSectionVars(
         vars.add(v)
     }
     return givenVars
+}
+
+private fun checkWhereTargetSectionVars(
+    node: WhereTargetSection,
+    definesSection: DefinesSection,
+    vars: VarMultiSet,
+    errors: MutableList<ParseError>
+): List<Var> {
+    val location = Location(node.row, node.column)
+    // all var names in the Defines: section
+    val defVarNames =
+        definesSection
+            .targets
+            .map { it.getVarsPhase2Node() }
+            .flatten()
+            .filter { !it.isPlaceholder }
+            .map { it.name }
+    // var names in the left-hand-side of := statements in where: section that
+    // also var names in the Defines: section
+    val lhsWhereNames =
+        node.targets
+            .filterIsInstance<AssignmentNode>()
+            .map { it.assignment.lhs.text }
+            .filter { defVarNames.contains(it) }
+            .toSet()
+
+    // the new variables introduced in the where: section
+    val newWhereVars =
+        node.targets
+            .map { it.getVarsPhase2Node() }
+            .flatten()
+            .filter { !lhsWhereNames.contains(it.name) }
+            .toMutableList()
+    /*
+     * If the target is of the form G := (X, *, e)
+     * then add G::X, G::*, and G::e as vars introduced.
+     */
+    if (node.targets.isNotEmpty() && node.targets.first() is AssignmentNode) {
+        val assign = (node.targets.first() as AssignmentNode).assignment
+        val left = assign.lhs.text
+        for (right in assign.rhs.getVarsPhase1Node(isInPlaceholderScope = false)) {
+            if (!right.isPlaceholder) {
+                newWhereVars.add(Var(name = "$left::${right.name}", isPlaceholder = false))
+            }
+        }
+    }
+    for (v in newWhereVars) {
+        if (vars.hasConflict(v)) {
+            errors.add(
+                ParseError(
+                    message = "Duplicate defined symbol '$v' in `where:`",
+                    row = location.row,
+                    column = location.column))
+        }
+        vars.add(v)
+    }
+    return newWhereVars
 }
 
 private fun checkGivenSectionVars(

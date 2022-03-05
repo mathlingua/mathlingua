@@ -64,6 +64,7 @@ internal data class DefinesGroup(
     override val signature: Signature?,
     override val id: IdStatement,
     val definesSection: DefinesSection,
+    val whereSection: WhereTargetSection?,
     val givenSection: GivenSection?,
     val whenSection: WhenSection?,
     val meansSection: MeansSection?,
@@ -81,6 +82,9 @@ internal data class DefinesGroup(
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
         fn(id)
         fn(definesSection)
+        if (whereSection != null) {
+            fn(whereSection)
+        }
         if (givenSection != null) {
             fn(givenSection)
         }
@@ -115,6 +119,7 @@ internal data class DefinesGroup(
         val sections =
             mutableListOf(
                 definesSection,
+                whereSection,
                 givenSection,
                 whenSection,
                 meansSection,
@@ -140,6 +145,7 @@ internal data class DefinesGroup(
                 signature = signature,
                 id = id.transform(chalkTransformer) as IdStatement,
                 definesSection = definesSection.transform(chalkTransformer) as DefinesSection,
+                whereSection = whereSection?.transform(chalkTransformer) as WhereTargetSection?,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
                 whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
                 meansSection = meansSection?.transform(chalkTransformer) as MeansSection?,
@@ -167,6 +173,7 @@ internal fun validateDefinesGroup(node: Phase1Node, errors: MutableList<ParseErr
             DEFAULT_DEFINES_GROUP,
             listOf(
                 "Defines",
+                "where?",
                 "given?",
                 "when?",
                 "means?",
@@ -186,6 +193,8 @@ internal fun validateDefinesGroup(node: Phase1Node, errors: MutableList<ParseErr
                         ensureNonNull(sections["Defines"], DEFAULT_DEFINES_SECTION) {
                             validateDefinesSection(it, errors)
                         },
+                    whereSection =
+                        ifNonNull(sections["where"]) { validateWhereTargetSection(it, errors) },
                     givenSection =
                         ifNonNull(sections["given"]) { validateGivenSection(it, errors) },
                     whenSection = ifNonNull(sections["when"]) { validateWhenSection(it, errors) },

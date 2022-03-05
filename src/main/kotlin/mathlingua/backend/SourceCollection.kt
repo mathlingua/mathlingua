@@ -1208,6 +1208,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     signature = id.signature(),
                     id = id,
                     definesSection = DefinesSection(targets = emptyList(), row = -1, column = -1),
+                    whereSection = null,
                     givenSection = null,
                     whenSection = null,
                     meansSection = null,

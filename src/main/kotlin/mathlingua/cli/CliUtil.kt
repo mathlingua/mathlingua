@@ -55,6 +55,7 @@ internal val COMPLETIONS =
                     parts =
                         listOf(
                             "Defines:",
+                            "where?",
                             "given?:",
                             "when?:",
                             "means?:",
@@ -84,6 +85,7 @@ internal val COMPLETIONS =
                 CompletionItem(name = "membership", parts = listOf("membership:", "through:")),
                 CompletionItem(name = "view", parts = listOf("view:", "as:", "via:", "by?:")),
                 CompletionItem(name = "symbols", parts = listOf("symbols:", "where?:")),
+                CompletionItem(name = "memberSymbols", parts = listOf("memberSymbols:", "where?:")),
                 CompletionItem(
                     name = "Resource",
                     parts =

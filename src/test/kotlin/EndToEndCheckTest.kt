@@ -178,6 +178,39 @@ internal class EndToEndCheckTest {
     }
 
     @Test
+    fun `check does not report errors on variables defined in Defines-where`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\something.else]
+                    Defines: X
+                    satisfying: "something else"
+                    written: "something else"
+
+
+                    [\something]
+                    Defines: G := (A, B)
+                    where: A := (X, *, e)
+                    means: 'X is \something.else'
+                    satisfying: 'e is \something.else'
+                    written: "something"
+                    called: "something"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+        """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
     fun `check reports errors on duplicate defined signatures`() {
         runCheckTest(
             files =

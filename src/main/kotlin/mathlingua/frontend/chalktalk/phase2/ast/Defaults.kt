@@ -66,6 +66,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ExpressingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.ProvidedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.WhereTargetSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.BySection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.ProvidingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.BetweenSection
@@ -295,6 +296,9 @@ internal val DEFAULT_OR_GROUP = OrGroup(orSection = DEFAULT_OR_SECTION, row = -1
 
 internal val DEFAULT_GIVEN_SECTION = GivenSection(targets = listOf(), row = -1, column = -1)
 
+internal val DEFAULT_WHERE_TARGET_SECTION =
+    WhereTargetSection(targets = listOf(), row = -1, column = -1)
+
 internal val DEFAULT_STATES_GROUP =
     StatesGroup(
         signature = null,
@@ -520,6 +524,7 @@ internal val DEFAULT_DEFINES_GROUP =
         signature = null,
         id = DEFAULT_ID_STATEMENT,
         definesSection = DEFAULT_DEFINES_SECTION,
+        whereSection = DEFAULT_WHERE_TARGET_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
         meansSection = DEFAULT_EXTENDING_SECTION,

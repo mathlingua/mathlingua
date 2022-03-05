@@ -313,6 +313,11 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                     column++
                 }
 
+                while (i < text.length && isQuoteChar(text[i])) {
+                    id.append(text[i++])
+                    column++
+                }
+
                 if (i < text.length &&
                     text[i] == ':' &&
                     i + 1 < text.length &&
@@ -404,4 +409,6 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
     private fun isNonDigitIdentifierChar(c: Char) = Regex("[$#a-zA-Z]+").matches("$c")
 
     private fun isDigitIdentifierChar(c: Char) = Regex("[0-9]+").matches("$c")
+
+    private fun isQuoteChar(c: Char) = c == '\'' || c == '"' || c == '`'
 }

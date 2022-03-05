@@ -173,6 +173,10 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                     name += text[i++]
                     column++
                 }
+                while (i < text.length && isQuoteChar(text[i])) {
+                    name += text[i++]
+                    column++
+                }
                 if (i < text.length &&
                     text[i] == '_' &&
                     i + 1 < text.length &&
@@ -188,6 +192,10 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                                 column = startColumn))
                     } else {
                         while (i < text.length && isNameChar(text[i])) {
+                            name += text[i++]
+                            column++
+                        }
+                        while (i < text.length && isQuoteChar(text[i])) {
                             name += text[i++]
                             column++
                         }
@@ -215,6 +223,11 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                     column++
                 }
 
+                while (i < text.length && isQuoteChar(text[i])) {
+                    name += text[i++]
+                    column++
+                }
+
                 if (i < text.length &&
                     text[i] == '_' &&
                     i + 1 < text.length &&
@@ -233,6 +246,11 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                             name += text[i++]
                             column++
                         }
+
+                        while (i < text.length && isQuoteChar(text[i])) {
+                            name += text[i++]
+                            column++
+                        }
                     }
                 }
 
@@ -245,6 +263,11 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                     column++
 
                     while (i < text.length && isNameChar(text[i])) {
+                        name += text[i++]
+                        column++
+                    }
+
+                    while (i < text.length && isQuoteChar(text[i])) {
                         name += text[i++]
                         column++
                     }
@@ -382,6 +405,35 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
                 }
                 this.chalkTalkTokens.add(
                     Phase1Token(stmt, ChalkTalkTokenType.Statement, startLine, startColumn))
+            } else if (c == '`') {
+                val startLine = line
+                val startColumn = column
+                var stmt = "" + c
+                while (i < text.length && text[i] != '`') {
+                    val cur = text[i++]
+                    column++
+                    stmt += cur
+                    if (cur == '\n' || cur == '\r') {
+                        line++
+                        column = -1
+                    }
+                }
+                if (i == text.length) {
+                    errors.add(ParseError("Expected a terminating `", line, column))
+                    stmt += "`"
+                } else {
+                    // include the terminating `
+                    stmt += text[i++]
+                    column++
+                }
+                // transform a statement of the form `...` to '...'
+                // this allows statements to be analyzed consistently in the backend
+                this.chalkTalkTokens.add(
+                    Phase1Token(
+                        "'${stmt.removeSurrounding("`", "`")}'",
+                        ChalkTalkTokenType.Statement,
+                        startLine,
+                        startColumn))
             } else if (c == '[') {
                 val startLine = line
                 val startColumn = column
@@ -492,6 +544,8 @@ private class ChalkTalkLexerImpl(private var text: String) : ChalkTalkLexer {
     private fun isOperatorChar(c: Char) = "~!@%^&*-+<>\\/=".contains(c)
 
     private fun isNameChar(c: Char) = Regex("[a-zA-Z0-9]+").matches("$c")
+
+    private fun isQuoteChar(c: Char) = c == '\'' || c == '"' || c == '`'
 
     override fun hasNext() = this.index < this.chalkTalkTokens.size
 

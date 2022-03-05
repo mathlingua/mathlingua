@@ -157,6 +157,7 @@ internal fun Phase2Node.findAllStatements(): List<Pair<Statement, List<DefinesGr
                                 expressingSection = null,
                                 providingSection = null,
                                 usingSection = null,
+                                writingSection = null,
                                 writtenSection =
                                     WrittenSection(
                                         forms = listOf(rhs.toCode()), row = -1, column = -1),

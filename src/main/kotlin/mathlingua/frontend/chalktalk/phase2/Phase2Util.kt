@@ -144,6 +144,42 @@ internal fun getPatternsToWrittenAs(
         }
     }
 
+    /*
+     * For a Defines: with a writing: section, create synthetic
+     * defines so that the operators in the writing: section
+     * can be recognized as having a associated written:
+     */
+    for (def in defines) {
+        val writingSection = def.writingSection
+        if (writingSection != null) {
+            for (rawForm in writingSection.forms) {
+                val form = rawForm.removeSurrounding("\"", "\"")
+                val parts = form.split(":=")
+                if (parts.size == 2) {
+                    val left = parts[0].trim()
+                    val right = parts[1].trim()
+                    when (val validation =
+                        FrontEnd.parse(
+                            """
+                            [$left]
+                            Defines: X
+                            expressing: ""
+                            written: "$right"
+                        """.trimIndent())
+                    ) {
+                        is ValidationSuccess -> {
+                            allDefines.addAll(validation.value.defines())
+                        }
+                    }
+                } else {
+                    println(
+                        "Warning(${writingSection.row + 1}, ${writingSection.column + 1}): Encountered an invalid writing: form $form. " +
+                            "Expected it to be of the form ... := ...")
+                }
+            }
+        }
+    }
+
     val allStates = mutableListOf<StatesGroup>()
     allStates.addAll(states)
 

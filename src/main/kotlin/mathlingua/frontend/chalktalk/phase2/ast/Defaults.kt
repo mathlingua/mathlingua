@@ -60,6 +60,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.Piecewise
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.piecewise.PiecewiseSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.MeansSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WritingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
@@ -268,6 +269,8 @@ internal val DEFAULT_FOR_ALL_SECTION = ForAllSection(targets = emptyList(), row 
 internal val DEFAULT_DEFINES_SECTION = DefinesSection(targets = emptyList(), row = -1, column = -1)
 
 internal val DEFAULT_WRITTEN_SECTION = WrittenSection(forms = emptyList(), row = -1, column = -1)
+
+internal val DEFAULT_WRITING_SECTION = WritingSection(forms = emptyList(), row = -1, column = -1)
 
 internal val DEFAULT_CALLED_SECTION = CalledSection(forms = emptyList(), row = -1, column = -1)
 
@@ -532,6 +535,7 @@ internal val DEFAULT_DEFINES_GROUP =
         expressingSection = DEFAULT_EXPRESSING_SECTION,
         providingSection = DEFAULT_PROVIDING_SECTION,
         usingSection = DEFAULT_USING_SECTION,
+        writingSection = DEFAULT_WRITING_SECTION,
         writtenSection = DEFAULT_WRITTEN_SECTION,
         calledSection = DEFAULT_CALLED_SECTION,
         metaDataSection = DEFAULT_META_DATA_SECTION,

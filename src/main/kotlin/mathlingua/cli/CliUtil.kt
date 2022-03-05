@@ -63,6 +63,7 @@ internal val COMPLETIONS =
                             "expressing:",
                             "providing?:",
                             "using?:",
+                            "writing?:",
                             "written:",
                             "called?:",
                             "Metadata?:"),

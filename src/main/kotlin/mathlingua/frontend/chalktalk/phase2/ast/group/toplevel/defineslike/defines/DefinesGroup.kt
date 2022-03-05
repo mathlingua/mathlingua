@@ -34,11 +34,13 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.CalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.MeansSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WritingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.WrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.ProvidingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.validateViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateExtendingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWritingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.validateGivenSection
@@ -72,6 +74,7 @@ internal data class DefinesGroup(
     val expressingSection: ExpressingSection?,
     val providingSection: ProvidingSection?,
     override val usingSection: UsingSection?,
+    val writingSection: WritingSection?,
     val writtenSection: WrittenSection,
     val calledSection: CalledSection?,
     override val metaDataSection: MetaDataSection?,
@@ -106,6 +109,9 @@ internal data class DefinesGroup(
         if (usingSection != null) {
             fn(usingSection)
         }
+        if (writingSection != null) {
+            fn(writingSection)
+        }
         fn(writtenSection)
         if (calledSection != null) {
             fn(calledSection)
@@ -127,6 +133,7 @@ internal data class DefinesGroup(
                 expressingSection,
                 providingSection,
                 usingSection,
+                writingSection,
                 writtenSection,
                 calledSection,
                 metaDataSection)
@@ -156,6 +163,7 @@ internal data class DefinesGroup(
                 providingSection =
                     providingSection?.transform(chalkTransformer) as ProvidingSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
+                writingSection = writingSection?.transform(chalkTransformer) as WritingSection?,
                 writtenSection = writtenSection.transform(chalkTransformer) as WrittenSection,
                 calledSection = calledSection?.transform(chalkTransformer) as CalledSection?,
                 metaDataSection = metaDataSection?.transform(chalkTransformer) as MetaDataSection?,
@@ -181,6 +189,7 @@ internal fun validateDefinesGroup(node: Phase1Node, errors: MutableList<ParseErr
                 "expressing?",
                 "providing?",
                 "using?",
+                "writing?",
                 "written",
                 "called?",
                 "Metadata?")) { sections ->
@@ -208,6 +217,8 @@ internal fun validateDefinesGroup(node: Phase1Node, errors: MutableList<ParseErr
                         ifNonNull(sections["providing"]) { validateViewingSection(it, errors) },
                     usingSection =
                         ifNonNull(sections["using"]) { validateUsingSection(it, errors) },
+                    writingSection =
+                        ifNonNull(sections["writing"]) { validateWritingSection(it, errors) },
                     writtenSection =
                         ensureNonNull(sections["written"], DEFAULT_WRITTEN_SECTION) {
                             validateWrittenSection(it, errors)

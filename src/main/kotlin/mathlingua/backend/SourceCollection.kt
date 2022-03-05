@@ -1220,6 +1220,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                     expressingSection = null,
                     providingSection = null,
                     usingSection = null,
+                    writingSection = null,
                     writtenSection =
                         WrittenSection(forms = listOf("\"${stmtText}\""), row = -1, column = -1),
                     calledSection = CalledSection(forms = emptyList(), row = -1, column = -1),

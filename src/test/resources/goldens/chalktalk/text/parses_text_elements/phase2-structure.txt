@@ -131,6 +131,7 @@ Document(
                expressingSection = null
                providingSection = null
                usingSection = null
+               writingSection = null
                writtenSection = WrittenSection(
                  forms = [
                            ""something""

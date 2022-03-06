@@ -128,9 +128,9 @@ Defines: G := (X, *)
 satisfying: "something"
 providing:
 . symbols: *
-  where: 'x * y := x G::* y'
+  where: 'x * y := x G.* y'
 . memberSymbols: *
-  where: 'x * y := x G::* y'
+  where: 'x * y := x G.* y'
 written: "something"
 
 

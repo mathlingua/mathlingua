@@ -684,14 +684,14 @@ private fun checkDefineSectionVars(
     val givenVars = node.targets.map { it.getVarsPhase2Node() }.flatten().toMutableList()
     /*
      * If the target is of the form G := (X, *, e)
-     * then add G::X, G::*, and G::e as vars introduced.
+     * then add G.X, G.*, and G.e as vars introduced.
      */
     if (node.targets.isNotEmpty() && node.targets.first() is AssignmentNode) {
         val assign = (node.targets.first() as AssignmentNode).assignment
         val left = assign.lhs.text
         for (right in assign.rhs.getVarsPhase1Node(isInPlaceholderScope = false)) {
             if (!right.isPlaceholder) {
-                givenVars.add(Var(name = "$left::${right.name}", isPlaceholder = false))
+                givenVars.add(Var(name = "$left.${right.name}", isPlaceholder = false))
             }
         }
     }
@@ -741,14 +741,14 @@ private fun checkWhereTargetSectionVars(
             .toMutableList()
     /*
      * If the target is of the form G := (X, *, e)
-     * then add G::X, G::*, and G::e as vars introduced.
+     * then add G.X, G.*, and G.e as vars introduced.
      */
     if (node.targets.isNotEmpty() && node.targets.first() is AssignmentNode) {
         val assign = (node.targets.first() as AssignmentNode).assignment
         val left = assign.lhs.text
         for (right in assign.rhs.getVarsPhase1Node(isInPlaceholderScope = false)) {
             if (!right.isPlaceholder) {
-                newWhereVars.add(Var(name = "$left::${right.name}", isPlaceholder = false))
+                newWhereVars.add(Var(name = "$left.${right.name}", isPlaceholder = false))
             }
         }
     }

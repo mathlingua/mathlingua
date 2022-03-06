@@ -6,22 +6,7 @@ ExpressionTexTalkNode(
                              name = TextTexTalkNode(
                                type = TexTalkNodeType.Identifier
                                tokenType = TexTalkTokenType.Identifier
-                               text = "some"
-                               isVarArg = false
-                             )
-                             square = null
-                             subSup = null
-                             groups = [
-                                      ]
-                             paren = null
-                             namedGroups = [
-                                           ]
-                           ),
-                           CommandPart(
-                             name = TextTexTalkNode(
-                               type = TexTalkNodeType.Identifier
-                               tokenType = TexTalkTokenType.Identifier
-                               text = "compound"
+                               text = "some.compound"
                                isVarArg = false
                              )
                              square = null

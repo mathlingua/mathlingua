@@ -319,14 +319,11 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
                 }
 
                 if (i < text.length &&
-                    text[i] == ':' &&
+                    text[i] == '.' &&
                     i + 1 < text.length &&
-                    text[i + 1] == ':' &&
-                    i + 2 < text.length &&
-                    (isOpChar(text[i + 2]) || isIdentifierChar(text[i + 2]))) {
-                    id.append("::")
-                    i += 2
-                    column += 2
+                    (isOpChar(text[i + 1]) || isIdentifierChar(text[i + 1]))) {
+                    id.append(text[i++]) // append the .
+                    column++
                     if (isOpChar(text[i])) {
                         while (i < text.length && isOpChar(text[i])) {
                             id.append(text[i++])

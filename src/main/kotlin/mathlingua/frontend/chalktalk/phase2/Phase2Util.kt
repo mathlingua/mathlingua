@@ -273,7 +273,7 @@ internal fun getPatternsToWrittenAs(
      *    Defines: G := (X, *, e)
      *    ...
      *
-     * then create "writtenAs" forms for the introduced symbols G::X, G::*, G::e
+     * then create "writtenAs" forms for the introduced symbols G.X, G.*, G.e
      */
     for (def in allDefines) {
         val targets = def.definesSection.targets
@@ -281,7 +281,7 @@ internal fun getPatternsToWrittenAs(
             val assign = (targets.first() as AssignmentNode).assignment
             val left = assign.lhs.text
             for (right in assign.rhs.getVarsPhase1Node(isInPlaceholderScope = false)) {
-                val target = "$left::$right"
+                val target = "$left.$right"
                 result[
                     OperatorTexTalkNode(
                         lhs = null,

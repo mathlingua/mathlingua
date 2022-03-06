@@ -26,12 +26,18 @@ internal fun Phase1Node.deepForEachTopDown(fn: (node: Phase1Node) -> Boolean) {
 }
 
 fun isOperatorName(text: String): Boolean {
-    var index = text.indexOf('_')
-    if (index < 0) {
-        index = text.length
+    var underscoreIndex = text.indexOf('_')
+    if (underscoreIndex < 0) {
+        underscoreIndex = text.length
     }
-    for (i in 0 until index) {
-        if (!isOpChar(text[i])) {
+    var i = 0
+    // treat G.* forms as an operator
+    val dotIndex = text.indexOf(".")
+    if (dotIndex in 0 until underscoreIndex) {
+        i = dotIndex + 1
+    }
+    while (i < underscoreIndex) {
+        if (!isOpChar(text[i++])) {
             return false
         }
     }

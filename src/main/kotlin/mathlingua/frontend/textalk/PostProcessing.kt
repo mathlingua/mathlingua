@@ -266,13 +266,13 @@ private fun getCommandOperatorSymbolText(node: TexTalkNode?): String? {
     } else if (node != null &&
         node is TextTexTalkNode &&
         node.tokenType == TexTalkTokenType.Identifier &&
-        node.text.contains("::") &&
+        node.text.contains(".") &&
         isOperatorText(node.text)) {
-        // An identifier of the form G::* is always an identifier
+        // An identifier of the form G.* is always an operator
         // since it is introduced from a Defines: target of the form
-        // G := (X, *, e), for example, and thus G::* refers to the
+        // G := (X, *, e), for example, and thus G.* refers to the
         // operator and is only used in an expression context, i.e.
-        // of the form 'x G::* y'.
+        // of the form 'x G.* y'.
         node.text
     } else {
         null
@@ -285,8 +285,8 @@ private fun isOperatorText(name: String): Boolean {
     }
 
     var i = 0
-    if (name.contains("::")) {
-        i = name.indexOf("::") + 2
+    if (name.contains(".")) {
+        i = name.indexOf(".") + 1
     }
 
     while (i < name.length) {

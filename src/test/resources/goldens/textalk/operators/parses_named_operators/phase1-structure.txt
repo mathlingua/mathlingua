@@ -13,22 +13,7 @@ ExpressionTexTalkNode(
                                name = TextTexTalkNode(
                                  type = TexTalkNodeType.Identifier
                                  tokenType = TexTalkTokenType.Identifier
-                                 text = "integer"
-                                 isVarArg = false
-                               )
-                               square = null
-                               subSup = null
-                               groups = [
-                                        ]
-                               paren = null
-                               namedGroups = [
-                                             ]
-                             ),
-                             CommandPart(
-                               name = TextTexTalkNode(
-                                 type = TexTalkNodeType.Identifier
-                                 tokenType = TexTalkTokenType.Operator
-                                 text = "+"
+                                 text = "integer.+/"
                                  isVarArg = false
                                )
                                square = null
@@ -40,7 +25,7 @@ ExpressionTexTalkNode(
                                              ]
                              )
                            ]
-                   hasSuffix = true
+                   hasSuffix = false
                  )
                  rhs = TextTexTalkNode(
                    type = TexTalkNodeType.Identifier

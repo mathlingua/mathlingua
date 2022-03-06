@@ -4609,7 +4609,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors when using form 'xyz colon-colon abc'`() {
+    fun `check does not report errors when using form 'xyz dot abc'`() {
         runCheckTest(
             files =
                 listOf(
@@ -4623,32 +4623,8 @@ internal class EndToEndCheckTest {
                     providing:
                     . symbols: *, X
                       where:
-                      . 'a * b := a G::* b'
-                      . 'X := G::X'
-                    written: "\textrm{group}"
-                """.trimIndent())),
-            expectedOutput =
-                """
-                SUCCESS
-                Processed 1 file
-                0 errors detected
-            """.trimIndent(),
-            expectedExitCode = 0,
-            expectedNumErrors = 0)
-    }
-
-    @Test
-    fun `check does not report errors when using form 'X colon-colon i' for sequences`() {
-        runCheckTest(
-            files =
-                listOf(
-                    PathAndContent(
-                        path = listOf("content", "file1.math"),
-                        content =
-                            """
-                    [\group]
-                    Defines: X := {x_{i}}_{i}
-                    satisfying: "something"
+                      . 'a * b := a X.* b'
+                      . 'X := G.X'
                     written: "\textrm{group}"
                 """.trimIndent())),
             expectedOutput =

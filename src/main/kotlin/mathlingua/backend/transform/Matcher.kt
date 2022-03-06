@@ -17,6 +17,7 @@
 package mathlingua.backend.transform
 
 import kotlin.math.max
+import mathlingua.frontend.chalktalk.phase1.ast.isOperatorName
 import mathlingua.frontend.chalktalk.phase2.WrittenAsForm
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.support.Location
@@ -526,6 +527,12 @@ private fun expandAsWrittenImplImpl(
         // There isn't a matching pattern.  However, the operator is a non-backslash
         // command such as +, -, ++, etc. and so it is not an error to not find the
         // matching pattern.  Instead, the operator itself can be rendered.
+        return Expansion(text = null, errors = emptyList(), matchedTarget = false)
+    } else if (patternExpansion == null && isOperatorName(op.command.toCode())) {
+        // TODO: Handle the case when an operator is of the form G.*
+        //       so that it is not just ignored but instead is processed
+        //       correctly
+        // Like the above case, we render the operator itself
         return Expansion(text = null, errors = emptyList(), matchedTarget = false)
     } else if (patternExpansion == null) {
         return Expansion(

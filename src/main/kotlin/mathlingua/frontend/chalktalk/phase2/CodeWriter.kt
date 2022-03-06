@@ -23,6 +23,7 @@ import mathlingua.backend.transform.findAllStatementSignatures
 import mathlingua.frontend.FrontEnd
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
+import mathlingua.frontend.chalktalk.phase1.ast.isOperatorName
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -736,8 +737,10 @@ private open class HtmlCodeWriter(
             builder.append(
                 "<div class='mathlingua-dropdown-menu-hidden' id='statement-$dropdownIndex-CUSTOM_SUFFIX'>")
             for (sig in signatures) {
-                // only include signatures from external Defines: or States: groups
-                if (!innerDefinedSignatures.contains(sig.form)) {
+                // only include signatures from external Defines: or States: groups so exclude
+                // operators
+                // TODO: Support operators.  This requires implementing type inference.
+                if (!innerDefinedSignatures.contains(sig.form) && !isOperatorName(sig.form)) {
                     builder.append(
                         "<a class='mathlingua-dropdown-menu-item' onclick=\"mathlinguaViewSignature('${
                             sig.form.replace(

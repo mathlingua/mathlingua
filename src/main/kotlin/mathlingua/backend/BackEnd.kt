@@ -25,7 +25,6 @@ internal object BackEnd {
         errors.addAll(checkUndefinedSignatures(sourceCollection))
         errors.addAll(checkDuplicateDefinedSignatures(sourceCollection))
         errors.addAll(sourceCollection.findInvalidTypes())
-        errors.addAll(sourceCollection.findMultipleIsStatementsWithoutMeansSection())
         errors.addAll(sourceCollection.findInvalidMeansSection())
         errors.addAll(sourceCollection.getSymbolErrors())
         errors.addAll(sourceCollection.getIsRhsErrors())

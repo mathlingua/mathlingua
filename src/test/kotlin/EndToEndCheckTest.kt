@@ -2242,7 +2242,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check reports errors if multiple 'is' statements exists in 'satisfying' without a 'means' section`() {
+    fun `check does not report errors if multiple 'is' statements exists in 'satisfying' without a 'means' section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2279,22 +2279,16 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 24, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f is \B' then a `means:` section must be specified with an `is` or `in` statement.
-
-                ERROR: content/file1.math (Line: 25, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f is \C' then a `means:` section must be specified with an `is` or `in` statement.
-
-                FAILED
+                SUCCESS
                 Processed 1 file
-                2 errors detected
+                0 errors detected
         """.trimIndent(),
-            expectedExitCode = 1,
-            expectedNumErrors = 2)
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
     }
 
     @Test
-    fun `check reports errors if multiple 'is' statements exists in 'expressing' without a 'means' section`() {
+    fun `check does not report errors if multiple 'is' statements exists in 'expressing' without a 'means' section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2331,22 +2325,16 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 24, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f is \B' then a `means:` section must be specified with an `is` or `in` statement.
-
-                ERROR: content/file1.math (Line: 25, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f is \C' then a `means:` section must be specified with an `is` or `in` statement.
-
-                FAILED
+                SUCCESS
                 Processed 1 file
-                2 errors detected
+                0 errors detected
         """.trimIndent(),
-            expectedExitCode = 1,
-            expectedNumErrors = 2)
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
     }
 
     @Test
-    fun `check reports errors if multiple 'in' statements exists in 'satisfying' without a 'means' section`() {
+    fun `check does not report errors if multiple 'in' statements exists in 'satisfying' without a 'means' section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2383,22 +2371,16 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 24, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f in \B' then a `means:` section must be specified with an `is` or `in` statement.
-
-                ERROR: content/file1.math (Line: 25, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f in \C' then a `means:` section must be specified with an `is` or `in` statement.
-
-                FAILED
+                SUCCESS
                 Processed 1 file
-                2 errors detected
+                0 errors detected
         """.trimIndent(),
-            expectedExitCode = 1,
-            expectedNumErrors = 2)
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
     }
 
     @Test
-    fun `check reports errors if multiple 'in' statements exists in 'expressing' without a 'means' section`() {
+    fun `check does not report errors if multiple 'in' statements exists in 'expressing' without a 'means' section`() {
         runCheckTest(
             files =
                 listOf(
@@ -2435,18 +2417,12 @@ internal class EndToEndCheckTest {
                 """.trimIndent())),
             expectedOutput =
                 """
-                ERROR: content/file1.math (Line: 24, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f in \B' then a `means:` section must be specified with an `is` or `in` statement.
-
-                ERROR: content/file1.math (Line: 25, Column: 3)
-                Since a `satisfying:` or `expressing:` section contains the statement 'f in \C' then a `means:` section must be specified with an `is` or `in` statement.
-
-                FAILED
+                SUCCESS
                 Processed 1 file
-                2 errors detected
+                0 errors detected
         """.trimIndent(),
-            expectedExitCode = 1,
-            expectedNumErrors = 2)
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
     }
 
     @Test

@@ -48,7 +48,6 @@ import mathlingua.frontend.textalk.TextTexTalkNode
 
 internal interface SymbolAnalyzer {
     fun findInvalidTypes(grp: TopLevelGroup): List<ParseError>
-    fun findMultipleIsStatementsWithoutMeansSection(defines: DefinesGroup): List<ParseError>
     fun findInvalidMeansSection(defines: DefinesGroup): List<ParseError>
     fun getTypePaths(startSignature: String): List<List<String>>
 }
@@ -310,55 +309,6 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
             }
         }
         return errors
-    }
-
-    override fun findMultipleIsStatementsWithoutMeansSection(
-        defines: DefinesGroup
-    ): List<ParseError> {
-        if (defines.satisfyingSection == null && defines.expressingSection == null) {
-            return emptyList()
-        }
-
-        val hasMeansWithIsOrIn =
-            defines.meansSection?.statements?.firstOrNull {
-                it.isIsStatement() || it.isInStatement()
-            } != null
-
-        val isOrInStatements = mutableListOf<Statement>()
-        val clauses =
-            if (defines.satisfyingSection != null) {
-                defines.satisfyingSection.clauses.clauses
-            } else {
-                // the !! is explicitly needed since if `defines.expressingSection`
-                // is `null` then the logic above is wrong and so the code should
-                // fail fast and loud
-                defines.expressingSection!!.clauses.clauses
-            }
-        for (clause in clauses) {
-            if (clause is Statement && (clause.isIsStatement() || clause.isInStatement())) {
-                isOrInStatements.add(clause)
-            }
-        }
-
-        // if the 'satisfying' section doesn't contain an 'is' or 'in' statement then
-        // there aren't any errors for the check done by this particular function
-        if (isOrInStatements.isEmpty()) {
-            return emptyList()
-        }
-
-        // if the 'satisfying' section contains an 'is' or 'in' statement and the
-        // 'means' section has an 'is' or 'in' statement, then there aren't any errors
-        if (hasMeansWithIsOrIn) {
-            return emptyList()
-        }
-
-        return isOrInStatements.map {
-            ParseError(
-                message =
-                    "Since a `satisfying:` or `expressing:` section contains the statement '${it.text}' then a `means:` section must be specified with an `is` or `in` statement.",
-                row = it.row,
-                column = it.column)
-        }
     }
 
     override fun findInvalidMeansSection(defines: DefinesGroup): List<ParseError> {

@@ -127,13 +127,13 @@ private open class HtmlCodeWriter(
         builder.append("<hr/>")
         builder.append("<span class='mathlingua-metadata'>")
 
-        val overview =
+        val note =
             meta.items.firstOrNull {
-                it is StringSectionGroup && it.section.name == "overview"
+                it is StringSectionGroup && it.section.name == "note"
             } as StringSectionGroup?
 
-        if (overview != null && overview.section.values.isNotEmpty()) {
-            for (text in overview.section.values) {
+        if (note != null && note.section.values.isNotEmpty()) {
+            for (text in note.section.values) {
                 builder.append("<span class='mathlingua-overview'>")
                 builder.append(getExpandedMarkdownedText(text))
                 builder.append("</span>")

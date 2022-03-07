@@ -36,7 +36,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.i
 import mathlingua.frontend.support.ParseError
 
 private val META_DATA_ITEM_CONSTRAINTS =
-    mapOf("overview" to 1, "tag" to -1, "author" to -1, "contributor" to -1, "id" to 1)
+    mapOf("note" to -1, "tag" to -1, "author" to -1, "contributor" to -1, "id" to 1)
 
 internal data class MetaDataSection(
     val items: List<MetaDataItem>, override val row: Int, override val column: Int

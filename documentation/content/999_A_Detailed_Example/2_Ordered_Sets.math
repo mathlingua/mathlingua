@@ -17,8 +17,8 @@ means: 'R is \set'
 satisfying: 'R \subset/ {A \set.product/ A}'
 written: "\textrm{Binary Relation on } A?"
 Metadata:
-. overview: "Two elements $a, b \in A$ are said to be related
-             if $(a, b) \in R$."
+. note: "Two elements $a, b \in A$ are said to be related
+         if $(a, b) \in R$."
 
 
 ::

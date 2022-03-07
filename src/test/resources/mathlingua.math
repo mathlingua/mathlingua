@@ -112,26 +112,26 @@ satisfying:
 . forAll: x, y, z
   suchThat: 'x, y, z in X'
   then: '(x*y)*z = x*(y*z)'
-providing:
+written: "\textrm{semigroup}"
+called: "semigroup"
+Providing:
 . view:
   as: '\set'
   via: 'X'
   by: '\some.theorem'
 . membership:
   through: 'X'
-written: "\textrm{semigroup}"
-called: "semigroup"
 
 
 [\something]
 Defines: G := (X, *)
 satisfying: "something"
-providing:
+written: "something"
+Providing:
 . symbols: *
   where: 'x * y := x G.* y'
 . memberSymbols: *
   where: 'x * y := x G.* y'
-written: "something"
 
 
 [\x]

@@ -129,7 +129,6 @@ Document(
                  column = 0
                )
                expressingSection = null
-               providingSection = null
                usingSection = null
                writingSection = null
                writtenSection = WrittenSection(
@@ -146,6 +145,7 @@ Document(
                  row = 6
                  column = 0
                )
+               providingSection = null
                metaDataSection = null
                row = 0
                column = 0

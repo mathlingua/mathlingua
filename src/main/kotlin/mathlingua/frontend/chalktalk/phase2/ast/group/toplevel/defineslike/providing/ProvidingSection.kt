@@ -37,7 +37,7 @@ internal data class ProvidingSection(
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("providing")
+        writer.writeHeader("Providing")
         writer.append(clauses, true, indent + 2)
         return writer
     }
@@ -48,8 +48,8 @@ internal data class ProvidingSection(
                 clauses = clauses.transform(chalkTransformer) as ClauseListNode, row, column))
 }
 
-internal fun validateViewingSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateSection(node.resolve(), errors, "providing", DEFAULT_PROVIDING_SECTION) {
+internal fun validateProvidingSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, "Providing", DEFAULT_PROVIDING_SECTION) {
         val clauses = validateClauseListNode(it, errors)
         val errorCountBefore = errors.size
         for (clause in clauses.clauses) {

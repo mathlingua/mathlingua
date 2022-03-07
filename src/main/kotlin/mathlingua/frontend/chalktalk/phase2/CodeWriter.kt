@@ -302,7 +302,12 @@ private open class HtmlCodeWriter(
                                     node.calledSection
                                 })
                         .toCode(false, 0, writer = newCodeWriter(defines, states, axioms, literal))
-                        .getCode())
+                        // the replacement is needed because the called section above is replaced
+                        // with a section with no forms (since the called section must be non-null)
+                        // but we don't want the empty called section to be printed otherwise it
+                        // prints as a blank line
+                        .getCode()
+                        .replace("<span class='mathlingua'></span><br/>", ""))
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
                     builder.append(generateMetaDataSectionCode(node.metaDataSection))
@@ -332,7 +337,12 @@ private open class HtmlCodeWriter(
                             }
                         }
                         .toCode(false, 0, writer = newCodeWriter(defines, states, axioms, literal))
-                        .getCode())
+                        // the replacement is needed because the called section above is replaced
+                        // with a section with no forms (since the called section must be non-null)
+                        // but we don't want the empty called section to be printed otherwise it
+                        // prints as a blank line
+                        .getCode()
+                        .replace("<span class='mathlingua'></span><br/>", ""))
                 builder.append("</span>")
                 if (node.metaDataSection != null) {
                     builder.append(generateMetaDataSectionCode(node.metaDataSection))

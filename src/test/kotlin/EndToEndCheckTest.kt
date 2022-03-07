@@ -1983,12 +1983,12 @@ internal class EndToEndCheckTest {
                     [\something.else]
                     Defines: X
                     satisfying: "something else"
-                    providing:
+                    written: "something else"
+                    called: "something else"
+                    Providing:
                     . view:
                       as: '\something'
                       via: 'X'
-                    written: "something else"
-                    called: "something else"
 
 
                     [\f{X}]
@@ -2046,14 +2046,14 @@ internal class EndToEndCheckTest {
                     satisfying:
                     . '< is \something.else'
                     . '0 < 1'
-                    providing:
+                    written: "\textrm{ordered set}"
+                    called: "ordered set"
+                    Providing:
                     . view:
                       as: '\another'
                       via: 'S'
                     . membership:
                       through: 'S'
-                    written: "\textrm{ordered set}"
-                    called: "ordered set"
                 """.trimIndent())),
             expectedOutput =
                 """
@@ -2101,14 +2101,14 @@ internal class EndToEndCheckTest {
                     satisfying:
                     . '< is \something.else'
                     . '0 < 1'
-                    providing:
+                    written: "\textrm{ordered set}"
+                    called: "ordered set"
+                    Providing:
                     . view:
                       as: '\another'
                       via: 'S'
                     . membership:
                       through: 'S'
-                    written: "\textrm{ordered set}"
-                    called: "ordered set"
                 """.trimIndent())),
             expectedOutput =
                 """
@@ -4596,12 +4596,12 @@ internal class EndToEndCheckTest {
                     [\group]
                     Defines: G := (X, *)
                     satisfying: "something"
-                    providing:
+                    written: "\textrm{group}"
+                    Providing:
                     . symbols: *, X
                       where:
                       . 'a * b := a X.* b'
                       . 'X := G.X'
-                    written: "\textrm{group}"
                 """.trimIndent())),
             expectedOutput =
                 """

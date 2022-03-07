@@ -36,14 +36,14 @@ Defines: N
 means: 'N is \set'
 expressing:
 . "The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$} "
-providing:
+written: "\mathbb{N}"
+called: "Naturals"
+Providing:
 . view:
   as: '\set'
   via: 'N'
 . membership:
   through: 'N'
-written: "\mathbb{N}"
-called: "Naturals"
 
 
 ::

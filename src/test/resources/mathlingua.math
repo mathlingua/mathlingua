@@ -145,9 +145,9 @@ written: "x"
 Defines: (y, z, w)
 means:
 . '(y, z) is \set'
+satisfying: "something"
 . '(y, w) is \set'
 . '(z, w) is \set'
-satisfying: "something"
 written: "y"
 
 

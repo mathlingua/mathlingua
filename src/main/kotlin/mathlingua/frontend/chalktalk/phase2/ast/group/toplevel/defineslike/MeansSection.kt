@@ -18,7 +18,7 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_EXTENDING_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MEANS_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
@@ -58,11 +58,20 @@ internal data class MeansSection(
                 column))
 }
 
-internal fun validateExtendingSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateSection(node.resolve(), errors, DEFAULT_EXTENDING_SECTION) {
+internal fun validateMeansSection(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateSection(node.resolve(), errors, DEFAULT_MEANS_SECTION) {
         // more robust validation is done in the
         //   SourceCollection.findInvalidMeansSection(DefinesGroup)
         // because it needs to know what vars are defined in the `Defines:` section
         val statements = it.args.map { arg -> validateStatement(arg, errors, arg.isInline) }
-        MeansSection(statements = statements, node.row, node.column)
+        if (statements.size != 1) {
+            errors.add(
+                ParseError(
+                    message = "A `means:` section must contain exactly one statement.",
+                    row = node.row,
+                    column = node.column))
+            DEFAULT_MEANS_SECTION
+        } else {
+            MeansSection(statements = statements, node.row, node.column)
+        }
     }

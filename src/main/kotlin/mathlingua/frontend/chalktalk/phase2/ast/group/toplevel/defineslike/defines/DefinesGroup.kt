@@ -39,7 +39,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.Writt
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.ProvidingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.validateViewingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateCalledSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateExtendingSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateMeansSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWritingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.validateWrittenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
@@ -208,7 +208,7 @@ internal fun validateDefinesGroup(node: Phase1Node, errors: MutableList<ParseErr
                         ifNonNull(sections["given"]) { validateGivenSection(it, errors) },
                     whenSection = ifNonNull(sections["when"]) { validateWhenSection(it, errors) },
                     meansSection =
-                        ifNonNull(sections["means"]) { validateExtendingSection(it, errors) },
+                        ifNonNull(sections["means"]) { validateMeansSection(it, errors) },
                     satisfyingSection =
                         ifNonNull(sections["satisfying"]) { validateSatisfiesSection(it, errors) },
                     expressingSection =

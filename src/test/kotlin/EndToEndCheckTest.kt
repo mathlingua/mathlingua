@@ -4641,4 +4641,75 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check reports errors when a 'means' section has more than one statement`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: A
+                    satisfying: "something"
+                    written: "A"
+
+
+                    [\B]
+                    Defines: B
+                    satisfying: "something"
+                    written: "B"
+
+
+                    [\C]
+                    Defines: C
+                    means:
+                    . 'C is \A'
+                    . 'C is \B'
+                    written: "X"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                ERROR: content/file1.math (Line: 15, Column: 1)
+                A `means:` section must contain exactly one statement.
+
+                FAILED
+                Processed 1 file
+                1 error detected
+            """.trimIndent(),
+            expectedExitCode = 1,
+            expectedNumErrors = 1)
+    }
+
+    @Test
+    fun `check does not report errors when a 'means' section has exactly one statement`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\A]
+                    Defines: A
+                    satisfying: "something"
+                    written: "A"
+
+
+                    [\B]
+                    Defines: B
+                    means: 'B is \A'
+                    written: "B"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

@@ -346,8 +346,7 @@ internal val DEFAULT_CONJECTURE_SECTION =
 
 internal val DEFAULT_THEOREM_SECTION = TheoremSection(names = emptyList(), row = -1, column = -1)
 
-internal val DEFAULT_EXTENDING_SECTION =
-    MeansSection(statements = emptyList(), row = -1, column = -1)
+internal val DEFAULT_MEANS_SECTION = MeansSection(statements = emptyList(), row = -1, column = -1)
 
 internal val DEFAULT_PROOF_SECTION = ProofSection(text = "", row = -1, column = -1)
 
@@ -530,7 +529,7 @@ internal val DEFAULT_DEFINES_GROUP =
         whereSection = DEFAULT_WHERE_TARGET_SECTION,
         givenSection = DEFAULT_GIVEN_SECTION,
         whenSection = DEFAULT_WHEN_SECTION,
-        meansSection = DEFAULT_EXTENDING_SECTION,
+        meansSection = DEFAULT_MEANS_SECTION,
         satisfyingSection = DEFAULT_SATISFYING_SECTION,
         expressingSection = DEFAULT_EXPRESSING_SECTION,
         providingSection = DEFAULT_PROVIDING_SECTION,

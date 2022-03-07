@@ -110,10 +110,9 @@ binary operation is a type of function.
 [\function:on{A}:to{B}]
 Defines: f(x)
 when: 'A, B is \set'
-means:
+satisfying:
 . 'x in A'
 . 'f(x) in B'
-satisfying:
 . forAll: a
   suchThat: 'a in A'
   then:
@@ -131,10 +130,9 @@ which is rendered as:
 [\function:on{A}:to{B}]
 Defines: f(x)
 when: 'A, B is \set'
-means:
+satisfying:
 . 'x in A'
 . 'f(x) in B'
-satisfying:
 . forAll: a
   suchThat: 'a in A'
   then:
@@ -403,9 +401,9 @@ Now we can define a group:
 Defines: G := (X, *, e)
 means:
 . 'X is \set'
+satisfying:
 . '* is \binary.operation:on{X}'
 . 'e in X'
-satisfying:
 . forAll: x
   where: 'x in X'
   then:
@@ -422,11 +420,11 @@ satisfying:
     suchThat:
     . 'y in X'
     . 'x * y = e'
-providing:
-. membership:
-  through: 'X'
 written: "\textrm{group}"
 called: "Group"
+Providing:
+. membership:
+  through: 'X'
 Metadata:
 . resources:
   . source: "@GroupTheoryJsMilne"
@@ -439,9 +437,9 @@ that is rendered as
 Defines: G := (X, *, e)
 means:
 . 'X is \set'
+satisfying:
 . '* is \binary.operation:on{X}'
 . 'e in X'
-satisfying:
 . forAll: x
   where: 'x in X'
   then:
@@ -458,11 +456,11 @@ satisfying:
     suchThat:
     . 'y in X'
     . 'x * y = e'
-providing:
-. membership:
-  through: 'X'
 written: "\textrm{group}"
 called: "Group"
+Providing:
+. membership:
+  through: 'X'
 Metadata:
 . resources:
   . source: "@GroupTheoryJsMilne"

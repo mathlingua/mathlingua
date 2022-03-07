@@ -60,8 +60,8 @@ number system will turn out to be an ordered set.
 Defines: (S, <)
 means:
 . 'S is \set'
-. '< is \binary.relation:on{S}'
 satisfying:
+. '< is \binary.relation:on{S}'
 . forAll: x, y
   where: 'x, y in S'
   then:
@@ -74,10 +74,11 @@ satisfying:
     . 'y < z'
     then:
     . 'x < z'
-providing:
+written: "\textrm{Ordered Set}"
+called: "abc"
+Providing:
 . membership:
   through: 'S'
-written: "\textrm{Ordered Set}"
 
 
 ::

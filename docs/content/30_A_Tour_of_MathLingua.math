@@ -143,7 +143,7 @@ satisfying:
 written: "f? : A? \rightarrow B?"
 called: "Function on $A?$ to $B?$"
 Metadata:
-. overview: "The key characteristic of a function is
+. note: "The key characteristic of a function is
   that every input is mapped to a *unique* output."
 
 ::

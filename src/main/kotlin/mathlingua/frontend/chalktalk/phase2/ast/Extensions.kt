@@ -31,12 +31,12 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewAsSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationSuccess
+import mathlingua.frontend.textalk.AsTexTalkNode
 import mathlingua.frontend.textalk.ColonEqualsTexTalkNode
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
 import mathlingua.frontend.textalk.InTexTalkNode
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.TexTalkNode
-import mathlingua.frontend.textalk.deepForEachTopDown
 import mathlingua.frontend.textalk.findColonEqualsLhsSymbols
 import mathlingua.frontend.textalk.findColonEqualsRhsSignatures
 import mathlingua.frontend.textalk.findInRhsSignatures
@@ -50,7 +50,7 @@ internal fun Phase2Node.deepForEachTopDown(fn: (node: Phase2Node) -> Boolean) {
     }
 }
 
-internal fun Phase2Node.getNonIsNonInStatementsNonInAsSections():
+internal fun Phase2Node.getNonIsNonInNonAsStatementsNonInAsSections():
     List<Pair<Statement, TexTalkNode>> {
     val result = mutableListOf<Pair<Statement, TexTalkNode>>()
     this.deepForEachTopDown { n ->
@@ -60,7 +60,9 @@ internal fun Phase2Node.getNonIsNonInStatementsNonInAsSections():
                 is ValidationSuccess -> {
                     val exp = validation.value
                     if (exp.children.size != 1 ||
-                        (exp.children[0] !is IsTexTalkNode && exp.children[0] !is InTexTalkNode)) {
+                        (exp.children[0] !is IsTexTalkNode &&
+                            exp.children[0] !is InTexTalkNode &&
+                            exp.children[0] !is AsTexTalkNode)) {
                         result.add(
                             Pair(
                                 n,

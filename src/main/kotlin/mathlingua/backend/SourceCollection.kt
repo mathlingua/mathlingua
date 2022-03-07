@@ -53,7 +53,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.findColonEqualsRhsSignatures
 import mathlingua.frontend.chalktalk.phase2.ast.findInRhsSignatures
 import mathlingua.frontend.chalktalk.phase2.ast.findIsLhsSymbols
 import mathlingua.frontend.chalktalk.phase2.ast.findIsRhsSignatures
-import mathlingua.frontend.chalktalk.phase2.ast.getNonIsNonInStatementsNonInAsSections
+import mathlingua.frontend.chalktalk.phase2.ast.getNonIsNonInNonAsStatementsNonInAsSections
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
@@ -1430,7 +1430,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         for (vst in allGroups) {
             val group = vst.value.normalized
 
-            for (stmtPair in group.getNonIsNonInStatementsNonInAsSections()) {
+            for (stmtPair in group.getNonIsNonInNonAsStatementsNonInAsSections()) {
                 val stmt = stmtPair.first
                 val exp = stmtPair.second
                 for (sig in exp.getSignaturesWithin()) {
@@ -1444,7 +1444,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                                 value =
                                     ParseError(
                                         message =
-                                            "Cannot use '$sig' in a non-`is` or non-`in` statement since its definition doesn't have an `expressing:` section",
+                                            "Cannot use '$sig' in a non-`is`, non-`as`, or non-`in` statement since its definition doesn't have an `expressing:` section",
                                         row = location.row,
                                         column = location.column),
                                 source = vst.source))

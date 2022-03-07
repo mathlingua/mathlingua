@@ -134,31 +134,38 @@ private class TexTalkParserImpl : TexTalkParser {
             }
         }
 
+        private fun splitAcrossAsNode(node: ExpressionTexTalkNode): ExpressionTexTalkNode {
+            var asIndex = -1
+            for (i in node.children.indices.reversed()) {
+                val child = node.children[i]
+                if (child is TextTexTalkNode && child.type === TexTalkNodeType.As) {
+                    asIndex = i
+                    break
+                }
+            }
+
+            if (asIndex == -1) {
+                return node
+            }
+
+            val lhs = node.children.slice(IntRange(0, asIndex - 1))
+            val rhs = node.children.slice(IntRange(asIndex + 1, node.children.size - 1))
+            val asNode =
+                AsTexTalkNode(
+                    lhs =
+                        ParametersTexTalkNode(
+                            listOf(splitAcrossAsNode(ExpressionTexTalkNode(children = lhs)))),
+                    rhs = ParametersTexTalkNode(listOf(ExpressionTexTalkNode(children = rhs))),
+                )
+            return ExpressionTexTalkNode(children = listOf(asNode))
+        }
+
         private fun resolveAsNode(node: TexTalkNode): TexTalkNode {
             return node.transform { texTalkNode ->
                 if (texTalkNode !is ExpressionTexTalkNode) {
                     texTalkNode
                 } else {
-                    var isIndex = -1
-                    for (i in texTalkNode.children.indices) {
-                        val child = texTalkNode.children[i]
-                        if (child is TextTexTalkNode && child.type == TexTalkNodeType.As) {
-                            if (isIndex < 0) {
-                                isIndex = i
-                            } else {
-                                addError("A statement can only contain one 'as' statement")
-                            }
-                        }
-                    }
-
-                    if (isIndex < 0) {
-                        texTalkNode
-                    } else {
-                        val lhs = parameters(texTalkNode.children, 0, isIndex)
-                        val rhs =
-                            parameters(texTalkNode.children, isIndex + 1, texTalkNode.children.size)
-                        ExpressionTexTalkNode(listOf(AsTexTalkNode(lhs, rhs)))
-                    }
+                    splitAcrossAsNode(texTalkNode)
                 }
             }
         }

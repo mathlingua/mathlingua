@@ -3015,7 +3015,7 @@ internal class EndToEndCheckTest {
                 The right-hand-side of an `:=` cannot reference a `Defines:` without an `expressing:` section but found '\something'
 
                 ERROR: content/file1.math (Line: 9, Column: 13)
-                Cannot use '\something' in a non-`is` or non-`in` statement since its definition doesn't have an `expressing:` section
+                Cannot use '\something' in a non-`is`, non-`as`, or non-`in` statement since its definition doesn't have an `expressing:` section
 
                 FAILED
                 Processed 1 file
@@ -3830,7 +3830,7 @@ internal class EndToEndCheckTest {
             expectedOutput =
                 """
                 ERROR: content/file1.math (Line: 9, Column: 13)
-                Cannot use '\something.else' in a non-`is` or non-`in` statement since its definition doesn't have an `expressing:` section
+                Cannot use '\something.else' in a non-`is`, non-`as`, or non-`in` statement since its definition doesn't have an `expressing:` section
 
                 FAILED
                 Processed 1 file
@@ -4602,6 +4602,35 @@ internal class EndToEndCheckTest {
                       . 'a * b := a X.* b'
                       . 'X := G.X'
                     written: "\textrm{group}"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
+
+    @Test
+    fun `check does not report errors when using multiple 'as' statements`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\X]
+                    Defines: X
+                    satisfying: "something"
+                    written: "X"
+
+
+                    Theorem:
+                    given: x
+                    then: 'x as \X as \X'
                 """.trimIndent())),
             expectedOutput =
                 """

@@ -1,11 +1,5 @@
 \cos
-\some[x]_{a}^{b}{x}.compound.name(x).function[x]{a, b}             :OUTPUT:     \some[x]_a^b{x}.compound.name(x).function[x]{a, b}
-\some[x]_a^b{x}.compound.name(x).function[x]{a, b}
-\some[x]_{a}^{b}{x}:name{A}.compound.name(x).function[x]{a, b}     :OUTPUT:     \some[x]_a^b{x}:name{A}.compound.name(x).function[x]{a, b}
-\some[x]_a^b{x}:name{A}.compound.name(x).function[x]{a, b}
-\some:name{x}.compound.name:anotherName{x}.another
-\topological:over{T}.continuous.function:on{A}:to{B}
-\function{someName}:on{A}:to{B}
+\topological.continuous.function:on{A}:to{B}
 abc
 \some.compound.name
 a ** b

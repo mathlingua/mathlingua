@@ -6,7 +6,22 @@ ExpressionTexTalkNode(
                              name = TextTexTalkNode(
                                type = TexTalkNodeType.Identifier
                                tokenType = TexTalkTokenType.Identifier
-                               text = "some"
+                               text = "some.compound"
+                               isVarArg = false
+                             )
+                             square = null
+                             subSup = null
+                             groups = [
+                                      ]
+                             paren = null
+                             namedGroups = [
+                                           ]
+                           ),
+                           CommandPart(
+                             name = TextTexTalkNode(
+                               type = TexTalkNodeType.Identifier
+                               tokenType = TexTalkTokenType.Identifier
+                               text = "name.function"
                                isVarArg = false
                              )
                              square = GroupTexTalkNode(
@@ -76,98 +91,6 @@ ExpressionTexTalkNode(
                                                                        type = TexTalkNodeType.Identifier
                                                                        tokenType = TexTalkTokenType.Identifier
                                                                        text = "x"
-                                                                       isVarArg = false
-                                                                     )
-                                                                   ]
-                                                      )
-                                                    ]
-                                          )
-                                          isVarArg = false
-                                        )
-                                      ]
-                             paren = null
-                             namedGroups = [
-                                           ]
-                           ),
-                           CommandPart(
-                             name = TextTexTalkNode(
-                               type = TexTalkNodeType.Identifier
-                               tokenType = TexTalkTokenType.Identifier
-                               text = "compound.name"
-                               isVarArg = false
-                             )
-                             square = null
-                             subSup = null
-                             groups = [
-                                      ]
-                             paren = GroupTexTalkNode(
-                               type = TexTalkNodeType.ParenGroup
-                               parameters = ParametersTexTalkNode(
-                                 items = [
-                                           ExpressionTexTalkNode(
-                                             children = [
-                                                          TextTexTalkNode(
-                                                            type = TexTalkNodeType.Identifier
-                                                            tokenType = TexTalkTokenType.Identifier
-                                                            text = "x"
-                                                            isVarArg = false
-                                                          )
-                                                        ]
-                                           )
-                                         ]
-                               )
-                               isVarArg = false
-                             )
-                             namedGroups = [
-                                           ]
-                           ),
-                           CommandPart(
-                             name = TextTexTalkNode(
-                               type = TexTalkNodeType.Identifier
-                               tokenType = TexTalkTokenType.Identifier
-                               text = "function"
-                               isVarArg = false
-                             )
-                             square = GroupTexTalkNode(
-                               type = TexTalkNodeType.SquareGroup
-                               parameters = ParametersTexTalkNode(
-                                 items = [
-                                           ExpressionTexTalkNode(
-                                             children = [
-                                                          TextTexTalkNode(
-                                                            type = TexTalkNodeType.Identifier
-                                                            tokenType = TexTalkTokenType.Identifier
-                                                            text = "x"
-                                                            isVarArg = false
-                                                          )
-                                                        ]
-                                           )
-                                         ]
-                               )
-                               isVarArg = false
-                             )
-                             subSup = null
-                             groups = [
-                                        GroupTexTalkNode(
-                                          type = TexTalkNodeType.CurlyGroup
-                                          parameters = ParametersTexTalkNode(
-                                            items = [
-                                                      ExpressionTexTalkNode(
-                                                        children = [
-                                                                     TextTexTalkNode(
-                                                                       type = TexTalkNodeType.Identifier
-                                                                       tokenType = TexTalkTokenType.Identifier
-                                                                       text = "a"
-                                                                       isVarArg = false
-                                                                     )
-                                                                   ]
-                                                      ),
-                                                      ExpressionTexTalkNode(
-                                                        children = [
-                                                                     TextTexTalkNode(
-                                                                       type = TexTalkNodeType.Identifier
-                                                                       tokenType = TexTalkTokenType.Identifier
-                                                                       text = "b"
                                                                        isVarArg = false
                                                                      )
                                                                    ]

@@ -422,6 +422,17 @@ private class TexTalkParserImpl : TexTalkParser {
                 hasSuffix = true
             }
 
+            for (i in 0 until parts.size - 2) {
+                val part = parts[i]
+                if (part.square != null ||
+                    part.subSup != null ||
+                    part.groups.isNotEmpty() ||
+                    part.namedGroups.isNotEmpty() ||
+                    part.paren != null) {
+                    addError("Only the last part of a command can contain parameters", backSlash)
+                }
+            }
+
             return Command(parts, hasSuffix)
         }
 

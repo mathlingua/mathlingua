@@ -61,9 +61,12 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
         }
     }
 
-    val app = Javalin.create().start(port)
-    app.config.addStaticFiles("/assets")
-    app.config.addStaticFiles(fs.cwd().absolutePath(), Location.EXTERNAL)
+    val app =
+        Javalin.create { config ->
+                config.addStaticFiles("/assets", Location.CLASSPATH)
+                config.addStaticFiles(fs.cwd().absolutePath(), Location.EXTERNAL)
+            }
+            .start(port)
     app.before("/") { ctx ->
         try {
             logger.log("Re-analyzing the MathLingua code.")
@@ -98,7 +101,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
         }
         .get("/api/readPage") { ctx ->
             try {
-                val path = ctx.queryParam("path", null)
+                val path = ctx.queryParam("path")
                 logger.log("Reading page $path")
                 if (path == null) {
                     ctx.status(400)
@@ -114,7 +117,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
         }
         .get("/api/fileResult") { ctx ->
             try {
-                val path = ctx.queryParam("path", null)
+                val path = ctx.queryParam("path")
                 logger.log("Getting file result for $path")
                 if (path == null) {
                     ctx.status(400)
@@ -245,7 +248,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
         }
         .get("/api/withSignature") { ctx ->
             try {
-                val signature = ctx.queryParam("signature", null)
+                val signature = ctx.queryParam("signature")
                 logger.log("Getting entity with signature '${signature}'")
                 if (signature == null) {
                     ctx.status(400)
@@ -264,7 +267,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
         }
         .get("/api/usedSignaturesAtRow") { ctx ->
             try {
-                val path = ctx.queryParam("path", null)
+                val path = ctx.queryParam("path")
                 val row = ctx.queryParam("row")?.toIntOrNull()
                 logger.log("Getting used signatures for $path at row $row")
                 if (path == null || row == null) {

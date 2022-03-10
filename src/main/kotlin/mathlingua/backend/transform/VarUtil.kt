@@ -150,33 +150,41 @@ private fun getVarsImplPhase1Node(
 }
 
 private fun getVarsImplPhase2Node(node: Phase2Node, vars: MutableList<Var>) {
-    if (node is Identifier) {
-        vars.add(Var(name = node.name.removeSuffix("..."), isPlaceholder = false))
-    } else if (node is TupleNode) {
-        getVarsImplPhase1Node(node.tuple, vars, isInPlaceholderScope = false)
-    } else if (node is AbstractionNode) {
-        getVarsImplPhase1Node(node.abstraction, vars, isInPlaceholderScope = false)
-    } else if (node is AssignmentNode) {
-        getVarsImplPhase1Node(node.assignment, vars, isInPlaceholderScope = false)
-    } else if (node is IdStatement) {
-        getVarsImplPhase2Node(node.toStatement(), vars)
-    } else if (node is Statement) {
-        when (node.texTalkRoot) {
-            is ValidationSuccess -> {
-                getVarsImplTexTalkNode(
-                    texTalkNode = node.texTalkRoot.value,
-                    vars = vars,
-                    isInLhsColonEquals = false,
-                    groupScope = GroupScope.InNone,
-                    isInIdStatement = false,
-                    forceIsPlaceholder = false)
-            }
-            else -> {
-                // if the parsing fails, then the vars cannot be determined
+    when (node) {
+        is Identifier -> {
+            vars.add(Var(name = node.name.removeSuffix("..."), isPlaceholder = false))
+        }
+        is TupleNode -> {
+            getVarsImplPhase1Node(node.tuple, vars, isInPlaceholderScope = false)
+        }
+        is AbstractionNode -> {
+            getVarsImplPhase1Node(node.abstraction, vars, isInPlaceholderScope = false)
+        }
+        is AssignmentNode -> {
+            getVarsImplPhase1Node(node.assignment, vars, isInPlaceholderScope = false)
+        }
+        is IdStatement -> {
+            getVarsImplPhase2Node(node.toStatement(), vars)
+        }
+        is Statement -> {
+            when (node.texTalkRoot) {
+                is ValidationSuccess -> {
+                    getVarsImplTexTalkNode(
+                        texTalkNode = node.texTalkRoot.value,
+                        vars = vars,
+                        isInLhsColonEquals = false,
+                        groupScope = GroupScope.InNone,
+                        isInIdStatement = false,
+                        forceIsPlaceholder = false)
+                }
+                else -> {
+                    // if the parsing fails, then the vars cannot be determined
+                }
             }
         }
-    } else {
-        node.forEach { getVarsImplPhase2Node(it, vars) }
+        else -> {
+            node.forEach { getVarsImplPhase2Node(it, vars) }
+        }
     }
 }
 
@@ -578,16 +586,6 @@ private fun checkVarsImplPhase2Node(
     }
 
     return varsToRemove.toList()
-}
-
-private fun getVarsIntroducedInWhenSection(whenSection: WhenSection): List<Var> {
-    val result = mutableListOf<Var>()
-    for (clause in whenSection.clauses.clauses) {
-        if (clause is Statement) {
-            result.addAll(getLeftHandSideVars(clause))
-        }
-    }
-    return result
 }
 
 private fun getLeftHandSideVars(statement: Statement): List<Var> {

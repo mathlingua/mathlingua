@@ -18,6 +18,7 @@ package mathlingua.cli
 
 import mathlingua.MutableMultiSet
 import mathlingua.backend.SourceFile
+import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.newMutableMultiSet
 
@@ -50,6 +51,9 @@ private data class SearchIndexImpl(val fs: VirtualFileSystem) : SearchIndex {
                         searchIndex[key] = pathSet
                     }
                 }
+            }
+            is ValidationFailure -> {
+                // ignore invalid files
             }
         }
     }

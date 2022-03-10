@@ -37,6 +37,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewGroup
 import mathlingua.frontend.support.ParseError
+import mathlingua.frontend.support.ValidationFailure
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.Command
 import mathlingua.frontend.textalk.ExpressionTexTalkNode
@@ -175,112 +176,6 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
         }
     }
 
-    private fun getTargetName(target: Target): String? {
-        return when (target) {
-            is AbstractionNode -> {
-                if (!target.abstraction.isEnclosed &&
-                    target.abstraction.parts.size == 1 &&
-                    !target.abstraction.isVarArgs &&
-                    target.abstraction.subParams == null) {
-                    target.abstraction.parts.first().name.text
-                } else {
-                    null
-                }
-            }
-            is Identifier -> target.name
-            is AssignmentNode -> target.assignment.lhs.text
-            else -> null
-        }
-    }
-
-    private fun getAllTypes(node: Phase2Node, target: String): List<Command> {
-        val result = mutableListOf<Command>()
-        getAllTypesImpl(node.normalize(), target, result)
-        return result
-    }
-
-    private fun getAllTypesImpl(node: Phase2Node, target: String, result: MutableList<Command>) {
-        if (node is Statement) {
-            when (val validation = node.texTalkRoot
-            ) {
-                is ValidationSuccess -> {
-                    getAllTypesImpl(validation.value, target, result)
-                }
-            }
-        }
-        node.forEach { getAllTypesImpl(it, target, result) }
-    }
-
-    private fun matchesName(node: ExpressionTexTalkNode, target: String): Boolean {
-        return node.children.size == 1 &&
-            ((node.children[0] is TextTexTalkNode &&
-                (node.children[0] as TextTexTalkNode).text == target) ||
-                node.children[0].toCode().replace(" ", "").startsWith("$target("))
-    }
-
-    private fun getAllTypesImpl(node: TexTalkNode, target: String, result: MutableList<Command>) {
-        if (node is IsTexTalkNode && node.lhs.items.find { matchesName(it, target) } != null) {
-            node.rhs.items.forEach {
-                if (it.children.size == 1 && it.children[0] is Command) {
-                    result.add(it.children[0] as Command)
-                }
-            }
-        }
-        node.forEach { getAllTypesImpl(it, target, result) }
-    }
-
-    private data class NameAndStatement(val name: String, val statement: Statement)
-
-    private fun findAllNames(node: Phase2Node): List<NameAndStatement> {
-        val result = mutableListOf<NameAndStatement>()
-        findAllNamesImpl(node, result)
-        return result
-    }
-
-    private fun findAllNamesImpl(node: Phase2Node, result: MutableList<NameAndStatement>) {
-        if (node is Statement) {
-            when (val validation = node.texTalkRoot
-            ) {
-                is ValidationSuccess -> {
-                    findAllNamesImpl(node, validation.value, result)
-                }
-            }
-        }
-        node.forEach { findAllNamesImpl(it, result) }
-    }
-
-    private fun findAllNamesImpl(
-        stmt: Statement, texTalkNode: TexTalkNode, result: MutableList<NameAndStatement>
-    ) {
-        if (texTalkNode is TextTexTalkNode) {
-            result.add(NameAndStatement(name = texTalkNode.text, statement = stmt))
-        }
-        texTalkNode.forEach {
-            when (it) {
-                is Command -> {
-                    for (part in it.parts) {
-                        for (grp in part.groups) {
-                            findAllNamesImpl(stmt, grp, result)
-                        }
-                        for (grp in part.namedGroups) {
-                            findAllNamesImpl(stmt, grp, result)
-                        }
-                        if (part.paren != null) {
-                            findAllNamesImpl(stmt, part.paren, result)
-                        }
-                        if (part.square != null) {
-                            findAllNamesImpl(stmt, part.square, result)
-                        }
-                        if (part.subSup != null) {
-                            findAllNamesImpl(stmt, part.subSup, result)
-                        }
-                    }
-                }
-                else -> findAllNamesImpl(stmt, it, result)
-            }
-        }
-    }
-
     override fun findInvalidTypes(grp: TopLevelGroup): List<ParseError> {
         val group = grp.normalize()
         val errors = mutableListOf<ParseError>()
@@ -390,5 +285,114 @@ private class SymbolAnalyzerImpl(defines: List<Pair<ValueAndSource<Signature>, D
             result.add(listOf(*path.toTypedArray()))
         }
         path.removeLast()
+    }
+}
+
+private fun getTargetName(target: Target): String? {
+    return when (target) {
+        is AbstractionNode -> {
+            if (!target.abstraction.isEnclosed &&
+                target.abstraction.parts.size == 1 &&
+                !target.abstraction.isVarArgs &&
+                target.abstraction.subParams == null) {
+                target.abstraction.parts.first().name.text
+            } else {
+                null
+            }
+        }
+        is Identifier -> target.name
+        is AssignmentNode -> target.assignment.lhs.text
+        else -> null
+    }
+}
+
+private fun getAllTypes(node: Phase2Node, target: String): List<Command> {
+    val result = mutableListOf<Command>()
+    getAllTypesImpl(node.normalize(), target, result)
+    return result
+}
+
+private fun getAllTypesImpl(node: Phase2Node, target: String, result: MutableList<Command>) {
+    if (node is Statement) {
+        when (val validation = node.texTalkRoot
+        ) {
+            is ValidationSuccess -> {
+                getAllTypesImpl(validation.value, target, result)
+            }
+            is ValidationFailure -> {
+                // ignore statements that are invalid
+            }
+        }
+    }
+    node.forEach { getAllTypesImpl(it, target, result) }
+}
+
+private fun matchesName(node: ExpressionTexTalkNode, target: String): Boolean {
+    return node.children.size == 1 &&
+        ((node.children[0] is TextTexTalkNode &&
+            (node.children[0] as TextTexTalkNode).text == target) ||
+            node.children[0].toCode().replace(" ", "").startsWith("$target("))
+}
+
+private fun getAllTypesImpl(node: TexTalkNode, target: String, result: MutableList<Command>) {
+    if (node is IsTexTalkNode && node.lhs.items.find { matchesName(it, target) } != null) {
+        node.rhs.items.forEach {
+            if (it.children.size == 1 && it.children[0] is Command) {
+                result.add(it.children[0] as Command)
+            }
+        }
+    }
+    node.forEach { getAllTypesImpl(it, target, result) }
+}
+
+private data class NameAndStatement(val name: String, val statement: Statement)
+
+private fun findAllNames(node: Phase2Node): List<NameAndStatement> {
+    val result = mutableListOf<NameAndStatement>()
+    findAllNamesImpl(node, result)
+    return result
+}
+
+private fun findAllNamesImpl(node: Phase2Node, result: MutableList<NameAndStatement>) {
+    if (node is Statement) {
+        when (val validation = node.texTalkRoot
+        ) {
+            is ValidationSuccess -> {
+                findAllNamesImpl(node, validation.value, result)
+            }
+        }
+    }
+    node.forEach { findAllNamesImpl(it, result) }
+}
+
+private fun findAllNamesImpl(
+    stmt: Statement, texTalkNode: TexTalkNode, result: MutableList<NameAndStatement>
+) {
+    if (texTalkNode is TextTexTalkNode) {
+        result.add(NameAndStatement(name = texTalkNode.text, statement = stmt))
+    }
+    texTalkNode.forEach {
+        when (it) {
+            is Command -> {
+                for (part in it.parts) {
+                    for (grp in part.groups) {
+                        findAllNamesImpl(stmt, grp, result)
+                    }
+                    for (grp in part.namedGroups) {
+                        findAllNamesImpl(stmt, grp, result)
+                    }
+                    if (part.paren != null) {
+                        findAllNamesImpl(stmt, part.paren, result)
+                    }
+                    if (part.square != null) {
+                        findAllNamesImpl(stmt, part.square, result)
+                    }
+                    if (part.subSup != null) {
+                        findAllNamesImpl(stmt, part.subSup, result)
+                    }
+                }
+            }
+            else -> findAllNamesImpl(stmt, it, result)
+        }
     }
 }

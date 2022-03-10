@@ -579,17 +579,6 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return result
     }
 
-    private fun getSignaturesWithStates(): List<ValueAndSource<Signature>> {
-        val result = mutableListOf<ValueAndSource<Signature>>()
-        for (svt in statesGroups) {
-            val def = svt.value.original
-            if (def.signature != null) {
-                result.add(ValueAndSource(value = def.signature, source = svt.source))
-            }
-        }
-        return result
-    }
-
     private fun getSignaturesWithoutExpressesSection(): List<ValueAndSource<Signature>> {
         val result = mutableListOf<ValueAndSource<Signature>>()
         for (svt in allGroups) {
@@ -1414,12 +1403,6 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         return errors
     }
 
-    private fun isSignatureTopLevel(exp: TexTalkNode, signature: String) =
-        exp is ExpressionTexTalkNode &&
-            exp.children.size == 1 &&
-            exp.children[0] is Command &&
-            (exp.children[0] as Command).signature() == signature
-
     override fun getNonExpressesUsedInNonIsNonInStatementsErrors():
         List<ValueAndSource<ParseError>> {
         val errors = mutableListOf<ValueAndSource<ParseError>>()
@@ -1468,6 +1451,12 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
             else -> emptyList()
         }
 }
+
+private fun isSignatureTopLevel(exp: TexTalkNode, signature: String) =
+    exp is ExpressionTexTalkNode &&
+        exp.children.size == 1 &&
+        exp.children[0] is Command &&
+        (exp.children[0] as Command).signature() == signature
 
 private fun <T> Boolean.thenUse(value: () -> List<T>) =
     if (this) {

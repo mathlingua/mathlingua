@@ -29,6 +29,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defin
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.SatisfyingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewAsSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.specify.IsSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.AsTexTalkNode
@@ -50,7 +51,7 @@ internal fun Phase2Node.deepForEachTopDown(fn: (node: Phase2Node) -> Boolean) {
     }
 }
 
-internal fun Phase2Node.getNonIsNonInNonAsStatementsNonInAsSections():
+internal fun Phase2Node.getNonIsNonInNonAsStatementsNotInAllowedSections():
     List<Pair<Statement, TexTalkNode>> {
     val result = mutableListOf<Pair<Statement, TexTalkNode>>()
     this.deepForEachTopDown { n ->
@@ -81,7 +82,7 @@ internal fun Phase2Node.getNonIsNonInNonAsStatementsNonInAsSections():
                 }
             }
         }
-        n !is ViewAsSection
+        n !is ViewAsSection && n !is IsSection
     }
     return result
 }

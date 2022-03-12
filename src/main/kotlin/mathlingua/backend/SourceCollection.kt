@@ -53,7 +53,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.findColonEqualsRhsSignatures
 import mathlingua.frontend.chalktalk.phase2.ast.findInRhsSignatures
 import mathlingua.frontend.chalktalk.phase2.ast.findIsLhsSymbols
 import mathlingua.frontend.chalktalk.phase2.ast.findIsRhsSignatures
-import mathlingua.frontend.chalktalk.phase2.ast.getNonIsNonInNonAsStatementsNonInAsSections
+import mathlingua.frontend.chalktalk.phase2.ast.getNonIsNonInNonAsStatementsNotInAllowedSections
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
@@ -903,7 +903,8 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 id = null,
                 theoremSection = TheoremSection(names = emptyList(), row = -1, column = -1),
                 givenSection = null,
-                whenSection = null,
+                whereSection = null,
+                suchThatSection = null,
                 thenSection =
                     ThenSection(
                         clauses =
@@ -1413,7 +1414,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
         for (vst in allGroups) {
             val group = vst.value.normalized
 
-            for (stmtPair in group.getNonIsNonInNonAsStatementsNonInAsSections()) {
+            for (stmtPair in group.getNonIsNonInNonAsStatementsNotInAllowedSections()) {
                 val stmt = stmtPair.first
                 val exp = stmtPair.second
                 for (sig in exp.getSignaturesWithin()) {

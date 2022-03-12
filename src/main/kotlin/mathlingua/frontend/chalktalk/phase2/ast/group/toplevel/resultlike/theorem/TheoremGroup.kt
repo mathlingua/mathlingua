@@ -29,17 +29,19 @@ import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.getOptionalId
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.ThenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.If.validateThenSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.SuchThatSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.exists.validateSuchThatSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.validateIffSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasSignature
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.WhereSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.symbols.validateWhereSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.UsingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.MetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.metadata.section.validateMetaDataSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateUsingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.validateWhenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.topLevelToCode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
@@ -52,7 +54,8 @@ internal data class TheoremGroup(
     override val id: IdStatement?,
     val theoremSection: TheoremSection,
     val givenSection: GivenSection?,
-    val whenSection: WhenSection?,
+    val whereSection: WhereSection?,
+    val suchThatSection: SuchThatSection?,
     val thenSection: ThenSection,
     val iffSection: IffSection?,
     override val usingSection: UsingSection?,
@@ -67,18 +70,21 @@ internal data class TheoremGroup(
             fn(id)
         }
         fn(theoremSection)
-        if (usingSection != null) {
-            fn(usingSection)
-        }
         if (givenSection != null) {
             fn(givenSection)
         }
-        if (whenSection != null) {
-            fn(whenSection)
+        if (whereSection != null) {
+            fn(whereSection)
+        }
+        if (suchThatSection != null) {
+            fn(suchThatSection)
         }
         fn(thenSection)
         if (iffSection != null) {
             fn(iffSection)
+        }
+        if (usingSection != null) {
+            fn(usingSection)
         }
         if (proofSection != null) {
             fn(proofSection)
@@ -97,7 +103,8 @@ internal data class TheoremGroup(
             id,
             theoremSection,
             givenSection,
-            whenSection,
+            whereSection,
+            suchThatSection,
             thenSection,
             iffSection,
             usingSection,
@@ -111,7 +118,8 @@ internal data class TheoremGroup(
                 id = id?.transform(chalkTransformer) as IdStatement?,
                 theoremSection = theoremSection.transform(chalkTransformer) as TheoremSection,
                 givenSection = givenSection?.transform(chalkTransformer) as GivenSection?,
-                whenSection = whenSection?.transform(chalkTransformer) as WhenSection?,
+                whereSection = whereSection?.transform(chalkTransformer) as WhereSection?,
+                suchThatSection = suchThatSection?.transform(chalkTransformer) as SuchThatSection?,
                 thenSection = thenSection.transform(chalkTransformer) as ThenSection,
                 iffSection = iffSection?.transform(chalkTransformer) as IffSection?,
                 usingSection = usingSection?.transform(chalkTransformer) as UsingSection?,
@@ -131,8 +139,15 @@ internal fun validateTheoremGroup(node: Phase1Node, errors: MutableList<ParseErr
             errors,
             DEFAULT_THEOREM_GROUP,
             listOf(
-                "Theorem", "given?", "when?", "then", "iff?", "using?", "Proof?", "Metadata?")) {
-        sections ->
+                "Theorem",
+                "given?",
+                "where?",
+                "suchThat?",
+                "then",
+                "iff?",
+                "using?",
+                "Proof?",
+                "Metadata?")) { sections ->
             TheoremGroup(
                 signature = id?.signature(),
                 id = id,
@@ -141,7 +156,9 @@ internal fun validateTheoremGroup(node: Phase1Node, errors: MutableList<ParseErr
                         validateTheoremSection(it, errors)
                     },
                 givenSection = ifNonNull(sections["given"]) { validateGivenSection(it, errors) },
-                whenSection = ifNonNull(sections["when"]) { validateWhenSection(it, errors) },
+                whereSection = ifNonNull(sections["where"]) { validateWhereSection(it, errors) },
+                suchThatSection =
+                    ifNonNull(sections["suchThat"]) { validateSuchThatSection(it, errors) },
                 thenSection =
                     ensureNonNull(sections["then"], DEFAULT_THEN_SECTION) {
                         validateThenSection(it, errors)

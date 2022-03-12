@@ -103,9 +103,6 @@ internal fun TopLevelGroup.getWhenSection() =
     when (this) {
         is DefinesGroup -> this.whenSection
         is StatesGroup -> this.whenSection
-        is TheoremGroup -> this.whenSection
-        is AxiomGroup -> this.whenSection
-        is ConjectureGroup -> this.whenSection
         else -> null
     }
 

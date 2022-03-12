@@ -192,12 +192,12 @@ called: "something"
 
 Theorem: "some name"
 given: x, y
-when: 'x, y is \something'
+where: 'x, y is \something'
 then: 'x + y is \something'
 
 
 Theorem:
-when: 'x'
+where: 'x'
 then: 'y'
 
 
@@ -208,12 +208,12 @@ iff: 'x'
 
 Axiom: "some name"
 given: x, y
-when: 'x, y is \something'
+where: 'x, y is \something'
 then: 'x + y is \something'
 
 
 Axiom:
-when: 'x'
+where: 'x'
 then: 'y'
 
 
@@ -224,12 +224,12 @@ iff: 'x'
 
 Conjecture: "some name"
 given: x, y
-when: 'x, y is \something'
+where: 'x, y is \something'
 then: 'x + y is \something'
 
 
 Conjecture:
-when: 'x'
+where: 'x'
 then: 'y'
 
 

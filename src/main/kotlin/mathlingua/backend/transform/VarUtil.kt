@@ -24,6 +24,7 @@ import mathlingua.frontend.chalktalk.phase1.ast.Phase1Token
 import mathlingua.frontend.chalktalk.phase1.ast.isOperatorName
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AssignmentNode
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.IdStatement
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
@@ -44,7 +45,6 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.conjecture.ConjectureGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.GivenSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.theorem.TheoremGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.shared.WhenSection
 import mathlingua.frontend.support.Location
 import mathlingua.frontend.support.ParseError
 import mathlingua.frontend.support.ValidationSuccess
@@ -447,14 +447,25 @@ private fun checkVarsImplPhase2Node(
         when (node) {
             is DefinesGroup -> node.whenSection
             is StatesGroup -> node.whenSection
-            is AxiomGroup -> node.whenSection
-            is ConjectureGroup -> node.whenSection
-            is TheoremGroup -> node.whenSection
             else -> null
         }
 
     if (whenSection != null) {
-        varsToRemove.addAll(checkWhenSectionVars(node = whenSection, vars = vars, errors = errors))
+        varsToRemove.addAll(
+            checkClausesVars(clauses = whenSection.clauses.clauses, vars = vars, errors = errors))
+    }
+
+    val whereSection =
+        when (node) {
+            is AxiomGroup -> node.whereSection
+            is ConjectureGroup -> node.whereSection
+            is TheoremGroup -> node.whereSection
+            else -> null
+        }
+
+    if (whereSection != null) {
+        varsToRemove.addAll(
+            checkClausesVars(clauses = whereSection.clauses.clauses, vars = vars, errors = errors))
     }
 
     // verify the `using:` section clauses are of the correct form and add the left-hand-side
@@ -605,11 +616,11 @@ private fun getLeftHandSideVars(statement: Statement): List<Var> {
     return result
 }
 
-private fun checkWhenSectionVars(
-    node: WhenSection, vars: VarMultiSet, errors: MutableList<ParseError>
+private fun checkClausesVars(
+    clauses: List<Clause>, vars: VarMultiSet, errors: MutableList<ParseError>
 ): List<Var> {
     val whenVars = VarMultiSet()
-    for (clause in node.clauses.clauses) {
+    for (clause in clauses) {
         // if a clause is a forAll:, exists:, or existsUnique: group
         // then make sure `vars` is updated to include the introduced symbols
         val clauseVars =

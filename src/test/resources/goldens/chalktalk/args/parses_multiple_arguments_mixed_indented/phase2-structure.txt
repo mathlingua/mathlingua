@@ -10,7 +10,8 @@ Document(
                  column = 0
                )
                givenSection = null
-               whenSection = null
+               whereSection = null
+               suchThatSection = null
                thenSection = ThenSection(
                  clauses = ClauseListNode(
                    clauses = [

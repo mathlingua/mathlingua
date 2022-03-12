@@ -21,6 +21,7 @@ import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_GENERATED_FROM_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.AbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
+import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
 import mathlingua.frontend.support.ParseError
 
@@ -34,10 +35,7 @@ internal data class GeneratedFromSection(
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("from")
-        for (form in forms) {
-            writer.writeNewline()
-            writer.append(form, true, indent + 2)
-        }
+        appendTargetArgs(writer, forms, indent + 2)
         return writer
     }
 

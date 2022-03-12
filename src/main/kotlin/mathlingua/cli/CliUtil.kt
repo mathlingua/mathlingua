@@ -99,7 +99,8 @@ internal val COMPLETIONS =
                         listOf(
                             "Axiom:",
                             "given?:",
-                            "when?:",
+                            "where?:",
+                            "suchThat?:",
                             "then:",
                             "iff?:",
                             "using?:",
@@ -111,7 +112,8 @@ internal val COMPLETIONS =
                         listOf(
                             "Conjecture:",
                             "given?:",
-                            "when?:",
+                            "where?:",
+                            "suchThat?:",
                             "then:",
                             "iff?:",
                             "using?:",
@@ -122,7 +124,8 @@ internal val COMPLETIONS =
                         listOf(
                             "Theorem:",
                             "given?:",
-                            "when?:",
+                            "where?:",
+                            "suchThat?:",
                             "then:",
                             "iff?:",
                             "using?:",

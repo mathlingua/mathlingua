@@ -19,34 +19,34 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase1.ast.Section
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCH_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCHING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.ClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.clause.validateClauseListNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.support.ParseError
 
-internal data class MatchSection(
+internal data class MatchingSection(
     val clauses: ClauseListNode, override val row: Int, override val column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = clauses.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("match")
+        writer.writeHeader("matching")
         writer.append(clauses, true, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            MatchSection(
+            MatchingSection(
                 clauses = clauses.transform(chalkTransformer) as ClauseListNode, row, column))
 }
 
-internal fun isMatchingSection(sec: Section) = sec.name.text == "match"
+internal fun isMatchingSection(sec: Section) = sec.name.text == "matching"
 
 internal fun validateMatchingSection(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateSection(node.resolve(), errors, "match", DEFAULT_MATCH_SECTION) {
-        MatchSection(clauses = validateClauseListNode(it, errors), node.row, node.column)
+    validateSection(node.resolve(), errors, "matching", DEFAULT_MATCHING_SECTION) {
+        MatchingSection(clauses = validateClauseListNode(it, errors), node.row, node.column)
     }

@@ -17,8 +17,8 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCH_GROUP
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCH_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCHING_GROUP
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCHING_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
 import mathlingua.frontend.chalktalk.phase2.ast.common.OnePartNode
@@ -27,18 +27,18 @@ import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.ParseError
 
-internal data class MatchGroup(
-    val matchSection: MatchSection, override val row: Int, override val column: Int
-) : OnePartNode<MatchSection>(matchSection, row, column, ::MatchGroup), Clause
+internal data class MatchingGroup(
+    val matchingSection: MatchingSection, override val row: Int, override val column: Int
+) : OnePartNode<MatchingSection>(matchingSection, row, column, ::MatchingGroup), Clause
 
-internal fun isMatchGroup(node: Phase1Node) = firstSectionMatchesName(node, "match")
+internal fun isMatchingGroup(node: Phase1Node) = firstSectionMatchesName(node, "matching")
 
-internal fun validateMatchGroup(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateGroup(node.resolve(), errors, "match", DEFAULT_MATCH_GROUP) { group ->
-        identifySections(group, errors, DEFAULT_MATCH_GROUP, listOf("match")) { sections ->
-            MatchGroup(
-                matchSection =
-                    ensureNonNull(sections["match"], DEFAULT_MATCH_SECTION) {
+internal fun validateMatchingGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "matching", DEFAULT_MATCHING_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_MATCHING_GROUP, listOf("matching")) { sections ->
+            MatchingGroup(
+                matchingSection =
+                    ensureNonNull(sections["matching"], DEFAULT_MATCHING_SECTION) {
                         validateMatchingSection(it, errors)
                     },
                 row = node.row,

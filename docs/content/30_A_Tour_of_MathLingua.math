@@ -567,7 +567,7 @@ The following is the code for the theorem:
 ```math
 Theorem:
 given: G := (X, *, e), x, y
-when:
+where:
 . 'G is \group'
 . 'x, y in G'
 then:
@@ -626,7 +626,7 @@ that is rendered as
 
 Theorem:
 given: G := (X, *, e), x, y
-when:
+where:
 . 'G is \group'
 . 'x, y in G'
 then:

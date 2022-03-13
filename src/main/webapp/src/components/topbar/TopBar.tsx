@@ -37,12 +37,14 @@ export const TopBar = () => {
           }
         }}>
         <option value='Anonymous Pro'>Anonymous Pro</option>
+        <option value='CMU Typewriter Text'>CMU Typewriter Text</option>
         <option value='Courier Prime'>Courier Prime</option>
         <option value='Cousine'>Cousine</option>
         <option value='Cutive Mono'>Cutive Mono</option>
         <option value='Fira Code'>Fira Code</option>
         <option value='Fira Mono'>Fira Mono</option>
         <option value='Inconsolata'>Inconsolata</option>
+        <option value='Georgia'>Georgia</option>
         <option value='Nova Mono'>Nova Mono</option>
         <option value='Noto Sans Mono'>Noto Sans Mono</option>
         <option value='PT Mono'>PT Mono</option>
@@ -52,6 +54,7 @@ export const TopBar = () => {
         <option value='Source Code Pro'>Source Code Pro</option>
         <option value='Space Mono'>Space Mono</option>
         <option value='Syne Mono'>Syne Mono</option>
+        <option value='The Good Monolith'>The Good Monolith</option>
         <option value='Ubuntu Mono'>Ubuntu Mono</option>
       </select>
       <select style={{

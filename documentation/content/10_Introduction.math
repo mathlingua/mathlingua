@@ -84,12 +84,13 @@ express in MathLingua:
 
 Theorem: "Fundamental Theorem of Calculus"
 given: f(x), F(x), I, a, b
-when:
+where:
 . 'a, b is \real'
-. 'a < b'
-. 'I := \open.interval{a, b}'
 . 'f(x) is \continuous.function:on{I}'
 . 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
+suchThat:
+. 'a < b'
+. 'I := \open.interval{a, b}'
 then:
 . '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
 
@@ -101,12 +102,13 @@ above rendering of the theorem.
 ```math
 Theorem: "Fundamental Theorem of Calculus"
 given: f(x), F(x), I, a, b
-when:
+where:
 . 'a, b is \real'
-. 'a < b'
-. 'I := \open.interval{a, b}'
 . 'f(x) is \continuous.function:on{I}'
 . 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
+suchThat:
+. 'a < b'
+. 'I := \open.interval{a, b}'
 then:
 . '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
 ```

@@ -4712,4 +4712,42 @@ internal class EndToEndCheckTest {
             expectedExitCode = 0,
             expectedNumErrors = 0)
     }
+
+    @Test
+    fun `check does not report errors function args specified in when section`() {
+        runCheckTest(
+            files =
+                listOf(
+                    PathAndContent(
+                        path = listOf("content", "file1.math"),
+                        content =
+                            """
+                    [\a]
+                    Defines: a
+                    satisfying: "something"
+                    written: "something"
+
+
+                    [\f(x)]
+                    Defines: f(x)
+                    when: 'x is \a'
+                    expressing: "something"
+                    written: "f"
+
+
+                    [x + y]
+                    Defines: f(x, y)
+                    when: 'x, y is \a'
+                    expressing: "something"
+                    written: "x? + y?"
+                """.trimIndent())),
+            expectedOutput =
+                """
+                SUCCESS
+                Processed 1 file
+                0 errors detected
+            """.trimIndent(),
+            expectedExitCode = 0,
+            expectedNumErrors = 0)
+    }
 }

@@ -1364,7 +1364,7 @@ private class SourceCollectionImpl(val fs: VirtualFileSystem, val sources: List<
                 for (pair in usedSymbols) {
                     val sym = pair.first
                     val location = pair.second
-                    if (outputs.contains(sym)) {
+                    if (outputs.contains(sym) && !inputs.contains(sym)) {
                         errors.add(
                             ValueAndSource(
                                 value =

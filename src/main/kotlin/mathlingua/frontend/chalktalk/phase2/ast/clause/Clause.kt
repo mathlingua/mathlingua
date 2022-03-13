@@ -37,8 +37,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.isGenerat
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.validateGeneratedGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.isIffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.validateIffGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.isMatchingGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.validateMatchingGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.isMatchGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.validateMatchGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.isNotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.validateNotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.isOrGroup
@@ -146,7 +146,7 @@ private val CLAUSE_VALIDATORS =
         ValidationPair(::isEqualityGroup, ::validateEqualityGroup),
         ValidationPair(::isHaveGroup, ::validateHaveGroup),
         ValidationPair(::isGeneratedGroup, ::validateGeneratedGroup),
-        ValidationPair(::isMatchingGroup, ::validateMatchingGroup),
+        ValidationPair(::isMatchGroup, ::validateMatchGroup),
         ValidationPair(::isSymbolsGroup, ::validateSymbolsGroup),
         ValidationPair(::isMemberSymbolsGroup, ::validateMemberSymbolsGroup))
 

@@ -176,9 +176,8 @@ written: "nat2"
 [\z]
 Defines: f(x)
 expressing:
-. matching: n
-  with:
-  . 'f(n) := 0'
+. match:
+  . 'f(x) := 0'
 written: "f(x)"
 
 

@@ -132,6 +132,7 @@ internal val COMPLETIONS =
                             "Proof?:",
                             "Metadata?:"),
                 ),
+                CompletionItem(name = "match", parts = listOf("match:")),
                 CompletionItem(name = "Topic", parts = listOf("Topic:", "content:", "Metadata?:")),
                 CompletionItem(name = "Note", parts = listOf("Note:", "content:", "Metadata?:")),
                 CompletionItem(name = "Specify", parts = listOf("Specify:")),

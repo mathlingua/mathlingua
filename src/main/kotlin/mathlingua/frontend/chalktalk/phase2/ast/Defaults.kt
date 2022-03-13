@@ -49,9 +49,8 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.Generated
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.generated.GeneratedSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.iff.IffSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.MatchingGroup
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.MatchingSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.WithSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.MatchGroup
+import mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching.MatchSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.not.NotSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.clause.or.OrGroup
@@ -557,18 +556,11 @@ internal val DEFAULT_GENERATED_GROUP =
         row = -1,
         column = -1)
 
-internal val DEFAULT_WITH_SECTION =
-    WithSection(clauses = DEFAULT_CLAUSE_LIST_NODE, row = -1, column = -1)
+internal val DEFAULT_MATCH_SECTION =
+    MatchSection(clauses = DEFAULT_CLAUSE_LIST_NODE, row = -1, column = -1)
 
-internal val DEFAULT_MATCHING_SECTION =
-    MatchingSection(targets = emptyList(), row = -1, column = -1)
-
-internal val DEFAULT_MATCHING_GROUP =
-    MatchingGroup(
-        matchingSection = DEFAULT_MATCHING_SECTION,
-        withSection = DEFAULT_WITH_SECTION,
-        row = -1,
-        column = -1)
+internal val DEFAULT_MATCH_GROUP =
+    MatchGroup(matchSection = DEFAULT_MATCH_SECTION, row = -1, column = -1)
 
 internal val DEFAULT_NEGATIVE_FLOAT_SECTION = NegativeFloatSection(row = -1, column = -1)
 

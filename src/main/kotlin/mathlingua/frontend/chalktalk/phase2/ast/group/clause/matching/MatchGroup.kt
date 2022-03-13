@@ -17,41 +17,29 @@
 package mathlingua.frontend.chalktalk.phase2.ast.group.clause.matching
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCHING_GROUP
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCHING_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WITH_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCH_GROUP
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_MATCH_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Clause
 import mathlingua.frontend.chalktalk.phase2.ast.clause.firstSectionMatchesName
-import mathlingua.frontend.chalktalk.phase2.ast.common.TwoPartNode
+import mathlingua.frontend.chalktalk.phase2.ast.common.OnePartNode
 import mathlingua.frontend.chalktalk.phase2.ast.section.ensureNonNull
 import mathlingua.frontend.chalktalk.phase2.ast.section.identifySections
 import mathlingua.frontend.chalktalk.phase2.ast.validateGroup
 import mathlingua.frontend.support.ParseError
 
-internal data class MatchingGroup(
-    val matchingSection: MatchingSection,
-    val withSection: WithSection,
-    override val row: Int,
-    override val column: Int
-) :
-    TwoPartNode<MatchingSection, WithSection>(
-        matchingSection, withSection, row, column, ::MatchingGroup),
-    Clause
+internal data class MatchGroup(
+    val matchSection: MatchSection, override val row: Int, override val column: Int
+) : OnePartNode<MatchSection>(matchSection, row, column, ::MatchGroup), Clause
 
-internal fun isMatchingGroup(node: Phase1Node) = firstSectionMatchesName(node, "matching")
+internal fun isMatchGroup(node: Phase1Node) = firstSectionMatchesName(node, "match")
 
-internal fun validateMatchingGroup(node: Phase1Node, errors: MutableList<ParseError>) =
-    validateGroup(node.resolve(), errors, "matching", DEFAULT_MATCHING_GROUP) { group ->
-        identifySections(group, errors, DEFAULT_MATCHING_GROUP, listOf("matching", "with")) {
-        sections ->
-            MatchingGroup(
-                matchingSection =
-                    ensureNonNull(sections["matching"], DEFAULT_MATCHING_SECTION) {
+internal fun validateMatchGroup(node: Phase1Node, errors: MutableList<ParseError>) =
+    validateGroup(node.resolve(), errors, "match", DEFAULT_MATCH_GROUP) { group ->
+        identifySections(group, errors, DEFAULT_MATCH_GROUP, listOf("match")) { sections ->
+            MatchGroup(
+                matchSection =
+                    ensureNonNull(sections["match"], DEFAULT_MATCH_SECTION) {
                         validateMatchingSection(it, errors)
-                    },
-                withSection =
-                    ensureNonNull(sections["with"], DEFAULT_WITH_SECTION) {
-                        validateWithSection(it, errors)
                     },
                 row = node.row,
                 column = node.column)

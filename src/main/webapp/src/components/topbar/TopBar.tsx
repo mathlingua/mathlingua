@@ -44,7 +44,7 @@ export const TopBar = () => {
         <option value='Fira Code'>Fira Code</option>
         <option value='Fira Mono'>Fira Mono</option>
         <option value='Inconsolata'>Inconsolata</option>
-        <option value='Georgia'>Georgia</option>
+        <option value='Libertinus Mono'>Libertinus Mono</option>
         <option value='Nova Mono'>Nova Mono</option>
         <option value='Noto Sans Mono'>Noto Sans Mono</option>
         <option value='PT Mono'>PT Mono</option>

@@ -324,8 +324,13 @@ private fun readAllBytes(stream: InputStream): ByteArray {
 private fun renderAll(
     fs: VirtualFileSystem, logger: Logger
 ): Pair<List<String>, List<ErrorResult>> {
+    //    println("assets/index.html IS")
+    //
+    // println(String(ClassLoader.getSystemClassLoader().getResourceAsStream("assets/index.html")?.readAllBytes() ?: ByteArray(0)))
+
+    /*
     val uri =
-        Mathlingua.javaClass.getResource("/assets")?.toURI()?.toString()?.trim()
+        ClassLoader.getSystemClassLoader().getResource("/src/main/resources/assets")?.toURI()?.toString()?.trim()
             ?: throw Exception("Failed to load assets directory")
     val index = uri.indexOf('!')
     val uriPrefix =
@@ -335,6 +340,16 @@ private fun renderAll(
             uri.substring(0, index)
         }
     val jarPath = uriPrefix.replace("jar:file:", "")
+     */
+
+    val stream = ClassLoader.getSystemClassLoader().getResourceAsStream("assets.jar").readAllBytes()
+    val outFile = File("TEST.jar")
+    if (!outFile.exists()) {
+        outFile.createNewFile()
+    }
+    outFile.writeBytes(stream)
+
+    val jarPath = outFile.absolutePath
 
     val docDir = File(getDocsDirectory(fs).absolutePath())
     docDir.mkdirs()
@@ -345,11 +360,14 @@ private fun renderAll(
         cnameFile.copyTo(target = docsCnameFile, overwrite = true)
     }
 
+    /*
     val jarTimestamp = File(jarPath).lastModified().toString()
     val timestampFile = File(docDir, "timestamp")
     if (!timestampFile.exists() || timestampFile.readText() != jarTimestamp) {
+     */
+    if (true) {
         logger.log("Initial run detected. Saving webapp files to speed up future runs.")
-        timestampFile.writeText(jarTimestamp)
+        //        timestampFile.writeText(jarTimestamp)
 
         val jar = JarFile(jarPath)
         for (entry in jar.entries()) {
@@ -375,7 +393,7 @@ private fun renderAll(
 
     val decomp =
         decompose(fs = fs, sourceCollection = newSourceCollectionFromCwd(fs = fs), mlgFiles = null)
-    val data = Json.encodeToString(decomp)
+    val data = Json.encodeToString(DecompositionResult.serializer(), decomp)
 
     val errors = mutableListOf<ErrorResult>()
 

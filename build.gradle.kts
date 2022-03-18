@@ -26,6 +26,7 @@ plugins {
     id("application")
     id("jacoco")
     kotlin("plugin.serialization") version "1.5.20"
+    id("org.graalvm.buildtools.native") version "0.9.4"
 }
 
 group = "mathlingua"
@@ -47,6 +48,7 @@ repositories {
             snapshotsOnly()
         }
     }
+    gradlePluginPortal()
 }
 
 dependencies {
@@ -56,10 +58,19 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
     implementation("org.jetbrains:markdown:0.3.1")
     implementation("io.javalin:javalin:4.3.0")
-    implementation("org.slf4j:slf4j-nop:1.7.36")
+//    implementation("org.slf4j:slf4j-nop:1.7.36")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
+//    implementation("com.fasterxml.jackson.core:jackson-databind:2.13.2")
     implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.0")
+    implementation("com.nixxcode.jvmbrotli:jvmbrotli:0.2.0")
+
+    implementation("org.slf4j:slf4j-simple:1.7.36")
+    implementation("org.slf4j:slf4j-api:1.7.36")
+
+//    implementation("org.slf4j:slf4j-simple:1.7.31")
+//    implementation("org.slf4j:slf4j-api:1.8.0-beta4")
+//    implementation("org.slf4j:slf4j-simple:1.8.0-beta4")
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
     testImplementation(kotlin("reflect", version = "1.5.0"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")
@@ -102,4 +113,24 @@ spotless {
     kotlin {
         ktfmt("0.18").dropboxStyle()
     }
+}
+
+nativeBuild {
+    useFatJar.set(true)
+    verbose.set(true)
+
+//    buildArgs.add("--allow-incomplete-classpath")
+    buildArgs.add("-H:ReflectionConfigurationFiles=../../../reflectconfig.json")
+//    buildArgs.add("-H:ResourceConfigurationFiles=../../../resourceconfig.json")
+    buildArgs.add("-H:+JNI")
+///    buildArgs.add("--initialize-at-run-time=io.javalin.json.JavalinJson")
+    buildArgs.add("-H:IncludeResourceBundles=javax.servlet.LocalStrings")
+    buildArgs.add("-H:IncludeResourceBundles=javax.servlet.http.LocalStrings")
+    buildArgs.add("-H:IncludeResources=assets\\.jar")
+//    buildArgs.add("-H:Log=registerResource")
+//    buildArgs.add("-H:EnableURLProtocols=http,https")
+    buildArgs.add("--enable-http")
+    buildArgs.add("--enable-https")
+    buildArgs.add("--no-fallback")
+//    buildArgs.add("--verbose")
 }

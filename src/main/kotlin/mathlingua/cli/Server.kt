@@ -63,7 +63,7 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
 
     val app =
         Javalin.create { config ->
-                config.addStaticFiles("/assets", Location.CLASSPATH)
+                config.addStaticFiles("/Users/kramer/github/mathlore/docs", Location.EXTERNAL)
                 config.addStaticFiles(fs.cwd().absolutePath(), Location.EXTERNAL)
             }
             .start(port)

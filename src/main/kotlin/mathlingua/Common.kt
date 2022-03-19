@@ -78,6 +78,7 @@ internal interface Queue<T> : Iterable<T> {
     fun offer(value: T)
     fun peek(): T
     fun poll(): T
+    fun size(): Int
     fun isEmpty(): Boolean
 }
 
@@ -99,6 +100,8 @@ private class QueueImpl<T> : Queue<T> {
     override fun peek(): T = data.peek()
 
     override fun poll(): T = data.poll()
+
+    override fun size() = data.size
 
     override fun isEmpty() = data.isEmpty()
 

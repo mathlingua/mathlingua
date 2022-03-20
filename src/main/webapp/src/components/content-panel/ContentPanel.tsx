@@ -210,6 +210,7 @@ const TwoColumnContent = (props: {
 }) => {
   const dispatch = useAppDispatch();
   const [locations, setLocations] = useState([] as HashLocation[]);
+  const [sidePanelSize, setSidePanelSize] = useState('20%');
 
   const getViewedLocationIndex = (path: string) => {
     return locations.findIndex(location =>
@@ -302,9 +303,9 @@ const TwoColumnContent = (props: {
     }
   };
 
-  return <SplitPane>
+  return <SplitPane onChange={(size) => setSidePanelSize(`${size}px`)}>
     {props.isSidePanelVisible ? (
-      <Pane initialSize='20%'>
+      <Pane initialSize={sidePanelSize}>
         <SidePanel viewedPath={props.hashLocation.viewedPath}
                    onOpenFileInTab={openFileInTab} />
       </Pane>

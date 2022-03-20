@@ -16,18 +16,122 @@
 
 package mathlingua.cli
 
-import io.javalin.Javalin
-import io.javalin.http.staticfiles.Location
+import io.ktor.application.call
+import io.ktor.http.HttpStatusCode
+import io.ktor.http.content.files
+import io.ktor.http.content.static
+import io.ktor.request.receiveText
+import io.ktor.response.respond
+import io.ktor.response.respondFile
+import io.ktor.routing.get
+import io.ktor.routing.post
+import io.ktor.routing.put
+import io.ktor.routing.routing
+import io.ktor.server.cio.CIO
+import io.ktor.server.engine.embeddedServer
 import java.io.File
+import java.io.FileNotFoundException
+import java.io.InputStream
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.util.zip.ZipFile
+import kotlin.io.path.absolutePathString
+import kotlin.io.path.writeBytes
 import kotlin.system.exitProcess
+import kotlinx.serialization.json.Json
 import mathlingua.backend.BackEnd
 import mathlingua.backend.SourceCollection
 import mathlingua.backend.buildSourceFile
 import mathlingua.backend.newSourceCollectionFromCwd
 
-fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -> Unit)?) {
+internal fun ensureDocsDirExists(fs: VirtualFileSystem, logger: Logger): File {
+    val classLoader = ClassLoader.getSystemClassLoader()
+    val checksumStream =
+        classLoader.getResourceAsStream("checksum")
+            ?: throw Exception("Failed to load static document assets checksum")
+
+    val docDir = File(getDocsDirectory(fs).absolutePath())
+    docDir.mkdirs()
+
+    val docsChecksumFile = File(docDir, "checksum")
+    val actualChecksum =
+        try {
+            docsChecksumFile.readText()
+        } catch (e: FileNotFoundException) {
+            ""
+        }
+    val expectedChecksum = String(checksumStream.readAllBytes())
+
+    val cnameFile = File("CNAME")
+    if (cnameFile.exists()) {
+        val docsCnameFile = File(docDir, "CNAME")
+        cnameFile.copyTo(target = docsCnameFile, overwrite = true)
+    }
+
+    if (actualChecksum != expectedChecksum) {
+        logger.log("Initial run detected. Saving webapp files to speed up future runs.")
+
+        // delete the docs directory so that no assets from any previous
+        // times the docs directory was generated are left over
+        if (docDir.exists()) {
+            docDir.deleteRecursively()
+        }
+
+        val assetsZipStream =
+            classLoader.getResourceAsStream("assets.zip")
+                ?: throw Exception("Failed to load static document assets")
+
+        val assetsZipBytes = assetsZipStream.readAllBytes()
+        val tempAssetsZipFile = kotlin.io.path.createTempFile(suffix = ".zip")
+        tempAssetsZipFile.writeBytes(assetsZipBytes)
+
+        val zipPath = tempAssetsZipFile.toAbsolutePath().absolutePathString()
+
+        val zip = ZipFile(zipPath)
+        for (entry in zip.entries()) {
+            if (!entry.toString().startsWith("assets/") || entry.toString() == "assets/") {
+                continue
+            }
+
+            val outFile = File(docDir, entry.name.replace("assets/", ""))
+            if (entry.isDirectory) {
+                outFile.mkdirs()
+            } else {
+                val parent = outFile.parentFile
+                parent?.mkdirs()
+                outFile.writeBytes(readAllBytes(zip.getInputStream(entry)))
+            }
+        }
+        zip.close()
+
+        val indexFile = File(docDir, "index.html")
+        val indexText =
+            indexFile.readText().replace("<head>", "<head><script src=\"./data.js\"></script>")
+        indexFile.writeText(indexText)
+        logger.log("Wrote docs${File.separator}index.html")
+
+        docsChecksumFile.writeText(expectedChecksum)
+    }
+
+    return docDir
+}
+
+private fun readAllBytes(stream: InputStream): ByteArray {
+    val result = mutableListOf<Byte>()
+    val tempArray = ByteArray(1024)
+    while (true) {
+        val numRead = stream.read(tempArray, 0, tempArray.size)
+        if (numRead < 0) {
+            break
+        }
+        for (i in 0 until numRead) {
+            result.add(tempArray[i])
+        }
+    }
+    return result.toByteArray()
+}
+
+internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -> Unit)?) {
     logger.log("Opening http://localhost:$port for you to edit your MathLingua files.")
     logger.log("Every time you refresh the page, your MathLingua files will be re-analyzed.")
 
@@ -39,11 +143,9 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
         return sourceCollection!!
     }
 
-    if (getSourceCollection().getAllPaths().isEmpty()) {
-        val contentDir = fs.getDirectory(listOf("content"))
-        if (!fs.exists(contentDir)) {
-            fs.mkdirs(contentDir)
-        }
+    val contentDir = fs.getDirectory(listOf("content"))
+    if (!fs.exists(contentDir)) {
+        fs.mkdirs(contentDir)
 
         val welcomeFile = fs.getFile(listOf("content", "welcome.math"))
         if (!fs.exists(welcomeFile)) {
@@ -61,296 +163,348 @@ fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onStart: (() -
         }
     }
 
-    val app =
-        Javalin.create { config ->
-                config.addStaticFiles("/assets", Location.CLASSPATH)
-                config.addStaticFiles(fs.cwd().absolutePath(), Location.EXTERNAL)
-            }
-            .start(port)
-    app.before("/") { ctx ->
-        try {
-            logger.log("Re-analyzing the MathLingua code.")
-            // invalidate the source collection and regenerate it
-            sourceCollection = null
-            getSourceCollection()
-        } catch (err: Exception) {
-            err.printStackTrace()
-            ctx.status(500)
-        }
-    }
-    app
-        .routes {}
-        .put("/api/writePage") { ctx ->
-            try {
-                val pathAndContent = ctx.bodyAsClass(WritePageRequest::class.java)
-                logger.log("Writing page ${pathAndContent.path}")
+    val docsDir = ensureDocsDirExists(fs, logger)
+    val server =
+        embeddedServer(CIO, port = port, host = "0.0.0.0") {
+            routing {
+                static {
+                    files(fs.cwd().absolutePath())
+                    files(docsDir.absolutePath)
+                }
 
-                val file = fs.getFileOrDirectory(pathAndContent.path)
-                println("Writing to path ${pathAndContent.path} content:")
-                println(pathAndContent.content)
-                file.writeText(pathAndContent.content)
-                println("Done writing to path ${pathAndContent.path}")
-                val newSource = file.buildSourceFile()
-                getSourceCollection().removeSource(pathAndContent.path)
-                getSourceCollection().addSource(newSource)
-                ctx.status(200)
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/readPage") { ctx ->
-            try {
-                val path = ctx.queryParam("path")
-                logger.log("Reading page $path")
-                if (path == null) {
-                    ctx.status(400)
-                } else {
-                    val file = fs.getFileOrDirectory(path)
-                    val content = file.readText()
-                    ctx.json(ReadPageResponse(content = content))
-                }
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/fileResult") { ctx ->
-            try {
-                val path = ctx.queryParam("path")
-                logger.log("Getting file result for $path")
-                if (path == null) {
-                    ctx.status(400)
-                } else {
-                    val page = getSourceCollection().getPage(path)
-                    if (page == null) {
-                        ctx.status(404)
-                    } else {
-                        ctx.json(page.fileResult)
+                get("/") {
+                    try {
+                        logger.log("Re-analyzing the MathLingua code.")
+                        // invalidate the source collection and regenerate it
+                        sourceCollection = null
+                        getSourceCollection()
+                        call.respondFile(File(docsDir, "index.html"))
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
                     }
                 }
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .post("/api/deleteDir") { ctx ->
-            try {
-                val data = ctx.bodyAsClass(DeleteDirRequest::class.java)
-                logger.log("Deleting directory ${data.path}")
-                Paths.get(data.path).toFile().deleteRecursively()
-                sourceCollection = null
-                getSourceCollection()
-                ctx.status(200)
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .post("/api/deleteFile") { ctx ->
-            try {
-                val data = ctx.bodyAsClass(DeleteFileRequest::class.java)
-                logger.log("Deleting file ${data.path}")
-                Paths.get(data.path).toFile().delete()
-                sourceCollection = null
-                getSourceCollection()
-                ctx.status(200)
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .post("/api/renameDir") { ctx ->
-            try {
-                val data = ctx.bodyAsClass(RenameDirRequest::class.java)
-                logger.log("Renaming directory ${data.fromPath} to ${data.toPath}")
-                val from = Paths.get(data.fromPath)
-                val to = Paths.get(data.toPath)
-                Files.move(from, to)
-                sourceCollection = null
-                getSourceCollection()
-                ctx.status(200)
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .post("/api/renameFile") { ctx ->
-            try {
-                val data = ctx.bodyAsClass(RenameFileRequest::class.java)
-                logger.log("Renaming file ${data.fromPath} to ${data.toPath}")
-                val from = Paths.get(data.fromPath)
-                val to = Paths.get(data.toPath)
-                Files.move(from, to)
-                sourceCollection = null
-                getSourceCollection()
-                ctx.status(200)
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .post("/api/newDir") { ctx ->
-            try {
-                val data = ctx.bodyAsClass(NewDirRequest::class.java)
-                logger.log("Creating new directory ${data.path}")
-                val dir = Paths.get(data.path).toFile()
-                dir.mkdirs()
-                val newFile = File(dir, "Untitled.math")
-                newFile.writeText("::\n::")
-                sourceCollection = null
-                getSourceCollection()
-                ctx.status(200)
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .post("/api/newFile") { ctx ->
-            try {
-                val data = ctx.bodyAsClass(NewFileRequest::class.java)
-                logger.log("Creating new file ${data.path}")
-                Paths.get(data.path).toFile().writeText("::\n::")
-                sourceCollection = null
-                getSourceCollection()
-                ctx.status(200)
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/check") { ctx ->
-            try {
-                logger.log("Checking")
-                ctx.json(
-                    CheckResponse(
-                        errors =
-                            BackEnd.check(getSourceCollection()).map {
-                                CheckError(
-                                    path = it.source.file.relativePath(),
-                                    message = it.value.message,
-                                    row = it.value.row,
-                                    column = it.value.column)
-                            }))
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/allPaths") { ctx ->
-            try {
-                logger.log("Getting all paths")
-                ctx.json(AllPathsResponse(paths = getSourceCollection().getAllPaths()))
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/withSignature") { ctx ->
-            try {
-                val signature = ctx.queryParam("signature")
-                logger.log("Getting entity with signature '${signature}'")
-                if (signature == null) {
-                    ctx.status(400)
-                } else {
-                    val entityResult = getSourceCollection().getWithSignature(signature)
-                    if (entityResult == null) {
-                        ctx.status(404)
-                    } else {
-                        ctx.json(entityResult)
+
+                put("/api/writePage") {
+                    try {
+                        val pathAndContent =
+                            Json.decodeFromString(WritePageRequest.serializer(), call.receiveText())
+                        logger.log("Writing page ${pathAndContent.path}")
+
+                        val file = fs.getFileOrDirectory(pathAndContent.path)
+                        file.writeText(pathAndContent.content)
+                        val newSource = file.buildSourceFile()
+                        getSourceCollection().removeSource(pathAndContent.path)
+                        getSourceCollection().addSource(newSource)
+                        call.respond(HttpStatusCode.OK)
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
                     }
                 }
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/usedSignaturesAtRow") { ctx ->
-            try {
-                val path = ctx.queryParam("path")
-                val row = ctx.queryParam("row")?.toIntOrNull()
-                logger.log("Getting used signatures for $path at row $row")
-                if (path == null || row == null) {
-                    ctx.status(400)
-                } else {
-                    val usedSignatures = getSourceCollection().getUsedSignaturesAtRow(path, row)
-                    ctx.json(
-                        UsedSignaturesAtRowResponse(
-                            signatures =
-                                usedSignatures
-                                    .map {
-                                        UsedSignature(
-                                            signature = it.value.form,
-                                            defPath = it.source.file.relativePath(),
-                                            defRow = it.value.location.row)
-                                    }
-                                    .sortedBy { it.signature }))
+
+                get("/api/readPage") {
+                    try {
+                        val path = call.request.queryParameters["path"]
+                        logger.log("Reading page $path")
+                        if (path == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        } else {
+                            val file = fs.getFileOrDirectory(path)
+                            val content = file.readText()
+                            call.respond(
+                                Json.encodeToString(
+                                    ReadPageResponse.serializer(),
+                                    ReadPageResponse(content = content)))
+                        }
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
                 }
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
+
+                get("/api/fileResult") {
+                    try {
+                        val path = call.request.queryParameters["path"]
+                        logger.log("Getting file result for $path")
+                        if (path == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        } else {
+                            val page = getSourceCollection().getPage(path)
+                            if (page == null) {
+                                call.respond(HttpStatusCode.NotFound)
+                            } else {
+                                call.respond(
+                                    Json.encodeToString(FileResult.serializer(), page.fileResult))
+                            }
+                        }
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+
+                post("/api/deleteDir") {
+                    try {
+                        val data =
+                            Json.decodeFromString(DeleteDirRequest.serializer(), call.receiveText())
+                        logger.log("Deleting directory ${data.path}")
+                        Paths.get(data.path).toFile().deleteRecursively()
+                        sourceCollection = null
+                        getSourceCollection()
+                        call.respond(HttpStatusCode.OK)
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                post("/api/deleteFile") {
+                    try {
+                        val data =
+                            Json.decodeFromString(
+                                DeleteFileRequest.serializer(), call.receiveText())
+                        logger.log("Deleting file ${data.path}")
+                        Paths.get(data.path).toFile().delete()
+                        sourceCollection = null
+                        getSourceCollection()
+                        call.respond(HttpStatusCode.OK)
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                post("/api/renameDir") {
+                    try {
+                        val data =
+                            Json.decodeFromString(RenameDirRequest.serializer(), call.receiveText())
+                        logger.log("Renaming directory ${data.fromPath} to ${data.toPath}")
+                        val from = Paths.get(data.fromPath)
+                        val to = Paths.get(data.toPath)
+                        Files.move(from, to)
+                        sourceCollection = null
+                        getSourceCollection()
+                        call.respond(HttpStatusCode.OK)
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                post("/api/renameFile") {
+                    try {
+                        val data =
+                            Json.decodeFromString(
+                                RenameFileRequest.serializer(), call.receiveText())
+                        logger.log("Renaming file ${data.fromPath} to ${data.toPath}")
+                        val from = Paths.get(data.fromPath)
+                        val to = Paths.get(data.toPath)
+                        Files.move(from, to)
+                        sourceCollection = null
+                        getSourceCollection()
+                        call.respond(HttpStatusCode.OK)
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                post("/api/newDir") {
+                    try {
+                        val data =
+                            Json.decodeFromString(NewDirRequest.serializer(), call.receiveText())
+                        logger.log("Creating new directory ${data.path}")
+                        val dir: File = Paths.get(data.path).toFile()
+                        dir.mkdirs()
+                        val newFile = File(dir, "Untitled.math")
+                        newFile.writeText("::\n::")
+                        sourceCollection = null
+                        getSourceCollection()
+                        call.respond(HttpStatusCode.OK)
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                post("/api/newFile") {
+                    try {
+                        val data =
+                            Json.decodeFromString(NewFileRequest.serializer(), call.receiveText())
+                        logger.log("Creating new file ${data.path}")
+                        Paths.get(data.path).toFile().writeText("::\n::")
+                        sourceCollection = null
+                        getSourceCollection()
+                        call.respond(HttpStatusCode.OK)
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/check") {
+                    try {
+                        logger.log("Checking")
+                        val result =
+                            CheckResponse(
+                                errors =
+                                    BackEnd.check(getSourceCollection()).map {
+                                        CheckError(
+                                            path = it.source.file.relativePath(),
+                                            message = it.value.message,
+                                            row = it.value.row,
+                                            column = it.value.column)
+                                    })
+                        call.respond(Json.encodeToString(CheckResponse.serializer(), result))
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/allPaths") {
+                    try {
+                        logger.log("Getting all paths")
+                        val result = AllPathsResponse(paths = getSourceCollection().getAllPaths())
+                        call.respond(Json.encodeToString(AllPathsResponse.serializer(), result))
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/withSignature") {
+                    try {
+                        val signature = call.request.queryParameters["signature"]
+                        logger.log("Getting entity with signature '${signature}'")
+                        if (signature == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        } else {
+                            val entityResult = getSourceCollection().getWithSignature(signature)
+                            if (entityResult == null) {
+                                call.respond(HttpStatusCode.NotFound)
+                            } else {
+                                call.respond(
+                                    Json.encodeToString(EntityResult.serializer(), entityResult))
+                            }
+                        }
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/usedSignaturesAtRow") {
+                    try {
+                        val path = call.request.queryParameters["path"]
+                        val row = call.request.queryParameters["row"]?.toIntOrNull()
+                        logger.log("Getting used signatures for $path at row $row")
+                        if (path == null || row == null) {
+                            call.respond(HttpStatusCode.BadRequest)
+                        } else {
+                            val usedSignatures =
+                                getSourceCollection().getUsedSignaturesAtRow(path, row)
+                            val result =
+                                UsedSignaturesAtRowResponse(
+                                    signatures =
+                                        usedSignatures
+                                            .map {
+                                                UsedSignature(
+                                                    signature = it.value.form,
+                                                    defPath = it.source.file.relativePath(),
+                                                    defRow = it.value.location.row)
+                                            }
+                                            .sortedBy { it.signature })
+                            call.respond(
+                                Json.encodeToString(
+                                    UsedSignaturesAtRowResponse.serializer(), result))
+                        }
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/search") {
+                    try {
+                        val query = call.request.queryParameters["query"] ?: ""
+                        logger.log("Searching with query '$query'")
+                        val result =
+                            SearchResponse(
+                                paths =
+                                    getSourceCollection().search(query).map {
+                                        it.file.relativePath()
+                                    })
+                        call.respond(Json.encodeToString(SearchResponse.serializer(), result))
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/completeWord") {
+                    try {
+                        val word = call.request.queryParameters["word"] ?: ""
+                        logger.log("Getting completions for word '$word'")
+                        val suffixes = getSourceCollection().findWordSuffixesFor(word)
+                        call.respond(
+                            Json.encodeToString(
+                                CompleteWordResponse.serializer(),
+                                CompleteWordResponse(suffixes = suffixes)))
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/completeSignature") {
+                    try {
+                        val prefix = call.request.queryParameters["prefix"] ?: ""
+                        logger.log("Getting signature completions for prefix '$prefix'")
+                        val suffixes = getSourceCollection().findSignaturesSuffixesFor(prefix)
+                        call.respond(
+                            Json.encodeToString(
+                                CompleteSignatureResponse.serializer(),
+                                CompleteSignatureResponse(suffixes = suffixes)))
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/gitHubUrl") {
+                    try {
+                        logger.log("Getting the GitHub url")
+                        call.respond(
+                            Json.encodeToString(
+                                GitHubUrlResponse.serializer(),
+                                GitHubUrlResponse(url = getGitHubUrl())))
+                    } catch (err: Exception) {
+                        err.printStackTrace()
+                        call.respond(HttpStatusCode.InternalServerError)
+                    }
+                }
+                get("/api/firstPath") {
+                    call.respond(
+                        Json.encodeToString(
+                            FirstPathResponse.serializer(),
+                            FirstPathResponse(path = getSourceCollection().getFirstPath())))
+                }
+                get("/api/signatureIndex") {
+                    call.respond(
+                        Json.encodeToString(
+                            SignatureIndex.serializer(),
+                            buildSignatureIndex(getSourceCollection())))
+                }
+                get("/api/shutdown") {
+                    // The /api/shutdown hook is used by the end-to-end tests to shutdown
+                    // the server after the tests are done.  It is ok to expose this since
+                    // the server is only designed to be run by a user on their local machine.
+                    // Thus, they already have the ability to shutdown the server if they
+                    // want to.
+                    exitProcess(0)
+                }
+                get("/api/completions") {
+                    call.respond(Json.encodeToString(Completions.serializer(), COMPLETIONS))
+                }
+                get("/api/configuration") {
+                    call.respond(
+                        Json.encodeToString(Configuration.serializer(), loadConfiguration()))
+                }
+                get("/api/{...}") { call.respond(HttpStatusCode.BadRequest) }
             }
         }
-        .get("/api/search") { ctx ->
-            try {
-                val query = ctx.queryParam("query") ?: ""
-                logger.log("Searching with query '$query'")
-                ctx.json(
-                    SearchResponse(
-                        paths = getSourceCollection().search(query).map { it.file.relativePath() }))
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/completeWord") { ctx ->
-            try {
-                val word = ctx.queryParam("word") ?: ""
-                logger.log("Getting completions for word '$word'")
-                val suffixes = getSourceCollection().findWordSuffixesFor(word)
-                ctx.json(CompleteWordResponse(suffixes = suffixes))
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/completeSignature") { ctx ->
-            try {
-                val prefix = ctx.queryParam("prefix") ?: ""
-                logger.log("Getting signature completions for prefix '$prefix'")
-                val suffixes = getSourceCollection().findSignaturesSuffixesFor(prefix)
-                ctx.json(CompleteSignatureResponse(suffixes = suffixes))
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/gitHubUrl") { ctx ->
-            try {
-                logger.log("Getting the GitHub url")
-                ctx.json(GitHubUrlResponse(url = getGitHubUrl()))
-            } catch (err: Exception) {
-                err.printStackTrace()
-                ctx.status(500)
-            }
-        }
-        .get("/api/firstPath") { ctx ->
-            ctx.json(FirstPathResponse(path = getSourceCollection().getFirstPath()))
-        }
-        .get("/api/signatureIndex") { ctx -> ctx.json(buildSignatureIndex(getSourceCollection())) }
-        .get("/api/shutdown") {
-            // The /api/shutdown hook is used by the end-to-end tests to shutdown
-            // the server after the tests are done.  It is ok to expose this since
-            // the server is only designed to be run by a user on their local machine.
-            // Thus, they already have the ability to shutdown the server if they
-            // want to.
-            exitProcess(0)
-        }
-        .get("/api/completions") { ctx -> ctx.json(COMPLETIONS) }
-        .get("/api/configuration") { ctx -> ctx.json(loadConfiguration()) }
-        .get("/api/*") { ctx -> ctx.status(400) }
 
     if (onStart != null) {
         onStart()
     }
+    server.start(wait = true)
 }

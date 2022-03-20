@@ -52,14 +52,16 @@ repositories {
 dependencies {
     implementation(kotlin("gradle-plugin", version = "1.5.21"))
     implementation(kotlin("stdlib", KotlinCompilerVersion.VERSION))
+    // needed for the CLI
     implementation("com.github.ajalt:clikt:2.8.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.0-native-mt")
+    // needed for markdown support in :: ... ::
     implementation("org.jetbrains:markdown:0.3.1")
-    implementation("io.javalin:javalin:4.3.0")
+    // needed for ktor
     implementation("org.slf4j:slf4j-nop:1.7.36")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
-    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.13.1")
-    implementation("org.jetbrains.kotlin:kotlin-reflect:1.6.0")
+    implementation("io.ktor:ktor-server-core:1.6.7")
+    implementation("io.ktor:ktor-server-cio:1.6.7")
+    // needed for tests
     testImplementation("com.willowtreeapps.assertk:assertk-jvm:0.25")
     testImplementation(kotlin("reflect", version = "1.5.0"))
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.8.2")

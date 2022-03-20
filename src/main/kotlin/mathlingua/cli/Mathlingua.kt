@@ -17,8 +17,6 @@
 package mathlingua.cli
 
 import java.io.File
-import java.io.InputStream
-import java.util.jar.JarFile
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import mathlingua.backend.BackEnd
@@ -137,6 +135,8 @@ object Mathlingua {
     }
 }
 
+internal fun getDocsDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("docs"))
+
 // -----------------------------------------------------------------------------
 
 private fun String.jsonSanitize() =
@@ -153,8 +153,6 @@ private fun maybePlural(text: String, count: Int) =
     } else {
         "${text}s"
     }
-
-private fun getDocsDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("docs"))
 
 private fun getContentDirectory(fs: VirtualFileSystem) = fs.getDirectory(listOf("content"))
 
@@ -306,72 +304,10 @@ private fun getUnifiedRenderedTopLevelElements(
     return codeElements
 }
 
-private fun readAllBytes(stream: InputStream): ByteArray {
-    val result = mutableListOf<Byte>()
-    val tempArray = ByteArray(1024)
-    while (true) {
-        val numRead = stream.read(tempArray, 0, tempArray.size)
-        if (numRead < 0) {
-            break
-        }
-        for (i in 0 until numRead) {
-            result.add(tempArray[i])
-        }
-    }
-    return result.toByteArray()
-}
-
 private fun renderAll(
     fs: VirtualFileSystem, logger: Logger
 ): Pair<List<String>, List<ErrorResult>> {
-    val uri =
-        Mathlingua.javaClass.getResource("/assets")?.toURI()?.toString()?.trim()
-            ?: throw Exception("Failed to load assets directory")
-    val index = uri.indexOf('!')
-    val uriPrefix =
-        if (index < 0) {
-            uri
-        } else {
-            uri.substring(0, index)
-        }
-    val jarPath = uriPrefix.replace("jar:file:", "")
-
-    val docDir = File(getDocsDirectory(fs).absolutePath())
-    docDir.mkdirs()
-
-    val cnameFile = File("CNAME")
-    if (cnameFile.exists()) {
-        val docsCnameFile = File(docDir, "CNAME")
-        cnameFile.copyTo(target = docsCnameFile, overwrite = true)
-    }
-
-    val jarTimestamp = File(jarPath).lastModified().toString()
-    val timestampFile = File(docDir, "timestamp")
-    if (!timestampFile.exists() || timestampFile.readText() != jarTimestamp) {
-        logger.log("Initial run detected. Saving webapp files to speed up future runs.")
-        timestampFile.writeText(jarTimestamp)
-
-        val jar = JarFile(jarPath)
-        for (entry in jar.entries()) {
-            if (!entry.toString().startsWith("assets/") || entry.toString() == "assets/") {
-                continue
-            }
-
-            val outFile = File(docDir, entry.name.replace("assets/", ""))
-            if (entry.isDirectory) {
-                outFile.mkdirs()
-            } else {
-                outFile.writeBytes(readAllBytes(jar.getInputStream(entry)))
-            }
-        }
-        jar.close()
-
-        val indexFile = File(docDir, "index.html")
-        val indexText =
-            indexFile.readText().replace("<head>", "<head><script src=\"./data.js\"></script>")
-        indexFile.writeText(indexText)
-        logger.log("Wrote docs${File.separator}index.html")
-    }
+    val docDir = ensureDocsDirExists(fs, logger)
 
     val decomp =
         decompose(fs = fs, sourceCollection = newSourceCollectionFromCwd(fs = fs), mlgFiles = null)

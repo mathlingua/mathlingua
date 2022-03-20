@@ -21,6 +21,8 @@ releases
 # webapp content
 
 src/main/resources/assets
+src/main/resources/assets.zip
+src/main/resources/checksum
 
 # dependencies
 src/main/webapp/node_modules

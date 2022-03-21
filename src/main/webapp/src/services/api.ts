@@ -381,7 +381,7 @@ export async function getConfiguration(): Promise<Configuration> {
 
 export async function writeFileResult(path: string, content: string) {
   try {
-    await axios.put('/api/writePage', {
+    await axios.post('/api/writePage', {
       path,
       content,
     });

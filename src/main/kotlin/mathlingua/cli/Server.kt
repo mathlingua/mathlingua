@@ -20,12 +20,11 @@ import io.ktor.application.call
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.content.files
 import io.ktor.http.content.static
-import io.ktor.request.receiveText
+import io.ktor.request.receiveStream
 import io.ktor.response.respond
 import io.ktor.response.respondFile
 import io.ktor.routing.get
 import io.ktor.routing.post
-import io.ktor.routing.put
 import io.ktor.routing.routing
 import io.ktor.server.cio.CIO
 import io.ktor.server.engine.embeddedServer
@@ -185,10 +184,16 @@ internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onSta
                     }
                 }
 
-                put("/api/writePage") {
+                // report data.js as a 404 when the server is run since the client code
+                // uses the fact that data.js does not exist to enable edit mode in the client
+                get("/data.js") { call.respond(HttpStatusCode.NotFound) }
+
+                post("/api/writePage") {
                     try {
                         val pathAndContent =
-                            Json.decodeFromString(WritePageRequest.serializer(), call.receiveText())
+                            Json.decodeFromString(
+                                WritePageRequest.serializer(),
+                                String(call.receiveStream().readAllBytes()))
                         logger.log("Writing page ${pathAndContent.path}")
 
                         val file = fs.getFileOrDirectory(pathAndContent.path)
@@ -247,7 +252,9 @@ internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onSta
                 post("/api/deleteDir") {
                     try {
                         val data =
-                            Json.decodeFromString(DeleteDirRequest.serializer(), call.receiveText())
+                            Json.decodeFromString(
+                                DeleteDirRequest.serializer(),
+                                String(call.receiveStream().readAllBytes()))
                         logger.log("Deleting directory ${data.path}")
                         Paths.get(data.path).toFile().deleteRecursively()
                         sourceCollection = null
@@ -262,7 +269,8 @@ internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onSta
                     try {
                         val data =
                             Json.decodeFromString(
-                                DeleteFileRequest.serializer(), call.receiveText())
+                                DeleteFileRequest.serializer(),
+                                String(call.receiveStream().readAllBytes()))
                         logger.log("Deleting file ${data.path}")
                         Paths.get(data.path).toFile().delete()
                         sourceCollection = null
@@ -276,7 +284,9 @@ internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onSta
                 post("/api/renameDir") {
                     try {
                         val data =
-                            Json.decodeFromString(RenameDirRequest.serializer(), call.receiveText())
+                            Json.decodeFromString(
+                                RenameDirRequest.serializer(),
+                                String(call.receiveStream().readAllBytes()))
                         logger.log("Renaming directory ${data.fromPath} to ${data.toPath}")
                         val from = Paths.get(data.fromPath)
                         val to = Paths.get(data.toPath)
@@ -293,7 +303,8 @@ internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onSta
                     try {
                         val data =
                             Json.decodeFromString(
-                                RenameFileRequest.serializer(), call.receiveText())
+                                RenameFileRequest.serializer(),
+                                String(call.receiveStream().readAllBytes()))
                         logger.log("Renaming file ${data.fromPath} to ${data.toPath}")
                         val from = Paths.get(data.fromPath)
                         val to = Paths.get(data.toPath)
@@ -309,7 +320,9 @@ internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onSta
                 post("/api/newDir") {
                     try {
                         val data =
-                            Json.decodeFromString(NewDirRequest.serializer(), call.receiveText())
+                            Json.decodeFromString(
+                                NewDirRequest.serializer(),
+                                String(call.receiveStream().readAllBytes()))
                         logger.log("Creating new directory ${data.path}")
                         val dir: File = Paths.get(data.path).toFile()
                         dir.mkdirs()
@@ -326,7 +339,9 @@ internal fun startServer(fs: VirtualFileSystem, logger: Logger, port: Int, onSta
                 post("/api/newFile") {
                     try {
                         val data =
-                            Json.decodeFromString(NewFileRequest.serializer(), call.receiveText())
+                            Json.decodeFromString(
+                                NewFileRequest.serializer(),
+                                String(call.receiveStream().readAllBytes()))
                         logger.log("Creating new file ${data.path}")
                         Paths.get(data.path).toFile().writeText("::\n::")
                         sourceCollection = null

@@ -57,7 +57,8 @@ dependencies {
     // needed for markdown support in :: ... ::
     implementation("org.jetbrains:markdown:0.3.1")
     // needed for ktor
-    implementation("org.slf4j:slf4j-nop:1.7.36")
+//    implementation("org.slf4j:slf4j-nop:1.7.36")
+    implementation("ch.qos.logback:logback-classic:1.2.11")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.3.2")
     implementation("io.ktor:ktor-server-core:1.6.7")
     implementation("io.ktor:ktor-server-cio:1.6.7")

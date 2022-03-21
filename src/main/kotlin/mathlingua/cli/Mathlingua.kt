@@ -126,12 +126,13 @@ object Mathlingua {
     fun decompose(fs: VirtualFileSystem, logger: Logger) {
         logger.log(
             Json.encodeToString(
+                DecompositionResult.serializer(),
                 decompose(
                     fs = fs, sourceCollection = newSourceCollectionFromCwd(fs), mlgFiles = null)))
     }
 
     fun completionJson(logger: Logger) {
-        logger.log(Json.encodeToString(COMPLETIONS))
+        logger.log(Json.encodeToString(Completions.serializer(), COMPLETIONS))
     }
 }
 
@@ -311,7 +312,7 @@ private fun renderAll(
 
     val decomp =
         decompose(fs = fs, sourceCollection = newSourceCollectionFromCwd(fs = fs), mlgFiles = null)
-    val data = Json.encodeToString(decomp)
+    val data = Json.encodeToString(DecompositionResult.serializer(), decomp)
 
     val errors = mutableListOf<ErrorResult>()
 

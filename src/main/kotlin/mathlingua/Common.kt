@@ -72,6 +72,8 @@ private class StackImpl<T> : Stack<T> {
     override fun pop(): T = data.pop()
 
     override fun isEmpty() = data.isEmpty()
+
+    override fun toString() = data.toString()
 }
 
 internal interface Queue<T> : Iterable<T> {

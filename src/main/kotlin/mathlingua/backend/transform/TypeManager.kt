@@ -22,13 +22,16 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.IsTexTalkNode
 import mathlingua.frontend.textalk.getSignaturesWithin
 import mathlingua.newQueue
+import mathlingua.newStack
 
 internal interface TypeManager {
     fun add(defines: DefinesGroup)
     fun remove(defines: DefinesGroup)
-    fun isSigDescendentOf(sig: String, targetSig: String): Boolean
+    fun isSigDescendantOf(sig: String, targetSig: String): Boolean
     fun isSigViewableAs(sig: String, targetSig: String): Boolean
     fun isSigIs(sig: String, targetSig: String): Boolean
+    fun getLineage(sig: String): List<String>
+    fun getLeastCommonAncestor(sigs: List<String>): String?
 }
 
 internal fun newTypeManager(): TypeManager {
@@ -92,7 +95,7 @@ private class TypeManagerImpl : TypeManager {
         sigToViewableSigs.remove(sig)
     }
 
-    override fun isSigDescendentOf(sig: String, targetSig: String): Boolean {
+    override fun isSigDescendantOf(sig: String, targetSig: String): Boolean {
         var cur: String? = sig
         while (cur != null) {
             if (cur == targetSig) {
@@ -112,7 +115,7 @@ private class TypeManagerImpl : TypeManager {
             for (i in 0 until size) {
                 val top = queue.poll()
                 visited.add(top)
-                if (top == targetSig || isSigDescendentOf(top, targetSig)) {
+                if (top == targetSig || isSigDescendantOf(top, targetSig)) {
                     return true
                 }
                 sigToViewableSigs[top]?.forEach { viewSig ->
@@ -126,5 +129,54 @@ private class TypeManagerImpl : TypeManager {
     }
 
     override fun isSigIs(sig: String, targetSig: String) =
-        isSigDescendentOf(sig, targetSig) || isSigViewableAs(sig, targetSig)
+        isSigDescendantOf(sig, targetSig) || isSigViewableAs(sig, targetSig)
+
+    override fun getLineage(sig: String): List<String> {
+        val result = mutableListOf<String>()
+        var cur: String? = sig
+        while (cur != null) {
+            result.add(cur)
+            cur = sigToParentSig[cur]
+        }
+        return result
+    }
+
+    override fun getLeastCommonAncestor(sigs: List<String>): String? {
+        if (sigs.isEmpty()) {
+            return null
+        }
+
+        val lineages =
+            sigs.map {
+                val stack = newStack<String>()
+                getLineage(it).forEach { item -> stack.push(item) }
+                stack
+            }
+
+        var latest: String? = null
+        while (!lineages[0].isEmpty()) {
+            val candidate = lineages[0].pop()
+            var allMatch = true
+            for (i in 1 until lineages.size) {
+                if (lineages[i].isEmpty() || lineages[i].peek() != candidate) {
+                    allMatch = false
+                }
+
+                if (!lineages[i].isEmpty()) {
+                    lineages[i].pop()
+                }
+            }
+
+            // If they all don't match then break and the latest ancestor they all
+            // had in common will be returned or null if they have no such ancestor
+            // in common.
+            if (!allMatch) {
+                break
+            }
+
+            latest = candidate
+        }
+
+        return latest
+    }
 }

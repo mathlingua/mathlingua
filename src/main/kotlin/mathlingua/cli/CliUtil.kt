@@ -48,24 +48,25 @@ internal val COMPLETIONS =
                 CompletionItem(name = "iff", parts = listOf("iff:", "then:")),
                 CompletionItem(name = "not", parts = listOf("not:")),
                 CompletionItem(name = "or", parts = listOf("or:")),
-                CompletionItem(name = "piecewise", parts = listOf("piecewise:")),
+                CompletionItem(
+                    name = "piecewise", parts = listOf("piecewise:\nwhen:\nthen:\nelse?:")),
                 CompletionItem(name = "generated", parts = listOf("generated:", "from:", "when?:")),
                 CompletionItem(
                     name = "Defines:",
                     parts =
                         listOf(
                             "Defines:",
-                            "where?",
+                            "where?:",
                             "given?:",
                             "when?:",
                             "means?:",
                             "satisfying:",
                             "expressing:",
-                            "providing?:",
                             "using?:",
                             "writing?:",
                             "written:",
                             "called?:",
+                            "Providing?:",
                             "Metadata?:"),
                 ),
                 CompletionItem(

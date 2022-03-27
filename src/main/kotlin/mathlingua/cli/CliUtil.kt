@@ -56,7 +56,7 @@ internal val COMPLETIONS =
                     parts =
                         listOf(
                             "Defines:",
-                            "where?:",
+                            "with?:",
                             "given?:",
                             "when?:",
                             "means?:",

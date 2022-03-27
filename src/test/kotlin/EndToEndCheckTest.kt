@@ -178,7 +178,7 @@ internal class EndToEndCheckTest {
     }
 
     @Test
-    fun `check does not report errors on variables defined in Defines-where`() {
+    fun `check does not report errors on variables defined in Defines-with`() {
         runCheckTest(
             files =
                 listOf(
@@ -194,7 +194,7 @@ internal class EndToEndCheckTest {
 
                     [\something]
                     Defines: G := (A, B)
-                    where: A := (X, *, e)
+                    with: A := (X, *, e)
                     means: 'X is \something.else'
                     satisfying: 'e is \something.else'
                     written: "something"

@@ -38,7 +38,7 @@ import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.HasUsingSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.TopLevelGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesSection
-import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.WhereTargetSection
+import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.WithSection
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.equality.EqualityGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.states.StatesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.resultlike.axiom.AxiomGroup
@@ -423,9 +423,9 @@ private fun checkVarsImplPhase2Node(
     if (node is DefinesGroup) {
         varsToRemove.addAll(checkVarsImplIdStatement(node.id, vars, errors))
         varsToRemove.addAll(checkDefineSectionVars(node.definesSection, vars, errors))
-        if (node.whereSection != null) {
+        if (node.withSection != null) {
             varsToRemove.addAll(
-                checkWhereTargetSectionVars(node.whereSection, node.definesSection, vars, errors))
+                checkWithSectionVars(node.withSection, node.definesSection, vars, errors))
         }
     }
 
@@ -717,8 +717,8 @@ private fun checkDefineSectionVars(
     return givenVars
 }
 
-private fun checkWhereTargetSectionVars(
-    node: WhereTargetSection,
+private fun checkWithSectionVars(
+    node: WithSection,
     definesSection: DefinesSection,
     vars: VarMultiSet,
     errors: MutableList<ParseError>

@@ -146,7 +146,7 @@ internal fun Phase2Node.findAllStatements(): List<Pair<Statement, List<DefinesGr
                                 id = id,
                                 definesSection =
                                     DefinesSection(targets = emptyList(), row = -1, column = -1),
-                                whereSection = null,
+                                withSection = null,
                                 givenSection = null,
                                 whenSection = null,
                                 meansSection = null,

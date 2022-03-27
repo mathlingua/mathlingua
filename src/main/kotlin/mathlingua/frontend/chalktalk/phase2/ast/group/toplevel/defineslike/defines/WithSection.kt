@@ -18,36 +18,36 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defi
 
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
-import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WHERE_TARGET_SECTION
+import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_WITH_SECTION
 import mathlingua.frontend.chalktalk.phase2.ast.clause.Target
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.section.appendTargetArgs
 import mathlingua.frontend.chalktalk.phase2.ast.validateTargetSection
 import mathlingua.frontend.support.ParseError
 
-internal data class WhereTargetSection(
+internal data class WithSection(
     val targets: List<Target>, override val row: Int, override val column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) = targets.forEach(fn)
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
-        writer.writeHeader("where")
+        writer.writeHeader("with")
         appendTargetArgs(writer, targets, indent + 2)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
         chalkTransformer(
-            WhereTargetSection(
+            WithSection(
                 targets = targets.map { it.transform(chalkTransformer) as Target }, row, column))
 }
 
-internal fun validateWhereTargetSection(node: Phase1Node, errors: MutableList<ParseError>) =
+internal fun validateWithSection(node: Phase1Node, errors: MutableList<ParseError>) =
     validateTargetSection(
-        node.resolve(), errors, "where", DEFAULT_WHERE_TARGET_SECTION, node.row, node.column) {
+        node.resolve(), errors, "with", DEFAULT_WITH_SECTION, node.row, node.column) {
     targets,
     row,
     column ->
-        WhereTargetSection(targets = targets, row, column)
+        WithSection(targets = targets, row, column)
     }

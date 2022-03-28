@@ -24,7 +24,6 @@ import mathlingua.frontend.support.ValidationSuccess
 import mathlingua.frontend.textalk.newTexTalkLexer
 import mathlingua.frontend.textalk.newTexTalkParser
 import mathlingua.newDiskFileSystem
-import org.jetbrains.kotlin.gradle.utils.`is`
 import org.junit.jupiter.api.Test
 
 internal class MathLinguaDataTest {

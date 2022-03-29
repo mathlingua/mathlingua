@@ -32,6 +32,7 @@ internal interface TypeManager {
     fun isSigIs(sig: String, targetSig: String): Boolean
     fun getLineage(sig: String): List<String>
     fun getLeastCommonAncestor(sigs: List<String>): String?
+    fun doTypesMatch(actual: Set<String>, expected: Set<String>): Boolean
 }
 
 internal fun newTypeManager(): TypeManager {
@@ -178,5 +179,23 @@ private class TypeManagerImpl : TypeManager {
         }
 
         return latest
+    }
+
+    override fun doTypesMatch(actual: Set<String>, expected: Set<String>): Boolean {
+        for (exp in expected) {
+            if (!doTypesContain(actual, exp)) {
+                return false
+            }
+        }
+        return true
+    }
+
+    private fun doTypesContain(types: Set<String>, target: String): Boolean {
+        for (t in types) {
+            if (isSigIs(t, target)) {
+                return true
+            }
+        }
+        return false
     }
 }

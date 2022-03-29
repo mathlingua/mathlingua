@@ -312,4 +312,63 @@ internal class TypeManagerTest {
         assertThat(man.getLeastCommonAncestor(listOf("\\A2", "\\B2", "\\C1", "\\D1")))
             .isEqualTo(null)
     }
+
+    @Test
+    fun testDoTypesMatch() {
+        val code =
+            """
+            [\A]
+            Defines: A
+            satisfying: "A"
+            written: "A"
+
+
+            [\B]
+            Defines: B
+            satisfying: "B"
+            written: "B"
+
+
+            [\B1]
+            Defines: B1
+            means: 'B1 is \B'
+            satisfying: "B1"
+            written: "B1"
+
+            [\C]
+            Defines: C
+            satisfying: "C"
+            written: "C"
+            Providing:
+            . view:
+              as: '\A'
+              via: 'C'
+        """.trimIndent()
+
+        val validation = FrontEnd.parse(code)
+        assertThat(validation is ValidationSuccess)
+        val doc = (validation as ValidationSuccess).value
+
+        val man = newTypeManager()
+        doc.defines().forEach { man.add(it) }
+
+        // an exact type matches
+        assertThat(man.doTypesMatch(actual = setOf("\\A"), expected = setOf("\\A"))).isTrue()
+        // with an extra type matches
+        assertThat(man.doTypesMatch(actual = setOf("\\A", "\\B"), expected = setOf("\\A"))).isTrue()
+        // with a subtype matches
+        assertThat(man.doTypesMatch(actual = setOf("\\B1"), expected = setOf("\\B"))).isTrue()
+        // with an extra type and a subtype matches
+        assertThat(man.doTypesMatch(actual = setOf("\\A", "\\B1"), expected = setOf("\\B")))
+            .isTrue()
+        // with a view-as matches
+        assertThat(man.doTypesMatch(actual = setOf("\\C"), expected = setOf("\\A"))).isTrue()
+        assertThat(man.doTypesMatch(actual = setOf(), expected = setOf())).isTrue()
+
+        // the wrong type doesn't match
+        assertThat(man.doTypesMatch(actual = setOf("\\A"), expected = setOf("\\B"))).isFalse()
+        // being view-as as the wrong type doesn't match
+        // C can be viewed as \A not \B
+        assertThat(man.doTypesMatch(actual = setOf("\\C"), expected = setOf("\\B"))).isFalse()
+    }
 }

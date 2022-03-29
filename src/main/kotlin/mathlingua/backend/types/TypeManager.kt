@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.backend.transform
+package mathlingua.backend.types
 
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.defines.DefinesGroup
 import mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.providing.viewing.ViewGroup

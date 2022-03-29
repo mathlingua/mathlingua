@@ -1,4 +1,4 @@
-package mathlingua.backend.transform
+package mathlingua.backend.types
 
 import assertk.assertThat
 import assertk.assertions.isEqualTo

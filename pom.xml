@@ -4,8 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>mathlingua.org</groupId>
-    <artifactId>mlg</artifactId>
-    <version>0.15.1</version>
+    <artifactId>mathlingua</artifactId><version>0.15.1</version>
     <packaging>jar</packaging>
 
     <name>mathlingua</name>

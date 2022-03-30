@@ -2,9 +2,7 @@
 
 ./bin/build-release.sh
 
-JAR_FILE=$(ls build/releases/mathlingua-*.jar)
-
-mkdir -p release
+JAR_FILE=$(ls release/mathlingua-*.jar)
 
 $GRAALVM_HOME/bin/native-image \
   --no-fallback \

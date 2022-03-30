@@ -55,7 +55,7 @@ set -e
 cd "${ROOT_DIR}"
 
 echo "Running the backend tests..."
-./gradlew check
+mvn test
 
 echo "Running the component tests..."
 cd src/main/webapp

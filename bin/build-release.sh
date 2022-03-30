@@ -9,11 +9,11 @@ echo "Building release ${MLG_VERSION}"
 
 RED_ERROR="\033[0;31mERROR\033[0m"
 
-GRADLE_VERSION_FILE=build.gradle.kts
-echo "Checking version declaration in ${GRADLE_VERSION_FILE}"
-if [[ "$(grep "version = \"${MLG_VERSION}\"" "${GRADLE_VERSION_FILE}")" == "" ]]
+MAVEN_VERSION_FILE=pom.xml
+echo "Checking version declaration in ${MAVEN_VERSION_FILE}"
+if [[ "$(grep "<artifactId>mathlingua</artifactId><version>${MLG_VERSION}</version>" "${MAVEN_VERSION_FILE}")" == "" ]]
 then
-  echo -e "${RED_ERROR}: ${GRADLE_VERSION_FILE} doesn't have the version set to ${MLG_VERSION}"
+  echo -e "${RED_ERROR}: ${MAVEN_VERSION_FILE} doesn't have the version set to ${MLG_VERSION}"
   exit 1
 fi
 

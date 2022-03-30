@@ -27,12 +27,14 @@ echo "Building the jar"
 cd ../../..
 
 echo "Removing old release jars"
-rm -f build/releases/*.jar
+rm -f target/*.jar
 
-./gradlew build
+mvn package
 
-cp build/releases/*.jar release
+OUT_NAME=$(ls target/mathlingua-*-jar-with-dependencies.jar | sed 's|target/||' | sed 's|-jar-with-dependencies||')
+mkdir -p release
+cp target/mathlingua-*-jar-with-dependencies.jar release/${OUT_NAME}
 
 echo "Updating the documentation's mathlingua.jar"
 mkdir -p documentation/.mlg
-cp build/releases/*.jar documentation/.mlg/mathlingua.jar
+cp release/${OUT_NAME} documentation/.mlg/mathlingua.jar

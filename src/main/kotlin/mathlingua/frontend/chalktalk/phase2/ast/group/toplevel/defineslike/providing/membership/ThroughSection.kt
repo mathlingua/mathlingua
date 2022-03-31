@@ -19,36 +19,57 @@ package mathlingua.frontend.chalktalk.phase2.ast.group.toplevel.defineslike.prov
 import mathlingua.frontend.chalktalk.phase1.ast.Phase1Node
 import mathlingua.frontend.chalktalk.phase2.CodeWriter
 import mathlingua.frontend.chalktalk.phase2.ast.DEFAULT_THROUGH_SECTION
-import mathlingua.frontend.chalktalk.phase2.ast.clause.Statement
-import mathlingua.frontend.chalktalk.phase2.ast.clause.validateStatement
+import mathlingua.frontend.chalktalk.phase2.ast.clause.Identifier
+import mathlingua.frontend.chalktalk.phase2.ast.clause.validateAbstractionNode
 import mathlingua.frontend.chalktalk.phase2.ast.common.Phase2Node
 import mathlingua.frontend.chalktalk.phase2.ast.validateSection
 import mathlingua.frontend.chalktalk.phase2.ast.validateSingleArg
 import mathlingua.frontend.support.ParseError
 
 internal data class ThroughSection(
-    val statement: Statement, override val row: Int, override val column: Int
+    val item: Identifier, override val row: Int, override val column: Int
 ) : Phase2Node {
     override fun forEach(fn: (node: Phase2Node) -> Unit) {
-        fn(statement)
+        fn(item)
     }
 
     override fun toCode(isArg: Boolean, indent: Int, writer: CodeWriter): CodeWriter {
         writer.writeIndent(isArg, indent)
         writer.writeHeader("through")
-        writer.append(statement, false, 1)
+        writer.append(item, false, 1)
         return writer
     }
 
     override fun transform(chalkTransformer: (node: Phase2Node) -> Phase2Node) =
-        chalkTransformer(
-            ThroughSection(statement = chalkTransformer(statement) as Statement, row, column))
+        chalkTransformer(ThroughSection(item = chalkTransformer(item) as Identifier, row, column))
 }
 
 internal fun validateThroughSection(node: Phase1Node, errors: MutableList<ParseError>) =
     validateSection(node.resolve(), errors, DEFAULT_THROUGH_SECTION) { sec ->
-        validateSingleArg(sec, errors, DEFAULT_THROUGH_SECTION, "statement") { arg ->
-            ThroughSection(
-                statement = validateStatement(arg, errors, arg.isInline), node.row, node.column)
+        validateSingleArg(sec, errors, DEFAULT_THROUGH_SECTION, "identifier") { arg ->
+            val abs = validateAbstractionNode(arg, errors, arg.isInline)
+            if (abs.abstraction.isEnclosed ||
+                abs.abstraction.isVarArgs ||
+                abs.abstraction.parts.size != 1 ||
+                abs.abstraction.parts.first().subParams != null ||
+                abs.abstraction.parts.first().params != null ||
+                abs.abstraction.parts.first().tail != null ||
+                (abs.abstraction.subParams != null && abs.abstraction.subParams.isNotEmpty())) {
+                errors.add(
+                    ParseError(
+                        message = "Expected an identifier", row = node.row, column = node.column))
+                DEFAULT_THROUGH_SECTION
+            } else {
+                ThroughSection(
+                    item =
+                        Identifier(
+                            name = abs.abstraction.parts.first().name.text,
+                            isVarArgs = false,
+                            row = abs.row,
+                            column = abs.column,
+                            isInline = abs.isInline),
+                    node.row,
+                    node.column)
+            }
         }
     }

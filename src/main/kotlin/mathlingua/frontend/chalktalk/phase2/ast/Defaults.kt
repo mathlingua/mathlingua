@@ -478,7 +478,7 @@ internal val DEFAULT_VIA_SECTION = ViaSection(statement = DEFAULT_STATEMENT, row
 internal val DEFAULT_BY_SECTION = BySection(statement = DEFAULT_STATEMENT, row = -1, column = -1)
 
 internal val DEFAULT_THROUGH_SECTION =
-    ThroughSection(statement = DEFAULT_STATEMENT, row = -1, column = -1)
+    ThroughSection(item = DEFAULT_IDENTIFIER, row = -1, column = -1)
 
 internal val DEFAULT_MEMBERSHIP_SECTION = MembershipSection(row = -1, column = -1)
 

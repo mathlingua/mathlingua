@@ -2053,7 +2053,7 @@ internal class EndToEndCheckTest {
                       as: '\another'
                       via: 'S'
                     . membership:
-                      through: 'S'
+                      through: S
                 """.trimIndent())),
             expectedOutput =
                 """
@@ -2108,7 +2108,7 @@ internal class EndToEndCheckTest {
                       as: '\another'
                       via: 'S'
                     . membership:
-                      through: 'S'
+                      through: S
                 """.trimIndent())),
             expectedOutput =
                 """

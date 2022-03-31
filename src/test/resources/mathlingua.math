@@ -120,7 +120,7 @@ Providing:
   via: 'X'
   by: '\some.theorem'
 . membership:
-  through: 'X'
+  through: X
 
 
 [\something]

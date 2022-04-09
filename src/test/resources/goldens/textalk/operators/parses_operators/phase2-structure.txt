@@ -1,9 +1,0 @@
-ExpressionTexTalkNode(
-  children = [
-               TextTexTalkNode(
-                 type = TexTalkNodeType.Operator
-                 text = "**"
-                 isVarArg = false
-               )
-             ]
-)

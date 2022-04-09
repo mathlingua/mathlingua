@@ -1,4 +1,0 @@
-Theorem:
-then:
-. forAll: {a_k}_k
-  then: "something"

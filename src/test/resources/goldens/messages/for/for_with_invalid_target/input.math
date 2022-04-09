@@ -1,5 +1,0 @@
-Theorem:
-then:
-. forAll: 'x'
-  then: y
-

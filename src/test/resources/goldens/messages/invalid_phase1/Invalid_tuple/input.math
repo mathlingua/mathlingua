@@ -1,4 +1,0 @@
-Theorem:
-then:
-. forAll: ("a")
-  then: b

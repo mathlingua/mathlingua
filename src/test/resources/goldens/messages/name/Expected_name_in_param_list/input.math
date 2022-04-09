@@ -1,4 +1,0 @@
-Theorem:
-then:
-. forAll: f(a, "b")
-  then: x

@@ -1,0 +1,309 @@
+
+Shared
+======
+<name assignment> ::= <name> ":=" (<name> |
+                                   <tuple> |
+                                   <sequence> |
+                                   <function> |
+                                   <set>)
+<function assignment> ::= <function> ":=" <function>
+<assignment> ::= <name assignment> |
+                 <function assignment>
+
+<name> ::= [a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)? |
+           [~!@#$%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?
+<name param> ::= (<name> "..."?) |
+                 "_"
+<name param list> ::= <name param> ("," <name param>)*
+
+<regular function> ::= <name> "(" <name param list> ")"
+<sub param function> ::= <name> "_" "{" <name param list> "}"
+<sub and regular param function> ::= <name> "_" "{" <name param list> "}" "(" <name param list> ")"
+<function> ::= <regular function> |
+               <sub param function> |
+               <sub and regular param function>
+
+<sub param function sequence> ::= "{" <sub param function> "}" "_" ""{" <name param list> "}"
+<sub and regular param function sequence> ::= "{" <sub and regular param function> "}" "_" "{" <name param list> "}"
+<sequence> ::= <sub param function sequence> |
+               <sub and regular param function sequence>
+
+<tuple> ::= "(" <target> ("," <target>)* ")"
+<name or name assignment> ::= <name> |
+                              <name assignment>
+<set> ::= "{" <name or name assignment> ("," <name or name assignment>)* "}"
+<target> ::= <assignment> |
+             <name> |
+             <tuple> |
+             <sequence> |
+             <function> |
+             <set>
+
+Phase 1
+=======
+<string>[x] ::= "\"" x "\""         with " escaped with \"
+<text block> ::= "::" .* "::"       with :: escaped with {::}
+<statement>[x] ::= ("'" x "'"       without an escape for ') |
+                   ("`" x "`"       without an escape for `)
+                   where x is any character except the surrounding
+                   characters unless escaped
+<id> ::= "[" (<textalk command form> |
+             (<name> <textalk infix command form> <name>)) |
+             (<operator name> <name>) |
+             (<name> <operator name>) |
+             (<name> <operator name> <name>) "]"
+
+[<id>]
+name1: arg, arg
+. arg, arg
+name2: ...
+. name3: ...
+
+===========================================================================
+
+TexTalk
+=======
+
+<textalk command exp> ::= "\" (<name> ".")* <name>
+                              ("_" "{" <value textalk params>+ "}" "^" "{" <value textalk params>+ "}"
+                               "[" <name param list>+ "]")?
+                              ("{" <value textalk params>+ "}")?
+                              (":" "{" <value textalk params>+ "}")*
+                              ("(" <value textalk params>+ ")")?
+<textalk command form> ::= "\" (<name> ".")* <name>
+                              ("_" "{" <name param list>+ "}" "^" "{" <name param list>+ "}"
+                               "[" <name param list>+ "]")?
+                              ("{" <name param list>+ "}")?
+                              (":" "{" <name param list>+ "}")*
+                              ("(" <name param list>+ ")")?
+<textalk infix command exp> ::= <textalk command exp> "/"
+<textalk infix command form> ::= <textalk command form> "/"
+<value textalk params> ::= <value textalk exp> ("," <value textalk exp>)*
+<target params> ::= <target> ("," <target>)*
+<textalk command exp list> ::= <textalk command exp> ("," <textalk command exp list>)*
+<is textalk exp> ::= <target params> "is" <textalk command exp list>
+<signature> ::= "\" (<name> ".")* <name> (":" <name>)*
+<as textalk exp> ::= <value textalk exp> "as" <signature>
+<membership params> ::= (<name> | <textalk command exp>) ("," (<name> | <textalk command exp>))*
+<in textalk exp> ::= <target params> "in" <membership params>
+<notin textalk exp> ::= <target params> "notin" <membership params>
+<:= textalk exp> ::= <target params> ":=" <value textalk exp>
+<= textalk exp> ::= <value textalk exp> "=" <value textalk exp>
+<!= textalk exp> ::= <value textalk exp> "!=" <value textalk exp>
+<paren exp> ::= "(" <value textalk exp> ")"
+<curly exp> ::= "{" <value textalk exp> "}"
+<operator name> ::= [~!@#$%^&*-+=|<>?/]+("_" [a-zA-Z0-9]+)?
+<value textalk exp> ::= <name> |
+                        <tuple> |
+                        <sequence> |
+                        <function> |
+                        <set> |
+                        "(" <value textalk exp> ")" |
+                        "{" <value textalk exp> "}" |
+                        <operator name> <value textalk exp> |
+                        <value textalk exp> <operator name> <value textalk exp> |
+                        <value textalk exp> <operator name> |
+                        <value textalk exp> <textalk infix command exp> <value textalk exp> |
+                        <textalk command exp> |
+                        <as textalk exp> |
+                        <:= textalk exp> |
+                        <= textalk exp> |
+                        <!= textalk exp>
+
+Phase 2
+=======
+
+<clause> ::= and: |
+             not: |
+             or: |
+             exists: |
+             existsUnique: |
+             forAll: |
+             if: |
+             iff: |
+             <statement>[<value textalk exp>]
+
+<spec> ::= <statement>[<is textalk exp>] |
+           <statement>[<in textalk exp>]
+
+and: <clause>+
+
+not: <clause>
+
+or: <clause>+
+
+exists: <target>+
+where?: <spec>+
+suchThat?: <clause>+
+
+existsUnique: <target>+
+where?: <spec>+
+suchThat?: <clause>+
+
+forAll: <target>+
+where?: <spec>+
+suchThat?: <clause>+
+then: <clause>+
+
+if: <clause>+
+then: <clause>+
+
+iff: <clause>+
+then: <clause>+
+
+generated:
+from: (<name> | <function>)+
+when?: <statement>[<:= textalk exp>]+
+
+piecewise:
+when?: <clause>+
+then?: <statement>[<:= textalk exp>]+
+else?: <statement>[<:= textalk exp>]+
+
+matching: <statement>[<:= textalk exp>]+
+
+equality:
+between: <target>, <target>
+provided: (<statement>[<value textalk exp> <textalk infix command exp> <value textalk exp>] |
+           <statement>[<value textalk exp> <operator name> <value textalk exp>])
+
+membership:
+through: <name>
+
+view:
+as: <string>[<signature>]
+via: <statement>[<value textalk exp>]
+by?: <statement>[<textalk command form>]
+
+symbols: <name>+
+where: <statement>[<:= textalk exp>]+
+
+memberSymbols: <name>+
+where: <statement>[<:= textalk exp>]+
+
+<metadata item> ::= note: |
+                    author: |
+                    tag: |
+                    reference:
+
+[<id>]
+Defines: <target>
+with?: <assignment>+
+given?: <target>+
+when?: <spec>+
+means?: <statement>[<is textalk exp>]
+satisfying: (generated: | <clause>+ | <spec>+ | <:= textalk exp>+)
+expressing: (piecewise: | match: | <clause>+ | <spec>+ | <:= textalk exp>+)
+using?: <statement>[<:= textalk exp>]+
+writing?: <string>[.*]+
+written: <string>[.*]+
+called?: <string>[.*]+
+Providing?: ((view:)* |
+             symbols: |
+             memberSymbols: |
+             equality: |
+             membership:)
+Metadata?: <metadata item>+
+
+note: <string>[.*]
+
+author: <string>[.*]+
+
+tag: <string>[.*]+
+
+reference: <string>["@" (<name> ".") <name> (":page" "{" [0-9]+ "}")?
+                                                        (":offset" "{" [0-9]+ "}")?
+                                                        (":at" "{" <string>[.*] "}"]+
+
+[<id>]
+States:
+given?: <target>+
+when?: <spec>+
+that: (<clause> | <spec> | <:= textalk exp>)+
+using?: <statement>[<:= textalk exp>]+
+written: <string>[.*]+
+called?: <string>[.*]+
+Metadata?: <metadata item>+
+
+["@" "\" (<name> ".")* <name>]
+Resource:
+. type? = <string>[.*]
+. name? = <string>[.*]
+. author? = <string>[.*]+
+. homepage? = <string>[.*]
+. url? = <string>[.*]
+. offset? = <string>[.*]
+Metadata?: <metadata item>+
+
+[<id>]
+Axiom:
+given?: <target>+
+where?: <spec>+
+suchThat?: <clause>+
+then: <clause>+
+iff?: <clause>+
+using?: <statement>[<:= textalk exp>]+
+Metadata?: <metadata item>+
+
+[<id>]
+Conjecture:
+given?: <target>+
+where?: <spec>+
+suchThat?: <clause>+
+then: <clause>+
+iff?: <clause>+
+using?: <statement>[<:= textalk exp>]+
+Metadata?: <metadata item>+
+
+[<id>]
+Theorem:
+given?: <target>+
+where?: <spec>+
+suchThat?: <clause>+
+then: <clause>+
+iff?: <clause>+
+using?: <statement>[<:= textalk exp>]+
+Proof: <string>[.*]+
+Metadata?: <metadata item>+
+
+["#" (<name> ".")* <name>]
+Topic:
+content: <string>[.*]
+Metadata?: <metadata item>+
+
+Note:
+content: <string>[.*]
+Metadata?: <metadata item>+
+
+Specify: (zero: |
+          positiveInt: |
+          negativeInt: |
+          positiveFloat: |
+          negativeFloat:)
+
+zero:
+is: <string>[\signature]
+
+positiveInt:
+is: <string>[\signature]
+
+negativeInt:
+is: <string>[\signature]
+
+positiveFloat:
+is: <string>[\signature]
+
+negativeFloat:
+is: <string>[\signature]
+
+<top-level group> ::= Defines: |
+                      States: |
+                      Axiom: |
+                      Conjecture: |
+                      Theorem: |
+                      Topic: |
+                      Resource: |
+                      Specify: |
+                      Note:
+
+<document> ::= (<top-level group> | <text block>)*

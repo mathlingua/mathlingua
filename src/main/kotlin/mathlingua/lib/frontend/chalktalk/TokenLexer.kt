@@ -1,7 +1,7 @@
 package mathlingua.lib.frontend.chalktalk
 
-import mathlingua.lib.frontend.ParseError
 import java.util.Stack
+import mathlingua.lib.frontend.ParseError
 
 internal interface TokenLexer {
     fun hasNext(): Boolean
@@ -61,21 +61,13 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             if (text[i] == '\n' && i + 1 < text.length && text[i + 1] == '\n') {
                 // there is a newline followed by a line break
                 tokens.add(
-                    Token(
-                        type = TokenType.Newline,
-                        text = "<newline>",
-                        row = row,
-                        column = column
-                    )
-                )
+                    Token(type = TokenType.Newline, text = "<newline>", row = row, column = column))
                 tokens.add(
                     Token(
                         type = TokenType.LineBreak,
                         text = "<linebreak>",
                         row = row,
-                        column = column
-                    )
-                )
+                        column = column))
                 while (i < text.length && text[i] == '\n') {
                     row++
                     column = 0
@@ -87,13 +79,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             // handle indents and un-indents
             if (text[i] == '\n') {
                 tokens.add(
-                    Token(
-                        type = TokenType.Newline,
-                        text = "<newline>",
-                        row = row,
-                        column = column
-                    )
-                )
+                    Token(type = TokenType.Newline, text = "<newline>", row = row, column = column))
 
                 // move past the newline character
                 i++
@@ -109,12 +95,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                         // the only indent possible is a '. ' if no indentation
                         // has occurred yet
                         errors.add(
-                            ParseError(
-                                message = "Expected a '. '",
-                                row = row,
-                                column = column
-                            )
-                        )
+                            ParseError(message = "Expected a '. '", row = row, column = column))
                     }
                     if (indent.size > 0) {
                         indentStack.push(indent.size)
@@ -125,11 +106,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                         if (!indent.endsWithDotSpace) {
                             errors.add(
                                 ParseError(
-                                    message = "Unexpected indent",
-                                    row = row,
-                                    column = column
-                                )
-                            )
+                                    message = "Unexpected indent", row = row, column = column))
                         }
                         indentStack.push(indent.size)
                     } else if (indent.size < prevIndent) {
@@ -140,24 +117,17 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                                     type = TokenType.Unindent,
                                     text = "<unindent>",
                                     row = row,
-                                    column = column
-                                )
-                            )
+                                    column = column))
                         }
                         // after unrolling the stack while the current indent is smaller than
                         // any previously seen indents, if the last indent in the stack doesn't
                         // match the current indent, then the current indent has an additional
                         // space, which is an error
                         if ((indentStack.isNotEmpty() && indent.size != indentStack.peek()) ||
-                            (indentStack.isEmpty() && indent.size > 0)
-                        ) {
+                            (indentStack.isEmpty() && indent.size > 0)) {
                             errors.add(
                                 ParseError(
-                                    message = "Misaligned indent",
-                                    row = row,
-                                    column = column
-                                )
-                            )
+                                    message = "Misaligned indent", row = row, column = column))
                         }
                     }
                     // else: If the new line is indented the same as the previous indent,
@@ -168,13 +138,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                 // or stayed the same
                 if (indent.endsWithDotSpace) {
                     tokens.add(
-                        Token(
-                            type = TokenType.DotSpace,
-                            text = ". ",
-                            row = row,
-                            column = column
-                        )
-                    )
+                        Token(type = TokenType.DotSpace, text = ". ", row = row, column = column))
                 }
 
                 continue
@@ -217,9 +181,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                         type = TokenType.Id,
                         text = buffer.toString(),
                         row = startRow,
-                        column = startColumn
-                    )
-                )
+                        column = startColumn))
                 continue
             }
 
@@ -229,13 +191,11 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                 tokens.add(
                     Token(
                         type = streamResult.type,
-                        text = streamResult.text.removeSurrounding(
-                            streamResult.prefix, streamResult.suffix
-                        ),
+                        text =
+                            streamResult.text.removeSurrounding(
+                                streamResult.prefix, streamResult.suffix),
                         row = row,
-                        column = column
-                    )
-                )
+                        column = column))
 
                 row += streamResult.numNewlines
                 i += streamResult.text.length
@@ -256,9 +216,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                         type = textAndType.type,
                         text = textAndType.text,
                         row = row,
-                        column = column
-                    )
-                )
+                        column = column))
                 column += textAndType.text.length
                 i += textAndType.text.length
                 continue
@@ -268,13 +226,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             val identifier = text.checkName(i)
             if (identifier != null) {
                 tokens.add(
-                    Token(
-                        type = TokenType.Name,
-                        text = identifier,
-                        row = row,
-                        column = column
-                    )
-                )
+                    Token(type = TokenType.Name, text = identifier, row = row, column = column))
                 column += identifier.length
                 i += identifier.length
                 continue
@@ -284,13 +236,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             val operator = text.checkOperator(i)
             if (operator != null) {
                 tokens.add(
-                    Token(
-                        type = TokenType.Operator,
-                        text = operator,
-                        row = row,
-                        column = column
-                    )
-                )
+                    Token(type = TokenType.Operator, text = operator, row = row, column = column))
                 column += operator.length
                 i += operator.length
                 continue
@@ -304,13 +250,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                 continue
             }
 
-            errors.add(
-                ParseError(
-                    message = "Unrecognized token '$c'",
-                    row = row,
-                    column = column
-                )
-            )
+            errors.add(ParseError(message = "Unrecognized token '$c'", row = row, column = column))
 
             if (c == '\n') {
                 row++
@@ -326,9 +266,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                     ParseError(
                         message = "Unexpected indent of size ${indentStack.pop()}",
                         row = row,
-                        column = column
-                    )
-                )
+                        column = column))
             }
         }
     }
@@ -356,30 +294,28 @@ private class TokenLexerImpl(text: String) : TokenLexer {
 
 private data class TextAndType(val text: String, val type: TokenType)
 
-private val TEXT_AND_TYPES = mutableListOf(
-    TextAndType(":=", TokenType.ColonEqual),
-    TextAndType("(", TokenType.LParen),
-    TextAndType(")", TokenType.RParen),
-    TextAndType("{", TokenType.LCurly),
-    TextAndType("}", TokenType.RCurly),
-    TextAndType(",", TokenType.Comma),
-    TextAndType(":", TokenType.Colon),
-    TextAndType("_", TokenType.Underscore),
-    TextAndType("...", TokenType.DotDotDot),
-    TextAndType(". ", TokenType.DotSpace)
-)
+private val TEXT_AND_TYPES =
+    mutableListOf(
+        TextAndType(":=", TokenType.ColonEqual),
+        TextAndType("(", TokenType.LParen),
+        TextAndType(")", TokenType.RParen),
+        TextAndType("{", TokenType.LCurly),
+        TextAndType("}", TokenType.RCurly),
+        TextAndType(",", TokenType.Comma),
+        TextAndType(":", TokenType.Colon),
+        TextAndType("_", TokenType.Underscore),
+        TextAndType("...", TokenType.DotDotDot),
+        TextAndType(". ", TokenType.DotSpace))
 
 private data class StreamAndType(
-    val prefix: String, val suffix: String,
-    val escape: String?, val type: TokenType
-)
+    val prefix: String, val suffix: String, val escape: String?, val type: TokenType)
 
-private val STREAMS_AND_TYPES = mutableListOf(
-    StreamAndType("'", "'", null, TokenType.Statement),
-    StreamAndType("`", "`", null, TokenType.Statement),
-    StreamAndType("\"", "\"", "\\\"", TokenType.Text),
-    StreamAndType("::", "::", "{::}", TokenType.TextBlock)
-)
+private val STREAMS_AND_TYPES =
+    mutableListOf(
+        StreamAndType("'", "'", null, TokenType.Statement),
+        StreamAndType("`", "`", null, TokenType.Statement),
+        StreamAndType("\"", "\"", "\\\"", TokenType.Text),
+        StreamAndType("::", "::", "{::}", TokenType.TextBlock))
 
 private fun String.checkTextAndType(index: Int): TextAndType? {
     for (textAndType in TEXT_AND_TYPES) {
@@ -391,9 +327,11 @@ private fun String.checkTextAndType(index: Int): TextAndType? {
 }
 
 private data class CheckStreamAndTypeResult(
-    val type: TokenType, val text: String, val numNewlines: Int,
-    val prefix: String, val suffix: String
-)
+    val type: TokenType,
+    val text: String,
+    val numNewlines: Int,
+    val prefix: String,
+    val suffix: String)
 
 private fun String.checkStreamAndType(index: Int): CheckStreamAndTypeResult? {
     var i = index
@@ -405,9 +343,7 @@ private fun String.checkStreamAndType(index: Int): CheckStreamAndTypeResult? {
 
             var numNewlines = 0
             while (i < this.length) {
-                if (streamAndType.escape != null &&
-                    this.startsWith(streamAndType.escape, i)
-                ) {
+                if (streamAndType.escape != null && this.startsWith(streamAndType.escape, i)) {
                     buffer.append(streamAndType.escape)
                     i += streamAndType.escape.length
                 } else if (this.startsWith(streamAndType.suffix, i)) {
@@ -428,8 +364,7 @@ private fun String.checkStreamAndType(index: Int): CheckStreamAndTypeResult? {
                 text = buffer.toString(),
                 numNewlines = numNewlines,
                 prefix = streamAndType.prefix,
-                suffix = streamAndType.suffix
-            )
+                suffix = streamAndType.suffix)
         }
     }
     return null
@@ -441,9 +376,11 @@ private fun String.checkName(index: Int): String? {
     while (i < this.length && this[i].isNameChar()) {
         buffer.append(this[i++])
     }
-    if (buffer.isNotEmpty() && i < this.length && this[i] == '_' &&
-        i + 1 < this.length && this[i + 1].isNameChar()
-    ) {
+    if (buffer.isNotEmpty() &&
+        i < this.length &&
+        this[i] == '_' &&
+        i + 1 < this.length &&
+        this[i + 1].isNameChar()) {
         buffer.append(this[i++])
         while (i < this.length && this[i].isNameChar()) {
             buffer.append(this[i++])
@@ -457,10 +394,7 @@ private fun String.checkName(index: Int): String? {
 }
 
 private fun Char.isNameChar() =
-    (this in 'a'..'z') ||
-        (this in 'A'..'Z') ||
-        (this in '0'..'9') ||
-        (this in "`'\"")
+    (this in 'a'..'z') || (this in 'A'..'Z') || (this in '0'..'9') || (this in "`'\"")
 
 private fun String.checkOperator(index: Int): String? {
     val buffer = StringBuilder()
@@ -481,8 +415,7 @@ private fun String.checkOperator(index: Int): String? {
     }
 }
 
-private fun Char.isOperatorChar() =
-    (this in "~!@#$%^&*-+=|<>?'`\"")
+private fun Char.isOperatorChar() = (this in "~!@#$%^&*-+=|<>?'`\"")
 
 private data class Indent(val size: Int, val endsWithDotSpace: Boolean, val error: String?)
 

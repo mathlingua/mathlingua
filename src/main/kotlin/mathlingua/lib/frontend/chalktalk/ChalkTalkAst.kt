@@ -6,39 +6,67 @@ import mathlingua.lib.frontend.MetaData
 internal sealed interface ChalkTalkNode : HasMetaData
 
 // names
-internal data class Name(val text: String, override val metadata: MetaData) : Target, NameOrNameAssignment, NameAssignmentItem
+internal data class Name(val text: String, override val metadata: MetaData) :
+    Target, NameOrNameAssignment, NameAssignmentItem
+
 internal data class NameParam(val name: Name, val isVarArgs: Boolean)
 
 // functions
 internal sealed interface Function : Target, NameAssignmentItem
-internal data class RegularFunction(val name: Name, val params: List<NameParam>, override val metadata: MetaData) : Function
-internal data class SubParamFunction(val name: Name, val subParams: List<NameParam>, override val metadata: MetaData) : Function
-internal data class SubAndRegularParamFunction(val name: Name, val subParams: List<NameParam>, val params: List<NameParam>,
-    override val metadata: MetaData) : Function
+
+internal data class RegularFunction(
+    val name: Name, val params: List<NameParam>, override val metadata: MetaData
+) : Function
+
+internal data class SubParamFunction(
+    val name: Name, val subParams: List<NameParam>, override val metadata: MetaData
+) : Function
+
+internal data class SubAndRegularParamFunction(
+    val name: Name,
+    val subParams: List<NameParam>,
+    val params: List<NameParam>,
+    override val metadata: MetaData
+) : Function
 
 // sequences
 internal sealed interface Sequence : Target, NameAssignmentItem
-internal data class SubParamFunctionSequence(val func: SubParamFunction, val subParams: List<NameParam>,
-    override val metadata: MetaData) : Sequence
-internal data class SubAndRegularParamFunctionSequence(val func: SubAndRegularParamFunction, val subParams: List<NameParam>,
-    override val metadata: MetaData) : Sequence
+
+internal data class SubParamFunctionSequence(
+    val func: SubParamFunction, val subParams: List<NameParam>, override val metadata: MetaData
+) : Sequence
+
+internal data class SubAndRegularParamFunctionSequence(
+    val func: SubAndRegularParamFunction,
+    val subParams: List<NameParam>,
+    override val metadata: MetaData
+) : Sequence
 
 // assignments
 internal sealed interface Assignment : Target
 // <name> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface NameAssignmentItem : ChalkTalkNode
-internal data class NameAssignment(val lhs: Name, val rhs: NameAssignmentItem, override val metadata: MetaData) : Assignment, NameOrNameAssignment
-internal data class FunctionAssignment(val lhs: Function, val rhs: Function, override val metadata: MetaData) : Assignment
+
+internal data class NameAssignment(
+    val lhs: Name, val rhs: NameAssignmentItem, override val metadata: MetaData
+) : Assignment, NameOrNameAssignment
+
+internal data class FunctionAssignment(
+    val lhs: Function, val rhs: Function, override val metadata: MetaData
+) : Assignment
 
 // targets
 // <assignment> | <name> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface Target : ChalkTalkNode
 
-internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) : Target, NameAssignmentItem
+internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) :
+    Target, NameAssignmentItem
 
 // <name> | <name assignment>
 internal sealed interface NameOrNameAssignment : ChalkTalkNode
-internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) : Target, NameAssignmentItem
+
+internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) :
+    Target, NameAssignmentItem
 
 internal data class TextBlock(val text: String, override val metadata: MetaData) : ChalkTalkNode
 

@@ -1,7 +1,7 @@
 package mathlingua.lib.frontend.chalktalk
 
-import mathlingua.lib.frontend.ParseError
 import mathlingua.lib.frontend.MetaData
+import mathlingua.lib.frontend.ParseError
 
 internal interface NodeLexer {
     fun hasNext(): Boolean
@@ -36,11 +36,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         nodes.add(arg)
                     } else {
                         errors.add(
-                            ParseError(
-                                message = "Expected an argument",
-                                row = -1, column = -1
-                            )
-                        )
+                            ParseError(message = "Expected an argument", row = -1, column = -1))
                     }
                     nodes.add(EndArgument)
                 }
@@ -51,11 +47,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         nodes.add(arg)
                     } else {
                         errors.add(
-                            ParseError(
-                                message = "Expected an argument",
-                                row = -1, column = -1
-                            )
-                        )
+                            ParseError(message = "Expected an argument", row = -1, column = -1))
                     }
                     nodes.add(EndArgument)
                 }
@@ -63,27 +55,35 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                     nodes.add(
                         Text(
                             text = next.text,
-                            metadata = MetaData(row = next.row, column = next.column, isInline = !wasPrevDotSpace)
-                        )
-                    )
+                            metadata =
+                                MetaData(
+                                    row = next.row,
+                                    column = next.column,
+                                    isInline = !wasPrevDotSpace)))
                     lexer.next()
                 }
                 TokenType.Statement -> {
                     nodes.add(
                         Statement(
                             text = next.text,
-                            metadata = MetaData(row = next.row, column = next.column, isInline = !wasPrevDotSpace),
-                        )
-                    )
+                            metadata =
+                                MetaData(
+                                    row = next.row,
+                                    column = next.column,
+                                    isInline = !wasPrevDotSpace),
+                        ))
                     lexer.next()
                 }
                 TokenType.TextBlock -> {
                     nodes.add(
                         TextBlock(
                             text = next.text,
-                            metadata = MetaData(row = next.row, column = next.column, isInline = !wasPrevDotSpace),
-                        )
-                    )
+                            metadata =
+                                MetaData(
+                                    row = next.row,
+                                    column = next.column,
+                                    isInline = !wasPrevDotSpace),
+                        ))
                     lexer.next()
                 }
                 TokenType.Name -> {
@@ -105,11 +105,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                             nodes.add(arg)
                         } else {
                             errors.add(
-                                ParseError(
-                                    message = "Expected an argument",
-                                    row = -1, column = -1
-                                )
-                            )
+                                ParseError(message = "Expected an argument", row = -1, column = -1))
                         }
                         nodes.add(EndArgument)
                     }
@@ -121,11 +117,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         nodes.add(arg)
                     } else {
                         errors.add(
-                            ParseError(
-                                message = "Expected an argument",
-                                row = -1, column = -1
-                            )
-                        )
+                            ParseError(message = "Expected an argument", row = -1, column = -1))
                     }
                     nodes.add(EndArgument)
                 }
@@ -161,7 +153,11 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         nodes.add(BeginGroup)
                     }
                     inGroup = true
-                    nodes.add(Id(text = next.text, metadata = MetaData(row = next.row, column = next.column, isInline = false)))
+                    nodes.add(
+                        Id(
+                            text = next.text,
+                            metadata =
+                                MetaData(row = next.row, column = next.column, isInline = false)))
                     lexer.next()
                 }
                 TokenType.Newline -> {
@@ -179,63 +175,56 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
-                            row = next.row, column = next.column
-                        )
-                    )
+                            row = next.row,
+                            column = next.column))
                     lexer.next()
                 }
                 TokenType.RParen -> {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
-                            row = next.row, column = next.column
-                        )
-                    )
+                            row = next.row,
+                            column = next.column))
                     lexer.next()
                 }
                 TokenType.RCurly -> {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
-                            row = next.row, column = next.column
-                        )
-                    )
+                            row = next.row,
+                            column = next.column))
                     lexer.next()
                 }
                 TokenType.Comma -> {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
-                            row = next.row, column = next.column
-                        )
-                    )
+                            row = next.row,
+                            column = next.column))
                     lexer.next()
                 }
                 TokenType.Colon -> {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
-                            row = next.row, column = next.column
-                        )
-                    )
+                            row = next.row,
+                            column = next.column))
                     lexer.next()
                 }
                 TokenType.Underscore -> {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
-                            row = next.row, column = next.column
-                        )
-                    )
+                            row = next.row,
+                            column = next.column))
                     lexer.next()
                 }
                 TokenType.DotDotDot -> {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
-                            row = next.row, column = next.column
-                        )
-                    )
+                            row = next.row,
+                            column = next.column))
                     lexer.next()
                 }
             }
@@ -255,17 +244,18 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     private fun has(type: TokenType) = lexer.hasNext() && lexer.peek().type == type
 
     private fun hasHas(type1: TokenType, type2: TokenType) =
-        lexer.hasNext() && lexer.hasNextNext() &&
-            lexer.peek().type == type1 && lexer.peekPeek().type == type2
+        lexer.hasNext() &&
+            lexer.hasNextNext() &&
+            lexer.peek().type == type1 &&
+            lexer.peekPeek().type == type2
 
     private fun expect(type: TokenType): Token? {
         if (!lexer.hasNext()) {
             errors.add(
                 ParseError(
                     message = "Expected a $type token but found the end of text",
-                    row = -1, column = -1
-                )
-            )
+                    row = -1,
+                    column = -1))
             return null
         }
         val next = lexer.next()
@@ -273,9 +263,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             errors.add(
                 ParseError(
                     message = "Expected a $type but found ${next.type}",
-                    row = next.row, column = next.column
-                )
-            )
+                    row = next.row,
+                    column = next.column))
         }
         return next
     }
@@ -287,18 +276,18 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         val next = lexer.next()
         return Name(
             text = next.text,
-            metadata = MetaData(row = next.row, column = next.column, isInline = isInline)
-        )
+            metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
     private fun nameParam(isInline: Boolean): NameParam? {
         val name = name(isInline) ?: return null
-        val hasDotDotDot = if (has(TokenType.DotDotDot)) {
-            expect(TokenType.DotDotDot)
-            true
-        } else {
-            false
-        }
+        val hasDotDotDot =
+            if (has(TokenType.DotDotDot)) {
+                expect(TokenType.DotDotDot)
+                true
+            } else {
+                false
+            }
         return NameParam(name = name, isVarArgs = hasDotDotDot)
     }
 
@@ -327,9 +316,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             errors.add(
                 ParseError(
                     message = "Expected a $end but found ${next.type}",
-                    row = next.row, column = next.column
-                )
-            )
+                    row = next.row,
+                    column = next.column))
         }
         expect(end)
         return result
@@ -342,8 +330,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         val next = lexer.next()
         return Name(
             text = next.text,
-            metadata = MetaData(row = next.row, column = next.column, isInline = isInline)
-        )
+            metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
     private fun argument(isInline: Boolean): ChalkTalkNode? {

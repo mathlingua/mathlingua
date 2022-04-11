@@ -99,7 +99,12 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         inGroup = true
                         inSection = true
                     } else {
-                        nodes.add(BeginArgument)
+                        val beginNewArg = !inArg
+
+                        if (beginNewArg) {
+                            nodes.add(BeginArgument)
+                        }
+
                         val arg = argument(isInline = !wasPrevDotSpace)
                         if (arg != null) {
                             nodes.add(arg)
@@ -107,7 +112,10 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                             errors.add(
                                 ParseError(message = "Expected an argument", row = -1, column = -1))
                         }
-                        nodes.add(EndArgument)
+
+                        if (beginNewArg) {
+                            nodes.add(EndArgument)
+                        }
                     }
                 }
                 TokenType.Operator -> {
@@ -161,7 +169,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                     lexer.next()
                 }
                 TokenType.Newline -> {
-                    if (inSection) {
+                    // if there is a '. ' then the section is not finished because it has arguments
+                    if (inSection && !(lexer.hasNextNext() && lexer.peekPeek().type == TokenType.DotSpace)) {
                         nodes.add(EndSection)
                     }
                     inSection = false
@@ -171,55 +180,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 // instead they should be encountered while creating nodes
                 // where construction began through encountering a different
                 // starting token
-                TokenType.ColonEqual -> {
-                    errors.add(
-                        ParseError(
-                            message = "Unexpected token ${next.text}",
-                            row = next.row,
-                            column = next.column))
-                    lexer.next()
-                }
-                TokenType.RParen -> {
-                    errors.add(
-                        ParseError(
-                            message = "Unexpected token ${next.text}",
-                            row = next.row,
-                            column = next.column))
-                    lexer.next()
-                }
-                TokenType.RCurly -> {
-                    errors.add(
-                        ParseError(
-                            message = "Unexpected token ${next.text}",
-                            row = next.row,
-                            column = next.column))
-                    lexer.next()
-                }
-                TokenType.Comma -> {
-                    errors.add(
-                        ParseError(
-                            message = "Unexpected token ${next.text}",
-                            row = next.row,
-                            column = next.column))
-                    lexer.next()
-                }
-                TokenType.Colon -> {
-                    errors.add(
-                        ParseError(
-                            message = "Unexpected token ${next.text}",
-                            row = next.row,
-                            column = next.column))
-                    lexer.next()
-                }
-                TokenType.Underscore -> {
-                    errors.add(
-                        ParseError(
-                            message = "Unexpected token ${next.text}",
-                            row = next.row,
-                            column = next.column))
-                    lexer.next()
-                }
-                TokenType.DotDotDot -> {
+                else -> {
                     errors.add(
                         ParseError(
                             message = "Unexpected token ${next.text}",
@@ -230,6 +191,18 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             }
 
             wasPrevDotSpace = next.type == TokenType.DotSpace
+        }
+
+        if (inArg) {
+            nodes.add(EndArgument)
+        }
+
+        if (inSection) {
+            nodes.add(EndSection)
+        }
+
+        if (inGroup) {
+            nodes.add(EndGroup)
         }
     }
 
@@ -334,6 +307,16 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun argument(isInline: Boolean): ChalkTalkNode? {
+        val name = name(isInline)
+        if (name != null) {
+            return name
+        }
+
+        val op = operator(isInline)
+        if (op != null) {
+            return op
+        }
+
         return null!!
     }
 }

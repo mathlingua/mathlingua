@@ -90,7 +90,6 @@ internal object EndGroup : ChalkTalkNode {
 
 internal data class BeginSection(val name: String) : ChalkTalkNode {
     override val metadata = MetaData(row = -1, column = -1, isInline = false)
-    override fun toString() = javaClass.simpleName
 }
 
 internal object EndSection : ChalkTalkNode {

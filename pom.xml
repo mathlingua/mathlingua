@@ -15,6 +15,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <kotlin.code.style>official</kotlin.code.style>
         <kotlin.compiler.jvmTarget>1.8</kotlin.compiler.jvmTarget>
+        <spotless.version>2.21.0</spotless.version>
     </properties>
 
     <repositories>
@@ -56,6 +57,23 @@
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>2.22.2</version>
+            </plugin>
+            <plugin>
+                <groupId>com.diffplug.spotless</groupId>
+                <artifactId>spotless-maven-plugin</artifactId>
+                <version>${spotless.version}</version>
+                <configuration>
+                    <kotlin>
+                        <includes>
+                            <include>src/main/kotlin/**/*.kt</include>
+                            <include>src/test/kotlin/**/*.kt</include>
+                        </includes>
+                        <ktfmt>
+                            <version>0.18</version>
+                            <style>DROPBOX</style>
+                        </ktfmt>
+                    </kotlin>
+                </configuration>
             </plugin>
         </plugins>
     </build>

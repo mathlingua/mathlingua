@@ -9,6 +9,9 @@ internal sealed interface ChalkTalkNode : HasMetaData
 internal data class Name(val text: String, override val metadata: MetaData) :
     Target, NameOrNameAssignment, NameAssignmentItem
 
+internal data class Operator(val text: String, override val metadata: MetaData) :
+    Target, NameAssignmentItem
+
 internal data class NameParam(val name: Name, val isVarArgs: Boolean)
 
 // functions
@@ -33,18 +36,17 @@ internal data class SubAndRegularParamFunction(
 internal sealed interface Sequence : Target, NameAssignmentItem
 
 internal data class SubParamFunctionSequence(
-    val func: SubParamFunction, val subParams: List<NameParam>, override val metadata: MetaData
+    val func: SubParamFunction, override val metadata: MetaData
 ) : Sequence
 
 internal data class SubAndRegularParamFunctionSequence(
     val func: SubAndRegularParamFunction,
-    val subParams: List<NameParam>,
     override val metadata: MetaData
 ) : Sequence
 
 // assignments
 internal sealed interface Assignment : Target
-// <name> | <tuple> | <sequence> | <function> | <set>
+// <name> | <operator> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface NameAssignmentItem : ChalkTalkNode
 
 internal data class NameAssignment(
@@ -55,9 +57,12 @@ internal data class FunctionAssignment(
     val lhs: Function, val rhs: Function, override val metadata: MetaData
 ) : Assignment
 
+// <target> | <text> | <statement>
+internal sealed interface Argument : ChalkTalkNode
+
 // targets
-// <assignment> | <name> | <tuple> | <sequence> | <function> | <set>
-internal sealed interface Target : ChalkTalkNode
+// <assignment> | <name> | <operator> | <tuple> | <sequence> | <function> | <set>
+internal sealed interface Target : Argument
 
 internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) :
     Target, NameAssignmentItem
@@ -72,11 +77,9 @@ internal data class TextBlock(val text: String, override val metadata: MetaData)
 
 internal data class Id(val text: String, override val metadata: MetaData) : ChalkTalkNode
 
-internal data class Statement(val text: String, override val metadata: MetaData) : ChalkTalkNode
+internal data class Statement(val text: String, override val metadata: MetaData) : Argument
 
-internal data class Text(val text: String, override val metadata: MetaData) : ChalkTalkNode
-
-internal sealed class Section(val name: String) : ChalkTalkNode
+internal data class Text(val text: String, override val metadata: MetaData) : Argument
 
 internal object BeginGroup : ChalkTalkNode {
     override val metadata = MetaData(row = -1, column = -1, isInline = false)

@@ -17,61 +17,29 @@ internal class NodeLexerTest {
             metadata = MetaData(
                 row = 0,
                 column = 0,
-                isInline = true
+                isInline = false
             )
         )
     ))
 
     @Test
-    fun `correctly parses single name`() = runTest("someName", listOf(
-        BeginArgument,
-        Name(
-            text = "someName",
-            metadata = MetaData(
-                row = 0,
-                column = 0,
-                isInline = true
-            )
-        ),
-        EndArgument
-    ))
-
-    @Test
-    fun `correctly parses single operator`() = runTest("*+-", listOf(
-        BeginArgument,
-        Name(
-            text = "*+-",
-            metadata = MetaData(
-                row = 0,
-                column = 0,
-                isInline = true
-            )
-        ),
-        EndArgument
-    ))
-
-    @Test
-    fun `correctly parses single section`() = runTest("""
-        iff:
-    """.trimIndent(), listOf(
+    fun `correctly parses single section group without an arg`() = runTest("someName:", listOf(
         BeginGroup,
-        BeginSection(name = "iff"),
+        BeginSection(name = "someName"),
         EndSection,
         EndGroup
     ))
 
     @Test
-    fun `correctly parses single section with single name argument`() = runTest("""
-        iff: someName
-    """.trimIndent(), listOf(
+    fun `correctly parses a single section group with a name arg`() = runTest("someName: xyz", listOf(
         BeginGroup,
-        BeginSection(name = "iff"),
+        BeginSection(name = "someName"),
         BeginArgument,
         Name(
-            text = "someName",
+            text = "xyz",
             metadata = MetaData(
                 row = 0,
-                column = 5,
+                column = 10,
                 isInline = true
             )
         ),
@@ -80,17 +48,16 @@ internal class NodeLexerTest {
         EndGroup
     ))
 
-    /*
     @Test
-    fun `correctly parses single section with single non-inline name argument`() = runTest("""
-        iff:
-        . someName
+    fun `correctly parses a single section group with an indented name arg`() = runTest("""
+        someName:
+        . xyz
     """.trimIndent(), listOf(
         BeginGroup,
-        BeginSection(name = "iff"),
+        BeginSection(name = "someName"),
         BeginArgument,
         Name(
-            text = "someName",
+            text = "xyz",
             metadata = MetaData(
                 row = 1,
                 column = 2,
@@ -101,33 +68,79 @@ internal class NodeLexerTest {
         EndSection,
         EndGroup
     ))
-     */
 
     @Test
-    fun `correctly parses multiple sections with single name argument`() = runTest("""
-        iff: someName
-        then: anotherName
+    fun `correctly parses a single section group with mixed name args`() = runTest("""
+        someName: a, b
+        . c, d
+        . e
     """.trimIndent(), listOf(
         BeginGroup,
-        BeginSection(name = "iff"),
+        BeginSection(name = "someName"),
         BeginArgument,
         Name(
-            text = "someName",
+            text = "a",
             metadata = MetaData(
                 row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        BeginArgument,
+        Name(
+            text = "b",
+            metadata = MetaData(
+                row = 0,
+                column = 13,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        BeginArgument,
+        Name(
+            text = "c",
+            metadata = MetaData(
+                row = 1,
+                column = 2,
+                isInline = false
+            )
+        ),
+        EndArgument,
+        BeginArgument,
+        Name(
+            text = "d",
+            metadata = MetaData(
+                row = 1,
                 column = 5,
                 isInline = true
             )
         ),
         EndArgument,
-        EndSection,
-        BeginSection(name = "then"),
         BeginArgument,
         Name(
-            text = "anotherName",
+            text = "e",
             metadata = MetaData(
-                row = 1,
-                column = 6,
+                row = 2,
+                column = 2,
+                isInline = false
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with an operator arg`() = runTest("someName: *+", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        Operator(
+            text = "*+",
+            metadata = MetaData(
+                row = 0,
+                column = 10,
                 isInline = true
             )
         ),
@@ -135,6 +148,594 @@ internal class NodeLexerTest {
         EndSection,
         EndGroup
     ))
+
+    @Test
+    fun `correctly parses a single section group with an regular function arg`() = runTest("someName: f(x, y)", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        RegularFunction(
+            name = Name(
+                text = "f",
+                metadata = MetaData(
+                    row = 0,
+                    column = 10,
+                    isInline = true
+                )
+            ),
+            params = listOf(
+                NameParam(
+                    Name(
+                        text = "x",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 12,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                ),
+                NameParam(
+                    Name(
+                        text = "y",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 15,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with an sub params function arg`() = runTest("someName: f_{x, y}", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        SubParamFunction(
+            name = Name(
+                text = "f",
+                metadata = MetaData(
+                    row = 0,
+                    column = 10,
+                    isInline = true
+                )
+            ),
+            subParams = listOf(
+                NameParam(
+                    Name(
+                        text = "x",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 13,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                ),
+                NameParam(
+                    Name(
+                        text = "y",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 16,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a sub and regular params function arg`() = runTest("someName: f_{i, j}(x, y)", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        SubAndRegularParamFunction(
+            name = Name(
+                text = "f",
+                metadata = MetaData(
+                    row = 0,
+                    column = 10,
+                    isInline = true
+                )
+            ),
+            subParams = listOf(
+                NameParam(
+                    Name(
+                        text = "i",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 13,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                ),
+                NameParam(
+                    Name(
+                        text = "j",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 16,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                )
+            ),
+            params = listOf(
+                NameParam(
+                    Name(
+                        text = "x",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 19,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                ),
+                NameParam(
+                    Name(
+                        text = "y",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 22,
+                            isInline = true
+                        )
+                    ),
+                    isVarArgs = false
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a sub params function sequence arg`() = runTest("someName: {f_{x, y}}_{x, y}", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        SubParamFunctionSequence(
+            func = SubParamFunction(
+                name = Name(
+                    text = "f",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 11,
+                        isInline = true
+                    )
+                ),
+                subParams = listOf(
+                    NameParam(
+                        Name(
+                            text = "x",
+                            metadata = MetaData(
+                                row = 0,
+                                column = 14,
+                                isInline = true
+                            )
+                        ),
+                        isVarArgs = false
+                    ),
+                    NameParam(
+                        Name(
+                            text = "y",
+                            metadata = MetaData(
+                                row = 0,
+                                column = 17,
+                                isInline = true
+                            )
+                        ),
+                        isVarArgs = false
+                    )
+                ),
+                metadata = MetaData(
+                    row = 0,
+                    column = 11,
+                    isInline = true
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a sub and regular params function sequence arg`() = runTest("someName: {f_{i, j}(x, y)}_{i, j}", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        SubAndRegularParamFunctionSequence(
+            func = SubAndRegularParamFunction(
+                name = Name(
+                    text = "f",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 11,
+                        isInline = true
+                    )
+                ),
+                subParams = listOf(
+                    NameParam(
+                        Name(
+                            text = "i",
+                            metadata = MetaData(
+                                row = 0,
+                                column = 14,
+                                isInline = true
+                            )
+                        ),
+                        isVarArgs = false
+                    ),
+                    NameParam(
+                        Name(
+                            text = "j",
+                            metadata = MetaData(
+                                row = 0,
+                                column = 17,
+                                isInline = true
+                            )
+                        ),
+                        isVarArgs = false
+                    )
+                ),
+                params = listOf(
+                    NameParam(
+                        Name(
+                            text = "x",
+                            metadata = MetaData(
+                                row = 0,
+                                column = 20,
+                                isInline = true
+                            )
+                        ),
+                        isVarArgs = false
+                    ),
+                    NameParam(
+                        Name(
+                            text = "y",
+                            metadata = MetaData(
+                                row = 0,
+                                column = 23,
+                                isInline = true
+                            )
+                        ),
+                        isVarArgs = false
+                    )
+                ),
+                metadata = MetaData(
+                    row = 0,
+                    column = 11,
+                    isInline = true
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a basic set arg`() = runTest("someName: {x, y}", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        Set(
+            items = listOf(
+                Name(
+                    text = "x",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 11,
+                        isInline = true
+                    )
+                ),
+                Name(
+                    text = "y",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 14,
+                        isInline = true
+                    )
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a colon equals set arg`() = runTest("someName: {x := a, y}", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        Set(
+            items = listOf(
+                NameAssignment(
+                    lhs = Name(
+                        text = "x",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 11,
+                            isInline = true
+                        )
+                    ),
+                    rhs = Name(
+                        text = "a",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 16,
+                            isInline = true
+                        )
+                    ),
+                    metadata = MetaData(
+                        row = 0,
+                        column = 11,
+                        isInline = true
+                    )
+                ),
+                Name(
+                    text = "y",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 19,
+                        isInline = true
+                    )
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a basic tuple arg`() = runTest("someName: (x, y)", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        Tuple(
+            targets = listOf(
+                Name(
+                    text = "x",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 11,
+                        isInline = true
+                    )
+                ),
+                Name(
+                    text = "y",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 14,
+                        isInline = true
+                    )
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a colon equals tuple arg`() = runTest("someName: (x := a, y)", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        Tuple(
+            targets = listOf(
+                NameAssignment(
+                    lhs = Name(
+                        text = "x",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 11,
+                            isInline = true
+                        )
+                    ),
+                    rhs = Name(
+                        text = "a",
+                        metadata = MetaData(
+                            row = 0,
+                            column = 16,
+                            isInline = true
+                        )
+                    ),
+                    metadata = MetaData(
+                        row = 0,
+                        column = 11,
+                        isInline = true
+                    )
+                ),
+                Name(
+                    text = "y",
+                    metadata = MetaData(
+                        row = 0,
+                        column = 19,
+                        isInline = true
+                    )
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses a single section group with a simple name assignment arg`() = runTest("someName: x := y", listOf(
+        BeginGroup,
+        BeginSection(name = "someName"),
+        BeginArgument,
+        NameAssignment(
+            lhs = Name(
+                text = "x",
+                metadata = MetaData(
+                    row = 0,
+                    column = 10,
+                    isInline = true
+                )
+            ),
+            rhs = Name(
+                text = "y",
+                metadata = MetaData(
+                    row = 0,
+                    column = 15,
+                    isInline = true
+                )
+            ),
+            metadata = MetaData(
+                row = 0,
+                column = 10,
+                isInline = true
+            )
+        ),
+        EndArgument,
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses multi section groups`() = runTest("""
+        sectionA:
+        sectionB:
+        sectionC:
+    """.trimIndent(), listOf(
+        BeginGroup,
+        BeginSection(name = "sectionA"),
+        EndSection,
+        BeginSection(name = "sectionB"),
+        EndSection,
+        BeginSection(name = "sectionC"),
+        EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses groups with groups as args`() = runTest("""
+        sectionA:
+        . subA:
+          subB:
+        sectionB:
+    """.trimIndent(), listOf(
+        BeginGroup,
+            BeginSection(name = "sectionA"),
+                BeginArgument,
+                    BeginGroup,
+                        BeginSection(name = "subA"),
+                        EndSection,
+                        BeginSection(name = "subB"),
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+            EndSection,
+            BeginSection(name = "sectionB"),
+            EndSection,
+        EndGroup
+    ))
+
+/*
+    BeginGroup,
+        BeginSection(name=sectionA),
+            BeginArgument,
+                BeginGroup,
+                    BeginSection(name=subA),
+                    EndSection,
+                    BeginSection(name=subB),
+                    EndSection,
+                    BeginSection(name=sectionB),
+                    EndSection,
+                EndGroup,
+            EndArgument,
+        EndSection,
+    EndGroup
+*/
+
+    /*
+        BeginGroup,
+            BeginSection(name=sectionA),
+                BeginArgument,
+                    BeginGroup,
+                        BeginSection(name=subA),
+                        EndSection,
+                        BeginSection(name=subB),
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+                BeginArgument,
+                    BeginGroup,
+                        BeginSection(name=sectionB),
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+            EndSection,
+        EndGroup
+
+     */
 }
 
 private fun runTest(text: String, expected: List<ChalkTalkNode>) {

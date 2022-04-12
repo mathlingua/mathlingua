@@ -33,7 +33,7 @@ internal enum class TokenType {
     TextBlock,
     Name,
     Operator,
-    Unindent,
+    UnIndent,
     DotSpace,
     LineBreak,
     Id,
@@ -114,7 +114,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                             indentStack.pop()
                             tokens.add(
                                 Token(
-                                    type = TokenType.Unindent,
+                                    type = TokenType.UnIndent,
                                     text = "<unindent>",
                                     row = row,
                                     column = column))
@@ -442,3 +442,21 @@ private fun String.getIndent(index: Int): Indent {
     }
     return Indent(size, endsWithDotSpace, error)
 }
+
+fun main() {
+    val text = """
+        a:
+        . b:
+          c:
+          . d:
+          e:
+        f:
+    """.trimIndent()
+    val lexer = newTokenLexer(text)
+    while (lexer.hasNext()) {
+        println(lexer.next())
+    }
+    println("Errors:")
+    lexer.errors().map { println(it) }
+}
+

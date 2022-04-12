@@ -504,18 +504,12 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             expect(TokenType.Newline)
         }
         while (lexer.hasNext()) {
-            val peek = lexer.peek()
-            if (peek.type == TokenType.LineBreak ||
-                peek.type == TokenType.UnIndent) {
-                lexer.next() // move past the line break or un-indent
+            if (!lexer.hasHas(TokenType.Name, TokenType.Colon)) {
                 break
             }
             processSection()
         }
-        if (lexer.has(TokenType.UnIndent)) {
-            lexer.next()
-        }
-        if (lexer.has(TokenType.LineBreak)) {
+        while (lexer.has(TokenType.LineBreak)) {
             lexer.next()
         }
         nodes.add(EndGroup)
@@ -529,8 +523,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             val peek = lexer.peek()
             val newlineButNotDotSpace = peek.type == TokenType.Newline &&
                 !(lexer.hasNextNext() && lexer.peekPeek().type == TokenType.DotSpace)
-            if (peek.type == TokenType.UnIndent || newlineButNotDotSpace) {
-                lexer.next() // move past the un-indent or newline
+            if (newlineButNotDotSpace) {
+                lexer.next() // move past newline
                 break
             }
             // either the next tokens are <newline><dot-space> or tokens for an argument
@@ -544,9 +538,10 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 true
             }
             processArgument(isInline)
-        }
-        if (lexer.has(TokenType.UnIndent)) {
-            lexer.next() // move past the un-indent to end the section
+            if (lexer.has(TokenType.UnIndent)) {
+                lexer.next() // move past the un-indent to end the section
+                break
+            }
         }
         nodes.add(EndSection)
     }

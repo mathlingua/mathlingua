@@ -677,65 +677,155 @@ internal class NodeLexerTest {
 
     @Test
     fun `correctly parses groups with groups as args`() = runTest("""
-        sectionA:
-        . subA:
-          subB:
-        sectionB:
+        A:
+        . X:
+        B:
     """.trimIndent(), listOf(
         BeginGroup,
-            BeginSection(name = "sectionA"),
+            BeginSection(name = "A"),
                 BeginArgument,
                     BeginGroup,
-                        BeginSection(name = "subA"),
-                        EndSection,
-                        BeginSection(name = "subB"),
+                        BeginSection(name = "X"),
                         EndSection,
                     EndGroup,
                 EndArgument,
             EndSection,
-            BeginSection(name = "sectionB"),
+            BeginSection(name = "B"),
             EndSection,
         EndGroup
     ))
 
-/*
-    BeginGroup,
-        BeginSection(name=sectionA),
-            BeginArgument,
-                BeginGroup,
-                    BeginSection(name=subA),
-                    EndSection,
-                    BeginSection(name=subB),
-                    EndSection,
-                    BeginSection(name=sectionB),
-                    EndSection,
-                EndGroup,
-            EndArgument,
-        EndSection,
-    EndGroup
-*/
-
-    /*
+    @Test
+    fun `correctly parses groups with nested groups as args`() = runTest("""
+        A:
+        . X:
+          . Y:
+        B:
+    """.trimIndent(), listOf(
         BeginGroup,
-            BeginSection(name=sectionA),
+            BeginSection(name = "A"),
                 BeginArgument,
                     BeginGroup,
-                        BeginSection(name=subA),
-                        EndSection,
-                        BeginSection(name=subB),
+                        BeginSection(name = "X"),
+                            BeginArgument,
+                                BeginGroup,
+                                    BeginSection(name = "Y"),
+                                    EndSection,
+                                EndGroup,
+                            EndArgument,
                         EndSection,
                     EndGroup,
                 EndArgument,
+            EndSection,
+            BeginSection(name = "B"),
+            EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses groups with deeply nested groups as args`() = runTest("""
+        A:
+        . X:
+          . Y:
+            . Z:
+        B:
+    """.trimIndent(), listOf(
+        BeginGroup,
+            BeginSection(name = "A"),
                 BeginArgument,
                     BeginGroup,
-                        BeginSection(name=sectionB),
+                        BeginSection(name = "X"),
+                            BeginArgument,
+                                BeginGroup,
+                                    BeginSection(name = "Y"),
+                                        BeginArgument,
+                                            BeginGroup,
+                                                BeginSection(name = "Z"),
+                                                EndSection,
+                                            EndGroup,
+                                        EndArgument,
+                                    EndSection,
+                                EndGroup,
+                            EndArgument,
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+            EndSection,
+            BeginSection(name = "B"),
+            EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses groups with deeply nested groups as args and offset trailing section`() = runTest("""
+        A:
+        . X:
+          . Y:
+            . Z:
+          B:
+    """.trimIndent(), listOf(
+        BeginGroup,
+            BeginSection(name = "A"),
+                BeginArgument,
+                    BeginGroup,
+                        BeginSection(name = "X"),
+                            BeginArgument,
+                                BeginGroup,
+                                    BeginSection(name = "Y"),
+                                        BeginArgument,
+                                            BeginGroup,
+                                                BeginSection(name = "Z"),
+                                                EndSection,
+                                            EndGroup,
+                                        EndArgument,
+                                    EndSection,
+                                EndGroup,
+                            EndArgument,
+                        EndSection,
+                        BeginSection(name = "B"),
                         EndSection,
                     EndGroup,
                 EndArgument,
             EndSection,
         EndGroup
+    ))
 
-     */
+    @Test
+    fun `correctly parses groups with deeply nested groups as args and offset trailing section and aligned section`() = runTest("""
+        A:
+        . X:
+          . Y:
+            . Z:
+          B:
+        C:
+    """.trimIndent(), listOf(
+        BeginGroup,
+            BeginSection(name = "A"),
+                BeginArgument,
+                    BeginGroup,
+                        BeginSection(name = "X"),
+                            BeginArgument,
+                                BeginGroup,
+                                    BeginSection(name = "Y"),
+                                        BeginArgument,
+                                            BeginGroup,
+                                                BeginSection(name = "Z"),
+                                                EndSection,
+                                            EndGroup,
+                                        EndArgument,
+                                    EndSection,
+                                EndGroup,
+                            EndArgument,
+                        EndSection,
+                        BeginSection(name = "B"),
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+            EndSection,
+            BeginSection(name = "C"),
+            EndSection,
+        EndGroup
+    ))
 }
 
 private fun runTest(text: String, expected: List<ChalkTalkNode>) {

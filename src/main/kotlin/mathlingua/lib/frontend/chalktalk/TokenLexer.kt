@@ -442,21 +442,3 @@ private fun String.getIndent(index: Int): Indent {
     }
     return Indent(size, endsWithDotSpace, error)
 }
-
-fun main() {
-    val text = """
-        a:
-        . b:
-          c:
-          . d:
-          e:
-        f:
-    """.trimIndent()
-    val lexer = newTokenLexer(text)
-    while (lexer.hasNext()) {
-        println(lexer.next())
-    }
-    println("Errors:")
-    lexer.errors().map { println(it) }
-}
-

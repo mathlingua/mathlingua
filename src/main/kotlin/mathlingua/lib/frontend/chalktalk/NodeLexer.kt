@@ -2,6 +2,34 @@ package mathlingua.lib.frontend.chalktalk
 
 import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ParseError
+import mathlingua.lib.frontend.ast.Argument
+import mathlingua.lib.frontend.ast.BeginArgument
+import mathlingua.lib.frontend.ast.BeginGroup
+import mathlingua.lib.frontend.ast.BeginSection
+import mathlingua.lib.frontend.ast.ChalkTalkNode
+import mathlingua.lib.frontend.ast.EndArgument
+import mathlingua.lib.frontend.ast.EndGroup
+import mathlingua.lib.frontend.ast.EndSection
+import mathlingua.lib.frontend.ast.Function
+import mathlingua.lib.frontend.ast.FunctionAssignment
+import mathlingua.lib.frontend.ast.Id
+import mathlingua.lib.frontend.ast.Name
+import mathlingua.lib.frontend.ast.NameAssignment
+import mathlingua.lib.frontend.ast.NameAssignmentItem
+import mathlingua.lib.frontend.ast.NameOrNameAssignment
+import mathlingua.lib.frontend.ast.NameParam
+import mathlingua.lib.frontend.ast.Operator
+import mathlingua.lib.frontend.ast.RegularFunction
+import mathlingua.lib.frontend.ast.Set
+import mathlingua.lib.frontend.ast.Statement
+import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
+import mathlingua.lib.frontend.ast.SubAndRegularParamFunctionSequence
+import mathlingua.lib.frontend.ast.SubParamFunction
+import mathlingua.lib.frontend.ast.SubParamFunctionSequence
+import mathlingua.lib.frontend.ast.Target
+import mathlingua.lib.frontend.ast.Text
+import mathlingua.lib.frontend.ast.TextBlock
+import mathlingua.lib.frontend.ast.Tuple
 
 internal interface NodeLexer {
     fun hasNext(): Boolean

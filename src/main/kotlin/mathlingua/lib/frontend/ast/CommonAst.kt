@@ -1,9 +1,8 @@
-package mathlingua.lib.frontend.chalktalk
+package mathlingua.lib.frontend.ast
 
-import mathlingua.lib.frontend.HasMetaData
 import mathlingua.lib.frontend.MetaData
 
-internal sealed interface ChalkTalkNode : HasMetaData
+internal sealed interface CommonNode : ChalkTalkNode, TexTalkNode
 
 // names
 internal data class Name(val text: String, override val metadata: MetaData) :
@@ -47,7 +46,7 @@ internal data class SubAndRegularParamFunctionSequence(
 // assignments
 internal sealed interface Assignment : Target
 // <name> | <operator> | <tuple> | <sequence> | <function> | <set>
-internal sealed interface NameAssignmentItem : ChalkTalkNode
+internal sealed interface NameAssignmentItem : CommonNode
 
 internal data class NameAssignment(
     val lhs: Name, val rhs: NameAssignmentItem, override val metadata: MetaData
@@ -58,7 +57,7 @@ internal data class FunctionAssignment(
 ) : Assignment
 
 // <target> | <text> | <statement>
-internal sealed interface Argument : ChalkTalkNode
+internal sealed interface Argument : CommonNode
 
 // targets
 // <assignment> | <name> | <operator> | <tuple> | <sequence> | <function> | <set>
@@ -68,44 +67,8 @@ internal data class Tuple(val targets: List<Target>, override val metadata: Meta
     Target, NameAssignmentItem
 
 // <name> | <name assignment>
-internal sealed interface NameOrNameAssignment : ChalkTalkNode
+internal sealed interface NameOrNameAssignment : CommonNode
 
 internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) :
     Target, NameAssignmentItem
 
-internal data class TextBlock(val text: String, override val metadata: MetaData) : ChalkTalkNode
-
-internal data class Id(val text: String, override val metadata: MetaData) : ChalkTalkNode
-
-internal data class Statement(val text: String, override val metadata: MetaData) : Argument
-
-internal data class Text(val text: String, override val metadata: MetaData) : Argument
-
-internal object BeginGroup : ChalkTalkNode {
-    override val metadata = MetaData(row = -1, column = -1, isInline = false)
-    override fun toString() = javaClass.simpleName
-}
-
-internal object EndGroup : ChalkTalkNode {
-    override val metadata = MetaData(row = -1, column = -1, isInline = false)
-    override fun toString() = javaClass.simpleName
-}
-
-internal data class BeginSection(val name: String) : ChalkTalkNode {
-    override val metadata = MetaData(row = -1, column = -1, isInline = false)
-}
-
-internal object EndSection : ChalkTalkNode {
-    override val metadata = MetaData(row = -1, column = -1, isInline = false)
-    override fun toString() = javaClass.simpleName
-}
-
-internal object BeginArgument : ChalkTalkNode {
-    override val metadata = MetaData(row = -1, column = -1, isInline = false)
-    override fun toString() = javaClass.simpleName
-}
-
-internal object EndArgument : ChalkTalkNode {
-    override val metadata = MetaData(row = -1, column = -1, isInline = false)
-    override fun toString() = javaClass.simpleName
-}

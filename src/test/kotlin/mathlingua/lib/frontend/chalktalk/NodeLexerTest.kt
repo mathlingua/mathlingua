@@ -5,6 +5,25 @@ import strikt.api.expect
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 import kotlin.test.Test
+import mathlingua.lib.frontend.ast.BeginArgument
+import mathlingua.lib.frontend.ast.BeginGroup
+import mathlingua.lib.frontend.ast.BeginSection
+import mathlingua.lib.frontend.ast.ChalkTalkNode
+import mathlingua.lib.frontend.ast.EndArgument
+import mathlingua.lib.frontend.ast.EndGroup
+import mathlingua.lib.frontend.ast.EndSection
+import mathlingua.lib.frontend.ast.Name
+import mathlingua.lib.frontend.ast.NameAssignment
+import mathlingua.lib.frontend.ast.NameParam
+import mathlingua.lib.frontend.ast.Operator
+import mathlingua.lib.frontend.ast.RegularFunction
+import mathlingua.lib.frontend.ast.Set
+import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
+import mathlingua.lib.frontend.ast.SubAndRegularParamFunctionSequence
+import mathlingua.lib.frontend.ast.SubParamFunction
+import mathlingua.lib.frontend.ast.SubParamFunctionSequence
+import mathlingua.lib.frontend.ast.TextBlock
+import mathlingua.lib.frontend.ast.Tuple
 
 internal class NodeLexerTest {
     @Test

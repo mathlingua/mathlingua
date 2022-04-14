@@ -18,7 +18,7 @@ import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameAssignmentItem
 import mathlingua.lib.frontend.ast.NameOrNameAssignment
 import mathlingua.lib.frontend.ast.NameParam
-import mathlingua.lib.frontend.ast.Operator
+import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.Statement
@@ -209,12 +209,12 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         return result
     }
 
-    private fun operator(isInline: Boolean): Operator? {
+    private fun operator(isInline: Boolean): OperatorName? {
         if (!lexer.has(TokenType.Operator)) {
             return null
         }
         val next = lexer.next()
-        return Operator(
+        return OperatorName(
             text = next.text,
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }

@@ -4,17 +4,19 @@ import mathlingua.lib.frontend.MetaData
 
 internal sealed interface CommonNode : ChalkTalkNode, TexTalkNode
 
+internal interface NameOrFunction : CommonNode
+
 // names
 internal data class Name(val text: String, override val metadata: MetaData) :
-    Target, NameOrNameAssignment, NameAssignmentItem
+    Target, NameOrNameAssignment, NameAssignmentItem, NameOrFunction
 
-internal data class Operator(val text: String, override val metadata: MetaData) :
-    Target, NameAssignmentItem
+internal data class OperatorName(val text: String, override val metadata: MetaData) :
+    Target, NameAssignmentItem, NameOrFunction
 
 internal data class NameParam(val name: Name, val isVarArgs: Boolean)
 
 // functions
-internal sealed interface Function : Target, NameAssignmentItem
+internal sealed interface Function : Target, NameAssignmentItem, NameOrFunction
 
 internal data class RegularFunction(
     val name: Name, val params: List<NameParam>, override val metadata: MetaData

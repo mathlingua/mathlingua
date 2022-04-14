@@ -235,12 +235,12 @@ Metadata?: <metadata item>+
 
 ["@" "\" (<name> ".")* <name>]
 Resource:
-. type? = <string>[.*]
-. name? = <string>[.*]
-. author? = <string>[.*]+
-. homepage? = <string>[.*]
-. url? = <string>[.*]
-. offset? = <string>[.*]
+. type?: <string>[.*]
+. name?: <string>[.*]
+. author?: <string>[.*]+
+. homepage?: <string>[.*]
+. url?:  <string>[.*]
+. offset?: <string>[.*]
 Metadata?: <metadata item>+
 
 [<id>]

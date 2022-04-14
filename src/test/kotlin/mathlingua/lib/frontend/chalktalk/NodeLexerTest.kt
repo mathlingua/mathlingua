@@ -15,7 +15,7 @@ import mathlingua.lib.frontend.ast.EndSection
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameParam
-import mathlingua.lib.frontend.ast.Operator
+import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
@@ -155,7 +155,7 @@ internal class NodeLexerTest {
         BeginGroup,
         BeginSection(name = "someName"),
         BeginArgument,
-        Operator(
+        OperatorName(
             text = "*+",
             metadata = MetaData(
                 row = 0,

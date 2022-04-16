@@ -264,9 +264,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             if (indent > 0) {
                 errors.add(
                     ParseError(
-                        message = "Unexpected indent of size $indent",
-                        row = row,
-                        column = column))
+                        message = "Unexpected indent of size $indent", row = row, column = column))
             }
         }
     }

@@ -94,12 +94,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         val next = lexer.next()
         return Statement(
             text = next.text,
-            metadata = MetaData(
-                row = next.row,
-                column = next.column,
-                isInline = isInline
-            )
-        )
+            metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
     private fun text(isInline: Boolean): Text? {
@@ -109,12 +104,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         val next = lexer.next()
         return Text(
             text = next.text,
-            metadata = MetaData(
-                row = next.row,
-                column = next.column,
-                isInline = isInline
-            )
-        )
+            metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
     private fun argument(isInline: Boolean): Argument? {
@@ -142,20 +132,21 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun nameParam(isInline: Boolean): NameParam? {
-        val name = name(isInline)
-            ?: if (lexer.has(TokenType.Underscore)) {
-                val underscore = lexer.next()
-                Name(
-                    text = underscore.text,
-                    metadata = MetaData(
-                        row = underscore.row,
-                        column = underscore.column,
-                        isInline = isInline
-                    )
-                )
-            } else {
-                null
-            } ?: return null
+        val name =
+            name(isInline)
+                ?: if (lexer.has(TokenType.Underscore)) {
+                    val underscore = lexer.next()
+                    Name(
+                        text = underscore.text,
+                        metadata =
+                            MetaData(
+                                row = underscore.row,
+                                column = underscore.column,
+                                isInline = isInline))
+                } else {
+                    null
+                }
+                    ?: return null
         val hasDotDotDot =
             if (lexer.has(TokenType.DotDotDot)) {
                 expect(TokenType.DotDotDot)
@@ -181,9 +172,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 ParseError(
                     message = "Unexpected token ${next.text}",
                     row = next.row,
-                    column = next.column
-                )
-            )
+                    column = next.column))
         }
         return result
     }
@@ -221,7 +210,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
 
     private fun function(isInline: Boolean): Function? {
         // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
-        if (!lexer.hasHas(TokenType.Name, TokenType.LParen) && !lexer.hasHas(TokenType.Name, TokenType.Underscore)) {
+        if (!lexer.hasHas(TokenType.Name, TokenType.LParen) &&
+            !lexer.hasHas(TokenType.Name, TokenType.Underscore)) {
             return null
         }
 
@@ -233,38 +223,35 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 name = name,
                 subParams = subParams,
                 params = regularParams,
-                metadata = MetaData(
-                    row = name.metadata.row,
-                    column = name.metadata.column,
-                    isInline = name.metadata.isInline
-                )
-            )
+                metadata =
+                    MetaData(
+                        row = name.metadata.row,
+                        column = name.metadata.column,
+                        isInline = name.metadata.isInline))
         } else if (subParams != null && regularParams == null) {
             SubParamFunction(
                 name = name,
                 subParams = subParams,
-                metadata = MetaData(
-                    row = name.metadata.row,
-                    column = name.metadata.column,
-                    isInline = name.metadata.isInline
-                )
-            )
+                metadata =
+                    MetaData(
+                        row = name.metadata.row,
+                        column = name.metadata.column,
+                        isInline = name.metadata.isInline))
         } else if (subParams == null && regularParams != null) {
             RegularFunction(
                 name = name,
                 params = regularParams,
-                metadata = MetaData(
-                    row = name.metadata.row,
-                    column = name.metadata.column,
-                    isInline = name.metadata.isInline
-                )
-            )
+                metadata =
+                    MetaData(
+                        row = name.metadata.row,
+                        column = name.metadata.column,
+                        isInline = name.metadata.isInline))
         } else {
-            errors.add(ParseError(
-                message = "Expected a function",
-                row = name.metadata.row,
-                column = name.metadata.column
-            ))
+            errors.add(
+                ParseError(
+                    message = "Expected a function",
+                    row = name.metadata.row,
+                    column = name.metadata.column))
             null
         }
     }
@@ -295,19 +282,18 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             return setOrSequence as NameAssignmentItem
         }
 
-        val nextText = if (lexer.hasNext()) {
-            lexer.next().text
-        } else {
-            "end of text"
-        }
+        val nextText =
+            if (lexer.hasNext()) {
+                lexer.next().text
+            } else {
+                "end of text"
+            }
 
         errors.add(
             ParseError(
                 message = "Expected a name assignment item but found $nextText",
                 row = -1,
-                column = -1
-            )
-        )
+                column = -1))
 
         return null
     }
@@ -324,20 +310,17 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                             message =
                                 "The right hand side of a := must be a function if the left hand side is a function",
                             row = func.metadata.row,
-                            column = func.metadata.column
-                        )
-                    )
+                            column = func.metadata.column))
                     null
                 } else {
                     FunctionAssignment(
                         lhs = func,
                         rhs = rhs,
-                        metadata = MetaData(
-                            row = func.metadata.row,
-                            column = func.metadata.column,
-                            isInline = isInline
-                        )
-                    )
+                        metadata =
+                            MetaData(
+                                row = func.metadata.row,
+                                column = func.metadata.column,
+                                isInline = isInline))
                 }
             } else {
                 func
@@ -355,12 +338,11 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                     NameAssignment(
                         lhs = name,
                         rhs = rhs,
-                        metadata = MetaData(
-                            row = name.metadata.row,
-                            column = name.metadata.column,
-                            isInline = isInline
-                        )
-                    )
+                        metadata =
+                            MetaData(
+                                row = name.metadata.row,
+                                column = name.metadata.column,
+                                isInline = isInline))
                 }
             } else {
                 name
@@ -381,11 +363,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         }
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
             val next = lexer.next()
-            errors.add(ParseError(
-                message = "Expected a target",
-                row = next.row,
-                column = next.column
-            ))
+            errors.add(
+                ParseError(message = "Expected a target", row = next.row, column = next.column))
         }
         return targets
     }
@@ -399,12 +378,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         expect(TokenType.RParen)
         return Tuple(
             targets = targets,
-            metadata = MetaData(
-                row = lParen.row,
-                column = lParen.column,
-                isInline = isInline
-            )
-        )
+            metadata = MetaData(row = lParen.row, column = lParen.column, isInline = isInline))
     }
 
     private fun setOrSequence(isInline: Boolean): ChalkTalkNode? {
@@ -422,49 +396,39 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                     ParseError(
                         message = "Expected a function with sub params",
                         row = lCurly.row,
-                        column = lCurly.column
-                    )
-                )
+                        column = lCurly.column))
                 null
             } else if (targets.size != 1) {
                 errors.add(
                     ParseError(
-                        message = "Expected exactly one function with sub params but found ${targets.size}",
+                        message =
+                            "Expected exactly one function with sub params but found ${targets.size}",
                         row = lCurly.row,
-                        column = lCurly.column
-                    )
-                )
+                        column = lCurly.column))
                 null
             } else {
-                when (val first = targets.first()) {
+                when (val first = targets.first()
+                ) {
                     is SubParamFunction -> {
                         SubParamFunctionSequence(
                             func = first,
-                            metadata = MetaData(
-                                row = lCurly.row,
-                                column = lCurly.column,
-                                isInline = isInline
-                            )
-                        )
+                            metadata =
+                                MetaData(
+                                    row = lCurly.row, column = lCurly.column, isInline = isInline))
                     }
                     is SubAndRegularParamFunction -> {
                         SubAndRegularParamFunctionSequence(
                             func = first,
-                            metadata = MetaData(
-                                row = lCurly.row,
-                                column = lCurly.column,
-                                isInline = isInline
-                            )
-                        )
+                            metadata =
+                                MetaData(
+                                    row = lCurly.row, column = lCurly.column, isInline = isInline))
                     }
                     else -> {
                         errors.add(
                             ParseError(
                                 message = "The given function must have sub params",
                                 row = lCurly.row,
-                                column = lCurly.column
-                            )
-                        )
+                                column = lCurly.column))
                         null
                     }
                 }
@@ -477,19 +441,12 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         ParseError(
                             message = "Expected a name or name assignment",
                             row = t.metadata.row,
-                            column = t.metadata.column
-                        )
-                    )
+                            column = t.metadata.column))
                 }
             }
             Set(
                 items = targets.filterIsInstance<NameOrNameAssignment>(),
-                metadata = MetaData(
-                    row = lCurly.row,
-                    column = lCurly.column,
-                    isInline = isInline
-                )
-            )
+                metadata = MetaData(row = lCurly.row, column = lCurly.column, isInline = isInline))
         }
     }
 
@@ -500,14 +457,10 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
 
         while (lexer.has(TokenType.TextBlock)) {
             val next = lexer.next()
-            nodes.add(TextBlock(
-                text = next.text,
-                metadata = MetaData(
-                    row = next.row,
-                    column = next.column,
-                    isInline = false
-                )
-            ))
+            nodes.add(
+                TextBlock(
+                    text = next.text,
+                    metadata = MetaData(row = next.row, column = next.column, isInline = false)))
             return
         }
 
@@ -521,14 +474,10 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         nodes.add(BeginGroup)
         if (lexer.has(TokenType.Id)) {
             val id = lexer.next()
-            nodes.add(Id(
-                text = id.text,
-                metadata = MetaData(
-                    row = id.row,
-                    column = id.column,
-                    isInline = false
-                )
-            ))
+            nodes.add(
+                Id(
+                    text = id.text,
+                    metadata = MetaData(row = id.row, column = id.column, isInline = false)))
             expect(TokenType.Newline)
         }
         while (lexer.hasNext()) {
@@ -549,8 +498,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         nodes.add(BeginSection(name = name.text))
         while (lexer.hasNext()) {
             val peek = lexer.peek()
-            val newlineButNotDotSpace = peek.type == TokenType.Newline &&
-                !(lexer.hasNextNext() && lexer.peekPeek().type == TokenType.DotSpace)
+            val newlineButNotDotSpace =
+                peek.type == TokenType.Newline &&
+                    !(lexer.hasNextNext() && lexer.peekPeek().type == TokenType.DotSpace)
             if (newlineButNotDotSpace) {
                 lexer.next() // move past newline
                 break
@@ -559,12 +509,13 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             if (peek.type == TokenType.Newline) {
                 lexer.next() // move past the newline
             }
-            val isInline = if (lexer.has(TokenType.DotSpace)) {
-                lexer.next() // move past the '. '
-                false
-            } else {
-                true
-            }
+            val isInline =
+                if (lexer.has(TokenType.DotSpace)) {
+                    lexer.next() // move past the '. '
+                    false
+                } else {
+                    true
+                }
             processArgument(isInline)
             if (lexer.has(TokenType.UnIndent)) {
                 lexer.next() // move past the un-indent to end the section
@@ -595,9 +546,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         ParseError(
                             message = "Expected an argument but found '${peek.text}'",
                             row = peek.row,
-                            column = peek.column
-                        )
-                    )
+                            column = peek.column))
                 }
                 if (lexer.has(TokenType.Comma)) {
                     lexer.next() // move past the comma
@@ -618,9 +567,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                     ParseError(
                         message = "Unexpected token '${next.text}'",
                         row = next.row,
-                        column = next.column
-                    )
-                )
+                        column = next.column))
             }
         }
     }

@@ -41,8 +41,7 @@ internal data class SubParamFunctionSequence(
 ) : Sequence
 
 internal data class SubAndRegularParamFunctionSequence(
-    val func: SubAndRegularParamFunction,
-    override val metadata: MetaData
+    val func: SubAndRegularParamFunction, override val metadata: MetaData
 ) : Sequence
 
 // assignments
@@ -73,4 +72,3 @@ internal sealed interface NameOrNameAssignment : CommonNode
 
 internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) :
     Target, NameAssignmentItem
-

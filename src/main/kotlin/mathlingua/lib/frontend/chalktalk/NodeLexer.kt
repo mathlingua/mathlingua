@@ -35,6 +35,11 @@ internal interface NodeLexer {
     fun hasNext(): Boolean
     fun peek(): ChalkTalkNode
     fun next(): ChalkTalkNode
+
+    fun hasNextNext(): Boolean
+    fun peekPeek(): ChalkTalkNode
+    fun nextNext(): ChalkTalkNode
+
     fun errors(): List<ParseError>
 }
 
@@ -64,6 +69,16 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     override fun peek() = nodes[index]
 
     override fun next() = nodes[index++]
+
+    override fun hasNextNext() = index + 1 < nodes.size
+
+    override fun peekPeek() = nodes[index + 1]
+
+    override fun nextNext(): ChalkTalkNode {
+        val result = peekPeek()
+        index += 2
+        return result
+    }
 
     override fun errors(): List<ParseError> = errors
 

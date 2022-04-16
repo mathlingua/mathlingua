@@ -19,7 +19,7 @@ internal class TokenLexerTest {
         }
         expect {
             that(tokenCount).isEqualTo(NUM_PREFIX_TOKENS)
-            that(prefixLexer.errors()).isEmpty()
+            that(prefixLexer.diagnostics()).isEmpty()
         }
 
         for (case in TEST_CASES) {
@@ -43,7 +43,7 @@ internal class TokenLexerTest {
                             text = case.expectedText,
                             row = 0,
                             column = PREFIX.length))
-                that(lexer.errors()).isEmpty()
+                that(lexer.diagnostics()).isEmpty()
             }
         }
     }
@@ -57,7 +57,7 @@ internal class TokenLexerTest {
         }
         expect {
             that(actual.toList()).isEqualTo(INDENT_UN_INDENT_EXPECTED)
-            that(lexer.errors()).isEmpty()
+            that(lexer.diagnostics()).isEmpty()
         }
     }
 }

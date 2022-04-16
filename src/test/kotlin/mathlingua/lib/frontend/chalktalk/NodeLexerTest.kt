@@ -608,7 +608,7 @@ private fun runTest(text: String, expected: List<ChalkTalkNode>) {
         nodes.add(nodeLexer.next())
     }
     expect {
-        that(nodeLexer.errors()).isEmpty()
+        that(nodeLexer.diagnostics()).isEmpty()
         that(nodes.toList()).isEqualTo(expected)
     }
 }

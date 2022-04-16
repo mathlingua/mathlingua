@@ -1,7 +1,8 @@
 package mathlingua.lib.frontend.chalktalk
 
 import java.util.Stack
-import mathlingua.lib.frontend.ParseError
+import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.DiagnosticType
 
 internal interface TokenLexer {
     fun hasNext(): Boolean
@@ -12,7 +13,7 @@ internal interface TokenLexer {
     fun peekPeek(): Token
     fun nextNext(): Token
 
-    fun errors(): List<ParseError>
+    fun diagnostics(): List<Diagnostic>
 }
 
 internal fun newTokenLexer(text: String): TokenLexer {
@@ -48,7 +49,7 @@ internal data class Token(val type: TokenType, val text: String, val row: Int, v
 private class TokenLexerImpl(text: String) : TokenLexer {
     private val tokens = mutableListOf<Token>()
     private var index = 0
-    private val errors = mutableListOf<ParseError>()
+    private val diagnostics = mutableListOf<Diagnostic>()
 
     init {
         var row = 0
@@ -94,8 +95,12 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                     if (indent.size > 0 && !indent.endsWithDotSpace) {
                         // the only indent possible is a '. ' if no indentation
                         // has occurred yet
-                        errors.add(
-                            ParseError(message = "Expected a '. '", row = row, column = column))
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                message = "Expected a '. '",
+                                row = row,
+                                column = column))
                     }
                     if (indent.size > 0) {
                         indentStack.push(indent.size)
@@ -104,9 +109,12 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                     val prevIndent = indentStack.peek()
                     if (indent.size > prevIndent) {
                         if (!indent.endsWithDotSpace) {
-                            errors.add(
-                                ParseError(
-                                    message = "Unexpected indent", row = row, column = column))
+                            diagnostics.add(
+                                Diagnostic(
+                                    type = DiagnosticType.Error,
+                                    message = "Unexpected indent",
+                                    row = row,
+                                    column = column))
                         }
                         indentStack.push(indent.size)
                     } else if (indent.size < prevIndent) {
@@ -125,9 +133,12 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                         // space, which is an error
                         if ((indentStack.isNotEmpty() && indent.size != indentStack.peek()) ||
                             (indentStack.isEmpty() && indent.size > 0)) {
-                            errors.add(
-                                ParseError(
-                                    message = "Misaligned indent", row = row, column = column))
+                            diagnostics.add(
+                                Diagnostic(
+                                    type = DiagnosticType.Error,
+                                    message = "Misaligned indent",
+                                    row = row,
+                                    column = column))
                         }
                     }
                     // else: If the new line is indented the same as the previous indent,
@@ -250,7 +261,12 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                 continue
             }
 
-            errors.add(ParseError(message = "Unrecognized token '$c'", row = row, column = column))
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "Unrecognized token '$c'",
+                    row = row,
+                    column = column))
 
             if (c == '\n') {
                 row++
@@ -262,9 +278,12 @@ private class TokenLexerImpl(text: String) : TokenLexer {
         while (indentStack.isNotEmpty()) {
             val indent = indentStack.pop()
             if (indent > 0) {
-                errors.add(
-                    ParseError(
-                        message = "Unexpected indent of size $indent", row = row, column = column))
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        message = "Unexpected indent of size $indent",
+                        row = row,
+                        column = column))
             }
         }
     }
@@ -285,7 +304,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
         return result
     }
 
-    override fun errors(): List<ParseError> = errors
+    override fun diagnostics(): List<Diagnostic> = diagnostics
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -1,7 +1,8 @@
 package mathlingua.lib.frontend.chalktalk
 
+import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
-import mathlingua.lib.frontend.ParseError
 import mathlingua.lib.frontend.ast.Argument
 import mathlingua.lib.frontend.ast.BeginArgument
 import mathlingua.lib.frontend.ast.BeginGroup
@@ -40,7 +41,7 @@ internal interface NodeLexer {
     fun peekPeek(): ChalkTalkNode
     fun nextNext(): ChalkTalkNode
 
-    fun errors(): List<ParseError>
+    fun diagnostics(): List<Diagnostic>
 }
 
 internal fun newNodeLexer(lexer: TokenLexer): NodeLexer {
@@ -52,7 +53,7 @@ internal fun newNodeLexer(lexer: TokenLexer): NodeLexer {
 private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     private val nodes = mutableListOf<ChalkTalkNode>()
     private var index = 0
-    private val errors = mutableListOf<ParseError>()
+    private val diagnostics = mutableListOf<Diagnostic>()
 
     init {
         while (lexer.hasNext()) {
@@ -80,12 +81,13 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         return result
     }
 
-    override fun errors(): List<ParseError> = errors
+    override fun diagnostics(): List<Diagnostic> = diagnostics
 
     private fun expect(type: TokenType): Token? {
         if (!lexer.hasNext()) {
-            errors.add(
-                ParseError(
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
                     message = "Expected a $type token but found the end of text",
                     row = -1,
                     column = -1))
@@ -93,8 +95,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         }
         val next = lexer.next()
         if (next.type != type) {
-            errors.add(
-                ParseError(
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
                     message = "Expected a $type but found ${next.type}",
                     row = next.row,
                     column = next.column))
@@ -183,8 +186,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         }
         while (lexer.hasNext() && lexer.peek().type != expectedEnd) {
             val next = lexer.next()
-            errors.add(
-                ParseError(
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
                     message = "Unexpected token ${next.text}",
                     row = next.row,
                     column = next.column))
@@ -262,8 +266,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                         column = name.metadata.column,
                         isInline = name.metadata.isInline))
         } else {
-            errors.add(
-                ParseError(
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
                     message = "Expected a function",
                     row = name.metadata.row,
                     column = name.metadata.column))
@@ -304,8 +309,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 "end of text"
             }
 
-        errors.add(
-            ParseError(
+        diagnostics.add(
+            Diagnostic(
+                type = DiagnosticType.Error,
                 message = "Expected a name assignment item but found $nextText",
                 row = -1,
                 column = -1))
@@ -320,8 +326,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 expect(TokenType.ColonEqual)
                 val rhs = function(isInline)
                 if (rhs == null) {
-                    errors.add(
-                        ParseError(
+                    diagnostics.add(
+                        Diagnostic(
+                            type = DiagnosticType.Error,
                             message =
                                 "The right hand side of a := must be a function if the left hand side is a function",
                             row = func.metadata.row,
@@ -378,8 +385,12 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         }
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
             val next = lexer.next()
-            errors.add(
-                ParseError(message = "Expected a target", row = next.row, column = next.column))
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "Expected a target",
+                    row = next.row,
+                    column = next.column))
         }
         return targets
     }
@@ -407,15 +418,17 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         return if (subParams != null) {
             // it is a sequence
             if (targets.isEmpty()) {
-                errors.add(
-                    ParseError(
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
                         message = "Expected a function with sub params",
                         row = lCurly.row,
                         column = lCurly.column))
                 null
             } else if (targets.size != 1) {
-                errors.add(
-                    ParseError(
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
                         message =
                             "Expected exactly one function with sub params but found ${targets.size}",
                         row = lCurly.row,
@@ -439,8 +452,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                                     row = lCurly.row, column = lCurly.column, isInline = isInline))
                     }
                     else -> {
-                        errors.add(
-                            ParseError(
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
                                 message = "The given function must have sub params",
                                 row = lCurly.row,
                                 column = lCurly.column))
@@ -452,8 +466,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             // it is a set
             for (t in targets) {
                 if (t !is NameOrNameAssignment) {
-                    errors.add(
-                        ParseError(
+                    diagnostics.add(
+                        Diagnostic(
+                            type = DiagnosticType.Error,
                             message = "Expected a name or name assignment",
                             row = t.metadata.row,
                             column = t.metadata.column))
@@ -557,8 +572,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                     nodes.add(arg)
                     nodes.add(EndArgument)
                 } else {
-                    errors.add(
-                        ParseError(
+                    diagnostics.add(
+                        Diagnostic(
+                            type = DiagnosticType.Error,
                             message = "Expected an argument but found '${peek.text}'",
                             row = peek.row,
                             column = peek.column))
@@ -578,8 +594,9 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 }
 
                 val next = lexer.next()
-                errors.add(
-                    ParseError(
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
                         message = "Unexpected token '${next.text}'",
                         row = next.row,
                         column = next.column))

@@ -8,7 +8,7 @@ internal interface NameOrFunction : CommonNode
 
 // names
 internal data class Name(val text: String, override val metadata: MetaData) :
-    Target, NameOrNameAssignment, NameAssignmentItem, NameOrFunction
+    Target, NameOrNameAssignment, NameAssignmentItem, NameOrFunction, MembershipItem, Expression
 
 internal data class OperatorName(val text: String, override val metadata: MetaData) :
     Target, NameAssignmentItem, NameOrFunction
@@ -16,7 +16,7 @@ internal data class OperatorName(val text: String, override val metadata: MetaDa
 internal data class NameParam(val name: Name, val isVarArgs: Boolean)
 
 // functions
-internal sealed interface Function : Target, NameAssignmentItem, NameOrFunction
+internal sealed interface Function : Target, NameAssignmentItem, NameOrFunction, Expression
 
 internal data class RegularFunction(
     val name: Name, val params: List<NameParam>, override val metadata: MetaData
@@ -34,7 +34,7 @@ internal data class SubAndRegularParamFunction(
 ) : Function
 
 // sequences
-internal sealed interface Sequence : Target, NameAssignmentItem
+internal sealed interface Sequence : Target, NameAssignmentItem, Expression
 
 internal data class SubParamFunctionSequence(
     val func: SubParamFunction, override val metadata: MetaData
@@ -65,10 +65,10 @@ internal sealed interface Argument : CommonNode
 internal sealed interface Target : Argument
 
 internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) :
-    Target, NameAssignmentItem
+    Target, NameAssignmentItem, Expression
 
 // <name> | <name assignment>
 internal sealed interface NameOrNameAssignment : CommonNode
 
 internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) :
-    Target, NameAssignmentItem
+    Target, NameAssignmentItem, Expression

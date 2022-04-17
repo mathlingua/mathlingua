@@ -82,6 +82,7 @@ private val TEST_CASES =
         TestCase("/", TexTalkTokenType.Slash),
         TestCase(":", TexTalkTokenType.Colon),
         TestCase("=", TexTalkTokenType.Equals),
+        TestCase("!=", TexTalkTokenType.NotEquals),
         TestCase("x", TexTalkTokenType.Name),
         TestCase("someName", TexTalkTokenType.Name),
         TestCase("someName_1", TexTalkTokenType.Name),

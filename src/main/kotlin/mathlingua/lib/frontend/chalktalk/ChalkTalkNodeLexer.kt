@@ -1,5 +1,6 @@
 package mathlingua.lib.frontend.chalktalk
 
+import java.util.LinkedList
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
@@ -32,9 +33,8 @@ import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
-import java.util.LinkedList
 
-internal interface NodeLexer {
+internal interface ChalkTalkNodeLexer {
     fun hasNext(): Boolean
     fun peek(): NodeLexerToken
     fun next(): NodeLexerToken
@@ -46,13 +46,13 @@ internal interface NodeLexer {
     fun diagnostics(): List<Diagnostic>
 }
 
-internal fun newNodeLexer(lexer: TokenLexer): NodeLexer {
-    return NodeLexerImpl(lexer)
+internal fun newChalkTalkNodeLexer(lexer: ChalkTalkTokenLexer): ChalkTalkNodeLexer {
+    return ChalkTalkNodeLexerImpl(lexer)
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
+private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : ChalkTalkNodeLexer {
     private val tokens = LinkedList<NodeLexerToken>()
     private val diagnostics = mutableListOf<Diagnostic>()
 
@@ -83,7 +83,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
 
     override fun diagnostics(): List<Diagnostic> = diagnostics
 
-    private fun expect(type: TokenType): Token? {
+    private fun expect(type: ChalkTalkTokenType): ChalkTalkToken? {
         if (!lexer.hasNext()) {
             diagnostics.add(
                 Diagnostic(
@@ -106,7 +106,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun statement(isInline: Boolean): Statement? {
-        if (!lexer.has(TokenType.Statement)) {
+        if (!lexer.has(ChalkTalkTokenType.Statement)) {
             return null
         }
         val next = lexer.next()
@@ -116,7 +116,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun text(isInline: Boolean): Text? {
-        if (!lexer.has(TokenType.Text)) {
+        if (!lexer.has(ChalkTalkTokenType.Text)) {
             return null
         }
         val next = lexer.next()
@@ -140,7 +140,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun name(isInline: Boolean): Name? {
-        if (!lexer.has(TokenType.Name)) {
+        if (!lexer.has(ChalkTalkTokenType.Name)) {
             return null
         }
         val next = lexer.next()
@@ -152,7 +152,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     private fun nameParam(isInline: Boolean): NameParam? {
         val name =
             name(isInline)
-                ?: if (lexer.has(TokenType.Underscore)) {
+                ?: if (lexer.has(ChalkTalkTokenType.Underscore)) {
                     val underscore = lexer.next()
                     Name(
                         text = underscore.text,
@@ -166,8 +166,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 }
                     ?: return null
         val hasDotDotDot =
-            if (lexer.has(TokenType.DotDotDot)) {
-                expect(TokenType.DotDotDot)
+            if (lexer.has(ChalkTalkTokenType.DotDotDot)) {
+                expect(ChalkTalkTokenType.DotDotDot)
                 true
             } else {
                 false
@@ -175,13 +175,13 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         return NameParam(name = name, isVarArgs = hasDotDotDot)
     }
 
-    private fun nameParamList(isInline: Boolean, expectedEnd: TokenType): List<NameParam> {
+    private fun nameParamList(isInline: Boolean, expectedEnd: ChalkTalkTokenType): List<NameParam> {
         val result = mutableListOf<NameParam>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
             val nameParam = nameParam(isInline) ?: break
             result.add(nameParam)
             if (!lexer.has(expectedEnd)) {
-                expect(TokenType.Comma)
+                expect(ChalkTalkTokenType.Comma)
             }
         }
         while (lexer.hasNext() && lexer.peek().type != expectedEnd) {
@@ -197,28 +197,28 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun subParams(isInline: Boolean): List<NameParam>? {
-        if (!lexer.hasHas(TokenType.Underscore, TokenType.LCurly)) {
+        if (!lexer.hasHas(ChalkTalkTokenType.Underscore, ChalkTalkTokenType.LCurly)) {
             return null
         }
-        expect(TokenType.Underscore)
-        expect(TokenType.LCurly)
-        val result = nameParamList(isInline, TokenType.RCurly)
-        expect(TokenType.RCurly)
+        expect(ChalkTalkTokenType.Underscore)
+        expect(ChalkTalkTokenType.LCurly)
+        val result = nameParamList(isInline, ChalkTalkTokenType.RCurly)
+        expect(ChalkTalkTokenType.RCurly)
         return result
     }
 
     private fun regularParams(isInline: Boolean): List<NameParam>? {
-        if (!lexer.has(TokenType.LParen)) {
+        if (!lexer.has(ChalkTalkTokenType.LParen)) {
             return null
         }
-        expect(TokenType.LParen)
-        val result = nameParamList(isInline, TokenType.RParen)
-        expect(TokenType.RParen)
+        expect(ChalkTalkTokenType.LParen)
+        val result = nameParamList(isInline, ChalkTalkTokenType.RParen)
+        expect(ChalkTalkTokenType.RParen)
         return result
     }
 
     private fun operator(isInline: Boolean): OperatorName? {
-        if (!lexer.has(TokenType.Operator)) {
+        if (!lexer.has(ChalkTalkTokenType.Operator)) {
             return null
         }
         val next = lexer.next()
@@ -229,8 +229,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
 
     private fun function(isInline: Boolean): Function? {
         // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
-        if (!lexer.hasHas(TokenType.Name, TokenType.LParen) &&
-            !lexer.hasHas(TokenType.Name, TokenType.Underscore)) {
+        if (!lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.LParen) &&
+            !lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Underscore)) {
             return null
         }
 
@@ -322,8 +322,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     private fun target(isInline: Boolean): Target? {
         val func = function(isInline)
         if (func != null) {
-            return if (lexer.has(TokenType.ColonEqual)) {
-                expect(TokenType.ColonEqual)
+            return if (lexer.has(ChalkTalkTokenType.ColonEqual)) {
+                expect(ChalkTalkTokenType.ColonEqual)
                 val rhs = function(isInline)
                 if (rhs == null) {
                     diagnostics.add(
@@ -351,8 +351,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
 
         val name = name(isInline)
         if (name != null) {
-            return if (lexer.has(TokenType.ColonEqual)) {
-                expect(TokenType.ColonEqual)
+            return if (lexer.has(ChalkTalkTokenType.ColonEqual)) {
+                expect(ChalkTalkTokenType.ColonEqual)
                 val rhs = nameOrAssignmentItem(isInline)
                 if (rhs == null) {
                     null
@@ -374,13 +374,13 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         return nameOrAssignmentItem(isInline) as Target?
     }
 
-    private fun targets(isInline: Boolean, expectedEnd: TokenType): List<Target> {
+    private fun targets(isInline: Boolean, expectedEnd: ChalkTalkTokenType): List<Target> {
         val targets = mutableListOf<Target>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
             val target = target(isInline) ?: break
             targets.add(target)
             if (!lexer.has(expectedEnd)) {
-                expect(TokenType.Comma)
+                expect(ChalkTalkTokenType.Comma)
             }
         }
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
@@ -396,24 +396,24 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun tuple(isInline: Boolean): Tuple? {
-        if (!lexer.has(TokenType.LParen)) {
+        if (!lexer.has(ChalkTalkTokenType.LParen)) {
             return null
         }
-        val lParen = expect(TokenType.LParen)!!
-        val targets = targets(isInline, TokenType.RParen)
-        expect(TokenType.RParen)
+        val lParen = expect(ChalkTalkTokenType.LParen)!!
+        val targets = targets(isInline, ChalkTalkTokenType.RParen)
+        expect(ChalkTalkTokenType.RParen)
         return Tuple(
             targets = targets,
             metadata = MetaData(row = lParen.row, column = lParen.column, isInline = isInline))
     }
 
     private fun setOrSequence(isInline: Boolean): ChalkTalkNode? {
-        if (!lexer.has(TokenType.LCurly)) {
+        if (!lexer.has(ChalkTalkTokenType.LCurly)) {
             return null
         }
-        val lCurly = expect(TokenType.LCurly)!!
-        val targets = targets(isInline, TokenType.RCurly)
-        expect(TokenType.RCurly)
+        val lCurly = expect(ChalkTalkTokenType.LCurly)!!
+        val targets = targets(isInline, ChalkTalkTokenType.RCurly)
+        expect(ChalkTalkTokenType.RCurly)
         val subParams = subParams(isInline)
         return if (subParams != null) {
             // it is a sequence
@@ -485,7 +485,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             return
         }
 
-        while (lexer.has(TokenType.TextBlock)) {
+        while (lexer.has(ChalkTalkTokenType.TextBlock)) {
             val next = lexer.next()
             tokens.add(
                 TextBlock(
@@ -498,56 +498,56 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 
     private fun processGroup() {
-        while (lexer.has(TokenType.LineBreak)) {
+        while (lexer.has(ChalkTalkTokenType.LineBreak)) {
             lexer.next()
         }
         tokens.add(BeginGroup)
-        if (lexer.has(TokenType.Id)) {
+        if (lexer.has(ChalkTalkTokenType.Id)) {
             val id = lexer.next()
             tokens.add(
                 Id(
                     text = id.text,
                     metadata = MetaData(row = id.row, column = id.column, isInline = false)))
-            expect(TokenType.Newline)
+            expect(ChalkTalkTokenType.Newline)
         }
         while (lexer.hasNext()) {
-            if (!lexer.hasHas(TokenType.Name, TokenType.Colon)) {
+            if (!lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)) {
                 break
             }
             processSection()
         }
-        while (lexer.has(TokenType.LineBreak)) {
+        while (lexer.has(ChalkTalkTokenType.LineBreak)) {
             lexer.next()
         }
         tokens.add(EndGroup)
     }
 
     private fun processSection() {
-        val name = expect(TokenType.Name) ?: return
-        expect(TokenType.Colon) ?: return
+        val name = expect(ChalkTalkTokenType.Name) ?: return
+        expect(ChalkTalkTokenType.Colon) ?: return
         tokens.add(BeginSection(name = name.text))
         while (lexer.hasNext()) {
             val peek = lexer.peek()
             val newlineButNotDotSpace =
-                peek.type == TokenType.Newline &&
-                    !(lexer.hasNextNext() && lexer.peekPeek().type == TokenType.DotSpace)
+                peek.type == ChalkTalkTokenType.Newline &&
+                    !(lexer.hasNextNext() && lexer.peekPeek().type == ChalkTalkTokenType.DotSpace)
             if (newlineButNotDotSpace) {
                 lexer.next() // move past newline
                 break
             }
             // either the next tokens are <newline><dot-space> or tokens for an argument
-            if (peek.type == TokenType.Newline) {
+            if (peek.type == ChalkTalkTokenType.Newline) {
                 lexer.next() // move past the newline
             }
             val isInline =
-                if (lexer.has(TokenType.DotSpace)) {
+                if (lexer.has(ChalkTalkTokenType.DotSpace)) {
                     lexer.next() // move past the '. '
                     false
                 } else {
                     true
                 }
             processArgument(isInline)
-            if (lexer.has(TokenType.UnIndent)) {
+            if (lexer.has(ChalkTalkTokenType.UnIndent)) {
                 lexer.next() // move past the un-indent to end the section
                 break
             }
@@ -558,13 +558,13 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     private fun processArgument(startsInline: Boolean) {
         var isInline = startsInline
         if (lexer.hasNextNext() &&
-            lexer.peek().type == TokenType.Name &&
-            lexer.peekPeek().type == TokenType.Colon) {
+            lexer.peek().type == ChalkTalkTokenType.Name &&
+            lexer.peekPeek().type == ChalkTalkTokenType.Colon) {
             tokens.add(BeginArgument)
             processGroup()
             tokens.add(EndArgument)
         } else {
-            while (lexer.hasNext() && lexer.peek().type != TokenType.Newline) {
+            while (lexer.hasNext() && lexer.peek().type != ChalkTalkTokenType.Newline) {
                 val peek = lexer.peek()
                 val arg = argument(isInline)
                 if (arg != null) {
@@ -579,7 +579,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                             row = peek.row,
                             column = peek.column))
                 }
-                if (lexer.has(TokenType.Comma)) {
+                if (lexer.has(ChalkTalkTokenType.Comma)) {
                     lexer.next() // move past the comma
                     isInline = true
                 } else {
@@ -588,7 +588,8 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
             }
             while (lexer.hasNext()) {
                 val peek = lexer.peek()
-                if (peek.type == TokenType.Newline || peek.type == TokenType.UnIndent) {
+                if (peek.type == ChalkTalkTokenType.Newline ||
+                    peek.type == ChalkTalkTokenType.UnIndent) {
                     lexer.next() // move past the newline or un-indent
                     break
                 }
@@ -605,9 +606,10 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
     }
 }
 
-private fun TokenLexer.has(type: TokenType) = this.hasNext() && this.peek().type == type
+private fun ChalkTalkTokenLexer.has(type: ChalkTalkTokenType) =
+    this.hasNext() && this.peek().type == type
 
-private fun TokenLexer.hasHas(type1: TokenType, type2: TokenType) =
+private fun ChalkTalkTokenLexer.hasHas(type1: ChalkTalkTokenType, type2: ChalkTalkTokenType) =
     this.hasNext() &&
         this.hasNextNext() &&
         this.peek().type == type1 &&

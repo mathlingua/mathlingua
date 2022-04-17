@@ -1,27 +1,27 @@
 package mathlingua.lib.frontend.chalktalk
 
+import java.util.LinkedList
 import java.util.Stack
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticType
-import java.util.LinkedList
 
-internal interface TokenLexer {
+internal interface ChalkTalkTokenLexer {
     fun hasNext(): Boolean
-    fun peek(): Token
-    fun next(): Token
+    fun peek(): ChalkTalkToken
+    fun next(): ChalkTalkToken
 
     fun hasNextNext(): Boolean
-    fun peekPeek(): Token
-    fun nextNext(): Token
+    fun peekPeek(): ChalkTalkToken
+    fun nextNext(): ChalkTalkToken
 
     fun diagnostics(): List<Diagnostic>
 }
 
-internal fun newTokenLexer(text: String): TokenLexer {
-    return TokenLexerImpl(text)
+internal fun newChalkTalkTokenLexer(text: String): ChalkTalkTokenLexer {
+    return ChalkTalkTokenLexerImpl(text)
 }
 
-internal enum class TokenType {
+internal enum class ChalkTalkTokenType {
     ColonEqual,
     LParen,
     RParen,
@@ -43,12 +43,13 @@ internal enum class TokenType {
     DotDotDot
 }
 
-internal data class Token(val type: TokenType, val text: String, val row: Int, val column: Int)
+internal data class ChalkTalkToken(
+    val type: ChalkTalkTokenType, val text: String, val row: Int, val column: Int)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-private class TokenLexerImpl(text: String) : TokenLexer {
-    private val tokens = LinkedList<Token>()
+private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
+    private val tokens = LinkedList<ChalkTalkToken>()
     private val diagnostics = mutableListOf<Diagnostic>()
 
     init {
@@ -62,10 +63,14 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             if (text[i] == '\n' && i + 1 < text.length && text[i + 1] == '\n') {
                 // there is a newline followed by a line break
                 tokens.add(
-                    Token(type = TokenType.Newline, text = "<newline>", row = row, column = column))
+                    ChalkTalkToken(
+                        type = ChalkTalkTokenType.Newline,
+                        text = "<newline>",
+                        row = row,
+                        column = column))
                 tokens.add(
-                    Token(
-                        type = TokenType.LineBreak,
+                    ChalkTalkToken(
+                        type = ChalkTalkTokenType.LineBreak,
                         text = "<linebreak>",
                         row = row,
                         column = column))
@@ -80,7 +85,11 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             // handle indents and un-indents
             if (text[i] == '\n') {
                 tokens.add(
-                    Token(type = TokenType.Newline, text = "<newline>", row = row, column = column))
+                    ChalkTalkToken(
+                        type = ChalkTalkTokenType.Newline,
+                        text = "<newline>",
+                        row = row,
+                        column = column))
 
                 // move past the newline character
                 i++
@@ -121,8 +130,8 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                         while (indentStack.isNotEmpty() && indent.size < indentStack.peek()) {
                             indentStack.pop()
                             tokens.add(
-                                Token(
-                                    type = TokenType.UnIndent,
+                                ChalkTalkToken(
+                                    type = ChalkTalkTokenType.UnIndent,
                                     text = "<unindent>",
                                     row = row,
                                     column = column))
@@ -149,7 +158,11 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                 // or stayed the same
                 if (indent.endsWithDotSpace) {
                     tokens.add(
-                        Token(type = TokenType.DotSpace, text = ". ", row = row, column = column))
+                        ChalkTalkToken(
+                            type = ChalkTalkTokenType.DotSpace,
+                            text = ". ",
+                            row = row,
+                            column = column))
                 }
 
                 continue
@@ -188,8 +201,8 @@ private class TokenLexerImpl(text: String) : TokenLexer {
                     }
                 }
                 tokens.add(
-                    Token(
-                        type = TokenType.Id,
+                    ChalkTalkToken(
+                        type = ChalkTalkTokenType.Id,
                         text = buffer.toString(),
                         row = startRow,
                         column = startColumn))
@@ -200,7 +213,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             val streamResult = text.checkStreamAndType(i)
             if (streamResult != null) {
                 tokens.add(
-                    Token(
+                    ChalkTalkToken(
                         type = streamResult.type,
                         text =
                             streamResult.text.removeSurrounding(
@@ -223,7 +236,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             val textAndType = text.checkTextAndType(i)
             if (textAndType != null) {
                 tokens.add(
-                    Token(
+                    ChalkTalkToken(
                         type = textAndType.type,
                         text = textAndType.text,
                         row = row,
@@ -237,7 +250,11 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             val identifier = text.checkName(i)
             if (identifier != null) {
                 tokens.add(
-                    Token(type = TokenType.Name, text = identifier, row = row, column = column))
+                    ChalkTalkToken(
+                        type = ChalkTalkTokenType.Name,
+                        text = identifier,
+                        row = row,
+                        column = column))
                 column += identifier.length
                 i += identifier.length
                 continue
@@ -247,7 +264,11 @@ private class TokenLexerImpl(text: String) : TokenLexer {
             val operator = text.checkOperator(i)
             if (operator != null) {
                 tokens.add(
-                    Token(type = TokenType.Operator, text = operator, row = row, column = column))
+                    ChalkTalkToken(
+                        type = ChalkTalkTokenType.Operator,
+                        text = operator,
+                        row = row,
+                        column = column))
                 column += operator.length
                 i += operator.length
                 continue
@@ -298,7 +319,7 @@ private class TokenLexerImpl(text: String) : TokenLexer {
 
     override fun peekPeek() = tokens[1]
 
-    override fun nextNext(): Token {
+    override fun nextNext(): ChalkTalkToken {
         tokens.remove()
         return tokens.remove()
     }
@@ -308,30 +329,30 @@ private class TokenLexerImpl(text: String) : TokenLexer {
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-private data class TextAndType(val text: String, val type: TokenType)
+private data class TextAndType(val text: String, val type: ChalkTalkTokenType)
 
 private val TEXT_AND_TYPES =
     mutableListOf(
-        TextAndType(":=", TokenType.ColonEqual),
-        TextAndType("(", TokenType.LParen),
-        TextAndType(")", TokenType.RParen),
-        TextAndType("{", TokenType.LCurly),
-        TextAndType("}", TokenType.RCurly),
-        TextAndType(",", TokenType.Comma),
-        TextAndType(":", TokenType.Colon),
-        TextAndType("_", TokenType.Underscore),
-        TextAndType("...", TokenType.DotDotDot),
-        TextAndType(". ", TokenType.DotSpace))
+        TextAndType(":=", ChalkTalkTokenType.ColonEqual),
+        TextAndType("(", ChalkTalkTokenType.LParen),
+        TextAndType(")", ChalkTalkTokenType.RParen),
+        TextAndType("{", ChalkTalkTokenType.LCurly),
+        TextAndType("}", ChalkTalkTokenType.RCurly),
+        TextAndType(",", ChalkTalkTokenType.Comma),
+        TextAndType(":", ChalkTalkTokenType.Colon),
+        TextAndType("_", ChalkTalkTokenType.Underscore),
+        TextAndType("...", ChalkTalkTokenType.DotDotDot),
+        TextAndType(". ", ChalkTalkTokenType.DotSpace))
 
 private data class StreamAndType(
-    val prefix: String, val suffix: String, val escape: String?, val type: TokenType)
+    val prefix: String, val suffix: String, val escape: String?, val type: ChalkTalkTokenType)
 
 private val STREAMS_AND_TYPES =
     mutableListOf(
-        StreamAndType("'", "'", null, TokenType.Statement),
-        StreamAndType("`", "`", null, TokenType.Statement),
-        StreamAndType("\"", "\"", "\\\"", TokenType.Text),
-        StreamAndType("::", "::", "{::}", TokenType.TextBlock))
+        StreamAndType("'", "'", null, ChalkTalkTokenType.Statement),
+        StreamAndType("`", "`", null, ChalkTalkTokenType.Statement),
+        StreamAndType("\"", "\"", "\\\"", ChalkTalkTokenType.Text),
+        StreamAndType("::", "::", "{::}", ChalkTalkTokenType.TextBlock))
 
 private fun String.checkTextAndType(index: Int): TextAndType? {
     for (textAndType in TEXT_AND_TYPES) {
@@ -343,7 +364,7 @@ private fun String.checkTextAndType(index: Int): TextAndType? {
 }
 
 private data class CheckStreamAndTypeResult(
-    val type: TokenType,
+    val type: ChalkTalkTokenType,
     val text: String,
     val numNewlines: Int,
     val prefix: String,

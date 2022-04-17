@@ -25,7 +25,7 @@ import strikt.api.expect
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
 
-internal class NodeLexerTest {
+internal class ChalkTalkNodeLexerTest {
     @Test fun `correctly parses empty input`() = runTest("", emptyList())
 
     @Test
@@ -601,8 +601,8 @@ internal class NodeLexerTest {
 }
 
 private fun runTest(text: String, expected: List<NodeLexerToken>) {
-    val tokenLexer = newTokenLexer(text)
-    val nodeLexer = newNodeLexer(tokenLexer)
+    val tokenLexer = newChalkTalkTokenLexer(text)
+    val nodeLexer = newChalkTalkNodeLexer(tokenLexer)
     val nodes = mutableListOf<NodeLexerToken>()
     while (nodeLexer.hasNext()) {
         nodes.add(nodeLexer.next())

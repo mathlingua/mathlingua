@@ -8,7 +8,7 @@ internal interface NameOrFunction : CommonNode
 
 // names
 internal data class Name(val text: String, override val metadata: MetaData) :
-    Target, NameOrNameAssignment, NameAssignmentItem, NameOrFunction, MembershipItem, Expression
+    Target, NameOrNameAssignment, NameAssignmentItem, NameOrFunction, NameOrCommand, Expression
 
 internal data class OperatorName(val text: String, override val metadata: MetaData) :
     Target, NameAssignmentItem, NameOrFunction

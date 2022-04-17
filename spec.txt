@@ -97,11 +97,12 @@ as
 <textalk infix command form> ::= <textalk command form> "/"
 <value textalk params> ::= <value textalk exp> ("," <value textalk exp>)*
 <target params> ::= <target> ("," <target>)*
-<is textalk exp> ::= <target params> "is" <textalk command exp>
+<name or command> ::= <name> | <textalk command exp>
+<name or command params> ::= <name or command> ("," <name or command>)*
+<is textalk exp> ::= <target params> "is" <name or command params>
 <signature> ::= "\" (<name> ".")* <name> (":" <name>)*
 <as textalk exp> ::= <value textalk exp> "as" <signature>
-<membership item> ::= <name> | <textalk command exp>
-<in textalk exp> ::= <target params> "in" <membership item>
+<in textalk exp> ::= <target params> "in" <name or command params>
 <notin textalk exp> ::= <target params> "notin" <membership params>
 <:= textalk exp> ::= <target> ":=" <value textalk exp>
 <= textalk exp> ::= <value textalk exp> "=" <value textalk exp>

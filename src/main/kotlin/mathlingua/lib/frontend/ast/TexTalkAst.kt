@@ -20,7 +20,7 @@ internal data class CommandExpression(
     val namedParams: List<NamedParameterExpression>?,
     val parenParams: List<Expression>?,
     override val metadata: MetaData
-) : TexTalkNode, MembershipItem, Expression
+) : TexTalkNode, NameOrCommand, Expression
 
 internal data class NamedParameterForm(
     val name: Name, val params: List<Name>, override val metadata: MetaData
@@ -47,8 +47,10 @@ internal data class InfixCommandExpression(
 internal data class InfixCommandForm(val command: CommandForm, override val metadata: MetaData) :
     TexTalkNode
 
+internal sealed interface NameOrCommand : TexTalkNode
+
 internal data class IsExpression(
-    val lhs: List<Target>, val rhs: Expression, override val metadata: MetaData
+    val lhs: List<Target>, val rhs: List<NameOrCommand>, override val metadata: MetaData
 ) : TexTalkNode, Expression
 
 internal data class SignatureExpression(
@@ -59,14 +61,12 @@ internal data class AsExpression(
     val lhs: Expression, val rhs: SignatureExpression, override val metadata: MetaData
 ) : TexTalkNode, Expression
 
-internal sealed interface MembershipItem : TexTalkNode
-
 internal data class InExpression(
-    val lhs: List<Target>, val rhs: MembershipItem, override val metadata: MetaData
+    val lhs: List<Target>, val rhs: NameOrCommand, override val metadata: MetaData
 ) : TexTalkNode, Expression
 
 internal data class NotInExpression(
-    val lhs: List<Target>, val rhs: MembershipItem, override val metadata: MetaData
+    val lhs: List<Target>, val rhs: NameOrCommand, override val metadata: MetaData
 ) : TexTalkNode, Expression
 
 internal data class ColonEqualsExpression(

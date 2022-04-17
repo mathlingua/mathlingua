@@ -44,7 +44,8 @@ internal enum class TexTalkTokenType {
     Slash,
     Name,
     Operator,
-    Colon
+    Colon,
+    Equals
 }
 
 internal data class TexTalkToken(
@@ -168,6 +169,7 @@ private val TEXT_AND_TYPES =
         TextAndType(".", TexTalkTokenType.Dot),
         TextAndType("\\", TexTalkTokenType.Backslash),
         TextAndType("/", TexTalkTokenType.Slash),
+        TextAndType("=", TexTalkTokenType.Equals),
         TextAndType(":=", TexTalkTokenType.ColonEquals),
         TextAndType(":Type:", TexTalkTokenType.ColonTypeColon),
         TextAndType(":Statement:", TexTalkTokenType.ColonStatementColon),

@@ -179,7 +179,7 @@ internal data class EqualityGroup(
 internal data class MembershipSection(override val metadata: MetaData) :
     Section("membership", metadata)
 
-internal data class ThroughSection(val through: Name, override val metadata: MetaData) :
+internal data class ThroughSection(val through: Statement, override val metadata: MetaData) :
     Section("through", metadata)
 
 internal data class MembershipGroup(

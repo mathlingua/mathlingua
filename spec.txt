@@ -189,7 +189,7 @@ provided: (<statement>[<value textalk exp> <textalk infix command exp> <value te
            <statement>[<value textalk exp> <scoped operator name> <value textalk exp>])
 
 membership:
-through: <name>
+through: <statement>
 
 view:
 as: <string>[<signature>]

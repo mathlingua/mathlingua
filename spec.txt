@@ -71,6 +71,16 @@ name2: ...
 TexTalk
 =======
 
+Keywords:
+---------
+is
+in
+notin
+as
+:Statement:
+:Type:
+:Expression:
+
 <textalk command exp> ::= "\" (<name> ".")* <name>
                               ("_" "{" <value textalk params>+ "}" "^" "{" <value textalk params>+ "}"
                                "[" <name param list>+ "]")?
@@ -100,16 +110,19 @@ TexTalk
 <paren exp> ::= "(" <value textalk exp> ")"
 <curly exp> ::= "{" <value textalk exp> "}"
 <operator name> ::= [~!@#$%^&*-+=|<>?/]+("_" [a-zA-Z0-9]+)?
+<scoped operator name> ::= (<name> ".")? <operator name>
+<scoped name> ::= (<name> ".")? <name>
 <value textalk exp> ::= <name> |
+                        <scoped name> |
                         <tuple> |
                         <sequence> |
                         <function> |
                         <set> |
                         "(" <value textalk exp> ")" |
                         "{" <value textalk exp> "}" |
-                        <operator name> <value textalk exp> |
-                        <value textalk exp> <operator name> <value textalk exp> |
-                        <value textalk exp> <operator name> |
+                        <scoped operator name> <value textalk exp> |
+                        <value textalk exp> <scoped operator name> <value textalk exp> |
+                        <value textalk exp> <scoped operator name> |
                         <value textalk exp> <textalk infix command exp> <value textalk exp> |
                         <textalk command exp> |
                         <as textalk exp> |
@@ -173,7 +186,7 @@ matching: <statement>[<:= textalk exp>]+
 equality:
 between: <target>, <target>
 provided: (<statement>[<value textalk exp> <textalk infix command exp> <value textalk exp>] |
-           <statement>[<value textalk exp> <operator name> <value textalk exp>])
+           <statement>[<value textalk exp> <scoped operator name> <value textalk exp>])
 
 membership:
 through: <name>

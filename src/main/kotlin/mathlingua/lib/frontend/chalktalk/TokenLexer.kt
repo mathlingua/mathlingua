@@ -3,6 +3,7 @@ package mathlingua.lib.frontend.chalktalk
 import java.util.Stack
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticType
+import java.util.LinkedList
 
 internal interface TokenLexer {
     fun hasNext(): Boolean
@@ -47,8 +48,7 @@ internal data class Token(val type: TokenType, val text: String, val row: Int, v
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private class TokenLexerImpl(text: String) : TokenLexer {
-    private val tokens = mutableListOf<Token>()
-    private var index = 0
+    private val tokens = LinkedList<Token>()
     private val diagnostics = mutableListOf<Diagnostic>()
 
     init {
@@ -288,20 +288,19 @@ private class TokenLexerImpl(text: String) : TokenLexer {
         }
     }
 
-    override fun hasNext() = index < tokens.size
+    override fun hasNext() = tokens.isNotEmpty()
 
-    override fun peek() = tokens[index]
+    override fun peek() = tokens.element()!!
 
-    override fun next() = tokens[index++]
+    override fun next() = tokens.remove()!!
 
-    override fun hasNextNext() = index + 1 < tokens.size
+    override fun hasNextNext() = tokens.size >= 2
 
-    override fun peekPeek() = tokens[index + 1]
+    override fun peekPeek() = tokens[1]
 
     override fun nextNext(): Token {
-        val result = peekPeek()
-        index += 2
-        return result
+        tokens.remove()
+        return tokens.remove()
     }
 
     override fun diagnostics(): List<Diagnostic> = diagnostics

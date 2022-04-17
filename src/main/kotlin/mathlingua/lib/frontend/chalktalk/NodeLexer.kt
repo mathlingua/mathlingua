@@ -32,6 +32,7 @@ import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
+import java.util.LinkedList
 
 internal interface NodeLexer {
     fun hasNext(): Boolean
@@ -52,8 +53,7 @@ internal fun newNodeLexer(lexer: TokenLexer): NodeLexer {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
-    private val tokens = mutableListOf<NodeLexerToken>()
-    private var index = 0
+    private val tokens = LinkedList<NodeLexerToken>()
     private val diagnostics = mutableListOf<Diagnostic>()
 
     init {
@@ -66,20 +66,19 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         }
     }
 
-    override fun hasNext() = index < tokens.size
+    override fun hasNext() = tokens.isNotEmpty()
 
-    override fun peek() = tokens[index]
+    override fun peek() = tokens.element()!!
 
-    override fun next() = tokens[index++]
+    override fun next() = tokens.remove()!!
 
-    override fun hasNextNext() = index + 1 < tokens.size
+    override fun hasNextNext() = tokens.size >= 2
 
-    override fun peekPeek() = tokens[index + 1]
+    override fun peekPeek() = tokens[1]
 
     override fun nextNext(): NodeLexerToken {
-        val result = peekPeek()
-        index += 2
-        return result
+        tokens.remove()
+        return tokens.remove()
     }
 
     override fun diagnostics(): List<Diagnostic> = diagnostics

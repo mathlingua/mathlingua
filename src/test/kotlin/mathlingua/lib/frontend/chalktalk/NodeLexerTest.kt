@@ -5,13 +5,13 @@ import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ast.BeginArgument
 import mathlingua.lib.frontend.ast.BeginGroup
 import mathlingua.lib.frontend.ast.BeginSection
-import mathlingua.lib.frontend.ast.ChalkTalkNode
 import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameParam
+import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
@@ -600,10 +600,10 @@ internal class NodeLexerTest {
                 EndGroup))
 }
 
-private fun runTest(text: String, expected: List<ChalkTalkNode>) {
+private fun runTest(text: String, expected: List<NodeLexerToken>) {
     val tokenLexer = newTokenLexer(text)
     val nodeLexer = newNodeLexer(tokenLexer)
-    val nodes = mutableListOf<ChalkTalkNode>()
+    val nodes = mutableListOf<NodeLexerToken>()
     while (nodeLexer.hasNext()) {
         nodes.add(nodeLexer.next())
     }

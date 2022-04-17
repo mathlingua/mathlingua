@@ -2,7 +2,7 @@ package mathlingua.lib.frontend.ast
 
 import mathlingua.lib.frontend.MetaData
 
-internal sealed interface CommonNode : ChalkTalkNode, TexTalkNode
+internal sealed interface CommonNode : ChalkTalkNode, TexTalkNode, NodeLexerToken
 
 internal interface NameOrFunction : CommonNode
 

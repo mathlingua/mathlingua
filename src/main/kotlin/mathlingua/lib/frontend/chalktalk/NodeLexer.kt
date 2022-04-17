@@ -19,6 +19,7 @@ import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameAssignmentItem
 import mathlingua.lib.frontend.ast.NameOrNameAssignment
 import mathlingua.lib.frontend.ast.NameParam
+import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
@@ -34,12 +35,12 @@ import mathlingua.lib.frontend.ast.Tuple
 
 internal interface NodeLexer {
     fun hasNext(): Boolean
-    fun peek(): ChalkTalkNode
-    fun next(): ChalkTalkNode
+    fun peek(): NodeLexerToken
+    fun next(): NodeLexerToken
 
     fun hasNextNext(): Boolean
-    fun peekPeek(): ChalkTalkNode
-    fun nextNext(): ChalkTalkNode
+    fun peekPeek(): NodeLexerToken
+    fun nextNext(): NodeLexerToken
 
     fun diagnostics(): List<Diagnostic>
 }
@@ -51,7 +52,7 @@ internal fun newNodeLexer(lexer: TokenLexer): NodeLexer {
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
-    private val nodes = mutableListOf<ChalkTalkNode>()
+    private val tokens = mutableListOf<NodeLexerToken>()
     private var index = 0
     private val diagnostics = mutableListOf<Diagnostic>()
 
@@ -65,17 +66,17 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         }
     }
 
-    override fun hasNext() = index < nodes.size
+    override fun hasNext() = index < tokens.size
 
-    override fun peek() = nodes[index]
+    override fun peek() = tokens[index]
 
-    override fun next() = nodes[index++]
+    override fun next() = tokens[index++]
 
-    override fun hasNextNext() = index + 1 < nodes.size
+    override fun hasNextNext() = index + 1 < tokens.size
 
-    override fun peekPeek() = nodes[index + 1]
+    override fun peekPeek() = tokens[index + 1]
 
-    override fun nextNext(): ChalkTalkNode {
+    override fun nextNext(): NodeLexerToken {
         val result = peekPeek()
         index += 2
         return result
@@ -487,7 +488,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
 
         while (lexer.has(TokenType.TextBlock)) {
             val next = lexer.next()
-            nodes.add(
+            tokens.add(
                 TextBlock(
                     text = next.text,
                     metadata = MetaData(row = next.row, column = next.column, isInline = false)))
@@ -501,10 +502,10 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         while (lexer.has(TokenType.LineBreak)) {
             lexer.next()
         }
-        nodes.add(BeginGroup)
+        tokens.add(BeginGroup)
         if (lexer.has(TokenType.Id)) {
             val id = lexer.next()
-            nodes.add(
+            tokens.add(
                 Id(
                     text = id.text,
                     metadata = MetaData(row = id.row, column = id.column, isInline = false)))
@@ -519,13 +520,13 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         while (lexer.has(TokenType.LineBreak)) {
             lexer.next()
         }
-        nodes.add(EndGroup)
+        tokens.add(EndGroup)
     }
 
     private fun processSection() {
         val name = expect(TokenType.Name) ?: return
         expect(TokenType.Colon) ?: return
-        nodes.add(BeginSection(name = name.text))
+        tokens.add(BeginSection(name = name.text))
         while (lexer.hasNext()) {
             val peek = lexer.peek()
             val newlineButNotDotSpace =
@@ -552,7 +553,7 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
                 break
             }
         }
-        nodes.add(EndSection)
+        tokens.add(EndSection)
     }
 
     private fun processArgument(startsInline: Boolean) {
@@ -560,17 +561,17 @@ private class NodeLexerImpl(private val lexer: TokenLexer) : NodeLexer {
         if (lexer.hasNextNext() &&
             lexer.peek().type == TokenType.Name &&
             lexer.peekPeek().type == TokenType.Colon) {
-            nodes.add(BeginArgument)
+            tokens.add(BeginArgument)
             processGroup()
-            nodes.add(EndArgument)
+            tokens.add(EndArgument)
         } else {
             while (lexer.hasNext() && lexer.peek().type != TokenType.Newline) {
                 val peek = lexer.peek()
                 val arg = argument(isInline)
                 if (arg != null) {
-                    nodes.add(BeginArgument)
-                    nodes.add(arg)
-                    nodes.add(EndArgument)
+                    tokens.add(BeginArgument)
+                    tokens.add(arg)
+                    tokens.add(EndArgument)
                 } else {
                     diagnostics.add(
                         Diagnostic(

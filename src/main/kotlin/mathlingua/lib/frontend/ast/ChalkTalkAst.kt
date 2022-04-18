@@ -125,7 +125,9 @@ internal data class GeneratedWhenSection(
 ) : Section("when", metadata)
 
 internal data class GeneratedGroup(
-    val fromSection: FromSection, val whenSection: WhenSection, override val metadata: MetaData
+    val fromSection: FromSection,
+    val whenSection: GeneratedWhenSection,
+    override val metadata: MetaData
 ) : Group(metadata), SatisfyingItem
 
 internal data class PiecewiseSection(override val metadata: MetaData) :

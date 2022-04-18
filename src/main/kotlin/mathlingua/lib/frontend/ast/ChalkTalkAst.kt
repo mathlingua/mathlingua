@@ -11,9 +11,9 @@ internal data class TextBlock(val text: String, override val metadata: MetaData)
 internal data class Id(val text: String, override val metadata: MetaData) :
     ChalkTalkNode, NodeLexerToken
 
-internal data class Statement(val text: String, override val metadata: MetaData) : Argument
+internal data class Statement(val text: String, override val metadata: MetaData) : Argument, Spec
 
-internal data class Text(val text: String, override val metadata: MetaData) : Argument
+internal data class Text(val text: String, override val metadata: MetaData) : Argument, Clause
 
 /*
  * <clause> ::= and: |
@@ -518,8 +518,8 @@ internal data class NegativeFloatGroup(
 internal data class IsSection(val form: Text, override val metadata: MetaData) :
     Section("is", metadata)
 
-internal interface TopLevelGroup
+internal interface TopLevelGroup : TopLevelGroupOrTextBlock
 
-internal interface TopLevelGroupOrTextBlock : TopLevelGroup
+internal interface TopLevelGroupOrTextBlock : ChalkTalkNode
 
 internal data class Document(val items: List<TopLevelGroupOrTextBlock>)

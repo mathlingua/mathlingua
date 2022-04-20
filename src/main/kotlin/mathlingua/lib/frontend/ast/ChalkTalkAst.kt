@@ -394,7 +394,7 @@ internal data class ResourceGroup(
 internal data class AxiomSection(override val metadata: MetaData) : Section("Axiom", metadata)
 
 internal data class AxiomGroup(
-    val id: Id,
+    val id: Id?,
     val axiomSection: AxiomSection,
     val givenSection: GivenSection?,
     val whereSection: WhereSection?,
@@ -410,7 +410,7 @@ internal data class ConjectureSection(override val metadata: MetaData) :
     Section("Conjecture", metadata)
 
 internal data class ConjectureGroup(
-    val id: Id,
+    val id: Id?,
     val conjectureSection: ConjectureSection,
     val givenSection: GivenSection?,
     val whereSection: WhereSection?,
@@ -425,7 +425,7 @@ internal data class ConjectureGroup(
 internal data class TheoremSection(override val metadata: MetaData) : Section("Theorem", metadata)
 
 internal data class TheoremGroup(
-    val id: Id,
+    val id: Id?,
     val theoremSection: TheoremSection,
     val givenSection: GivenSection?,
     val whereSection: WhereSection?,

@@ -501,7 +501,16 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         while (lexer.has(ChalkTalkTokenType.LineBreak)) {
             lexer.next()
         }
-        tokens.add(BeginGroup)
+        val peek =
+            if (lexer.hasNext()) {
+                lexer.peek()
+            } else {
+                null
+            }
+        tokens.add(
+            BeginGroup(
+                metadata =
+                    MetaData(row = peek?.row ?: -1, column = peek?.column ?: -1, isInline = false)))
         if (lexer.has(ChalkTalkTokenType.Id)) {
             val id = lexer.next()
             tokens.add(
@@ -525,7 +534,10 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
     private fun processSection() {
         val name = expect(ChalkTalkTokenType.Name) ?: return
         expect(ChalkTalkTokenType.Colon) ?: return
-        tokens.add(BeginSection(name = name.text))
+        tokens.add(
+            BeginSection(
+                name = name.text,
+                metadata = MetaData(row = name.row, column = name.column, isInline = false)))
         while (lexer.hasNext()) {
             val peek = lexer.peek()
             val newlineButNotDotSpace =
@@ -560,7 +572,10 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         if (lexer.hasNextNext() &&
             lexer.peek().type == ChalkTalkTokenType.Name &&
             lexer.peekPeek().type == ChalkTalkTokenType.Colon) {
-            tokens.add(BeginArgument)
+            val peek = lexer.peek()
+            tokens.add(
+                BeginArgument(
+                    metadata = MetaData(row = peek.row, column = peek.column, isInline = false)))
             processGroup()
             tokens.add(EndArgument)
         } else {
@@ -568,7 +583,13 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 val peek = lexer.peek()
                 val arg = argument(isInline)
                 if (arg != null) {
-                    tokens.add(BeginArgument)
+                    tokens.add(
+                        BeginArgument(
+                            metadata =
+                                MetaData(
+                                    row = arg.metadata.row,
+                                    column = arg.metadata.column,
+                                    isInline = arg.metadata.isInline)))
                     tokens.add(arg)
                     tokens.add(EndArgument)
                 } else {

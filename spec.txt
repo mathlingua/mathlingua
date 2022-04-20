@@ -256,7 +256,7 @@ Resource:
 . offset?: <string>[.*]
 Metadata?: <metadata item>+
 
-[<id>]
+[<id>?]
 Axiom:
 given?: <target>+
 where?: <spec>+
@@ -266,7 +266,7 @@ iff?: <clause>+
 using?: <statement>[<:= textalk exp>]+
 Metadata?: <metadata item>+
 
-[<id>]
+[<id>?]
 Conjecture:
 given?: <target>+
 where?: <spec>+
@@ -276,7 +276,7 @@ iff?: <clause>+
 using?: <statement>[<:= textalk exp>]+
 Metadata?: <metadata item>+
 
-[<id>]
+[<id>?]
 Theorem:
 given?: <target>+
 where?: <spec>+

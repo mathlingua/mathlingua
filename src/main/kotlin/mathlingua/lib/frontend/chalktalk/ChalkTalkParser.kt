@@ -998,7 +998,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         default: T,
         builder: (id: Id?, sections: Map<String, Section?>, metadata: MetaData) -> T
     ): T? {
-        if (!nextIs<BeginGroup>()) {
+        if (!nextIs<BeginGroup>() || !hasHasBeginSection(specs.first().name)) {
             return null
         }
 
@@ -1020,7 +1020,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             id = DEFAULT_ID
         }
 
-        val sections = mutableListOf<EvaluatedSection>()
+        val sections = mutableListOf<Section>()
         while (lexer.hasNext()) {
             val nextIsSection = lexer.hasNext() && lexer.peek() is BeginSection
             if (!nextIsSection) {
@@ -1030,8 +1030,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             if (namesToSpec.containsKey(sect.name)) {
                 val spec = namesToSpec[sect.name]!!
                 val result = spec.builder()
-                sections.add(
-                    EvaluatedSection(name = sect.name, required = spec.required, section = result))
+                if (result != null) {
+                    sections.add(result)
+                }
             } else {
                 val beginSection = expectIs<BeginSection>()!!
                 diagnostics.add(
@@ -1059,8 +1060,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
         val mapping =
             identifySections(
-                sections.mapNotNull { it.section },
-                specs.map { "${it.name}${if (it.required) { "" } else { "?" }}" })
+                sections, specs.map { "${it.name}${if (it.required) { "" } else { "?" }}" })
                 ?: return default
 
         expect(EndGroup)
@@ -1077,12 +1077,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 private data class SectionSpec(
     val name: String, val required: Boolean, val builder: () -> Section?)
 
-private data class EvaluatedSection(val name: String, val required: Boolean, val section: Section?)
-
 fun main() {
     val text =
         """
-        [some id]
         Theorem:
         then:
         . and:

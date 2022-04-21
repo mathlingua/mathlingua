@@ -22,12 +22,13 @@ import mathlingua.lib.frontend.ast.ConjectureSection
 import mathlingua.lib.frontend.ast.ContentSection
 import mathlingua.lib.frontend.ast.DEFAULT_AND_SECTION
 import mathlingua.lib.frontend.ast.DEFAULT_CLAUSE
+import mathlingua.lib.frontend.ast.DEFAULT_CONJECTURE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_EXISTS_SECTION
 import mathlingua.lib.frontend.ast.DEFAULT_EXISTS_UNIQUE_SECTION
+import mathlingua.lib.frontend.ast.DEFAULT_ID
 import mathlingua.lib.frontend.ast.DEFAULT_NOT_SECTION
 import mathlingua.lib.frontend.ast.DEFAULT_OR_SECTION
-import mathlingua.lib.frontend.ast.DEFAULT_THEN_SECTION
-import mathlingua.lib.frontend.ast.DEFAULT_THEOREM_SECTION
+import mathlingua.lib.frontend.ast.DEFAULT_THEOREM_GROUP
 import mathlingua.lib.frontend.ast.DefinesGroup
 import mathlingua.lib.frontend.ast.DefinesSection
 import mathlingua.lib.frontend.ast.Document
@@ -144,6 +145,8 @@ import mathlingua.lib.frontend.ast.WritingSection
 import mathlingua.lib.frontend.ast.WrittenSection
 import mathlingua.lib.frontend.ast.ZeroGroup
 import mathlingua.lib.frontend.ast.ZeroSection
+import java.util.LinkedList
+import java.util.Queue
 
 internal data class ParseResult(val doc: Document, val diagnostics: List<Diagnostic>)
 
@@ -619,28 +622,66 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         return null
     }
 
-    private fun conjectureGroup(): ConjectureGroup? {
-        return null
+    private fun conjectureGroup(): ConjectureGroup? = group(
+        idRequired = false,
+        specs = listOf(
+            SectionSpec(name = "Conjecture", required = true) { this.conjectureSection() },
+            SectionSpec(name = "given", required = false) { this.givenSection() },
+            SectionSpec(name = "where", required = false) { this.whereSection() },
+            SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
+            SectionSpec(name = "then", required = true) { this.thenSection() },
+            SectionSpec(name = "iff", required = false) { this.iffSection() },
+            SectionSpec(name = "using", required = false) { this.usingSection() },
+            SectionSpec(name = "Metadata", required = false) { this.metadataSection() }
+        ),
+        default = DEFAULT_CONJECTURE_GROUP
+    ) { id, sections, metadata ->
+        ConjectureGroup(
+            id = id,
+            conjectureSection = sections["Conjecture"] as ConjectureSection,
+            givenSection = sections["given"] as GivenSection?,
+            whereSection = sections["where"] as WhereSection?,
+            suchThatSection = sections["suchThat"] as SuchThatSection?,
+            thenSection = sections["then"] as ThenSection,
+            iffSection = sections["iff"] as IffSection?,
+            usingSection = sections["using"] as UsingSection?,
+            metadataSection = sections["Metadata"] as MetadataSection?,
+            metadata = metadata
+        )
     }
 
     private fun theoremSection(): TheoremSection? =
         section("Theorem") { TheoremSection(metadata = it) }
 
-    private fun theoremGroup(): TheoremGroup? =
-        group("Theorem") {
-            TheoremGroup(
-                id = id(),
-                theoremSection = requiredSection(theoremSection(), DEFAULT_THEOREM_SECTION),
-                givenSection = givenSection(),
-                whereSection = whereSection(),
-                suchThatSection = suchThatSection(),
-                thenSection = requiredSection(thenSection(), DEFAULT_THEN_SECTION),
-                iffSection = iffSection(),
-                usingSection = usingSection(),
-                proofSection = proofSection(),
-                metadataSection = metadataSection(),
-                metadata = it)
-        }
+    private fun theoremGroup(): TheoremGroup? = group(
+        idRequired = false,
+        specs = listOf(
+            SectionSpec(name = "Theorem", required = true) { this.theoremSection() },
+            SectionSpec(name = "given", required = false) { this.givenSection() },
+            SectionSpec(name = "where", required = false) { this.whereSection() },
+            SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
+            SectionSpec(name = "then", required = true) { this.thenSection() },
+            SectionSpec(name = "iff", required = false) { this.iffSection() },
+            SectionSpec(name = "using", required = false) { this.usingSection() },
+            SectionSpec(name = "proof", required = false) { this.proofSection() },
+            SectionSpec(name = "Metadata", required = false) { this.metadataSection() }
+        ),
+        default = DEFAULT_THEOREM_GROUP
+    ) { id, sections, metadata ->
+        TheoremGroup(
+            id = id,
+            theoremSection = sections["Theorem"] as TheoremSection,
+            givenSection = sections["given"] as GivenSection?,
+            whereSection = sections["where"] as WhereSection?,
+            suchThatSection = sections["suchThat"] as SuchThatSection?,
+            thenSection = sections["then"] as ThenSection,
+            iffSection = sections["iff"] as IffSection?,
+            usingSection = sections["using"] as UsingSection?,
+            proofSection = sections["proof"] as ProofSection?,
+            metadataSection = sections["Metadata"] as MetadataSection?,
+            metadata = metadata
+        )
+    }
 
     private fun proofSection(): ProofSection? {
         return null
@@ -841,13 +882,215 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
         return next
     }
+
+    private fun identifySections(
+        sections: List<Section>, expected: List<String>
+    ): Map<String, Section>? {
+        val patternBuilder = StringBuilder()
+        for (name in expected) {
+            patternBuilder.append(name)
+            patternBuilder.append(":\n")
+        }
+
+        // the pattern is used for error messages
+        val pattern = patternBuilder.toString()
+
+        val sectionQueue: Queue<Section> = LinkedList()
+        for (s in sections) {
+            sectionQueue.offer(s)
+        }
+
+        val expectedQueue: Queue<String> = LinkedList()
+        for (e in expected) {
+            expectedQueue.offer(e)
+        }
+
+        val usedSectionNames = mutableMapOf<String, Int>()
+        val result = mutableMapOf<String, Section>()
+
+        while (!sectionQueue.isEmpty() && !expectedQueue.isEmpty()) {
+            val nextSection = sectionQueue.peek()
+            val maybeName = expectedQueue.peek()
+
+            val isOptional = maybeName.endsWith("?")
+            val trueName = if (isOptional) maybeName.substring(0, maybeName.length - 1) else maybeName
+            val key =
+                if (usedSectionNames.containsKey(trueName)) {
+                    "$trueName${usedSectionNames[trueName]}"
+                } else {
+                    trueName
+                }
+            usedSectionNames[trueName] = usedSectionNames.getOrDefault(trueName, 0) + 1
+            if (nextSection.name == trueName) {
+                result[key] = nextSection
+                // the expected name and Section have both been used so move past them
+                sectionQueue.poll()
+                expectedQueue.poll()
+            } else if (isOptional) {
+                // The Section found doesn't match the expected name
+                // but the expected name is optional.  So move past
+                // the expected name but don't move past the Section
+                // so it can be processed again in the next run of
+                // the loop.
+                expectedQueue.poll()
+            } else {
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        message = "For pattern:\n\n" +
+                            pattern +
+                            "\nExpected '" +
+                            trueName +
+                            "' but found '" +
+                            nextSection.name +
+                            "'",
+                        row = nextSection.metadata.row,
+                        column = nextSection.metadata.column
+                    )
+                )
+                return null
+            }
+        }
+
+        if (!sectionQueue.isEmpty()) {
+            val peek = sectionQueue.peek()
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "For pattern:\n\n" + pattern + "\nUnexpected Section '" + peek.name + "'",
+                    row = peek.metadata.row,
+                    column = peek.metadata.column
+                )
+            )
+            return null
+        }
+
+        var nextExpected: String? = null
+        for (exp in expectedQueue) {
+            if (!exp.endsWith("?")) {
+                // trim the ?
+                nextExpected = exp
+                break
+            }
+        }
+
+        var startRow = -1
+        var startColumn = -1
+        if (sections.isNotEmpty()) {
+            val sect = sections[0]
+            startRow = sect.metadata.row
+            startColumn = sect.metadata.column
+        }
+
+        if (nextExpected != null) {
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "For pattern:\n\n$pattern\nExpected a $nextExpected",
+                    row = startRow,
+                    column = startColumn
+                )
+            )
+            return null
+        }
+
+        return result
+    }
+
+    private fun <T> group(idRequired: Boolean, specs: List<SectionSpec>,
+                          default: T,
+                          builder: (id: Id?, sections: Map<String, Section?>, metadata: MetaData) -> T): T? {
+        if (!nextIs<BeginGroup>()) {
+            return null
+        }
+
+        val namesToSpec = mutableMapOf<String, SectionSpec>()
+        for (spec in specs) {
+            namesToSpec[spec.name] = spec
+        }
+
+        val beginGroup = expectIs<BeginGroup>()!!
+
+        var id = id()
+        if (idRequired && id == null) {
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "Expected an id",
+                    row = beginGroup.metadata.row,
+                    column = beginGroup.metadata.column
+                )
+            )
+            id = DEFAULT_ID
+        }
+
+        val sections = mutableListOf<EvaluatedSection>()
+        while (lexer.hasNext()) {
+            val nextIsSection = lexer.hasNext() && lexer.peek() is BeginSection
+            if (!nextIsSection) {
+                break
+            }
+            val sect = lexer.peek() as BeginSection
+            if (namesToSpec.containsKey(sect.name)) {
+                val spec = namesToSpec[sect.name]!!
+                val result = spec.builder()
+                sections.add(
+                    EvaluatedSection(
+                        name = sect.name,
+                        required = spec.required,
+                        section = result
+                    )
+                )
+            } else {
+                val beginSection = expectIs<BeginSection>()!!
+                diagnostics.add(Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "Unexpected section '${sect.name}'",
+                    row = beginSection.metadata.row,
+                    column = beginGroup.metadata.column
+                ))
+                while (lexer.hasNext() && !nextIs<EndSection>()) {
+                    lexer.next()
+                }
+                expectIs<EndSection>()
+            }
+        }
+
+        while (lexer.hasNext() && !nextIs<EndGroup>()) {
+            val next = lexer.next()
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "Unexpected item $next",
+                    row = next.metadata.row,
+                    column = next.metadata.column
+                )
+            )
+        }
+
+        val mapping = identifySections(
+            sections.mapNotNull { it.section },
+            specs.map { "${it.name}${if (it.required) { "" } else { "?" }}" }
+        ) ?: return default
+
+        expect(EndGroup)
+        return builder(id, mapping, MetaData(
+                row = beginGroup.metadata.row,
+                column = beginGroup.metadata.column,
+                isInline = false
+            )
+        )
+    }
 }
+
+private data class SectionSpec(val name: String, val required: Boolean, val builder: () -> Section?)
+private data class EvaluatedSection(val name: String, val required: Boolean, val section: Section?)
 
 fun main() {
     val text =
         """
+        [some id]
         Theorem:
-        abc:
         then:
         . and:
           . "abc"

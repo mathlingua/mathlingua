@@ -267,30 +267,20 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun andGroup(): AndGroup? =
         group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "and", required = true) { this.andSection() }
-            ),
-            default = DEFAULT_AND_GROUP
-        ) { _, sections, metadata ->
-            AndGroup(
-                andSection = sections["and"] as AndSection,
-                metadata = metadata
-            )
+            specs = listOf(SectionSpec(name = "and", required = true) { this.andSection() }),
+            default = DEFAULT_AND_GROUP) { _, sections, metadata ->
+            AndGroup(andSection = sections["and"] as AndSection, metadata = metadata)
         }
 
     private fun notSection(): NotSection? =
         section("not") { NotSection(clause = required(clause(), DEFAULT_CLAUSE), metadata = it) }
 
     private fun notGroup(): NotGroup? =
-        group(
-            idSpec = IdRequirement.NotAllowed,
-            specs = listOf(),
-            default = DEFAULT_NOT_GROUP
-        ) { _, sections, metadata ->
-            NotGroup(
-                notSection = sections["not"] as NotSection,
-                metadata = metadata
-            )
+        group(idSpec = IdRequirement.NotAllowed, specs = listOf(), default = DEFAULT_NOT_GROUP) {
+        _,
+        sections,
+        metadata ->
+            NotGroup(notSection = sections["not"] as NotSection, metadata = metadata)
         }
 
     private fun orSection(): OrSection? =
@@ -299,15 +289,10 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun orGroup(): OrGroup? =
         group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "or", required = true) { this.orSection() }
-            ),
+            specs = listOf(SectionSpec(name = "or", required = true) { this.orSection() }),
             default = DEFAULT_OR_GROUP,
         ) { _, sections, metadata ->
-            OrGroup(
-                orSection = sections["or"] as OrSection,
-                metadata = metadata
-            )
+            OrGroup(orSection = sections["or"] as OrSection, metadata = metadata)
         }
 
     private fun target(): Target? = null
@@ -342,13 +327,12 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun existsGroup(): ExistsGroup? =
         group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "exists", required = true) { this.existsSection() },
-                SectionSpec(name = "where", required = false) { this.whereSection() },
-                SectionSpec(name = "suchThat", required = false) { this.suchThatSection() }
-            ),
-            default = DEFAULT_EXISTS_GROUP
-        ) { _, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "exists", required = true) { this.existsSection() },
+                    SectionSpec(name = "where", required = false) { this.whereSection() },
+                    SectionSpec(name = "suchThat", required = false) { this.suchThatSection() }),
+            default = DEFAULT_EXISTS_GROUP) { _, sections, metadata ->
             ExistsGroup(
                 existsSection = sections["exists"] as ExistsSection,
                 whereSection = sections["where"] as WhereSection?,
@@ -357,18 +341,21 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun existsUniqueSection(): ExistsUniqueSection? =
-        section("existsUnique") { ExistsUniqueSection(targets = oneOrMore(targets(), it), metadata = it) }
+        section("existsUnique") {
+            ExistsUniqueSection(targets = oneOrMore(targets(), it), metadata = it)
+        }
 
     private fun existsUniqueGroup(): ExistsUniqueGroup? =
         group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "existsUnique", required = true) { this.existsUniqueSection() },
-                SectionSpec(name = "where", required = false) { this.whereSection() },
-                SectionSpec(name = "suchThat", required = false) { this.suchThatSection() }
-            ),
-            default = DEFAULT_EXISTS_UNIQUE_GROUP
-        ) { _, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "existsUnique", required = true) {
+                        this.existsUniqueSection()
+                    },
+                    SectionSpec(name = "where", required = false) { this.whereSection() },
+                    SectionSpec(name = "suchThat", required = false) { this.suchThatSection() }),
+            default = DEFAULT_EXISTS_UNIQUE_GROUP) { _, sections, metadata ->
             ExistsUniqueGroup(
                 existsUniqueSection = sections["existsUnique"] as ExistsUniqueSection,
                 whereSection = sections["where"] as WhereSection?,
@@ -377,95 +364,71 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun forAllSection(): ForAllSection? =
-        section("forAll") {
-            ForAllSection(
-                targets = oneOrMore(targets(), it),
-                metadata = it
-            )
-        }
+        section("forAll") { ForAllSection(targets = oneOrMore(targets(), it), metadata = it) }
 
     private fun forAllGroup(): ForAllGroup? =
         group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "forAll", required = true) { this.forAllSection() },
-                SectionSpec(name = "where", required = false) { this.whereSection() },
-                SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
-                SectionSpec(name = "then", required = true) { this.thenSection() }
-            ),
-            default = DEFAULT_FOR_ALL_GROUP
-        ) { _, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "forAll", required = true) { this.forAllSection() },
+                    SectionSpec(name = "where", required = false) { this.whereSection() },
+                    SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
+                    SectionSpec(name = "then", required = true) { this.thenSection() }),
+            default = DEFAULT_FOR_ALL_GROUP) { _, sections, metadata ->
             ForAllGroup(
                 forAllSection = sections["forAll"] as ForAllSection,
                 whereSection = sections["where"] as WhereSection?,
                 suchThatSection = sections["suchThat"] as SuchThatSection?,
                 thenSection = sections["then"] as ThenSection,
-                metadata = metadata
-            )
+                metadata = metadata)
         }
 
     private fun thenSection(): ThenSection? =
         section("then") { ThenSection(clauses = oneOrMore(clauses(), it), metadata = it) }
 
     private fun ifSection(): IfSection? =
-        section("if") {
-            IfSection(
-                clauses = oneOrMore(clauses(), it),
-                metadata = it
-            )
-        }
+        section("if") { IfSection(clauses = oneOrMore(clauses(), it), metadata = it) }
 
-    private fun ifGroup(): IfGroup?
-        = group(
+    private fun ifGroup(): IfGroup? =
+        group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "if", required = true) { this.ifSection() },
-                SectionSpec(name = "then", required = true) { this.thenSection() }
-            ),
-            default = DEFAULT_IF_GROUP
-        ) { _, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "if", required = true) { this.ifSection() },
+                    SectionSpec(name = "then", required = true) { this.thenSection() }),
+            default = DEFAULT_IF_GROUP) { _, sections, metadata ->
             IfGroup(
                 ifSection = sections["if"] as IfSection,
                 thenSection = sections["then"] as ThenSection,
-                metadata = metadata
-            )
+                metadata = metadata)
         }
 
     private fun iffSection(): IffSection? =
-        section("iff") {
-            IffSection(
-                clauses = oneOrMore(clauses(), it),
-                metadata = it
-            )
-        }
+        section("iff") { IffSection(clauses = oneOrMore(clauses(), it), metadata = it) }
 
-    private fun iffGroup(): IffGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "iff", required = true) { this.iffSection() },
-            SectionSpec(name = "then", required = true) { this.thenSection() }
-        ),
-        default = DEFAULT_IFF_GROUP
-        ) { _, sections, metadata ->
+    private fun iffGroup(): IffGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "iff", required = true) { this.iffSection() },
+                    SectionSpec(name = "then", required = true) { this.thenSection() }),
+            default = DEFAULT_IFF_GROUP) { _, sections, metadata ->
             IffGroup(
                 iffSection = sections["iff"] as IffSection,
                 thenSection = sections["then"] as ThenSection,
-                metadata = metadata
-            )
-    }
+                metadata = metadata)
+        }
 
     private fun generatedSection(): GeneratedSection? =
-        section("generated") {
-            GeneratedSection(metadata = it)
-        }
+        section("generated") { GeneratedSection(metadata = it) }
 
     private fun name(): Name? = getNextIfCorrectType()
 
     private fun function(): Function? = getNextIfCorrectType()
 
-    private fun nameOrFunction(): NameOrFunction?
-        = name() ?: function()
+    private fun nameOrFunction(): NameOrFunction? = name() ?: function()
 
     private fun nameOrFunctions(): List<NameOrFunction> {
         val result = mutableListOf<NameOrFunction>()
@@ -477,12 +440,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     }
 
     private fun fromSection(): FromSection? =
-        section("from") {
-            FromSection(
-                items = oneOrMore(nameOrFunctions(), it),
-                metadata = it
-            )
-        }
+        section("from") { FromSection(items = oneOrMore(nameOrFunctions(), it), metadata = it) }
 
     private fun statements(): List<Statement> {
         val result = mutableListOf<Statement>()
@@ -495,219 +453,155 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun generatedWhenSection(): GeneratedWhenSection? =
         section("when") {
-            GeneratedWhenSection(
-                statements = oneOrMore(statements(), it),
-                metadata = it
-            )
+            GeneratedWhenSection(statements = oneOrMore(statements(), it), metadata = it)
         }
 
-    private fun generatedGroup(): GeneratedGroup?
-        = group(
+    private fun generatedGroup(): GeneratedGroup? =
+        group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "generated", required = true) { this.generatedSection() },
-                SectionSpec(name = "from", required = true) { this.fromSection() },
-                SectionSpec(name = "when", required = true) { this.generatedWhenSection() }
-            ),
-            default = DEFAULT_GENERATED_GROUP
-        ) { _, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "generated", required = true) { this.generatedSection() },
+                    SectionSpec(name = "from", required = true) { this.fromSection() },
+                    SectionSpec(name = "when", required = true) { this.generatedWhenSection() }),
+            default = DEFAULT_GENERATED_GROUP) { _, sections, metadata ->
             GeneratedGroup(
                 generatedSection = sections["generated"] as GeneratedSection,
                 fromSection = sections["from"] as FromSection,
                 whenSection = sections["when"] as GeneratedWhenSection,
-                metadata = metadata
-            )
-    }
+                metadata = metadata)
+        }
 
     private fun piecewiseSection(): PiecewiseSection? =
-        section("piecewise") {
-            PiecewiseSection(metadata = it)
-        }
+        section("piecewise") { PiecewiseSection(metadata = it) }
 
     private fun piecewiseWhenSection(): PiecewiseWhenSection? =
-        section("when") {
-            PiecewiseWhenSection(
-                clauses = oneOrMore(clauses(), it),
-                metadata = it
-            )
-        }
+        section("when") { PiecewiseWhenSection(clauses = oneOrMore(clauses(), it), metadata = it) }
 
     private fun piecewiseThenSection(): PiecewiseThenSection? =
         section("then") {
-            PiecewiseThenSection(
-                statements = oneOrMore(statements(), it),
-                metadata = it
-            )
+            PiecewiseThenSection(statements = oneOrMore(statements(), it), metadata = it)
         }
 
     private fun piecewiseElseSection(): PiecewiseElseSection? =
         section("else") {
-            PiecewiseElseSection(
-                statements = oneOrMore(statements(), it),
-                metadata = it
-            )
+            PiecewiseElseSection(statements = oneOrMore(statements(), it), metadata = it)
         }
 
-    private fun piecewiseGroup(): PiecewiseGroup?
-        = group(
+    private fun piecewiseGroup(): PiecewiseGroup? =
+        group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "piecewise", required = true) { this.piecewiseSection() },
-                SectionSpec(name = "when", required = false) { this.piecewiseWhenSection() },
-                SectionSpec(name = "then", required = false) { this.piecewiseThenSection() },
-                SectionSpec(name = "else", required = false) { this.piecewiseElseSection() }
-            ),
-            default = DEFAULT_PIECEWISE_GROUP
-        ) { _, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "piecewise", required = true) { this.piecewiseSection() },
+                    SectionSpec(name = "when", required = false) { this.piecewiseWhenSection() },
+                    SectionSpec(name = "then", required = false) { this.piecewiseThenSection() },
+                    SectionSpec(name = "else", required = false) { this.piecewiseElseSection() }),
+            default = DEFAULT_PIECEWISE_GROUP) { _, sections, metadata ->
             PiecewiseGroup(
                 piecewiseSection = sections["piecewise"] as PiecewiseSection,
                 whenSection = sections["when"] as PiecewiseWhenSection?,
                 thenSection = sections["then"] as PiecewiseThenSection?,
                 piecewiseElseSection = sections["else"] as PiecewiseElseSection?,
-                metadata = metadata
-            )
-    }
+                metadata = metadata)
+        }
 
     private fun matchingSection(): MatchingSection? =
         section("matching") {
-            MatchingSection(
-                statements = oneOrMore(statements(), it),
-                metadata = it
-            )
+            MatchingSection(statements = oneOrMore(statements(), it), metadata = it)
         }
 
-    private fun matchingGroup(): MatchingGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "matching", required = true) { this.matchingSection() }
-        ),
-        default = DEFAULT_MATCHING_GROUP
-        ) { _, sections, metadata ->
+    private fun matchingGroup(): MatchingGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "matching", required = true) { this.matchingSection() }),
+            default = DEFAULT_MATCHING_GROUP) { _, sections, metadata ->
             MatchingGroup(
-                matchingSection = sections["matching"] as MatchingSection,
-                metadata = metadata
-            )
-    }
+                matchingSection = sections["matching"] as MatchingSection, metadata = metadata)
+        }
 
     private fun equalitySection(): EqualitySection? =
-        section("equality") {
-            EqualitySection(metadata = it)
-        }
+        section("equality") { EqualitySection(metadata = it) }
 
     private fun betweenSection(): BetweenSection? =
         section("between") {
             BetweenSection(
                 first = required(target(), DEFAULT_TARGET),
                 second = required(target(), DEFAULT_TARGET),
-                metadata = it
-            )
+                metadata = it)
         }
 
     private fun providedSection(): ProvidedSection? =
         section("provided") {
-            ProvidedSection(
-                statement = required(statement(), DEFAULT_STATEMENT),
-                metadata = it
-            )
+            ProvidedSection(statement = required(statement(), DEFAULT_STATEMENT), metadata = it)
         }
 
-    private fun equalityGroup(): EqualityGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "equality", required = true) { this.equalitySection() },
-            SectionSpec(name = "between", required = true) { this.betweenSection() },
-            SectionSpec(name = "provided", required = true) { this.providedSection() }
-        ),
-        default = DEFAULT_EQUALITY_GROUP
-        ) { _, sections, metadata ->
-        EqualityGroup(
-            equalitySection = sections["equality"] as EqualitySection,
-            betweenSection = sections["between"] as BetweenSection,
-            providedSection = sections["provided"] as ProvidedSection,
-            metadata = metadata
-        )
-    }
+    private fun equalityGroup(): EqualityGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "equality", required = true) { this.equalitySection() },
+                    SectionSpec(name = "between", required = true) { this.betweenSection() },
+                    SectionSpec(name = "provided", required = true) { this.providedSection() }),
+            default = DEFAULT_EQUALITY_GROUP) { _, sections, metadata ->
+            EqualityGroup(
+                equalitySection = sections["equality"] as EqualitySection,
+                betweenSection = sections["between"] as BetweenSection,
+                providedSection = sections["provided"] as ProvidedSection,
+                metadata = metadata)
+        }
 
     private fun membershipSection(): MembershipSection? =
-        section("membership") {
-            MembershipSection(
-                metadata = it
-            )
-        }
+        section("membership") { MembershipSection(metadata = it) }
 
     private fun throughSection(): ThroughSection? =
         section("through") {
-            ThroughSection(
-                through = required(statement(), DEFAULT_STATEMENT),
-                metadata = it
-            )
+            ThroughSection(through = required(statement(), DEFAULT_STATEMENT), metadata = it)
         }
 
-    private fun membershipGroup(): MembershipGroup?
-        = group(
+    private fun membershipGroup(): MembershipGroup? =
+        group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "membership", required = true) { this.membershipSection() },
-                SectionSpec(name = "through", required = true) { this.throughSection() }
-            ),
-            default = DEFAULT_MEMBERSHIP_GROUP
-        ) { _, sections, metadata ->
-        MembershipGroup(
-            membershipSection = sections["membership"] as MembershipSection,
-            throughSection = sections["through"] as ThroughSection,
-            metadata = metadata
-        )
-    }
-
-    private fun viewSection(): ViewSection? =
-        section("view") {
-            ViewSection(metadata = it)
+            specs =
+                listOf(
+                    SectionSpec(name = "membership", required = true) { this.membershipSection() },
+                    SectionSpec(name = "through", required = true) { this.throughSection() }),
+            default = DEFAULT_MEMBERSHIP_GROUP) { _, sections, metadata ->
+            MembershipGroup(
+                membershipSection = sections["membership"] as MembershipSection,
+                throughSection = sections["through"] as ThroughSection,
+                metadata = metadata)
         }
+
+    private fun viewSection(): ViewSection? = section("view") { ViewSection(metadata = it) }
 
     private fun asSection(): AsSection? =
-        section("as") {
-            AsSection(
-                asText = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
-        }
+        section("as") { AsSection(asText = required(text(), DEFAULT_TEXT), metadata = it) }
 
     private fun viaSection(): ViaSection? =
-        section("via") {
-            ViaSection(
-                via = required(statement(), DEFAULT_STATEMENT),
-                metadata = it
-            )
-        }
+        section("via") { ViaSection(via = required(statement(), DEFAULT_STATEMENT), metadata = it) }
 
     private fun bySection(): BySection? =
-        section("by") {
-            BySection(
-                by = required(statement(), DEFAULT_STATEMENT),
-                metadata = it
-            )
-        }
+        section("by") { BySection(by = required(statement(), DEFAULT_STATEMENT), metadata = it) }
 
     private fun viewGroup(): ViewGroup? =
         group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "view", required = true) { this.viewSection() },
-                SectionSpec(name = "as", required = true) { this.asSection() },
-                SectionSpec(name = "via", required = true) { this.viewSection() },
-                SectionSpec(name = "by", required = false) { this.bySection() }
-            ),
-            default = DEFAULT_VIEW_GROUP
-        ) { _, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "view", required = true) { this.viewSection() },
+                    SectionSpec(name = "as", required = true) { this.asSection() },
+                    SectionSpec(name = "via", required = true) { this.viewSection() },
+                    SectionSpec(name = "by", required = false) { this.bySection() }),
+            default = DEFAULT_VIEW_GROUP) { _, sections, metadata ->
             ViewGroup(
                 viewSection = sections["view"] as ViewSection,
                 asSection = sections["as"] as AsSection,
                 viaSection = sections["via"] as ViaSection,
                 bySection = sections["by"] as BySection?,
-                metadata = metadata
-            )
+                metadata = metadata)
         }
 
     private fun names(): List<Name> {
@@ -720,68 +614,52 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     }
 
     private fun symbolsSection(): SymbolsSection? =
-        section("symbols") {
-            SymbolsSection(
-                names = oneOrMore(names(), it),
-                metadata = it
-            )
-        }
+        section("symbols") { SymbolsSection(names = oneOrMore(names(), it), metadata = it) }
 
     private fun symbolsWhereSection(): SymbolsWhereSection? =
         section("where") {
-            SymbolsWhereSection(
-                statements = oneOrMore(statements(), it),
-                metadata = it
-            )
+            SymbolsWhereSection(statements = oneOrMore(statements(), it), metadata = it)
         }
 
-    private fun symbolsGroup(): SymbolsGroup?
-        = group(
+    private fun symbolsGroup(): SymbolsGroup? =
+        group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "symbols", required = true) { this.symbolsSection() },
-                SectionSpec(name = "where", required = true) { this.symbolsWhereSection() }
-            ),
-            default = DEFAULT_SYMBOLS_GROUP
-        ) { _, sections, metadata ->
-        SymbolsGroup(
-            symbolsSection = sections["symbols"] as SymbolsSection,
-            whereSection = sections["where"] as SymbolsWhereSection,
-            metadata = metadata
-        )
-    }
+            specs =
+                listOf(
+                    SectionSpec(name = "symbols", required = true) { this.symbolsSection() },
+                    SectionSpec(name = "where", required = true) { this.symbolsWhereSection() }),
+            default = DEFAULT_SYMBOLS_GROUP) { _, sections, metadata ->
+            SymbolsGroup(
+                symbolsSection = sections["symbols"] as SymbolsSection,
+                whereSection = sections["where"] as SymbolsWhereSection,
+                metadata = metadata)
+        }
 
     private fun memberSymbolsSection(): MemberSymbolsSection? =
         section("memberSymbols") {
-            MemberSymbolsSection(
-                names = oneOrMore(names(), it),
-                metadata = it
-            )
+            MemberSymbolsSection(names = oneOrMore(names(), it), metadata = it)
         }
 
     private fun memberSymbolsWhereSection(): MemberSymbolsWhereSection? =
         section("where") {
-            MemberSymbolsWhereSection(
-                statements = oneOrMore(statements(), it),
-                metadata = it
-            )
+            MemberSymbolsWhereSection(statements = oneOrMore(statements(), it), metadata = it)
         }
 
-    private fun memberSymbolsGroup(): MemberSymbolsGroup?
-    = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "memberSymbols", required = true) { this.memberSymbolsSection() },
-            SectionSpec(name = "where", required = true) { this.symbolsWhereSection() }
-        ),
-        default = DEFAULT_MEMBER_SYMBOLS_GROUP
-    ) { _, sections, metadata ->
-        MemberSymbolsGroup(
-            memberSymbolsSection = sections["memberSymbols"] as MemberSymbolsSection,
-            whereSection = sections["where"] as MemberSymbolsWhereSection,
-            metadata = metadata
-        )
-    }
+    private fun memberSymbolsGroup(): MemberSymbolsGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "memberSymbols", required = true) {
+                        this.memberSymbolsSection()
+                    },
+                    SectionSpec(name = "where", required = true) { this.symbolsWhereSection() }),
+            default = DEFAULT_MEMBER_SYMBOLS_GROUP) { _, sections, metadata ->
+            MemberSymbolsGroup(
+                memberSymbolsSection = sections["memberSymbols"] as MemberSymbolsSection,
+                whereSection = sections["where"] as MemberSymbolsWhereSection,
+                metadata = metadata)
+        }
 
     private fun texts(): List<Text> {
         val result = mutableListOf<Text>()
@@ -793,99 +671,55 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     }
 
     private fun noteSection(): NoteSection? =
-        section("note") {
-            NoteSection(
-                items = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("note") { NoteSection(items = oneOrMore(texts(), it), metadata = it) }
 
-    private fun noteGroup(): NoteGroup?
-        = group(
+    private fun noteGroup(): NoteGroup? =
+        group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "note", required = true) { this.noteSection() }
-            ),
-            default = DEFAULT_NOTE_GROUP
-        ) { _, sections, metadata ->
-            NoteGroup(
-                noteSection = sections["note"] as NoteSection,
-                metadata = metadata
-            )
-    }
+            specs = listOf(SectionSpec(name = "note", required = true) { this.noteSection() }),
+            default = DEFAULT_NOTE_GROUP) { _, sections, metadata ->
+            NoteGroup(noteSection = sections["note"] as NoteSection, metadata = metadata)
+        }
 
     private fun authorSection(): AuthorSection? =
-        section("author") {
-            AuthorSection(
-                items = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("author") { AuthorSection(items = oneOrMore(texts(), it), metadata = it) }
 
-    private fun authorGroup(): AuthorGroup?
-        = group(
+    private fun authorGroup(): AuthorGroup? =
+        group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(
-                SectionSpec(name = "author", required = true) { this.authorSection() }
-            ),
-            default = DEFAULT_AUTHOR_GROUP
-        ) { _, sections, metadata ->
-            AuthorGroup(
-                authorSection = sections["author"] as AuthorSection,
-                metadata = metadata
-            )
+            specs = listOf(SectionSpec(name = "author", required = true) { this.authorSection() }),
+            default = DEFAULT_AUTHOR_GROUP) { _, sections, metadata ->
+            AuthorGroup(authorSection = sections["author"] as AuthorSection, metadata = metadata)
         }
 
     private fun tagSection(): TagSection? =
-        section("tag") {
-            TagSection(
-                items = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("tag") { TagSection(items = oneOrMore(texts(), it), metadata = it) }
 
-    private fun tagGroup(): TagGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "tag", required = true) { this.tagSection() }
-        ),
-        default = DEFAULT_TAG_GROUP
-    ) { _, sections, metadata ->
-        TagGroup(
-            tagSection = sections["tag"] as TagSection,
-            metadata = metadata
-        )
-    }
+    private fun tagGroup(): TagGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "tag", required = true) { this.tagSection() }),
+            default = DEFAULT_TAG_GROUP) { _, sections, metadata ->
+            TagGroup(tagSection = sections["tag"] as TagSection, metadata = metadata)
+        }
 
     private fun referenceSection(): ReferenceSection? =
-        section("reference") {
-            ReferenceSection(
-                items = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("reference") { ReferenceSection(items = oneOrMore(texts(), it), metadata = it) }
 
-    private fun referenceGroup(): ReferenceGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "reference", required = true) { this.referenceSection() }
-        ),
-        default = DEFAULT_REFERENCE_GROUP
-    ) { _, sections, metadata ->
-        ReferenceGroup(
-            referenceSection = sections["reference"] as ReferenceSection,
-            metadata = metadata
-        )
-    }
+    private fun referenceGroup(): ReferenceGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "reference", required = true) { this.referenceSection() }),
+            default = DEFAULT_REFERENCE_GROUP) { _, sections, metadata ->
+            ReferenceGroup(
+                referenceSection = sections["reference"] as ReferenceSection, metadata = metadata)
+        }
 
     private fun definesSection(): DefinesSection? =
         section("Defines") {
-            DefinesSection(
-                target = required(target(), DEFAULT_TARGET),
-                metadata = it
-            )
+            DefinesSection(target = required(target(), DEFAULT_TARGET), metadata = it)
         }
 
     private fun assignment(): Assignment? = getNextIfCorrectType()
@@ -900,35 +734,17 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     }
 
     private fun withSection(): WithSection? =
-        section("with") {
-            WithSection(
-                assignments = oneOrMore(assignments(), it),
-                metadata = it
-            )
-        }
+        section("with") { WithSection(assignments = oneOrMore(assignments(), it), metadata = it) }
 
     private fun givenSection(): GivenSection? =
-        section("given") {
-            GivenSection(
-                targets = oneOrMore(targets(), it),
-                metadata = it
-            )
-        }
+        section("given") { GivenSection(targets = oneOrMore(targets(), it), metadata = it) }
 
     private fun whenSection(): WhenSection? =
-        section("when") {
-            WhenSection(
-                specs = oneOrMore(specs(), it),
-                metadata = it
-            )
-        }
+        section("when") { WhenSection(specs = oneOrMore(specs(), it), metadata = it) }
 
     private fun meansSection(): MeansSection? =
         section("means") {
-            MeansSection(
-                statement = required(statement(), DEFAULT_STATEMENT),
-                metadata = it
-            )
+            MeansSection(statement = required(statement(), DEFAULT_STATEMENT), metadata = it)
         }
 
     private fun satisfyingItem(): SatisfyingItem? =
@@ -945,10 +761,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun satisfyingSection(): SatisfyingSection? =
         section("satisfying") {
-            SatisfyingSection(
-                items = oneOrMore(satisfyingItems(), it),
-                metadata = it
-            )
+            SatisfyingSection(items = oneOrMore(satisfyingItems(), it), metadata = it)
         }
 
     private fun expressingItem(): ExpressingItem? =
@@ -965,46 +778,24 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun expressingSection(): ExpressingSection? =
         section("expressing") {
-            ExpressingSection(
-                items = oneOrMore(expressingItems(), it),
-                metadata = it
-            )
+            ExpressingSection(items = oneOrMore(expressingItems(), it), metadata = it)
         }
 
     private fun usingSection(): UsingSection? =
-        section("using") {
-            UsingSection(
-                statements = oneOrMore(statements(), it),
-                metadata = it
-            )
-        }
+        section("using") { UsingSection(statements = oneOrMore(statements(), it), metadata = it) }
 
     private fun writingSection(): WritingSection? =
-        section("writing") {
-            WritingSection(
-                items = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("writing") { WritingSection(items = oneOrMore(texts(), it), metadata = it) }
 
     private fun writtenSection(): WrittenSection? =
-        section("written") {
-            WrittenSection(
-                items = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("written") { WrittenSection(items = oneOrMore(texts(), it), metadata = it) }
 
     private fun calledSection(): CalledSection? =
-        section("called") {
-            CalledSection(
-                items = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("called") { CalledSection(items = oneOrMore(texts(), it), metadata = it) }
 
     private fun providingItem(): ProvidingItem? =
-        viewGroup() ?: symbolsGroup() ?: memberSymbolsGroup() ?: equalityGroup() ?: membershipGroup()
+        viewGroup()
+            ?: symbolsGroup() ?: memberSymbolsGroup() ?: equalityGroup() ?: membershipGroup()
 
     private fun providingItems(): List<ProvidingItem> {
         val result = mutableListOf<ProvidingItem>()
@@ -1017,10 +808,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun providingSection(): ProvidingSection? =
         section("Providing") {
-            ProvidingSection(
-                items = oneOrMore(providingItems(), it),
-                metadata = it
-            )
+            ProvidingSection(items = oneOrMore(providingItems(), it), metadata = it)
         }
 
     private fun metadataItem(): MetadataItem? =
@@ -1037,32 +825,28 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun metadataSection(): MetadataSection? =
         section("Metadata") {
-            MetadataSection(
-                items = oneOrMore(metadataItems(), it),
-                metadata = it
-            )
+            MetadataSection(items = oneOrMore(metadataItems(), it), metadata = it)
         }
 
-    private fun definesGroup(): DefinesGroup?
-        = group(
+    private fun definesGroup(): DefinesGroup? =
+        group(
             idSpec = IdRequirement.Required,
-            specs = listOf(
-                SectionSpec(name = "Defines", required = true) { this.definesSection() },
-                SectionSpec(name = "with", required = false) { this.withSection() },
-                SectionSpec(name = "given", required = false) { this.givenSection() },
-                SectionSpec(name = "when", required = false) { this.whenSection() },
-                SectionSpec(name = "means", required = false) { this.meansSection() },
-                SectionSpec(name = "satisfying", required = false) { this.satisfyingSection() },
-                SectionSpec(name = "expressing", required = false) { this.expressingSection() },
-                SectionSpec(name = "using", required = false) { this.usingSection() },
-                SectionSpec(name = "writing", required = false) { this.writingSection() },
-                SectionSpec(name = "written", required = false) { this.writtenSection() },
-                SectionSpec(name = "called", required = false) { this.calledSection() },
-                SectionSpec(name = "Providing", required = false) { this.providingSection() },
-                SectionSpec(name = "Metadata", required = false) { this.metadataSection() }
-            ),
-            default = DEFAULT_DEFINES_GROUP
-        ) { id, sections, metadata ->
+            specs =
+                listOf(
+                    SectionSpec(name = "Defines", required = true) { this.definesSection() },
+                    SectionSpec(name = "with", required = false) { this.withSection() },
+                    SectionSpec(name = "given", required = false) { this.givenSection() },
+                    SectionSpec(name = "when", required = false) { this.whenSection() },
+                    SectionSpec(name = "means", required = false) { this.meansSection() },
+                    SectionSpec(name = "satisfying", required = false) { this.satisfyingSection() },
+                    SectionSpec(name = "expressing", required = false) { this.expressingSection() },
+                    SectionSpec(name = "using", required = false) { this.usingSection() },
+                    SectionSpec(name = "writing", required = false) { this.writingSection() },
+                    SectionSpec(name = "written", required = false) { this.writtenSection() },
+                    SectionSpec(name = "called", required = false) { this.calledSection() },
+                    SectionSpec(name = "Providing", required = false) { this.providingSection() },
+                    SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
+            default = DEFAULT_DEFINES_GROUP) { id, sections, metadata ->
             DefinesGroup(
                 id = id,
                 definesSection = sections["Defines"] as DefinesSection,
@@ -1078,46 +862,39 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 calledSection = sections["called"] as CalledSection?,
                 providingSection = sections["Providing"] as ProvidingSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
-                metadata = metadata
-            )
-    }
-
-    private fun statesSection(): StatesSection? =
-        section("States") {
-            StatesSection(metadata = it)
+                metadata = metadata)
         }
 
-    private fun statesGroup(): StatesGroup?
-        = group(
-        idSpec = IdRequirement.Required,
-        specs = listOf(
-            SectionSpec(name = "States", required = true) { this.statesSection() },
-            SectionSpec(name = "given", required = false) { this.givenSection() },
-            SectionSpec(name = "when", required = false) { this.whenSection() },
-            SectionSpec(name = "that", required = false) { this.thatSection() },
-            SectionSpec(name = "using", required = false) { this.usingSection() },
-            SectionSpec(name = "written", required = false) { this.writtenSection() },
-            SectionSpec(name = "called", required = false) { this.calledSection() },
-            SectionSpec(name = "Metadata", required = false) { this.metadataSection() }
-        ),
-        default = DEFAULT_STATES_GROUP
-    ) { id, sections, metadata ->
-        StatesGroup(
-            id = id,
-            statesSection = sections["States"] as StatesSection,
-            givenSection = sections["given"] as GivenSection?,
-            whenSection = sections["when"] as WhenSection?,
-            thatSection = sections["that"] as ThatSection,
-            usingSection = sections["using"] as UsingSection?,
-            writtenSection = sections["written"] as WrittenSection,
-            calledSection = sections["called"] as CalledSection?,
-            metadataSection = sections["Metadata"] as MetadataSection?,
-            metadata = metadata
-        )
-    }
+    private fun statesSection(): StatesSection? = section("States") { StatesSection(metadata = it) }
 
-    private fun thatItem(): ThatItem? =
-        clause() ?: spec() ?: statement()
+    private fun statesGroup(): StatesGroup? =
+        group(
+            idSpec = IdRequirement.Required,
+            specs =
+                listOf(
+                    SectionSpec(name = "States", required = true) { this.statesSection() },
+                    SectionSpec(name = "given", required = false) { this.givenSection() },
+                    SectionSpec(name = "when", required = false) { this.whenSection() },
+                    SectionSpec(name = "that", required = false) { this.thatSection() },
+                    SectionSpec(name = "using", required = false) { this.usingSection() },
+                    SectionSpec(name = "written", required = false) { this.writtenSection() },
+                    SectionSpec(name = "called", required = false) { this.calledSection() },
+                    SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
+            default = DEFAULT_STATES_GROUP) { id, sections, metadata ->
+            StatesGroup(
+                id = id,
+                statesSection = sections["States"] as StatesSection,
+                givenSection = sections["given"] as GivenSection?,
+                whenSection = sections["when"] as WhenSection?,
+                thatSection = sections["that"] as ThatSection,
+                usingSection = sections["using"] as UsingSection?,
+                writtenSection = sections["written"] as WrittenSection,
+                calledSection = sections["called"] as CalledSection?,
+                metadataSection = sections["Metadata"] as MetadataSection?,
+                metadata = metadata)
+        }
+
+    private fun thatItem(): ThatItem? = clause() ?: spec() ?: statement()
 
     private fun thatItems(): List<ThatItem> {
         val result = mutableListOf<ThatItem>()
@@ -1129,15 +906,11 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     }
 
     private fun thatSection(): ThatSection? =
-        section("that") {
-            ThatSection(
-                items = oneOrMore(thatItems(), it),
-                metadata = it
-            )
-        }
+        section("that") { ThatSection(items = oneOrMore(thatItems(), it), metadata = it) }
 
     private fun resourceItem(): ResourceItem? =
-        typeGroup() ?: nameGroup() ?: authorGroup() ?: homepageGroup() ?: urlGroup() ?: offsetGroup()
+        typeGroup()
+            ?: nameGroup() ?: authorGroup() ?: homepageGroup() ?: urlGroup() ?: offsetGroup()
 
     private fun resourceItems(): List<ResourceItem> {
         val result = mutableListOf<ResourceItem>()
@@ -1150,157 +923,95 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun resourceSection(): ResourceSection? =
         section("Resource") {
-            ResourceSection(
-                items = oneOrMore(resourceItems(), it),
-                metadata = it
-            )
+            ResourceSection(items = oneOrMore(resourceItems(), it), metadata = it)
         }
 
     private fun typeSection(): TypeSection? =
-        section("type") {
-            TypeSection(
-                type = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
-        }
+        section("type") { TypeSection(type = required(text(), DEFAULT_TEXT), metadata = it) }
 
-    private fun typeGroup(): TypeGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "type", required = true) { this.tagSection() }
-        ),
-        default = DEFAULT_TYPE_GROUP
-    ) { _, sections, metadata ->
-        TypeGroup(
-            typeSection = sections["type"] as TypeSection,
-            metadata = metadata
-        )
-    }
+    private fun typeGroup(): TypeGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "type", required = true) { this.tagSection() }),
+            default = DEFAULT_TYPE_GROUP) { _, sections, metadata ->
+            TypeGroup(typeSection = sections["type"] as TypeSection, metadata = metadata)
+        }
 
     private fun nameSection(): NameSection? =
-        section("name") {
-            NameSection(
-                text = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
-        }
+        section("name") { NameSection(text = required(text(), DEFAULT_TEXT), metadata = it) }
 
-    private fun nameGroup(): NameGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "name", required = true) { this.nameSection() }
-        ),
-        default = DEFAULT_NAME_GROUP
-    ) { _, sections, metadata ->
-        NameGroup(
-            nameSection = sections["name"] as NameSection,
-            metadata = metadata
-        )
-    }
+    private fun nameGroup(): NameGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "name", required = true) { this.nameSection() }),
+            default = DEFAULT_NAME_GROUP) { _, sections, metadata ->
+            NameGroup(nameSection = sections["name"] as NameSection, metadata = metadata)
+        }
 
     private fun homepageSection(): HomepageSection? =
         section("homepage") {
-            HomepageSection(
-                homepage = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
+            HomepageSection(homepage = required(text(), DEFAULT_TEXT), metadata = it)
         }
 
-    private fun homepageGroup(): HomepageGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "homepage", required = true) { this.homepageSection() }
-        ),
-        default = DEFAULT_HOMEPAGE_GROUP
-    ) { _, sections, metadata ->
-        HomepageGroup(
-            homepageSection = sections["homepage"] as HomepageSection,
-            metadata = metadata
-        )
-    }
+    private fun homepageGroup(): HomepageGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "homepage", required = true) { this.homepageSection() }),
+            default = DEFAULT_HOMEPAGE_GROUP) { _, sections, metadata ->
+            HomepageGroup(
+                homepageSection = sections["homepage"] as HomepageSection, metadata = metadata)
+        }
 
     private fun urlSection(): UrlSection? =
-        section("url") {
-            UrlSection(
-                url = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
-        }
+        section("url") { UrlSection(url = required(text(), DEFAULT_TEXT), metadata = it) }
 
-    private fun urlGroup(): UrlGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "url", required = true) { this.urlSection() }
-        ),
-        default = DEFAULT_URL_GROUP
-    ) { _, sections, metadata ->
-        UrlGroup(
-            urlSection = sections["url"] as UrlSection,
-            metadata = metadata
-        )
-    }
+    private fun urlGroup(): UrlGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "url", required = true) { this.urlSection() }),
+            default = DEFAULT_URL_GROUP) { _, sections, metadata ->
+            UrlGroup(urlSection = sections["url"] as UrlSection, metadata = metadata)
+        }
 
     private fun offsetSection(): OffsetSection? =
-        section("offset") {
-            OffsetSection(
-                offset = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
+        section("offset") { OffsetSection(offset = required(text(), DEFAULT_TEXT), metadata = it) }
+
+    private fun offsetGroup(): OffsetGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "offset", required = true) { this.offsetSection() }),
+            default = DEFAULT_OFFSET_GROUP) { _, sections, metadata ->
+            OffsetGroup(offsetSection = sections["offset"] as OffsetSection, metadata = metadata)
         }
 
-    private fun offsetGroup(): OffsetGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "offset", required = true) { this.offsetSection() }
-        ),
-        default = DEFAULT_OFFSET_GROUP
-    ) { _, sections, metadata ->
-        OffsetGroup(
-            offsetSection = sections["offset"] as OffsetSection,
-            metadata = metadata
-        )
-    }
-
-    private fun resourceGroup(): ResourceGroup?
-        = group(
-        idSpec = IdRequirement.Required,
-        specs = listOf(
-            SectionSpec(name = "Resource", required = true) { this.resourceSection() }
-        ),
-        default = DEFAULT_RESOURCE_GROUP
-    ) { id, sections, metadata ->
-        ResourceGroup(
-            id = id.text,
-            resourceSection = sections["Resource"] as ResourceSection,
-            metadata = metadata
-        )
-    }
-
-    private fun axiomSection(): AxiomSection? =
-        section("Axiom") {
-            AxiomSection(
-                metadata = it
-            )
+    private fun resourceGroup(): ResourceGroup? =
+        group(
+            idSpec = IdRequirement.Required,
+            specs =
+                listOf(SectionSpec(name = "Resource", required = true) { this.resourceSection() }),
+            default = DEFAULT_RESOURCE_GROUP) { id, sections, metadata ->
+            ResourceGroup(
+                id = id.text,
+                resourceSection = sections["Resource"] as ResourceSection,
+                metadata = metadata)
         }
+
+    private fun axiomSection(): AxiomSection? = section("Axiom") { AxiomSection(metadata = it) }
 
     private fun axiomGroup(): AxiomGroup? =
         group(
             idSpec = IdRequirement.Optional,
             specs =
-            listOf(
-                SectionSpec(name = "Axiom", required = true) { this.axiomSection() },
-                SectionSpec(name = "given", required = false) { this.givenSection() },
-                SectionSpec(name = "where", required = false) { this.whereSection() },
-                SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
-                SectionSpec(name = "then", required = true) { this.thenSection() },
-                SectionSpec(name = "iff", required = false) { this.iffSection() },
-                SectionSpec(name = "using", required = false) { this.usingSection() },
-                SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
+                listOf(
+                    SectionSpec(name = "Axiom", required = true) { this.axiomSection() },
+                    SectionSpec(name = "given", required = false) { this.givenSection() },
+                    SectionSpec(name = "where", required = false) { this.whereSection() },
+                    SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
+                    SectionSpec(name = "then", required = true) { this.thenSection() },
+                    SectionSpec(name = "iff", required = false) { this.iffSection() },
+                    SectionSpec(name = "using", required = false) { this.usingSection() },
+                    SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_AXIOM_GROUP) { id, sections, metadata ->
             AxiomGroup(
                 id = id,
@@ -1316,11 +1027,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun conjectureSection(): ConjectureSection? =
-        section("Conjecture") {
-            ConjectureSection(
-                metadata = it
-            )
-        }
+        section("Conjecture") { ConjectureSection(metadata = it) }
 
     private fun conjectureGroup(): ConjectureGroup? =
         group(
@@ -1382,74 +1089,55 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun proofSection(): ProofSection? =
-        section("proof") {
-            ProofSection(
-                proofs = oneOrMore(texts(), it),
-                metadata = it
-            )
-        }
+        section("proof") { ProofSection(proofs = oneOrMore(texts(), it), metadata = it) }
 
-    private fun topicSection(): TopicSection? =
-        section("Topic") {
-            TopicSection(
-                metadata = it
-            )
-        }
+    private fun topicSection(): TopicSection? = section("Topic") { TopicSection(metadata = it) }
 
     private fun contentSection(): ContentSection? =
         section("content") {
-            ContentSection(
-                content = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
+            ContentSection(content = required(text(), DEFAULT_TEXT), metadata = it)
         }
 
-    private fun topicGroup(): TopicGroup?
-        = group(
-        idSpec = IdRequirement.Required,
-        specs = listOf(
-            SectionSpec(name = "Topic", required = true) { this.topicSection() },
-            SectionSpec(name = "content", required = true) { this.contentSection() },
-            SectionSpec(name = "Metadata", required = false) { this.metadataSection() }
-        ),
-        default = DEFAULT_TOPIC_GROUP
-    ) { id, sections, metadata ->
-        TopicGroup(
-            id = id.text,
-            topicSection = sections["Topic"] as TopicSection,
-            contentSection = sections["content"] as ContentSection,
-            metadataSection = sections["Metadata"] as MetadataSection?,
-            metadata = metadata
-        )
-    }
+    private fun topicGroup(): TopicGroup? =
+        group(
+            idSpec = IdRequirement.Required,
+            specs =
+                listOf(
+                    SectionSpec(name = "Topic", required = true) { this.topicSection() },
+                    SectionSpec(name = "content", required = true) { this.contentSection() },
+                    SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
+            default = DEFAULT_TOPIC_GROUP) { id, sections, metadata ->
+            TopicGroup(
+                id = id.text,
+                topicSection = sections["Topic"] as TopicSection,
+                contentSection = sections["content"] as ContentSection,
+                metadataSection = sections["Metadata"] as MetadataSection?,
+                metadata = metadata)
+        }
 
     private fun noteTopLevelSection(): NoteTopLevelSection? =
-        section("Note") {
-            NoteTopLevelSection(
-                metadata = it
-            )
+        section("Note") { NoteTopLevelSection(metadata = it) }
+
+    private fun noteTopLevelGroup(): NoteTopLevelGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "Note", required = true) { this.noteTopLevelSection() },
+                    SectionSpec(name = "content", required = true) { this.contentSection() },
+                    SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
+            default = DEFAULT_NOTE_TOP_LEVEL_GROUP) { _, sections, metadata ->
+            NoteTopLevelGroup(
+                noteSection = sections["Note"] as NoteTopLevelSection,
+                contentSection = sections["content"] as ContentSection,
+                metadataSection = sections["Metadata"] as MetadataSection?,
+                metadata = metadata)
         }
 
-    private fun noteTopLevelGroup(): NoteTopLevelGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "Note", required = true) { this.noteTopLevelSection() },
-            SectionSpec(name = "content", required = true) { this.contentSection() },
-            SectionSpec(name = "Metadata", required = false) { this.metadataSection() }
-        ),
-        default = DEFAULT_NOTE_TOP_LEVEL_GROUP
-    ) { _, sections, metadata ->
-        NoteTopLevelGroup(
-            noteSection = sections["Note"] as NoteTopLevelSection,
-            contentSection = sections["content"] as ContentSection,
-            metadataSection = sections["Metadata"] as MetadataSection?,
-            metadata = metadata
-        )
-    }
-
     private fun specifyItem(): SpecifyItem? =
-        zeroGroup() ?: positiveIntGroup() ?: negativeIntGroup() ?: positiveFloatGroup() ?: negativeFloatGroup()
+        zeroGroup()
+            ?: positiveIntGroup() ?: negativeIntGroup() ?: positiveFloatGroup()
+                ?: negativeFloatGroup()
 
     private fun specifyItems(): List<SpecifyItem> {
         val result = mutableListOf<SpecifyItem>()
@@ -1461,149 +1149,112 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     }
 
     private fun specifySection(): SpecifySection? =
-        section("Specify") {
-            SpecifySection(
-                items = oneOrMore(specifyItems(), it),
-                metadata = it
-            )
+        section("Specify") { SpecifySection(items = oneOrMore(specifyItems(), it), metadata = it) }
+
+    private fun specifyGroup(): SpecifyGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "Specify", required = true) { this.specifySection() }),
+            default = DEFAULT_SPECIFY_GROUP) { _, sections, metadata ->
+            SpecifyGroup(
+                specifySection = sections["Specify"] as SpecifySection, metadata = metadata)
         }
 
-    private fun specifyGroup(): SpecifyGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "Specify", required = true) { this.specifySection() }
-        ),
-        default = DEFAULT_SPECIFY_GROUP
-    ) { _, sections, metadata ->
-        SpecifyGroup(
-            specifySection = sections["Specify"] as SpecifySection,
-            metadata = metadata
-        )
-    }
+    private fun zeroSection(): ZeroSection? = section("zero") { ZeroSection(metadata = it) }
 
-    private fun zeroSection(): ZeroSection? =
-        section("zero") {
-            ZeroSection(
-                metadata = it
-            )
+    private fun zeroGroup(): ZeroGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "zero", required = true) { this.zeroSection() },
+                    SectionSpec(name = "is", required = true) { this.isSection() }),
+            default = DEFAULT_ZERO_GROUP) { _, sections, metadata ->
+            ZeroGroup(
+                zeroSection = sections["zero"] as ZeroSection,
+                isSection = sections["is"] as IsSection,
+                metadata = metadata)
         }
-
-    private fun zeroGroup(): ZeroGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "zero", required = true) { this.zeroSection() },
-            SectionSpec(name = "is", required = true) { this.isSection() }
-        ),
-        default = DEFAULT_ZERO_GROUP
-    ) { _, sections, metadata ->
-        ZeroGroup(
-            zeroSection = sections["zero"] as ZeroSection,
-            isSection = sections["is"] as IsSection,
-            metadata = metadata
-        )
-    }
 
     private fun positiveIntSection(): PositiveIntSection? =
-        section("positiveInt") {
-            PositiveIntSection(
-                metadata = it
-            )
-        }
+        section("positiveInt") { PositiveIntSection(metadata = it) }
 
-    private fun positiveIntGroup(): PositiveIntGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "positiveInt", required = true) { this.positiveIntSection() },
-            SectionSpec(name = "is", required = true) { this.isSection() }
-        ),
-        default = DEFAULT_POSITIVE_INT_GROUP
-    ) { _, sections, metadata ->
-        PositiveIntGroup(
-            positiveIntSection = sections["positiveInt"] as PositiveIntSection,
-            isSection = sections["is"] as IsSection,
-            metadata = metadata
-        )
-    }
+    private fun positiveIntGroup(): PositiveIntGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "positiveInt", required = true) {
+                        this.positiveIntSection()
+                    },
+                    SectionSpec(name = "is", required = true) { this.isSection() }),
+            default = DEFAULT_POSITIVE_INT_GROUP) { _, sections, metadata ->
+            PositiveIntGroup(
+                positiveIntSection = sections["positiveInt"] as PositiveIntSection,
+                isSection = sections["is"] as IsSection,
+                metadata = metadata)
+        }
 
     private fun negativeIntSection(): NegativeIntSection? =
-        section("negativeInt") {
-            NegativeIntSection(
-                metadata = it
-            )
-        }
+        section("negativeInt") { NegativeIntSection(metadata = it) }
 
-    private fun negativeIntGroup(): NegativeIntGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "negativeInt", required = true) { this.negativeIntSection() },
-            SectionSpec(name = "is", required = true) { this.isSection() }
-        ),
-        default = DEFAULT_NEGATIVE_INT_GROUP
-    ) { _, sections, metadata ->
-        NegativeIntGroup(
-            negativeIntSection = sections["negativeInt"] as NegativeIntSection,
-            isSection = sections["is"] as IsSection,
-            metadata = metadata
-        )
-    }
+    private fun negativeIntGroup(): NegativeIntGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "negativeInt", required = true) {
+                        this.negativeIntSection()
+                    },
+                    SectionSpec(name = "is", required = true) { this.isSection() }),
+            default = DEFAULT_NEGATIVE_INT_GROUP) { _, sections, metadata ->
+            NegativeIntGroup(
+                negativeIntSection = sections["negativeInt"] as NegativeIntSection,
+                isSection = sections["is"] as IsSection,
+                metadata = metadata)
+        }
 
     private fun positiveFloatSection(): PositiveFloatSection? =
-        section("positiveFloat") {
-            PositiveFloatSection(
-                metadata = it
-            )
-        }
+        section("positiveFloat") { PositiveFloatSection(metadata = it) }
 
-    private fun positiveFloatGroup(): PositiveFloatGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "positiveFloat", required = true) { this.positiveFloatSection() },
-            SectionSpec(name = "is", required = true) { this.isSection() }
-        ),
-        default = DEFAULT_POSITIVE_FLOAT_GROUP
-    ) { _, sections, metadata ->
-        PositiveFloatGroup(
-            positiveFloatSection = sections["positiveFloat"] as PositiveFloatSection,
-            isSection = sections["is"] as IsSection,
-            metadata = metadata
-        )
-    }
+    private fun positiveFloatGroup(): PositiveFloatGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "positiveFloat", required = true) {
+                        this.positiveFloatSection()
+                    },
+                    SectionSpec(name = "is", required = true) { this.isSection() }),
+            default = DEFAULT_POSITIVE_FLOAT_GROUP) { _, sections, metadata ->
+            PositiveFloatGroup(
+                positiveFloatSection = sections["positiveFloat"] as PositiveFloatSection,
+                isSection = sections["is"] as IsSection,
+                metadata = metadata)
+        }
 
     private fun negativeFloatSection(): NegativeFloatSection? =
-        section("negativeFloat") {
-            NegativeFloatSection(
-                metadata = it
-            )
-        }
+        section("negativeFloat") { NegativeFloatSection(metadata = it) }
 
-    private fun negativeFloatGroup(): NegativeFloatGroup?
-        = group(
-        idSpec = IdRequirement.NotAllowed,
-        specs = listOf(
-            SectionSpec(name = "negativeFloat", required = true) { this.negativeFloatSection() },
-            SectionSpec(name = "is", required = true) { this.isSection() }
-        ),
-        default = DEFAULT_NEGATIVE_FLOAT_GROUP
-    ) { _, sections, metadata ->
-        NegativeFloatGroup(
-            negativeFloatSection = sections["negativeFloat"] as NegativeFloatSection,
-            isSection = sections["is"] as IsSection,
-            metadata = metadata
-        )
-    }
+    private fun negativeFloatGroup(): NegativeFloatGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "negativeFloat", required = true) {
+                        this.negativeFloatSection()
+                    },
+                    SectionSpec(name = "is", required = true) { this.isSection() }),
+            default = DEFAULT_NEGATIVE_FLOAT_GROUP) { _, sections, metadata ->
+            NegativeFloatGroup(
+                negativeFloatSection = sections["negativeFloat"] as NegativeFloatSection,
+                isSection = sections["is"] as IsSection,
+                metadata = metadata)
+        }
 
     private fun isSection(): IsSection? =
-        section("is") {
-            IsSection(
-                form = required(text(), DEFAULT_TEXT),
-                metadata = it
-            )
-        }
+        section("is") { IsSection(form = required(text(), DEFAULT_TEXT), metadata = it) }
 
     private inline fun <reified T> getNextIfCorrectType(): T? =
         if (nextIs<T>()) {
@@ -1639,9 +1290,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     type = DiagnosticType.Error,
                     message = "Expected at least one argument",
                     row = metadata.row,
-                    column = metadata.column
-                )
-            )
+                    column = metadata.column))
         }
         return value
     }

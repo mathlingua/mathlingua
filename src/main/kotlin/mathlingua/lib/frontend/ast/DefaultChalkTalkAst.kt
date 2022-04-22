@@ -87,6 +87,7 @@ internal val DEFAULT_GENERATED_WHEN_SECTION =
 
 internal val DEFAULT_GENERATED_GROUP =
     GeneratedGroup(
+        generatedSection = DEFAULT_GENERATED_SECTION,
         fromSection = DEFAULT_FROM_SECTION,
         whenSection = DEFAULT_GENERATED_WHEN_SECTION,
         metadata = DEFAULT_METADATA)

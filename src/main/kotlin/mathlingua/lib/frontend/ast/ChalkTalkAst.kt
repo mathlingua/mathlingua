@@ -125,6 +125,7 @@ internal data class GeneratedWhenSection(
 ) : Section("when", metadata)
 
 internal data class GeneratedGroup(
+    val generatedSection: GeneratedSection,
     val fromSection: FromSection,
     val whenSection: GeneratedWhenSection,
     override val metadata: MetaData
@@ -245,7 +246,7 @@ internal data class AuthorSection(val items: List<Text>, override val metadata: 
     Section("author", metadata)
 
 internal data class AuthorGroup(val authorSection: AuthorSection, override val metadata: MetaData) :
-    Group(metadata), MetadataItem
+    Group(metadata), MetadataItem, ResourceItem
 
 internal data class TagSection(val items: List<Text>, override val metadata: MetaData) :
     Section("tag", metadata)

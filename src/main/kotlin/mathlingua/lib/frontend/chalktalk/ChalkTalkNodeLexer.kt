@@ -507,18 +507,30 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             } else {
                 null
             }
-        tokens.add(
-            BeginGroup(
-                metadata =
-                    MetaData(row = peek?.row ?: -1, column = peek?.column ?: -1, isInline = false)))
+
+        var id: Id? = null
         if (lexer.has(ChalkTalkTokenType.Id)) {
-            val id = lexer.next()
-            tokens.add(
-                Id(
-                    text = id.text,
-                    metadata = MetaData(row = id.row, column = id.column, isInline = false)))
+            val next = lexer.next()
+            id = Id(
+                    text = next.text,
+                    metadata = MetaData(row = next.row, column = next.column, isInline = false))
             expect(ChalkTalkTokenType.Newline)
         }
+
+        tokens.add(
+            BeginGroup(
+                name = if (lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)) {
+                    lexer.peek().text
+                } else {
+                    null
+                },
+                metadata =
+                    MetaData(row = peek?.row ?: -1, column = peek?.column ?: -1, isInline = false)))
+
+        if (id != null) {
+            tokens.add(id)
+        }
+
         while (lexer.hasNext()) {
             if (!lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)) {
                 break

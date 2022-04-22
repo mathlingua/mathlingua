@@ -1832,7 +1832,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         default: T,
         builder: (id: Id, sections: Map<String, Section?>, metadata: MetaData) -> T
     ): T? {
-        if (!nextIs<BeginGroup>() || !hasHasBeginSection(specs.first().name)) {
+        if (!nextIs<BeginGroup>() || (lexer.peek() as BeginGroup).name != specs.first().name) {
             return null
         }
 
@@ -1932,6 +1932,7 @@ private data class SectionSpec(
 fun main() {
     val text =
         """
+        [some id]
         Theorem:
         then:
         . and:

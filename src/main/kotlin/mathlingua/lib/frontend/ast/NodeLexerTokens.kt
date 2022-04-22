@@ -5,7 +5,7 @@ import mathlingua.lib.frontend.MetaData
 
 internal sealed interface NodeLexerToken : HasMetaData
 
-internal data class BeginGroup(override val metadata: MetaData) : NodeLexerToken
+internal data class BeginGroup(val name: String?, override val metadata: MetaData) : NodeLexerToken
 
 internal object EndGroup : NodeLexerToken {
     override val metadata = MetaData(row = -1, column = -1, isInline = true)

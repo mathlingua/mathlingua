@@ -151,6 +151,7 @@ import mathlingua.lib.frontend.ast.ResourceSection
 import mathlingua.lib.frontend.ast.SatisfyingItem
 import mathlingua.lib.frontend.ast.SatisfyingSection
 import mathlingua.lib.frontend.ast.Section
+import mathlingua.lib.frontend.ast.Sequence
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.Spec
 import mathlingua.lib.frontend.ast.SpecifyGroup
@@ -221,12 +222,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun document(): Document {
         val items = mutableListOf<TopLevelGroupOrTextBlock>()
         while (lexer.hasNext()) {
-            val item = topLevelGroupOrTextBlock()
-            if (item != null) {
-                items.add(item)
-            } else {
-                moveToNextStartingLocation()
-            }
+            val item = topLevelGroupOrTextBlock() ?: break
+            items.add(item)
         }
         while (lexer.hasNext()) {
             maybeAddDiagnosticForMissingItem(lexer.next())
@@ -275,10 +272,10 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         section("not") { NotSection(clause = required(clause(), DEFAULT_CLAUSE), metadata = it) }
 
     private fun notGroup(): NotGroup? =
-        group(idSpec = IdRequirement.NotAllowed, specs = listOf(), default = DEFAULT_NOT_GROUP) {
-        _,
-        sections,
-        metadata ->
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "not", required = true) { this.notSection() }),
+            default = DEFAULT_NOT_GROUP) { _, sections, metadata ->
             NotGroup(notSection = sections["not"] as NotSection, metadata = metadata)
         }
 
@@ -294,7 +291,16 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             OrGroup(orSection = sections["or"] as OrSection, metadata = metadata)
         }
 
-    private fun target(): Target? = null
+    private fun operator(): OperatorName? = getNextIfCorrectType()
+
+    private fun tuple(): Tuple? = getNextIfCorrectType()
+
+    private fun set(): Set? = getNextIfCorrectType()
+
+    private fun sequence(): Sequence? = getNextIfCorrectType()
+
+    private fun target(): Target? =
+        assignment() ?: name() ?: operator() ?: tuple() ?: sequence() ?: function() ?: set()
 
     private fun targets(): List<Target> = collect { target() }
 
@@ -1216,8 +1222,10 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
         val section = lexer.next() // move past the BeginSection
         val result = fn(section.metadata)
+        while (lexer.hasNext() && !nextIs<EndSection>()) {
+            maybeAddDiagnosticForMissingItem(lexer.next())
+        }
         expect(EndSection)
-
         return result
     }
 
@@ -1232,11 +1240,6 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
         return result
     }
-
-    private fun hasHasBeginSection(name: String) =
-        lexer.hasNextNext() &&
-            lexer.peekPeek() is BeginSection &&
-            (lexer.peekPeek() as BeginSection).name == name
 
     private inline fun <reified T> expectIs(): NodeLexerToken? {
         if (!lexer.hasNext() || lexer.peek() !is T) {
@@ -1440,14 +1443,24 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 }
             } else {
                 val beginSection = expectIs<BeginSection>()!!
+                var count = 1
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
                         message = "Unexpected section '${sect.name}'",
                         row = beginSection.metadata.row,
                         column = beginGroup.metadata.column))
-                while (lexer.hasNext() && !nextIs<EndSection>()) {
-                    lexer.next()
+                while (lexer.hasNext() && count > 0) {
+                    val peek = lexer.peek()
+                    if (peek is BeginSection) {
+                        count++
+                    } else if (peek is EndSection) {
+                        count--
+                    }
+
+                    if (count > 0) {
+                        lexer.next()
+                    }
                 }
                 expectIs<EndSection>()
             }
@@ -1456,94 +1469,102 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         while (lexer.hasNext() && !nextIs<EndGroup>()) {
             maybeAddDiagnosticForMissingItem(lexer.next())
         }
+        expect(EndGroup)
 
         val mapping =
             identifySections(
                 sections, specs.map { "${it.name}${if (it.required) { "" } else { "?" }}" })
-                ?: return default
 
-        expect(EndGroup)
-        return builder(
-            id,
-            mapping,
-            MetaData(
-                row = beginGroup.metadata.row,
-                column = beginGroup.metadata.column,
-                isInline = false))
+        return if (mapping == null) {
+            default
+        } else {
+            builder(
+                id,
+                mapping,
+                MetaData(
+                    row = beginGroup.metadata.row,
+                    column = beginGroup.metadata.column,
+                    isInline = false))
+        }
     }
 
-    private fun isNextEndToken() = lexer.hasNext() && (
-        lexer.peek() is EndGroup || lexer.peek() is EndSection || lexer.peek() is EndArgument)
+    private fun skipGroup() {
+        if (!nextIs<BeginGroup>()) {
+            return
+        }
 
-    private fun isNextBeginToken() = lexer.hasNext() && (
-        lexer.peek() is BeginGroup || lexer.peek() is BeginSection || lexer.peek() is BeginArgument)
+        var numOpen = 1
+        lexer.next() // move past the BeginGroup
 
-    private fun moveToNextStartingLocation() {
-        if (isNextBeginToken()) {
+        while (lexer.hasNext() && numOpen > 0) {
+            val peek = lexer.peek()
+            if (peek is BeginGroup) {
+                numOpen++
+            } else if (peek is EndGroup) {
+                numOpen--
+            }
+
+            if (numOpen > 0) {
+                lexer.next()
+            }
+        }
+
+        if (nextIs<EndGroup>()) {
             lexer.next()
-        }
-
-        while (lexer.hasNext() && !isNextEndToken()) {
-            maybeAddDiagnosticForMissingItem(lexer.next())
-        }
-
-        if (isNextEndToken()) {
-            lexer.next() // move past the end token
         }
     }
 
     private fun maybeAddDiagnosticForMissingItem(token: NodeLexerToken) {
-        val text = when (token) {
-            is BeginGroup -> {
-                // don't report about this to the user since it is an implementation detail
-                null
+        val text =
+            when (token) {
+                is BeginGroup -> {
+                    // don't report about this to the user since it is an implementation detail
+                    null
+                }
+                is EndGroup -> {
+                    // don't report about this to the user since it is an implementation detail
+                    null
+                }
+                is BeginSection -> {
+                    // don't report about this to the user since it is an implementation detail
+                    null
+                }
+                is EndSection -> {
+                    // don't report about this to the user since it is an implementation detail
+                    null
+                }
+                is BeginArgument -> {
+                    // don't report about this to the user since it is an implementation detail
+                    null
+                }
+                is EndArgument -> {
+                    // don't report about this to the user since it is an implementation detail
+                    null
+                }
+                is Statement -> "statement"
+                is FunctionAssignment -> "function assignment"
+                is NameAssignment -> "name assignment"
+                is RegularFunction -> "function"
+                is SubAndRegularParamFunction -> "function"
+                is SubParamFunction -> "function"
+                is Name -> "name"
+                is OperatorName -> "name"
+                is SubAndRegularParamFunctionSequence -> "sequence"
+                is SubParamFunctionSequence -> "sequence"
+                is Set -> "set"
+                is Tuple -> "tuple"
+                is Text -> "text"
+                is NameOrFunction -> "name or function"
+                is Id -> "id"
+                is TextBlock -> "text block"
             }
-            is EndGroup -> {
-                // don't report about this to the user since it is an implementation detail
-                null
-            }
-            is BeginSection -> {
-                // don't report about this to the user since it is an implementation detail
-                null
-            }
-            is EndSection -> {
-                // don't report about this to the user since it is an implementation detail
-                null
-            }
-            is BeginArgument -> {
-                // don't report about this to the user since it is an implementation detail
-                null
-            }
-            is EndArgument -> {
-                // don't report about this to the user since it is an implementation detail
-                null
-            }
-            is Statement -> "statement"
-            is FunctionAssignment -> "function assignment"
-            is NameAssignment -> "name assignment"
-            is RegularFunction -> "function"
-            is SubAndRegularParamFunction -> "function"
-            is SubParamFunction -> "function"
-            is Name -> "name"
-            is OperatorName -> "name"
-            is SubAndRegularParamFunctionSequence -> "sequence"
-            is SubParamFunctionSequence -> "sequence"
-            is Set -> "set"
-            is Tuple -> "tuple"
-            is Text -> "text"
-            is NameOrFunction -> "name or function"
-            is Id -> "id"
-            is TextBlock -> "text block"
-        }
         if (text != null) {
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
                     message = "Unexpected $text item",
                     row = token.metadata.row,
-                    column = token.metadata.column
-                )
-            )
+                    column = token.metadata.column))
         }
     }
 }
@@ -1560,15 +1581,23 @@ private data class SectionSpec(
 fun main() {
     val text =
         """
-        [some id
-        Theorem:
-        then:
-        . and:
-          . "abc"
-
-        Theorem:
-        then:
-        . and: "abc"
+        [\continuous.function:on{A}:to{B}]
+        Defines: f
+        when:
+        . 'A, B is \set'
+        means: 'f is \function:on{A}:to{B}'
+        satisfying:
+        . forAll: epsilon
+          where: 'epsilon is \real'
+          suchThat:
+          . 'epsilon > 0'
+          then:
+          . exists: delta
+            where: 'delta is \real'
+            suchThat:
+            . 'delta > 0'
+            . 'f(x) - f(x0) < delta'
+       written: "continuous function"
     """.trimIndent()
     val lexer1 = newChalkTalkTokenLexer(text)
     val lexer2 = newChalkTalkNodeLexer(lexer1)
@@ -1577,5 +1606,7 @@ fun main() {
     println("Doc:")
     println(result.doc)
     println("Diagnostics:")
+    lexer1.diagnostics().forEach(::println)
+    lexer2.diagnostics().forEach(::println)
     result.diagnostics.forEach(::println)
 }

@@ -200,6 +200,14 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                         buffer.append(c)
                     }
                 }
+                if (numOpen > 0) {
+                    diagnostics.add(
+                        Diagnostic(
+                            type = DiagnosticType.Error,
+                            message = "Expected a closing ]",
+                            row = startRow,
+                            column = startColumn))
+                }
                 tokens.add(
                     ChalkTalkToken(
                         type = ChalkTalkTokenType.Id,

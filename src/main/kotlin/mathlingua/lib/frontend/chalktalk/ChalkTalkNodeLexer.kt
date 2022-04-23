@@ -49,6 +49,7 @@ import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
+import java.util.Stack
 
 internal interface ChalkTalkNodeLexer {
     fun hasNext(): Boolean
@@ -58,6 +59,8 @@ internal interface ChalkTalkNodeLexer {
     fun hasNextNext(): Boolean
     fun peekPeek(): NodeLexerToken
     fun nextNext(): NodeLexerToken
+
+    fun fastForward(): List<NodeLexerToken>
 
     fun diagnostics(): List<Diagnostic>
 }
@@ -70,6 +73,7 @@ internal fun newChalkTalkNodeLexer(lexer: ChalkTalkTokenLexer): ChalkTalkNodeLex
 
 private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : ChalkTalkNodeLexer {
     private val tokens = LinkedList<NodeLexerToken>()
+    private val beginStack = Stack<NodeLexerToken>()
     private val diagnostics = mutableListOf<Diagnostic>()
 
     init {
@@ -86,15 +90,64 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
 
     override fun peek() = tokens.element()!!
 
-    override fun next() = tokens.remove()!!
+    override fun next(): NodeLexerToken {
+        val next = tokens.remove()!!
+        when (next) {
+            is BeginGroup, is BeginSection, is BeginArgument -> {
+                beginStack.push(next)
+            }
+            is EndGroup -> {
+                if (beginStack.isEmpty() || beginStack.peek() !is BeginGroup) {
+                    throw Exception("Unmatched EndGroup to ${if (beginStack.isEmpty()) {
+                        "and empty stack"
+                    } else {
+                        beginStack.peek().toString()
+                    }}")
+                }
+                beginStack.pop()
+            }
+            is EndSection -> {
+                if (beginStack.isEmpty() || beginStack.peek() !is BeginSection) {
+                    throw Exception("Unmatched EndSection to ${if (beginStack.isEmpty()) {
+                        "and empty stack"
+                    } else {
+                        beginStack.peek().toString()
+                    }}")
+                }
+                beginStack.pop()
+            }
+            is EndArgument -> {
+                if (beginStack.isEmpty() || beginStack.peek() !is BeginArgument) {
+                    throw Exception("Unmatched EndArgument to ${if (beginStack.isEmpty()) {
+                        "and empty stack"
+                    } else {
+                        beginStack.peek().toString()
+                    }}")
+                }
+                beginStack.pop()
+            } else -> {
+                // for other tokens, the stack doesn't need to be modified
+            }
+        }
+        return next
+    }
 
     override fun hasNextNext() = tokens.size >= 2
 
     override fun peekPeek() = tokens[1]
 
     override fun nextNext(): NodeLexerToken {
-        tokens.remove()
-        return tokens.remove()
+        next()
+        return next()
+    }
+
+    override fun fastForward(): List<NodeLexerToken> {
+        val result = mutableListOf<NodeLexerToken>()
+        val initStackSize = beginStack.size
+        while (hasNext() && beginStack.size >= initStackSize) {
+            result.add(next())
+        }
+        return result
     }
 
     override fun diagnostics(): List<Diagnostic> = diagnostics

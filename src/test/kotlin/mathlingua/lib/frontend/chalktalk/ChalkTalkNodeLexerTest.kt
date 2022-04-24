@@ -31,6 +31,7 @@ import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
+import mathlingua.lib.frontend.ast.Statement
 import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
 import mathlingua.lib.frontend.ast.SubAndRegularParamFunctionSequence
 import mathlingua.lib.frontend.ast.SubParamFunction
@@ -676,6 +677,34 @@ internal class ChalkTalkNodeLexerTest {
                     name = "C", metadata = MetaData(row = 5, column = 0, isInline = false)),
                 EndSection,
                 EndGroup))
+
+    @Test
+    fun `correctly parses multi sections where first section has dot space argument`() =
+        runTest("""
+            Theorem:
+            . a: x
+            then: 'y'
+    """.trimIndent(),
+        listOf(
+            BeginGroup(name="Theorem", metadata=MetaData(row=0, column=0, isInline=false)),
+            BeginSection(name="Theorem", metadata=MetaData(row=0, column=0, isInline=false)),
+            BeginArgument(metadata=MetaData(row=1, column=2, isInline=false)),
+            BeginGroup(name="a", metadata=MetaData(row=1, column=2, isInline=false)),
+            BeginSection(name="a", metadata=MetaData(row=1, column=2, isInline=false)),
+            BeginArgument(metadata=MetaData(row=1, column=5, isInline=true)),
+            Name(text="x", metadata=MetaData(row=1, column=5, isInline=true)),
+            EndArgument,
+            EndSection,
+            EndGroup,
+            EndArgument,
+            EndSection,
+            BeginSection(name="then", metadata=MetaData(row=2, column=0, isInline=false)),
+            BeginArgument(metadata=MetaData(row=2, column=6, isInline=true)),
+            Statement(text="y", metadata=MetaData(row=2, column=6, isInline=true)),
+            EndArgument,
+            EndSection,
+            EndGroup
+        ))
 }
 
 private fun runTest(text: String, expected: List<NodeLexerToken>) {

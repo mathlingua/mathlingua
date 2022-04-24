@@ -77,13 +77,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
     private val diagnostics = mutableListOf<Diagnostic>()
 
     init {
-        while (lexer.hasNext()) {
-            val peek = lexer.peek()
-            processTopLevelItem()
-            if (lexer.hasNext() && lexer.next() === peek) {
-                throw Exception("NodeLexer caught in an infinite loop")
-            }
-        }
+        processTopLevel()
     }
 
     override fun hasNext() = tokens.isNotEmpty()
@@ -195,6 +189,10 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
     }
 
     private fun argument(isInline: Boolean): Argument? {
+        if (!lexer.hasNext() || lexer.has(ChalkTalkTokenType.Newline)) {
+            return null
+        }
+
         val statement = statement(isInline)
         if (statement != null) {
             return statement
@@ -549,164 +547,222 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         }
     }
 
-    private fun processTopLevelItem() {
-        if (!lexer.hasNext()) {
-            return
-        }
-
-        while (lexer.has(ChalkTalkTokenType.TextBlock)) {
-            val next = lexer.next()
-            tokens.add(
-                TextBlock(
+    private fun processTopLevel() {
+        var first = true
+        while (lexer.hasNext()) {
+            val peek = lexer.peek()
+            if (peek.type == ChalkTalkTokenType.TextBlock) {
+                val next = lexer.next()
+                tokens.add(TextBlock(
                     text = next.text,
-                    metadata = MetaData(row = next.row, column = next.column, isInline = false)))
-            return
+                    metadata = MetaData(
+                        row = next.row,
+                        column = next.column,
+                        isInline = false
+                    )
+                ))
+                if (lexer.has(ChalkTalkTokenType.Newline)) {
+                    lexer.next() // move past the newline
+                }
+            } else if (first || lexer.has(ChalkTalkTokenType.LineBreak)) {
+                if (lexer.has(ChalkTalkTokenType.LineBreak)) {
+                    lexer.next() // move past the line break
+                }
+                processGroup()
+            } else {
+                val next = lexer.next()
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        message = "Unexpected text '${next.text}'",
+                        row = next.row,
+                        column = next.column
+                    )
+                )
+            }
+            first = false
         }
-
-        processGroup()
     }
 
-    private fun processGroup() {
-        while (lexer.has(ChalkTalkTokenType.LineBreak)) {
-            lexer.next()
-        }
-        val peek =
-            if (lexer.hasNext()) {
-                lexer.peek()
-            } else {
-                null
-            }
+    private fun isNextSectionHeader() = lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)
 
+    // continues to the terminator token and absorbs it
+    private fun processGroup() {
+        var startToken: ChalkTalkToken? = null
         var id: Id? = null
+
         if (lexer.has(ChalkTalkTokenType.Id)) {
             val next = lexer.next()
-            id =
-                Id(
-                    text = next.text,
-                    metadata = MetaData(row = next.row, column = next.column, isInline = false))
+            startToken = next
+            id = Id(
+                text = next.text,
+                metadata = MetaData(
+                    row = next.row,
+                    column = next.column,
+                    isInline = false
+                )
+            )
             expect(ChalkTalkTokenType.Newline)
         }
 
-        tokens.add(
-            BeginGroup(
-                name =
-                    if (lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)) {
-                        lexer.peek().text
-                    } else {
-                        null
-                    },
-                metadata =
-                    MetaData(row = peek?.row ?: -1, column = peek?.column ?: -1, isInline = false)))
+        if (startToken == null && lexer.has(ChalkTalkTokenType.Name)) {
+            startToken = lexer.peek()
+        }
+
+        val firstSectionName = if (lexer.has(ChalkTalkTokenType.Name)) {
+            lexer.peek().text
+        } else {
+            null
+        }
+
+        tokens.add(BeginGroup(
+            name = firstSectionName,
+            metadata = if (startToken != null) {
+                MetaData(
+                    row = startToken.row,
+                    column = startToken.column,
+                    isInline = false
+                )
+            } else {
+                MetaData(
+                    row = -1,
+                    column = -1,
+                    isInline = false
+                )
+            }
+        ))
 
         if (id != null) {
             tokens.add(id)
         }
 
-        while (lexer.hasNext()) {
-            if (!lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)) {
-                break
-            }
+        while (lexer.hasNext() && isNextSectionHeader() && !lexer.has(ChalkTalkTokenType.LineBreak) && !lexer.has(ChalkTalkTokenType.UnIndent)) {
             processSection()
         }
-        while (lexer.has(ChalkTalkTokenType.LineBreak)) {
-            lexer.next()
+
+        while (lexer.hasNext() && !(lexer.has(ChalkTalkTokenType.LineBreak) || lexer.has(ChalkTalkTokenType.UnIndent))) {
+            val next = lexer.next()
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "Unexpected text '${next.text}'",
+                    row = next.row,
+                    column = next.column
+                )
+            )
         }
+
         tokens.add(EndGroup)
     }
 
+    // processes a section including absorbing any trailing newlines or other tokens at the end of the section
     private fun processSection() {
-        val name = expect(ChalkTalkTokenType.Name) ?: return
-        expect(ChalkTalkTokenType.Colon) ?: return
-        tokens.add(
-            BeginSection(
-                name = name.text,
-                metadata = MetaData(row = name.row, column = name.column, isInline = false)))
-        while (lexer.hasNext()) {
-            val peek = lexer.peek()
-            val newlineButNotDotSpace =
-                peek.type == ChalkTalkTokenType.Newline &&
-                    !(lexer.hasNextNext() && lexer.peekPeek().type == ChalkTalkTokenType.DotSpace)
-            if (newlineButNotDotSpace) {
-                lexer.next() // move past newline
-                break
-            }
-            // either the next tokens are <newline><dot-space> or tokens for an argument
-            if (peek.type == ChalkTalkTokenType.Newline) {
-                lexer.next() // move past the newline
-            }
-            val isInline =
-                if (lexer.has(ChalkTalkTokenType.DotSpace)) {
-                    lexer.next() // move past the '. '
-                    false
-                } else {
-                    true
-                }
-            processArgument(isInline)
+        val name = expect(ChalkTalkTokenType.Name) ?: throw Exception("Reached a section header without a name")
+        expect(ChalkTalkTokenType.Colon) ?: throw Exception("Reached a section header without a colon")
+
+        tokens.add(BeginSection(
+            name = name.text,
+            metadata = MetaData(
+                row = name.row,
+                column = name.column,
+                isInline = false
+            )
+        ))
+
+        // handle arguments on the same line
+        processArgumentList(startsInline = true)
+
+        // handle arguments on new lines
+        while (lexer.hasNext() && lexer.has(ChalkTalkTokenType.DotSpace)) {
+            expect(ChalkTalkTokenType.DotSpace) // move past the dot space
+            processArgumentList(startsInline = false)
+            // if the argument list ended with and un-indent then move past the un-indent to allow
+            // the section to continue processing the next argument on a new line if it exists
+            // or end the section otherwise
             if (lexer.has(ChalkTalkTokenType.UnIndent)) {
-                lexer.next() // move past the un-indent to end the section
-                break
+                lexer.next()
             }
         }
+
         tokens.add(EndSection)
     }
 
-    private fun processArgument(startsInline: Boolean) {
+    // processes a comma separated list of arguments on a single line and absorbs the trailing newline
+    private fun processArgumentList(startsInline: Boolean) {
         var isInline = startsInline
-        if (lexer.hasNextNext() &&
-            lexer.peek().type == ChalkTalkTokenType.Name &&
-            lexer.peekPeek().type == ChalkTalkTokenType.Colon) {
-            val peek = lexer.peek()
-            tokens.add(
-                BeginArgument(
-                    metadata = MetaData(row = peek.row, column = peek.column, isInline = false)))
-            processGroup()
-            tokens.add(EndArgument)
-        } else {
-            while (lexer.hasNext() && lexer.peek().type != ChalkTalkTokenType.Newline) {
-                val peek = lexer.peek()
-                val arg = argument(isInline)
-                if (arg != null) {
-                    tokens.add(
-                        BeginArgument(
-                            metadata =
-                                MetaData(
-                                    row = arg.metadata.row,
-                                    column = arg.metadata.column,
-                                    isInline = arg.metadata.isInline)))
-                    tokens.add(arg)
-                    tokens.add(EndArgument)
-                } else {
-                    diagnostics.add(
-                        Diagnostic(
-                            type = DiagnosticType.Error,
-                            message = "Expected an argument but found '${peek.text}'",
-                            row = peek.row,
-                            column = peek.column))
-                }
-                if (lexer.has(ChalkTalkTokenType.Comma)) {
-                    lexer.next() // move past the comma
-                    isInline = true
-                } else {
-                    break
-                }
-            }
-            while (lexer.hasNext()) {
-                val peek = lexer.peek()
-                if (peek.type == ChalkTalkTokenType.Newline ||
-                    peek.type == ChalkTalkTokenType.UnIndent) {
-                    lexer.next() // move past the newline or un-indent
-                    break
-                }
-
+        while (lexer.hasNext() && !lexer.has(ChalkTalkTokenType.Newline) && !lexer.has(ChalkTalkTokenType.UnIndent)) {
+            processArgument(isInline = isInline)
+            isInline = true
+            while (lexer.hasNext() && !(lexer.has(ChalkTalkTokenType.Comma) || lexer.has(ChalkTalkTokenType.Newline) || lexer.has(ChalkTalkTokenType.UnIndent))) {
                 val next = lexer.next()
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
-                        message = "Unexpected token '${next.text}'",
+                        message = "Unexpected text '${next.text}' in section argument",
                         row = next.row,
-                        column = next.column))
+                        column = next.column
+                    )
+                )
+            }
+            // a comma is not present for the last of the sections arguments
+            if (lexer.has(ChalkTalkTokenType.Comma)) {
+                lexer.next() // move past the comma
             }
         }
+
+        // a section might not end in a newline if the end of the section is the end of the input
+        if (lexer.has(ChalkTalkTokenType.Newline)) {
+            lexer.next() // move past the newline at the end of the line
+        }
+    }
+
+    // stops at a comma or a newline but does not absorb it
+    private fun processArgument(isInline: Boolean) {
+        if (!lexer.hasNext()) {
+            return
+        }
+
+        val firstToken = lexer.peek()
+        tokens.add(BeginArgument(metadata = MetaData(
+                row = firstToken.row,
+                column = firstToken.column,
+                isInline = isInline
+            )
+        ))
+
+        if (isNextSectionHeader()) {
+            // the argument is a group
+            processGroup()
+        } else {
+            // the argument is a target, text, statement, etc.
+            val arg = argument(isInline)
+            if (arg == null) {
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        message = "Expected an argument",
+                        row = firstToken.row,
+                        column = firstToken.column
+                    )
+                )
+            } else {
+                tokens.add(arg)
+            }
+        }
+
+        while (lexer.hasNext() && !(lexer.has(ChalkTalkTokenType.Comma) || lexer.has(ChalkTalkTokenType.Newline) || lexer.has(ChalkTalkTokenType.UnIndent))) {
+            val next = lexer.next()
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    message = "Unexpected text '${next.text}' at the end of the argument",
+                    row = next.row,
+                    column = next.column
+                )
+            )
+        }
+
+        tokens.add(EndArgument)
     }
 }
 

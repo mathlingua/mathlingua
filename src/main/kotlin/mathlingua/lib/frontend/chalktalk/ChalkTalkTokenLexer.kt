@@ -320,15 +320,19 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
             i++
         }
 
-        while (indentStack.isNotEmpty()) {
-            val indent = indentStack.pop()
-            if (indent > 0) {
-                diagnostics.add(
-                    Diagnostic(
-                        type = DiagnosticType.Error,
-                        message = "Unexpected indent of size $indent",
-                        row = row,
-                        column = column))
+        // if the end of stream doesn't end with a newline, then any remaining
+        // indents could not be terminated, but this is not an error
+        if (text.endsWith("\n") || text.endsWith(" ")) {
+            while (indentStack.isNotEmpty()) {
+                val indent = indentStack.pop()
+                if (indent > 0) {
+                    diagnostics.add(
+                        Diagnostic(
+                            type = DiagnosticType.Error,
+                            message = "Unexpected indent of size $indent",
+                            row = row,
+                            column = column))
+                }
             }
         }
     }

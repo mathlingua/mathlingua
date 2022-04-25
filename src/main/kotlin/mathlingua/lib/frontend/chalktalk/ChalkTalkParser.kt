@@ -1622,7 +1622,7 @@ private data class SectionSpec(
     val name: String, val required: Boolean, val builder: () -> Section?)
 
 fun main() {
-    val _text =
+    val text =
         """
         [\continuous.function:on{A}:to{B}]
         Defines: f
@@ -1642,15 +1642,14 @@ fun main() {
             . 'f(x) - f(x0) < delta'
         written: "continuous function"
     """.trimIndent()
-    val text =
+    val text2 =
         """
         Theorem:
         then:
         . if: 'x'
-          then:
-          . 'y'
+          then: 'y'
     """.trimIndent()
-    val lexer1 = newChalkTalkTokenLexer(text)
+    val lexer1 = newChalkTalkTokenLexer(text2)
     val lexer2 = newChalkTalkNodeLexer(lexer1)
     val parser = newChalkTalkParser(lexer2)
     val result = parser.parse()

@@ -285,7 +285,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun notSection(): NotSection? =
-        section("not") { NotSection(clause = required(clause(), DEFAULT_CLAUSE), metadata = it) }
+        section("not") { NotSection(clause = required(argument { clause() }, DEFAULT_CLAUSE), metadata = it) }
 
     private fun notGroup(): NotGroup? =
         group(
@@ -318,12 +318,12 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun target(): Target? =
         assignment() ?: name() ?: operator() ?: tuple() ?: sequence() ?: function() ?: set()
 
-    private fun targets(): List<Target> = collect { target() }
+    private fun targets(): List<Target> = collect { argument {  target() } }
 
     private fun existsSection(): ExistsSection? =
         section("exists") { ExistsSection(targets = oneOrMore(targets(), it), metadata = it) }
 
-    private fun specs(): List<Spec> = collect { spec() }
+    private fun specs(): List<Spec> = collect { argument {  spec() } }
 
     private fun whereSection(): WhereSection? =
         section("where") { WhereSection(specs = oneOrMore(specs(), it), metadata = it) }
@@ -437,12 +437,12 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun nameOrFunction(): NameOrFunction? = name() ?: function()
 
-    private fun nameOrFunctions(): List<NameOrFunction> = collect { nameOrFunction() }
+    private fun nameOrFunctions(): List<NameOrFunction> = collect { argument {  nameOrFunction() } }
 
     private fun fromSection(): FromSection? =
         section("from") { FromSection(items = oneOrMore(nameOrFunctions(), it), metadata = it) }
 
-    private fun statements(): List<Statement> = collect { statement() }
+    private fun statements(): List<Statement> = collect { argument {  statement() } }
 
     private fun generatedWhenSection(): GeneratedWhenSection? =
         section("when") {
@@ -520,14 +520,14 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun betweenSection(): BetweenSection? =
         section("between") {
             BetweenSection(
-                first = required(target(), DEFAULT_TARGET),
-                second = required(target(), DEFAULT_TARGET),
+                first = required(argument { target() }, DEFAULT_TARGET),
+                second = required(argument { target() }, DEFAULT_TARGET),
                 metadata = it)
         }
 
     private fun providedSection(): ProvidedSection? =
         section("provided") {
-            ProvidedSection(statement = required(statement(), DEFAULT_STATEMENT), metadata = it)
+            ProvidedSection(statement = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
         }
 
     private fun equalityGroup(): EqualityGroup? =
@@ -551,7 +551,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun throughSection(): ThroughSection? =
         section("through") {
-            ThroughSection(through = required(statement(), DEFAULT_STATEMENT), metadata = it)
+            ThroughSection(through = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
         }
 
     private fun membershipGroup(): MembershipGroup? =
@@ -571,13 +571,13 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun viewSection(): ViewSection? = section("view") { ViewSection(metadata = it) }
 
     private fun asSection(): AsSection? =
-        section("as") { AsSection(asText = required(text(), DEFAULT_TEXT), metadata = it) }
+        section("as") { AsSection(asText = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
 
     private fun viaSection(): ViaSection? =
-        section("via") { ViaSection(via = required(statement(), DEFAULT_STATEMENT), metadata = it) }
+        section("via") { ViaSection(via = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it) }
 
     private fun bySection(): BySection? =
-        section("by") { BySection(by = required(statement(), DEFAULT_STATEMENT), metadata = it) }
+        section("by") { BySection(by = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it) }
 
     private fun viewGroup(): ViewGroup? =
         group(
@@ -647,7 +647,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 metadata = metadata)
         }
 
-    private fun texts(): List<Text> = collect { text() }
+    private fun texts(): List<Text> = collect { argument {  text() } }
 
     private fun noteSection(): NoteSection? =
         section("note") { NoteSection(items = oneOrMore(texts(), it), metadata = it) }
@@ -698,12 +698,12 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun definesSection(): DefinesSection? =
         section("Defines") {
-            DefinesSection(target = required(target(), DEFAULT_TARGET), metadata = it)
+            DefinesSection(target = required(argument { target() }, DEFAULT_TARGET), metadata = it)
         }
 
     private fun assignment(): Assignment? = getNextIfCorrectType()
 
-    private fun assignments(): List<Assignment> = collect { assignment() }
+    private fun assignments(): List<Assignment> = collect { argument { assignment() } }
 
     private fun withSection(): WithSection? =
         section("with") { WithSection(assignments = oneOrMore(assignments(), it), metadata = it) }
@@ -716,13 +716,13 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun meansSection(): MeansSection? =
         section("means") {
-            MeansSection(statement = required(statement(), DEFAULT_STATEMENT), metadata = it)
+            MeansSection(statement = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
         }
 
     private fun satisfyingItem(): SatisfyingItem? =
         generatedGroup() ?: clause() ?: spec() ?: statement()
 
-    private fun satisfyingItems(): List<SatisfyingItem> = collect { satisfyingItem() }
+    private fun satisfyingItems(): List<SatisfyingItem> = collect { argument { satisfyingItem() } }
 
     private fun satisfyingSection(): SatisfyingSection? =
         section("satisfying") {
@@ -732,7 +732,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun expressingItem(): ExpressingItem? =
         piecewiseGroup() ?: matchingGroup() ?: clause() ?: spec() ?: statement()
 
-    private fun expressingItems(): List<ExpressingItem> = collect { expressingItem() }
+    private fun expressingItems(): List<ExpressingItem> = collect { argument { expressingItem() } }
 
     private fun expressingSection(): ExpressingSection? =
         section("expressing") {
@@ -755,7 +755,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         viewGroup()
             ?: symbolsGroup() ?: memberSymbolsGroup() ?: equalityGroup() ?: membershipGroup()
 
-    private fun providingItems(): List<ProvidingItem> = collect { providingItem() }
+    private fun providingItems(): List<ProvidingItem> = collect { argument { providingItem() } }
 
     private fun providingSection(): ProvidingSection? =
         section("Providing") {
@@ -765,7 +765,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun metadataItem(): MetadataItem? =
         noteGroup() ?: authorGroup() ?: tagGroup() ?: referenceGroup()
 
-    private fun metadataItems(): List<MetadataItem> = collect { metadataItem() }
+    private fun metadataItems(): List<MetadataItem> = collect { argument { metadataItem() } }
 
     private fun metadataSection(): MetadataSection? =
         section("Metadata") {
@@ -840,7 +840,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun thatItem(): ThatItem? = clause() ?: spec() ?: statement()
 
-    private fun thatItems(): List<ThatItem> = collect { thatItem() }
+    private fun thatItems(): List<ThatItem> = collect { argument { thatItem() } }
 
     private fun thatSection(): ThatSection? =
         section("that") { ThatSection(items = oneOrMore(thatItems(), it), metadata = it) }
@@ -849,7 +849,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         typeGroup()
             ?: nameGroup() ?: authorGroup() ?: homepageGroup() ?: urlGroup() ?: offsetGroup()
 
-    private fun resourceItems(): List<ResourceItem> = collect { resourceItem() }
+    private fun resourceItems(): List<ResourceItem> = collect { argument { resourceItem() } }
 
     private fun resourceSection(): ResourceSection? =
         section("Resource") {
@@ -857,18 +857,18 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun typeSection(): TypeSection? =
-        section("type") { TypeSection(type = required(text(), DEFAULT_TEXT), metadata = it) }
+        section("type") { TypeSection(type = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
 
     private fun typeGroup(): TypeGroup? =
         group(
             idSpec = IdRequirement.NotAllowed,
-            specs = listOf(SectionSpec(name = "type", required = true) { this.tagSection() }),
+            specs = listOf(SectionSpec(name = "type", required = true) { this.typeSection() }),
             default = DEFAULT_TYPE_GROUP) { _, sections, metadata ->
             TypeGroup(typeSection = sections["type"] as TypeSection, metadata = metadata)
         }
 
     private fun nameSection(): NameSection? =
-        section("name") { NameSection(text = required(text(), DEFAULT_TEXT), metadata = it) }
+        section("name") { NameSection(text = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
 
     private fun nameGroup(): NameGroup? =
         group(
@@ -880,7 +880,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun homepageSection(): HomepageSection? =
         section("homepage") {
-            HomepageSection(homepage = required(text(), DEFAULT_TEXT), metadata = it)
+            HomepageSection(homepage = required(argument { text() }, DEFAULT_TEXT), metadata = it)
         }
 
     private fun homepageGroup(): HomepageGroup? =
@@ -894,7 +894,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun urlSection(): UrlSection? =
-        section("url") { UrlSection(url = required(text(), DEFAULT_TEXT), metadata = it) }
+        section("url") { UrlSection(url = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
 
     private fun urlGroup(): UrlGroup? =
         group(
@@ -905,7 +905,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun offsetSection(): OffsetSection? =
-        section("offset") { OffsetSection(offset = required(text(), DEFAULT_TEXT), metadata = it) }
+        section("offset") { OffsetSection(offset = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
 
     private fun offsetGroup(): OffsetGroup? =
         group(
@@ -1025,7 +1025,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun contentSection(): ContentSection? =
         section("content") {
-            ContentSection(content = required(text(), DEFAULT_TEXT), metadata = it)
+            ContentSection(content = required(argument { text() }, DEFAULT_TEXT), metadata = it)
         }
 
     private fun topicGroup(): TopicGroup? =
@@ -1069,7 +1069,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             ?: positiveIntGroup() ?: negativeIntGroup() ?: positiveFloatGroup()
                 ?: negativeFloatGroup()
 
-    private fun specifyItems(): List<SpecifyItem> = collect { specifyItem() }
+    private fun specifyItems(): List<SpecifyItem> = collect { argument { specifyItem() } }
 
     private fun specifySection(): SpecifySection? =
         section("Specify") { SpecifySection(items = oneOrMore(specifyItems(), it), metadata = it) }
@@ -1177,7 +1177,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun isSection(): IsSection? =
-        section("is") { IsSection(form = required(text(), DEFAULT_TEXT), metadata = it) }
+        section("is") { IsSection(form = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
 
     private fun <T> collect(fn: () -> T?): List<T> {
         val result = mutableListOf<T>()
@@ -1613,7 +1613,7 @@ fun main() {
             suchThat:
             . 'delta > 0'
             . 'f(x) - f(x0) < delta'
-       written: "continuous function"
+        written: "continuous function"
     """.trimIndent()
     val lexer1 = newChalkTalkTokenLexer(text)
     val lexer2 = newChalkTalkNodeLexer(lexer1)

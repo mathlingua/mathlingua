@@ -285,7 +285,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun notSection(): NotSection? =
-        section("not") { NotSection(clause = required(argument { clause() }, DEFAULT_CLAUSE), metadata = it) }
+        section("not") {
+            NotSection(clause = required(argument { clause() }, DEFAULT_CLAUSE), metadata = it)
+        }
 
     private fun notGroup(): NotGroup? =
         group(
@@ -318,12 +320,12 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun target(): Target? =
         assignment() ?: name() ?: operator() ?: tuple() ?: sequence() ?: function() ?: set()
 
-    private fun targets(): List<Target> = collect { argument {  target() } }
+    private fun targets(): List<Target> = collect { argument { target() } }
 
     private fun existsSection(): ExistsSection? =
         section("exists") { ExistsSection(targets = oneOrMore(targets(), it), metadata = it) }
 
-    private fun specs(): List<Spec> = collect { argument {  spec() } }
+    private fun specs(): List<Spec> = collect { argument { spec() } }
 
     private fun whereSection(): WhereSection? =
         section("where") { WhereSection(specs = oneOrMore(specs(), it), metadata = it) }
@@ -437,12 +439,12 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun nameOrFunction(): NameOrFunction? = name() ?: function()
 
-    private fun nameOrFunctions(): List<NameOrFunction> = collect { argument {  nameOrFunction() } }
+    private fun nameOrFunctions(): List<NameOrFunction> = collect { argument { nameOrFunction() } }
 
     private fun fromSection(): FromSection? =
         section("from") { FromSection(items = oneOrMore(nameOrFunctions(), it), metadata = it) }
 
-    private fun statements(): List<Statement> = collect { argument {  statement() } }
+    private fun statements(): List<Statement> = collect { argument { statement() } }
 
     private fun generatedWhenSection(): GeneratedWhenSection? =
         section("when") {
@@ -527,7 +529,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun providedSection(): ProvidedSection? =
         section("provided") {
-            ProvidedSection(statement = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
+            ProvidedSection(
+                statement = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
         }
 
     private fun equalityGroup(): EqualityGroup? =
@@ -551,7 +554,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun throughSection(): ThroughSection? =
         section("through") {
-            ThroughSection(through = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
+            ThroughSection(
+                through = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
         }
 
     private fun membershipGroup(): MembershipGroup? =
@@ -571,13 +575,19 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun viewSection(): ViewSection? = section("view") { ViewSection(metadata = it) }
 
     private fun asSection(): AsSection? =
-        section("as") { AsSection(asText = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
+        section("as") {
+            AsSection(asText = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
 
     private fun viaSection(): ViaSection? =
-        section("via") { ViaSection(via = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it) }
+        section("via") {
+            ViaSection(via = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
+        }
 
     private fun bySection(): BySection? =
-        section("by") { BySection(by = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it) }
+        section("by") {
+            BySection(by = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
+        }
 
     private fun viewGroup(): ViewGroup? =
         group(
@@ -647,7 +657,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 metadata = metadata)
         }
 
-    private fun texts(): List<Text> = collect { argument {  text() } }
+    private fun texts(): List<Text> = collect { argument { text() } }
 
     private fun noteSection(): NoteSection? =
         section("note") { NoteSection(items = oneOrMore(texts(), it), metadata = it) }
@@ -716,7 +726,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun meansSection(): MeansSection? =
         section("means") {
-            MeansSection(statement = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
+            MeansSection(
+                statement = required(argument { statement() }, DEFAULT_STATEMENT), metadata = it)
         }
 
     private fun satisfyingItem(): SatisfyingItem? =
@@ -792,7 +803,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_DEFINES_GROUP) { id, sections, metadata ->
             DefinesGroup(
-                id = id,
+                id = id ?: DEFAULT_ID,
                 definesSection = sections["Defines"] as DefinesSection,
                 withSection = sections["with"] as WithSection?,
                 givenSection = sections["given"] as GivenSection?,
@@ -826,7 +837,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_STATES_GROUP) { id, sections, metadata ->
             StatesGroup(
-                id = id,
+                id = id ?: DEFAULT_ID,
                 statesSection = sections["States"] as StatesSection,
                 givenSection = sections["given"] as GivenSection?,
                 whenSection = sections["when"] as WhenSection?,
@@ -857,7 +868,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun typeSection(): TypeSection? =
-        section("type") { TypeSection(type = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
+        section("type") {
+            TypeSection(type = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
 
     private fun typeGroup(): TypeGroup? =
         group(
@@ -868,7 +881,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun nameSection(): NameSection? =
-        section("name") { NameSection(text = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
+        section("name") {
+            NameSection(text = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
 
     private fun nameGroup(): NameGroup? =
         group(
@@ -894,7 +909,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun urlSection(): UrlSection? =
-        section("url") { UrlSection(url = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
+        section("url") {
+            UrlSection(url = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
 
     private fun urlGroup(): UrlGroup? =
         group(
@@ -905,7 +922,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun offsetSection(): OffsetSection? =
-        section("offset") { OffsetSection(offset = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
+        section("offset") {
+            OffsetSection(offset = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
 
     private fun offsetGroup(): OffsetGroup? =
         group(
@@ -922,7 +941,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 listOf(SectionSpec(name = "Resource", required = true) { this.resourceSection() }),
             default = DEFAULT_RESOURCE_GROUP) { id, sections, metadata ->
             ResourceGroup(
-                id = id.text,
+                id = id?.text ?: "",
                 resourceSection = sections["Resource"] as ResourceSection,
                 metadata = metadata)
         }
@@ -1038,7 +1057,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_TOPIC_GROUP) { id, sections, metadata ->
             TopicGroup(
-                id = id.text,
+                id = id?.text ?: "",
                 topicSection = sections["Topic"] as TopicSection,
                 contentSection = sections["content"] as ContentSection,
                 metadataSection = sections["Metadata"] as MetadataSection?,
@@ -1177,7 +1196,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun isSection(): IsSection? =
-        section("is") { IsSection(form = required(argument { text() }, DEFAULT_TEXT), metadata = it) }
+        section("is") {
+            IsSection(form = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
 
     private fun <T> collect(fn: () -> T?): List<T> {
         val result = mutableListOf<T>()
@@ -1272,21 +1293,26 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun expect(token: NodeLexerToken): NodeLexerToken? {
         if (!lexer.hasNext()) {
-            diagnostics.add(
-                Diagnostic(
-                    type = DiagnosticType.Error,
-                    message = "Expected $token but found the end of stream",
-                    row = -1,
-                    column = -1))
+            val text = getNodeName(token)
+            if (text != null) {
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        message = "Expected $text but found the end of stream",
+                        row = -1,
+                        column = -1))
+            }
             return null
         }
 
         val next = lexer.next()
-        if (next != token) {
+        val tokenText = getNodeName(token)
+        val nextText = getNodeName(next)
+        if (next != token && tokenText != null && nextText != null) {
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
-                    message = "Expected $token but found $next",
+                    message = "Expected $tokenText but found $nextText",
                     row = next.metadata.row,
                     column = next.metadata.column))
         }
@@ -1408,7 +1434,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         idSpec: IdRequirement,
         specs: List<SectionSpec>,
         default: T,
-        builder: (id: Id, sections: Map<String, Section?>, metadata: MetaData) -> T
+        builder: (id: Id?, sections: Map<String, Section?>, metadata: MetaData) -> T
     ): T? {
         if (!nextIs<BeginGroup>() || (lexer.peek() as BeginGroup).name != specs.first().name) {
             return null
@@ -1421,7 +1447,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
         val beginGroup = expectIs<BeginGroup>()!!
 
-        var id = id()
+        val id = id()
         if (id == null) {
             if (idSpec == IdRequirement.Required) {
                 diagnostics.add(
@@ -1431,7 +1457,6 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                         row = beginGroup.metadata.row,
                         column = beginGroup.metadata.column))
             }
-            id = DEFAULT_ID
         } else {
             // report an error if the id is specified but is not allowed
             if (idSpec == IdRequirement.NotAllowed) {
@@ -1530,50 +1555,52 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
     }
 
-    private fun maybeAddDiagnosticForMissingItem(token: NodeLexerToken) {
-        val text =
-            when (token) {
-                is BeginGroup -> {
-                    // don't report about this to the user since it is an implementation detail
-                    null
-                }
-                is EndGroup -> {
-                    // don't report about this to the user since it is an implementation detail
-                    null
-                }
-                is BeginSection -> {
-                    // don't report about this to the user since it is an implementation detail
-                    null
-                }
-                is EndSection -> {
-                    // don't report about this to the user since it is an implementation detail
-                    null
-                }
-                is BeginArgument -> {
-                    // don't report about this to the user since it is an implementation detail
-                    null
-                }
-                is EndArgument -> {
-                    // don't report about this to the user since it is an implementation detail
-                    null
-                }
-                is Statement -> "statement"
-                is FunctionAssignment -> "function assignment"
-                is NameAssignment -> "name assignment"
-                is RegularFunction -> "function"
-                is SubAndRegularParamFunction -> "function"
-                is SubParamFunction -> "function"
-                is Name -> "name"
-                is OperatorName -> "name"
-                is SubAndRegularParamFunctionSequence -> "sequence"
-                is SubParamFunctionSequence -> "sequence"
-                is Set -> "set"
-                is Tuple -> "tuple"
-                is Text -> "text"
-                is NameOrFunction -> "name or function"
-                is Id -> "id"
-                is TextBlock -> "text block"
+    private fun getNodeName(item: NodeLexerToken) =
+        when (item) {
+            is BeginGroup -> {
+                // don't report about this to the user since it is an implementation detail
+                null
             }
+            is EndGroup -> {
+                // don't report about this to the user since it is an implementation detail
+                null
+            }
+            is BeginSection -> {
+                // don't report about this to the user since it is an implementation detail
+                null
+            }
+            is EndSection -> {
+                // don't report about this to the user since it is an implementation detail
+                null
+            }
+            is BeginArgument -> {
+                // don't report about this to the user since it is an implementation detail
+                null
+            }
+            is EndArgument -> {
+                // don't report about this to the user since it is an implementation detail
+                null
+            }
+            is Statement -> "statement"
+            is FunctionAssignment -> "function assignment"
+            is NameAssignment -> "name assignment"
+            is RegularFunction -> "function"
+            is SubAndRegularParamFunction -> "function"
+            is SubParamFunction -> "function"
+            is Name -> "name"
+            is OperatorName -> "name"
+            is SubAndRegularParamFunctionSequence -> "sequence"
+            is SubParamFunctionSequence -> "sequence"
+            is Set -> "set"
+            is Tuple -> "tuple"
+            is Text -> "text"
+            is NameOrFunction -> "name or function"
+            is Id -> "id"
+            is TextBlock -> "text block"
+        }
+
+    private fun maybeAddDiagnosticForMissingItem(token: NodeLexerToken) {
+        val text = getNodeName(token)
         if (text != null) {
             diagnostics.add(
                 Diagnostic(
@@ -1595,7 +1622,7 @@ private data class SectionSpec(
     val name: String, val required: Boolean, val builder: () -> Section?)
 
 fun main() {
-    val text =
+    val _text =
         """
         [\continuous.function:on{A}:to{B}]
         Defines: f
@@ -1615,6 +1642,14 @@ fun main() {
             . 'f(x) - f(x0) < delta'
         written: "continuous function"
     """.trimIndent()
+    val text =
+        """
+        Theorem:
+        then:
+        . if: 'x'
+          then:
+          . 'y'
+    """.trimIndent()
     val lexer1 = newChalkTalkTokenLexer(text)
     val lexer2 = newChalkTalkNodeLexer(lexer1)
     val parser = newChalkTalkParser(lexer2)
@@ -1625,4 +1660,6 @@ fun main() {
     lexer1.diagnostics().forEach(::println)
     lexer2.diagnostics().forEach(::println)
     result.diagnostics.forEach(::println)
+    println("---------------------")
+    println(result.doc.toCode())
 }

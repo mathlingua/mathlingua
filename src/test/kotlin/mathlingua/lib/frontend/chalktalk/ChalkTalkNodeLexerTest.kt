@@ -504,19 +504,19 @@ internal class ChalkTalkNodeLexerTest {
         """.trimIndent(),
             listOf(
                 BeginGroup(name = "A", metadata = MetaData(row = 0, column = 0, isInline = false)),
-                    BeginSection(
-                        name = "A", metadata = MetaData(row = 0, column = 0, isInline = false)),
-                        BeginArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
-                            BeginGroup(name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
-                                BeginSection(
-                                    name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
-                                EndSection,
-                            EndGroup,
-                        EndArgument,
-                    EndSection,
-                    BeginSection(
-                        name = "B", metadata = MetaData(row = 2, column = 0, isInline = false)),
-                    EndSection,
+                BeginSection(
+                    name = "A", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginGroup(name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginSection(
+                    name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection,
+                EndGroup,
+                EndArgument,
+                EndSection,
+                BeginSection(
+                    name = "B", metadata = MetaData(row = 2, column = 0, isInline = false)),
+                EndSection,
                 EndGroup))
 
     @Test
@@ -530,24 +530,26 @@ internal class ChalkTalkNodeLexerTest {
         """.trimIndent(),
             listOf(
                 BeginGroup(name = "A", metadata = MetaData(row = 0, column = 0, isInline = false)),
-                    BeginSection(
-                        name = "A", metadata = MetaData(row = 0, column = 0, isInline = false)),
-                        BeginArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
-                            BeginGroup(name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
-                                BeginSection(name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
-                                    BeginArgument(metadata = MetaData(row = 2, column = 4, isInline = false)),
-                                        BeginGroup(name = "Y", metadata = MetaData(row = 2, column = 4, isInline = false)),
-                                            BeginSection(name = "Y", metadata = MetaData(row = 2, column = 4, isInline = false)),
-                                            EndSection,
-                                        EndGroup,
-                                    EndArgument,
-                                EndSection,
-                            EndGroup,
-                        EndArgument,
-                    EndSection,
-                    BeginSection(
-                        name = "B", metadata = MetaData(row = 3, column = 0, isInline = false)),
-                    EndSection,
+                BeginSection(
+                    name = "A", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginGroup(name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginSection(
+                    name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                BeginGroup(name = "Y", metadata = MetaData(row = 2, column = 4, isInline = false)),
+                BeginSection(
+                    name = "Y", metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndSection,
+                EndGroup,
+                EndArgument,
+                EndSection,
+                EndGroup,
+                EndArgument,
+                EndSection,
+                BeginSection(
+                    name = "B", metadata = MetaData(row = 3, column = 0, isInline = false)),
+                EndSection,
                 EndGroup))
 
     @Test
@@ -679,67 +681,79 @@ internal class ChalkTalkNodeLexerTest {
 
     @Test
     fun `correctly parses multi sections where first section has dot space argument`() =
-        runTest("""
+        runTest(
+            """
             Theorem:
             . a: x
             then: 'y'
     """.trimIndent(),
-        listOf(
-            BeginGroup(name="Theorem", metadata=MetaData(row=0, column=0, isInline=false)),
-            BeginSection(name="Theorem", metadata=MetaData(row=0, column=0, isInline=false)),
-            BeginArgument(metadata=MetaData(row=1, column=2, isInline=false)),
-            BeginGroup(name="a", metadata=MetaData(row=1, column=2, isInline=false)),
-            BeginSection(name="a", metadata=MetaData(row=1, column=2, isInline=false)),
-            BeginArgument(metadata=MetaData(row=1, column=5, isInline=true)),
-            Name(text="x", metadata=MetaData(row=1, column=5, isInline=true)),
-            EndArgument,
-            EndSection,
-            EndGroup,
-            EndArgument,
-            EndSection,
-            BeginSection(name="then", metadata=MetaData(row=2, column=0, isInline=false)),
-            BeginArgument(metadata=MetaData(row=2, column=6, isInline=true)),
-            Statement(text="y", metadata=MetaData(row=2, column=6, isInline=true)),
-            EndArgument,
-            EndSection,
-            EndGroup
-        ))
+            listOf(
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginGroup(name = "a", metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginSection(
+                    name = "a", metadata = MetaData(row = 1, column = 2, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
+                Name(text = "x", metadata = MetaData(row = 1, column = 5, isInline = true)),
+                EndArgument,
+                EndSection,
+                EndGroup,
+                EndArgument,
+                EndSection,
+                BeginSection(
+                    name = "then", metadata = MetaData(row = 2, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 2, column = 6, isInline = true)),
+                Statement(text = "y", metadata = MetaData(row = 2, column = 6, isInline = true)),
+                EndArgument,
+                EndSection,
+                EndGroup))
 
     @Test
     fun `correctly parses multiple top level groups`() =
-        runTest("""
+        runTest(
+            """
             Theorem: x
 
             Theorem: y
 
             Theorem: z
-        """.trimIndent(), listOf(
-            BeginGroup(name="Theorem", metadata=MetaData(row=0, column=0, isInline=false)),
-                BeginSection(name="Theorem", metadata=MetaData(row=0, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=0, column=9, isInline=true)),
-                        Name(text="x", metadata=MetaData(row=0, column=9, isInline=true)),
-                    EndArgument,
+        """.trimIndent(),
+            listOf(
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 0, column = 9, isInline = true)),
+                Name(text = "x", metadata = MetaData(row = 0, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup,
-            BeginGroup(name="Theorem", metadata=MetaData(row=2, column=0, isInline=false)),
-                BeginSection(name="Theorem", metadata=MetaData(row=2, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=2, column=9, isInline=true)),
-                        Name(text="y", metadata=MetaData(row=2, column=9, isInline=true)),
-                    EndArgument,
+                EndGroup,
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
+                Name(text = "y", metadata = MetaData(row = 2, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup,
-            BeginGroup(name="Theorem", metadata=MetaData(row=4, column=0, isInline=false)),
-                BeginSection(name="Theorem", metadata=MetaData(row=4, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=4, column=9, isInline=true)),
-                        Name(text="z", metadata=MetaData(row=4, column=9, isInline=true)),
-                    EndArgument,
+                EndGroup,
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
+                Name(text = "z", metadata = MetaData(row = 4, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup
-        ))
+                EndGroup))
 
     @Test
     fun `correctly parses multiple top level groups and text blocks`() =
-        runTest("""
+        runTest(
+            """
             :: some text ::
 
             Theorem: x
@@ -747,41 +761,43 @@ internal class ChalkTalkNodeLexerTest {
             Theorem: y
 
             Theorem: z
-        """.trimIndent(), listOf(
-            TextBlock(
-                text = " some text ",
-                metadata = MetaData(
-                    row = 0,
-                    column = 0,
-                    isInline = false
-                )
-            ),
-            BeginGroup(name="Theorem", metadata=MetaData(row=2, column=0, isInline=false)),
-                BeginSection(name="Theorem", metadata=MetaData(row=2, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=2, column=9, isInline=true)),
-                        Name(text="x", metadata=MetaData(row=2, column=9, isInline=true)),
-                    EndArgument,
+        """.trimIndent(),
+            listOf(
+                TextBlock(
+                    text = " some text ",
+                    metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
+                Name(text = "x", metadata = MetaData(row = 2, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup,
-            BeginGroup(name="Theorem", metadata=MetaData(row=4, column=0, isInline=false)),
-                BeginSection(name="Theorem", metadata=MetaData(row=4, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=4, column=9, isInline=true)),
-                        Name(text="y", metadata=MetaData(row=4, column=9, isInline=true)),
-                    EndArgument,
+                EndGroup,
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
+                Name(text = "y", metadata = MetaData(row = 4, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup,
-            BeginGroup(name="Theorem", metadata=MetaData(row=6, column=0, isInline=false)),
-                BeginSection(name="Theorem", metadata=MetaData(row=6, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=6, column=9, isInline=true)),
-                        Name(text="z", metadata=MetaData(row=6, column=9, isInline=true)),
-                    EndArgument,
+                EndGroup,
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 6, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 6, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 6, column = 9, isInline = true)),
+                Name(text = "z", metadata = MetaData(row = 6, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup
-        ))
+                EndGroup))
 
     @Test
     fun `correctly parses multiple top level groups with ids`() =
-        runTest("""
+        runTest(
+            """
             [id 1]
             Theorem: x
 
@@ -790,53 +806,38 @@ internal class ChalkTalkNodeLexerTest {
 
             [id 3]
             Theorem: z
-        """.trimIndent(), listOf(
-            BeginGroup(name="Theorem", metadata=MetaData(row=0, column=0, isInline=false)),
-                Id(
-                    text = "id 1",
-                    metadata = MetaData(
-                        row = 0,
-                        column = 0,
-                        isInline = false
-                    )
-                ),
-                BeginSection(name="Theorem", metadata=MetaData(row=1, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=1, column=9, isInline=true)),
-                        Name(text="x", metadata=MetaData(row=1, column=9, isInline=true)),
-                    EndArgument,
+        """.trimIndent(),
+            listOf(
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                Id(text = "id 1", metadata = MetaData(row = 0, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 1, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 1, column = 9, isInline = true)),
+                Name(text = "x", metadata = MetaData(row = 1, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup,
-            BeginGroup(name="Theorem", metadata=MetaData(row=3, column=0, isInline=false)),
-                Id(
-                    text = "id 2",
-                    metadata = MetaData(
-                        row = 3,
-                        column = 0,
-                        isInline = false
-                    )
-                ),
-                BeginSection(name="Theorem", metadata=MetaData(row=4, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=4, column=9, isInline=true)),
-                        Name(text="y", metadata=MetaData(row=4, column=9, isInline=true)),
-                    EndArgument,
+                EndGroup,
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 3, column = 0, isInline = false)),
+                Id(text = "id 2", metadata = MetaData(row = 3, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
+                Name(text = "y", metadata = MetaData(row = 4, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup,
-            BeginGroup(name="Theorem", metadata=MetaData(row=6, column=0, isInline=false)),
-                Id(
-                    text = "id 3",
-                    metadata = MetaData(
-                        row = 6,
-                        column = 0,
-                        isInline = false
-                    )
-                ),
-                BeginSection(name="Theorem", metadata=MetaData(row=7, column=0, isInline=false)),
-                    BeginArgument(metadata=MetaData(row=7, column=9, isInline=true)),
-                        Name(text="z", metadata=MetaData(row=7, column=9, isInline=true)),
-                    EndArgument,
+                EndGroup,
+                BeginGroup(
+                    name = "Theorem", metadata = MetaData(row = 6, column = 0, isInline = false)),
+                Id(text = "id 3", metadata = MetaData(row = 6, column = 0, isInline = false)),
+                BeginSection(
+                    name = "Theorem", metadata = MetaData(row = 7, column = 0, isInline = false)),
+                BeginArgument(metadata = MetaData(row = 7, column = 9, isInline = true)),
+                Name(text = "z", metadata = MetaData(row = 7, column = 9, isInline = true)),
+                EndArgument,
                 EndSection,
-            EndGroup
-        ))
+                EndGroup))
 }
 
 private fun runTest(text: String, expected: List<NodeLexerToken>) {

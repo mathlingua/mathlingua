@@ -17,6 +17,7 @@
 package mathlingua.lib.frontend.chalktalk
 
 import java.util.LinkedList
+import java.util.Stack
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
@@ -49,7 +50,6 @@ import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
-import java.util.Stack
 
 internal interface ChalkTalkNodeLexer {
     fun hasNext(): Boolean
@@ -92,7 +92,8 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             }
             is EndGroup -> {
                 if (beginStack.isEmpty() || beginStack.peek() !is BeginGroup) {
-                    throw Exception("Unmatched EndGroup to ${if (beginStack.isEmpty()) {
+                    throw Exception(
+                        "Unmatched EndGroup to ${if (beginStack.isEmpty()) {
                         "and empty stack"
                     } else {
                         beginStack.peek().toString()
@@ -102,7 +103,8 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             }
             is EndSection -> {
                 if (beginStack.isEmpty() || beginStack.peek() !is BeginSection) {
-                    throw Exception("Unmatched EndSection to ${if (beginStack.isEmpty()) {
+                    throw Exception(
+                        "Unmatched EndSection to ${if (beginStack.isEmpty()) {
                         "and empty stack"
                     } else {
                         beginStack.peek().toString()
@@ -112,14 +114,16 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             }
             is EndArgument -> {
                 if (beginStack.isEmpty() || beginStack.peek() !is BeginArgument) {
-                    throw Exception("Unmatched EndArgument to ${if (beginStack.isEmpty()) {
+                    throw Exception(
+                        "Unmatched EndArgument to ${if (beginStack.isEmpty()) {
                         "and empty stack"
                     } else {
                         beginStack.peek().toString()
                     }}")
                 }
                 beginStack.pop()
-            } else -> {
+            }
+            else -> {
                 // for other tokens, the stack doesn't need to be modified
             }
         }
@@ -553,14 +557,11 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             val peek = lexer.peek()
             if (peek.type == ChalkTalkTokenType.TextBlock) {
                 val next = lexer.next()
-                tokens.add(TextBlock(
-                    text = next.text,
-                    metadata = MetaData(
-                        row = next.row,
-                        column = next.column,
-                        isInline = false
-                    )
-                ))
+                tokens.add(
+                    TextBlock(
+                        text = next.text,
+                        metadata =
+                            MetaData(row = next.row, column = next.column, isInline = false)))
                 if (lexer.has(ChalkTalkTokenType.Newline)) {
                     lexer.next() // move past the newline
                 }
@@ -576,15 +577,14 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                         type = DiagnosticType.Error,
                         message = "Unexpected text '${next.text}'",
                         row = next.row,
-                        column = next.column
-                    )
-                )
+                        column = next.column))
             }
             first = false
         }
     }
 
-    private fun isNextSectionHeader() = lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)
+    private fun isNextSectionHeader() =
+        lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Colon)
 
     // continues to the terminator token and absorbs it
     private fun processGroup() {
@@ -594,14 +594,10 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         if (lexer.has(ChalkTalkTokenType.Id)) {
             val next = lexer.next()
             startToken = next
-            id = Id(
-                text = next.text,
-                metadata = MetaData(
-                    row = next.row,
-                    column = next.column,
-                    isInline = false
-                )
-            )
+            id =
+                Id(
+                    text = next.text,
+                    metadata = MetaData(row = next.row, column = next.column, isInline = false))
             expect(ChalkTalkTokenType.Newline)
         }
 
@@ -609,65 +605,61 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             startToken = lexer.peek()
         }
 
-        val firstSectionName = if (lexer.has(ChalkTalkTokenType.Name)) {
-            lexer.peek().text
-        } else {
-            null
-        }
-
-        tokens.add(BeginGroup(
-            name = firstSectionName,
-            metadata = if (startToken != null) {
-                MetaData(
-                    row = startToken.row,
-                    column = startToken.column,
-                    isInline = false
-                )
+        val firstSectionName =
+            if (lexer.has(ChalkTalkTokenType.Name)) {
+                lexer.peek().text
             } else {
-                MetaData(
-                    row = -1,
-                    column = -1,
-                    isInline = false
-                )
+                null
             }
-        ))
+
+        tokens.add(
+            BeginGroup(
+                name = firstSectionName,
+                metadata =
+                    if (startToken != null) {
+                        MetaData(row = startToken.row, column = startToken.column, isInline = false)
+                    } else {
+                        MetaData(row = -1, column = -1, isInline = false)
+                    }))
 
         if (id != null) {
             tokens.add(id)
         }
 
-        while (lexer.hasNext() && isNextSectionHeader() && !lexer.has(ChalkTalkTokenType.LineBreak) && !lexer.has(ChalkTalkTokenType.UnIndent)) {
+        while (lexer.hasNext() &&
+            isNextSectionHeader() &&
+            !lexer.has(ChalkTalkTokenType.LineBreak) &&
+            !lexer.has(ChalkTalkTokenType.UnIndent)) {
             processSection()
         }
 
-        while (lexer.hasNext() && !(lexer.has(ChalkTalkTokenType.LineBreak) || lexer.has(ChalkTalkTokenType.UnIndent))) {
+        while (lexer.hasNext() &&
+            !(lexer.has(ChalkTalkTokenType.LineBreak) || lexer.has(ChalkTalkTokenType.UnIndent))) {
             val next = lexer.next()
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
                     message = "Unexpected text '${next.text}'",
                     row = next.row,
-                    column = next.column
-                )
-            )
+                    column = next.column))
         }
 
         tokens.add(EndGroup)
     }
 
-    // processes a section including absorbing any trailing newlines or other tokens at the end of the section
+    // processes a section including absorbing any trailing newlines or other tokens at the end of
+    // the section
     private fun processSection() {
-        val name = expect(ChalkTalkTokenType.Name) ?: throw Exception("Reached a section header without a name")
-        expect(ChalkTalkTokenType.Colon) ?: throw Exception("Reached a section header without a colon")
+        val name =
+            expect(ChalkTalkTokenType.Name)
+                ?: throw Exception("Reached a section header without a name")
+        expect(ChalkTalkTokenType.Colon)
+            ?: throw Exception("Reached a section header without a colon")
 
-        tokens.add(BeginSection(
-            name = name.text,
-            metadata = MetaData(
-                row = name.row,
-                column = name.column,
-                isInline = false
-            )
-        ))
+        tokens.add(
+            BeginSection(
+                name = name.text,
+                metadata = MetaData(row = name.row, column = name.column, isInline = false)))
 
         // handle arguments on the same line
         processArgumentList(startsInline = true)
@@ -687,22 +679,26 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         tokens.add(EndSection)
     }
 
-    // processes a comma separated list of arguments on a single line and absorbs the trailing newline
+    // processes a comma separated list of arguments on a single line and absorbs the trailing
+    // newline
     private fun processArgumentList(startsInline: Boolean) {
         var isInline = startsInline
-        while (lexer.hasNext() && !lexer.has(ChalkTalkTokenType.Newline) && !lexer.has(ChalkTalkTokenType.UnIndent)) {
+        while (lexer.hasNext() &&
+            !lexer.has(ChalkTalkTokenType.Newline) &&
+            !lexer.has(ChalkTalkTokenType.UnIndent)) {
             processArgument(isInline = isInline)
             isInline = true
-            while (lexer.hasNext() && !(lexer.has(ChalkTalkTokenType.Comma) || lexer.has(ChalkTalkTokenType.Newline) || lexer.has(ChalkTalkTokenType.UnIndent))) {
+            while (lexer.hasNext() &&
+                !(lexer.has(ChalkTalkTokenType.Comma) ||
+                    lexer.has(ChalkTalkTokenType.Newline) ||
+                    lexer.has(ChalkTalkTokenType.UnIndent))) {
                 val next = lexer.next()
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
                         message = "Unexpected text '${next.text}' in section argument",
                         row = next.row,
-                        column = next.column
-                    )
-                )
+                        column = next.column))
             }
             // a comma is not present for the last of the sections arguments
             if (lexer.has(ChalkTalkTokenType.Comma)) {
@@ -723,12 +719,11 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         }
 
         val firstToken = lexer.peek()
-        tokens.add(BeginArgument(metadata = MetaData(
-                row = firstToken.row,
-                column = firstToken.column,
-                isInline = isInline
-            )
-        ))
+        tokens.add(
+            BeginArgument(
+                metadata =
+                    MetaData(
+                        row = firstToken.row, column = firstToken.column, isInline = isInline)))
 
         if (isNextSectionHeader()) {
             // the argument is a group
@@ -742,24 +737,23 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                         type = DiagnosticType.Error,
                         message = "Expected an argument",
                         row = firstToken.row,
-                        column = firstToken.column
-                    )
-                )
+                        column = firstToken.column))
             } else {
                 tokens.add(arg)
             }
         }
 
-        while (lexer.hasNext() && !(lexer.has(ChalkTalkTokenType.Comma) || lexer.has(ChalkTalkTokenType.Newline) || lexer.has(ChalkTalkTokenType.UnIndent))) {
+        while (lexer.hasNext() &&
+            !(lexer.has(ChalkTalkTokenType.Comma) ||
+                lexer.has(ChalkTalkTokenType.Newline) ||
+                lexer.has(ChalkTalkTokenType.UnIndent))) {
             val next = lexer.next()
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
                     message = "Unexpected text '${next.text}' at the end of the argument",
                     row = next.row,
-                    column = next.column
-                )
-            )
+                    column = next.column))
         }
 
         tokens.add(EndArgument)

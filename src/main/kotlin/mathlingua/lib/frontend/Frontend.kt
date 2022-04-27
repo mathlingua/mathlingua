@@ -16,12 +16,11 @@
 
 package mathlingua.lib.frontend
 
-internal enum class DiagnosticType {
+enum class DiagnosticType {
     Error
 }
 
-internal data class Diagnostic(
-    val type: DiagnosticType, val message: String, val row: Int, val column: Int)
+data class Diagnostic(val type: DiagnosticType, val message: String, val row: Int, val column: Int)
 
 internal data class MetaData(var row: Int, var column: Int, var isInline: Boolean)
 

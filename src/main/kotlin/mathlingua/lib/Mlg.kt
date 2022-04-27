@@ -17,13 +17,24 @@
 package mathlingua.lib
 
 import java.io.File
+import java.nio.file.Paths
+import mathlingua.lib.backend.getDocsDir
+import mathlingua.lib.backend.newWorkspace
+import mathlingua.lib.frontend.DiagnosticType
+
+private const val VERSION = "0.16"
+
+private const val CNAME_FILE_NAME = "CNAME"
+
+data class FileDiagnostic(
+    val file: File, val type: DiagnosticType, val message: String, val row: Int, val column: Int)
 
 interface Mlg {
-    fun check(files: List<File>)
+    fun check(files: List<File>): List<FileDiagnostic>
     fun edit(noOpen: Boolean, port: Int)
     fun doc()
     fun clean()
-    fun version()
+    fun version(): String
 }
 
 fun newMlg(): Mlg = MlgImpl
@@ -31,23 +42,31 @@ fun newMlg(): Mlg = MlgImpl
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private object MlgImpl : Mlg {
-    override fun check(files: List<File>) {
-        TODO("Not yet implemented")
-    }
+    override fun check(files: List<File>): List<FileDiagnostic> = newWorkspace(cwd()).check()
 
     override fun edit(noOpen: Boolean, port: Int) {
         TODO("Not yet implemented")
+        // starts a server that allows the user to interact with their
+        // mathlingua code
     }
 
-    override fun doc() {
-        TODO("Not yet implemented")
-    }
+    override fun doc() = newWorkspace(cwd()).doc()
 
     override fun clean() {
-        TODO("Not yet implemented")
+        val cwd = cwd()
+
+        val docsDir = getDocsDir(cwd)
+        docsDir.deleteRecursively()
+        docsDir.mkdirs()
+
+        val cnameSource = File(cwd, CNAME_FILE_NAME)
+        if (cnameSource.exists()) {
+            val cnameDest = File(docsDir, CNAME_FILE_NAME)
+            cnameDest.writeText(cnameSource.readText())
+        }
     }
 
-    override fun version() {
-        TODO("Not yet implemented")
-    }
+    override fun version(): String = VERSION
 }
+
+private fun cwd() = Paths.get(".").toAbsolutePath().normalize().toFile()

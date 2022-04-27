@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>org.mathlingua</artifactId>
-    <groupId>mathlingua</groupId>
+    <artifactId>mathlingua</artifactId>
+    <groupId>org.mathlingua</groupId>
     <version>0.16.0</version>
     <packaging>jar</packaging>
 

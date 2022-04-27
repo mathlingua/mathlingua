@@ -19,6 +19,8 @@ package mathlingua.lib.frontend.textalk
 import java.util.LinkedList
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticType
+import mathlingua.lib.frontend.ast.TexTalkToken
+import mathlingua.lib.frontend.ast.TexTalkTokenType
 
 internal interface TexTalkLexer {
     fun hasNext(): Boolean
@@ -35,38 +37,6 @@ internal interface TexTalkLexer {
 internal fun newTexTalkLexer(text: String): TexTalkLexer {
     return TexTalkLexerImpl(text)
 }
-
-internal enum class TexTalkTokenType {
-    LParen,
-    RParen,
-    LSquare,
-    RSquare,
-    LCurly,
-    RCurly,
-    Comma,
-    ColonEquals,
-    Is,
-    In,
-    NotIn,
-    As,
-    ColonTypeColon,
-    ColonStatementColon,
-    ColonExpressionColon,
-    Underscore,
-    Caret,
-    DotDotDot,
-    Dot,
-    Backslash,
-    Slash,
-    Name,
-    Operator,
-    Colon,
-    Equals,
-    NotEquals
-}
-
-internal data class TexTalkToken(
-    val type: TexTalkTokenType, val text: String, val row: Int, val column: Int)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

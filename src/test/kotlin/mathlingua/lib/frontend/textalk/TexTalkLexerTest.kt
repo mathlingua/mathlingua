@@ -17,6 +17,8 @@
 package mathlingua.lib.frontend.textalk
 
 import kotlin.test.Test
+import mathlingua.lib.frontend.ast.TexTalkToken
+import mathlingua.lib.frontend.ast.TexTalkTokenType
 import strikt.api.expect
 import strikt.api.expectThat
 import strikt.assertions.isEmpty

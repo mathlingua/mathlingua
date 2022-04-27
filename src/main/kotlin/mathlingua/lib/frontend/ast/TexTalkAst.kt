@@ -19,9 +19,44 @@ package mathlingua.lib.frontend.ast
 import mathlingua.lib.frontend.HasMetaData
 import mathlingua.lib.frontend.MetaData
 
-internal sealed interface TexTalkNode : HasMetaData
+internal sealed interface TexTalkNode : HasMetaData, TexTalkNodeOrToken
 
 internal sealed interface Expression : TexTalkNode
+
+internal sealed interface TexTalkNodeOrToken
+
+internal enum class TexTalkTokenType {
+    LParen,
+    RParen,
+    LSquare,
+    RSquare,
+    LCurly,
+    RCurly,
+    Comma,
+    ColonEquals,
+    Is,
+    In,
+    NotIn,
+    As,
+    ColonTypeColon,
+    ColonStatementColon,
+    ColonExpressionColon,
+    Underscore,
+    Caret,
+    DotDotDot,
+    Dot,
+    Backslash,
+    Slash,
+    Name,
+    Operator,
+    Colon,
+    Equals,
+    NotEquals
+}
+
+internal data class TexTalkToken(
+    val type: TexTalkTokenType, val text: String, val row: Int, val column: Int
+) : TexTalkNodeOrToken
 
 internal data class NamedParameterExpression(
     val name: Name, val params: List<Expression>, override val metadata: MetaData

@@ -216,10 +216,10 @@ import mathlingua.lib.frontend.ast.WrittenSection
 import mathlingua.lib.frontend.ast.ZeroGroup
 import mathlingua.lib.frontend.ast.ZeroSection
 
-internal data class ParseResult(val doc: Document, val diagnostics: List<Diagnostic>)
+internal data class ChalkTalkParseResult(val doc: Document, val diagnostics: List<Diagnostic>)
 
 internal interface ChalkTalkParser {
-    fun parse(): ParseResult
+    fun parse(): ChalkTalkParseResult
 }
 
 internal fun newChalkTalkParser(lexer: ChalkTalkNodeLexer): ChalkTalkParser {
@@ -231,8 +231,8 @@ internal fun newChalkTalkParser(lexer: ChalkTalkNodeLexer): ChalkTalkParser {
 private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkParser {
     private val diagnostics = mutableListOf<Diagnostic>()
 
-    override fun parse(): ParseResult {
-        return ParseResult(doc = document(), diagnostics = diagnostics)
+    override fun parse(): ChalkTalkParseResult {
+        return ChalkTalkParseResult(doc = document(), diagnostics = diagnostics)
     }
 
     private fun document(): Document {

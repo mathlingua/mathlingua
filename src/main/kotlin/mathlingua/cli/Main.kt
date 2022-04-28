@@ -18,7 +18,12 @@ package mathlingua.cli
 
 import java.io.File
 import kotlin.system.exitProcess
+import mathlingua.lib.backend.cwd
 import mathlingua.lib.newMlg
+import mathlingua.lib.util.bold
+import mathlingua.lib.util.green
+import mathlingua.lib.util.newLogger
+import mathlingua.lib.util.red
 
 fun main(args: Array<String>) {
     try {
@@ -32,8 +37,21 @@ fun main(args: Array<String>) {
 
         when (subcommand) {
             "check" -> {
+                val cwd = cwd()
                 val parseResult = parseArgs(subArgs, mapOf(), null)
-                mlg.check(parseResult.positional.map { File(it) })
+                val diagnostics = mlg.check(parseResult.positional.map { File(it) })
+                val logger = newLogger()
+                for (diag in diagnostics) {
+                    val relPath = diag.file.relativeTo(cwd).path
+                    logger.error(
+                        "${bold(red("ERROR: "))} $relPath (Line: ${diag.row + 1}, Column: ${diag.column + 1})\n${diag.message}\n")
+                }
+
+                if (diagnostics.isEmpty()) {
+                    logger.log(bold(green("SUCCESS")))
+                }
+                logger.log(
+                    "${diagnostics.size} error${if (diagnostics.size == 1) {""} else {"s"} } detected")
             }
             "edit" -> {
                 val parseResult = parseArgs(subArgs, mapOf("--no-open" to 0, "--port" to 1), 0)

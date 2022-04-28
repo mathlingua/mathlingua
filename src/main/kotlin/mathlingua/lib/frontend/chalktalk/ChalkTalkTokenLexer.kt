@@ -73,6 +73,11 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
         var column = 0
         var i = 0
 
+        while (i < text.length && text[i] == '\n') {
+            i++
+            row++
+        }
+
         val indentStack = Stack<Int>()
         while (i < text.length) {
             // handle line breaks

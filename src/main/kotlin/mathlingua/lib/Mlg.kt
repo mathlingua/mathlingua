@@ -17,7 +17,7 @@
 package mathlingua.lib
 
 import java.io.File
-import java.nio.file.Paths
+import mathlingua.lib.backend.cwd
 import mathlingua.lib.backend.getDocsDir
 import mathlingua.lib.backend.newWorkspace
 import mathlingua.lib.frontend.DiagnosticType
@@ -42,7 +42,16 @@ fun newMlg(): Mlg = MlgImpl
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private object MlgImpl : Mlg {
-    override fun check(files: List<File>): List<FileDiagnostic> = newWorkspace(cwd()).check()
+    override fun check(files: List<File>): List<FileDiagnostic> {
+        val cwd = cwd()
+        val workspace = newWorkspace(cwd)
+        File(cwd, "content").walkBottomUp().forEach {
+            if (it.isFile && it.path.endsWith(".math")) {
+                workspace.include(it)
+            }
+        }
+        return workspace.check()
+    }
 
     override fun edit(noOpen: Boolean, port: Int) {
         TODO("Not yet implemented")
@@ -68,5 +77,3 @@ private object MlgImpl : Mlg {
 
     override fun version(): String = VERSION
 }
-
-private fun cwd() = Paths.get(".").toAbsolutePath().normalize().toFile()

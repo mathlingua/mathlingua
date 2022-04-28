@@ -34,16 +34,3 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         TODO("Not yet implemented")
     }
 }
-
-fun main() {
-    val text = """
-        f(x, y)
-    """.trimIndent()
-    val lexer = newTexTalkLexer(text)
-    val parser = newTexTalkParser(lexer)
-    val result = parser.parse()
-    println("Node:")
-    println(result.node)
-    println("Diagnostics:")
-    result.diagnostics.forEach(::println)
-}

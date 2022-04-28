@@ -16,6 +16,11 @@
 
 package mathlingua.lib.frontend
 
+import mathlingua.lib.frontend.chalktalk.ChalkTalkParseResult
+import mathlingua.lib.frontend.chalktalk.newChalkTalkNodeLexer
+import mathlingua.lib.frontend.chalktalk.newChalkTalkParser
+import mathlingua.lib.frontend.chalktalk.newChalkTalkTokenLexer
+
 enum class DiagnosticType {
     Error
 }
@@ -26,4 +31,13 @@ internal data class MetaData(var row: Int, var column: Int, var isInline: Boolea
 
 internal interface HasMetaData {
     val metadata: MetaData
+}
+
+internal object Frontend {
+    fun parse(text: String): ChalkTalkParseResult {
+        val tokenLexer = newChalkTalkTokenLexer(text)
+        val nodeLexer = newChalkTalkNodeLexer(tokenLexer)
+        val parser = newChalkTalkParser(nodeLexer)
+        return parser.parse()
+    }
 }

@@ -17,7 +17,11 @@
 package mathlingua.lib.backend
 
 import java.io.File
+import java.nio.file.Paths
 import mathlingua.lib.FileDiagnostic
+import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.Frontend
+import mathlingua.lib.frontend.ast.Document
 
 internal interface Workspace {
     fun include(file: File)
@@ -38,37 +42,59 @@ internal fun getDocsDir(baseDir: File) = File(baseDir, "docs")
 
 internal fun getContentDir(baseDir: File) = File(baseDir, "content")
 
+internal fun cwd() = Paths.get(".").toAbsolutePath().normalize().toFile()
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+private data class WorkspaceItem(
+    val file: File, val doc: Document, val diagnostics: List<Diagnostic>)
+
 private data class WorkspaceImpl(private val baseDir: File) : Workspace {
+    private val items = mutableMapOf<File, WorkspaceItem>()
+
     override fun include(file: File) {
-        TODO("Not yet implemented")
+        val result = Frontend.parse(file.readText())
+        items[file] = WorkspaceItem(file = file, doc = result.doc, diagnostics = result.diagnostics)
     }
 
     override fun exclude(file: File) {
-        println("Excluding file: $file")
+        items.remove(file)
     }
 
-    override fun read(file: File): String {
-        println("Reading file: $file")
-        return ""
-    }
+    override fun read(file: File): String = file.readText()
 
     override fun write(file: File, content: String) {
-        println("Writing file: $file")
+        exclude(file)
+        file.writeText(content)
+        include(file)
     }
 
     override fun delete(file: File) {
-        println("Deleting file: $file")
+        exclude(file)
+        file.delete()
     }
 
     override fun move(from: File, to: File) {
-        println("Moving file $from to $to")
+        val text = from.readText()
+        exclude(from)
+        to.writeText(text)
+        include(to)
     }
 
     override fun check(): List<FileDiagnostic> {
-        println("Checking")
-        return emptyList()
+        val result = mutableListOf<FileDiagnostic>()
+        for ((file, item) in items) {
+            for (diag in item.diagnostics) {
+                result.add(
+                    FileDiagnostic(
+                        file = file,
+                        type = diag.type,
+                        message = diag.message,
+                        row = diag.row,
+                        column = diag.column))
+            }
+        }
+        return result
     }
 
     override fun doc() {

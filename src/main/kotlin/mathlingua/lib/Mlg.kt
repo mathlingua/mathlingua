@@ -45,11 +45,7 @@ private object MlgImpl : Mlg {
     override fun check(files: List<File>): List<FileDiagnostic> {
         val cwd = cwd()
         val workspace = newWorkspace(cwd)
-        File(cwd, "content").walkBottomUp().forEach {
-            if (it.isFile && it.path.endsWith(".math")) {
-                workspace.include(it)
-            }
-        }
+        files.forEach { workspace.include(it) }
         return workspace.check()
     }
 

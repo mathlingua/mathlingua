@@ -39,19 +39,40 @@ fun main(args: Array<String>) {
             "check" -> {
                 val cwd = cwd()
                 val parseResult = parseArgs(subArgs, mapOf(), null)
-                val diagnostics = mlg.check(parseResult.positional.map { File(it) })
+
+                val files = mutableListOf<File>()
+                File(cwd, "content").walkBottomUp().forEach {
+                    if (it.isFile && it.path.endsWith(".math")) {
+                        files.add(it)
+                    }
+                }
+
+                val diagnostics = mlg.check(files)
                 val logger = newLogger()
-                for (diag in diagnostics) {
+
+                val targetFiles = parseResult.positional.map { File(it).canonicalPath }
+                val targetDiagnostics =
+                    if (targetFiles.isNotEmpty()) {
+                        diagnostics.filter { diagnostic ->
+                            targetFiles.any { target ->
+                                diagnostic.file.canonicalPath.startsWith(target)
+                            }
+                        }
+                    } else {
+                        diagnostics
+                    }
+
+                for (diag in targetDiagnostics) {
                     val relPath = diag.file.relativeTo(cwd).path
                     logger.error(
                         "${bold(red("ERROR: "))} $relPath (Line: ${diag.row + 1}, Column: ${diag.column + 1})\n${diag.message}\n")
                 }
 
-                if (diagnostics.isEmpty()) {
+                if (targetDiagnostics.isEmpty()) {
                     logger.log(bold(green("SUCCESS")))
                 }
                 logger.log(
-                    "${diagnostics.size} error${if (diagnostics.size == 1) {""} else {"s"} } detected")
+                    "${targetDiagnostics.size} error${if (targetDiagnostics.size == 1) {""} else {"s"} } detected")
             }
             "edit" -> {
                 val parseResult = parseArgs(subArgs, mapOf("--no-open" to 0, "--port" to 1), 0)

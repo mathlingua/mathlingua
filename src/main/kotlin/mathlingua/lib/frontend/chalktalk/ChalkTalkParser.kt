@@ -19,6 +19,7 @@ package mathlingua.lib.frontend.chalktalk
 import java.util.LinkedList
 import java.util.Queue
 import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ast.AndGroup
@@ -595,7 +596,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 listOf(
                     SectionSpec(name = "view", required = true) { this.viewSection() },
                     SectionSpec(name = "as", required = true) { this.asSection() },
-                    SectionSpec(name = "via", required = true) { this.viewSection() },
+                    SectionSpec(name = "via", required = true) { this.viaSection() },
                     SectionSpec(name = "by", required = false) { this.bySection() }),
             default = DEFAULT_VIEW_GROUP) { _, sections, metadata ->
             ViewGroup(
@@ -648,7 +649,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "memberSymbols", required = true) {
                         this.memberSymbolsSection()
                     },
-                    SectionSpec(name = "where", required = true) { this.symbolsWhereSection() }),
+                    SectionSpec(name = "where", required = true) {
+                        this.memberSymbolsWhereSection()
+                    }),
             default = DEFAULT_MEMBER_SYMBOLS_GROUP) { _, sections, metadata ->
             MemberSymbolsGroup(
                 memberSymbolsSection = sections["memberSymbols"] as MemberSymbolsSection,
@@ -1228,6 +1231,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkParser,
                     message = "Expected a '$default'",
                     row = peek?.metadata?.row ?: -1,
                     column = peek?.metadata?.column ?: -1))
@@ -1240,6 +1244,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkParser,
                     message = "Expected at least one argument",
                     row = metadata.row,
                     column = metadata.column))
@@ -1282,6 +1287,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkParser,
                     message = "Found a token of the wrong type",
                     row = -1,
                     column = -1))
@@ -1297,6 +1303,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkParser,
                         message = "Expected $text but found the end of stream",
                         row = -1,
                         column = -1))
@@ -1311,6 +1318,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkParser,
                     message = "Expected $tokenText but found $nextText",
                     row = next.metadata.row,
                     column = next.metadata.column))
@@ -1373,6 +1381,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkParser,
                         message =
                             "For pattern:\n\n" +
                                 pattern +
@@ -1392,6 +1401,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkParser,
                     message =
                         "For pattern:\n\n" + pattern + "\nUnexpected Section '" + peek.name + "'",
                     row = peek.metadata.row,
@@ -1420,6 +1430,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkParser,
                     message = "For pattern:\n\n$pattern\nExpected a $nextExpected",
                     row = startRow,
                     column = startColumn))
@@ -1452,6 +1463,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkParser,
                         message = "Expected an id",
                         row = beginGroup.metadata.row,
                         column = beginGroup.metadata.column))
@@ -1462,6 +1474,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkParser,
                         message = "An id cannot be specified here",
                         row = beginGroup.metadata.row,
                         column = beginGroup.metadata.column))
@@ -1487,6 +1500,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkParser,
                         message = "Unexpected section '${sect.name}'",
                         row = beginSection.metadata.row,
                         column = beginGroup.metadata.column))
@@ -1525,32 +1539,6 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     row = beginGroup.metadata.row,
                     column = beginGroup.metadata.column,
                     isInline = false))
-        }
-    }
-
-    private fun skipGroup() {
-        if (!nextIs<BeginGroup>()) {
-            return
-        }
-
-        var numOpen = 1
-        lexer.next() // move past the BeginGroup
-
-        while (lexer.hasNext() && numOpen > 0) {
-            val peek = lexer.peek()
-            if (peek is BeginGroup) {
-                numOpen++
-            } else if (peek is EndGroup) {
-                numOpen--
-            }
-
-            if (numOpen > 0) {
-                lexer.next()
-            }
-        }
-
-        if (nextIs<EndGroup>()) {
-            lexer.next()
         }
     }
 
@@ -1604,6 +1592,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkParser,
                     message = "Unexpected $text item",
                     row = token.metadata.row,
                     column = token.metadata.column))

@@ -25,7 +25,20 @@ enum class DiagnosticType {
     Error
 }
 
-data class Diagnostic(val type: DiagnosticType, val message: String, val row: Int, val column: Int)
+enum class DiagnosticOrigin {
+    ChalkTalkTokenLexer,
+    ChalkTalkNodeLexer,
+    ChalkTalkParser,
+    TexTalkLexer,
+    TexTalkParser
+}
+
+data class Diagnostic(
+    val type: DiagnosticType,
+    val origin: DiagnosticOrigin,
+    val message: String,
+    val row: Int,
+    val column: Int)
 
 internal data class MetaData(var row: Int, var column: Int, var isInline: Boolean)
 

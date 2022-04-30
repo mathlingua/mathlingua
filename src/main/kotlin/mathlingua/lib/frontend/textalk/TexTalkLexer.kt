@@ -18,6 +18,7 @@ package mathlingua.lib.frontend.textalk
 
 import java.util.LinkedList
 import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
@@ -106,6 +107,7 @@ private class TexTalkLexerImpl(text: String) : TexTalkLexer {
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.TexTalkLexer,
                     message = "Unrecognized token '$c'",
                     row = row,
                     column = column))

@@ -51,16 +51,40 @@ fun main() {
                     break
                 }
                 ":done" -> {
-                    val parse = Frontend.parse(input.toString())
+                    val text = input.toString()
+                    println("Read:")
+                    println("-----")
+                    val lines = text.split('\n')
+                    val maxGutterWidth = "${lines.size}".length
+                    lines.forEachIndexed { index, curLine ->
+                        val lineNum = "$index"
+                        print(" ".repeat(maxGutterWidth - lineNum.length))
+                        print(lineNum)
+                        print(" | ")
+                        print(curLine)
+                        println()
+                    }
+                    println()
+                    val parse = Frontend.parse(text)
                     println()
                     println("Document:")
                     println("---------")
                     println(parse.doc.toCode())
                     println()
-                    val message = "Diagnostics (${parse.diagnostics.size}):"
+                    val message = "Found ${parse.diagnostics.size} diagnostics:"
                     println(message)
                     println("-".repeat(message.length))
-                    parse.diagnostics.forEach(::println)
+                    parse.diagnostics.forEachIndexed { index, diagnostic ->
+                        val title = "Diagnostic (${index + 1}):"
+                        println()
+                        println(title)
+                        println("-".repeat(title.length))
+                        println("  Type:    ${diagnostic.type}")
+                        println("  Message: ${diagnostic.message}")
+                        println("  Origin:  ${diagnostic.origin}")
+                        println("  Row:     ${diagnostic.row}")
+                        println("  Column:  ${diagnostic.column}")
+                    }
                     println()
                     break
                 }

@@ -19,6 +19,7 @@ package mathlingua.lib.frontend.chalktalk
 import java.util.LinkedList
 import java.util.Stack
 import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
 
 internal interface ChalkTalkTokenLexer {
@@ -128,6 +129,7 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                         diagnostics.add(
                             Diagnostic(
                                 type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkTokenLexer,
                                 message = "Expected a '. '",
                                 row = row,
                                 column = column))
@@ -142,6 +144,7 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                             diagnostics.add(
                                 Diagnostic(
                                     type = DiagnosticType.Error,
+                                    origin = DiagnosticOrigin.ChalkTalkTokenLexer,
                                     message = "Unexpected indent",
                                     row = row,
                                     column = column))
@@ -166,6 +169,7 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                             diagnostics.add(
                                 Diagnostic(
                                     type = DiagnosticType.Error,
+                                    origin = DiagnosticOrigin.ChalkTalkTokenLexer,
                                     message = "Misaligned indent",
                                     row = row,
                                     column = column))
@@ -225,6 +229,7 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                     diagnostics.add(
                         Diagnostic(
                             type = DiagnosticType.Error,
+                            origin = DiagnosticOrigin.ChalkTalkTokenLexer,
                             message = "Expected a closing ]",
                             row = startRow,
                             column = startColumn))
@@ -314,6 +319,7 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkTokenLexer,
                     message = "Unrecognized token '$c'",
                     row = row,
                     column = column))
@@ -334,6 +340,7 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                     diagnostics.add(
                         Diagnostic(
                             type = DiagnosticType.Error,
+                            origin = DiagnosticOrigin.ChalkTalkTokenLexer,
                             message = "Unexpected indent of size $indent",
                             row = row,
                             column = column))

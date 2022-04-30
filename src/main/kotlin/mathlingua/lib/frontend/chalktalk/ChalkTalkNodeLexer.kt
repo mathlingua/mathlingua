@@ -19,6 +19,7 @@ package mathlingua.lib.frontend.chalktalk
 import java.util.LinkedList
 import java.util.Stack
 import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ast.Argument
@@ -155,6 +156,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                     message = "Expected a $type token but found the end of text",
                     row = -1,
                     column = -1))
@@ -165,6 +167,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                     message = "Expected a $type but found ${next.type}",
                     row = next.row,
                     column = next.column))
@@ -260,6 +263,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                     message = "Unexpected token ${next.text}",
                     row = next.row,
                     column = next.column))
@@ -340,6 +344,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                     message = "Expected a function",
                     row = name.metadata.row,
                     column = name.metadata.column))
@@ -383,6 +388,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         diagnostics.add(
             Diagnostic(
                 type = DiagnosticType.Error,
+                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                 message = "Expected a name assignment item but found $nextText",
                 row = -1,
                 column = -1))
@@ -400,6 +406,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                     diagnostics.add(
                         Diagnostic(
                             type = DiagnosticType.Error,
+                            origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                             message =
                                 "The right hand side of a := must be a function if the left hand side is a function",
                             row = func.metadata.row,
@@ -459,6 +466,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                     message = "Expected a target",
                     row = next.row,
                     column = next.column))
@@ -492,6 +500,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                         message = "Expected a function with sub params",
                         row = lCurly.row,
                         column = lCurly.column))
@@ -500,6 +509,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                         message =
                             "Expected exactly one function with sub params but found ${targets.size}",
                         row = lCurly.row,
@@ -526,6 +536,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                         diagnostics.add(
                             Diagnostic(
                                 type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                                 message = "The given function must have sub params",
                                 row = lCurly.row,
                                 column = lCurly.column))
@@ -540,6 +551,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                     diagnostics.add(
                         Diagnostic(
                             type = DiagnosticType.Error,
+                            origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                             message = "Expected a name or name assignment",
                             row = t.metadata.row,
                             column = t.metadata.column))
@@ -575,6 +587,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                         message = "Unexpected text '${next.text}'",
                         row = next.row,
                         column = next.column))
@@ -639,6 +652,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                     message = "Unexpected text '${next.text}'",
                     row = next.row,
                     column = next.column))
@@ -696,6 +710,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                         message = "Unexpected text '${next.text}' in section argument",
                         row = next.row,
                         column = next.column))
@@ -735,6 +750,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 diagnostics.add(
                     Diagnostic(
                         type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                         message = "Expected an argument",
                         row = firstToken.row,
                         column = firstToken.column))
@@ -751,6 +767,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.ChalkTalkNodeLexer,
                     message = "Unexpected text '${next.text}' at the end of the argument",
                     row = next.row,
                     column = next.column))

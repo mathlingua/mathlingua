@@ -16,7 +16,7 @@
 
 package mathlingua.lib.frontend
 
-import mathlingua.lib.frontend.chalktalk.ChalkTalkParseResult
+import mathlingua.lib.frontend.ast.Document
 import mathlingua.lib.frontend.chalktalk.newChalkTalkNodeLexer
 import mathlingua.lib.frontend.chalktalk.newChalkTalkParser
 import mathlingua.lib.frontend.chalktalk.newChalkTalkTokenLexer
@@ -33,11 +33,20 @@ internal interface HasMetaData {
     val metadata: MetaData
 }
 
+internal data class FrontendResult(val doc: Document, val diagnostics: List<Diagnostic>)
+
 internal object Frontend {
-    fun parse(text: String): ChalkTalkParseResult {
+    fun parse(text: String): FrontendResult {
         val tokenLexer = newChalkTalkTokenLexer(text)
         val nodeLexer = newChalkTalkNodeLexer(tokenLexer)
         val parser = newChalkTalkParser(nodeLexer)
-        return parser.parse()
+
+        val doc = parser.parse()
+        val diagnostics = mutableListOf<Diagnostic>()
+        diagnostics.addAll(tokenLexer.diagnostics())
+        diagnostics.addAll(nodeLexer.diagnostics())
+        diagnostics.addAll(parser.diagnostics())
+
+        return FrontendResult(doc = doc, diagnostics = diagnostics)
     }
 }

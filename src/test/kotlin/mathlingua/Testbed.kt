@@ -28,14 +28,18 @@ fun main() {
             val line = readLine() ?: break
             when (line) {
                 ":help" -> {
-                    println("Enter MathLingua text to process, which can contain many lines, followed by a command.")
+                    println(
+                        "Enter MathLingua text to process, which can contain many lines, followed by a command.")
                     println("Commands are entered on a new line and are of the form ':<command>'")
                     println("Supported commands:")
                     println()
                     println(":help    Show this help message")
-                    println(":ignore  Ignore the entered MathLingua text and start over with new input")
-                    println(":exit    Immediately exit without processing the entered MathLingua text")
-                    println(":done    Process the entered MathLingua text and start over with new input")
+                    println(
+                        ":ignore  Ignore the entered MathLingua text and start over with new input")
+                    println(
+                        ":exit    Immediately exit without processing the entered MathLingua text")
+                    println(
+                        ":done    Process the entered MathLingua text and start over with new input")
                     println()
                     break
                 }

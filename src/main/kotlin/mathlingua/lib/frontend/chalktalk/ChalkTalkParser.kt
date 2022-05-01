@@ -248,7 +248,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     }
 
     private fun topLevelGroupOrTextBlock(): TopLevelGroupOrTextBlock? {
-        return topLevelGroup() ?: textBlock()
+        return textBlock() ?: topLevelGroup()
     }
 
     private fun topLevelGroup(): TopLevelGroup? =
@@ -799,7 +799,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "expressing", required = false) { this.expressingSection() },
                     SectionSpec(name = "using", required = false) { this.usingSection() },
                     SectionSpec(name = "writing", required = false) { this.writingSection() },
-                    SectionSpec(name = "written", required = false) { this.writtenSection() },
+                    SectionSpec(name = "written", required = true) { this.writtenSection() },
                     SectionSpec(name = "called", required = false) { this.calledSection() },
                     SectionSpec(name = "Providing", required = false) { this.providingSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
@@ -834,7 +834,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "when", required = false) { this.whenSection() },
                     SectionSpec(name = "that", required = false) { this.thatSection() },
                     SectionSpec(name = "using", required = false) { this.usingSection() },
-                    SectionSpec(name = "written", required = false) { this.writtenSection() },
+                    SectionSpec(name = "written", required = true) { this.writtenSection() },
                     SectionSpec(name = "called", required = false) { this.calledSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_STATES_GROUP) { id, sections, metadata ->

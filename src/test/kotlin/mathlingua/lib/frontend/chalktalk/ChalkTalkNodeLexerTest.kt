@@ -37,6 +37,7 @@ import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
 import mathlingua.lib.frontend.ast.SubAndRegularParamFunctionSequence
 import mathlingua.lib.frontend.ast.SubParamFunction
 import mathlingua.lib.frontend.ast.SubParamFunctionSequence
+import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
 import strikt.api.expect
@@ -838,6 +839,98 @@ internal class ChalkTalkNodeLexerTest {
                 EndArgument,
                 EndSection,
                 EndGroup))
+
+    @Test
+    fun `correctly parses multiple dot space group arguments`() = runTest("""
+        [a]
+        Defines: b
+        satisfying:
+        . forAll: c
+          then: 'd'
+        . forAll: e
+          then: 'f'
+        written: "g"
+    """.trimIndent(), listOf(
+        BeginGroup(name="Defines", metadata=MetaData(row=0, column=0, isInline=false)),
+            Id(text="a", metadata=MetaData(row=0, column=0, isInline=false)),
+            BeginSection(name="Defines", metadata=MetaData(row=1, column=0, isInline=false)),
+                BeginArgument(metadata=MetaData(row=1, column=9, isInline=true)),
+                    Name(text="b", metadata=MetaData(row=1, column=9, isInline=true)),
+                EndArgument,
+            EndSection,
+            BeginSection(name="satisfying", metadata=MetaData(row=2, column=0, isInline=false)),
+                BeginArgument(metadata=MetaData(row=3, column=2, isInline=false)),
+                    BeginGroup(name="forAll", metadata=MetaData(row=3, column=2, isInline=false)),
+                        BeginSection(name="forAll", metadata=MetaData(row=3, column=2, isInline=false)),
+                            BeginArgument(metadata=MetaData(row=3, column=10, isInline=true)),
+                                Name(text="c", metadata=MetaData(row=3, column=10, isInline=true)),
+                            EndArgument,
+                        EndSection,
+                        BeginSection(name="then", metadata=MetaData(row=4, column=2, isInline=false)),
+                            BeginArgument(metadata=MetaData(row=4, column=8, isInline=true)),
+                                Statement(text="d", metadata=MetaData(row=4, column=8, isInline=true)),
+                            EndArgument,
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+                BeginArgument(metadata=MetaData(row=5, column=2, isInline=false)),
+                    BeginGroup(name="forAll", metadata=MetaData(row=5, column=2, isInline=false)),
+                        BeginSection(name="forAll", metadata=MetaData(row=5, column=2, isInline=false)),
+                            BeginArgument(metadata=MetaData(row=5, column=10, isInline=true)),
+                                Name(text="e", metadata=MetaData(row=5, column=10, isInline=true)),
+                            EndArgument,
+                        EndSection,
+                        BeginSection(name="then", metadata=MetaData(row=6, column=2, isInline=false)),
+                            BeginArgument(metadata=MetaData(row=6, column=8, isInline=true)),
+                                Statement(text="f", metadata=MetaData(row=6, column=8, isInline=true)),
+                            EndArgument,
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+            EndSection,
+            BeginSection(name="written", metadata=MetaData(row=7, column=0, isInline=false)),
+                BeginArgument(metadata=MetaData(row=7, column=9, isInline=true)),
+                    Text(text="g", metadata=MetaData(row=7, column=9, isInline=true)),
+                EndArgument,
+            EndSection,
+        EndGroup
+    ))
+
+    @Test
+    fun `correctly parses multiple simple dot space group arguments`() = runTest("""
+        a:
+        . b: x
+        . c: y
+        d: z
+    """.trimIndent(), listOf(
+        BeginGroup(name="a", metadata=MetaData(row=0, column=0, isInline=false)),
+            BeginSection(name="a", metadata=MetaData(row=0, column=0, isInline=false)),
+                BeginArgument(metadata=MetaData(row=1, column=2, isInline=false)),
+                    BeginGroup(name="b", metadata=MetaData(row=1, column=2, isInline=false)),
+                        BeginSection(name="b", metadata=MetaData(row=1, column=2, isInline=false)),
+                            BeginArgument(metadata=MetaData(row=1, column=5, isInline=true)),
+                                Name(text="x", metadata=MetaData(row=1, column=5, isInline=true)),
+                            EndArgument,
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+                BeginArgument(metadata=MetaData(row=2, column=2, isInline=false)),
+                    BeginGroup(name="c", metadata=MetaData(row=2, column=2, isInline=false)),
+                        BeginSection(name="c", metadata=MetaData(row=2, column=2, isInline=false)),
+                            BeginArgument(metadata=MetaData(row=2, column=5, isInline=true)),
+                                Name(text="y", metadata=MetaData(row=2, column=5, isInline=true)),
+                            EndArgument,
+                        EndSection,
+                    EndGroup,
+                EndArgument,
+            EndSection,
+            BeginSection(name="d", metadata=MetaData(row=3, column=0, isInline=false)),
+                BeginArgument(metadata=MetaData(row=3, column=3, isInline=true)),
+                    Name(text="z", metadata=MetaData(row=3, column=3, isInline=true)),
+                EndArgument,
+            EndSection,
+        EndGroup
+    ))
 }
 
 private fun runTest(text: String, expected: List<NodeLexerToken>) {

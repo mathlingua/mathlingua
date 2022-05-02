@@ -65,17 +65,247 @@ internal class ChalkTalkTokenLexerTest {
     }
 
     @Test
-    fun `correctly identifies indents and un-indents`() {
-        val lexer = newChalkTalkTokenLexer(INDENT_UN_INDENT_TEST_INPUT)
-        val actual = mutableListOf<ChalkTalkToken>()
-        while (lexer.hasNext()) {
-            actual.add(lexer.next())
-        }
-        expect {
-            that(actual.toList()).isEqualTo(INDENT_UN_INDENT_EXPECTED)
-            that(lexer.diagnostics()).isEmpty()
-        }
-    }
+    fun `correctly identifies multiple aligned sections`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        b:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 1)))
+
+    @Test
+    fun `correctly handles single indented arg`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        . b:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 1, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 3)))
+
+    @Test
+    fun `correctly handles multiple indented arg`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        . b:
+        . c:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 1, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 3),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 1, column = 4),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 2, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 2, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 2, column = 3)))
+
+    @Test
+    fun `correctly handles nested indented args`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        . b:
+          . c:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 1, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 3),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 1, column = 4),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 2, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 2, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 2, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 2, column = 5)))
+
+    @Test
+    fun `correctly handles single indented arg with follow-up section`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        . b:
+        c:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 1, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 3),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 1, column = 4),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 2, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 2, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 2, column = 1),
+            ))
+
+    @Test
+    fun `correctly handles nested indented args with a follow-up section`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        . b:
+          . c:
+        d:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 1, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 3),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 1, column = 4),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 2, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 2, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 2, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 2, column = 5),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 2, column = 6),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 3, column = 4),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 3, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "d", row = 3, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 3, column = 1),
+            ))
+
+    @Test
+    fun `correctly handles nested indented args with a follow-up un-indented arg`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        . b:
+          . c:
+            . d:
+          . e:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 1, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 3),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 1, column = 4),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 2, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 2, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 2, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 2, column = 5),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 2, column = 6),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 3, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 3, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "d", row = 3, column = 6),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 3, column = 7),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 3, column = 8),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 4, column = 6),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 4, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "e", row = 4, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 4, column = 5)))
+
+    @Test
+    fun `correctly handles nested indented args with a follow-up parallel arg`() =
+        runIndentUnIndentTest(
+            """
+        a:
+        . b:
+          . c:
+            . d:
+            . e:
+    """.trimIndent(),
+            listOf(
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 0, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 1),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 2),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 1, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 1, column = 0),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 1, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 3),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 1, column = 4),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 2, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 2, column = 2),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 2, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 2, column = 5),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 2, column = 6),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Indent, text = "<indent>", row = 3, column = 0),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 3, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "d", row = 3, column = 6),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 3, column = 7),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.Newline, text = "<newline>", row = 3, column = 8),
+                ChalkTalkToken(
+                    type = ChalkTalkTokenType.DotSpace, text = ". ", row = 4, column = 4),
+                ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "e", row = 4, column = 6),
+                ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 4, column = 7)))
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -115,108 +345,14 @@ private val TEST_CASES =
         TestCase("\n", ChalkTalkTokenType.Newline, "<newline>"),
         TestCase("...", ChalkTalkTokenType.DotDotDot, "..."))
 
-private val INDENT_UN_INDENT_TEST_INPUT =
-    """
-            Header: 1
-            secondHeader: 2
-            thirdHeader: 3
-            . x: y
-              y: 'something'
-              . iff: a
-                then: b
-              . a:
-                b:
-              z: c
-            fourthHeader: "x"
-            . a:
-              . b:
-                . c:
-                . d:
-                  . e:
-            fifthHeader:
-        """.trimIndent()
-
-private val INDENT_UN_INDENT_EXPECTED =
-    listOf(
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "Header", row = 0, column = 0),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 0, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "1", row = 0, column = 8),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 0, column = 9),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "secondHeader", row = 1, column = 0),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 1, column = 12),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "2", row = 1, column = 14),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 1, column = 15),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "thirdHeader", row = 2, column = 0),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 2, column = 11),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "3", row = 2, column = 13),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 2, column = 14),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 3, column = 2),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "x", row = 3, column = 2),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 3, column = 3),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "y", row = 3, column = 5),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 3, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "y", row = 4, column = 2),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 4, column = 3),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.Statement, text = "something", row = 4, column = 5),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 4, column = 16),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 5, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "iff", row = 5, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 5, column = 7),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 5, column = 9),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 5, column = 10),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "then", row = 6, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 6, column = 8),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 6, column = 10),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 6, column = 11),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 7, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 7, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 7, column = 5),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 7, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 8, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 8, column = 5),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 8, column = 6),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 9, column = 2),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "z", row = 9, column = 2),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 9, column = 3),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 9, column = 5),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 9, column = 6),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 10, column = 0),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "fourthHeader", row = 10, column = 0),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 10, column = 12),
-        ChalkTalkToken(type = ChalkTalkTokenType.Text, text = "x", row = 10, column = 14),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.Newline, text = "<newline>", row = 10, column = 17),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 11, column = 2),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "a", row = 11, column = 2),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 11, column = 3),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 11, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 12, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "b", row = 12, column = 4),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 12, column = 5),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 12, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 13, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "c", row = 13, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 13, column = 7),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 13, column = 8),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 14, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "d", row = 14, column = 6),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 14, column = 7),
-        ChalkTalkToken(type = ChalkTalkTokenType.Newline, text = "<newline>", row = 14, column = 8),
-        ChalkTalkToken(type = ChalkTalkTokenType.DotSpace, text = ". ", row = 15, column = 8),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "e", row = 15, column = 8),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 15, column = 9),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.Newline, text = "<newline>", row = 15, column = 10),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 16, column = 0),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 16, column = 0),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 16, column = 0),
-        ChalkTalkToken(
-            type = ChalkTalkTokenType.UnIndent, text = "<unindent>", row = 16, column = 0),
-        ChalkTalkToken(type = ChalkTalkTokenType.Name, text = "fifthHeader", row = 16, column = 0),
-        ChalkTalkToken(type = ChalkTalkTokenType.Colon, text = ":", row = 16, column = 11))
+private fun runIndentUnIndentTest(input: String, expected: List<ChalkTalkToken>) {
+    val lexer = newChalkTalkTokenLexer(input)
+    val actual = mutableListOf<ChalkTalkToken>()
+    while (lexer.hasNext()) {
+        actual.add(lexer.next())
+    }
+    expect {
+        that(actual.toList()).isEqualTo(expected)
+        that(lexer.diagnostics()).isEmpty()
+    }
+}

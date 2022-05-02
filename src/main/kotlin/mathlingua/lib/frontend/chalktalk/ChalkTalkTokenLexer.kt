@@ -17,7 +17,6 @@
 package mathlingua.lib.frontend.chalktalk
 
 import java.util.LinkedList
-import java.util.Stack
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
@@ -52,6 +51,7 @@ internal enum class ChalkTalkTokenType {
     TextBlock,
     Name,
     Operator,
+    Indent,
     UnIndent,
     DotSpace,
     LineBreak,
@@ -79,7 +79,7 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
             row++
         }
 
-        val indentStack = Stack<Int>()
+        var prevIndent = 0
         while (i < text.length) {
             // handle line breaks
             if (text[i] == '\n' && i + 1 < text.length && text[i + 1] == '\n') {
@@ -118,65 +118,60 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                 row++
                 column = 0
 
+                val startRow = row
+                val startCol = column
+
                 val indent = text.getIndent(i)
                 i += indent.size
                 column += indent.size
 
-                if (indentStack.isEmpty()) {
-                    if (indent.size > 0 && !indent.endsWithDotSpace) {
-                        // the only indent possible is a '. ' if no indentation
-                        // has occurred yet
+                if (indent.size % 2 == 1) {
+                    diagnostics.add(
+                        Diagnostic(
+                            type = DiagnosticType.Error,
+                            origin = DiagnosticOrigin.ChalkTalkTokenLexer,
+                            message = "Invalid indent of non-even size ${indent.size}",
+                            row = startRow,
+                            column = startCol))
+                }
+
+                if (indent.size > prevIndent) {
+                    if (indent.size != prevIndent + 2) {
                         diagnostics.add(
                             Diagnostic(
                                 type = DiagnosticType.Error,
                                 origin = DiagnosticOrigin.ChalkTalkTokenLexer,
-                                message = "Expected a '. '",
-                                row = row,
-                                column = column))
+                                message =
+                                    "Expected an indent of ${prevIndent + 2} but found ${indent.size}",
+                                row = startRow,
+                                column = startCol))
                     }
-                    if (indent.size > 0) {
-                        indentStack.push(indent.size)
+
+                    var newCol = startCol
+                    while (indent.size > prevIndent) {
+                        prevIndent += 2
+                        tokens.add(
+                            ChalkTalkToken(
+                                type = ChalkTalkTokenType.Indent,
+                                text = "<indent>",
+                                row = startRow,
+                                column = newCol))
+                        newCol += 2
+                    }
+                } else if (indent.size < prevIndent) {
+                    var newCol = prevIndent
+                    while (indent.size < prevIndent) {
+                        prevIndent -= 2
+                        tokens.add(
+                            ChalkTalkToken(
+                                type = ChalkTalkTokenType.UnIndent,
+                                text = "<unindent>",
+                                row = startRow,
+                                column = newCol))
+                        newCol -= 2
                     }
                 } else {
-                    val prevIndent = indentStack.peek()
-                    if (indent.size > prevIndent) {
-                        if (!indent.endsWithDotSpace) {
-                            diagnostics.add(
-                                Diagnostic(
-                                    type = DiagnosticType.Error,
-                                    origin = DiagnosticOrigin.ChalkTalkTokenLexer,
-                                    message = "Unexpected indent",
-                                    row = row,
-                                    column = column))
-                        }
-                        indentStack.push(indent.size)
-                    } else if (indent.size < prevIndent) {
-                        while (indentStack.isNotEmpty() && indent.size < indentStack.peek()) {
-                            indentStack.pop()
-                            tokens.add(
-                                ChalkTalkToken(
-                                    type = ChalkTalkTokenType.UnIndent,
-                                    text = "<unindent>",
-                                    row = row,
-                                    column = column))
-                        }
-                        // after unrolling the stack while the current indent is smaller than
-                        // any previously seen indents, if the last indent in the stack doesn't
-                        // match the current indent, then the current indent has an additional
-                        // space, which is an error
-                        if ((indentStack.isNotEmpty() && indent.size != indentStack.peek()) ||
-                            (indentStack.isEmpty() && indent.size > 0)) {
-                            diagnostics.add(
-                                Diagnostic(
-                                    type = DiagnosticType.Error,
-                                    origin = DiagnosticOrigin.ChalkTalkTokenLexer,
-                                    message = "Misaligned indent",
-                                    row = row,
-                                    column = column))
-                        }
-                    }
-                    // else: If the new line is indented the same as the previous indent,
-                    // then nothing needs to be done since no change in indentation has occurred
+                    // no indent or un-indent tokens need to be specified
                 }
 
                 // report a '. ' regardless of whether the indentation has increased, decreased,
@@ -186,8 +181,10 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                         ChalkTalkToken(
                             type = ChalkTalkTokenType.DotSpace,
                             text = ". ",
-                            row = row,
-                            column = column))
+                            row = startRow,
+                            // indent.size is the column where '. ' ends and so
+                            // subtract 2 to get to the start of the .
+                            column = indent.size - 2))
                 }
 
                 continue
@@ -334,17 +331,14 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
         // if the end of stream doesn't end with a newline, then any remaining
         // indents could not be terminated, but this is not an error
         if (text.endsWith("\n") || text.endsWith(" ")) {
-            while (indentStack.isNotEmpty()) {
-                val indent = indentStack.pop()
-                if (indent > 0) {
-                    diagnostics.add(
-                        Diagnostic(
-                            type = DiagnosticType.Error,
-                            origin = DiagnosticOrigin.ChalkTalkTokenLexer,
-                            message = "Unexpected indent of size $indent",
-                            row = row,
-                            column = column))
-                }
+            if (prevIndent > 0) {
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkTokenLexer,
+                        message = "Unexpected indent of size $prevIndent",
+                        row = row,
+                        column = column))
             }
         }
     }

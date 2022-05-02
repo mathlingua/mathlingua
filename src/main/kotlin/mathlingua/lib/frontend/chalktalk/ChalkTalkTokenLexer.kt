@@ -90,6 +90,15 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
                         text = "<newline>",
                         row = row,
                         column = column))
+                while (prevIndent > 0) {
+                    tokens.add(
+                        ChalkTalkToken(
+                            type = ChalkTalkTokenType.UnIndent,
+                            text = "<unindent>",
+                            row = row,
+                            column = prevIndent))
+                    prevIndent -= 2
+                }
                 tokens.add(
                     ChalkTalkToken(
                         type = ChalkTalkTokenType.LineBreak,
@@ -326,20 +335,6 @@ private class ChalkTalkTokenLexerImpl(text: String) : ChalkTalkTokenLexer {
             }
             column++
             i++
-        }
-
-        // if the end of stream doesn't end with a newline, then any remaining
-        // indents could not be terminated, but this is not an error
-        if (text.endsWith("\n") || text.endsWith(" ")) {
-            if (prevIndent > 0) {
-                diagnostics.add(
-                    Diagnostic(
-                        type = DiagnosticType.Error,
-                        origin = DiagnosticOrigin.ChalkTalkTokenLexer,
-                        message = "Unexpected indent of size $prevIndent",
-                        row = row,
-                        column = column))
-            }
         }
     }
 

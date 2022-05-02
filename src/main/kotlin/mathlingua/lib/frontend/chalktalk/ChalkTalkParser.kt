@@ -1022,7 +1022,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
                     SectionSpec(name = "using", required = false) { this.usingSection() },
-                    SectionSpec(name = "proof", required = false) { this.proofSection() },
+                    SectionSpec(name = "Proof", required = false) { this.proofSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_THEOREM_GROUP) { id, sections, metadata ->
             TheoremGroup(
@@ -1034,13 +1034,13 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
                 usingSection = sections["using"] as UsingSection?,
-                proofSection = sections["proof"] as ProofSection?,
+                proofSection = sections["Proof"] as ProofSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
 
     private fun proofSection(): ProofSection? =
-        section("proof") { ProofSection(proofs = oneOrMore(texts(), it), metadata = it) }
+        section("Proof") { ProofSection(proofs = oneOrMore(texts(), it), metadata = it) }
 
     private fun topicSection(): TopicSection? = section("Topic") { TopicSection(metadata = it) }
 

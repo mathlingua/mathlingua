@@ -272,6 +272,7 @@ internal val DEFAULT_DEFINES_GROUP =
         withSection = null,
         givenSection = null,
         whenSection = null,
+        suchThatSection = null,
         meansSection = null,
         satisfyingSection = null,
         expressingSection = null,
@@ -293,6 +294,7 @@ internal val DEFAULT_STATES_GROUP =
         statesSection = DEFAULT_STATES_SECTION,
         givenSection = null,
         whenSection = null,
+        suchThatSection = null,
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = null,
         writtenSection = DEFAULT_WRITTEN_SECTION,
@@ -333,7 +335,7 @@ internal val DEFAULT_OFFSET_GROUP =
 internal val DEFAULT_RESOURCE_GROUP =
     ResourceGroup(id = "", resourceSection = DEFAULT_RESOURCE_SECTION, metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_AXIOM_SECTION = AxiomSection(metadata = DEFAULT_METADATA)
+internal val DEFAULT_AXIOM_SECTION = AxiomSection(names = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_AXIOM_GROUP =
     AxiomGroup(
@@ -348,7 +350,8 @@ internal val DEFAULT_AXIOM_GROUP =
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_CONJECTURE_SECTION = ConjectureSection(metadata = DEFAULT_METADATA)
+internal val DEFAULT_CONJECTURE_SECTION =
+    ConjectureSection(names = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_CONJECTURE_GROUP =
     ConjectureGroup(
@@ -363,7 +366,8 @@ internal val DEFAULT_CONJECTURE_GROUP =
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_THEOREM_SECTION = TheoremSection(metadata = DEFAULT_METADATA)
+internal val DEFAULT_THEOREM_SECTION =
+    TheoremSection(names = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_PROOF_SECTION = ProofSection(proofs = emptyList(), metadata = DEFAULT_METADATA)
 
@@ -381,7 +385,7 @@ internal val DEFAULT_THEOREM_GROUP =
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_TOPIC_SECTION = TopicSection(metadata = DEFAULT_METADATA)
+internal val DEFAULT_TOPIC_SECTION = TopicSection(names = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_CONTENT_SECTION =
     ContentSection(content = DEFAULT_TEXT, metadata = DEFAULT_METADATA)

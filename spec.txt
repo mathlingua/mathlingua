@@ -212,6 +212,7 @@ Defines: <target>
 with?: <assignment>+
 given?: <target>+
 when?: <spec>+
+suchThat?: <clause>+
 means?: <statement>[<is textalk exp>]
 satisfying: (generated: | <clause>+ | <spec>+ | <:= textalk exp>+)
 expressing: (piecewise: | match: | <clause>+ | <spec>+ | <:= textalk exp>+)
@@ -240,6 +241,7 @@ reference: <string>["@" (<name> ".") <name> (":page" "{" [0-9]+ "}")?
 States:
 given?: <target>+
 when?: <spec>+
+suchThat?: <clause>+
 that: (<clause> | <spec> | <:= textalk exp>)+
 using?: <statement>[<:= textalk exp>]+
 written: <string>[.*]+
@@ -257,7 +259,7 @@ Resource:
 Metadata?: <metadata item>+
 
 [<id>?]
-Axiom:
+Axiom: <string>[.*]*
 given?: <target>+
 where?: <spec>+
 suchThat?: <clause>+
@@ -267,7 +269,7 @@ using?: <statement>[<:= textalk exp>]+
 Metadata?: <metadata item>+
 
 [<id>?]
-Conjecture:
+Conjecture: <string>[.*]*
 given?: <target>+
 where?: <spec>+
 suchThat?: <clause>+
@@ -277,7 +279,7 @@ using?: <statement>[<:= textalk exp>]+
 Metadata?: <metadata item>+
 
 [<id>?]
-Theorem:
+Theorem: <string>[.*]*
 given?: <target>+
 where?: <spec>+
 suchThat?: <clause>+
@@ -288,7 +290,7 @@ Proof: <string>[.*]+
 Metadata?: <metadata item>+
 
 ["#" (<name> ".")* <name>]
-Topic:
+Topic: <string>[.*]*
 content: <string>[.*]
 Metadata?: <metadata item>+
 

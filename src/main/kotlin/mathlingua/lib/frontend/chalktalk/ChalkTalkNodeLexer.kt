@@ -757,3 +757,21 @@ private fun ChalkTalkTokenLexer.hasHas(type1: ChalkTalkTokenType, type2: ChalkTa
         this.hasNextNext() &&
         this.peek().type == type1 &&
         this.peekPeek().type == type2
+
+fun main() {
+    val text =
+        """
+        Theorem:
+        then:
+        . for: x
+          then: 'x'
+    """.trimIndent()
+    val lexer1 = newChalkTalkTokenLexer(text)
+    val lexer2 = newChalkTalkNodeLexer(lexer1)
+    while (lexer2.hasNext()) {
+        println(lexer2.next())
+    }
+    println("Errors:")
+    lexer1.diagnostics().forEach(::println)
+    lexer2.diagnostics().forEach(::println)
+}

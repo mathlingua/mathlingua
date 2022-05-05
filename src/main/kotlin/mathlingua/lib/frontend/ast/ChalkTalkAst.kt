@@ -498,6 +498,7 @@ internal data class DefinesGroup(
     val withSection: WithSection?,
     val givenSection: GivenSection?,
     val whenSection: WhenSection?,
+    val suchThatSection: SuchThatSection?,
     val meansSection: MeansSection?,
     val satisfyingSection: SatisfyingSection?,
     val expressingSection: ExpressingSection?,
@@ -516,6 +517,7 @@ internal data class DefinesGroup(
             withSection,
             givenSection,
             whenSection,
+            suchThatSection,
             meansSection,
             satisfyingSection,
             expressingSection,
@@ -543,6 +545,7 @@ internal data class StatesGroup(
     val statesSection: StatesSection,
     val givenSection: GivenSection?,
     val whenSection: WhenSection?,
+    val suchThatSection: SuchThatSection?,
     val thatSection: ThatSection,
     val usingSection: UsingSection?,
     val writtenSection: WrittenSection,
@@ -556,6 +559,7 @@ internal data class StatesGroup(
             statesSection,
             givenSection,
             whenSection,
+            suchThatSection,
             thatSection,
             usingSection,
             writtenSection,
@@ -628,7 +632,8 @@ internal data class ResourceGroup(
     override fun toCode() = groupToCode(null, resourceSection)
 }
 
-internal data class AxiomSection(override val metadata: MetaData) : Section("Axiom", metadata) {
+internal data class AxiomSection(val names: List<Text>, override val metadata: MetaData) :
+    Section("Axiom", metadata) {
     override fun toCode() = sectionToCode(this)
 }
 
@@ -657,7 +662,7 @@ internal data class AxiomGroup(
             metadataSection)
 }
 
-internal data class ConjectureSection(override val metadata: MetaData) :
+internal data class ConjectureSection(val names: List<Text>, override val metadata: MetaData) :
     Section("Conjecture", metadata) {
     override fun toCode() = sectionToCode(this)
 }
@@ -687,7 +692,8 @@ internal data class ConjectureGroup(
             metadataSection)
 }
 
-internal data class TheoremSection(override val metadata: MetaData) : Section("Theorem", metadata) {
+internal data class TheoremSection(val names: List<Text>, override val metadata: MetaData) :
+    Section("Theorem", metadata) {
     override fun toCode() = sectionToCode(this)
 }
 
@@ -723,7 +729,8 @@ internal data class ProofSection(val proofs: List<Text>, override val metadata: 
     override fun toCode() = sectionToCode(this, *proofs.toTypedArray())
 }
 
-internal data class TopicSection(override val metadata: MetaData) : Section("Topic", metadata) {
+internal data class TopicSection(val names: List<Text>, override val metadata: MetaData) :
+    Section("Topic", metadata) {
     override fun toCode() = sectionToCode(this)
 }
 

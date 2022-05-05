@@ -795,6 +795,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "with", required = false) { this.withSection() },
                     SectionSpec(name = "given", required = false) { this.givenSection() },
                     SectionSpec(name = "when", required = false) { this.whenSection() },
+                    SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
                     SectionSpec(name = "means", required = false) { this.meansSection() },
                     SectionSpec(name = "satisfying", required = false) { this.satisfyingSection() },
                     SectionSpec(name = "expressing", required = false) { this.expressingSection() },
@@ -811,6 +812,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 withSection = sections["with"] as WithSection?,
                 givenSection = sections["given"] as GivenSection?,
                 whenSection = sections["when"] as WhenSection?,
+                suchThatSection = sections["suchThat"] as SuchThatSection?,
                 meansSection = sections["means"] as MeansSection?,
                 satisfyingSection = sections["satisfying"] as SatisfyingSection?,
                 expressingSection = sections["expressing"] as ExpressingSection?,
@@ -833,6 +835,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "States", required = true) { this.statesSection() },
                     SectionSpec(name = "given", required = false) { this.givenSection() },
                     SectionSpec(name = "when", required = false) { this.whenSection() },
+                    SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
                     SectionSpec(name = "that", required = false) { this.thatSection() },
                     SectionSpec(name = "using", required = false) { this.usingSection() },
                     SectionSpec(name = "written", required = true) { this.writtenSection() },
@@ -844,6 +847,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 statesSection = sections["States"] as StatesSection,
                 givenSection = sections["given"] as GivenSection?,
                 whenSection = sections["when"] as WhenSection?,
+                suchThatSection = sections["suchThat"] as SuchThatSection?,
                 thatSection = sections["that"] as ThatSection,
                 usingSection = sections["using"] as UsingSection?,
                 writtenSection = sections["written"] as WrittenSection,
@@ -949,7 +953,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 metadata = metadata)
         }
 
-    private fun axiomSection(): AxiomSection? = section("Axiom") { AxiomSection(metadata = it) }
+    private fun axiomSection(): AxiomSection? =
+        section("Axiom") { AxiomSection(names = texts(), metadata = it) }
 
     private fun axiomGroup(): AxiomGroup? =
         group(
@@ -979,7 +984,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun conjectureSection(): ConjectureSection? =
-        section("Conjecture") { ConjectureSection(metadata = it) }
+        section("Conjecture") { ConjectureSection(names = texts(), metadata = it) }
 
     private fun conjectureGroup(): ConjectureGroup? =
         group(
@@ -1009,7 +1014,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun theoremSection(): TheoremSection? =
-        section("Theorem") { TheoremSection(metadata = it) }
+        section("Theorem") { TheoremSection(names = texts(), metadata = it) }
 
     private fun theoremGroup(): TheoremGroup? =
         group(
@@ -1043,7 +1048,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun proofSection(): ProofSection? =
         section("Proof") { ProofSection(proofs = oneOrMore(texts(), it), metadata = it) }
 
-    private fun topicSection(): TopicSection? = section("Topic") { TopicSection(metadata = it) }
+    private fun topicSection(): TopicSection? =
+        section("Topic") { TopicSection(names = texts(), metadata = it) }
 
     private fun contentSection(): ContentSection? =
         section("content") {

@@ -512,7 +512,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
                 EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
-                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
@@ -626,10 +626,10 @@ internal class ChalkTalkNodeLexerTest {
                 EndSection(metadata = MetaData(row = 2, column = 4, isInline = false)),
                 EndGroup(metadata = MetaData(row = 2, column = 4, isInline = false)),
                 EndArgument(metadata = MetaData(row = 2, column = 4, isInline = false)),
-                EndSection(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginSection(
                     name = "B", metadata = MetaData(row = 4, column = 2, isInline = false)),
-                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 4, column = 2, isInline = false)),
                 EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
@@ -729,7 +729,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 9, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 0, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 0, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 0, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginGroup(
@@ -738,7 +738,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
                 Name(text = "y", metadata = MetaData(row = 2, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 2, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginGroup(
@@ -747,7 +747,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
                 Name(text = "z", metadata = MetaData(row = 4, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 4, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 4, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 4, column = 0, isInline = false))))
 
@@ -773,7 +773,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 2, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 2, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginGroup(
@@ -782,7 +782,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
                 Name(text = "y", metadata = MetaData(row = 4, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 4, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 4, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginGroup(
@@ -791,7 +791,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 6, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 6, column = 9, isInline = true)),
                 Name(text = "z", metadata = MetaData(row = 6, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 6, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 6, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 6, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 6, column = 0, isInline = false))))
 
@@ -861,7 +861,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Defines", metadata = MetaData(row = 1, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 9, isInline = true)),
                 Name(text = "b", metadata = MetaData(row = 1, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 1, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 1, column = 0, isInline = false)),
                 BeginSection(
                     name = "satisfying",
@@ -873,13 +873,13 @@ internal class ChalkTalkNodeLexerTest {
                     name = "forAll", metadata = MetaData(row = 3, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 3, column = 10, isInline = true)),
                 Name(text = "c", metadata = MetaData(row = 3, column = 10, isInline = true)),
-                EndArgument(metadata = MetaData(row = 3, column = 10, isInline = false)),
+                EndArgument(metadata = MetaData(row = 3, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 3, column = 2, isInline = false)),
                 BeginSection(
                     name = "then", metadata = MetaData(row = 4, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 8, isInline = true)),
                 Statement(text = "d", metadata = MetaData(row = 4, column = 8, isInline = true)),
-                EndArgument(metadata = MetaData(row = 4, column = 8, isInline = false)),
+                EndArgument(metadata = MetaData(row = 4, column = 8, isInline = true)),
                 EndSection(metadata = MetaData(row = 4, column = 2, isInline = false)),
                 EndGroup(metadata = MetaData(row = 3, column = 2, isInline = false)),
                 EndArgument(metadata = MetaData(row = 3, column = 2, isInline = false)),
@@ -890,22 +890,22 @@ internal class ChalkTalkNodeLexerTest {
                     name = "forAll", metadata = MetaData(row = 5, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 5, column = 10, isInline = true)),
                 Name(text = "e", metadata = MetaData(row = 5, column = 10, isInline = true)),
-                EndArgument(metadata = MetaData(row = 5, column = 10, isInline = false)),
+                EndArgument(metadata = MetaData(row = 5, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 5, column = 2, isInline = false)),
                 BeginSection(
                     name = "then", metadata = MetaData(row = 6, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 6, column = 8, isInline = true)),
                 Statement(text = "f", metadata = MetaData(row = 6, column = 8, isInline = true)),
-                EndArgument(metadata = MetaData(row = 6, column = 8, isInline = false)),
+                EndArgument(metadata = MetaData(row = 6, column = 8, isInline = true)),
                 EndSection(metadata = MetaData(row = 6, column = 2, isInline = false)),
                 EndGroup(metadata = MetaData(row = 5, column = 2, isInline = false)),
                 EndArgument(metadata = MetaData(row = 5, column = 2, isInline = false)),
-                EndSection(metadata = MetaData(row = 5, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginSection(
                     name = "written", metadata = MetaData(row = 7, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 7, column = 9, isInline = true)),
                 Text(text = "g", metadata = MetaData(row = 7, column = 9, isInline = true)),
-                EndArgument(metadata = MetaData(row = 7, column = 9, isInline = false)),
+                EndArgument(metadata = MetaData(row = 7, column = 9, isInline = true)),
                 EndSection(metadata = MetaData(row = 7, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
@@ -928,7 +928,7 @@ internal class ChalkTalkNodeLexerTest {
                     name = "b", metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 1, column = 5, isInline = true)),
-                EndArgument(metadata = MetaData(row = 1, column = 5, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
                 EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
@@ -938,18 +938,18 @@ internal class ChalkTalkNodeLexerTest {
                     name = "c", metadata = MetaData(row = 2, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 5, isInline = true)),
                 Name(text = "y", metadata = MetaData(row = 2, column = 5, isInline = true)),
-                EndArgument(metadata = MetaData(row = 2, column = 5, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 5, isInline = true)),
                 EndSection(metadata = MetaData(row = 2, column = 2, isInline = false)),
                 EndGroup(metadata = MetaData(row = 2, column = 2, isInline = false)),
                 EndArgument(metadata = MetaData(row = 2, column = 2, isInline = false)),
-                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "d", metadata = MetaData(row = 3, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 3, column = 3, isInline = true)),
                 Name(text = "z", metadata = MetaData(row = 3, column = 3, isInline = true)),
-                EndArgument(metadata = MetaData(row = 3, column = 3, isInline = false)),
+                EndArgument(metadata = MetaData(row = 3, column = 3, isInline = true)),
                 EndSection(metadata = MetaData(row = 3, column = 0, isInline = false)),
-                EndGroup(metadata = MetaData(row = 2, column = 2, isInline = false))))
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 }
 
 private fun runTest(text: String, expected: List<NodeLexerToken>) {

@@ -627,7 +627,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 null
             }
 
-        tokens.add(
+        val beginGroup =
             BeginGroup(
                 name = firstSectionName,
                 metadata =
@@ -635,7 +635,8 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                         MetaData(row = startToken.row, column = startToken.column, isInline = false)
                     } else {
                         MetaData(row = -1, column = -1, isInline = false)
-                    }))
+                    })
+        tokens.add(beginGroup)
 
         if (id != null) {
             tokens.add(id)
@@ -649,7 +650,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             lexer.next()
         }
 
-        tokens.add(EndGroup)
+        tokens.add(EndGroup(metadata = beginGroup.metadata.copy()))
     }
 
     // processes a section including absorbing any trailing newlines or other tokens at the end of
@@ -661,10 +662,11 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         expect(ChalkTalkTokenType.Colon)
             ?: throw Exception("Reached a section header without a colon")
 
-        tokens.add(
+        val beginSection =
             BeginSection(
                 name = name.text,
-                metadata = MetaData(row = name.row, column = name.column, isInline = false)))
+                metadata = MetaData(row = name.row, column = name.column, isInline = false))
+        tokens.add(beginSection)
 
         // handle arguments on the same line
         processArgumentList(startsInline = true)
@@ -675,15 +677,16 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             while (lexer.hasNext() && !lexer.has(ChalkTalkTokenType.UnIndent)) {
                 val dotSpace = expect(ChalkTalkTokenType.DotSpace)!! // move past the dot space
                 if (isNextSectionHeader()) {
-                    tokens.add(
+                    val beginArgument =
                         BeginArgument(
                             metadata =
                                 MetaData(
                                     row = dotSpace.row,
                                     column = dotSpace.column + 2,
-                                    isInline = false)))
+                                    isInline = false))
+                    tokens.add(beginArgument)
                     processGroup()
-                    tokens.add(EndArgument)
+                    tokens.add(EndArgument(metadata = beginArgument.metadata.copy()))
                 } else {
                     processArgumentList(startsInline = false)
                 }
@@ -694,7 +697,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             }
         }
 
-        tokens.add(EndSection)
+        tokens.add(EndSection(metadata = beginSection.metadata.copy()))
     }
 
     // processes a comma separated list of arguments on a single line and absorbs the trailing
@@ -706,15 +709,16 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
 
             val arg = argument(isInline)
             if (arg != null) {
-                tokens.add(
+                val beginArgument =
                     BeginArgument(
                         metadata =
                             MetaData(
                                 row = firstToken.row,
                                 column = firstToken.column,
-                                isInline = isInline)))
+                                isInline = isInline))
+                tokens.add(beginArgument)
                 tokens.add(arg)
-                tokens.add(EndArgument)
+                tokens.add(EndArgument(metadata = beginArgument.metadata.copy()))
             }
 
             isInline = true

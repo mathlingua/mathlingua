@@ -36,6 +36,7 @@ import mathlingua.lib.frontend.ast.BeginSection
 import mathlingua.lib.frontend.ast.BetweenSection
 import mathlingua.lib.frontend.ast.BySection
 import mathlingua.lib.frontend.ast.CalledSection
+import mathlingua.lib.frontend.ast.ChalkTalkNode
 import mathlingua.lib.frontend.ast.Clause
 import mathlingua.lib.frontend.ast.ConjectureGroup
 import mathlingua.lib.frontend.ast.ConjectureSection
@@ -318,7 +319,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun sequence(): Sequence? = getNextIfCorrectType()
 
     private fun target(): Target? =
-        assignment() ?: name() ?: operator() ?: tuple() ?: sequence() ?: function() ?: set()
+        name() ?: operator() ?: tuple() ?: sequence() ?: function() ?: set() ?: assignment()
 
     private fun targets(): List<Target> = collect { argument { target() } }
 
@@ -1220,7 +1221,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private inline fun <reified T> nextIs() = lexer.hasNext() && lexer.peek() is T
 
-    private fun <T> required(value: T?, default: T): T {
+    private fun <T : ChalkTalkNode> required(value: T?, default: T): T {
         val peek =
             if (lexer.hasNext()) {
                 lexer.peek()
@@ -1232,7 +1233,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 Diagnostic(
                     type = DiagnosticType.Error,
                     origin = DiagnosticOrigin.ChalkTalkParser,
-                    message = "Expected a '$default'",
+                    message = "Expected a '${default.javaClass.simpleName}'",
                     row = peek?.metadata?.row ?: -1,
                     column = peek?.metadata?.column ?: -1))
         }
@@ -1266,7 +1267,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         while (lexer.hasNext() && !nextIs<EndSection>()) {
             maybeAddDiagnosticForMissingItem(lexer.next())
         }
-        expect(EndSection)
+        expectIs<EndSection>()
         return result
     }
 
@@ -1277,53 +1278,29 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
         val begin = expectIs<BeginArgument>()
         val result = fn(begin?.metadata ?: MetaData(row = -1, column = -1, isInline = false))
-        expect(EndArgument)
+        expectIs<EndArgument>()
 
         return result
     }
 
-    private inline fun <reified T> expectIs(): NodeLexerToken? {
+    private inline fun <reified T : NodeLexerToken> expectIs(): NodeLexerToken? {
         if (!lexer.hasNext() || lexer.peek() !is T) {
+            val peek =
+                if (lexer.hasNext()) {
+                    lexer.peek()
+                } else {
+                    null
+                }
             diagnostics.add(
                 Diagnostic(
                     type = DiagnosticType.Error,
                     origin = DiagnosticOrigin.ChalkTalkParser,
                     message = "Found a token of the wrong type",
-                    row = -1,
-                    column = -1))
+                    row = peek?.metadata?.row ?: -1,
+                    column = peek?.metadata?.column ?: -1))
             return null
         }
         return lexer.next()
-    }
-
-    private fun expect(token: NodeLexerToken): NodeLexerToken? {
-        if (!lexer.hasNext()) {
-            val text = getNodeName(token)
-            if (text != null) {
-                diagnostics.add(
-                    Diagnostic(
-                        type = DiagnosticType.Error,
-                        origin = DiagnosticOrigin.ChalkTalkParser,
-                        message = "Expected $text but found the end of stream",
-                        row = -1,
-                        column = -1))
-            }
-            return null
-        }
-
-        val next = lexer.next()
-        val tokenText = getNodeName(token)
-        val nextText = getNodeName(next)
-        if (next != token && tokenText != null && nextText != null) {
-            diagnostics.add(
-                Diagnostic(
-                    type = DiagnosticType.Error,
-                    origin = DiagnosticOrigin.ChalkTalkParser,
-                    message = "Expected $tokenText but found $nextText",
-                    row = next.metadata.row,
-                    column = next.metadata.column))
-        }
-        return next
     }
 
     private fun identifySections(
@@ -1523,7 +1500,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         while (lexer.hasNext() && !nextIs<EndGroup>()) {
             maybeAddDiagnosticForMissingItem(lexer.next())
         }
-        expect(EndGroup)
+        expectIs<EndGroup>()
 
         val mapping =
             identifySections(

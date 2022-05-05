@@ -481,7 +481,7 @@ private fun String.checkOperator(index: Int): String? {
     }
 }
 
-private fun Char.isOperatorChar() = (this in "~!@#$%^&*-+=|<>?'`\"")
+private fun Char.isOperatorChar() = (this in "~!@#$%^&*-+=|<>?'`/\"")
 
 private data class Indent(val size: Int, val endsWithDotSpace: Boolean, val error: String?)
 

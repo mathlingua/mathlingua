@@ -65,8 +65,8 @@ internal class ChalkTalkNodeLexerTest {
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
-                EndSection,
-                EndGroup))
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a name arg`() =
@@ -79,9 +79,9 @@ internal class ChalkTalkNodeLexerTest {
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 Name(text = "xyz", metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with an indented name arg`() =
@@ -97,9 +97,9 @@ internal class ChalkTalkNodeLexerTest {
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 Name(text = "xyz", metadata = MetaData(row = 1, column = 2, isInline = false)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with mixed name args`() =
@@ -116,21 +116,21 @@ internal class ChalkTalkNodeLexerTest {
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 Name(text = "a", metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 BeginArgument(metadata = MetaData(row = 0, column = 13, isInline = true)),
                 Name(text = "b", metadata = MetaData(row = 0, column = 13, isInline = true)),
-                EndArgument,
+                EndArgument(metadata = MetaData(row = 0, column = 13, isInline = true)),
                 BeginArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 Name(text = "c", metadata = MetaData(row = 1, column = 2, isInline = false)),
-                EndArgument,
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
                 Name(text = "d", metadata = MetaData(row = 1, column = 5, isInline = true)),
-                EndArgument,
+                EndArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
                 BeginArgument(metadata = MetaData(row = 2, column = 2, isInline = false)),
                 Name(text = "e", metadata = MetaData(row = 2, column = 2, isInline = false)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 2, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with an operator arg`() =
@@ -144,9 +144,9 @@ internal class ChalkTalkNodeLexerTest {
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 OperatorName(
                     text = "*+", metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with an regular function arg`() =
@@ -175,9 +175,9 @@ internal class ChalkTalkNodeLexerTest {
                                     metadata = MetaData(row = 0, column = 15, isInline = true)),
                                 isVarArgs = false)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with an sub params function arg`() =
@@ -206,9 +206,9 @@ internal class ChalkTalkNodeLexerTest {
                                     metadata = MetaData(row = 0, column = 16, isInline = true)),
                                 isVarArgs = false)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a sub and regular params function arg`() =
@@ -249,9 +249,9 @@ internal class ChalkTalkNodeLexerTest {
                                     metadata = MetaData(row = 0, column = 22, isInline = true)),
                                 isVarArgs = false)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a sub params function sequence arg`() =
@@ -286,9 +286,9 @@ internal class ChalkTalkNodeLexerTest {
                                         isVarArgs = false)),
                             metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a sub and regular params function sequence arg`() =
@@ -337,9 +337,9 @@ internal class ChalkTalkNodeLexerTest {
                                         isVarArgs = false)),
                             metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a basic set arg`() =
@@ -361,9 +361,9 @@ internal class ChalkTalkNodeLexerTest {
                                 text = "y",
                                 metadata = MetaData(row = 0, column = 14, isInline = true))),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a colon equals set arg`() =
@@ -392,9 +392,9 @@ internal class ChalkTalkNodeLexerTest {
                                 text = "y",
                                 metadata = MetaData(row = 0, column = 19, isInline = true))),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a basic tuple arg`() =
@@ -416,9 +416,9 @@ internal class ChalkTalkNodeLexerTest {
                                 text = "y",
                                 metadata = MetaData(row = 0, column = 14, isInline = true))),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a colon equals tuple arg`() =
@@ -447,9 +447,9 @@ internal class ChalkTalkNodeLexerTest {
                                 text = "y",
                                 metadata = MetaData(row = 0, column = 19, isInline = true))),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses a single section group with a simple name assignment arg`() =
@@ -469,9 +469,9 @@ internal class ChalkTalkNodeLexerTest {
                         Name(
                             text = "y", metadata = MetaData(row = 0, column = 15, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses multi section groups`() =
@@ -486,14 +486,14 @@ internal class ChalkTalkNodeLexerTest {
                     name = "sectionA", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "sectionA", metadata = MetaData(row = 0, column = 0, isInline = false)),
-                EndSection,
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "sectionB", metadata = MetaData(row = 1, column = 0, isInline = false)),
-                EndSection,
+                EndSection(metadata = MetaData(row = 1, column = 0, isInline = false)),
                 BeginSection(
                     name = "sectionC", metadata = MetaData(row = 2, column = 0, isInline = false)),
-                EndSection,
-                EndGroup))
+                EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses groups with groups as args`() =
@@ -511,14 +511,14 @@ internal class ChalkTalkNodeLexerTest {
                 BeginGroup(name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginSection(
                     name = "X", metadata = MetaData(row = 1, column = 2, isInline = false)),
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "B", metadata = MetaData(row = 2, column = 0, isInline = false)),
-                EndSection,
-                EndGroup))
+                EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses groups with nested groups as args`() =
@@ -541,17 +541,17 @@ internal class ChalkTalkNodeLexerTest {
                 BeginGroup(name = "Y", metadata = MetaData(row = 2, column = 4, isInline = false)),
                 BeginSection(
                     name = "Y", metadata = MetaData(row = 2, column = 4, isInline = false)),
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndSection(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "B", metadata = MetaData(row = 3, column = 0, isInline = false)),
-                EndSection,
-                EndGroup))
+                EndSection(metadata = MetaData(row = 3, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses groups with deeply nested groups as args`() =
@@ -579,20 +579,20 @@ internal class ChalkTalkNodeLexerTest {
                 BeginGroup(name = "Z", metadata = MetaData(row = 3, column = 6, isInline = false)),
                 BeginSection(
                     name = "Z", metadata = MetaData(row = 3, column = 6, isInline = false)),
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndSection(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndGroup(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndArgument(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "B", metadata = MetaData(row = 4, column = 0, isInline = false)),
-                EndSection,
-                EndGroup))
+                EndSection(metadata = MetaData(row = 4, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses groups with deeply nested groups as args and offset trailing section`() =
@@ -620,20 +620,20 @@ internal class ChalkTalkNodeLexerTest {
                 BeginGroup(name = "Z", metadata = MetaData(row = 3, column = 6, isInline = false)),
                 BeginSection(
                     name = "Z", metadata = MetaData(row = 3, column = 6, isInline = false)),
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndSection(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndGroup(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndArgument(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 4, isInline = false)),
                 BeginSection(
                     name = "B", metadata = MetaData(row = 4, column = 2, isInline = false)),
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses groups with deeply nested groups as args and offset trailing section and aligned section`() =
@@ -662,23 +662,23 @@ internal class ChalkTalkNodeLexerTest {
                 BeginGroup(name = "Z", metadata = MetaData(row = 3, column = 6, isInline = false)),
                 BeginSection(
                     name = "Z", metadata = MetaData(row = 3, column = 6, isInline = false)),
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndSection(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndGroup(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndArgument(metadata = MetaData(row = 3, column = 6, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 4, isInline = false)),
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginSection(
                     name = "B", metadata = MetaData(row = 4, column = 2, isInline = false)),
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndSection(metadata = MetaData(row = 4, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "C", metadata = MetaData(row = 5, column = 0, isInline = false)),
-                EndSection,
-                EndGroup))
+                EndSection(metadata = MetaData(row = 5, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses multi sections where first section has dot space argument`() =
@@ -699,18 +699,18 @@ internal class ChalkTalkNodeLexerTest {
                     name = "a", metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 1, column = 5, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginSection(
                     name = "then", metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 6, isInline = true)),
                 Statement(text = "y", metadata = MetaData(row = 2, column = 6, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 2, column = 6, isInline = true)),
+                EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses multiple top level groups`() =
@@ -729,27 +729,27 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 9, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 0, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
+                EndArgument(metadata = MetaData(row = 0, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginGroup(
                     name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginSection(
                     name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
                 Name(text = "y", metadata = MetaData(row = 2, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
+                EndArgument(metadata = MetaData(row = 2, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginGroup(
                     name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginSection(
                     name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
                 Name(text = "z", metadata = MetaData(row = 4, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 4, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 4, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 4, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses multiple top level groups and text blocks`() =
@@ -773,27 +773,27 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 9, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 2, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
+                EndArgument(metadata = MetaData(row = 2, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginGroup(
                     name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginSection(
                     name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
                 Name(text = "y", metadata = MetaData(row = 4, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
+                EndArgument(metadata = MetaData(row = 4, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 4, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginGroup(
                     name = "Theorem", metadata = MetaData(row = 6, column = 0, isInline = false)),
                 BeginSection(
                     name = "Theorem", metadata = MetaData(row = 6, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 6, column = 9, isInline = true)),
                 Name(text = "z", metadata = MetaData(row = 6, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 6, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 6, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 6, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses multiple top level groups with ids`() =
@@ -816,9 +816,9 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 1, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 9, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 1, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
+                EndArgument(metadata = MetaData(row = 1, column = 9, isInline = true)),
+                EndSection(metadata = MetaData(row = 1, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginGroup(
                     name = "Theorem", metadata = MetaData(row = 3, column = 0, isInline = false)),
                 Id(text = "id 2", metadata = MetaData(row = 3, column = 0, isInline = false)),
@@ -826,9 +826,9 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 4, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
                 Name(text = "y", metadata = MetaData(row = 4, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
+                EndArgument(metadata = MetaData(row = 4, column = 9, isInline = true)),
+                EndSection(metadata = MetaData(row = 4, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 3, column = 0, isInline = false)),
                 BeginGroup(
                     name = "Theorem", metadata = MetaData(row = 6, column = 0, isInline = false)),
                 Id(text = "id 3", metadata = MetaData(row = 6, column = 0, isInline = false)),
@@ -836,9 +836,9 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Theorem", metadata = MetaData(row = 7, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 7, column = 9, isInline = true)),
                 Name(text = "z", metadata = MetaData(row = 7, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 7, column = 9, isInline = true)),
+                EndSection(metadata = MetaData(row = 7, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 6, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses multiple dot space group arguments`() =
@@ -861,8 +861,8 @@ internal class ChalkTalkNodeLexerTest {
                     name = "Defines", metadata = MetaData(row = 1, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 9, isInline = true)),
                 Name(text = "b", metadata = MetaData(row = 1, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
+                EndArgument(metadata = MetaData(row = 1, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 1, column = 0, isInline = false)),
                 BeginSection(
                     name = "satisfying",
                     metadata = MetaData(row = 2, column = 0, isInline = false)),
@@ -873,16 +873,16 @@ internal class ChalkTalkNodeLexerTest {
                     name = "forAll", metadata = MetaData(row = 3, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 3, column = 10, isInline = true)),
                 Name(text = "c", metadata = MetaData(row = 3, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
+                EndArgument(metadata = MetaData(row = 3, column = 10, isInline = false)),
+                EndSection(metadata = MetaData(row = 3, column = 2, isInline = false)),
                 BeginSection(
                     name = "then", metadata = MetaData(row = 4, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 8, isInline = true)),
                 Statement(text = "d", metadata = MetaData(row = 4, column = 8, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
+                EndArgument(metadata = MetaData(row = 4, column = 8, isInline = false)),
+                EndSection(metadata = MetaData(row = 4, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 3, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 3, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 5, column = 2, isInline = false)),
                 BeginGroup(
                     name = "forAll", metadata = MetaData(row = 5, column = 2, isInline = false)),
@@ -890,24 +890,24 @@ internal class ChalkTalkNodeLexerTest {
                     name = "forAll", metadata = MetaData(row = 5, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 5, column = 10, isInline = true)),
                 Name(text = "e", metadata = MetaData(row = 5, column = 10, isInline = true)),
-                EndArgument,
-                EndSection,
+                EndArgument(metadata = MetaData(row = 5, column = 10, isInline = false)),
+                EndSection(metadata = MetaData(row = 5, column = 2, isInline = false)),
                 BeginSection(
                     name = "then", metadata = MetaData(row = 6, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 6, column = 8, isInline = true)),
                 Statement(text = "f", metadata = MetaData(row = 6, column = 8, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndArgument(metadata = MetaData(row = 6, column = 8, isInline = false)),
+                EndSection(metadata = MetaData(row = 6, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 5, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 5, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 5, column = 2, isInline = false)),
                 BeginSection(
                     name = "written", metadata = MetaData(row = 7, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 7, column = 9, isInline = true)),
                 Text(text = "g", metadata = MetaData(row = 7, column = 9, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 7, column = 9, isInline = false)),
+                EndSection(metadata = MetaData(row = 7, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
     @Test
     fun `correctly parses multiple simple dot space group arguments`() =
@@ -928,28 +928,28 @@ internal class ChalkTalkNodeLexerTest {
                     name = "b", metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 1, column = 5, isInline = true)),
                 Name(text = "x", metadata = MetaData(row = 1, column = 5, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
+                EndArgument(metadata = MetaData(row = 1, column = 5, isInline = false)),
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 1, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 2, isInline = false)),
                 BeginGroup(name = "c", metadata = MetaData(row = 2, column = 2, isInline = false)),
                 BeginSection(
                     name = "c", metadata = MetaData(row = 2, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 5, isInline = true)),
                 Name(text = "y", metadata = MetaData(row = 2, column = 5, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup,
-                EndArgument,
-                EndSection,
+                EndArgument(metadata = MetaData(row = 2, column = 5, isInline = false)),
+                EndSection(metadata = MetaData(row = 2, column = 2, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 2, isInline = false)),
+                EndArgument(metadata = MetaData(row = 2, column = 2, isInline = false)),
+                EndSection(metadata = MetaData(row = 1, column = 2, isInline = false)),
                 BeginSection(
                     name = "d", metadata = MetaData(row = 3, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 3, column = 3, isInline = true)),
                 Name(text = "z", metadata = MetaData(row = 3, column = 3, isInline = true)),
-                EndArgument,
-                EndSection,
-                EndGroup))
+                EndArgument(metadata = MetaData(row = 3, column = 3, isInline = false)),
+                EndSection(metadata = MetaData(row = 3, column = 0, isInline = false)),
+                EndGroup(metadata = MetaData(row = 2, column = 2, isInline = false))))
 }
 
 private fun runTest(text: String, expected: List<NodeLexerToken>) {

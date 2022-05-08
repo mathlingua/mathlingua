@@ -93,7 +93,7 @@ internal data class InfixCommandExpression(
     val command: CommandExpression,
     val rhs: Expression,
     override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class InfixCommandForm(val command: CommandForm, override val metadata: MetaData) :
     TexTalkNode
@@ -102,7 +102,7 @@ internal sealed interface NameOrCommand : TexTalkNode
 
 internal data class IsExpression(
     val lhs: List<Target>, val rhs: List<NameOrCommand>, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class SignatureExpression(
     val names: List<Name>, val colonNames: List<Name>, override val metadata: MetaData
@@ -110,27 +110,27 @@ internal data class SignatureExpression(
 
 internal data class AsExpression(
     val lhs: Expression, val rhs: SignatureExpression, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class InExpression(
     val lhs: List<Target>, val rhs: NameOrCommand, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class NotInExpression(
     val lhs: List<Target>, val rhs: NameOrCommand, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class ColonEqualsExpression(
     val lhs: Target, val rhs: Expression, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class EqualsExpression(
     val lhs: Expression, val rhs: Expression, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class NotEqualsExpression(
     val lhs: Expression, val rhs: Expression, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal enum class GroupingType {
     Paren,
@@ -139,7 +139,7 @@ internal enum class GroupingType {
 
 internal data class GroupingExpression(
     val type: GroupingType, val expression: Expression, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal sealed interface Operator : TexTalkNode
 
@@ -153,19 +153,45 @@ internal data class TypeScopedOperatorName(
 
 internal data class MemberScopedName(
     val prefixes: List<Name>, val name: Name, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class InfixOperatorExpression(
     val operator: Operator,
     val lhs: Expression,
     val rhs: Expression,
     override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class PrefixOperatorExpression(
     val operator: Operator, val value: Expression, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
 
 internal data class PostfixOperatorExpression(
     val operator: Operator, val value: Expression, override val metadata: MetaData
-) : TexTalkNode, Expression
+) : Expression
+
+internal sealed interface FunctionCall : Expression
+
+internal data class RegularFunctionCall(
+    val name: Name,
+    val args: List<Expression>,
+    override val metadata: MetaData
+) : FunctionCall
+
+internal data class SubParamFunctionCall(
+    val name: Name,
+    val subArgs: List<Expression>,
+    override val metadata: MetaData
+) : FunctionCall
+
+internal data class SubAndRegularParamFunctionCall(
+    val name: Name,
+    val subArgs: List<Expression>,
+    val args: List<Expression>,
+    override val metadata: MetaData
+) : FunctionCall
+
+internal data class TupleCall(
+    val args: List<Expression>,
+    override val metadata: MetaData
+) : Expression

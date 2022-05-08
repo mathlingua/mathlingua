@@ -119,6 +119,15 @@ as
 <prefix operator expression> ::= <member scoped operator name> <value textalk exp>
 <infix operator expression> ::= <value textalk exp> <member scoped operator name> <value textalk exp>
 <postfix operator expression> ::= <value textalk exp> <member scoped operator name>
+<value textalk exp list> ::= <value textalk exp> ("," <value textalk exp>)*
+<regular function call> ::= <name> "(" <value textalk exp list> ")"
+<sub param function call> ::= <name> "_" "{" <value textalk exp list> "}"
+<sub and regular param function call> ::= <name> "_" "{" <value textalk exp list> "}" "(" <value textalk exp list> ")"
+<function call> ::= <regular function call> |
+                    <sub param function call> |
+                    <sub and regular param function call>
+
+<tuple call> ::= "(" <value textalk exp> ("," <value textalk exp>)* ")"
 <value textalk exp> ::= <name> |
                         <member scoped name> |
                         <tuple> |
@@ -135,7 +144,9 @@ as
                         <as textalk exp> |
                         <:= textalk exp> |
                         <= textalk exp> |
-                        <!= textalk exp>
+                        <!= textalk exp> |
+                        <function call> |
+                        <tuple call>
 
 Phase 2
 =======

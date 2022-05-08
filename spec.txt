@@ -126,8 +126,24 @@ as
 <function call> ::= <regular function call> |
                     <sub param function call> |
                     <sub and regular param function call>
-
 <tuple call> ::= "(" <value textalk exp> ("," <value textalk exp>)* ")"
+<operation expression> ::= <prefix operator expression> |
+                           <infix operator expression> |
+                           <postfix operator expression> |
+                           <infix command expression>
+<name assignment expression> ::= <name> ":=" <value textalk exp>
+<function assignment expression> ::= <function> ":=" <value textalk exp>
+<set assignment expression> ::= <set> ":=" <value textalk exp>
+<sequence assignment expression> ::= <sequence> ":=" <value textalk exp>
+<tuple assignment expression> ::= <tuple> ":=" <value textalk exp>
+<name assignment assignment expression> ::= <name assignment> ":=" <value textalk exp>
+<assignment expression> ::= <name assignment expression> |
+                            <function assignment expression> |
+                            <set assignment expression> |
+                            <sequence assignment expression> |
+                            <tuple assignment expression> |
+                            <name assignment assignment expression> |
+                            <operation expression> ":=" <value textalk exp>
 <value textalk exp> ::= <name> |
                         <member scoped name> |
                         <tuple> |
@@ -136,17 +152,15 @@ as
                         <set> |
                         "(" <value textalk exp> ")" |
                         "{" <value textalk exp> "}" |
-                        <prefix operator expression> |
-                        <infix operator expression> |
-                        <postfix operator expression> |
-                        <infix command expression> |
+                        <operation expression> |
                         <textalk command exp> |
                         <as textalk exp> |
                         <:= textalk exp> |
                         <= textalk exp> |
                         <!= textalk exp> |
                         <function call> |
-                        <tuple call>
+                        <tuple call> |
+                        <assignment expression>
 
 Phase 2
 =======

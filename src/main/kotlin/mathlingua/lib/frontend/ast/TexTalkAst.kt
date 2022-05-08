@@ -88,12 +88,14 @@ internal data class CommandForm(
     override val metadata: MetaData
 ) : TexTalkNode
 
+internal sealed interface OperationExpression : Expression
+
 internal data class InfixCommandExpression(
     val lhs: Expression,
     val command: CommandExpression,
     val rhs: Expression,
     override val metadata: MetaData
-) : Expression
+) : OperationExpression
 
 internal data class InfixCommandForm(val command: CommandForm, override val metadata: MetaData) :
     TexTalkNode
@@ -160,15 +162,15 @@ internal data class InfixOperatorExpression(
     val lhs: Expression,
     val rhs: Expression,
     override val metadata: MetaData
-) : Expression
+) : OperationExpression
 
 internal data class PrefixOperatorExpression(
     val operator: Operator, val value: Expression, override val metadata: MetaData
-) : Expression
+) : OperationExpression
 
 internal data class PostfixOperatorExpression(
     val operator: Operator, val value: Expression, override val metadata: MetaData
-) : Expression
+) : OperationExpression
 
 internal sealed interface FunctionCall : Expression
 
@@ -195,3 +197,41 @@ internal data class TupleCall(
     val args: List<Expression>,
     override val metadata: MetaData
 ) : Expression
+
+internal sealed interface AssignmentExpression : Expression
+
+internal data class NameAssignmentExpression(
+    val lhs: Name,
+    val rhs: Expression,
+    override val metadata: MetaData
+) : AssignmentExpression
+
+internal data class FunctionAssignmentExpression(
+    val lhs: Function,
+    val rhs: Expression,
+    override val metadata: MetaData
+) : AssignmentExpression
+
+internal data class SetAssignmentExpression(
+    val lhs: Set,
+    val rhs: Expression,
+    override val metadata: MetaData
+) : AssignmentExpression
+
+internal data class SequenceAssignmentExpression(
+    val lhs: Sequence,
+    val rhs: Expression,
+    override val metadata: MetaData
+) : AssignmentExpression
+
+internal data class TupleAssignmentExpression(
+    val lhs: Tuple,
+    val rhs: Expression,
+    override val metadata: MetaData
+) : AssignmentExpression
+
+internal data class NameAssignmentAssignmentExpression(
+    val lhs: NameAssignment,
+    val rhs: Expression,
+    override val metadata: MetaData
+) : AssignmentExpression

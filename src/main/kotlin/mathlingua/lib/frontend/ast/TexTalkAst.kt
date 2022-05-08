@@ -141,24 +141,31 @@ internal data class GroupingExpression(
     val type: GroupingType, val expression: Expression, override val metadata: MetaData
 ) : TexTalkNode, Expression
 
-internal data class ScopedOperatorName(
-    val prefix: Name, val name: Name, override val metadata: MetaData
-) : TexTalkNode
+internal sealed interface Operator : TexTalkNode
 
-internal data class ScopedName(val prefix: Name, val name: Name, override val metadata: MetaData) :
-    TexTalkNode, Expression
+internal data class MemberScopedOperatorName(
+    val prefixes: List<Name>, val name: Name, override val metadata: MetaData
+) : Operator
 
-internal data class InfixOperator(
-    val operator: ScopedOperatorName,
+internal data class TypeScopedOperatorName(
+    val signature: SignatureExpression, val name: OperatorName, override val metadata: MetaData
+) : Operator
+
+internal data class MemberScopedName(
+    val prefixes: List<Name>, val name: Name, override val metadata: MetaData
+) : TexTalkNode, Expression
+
+internal data class InfixOperatorExpression(
+    val operator: Operator,
     val lhs: Expression,
     val rhs: Expression,
     override val metadata: MetaData
 ) : TexTalkNode, Expression
 
-internal data class PrefixOperator(
-    val operator: ScopedOperatorName, val value: Expression, override val metadata: MetaData
+internal data class PrefixOperatorExpression(
+    val operator: Operator, val value: Expression, override val metadata: MetaData
 ) : TexTalkNode, Expression
 
-internal data class PostfixOperator(
-    val operator: ScopedOperatorName, val value: Expression, override val metadata: MetaData
+internal data class PostfixOperatorExpression(
+    val operator: Operator, val value: Expression, override val metadata: MetaData
 ) : TexTalkNode, Expression

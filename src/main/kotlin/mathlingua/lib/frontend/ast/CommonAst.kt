@@ -30,7 +30,7 @@ internal data class Name(val text: String, override val metadata: MetaData) :
 }
 
 internal data class OperatorName(val text: String, override val metadata: MetaData) :
-    Target, NameAssignmentItem, NameOrFunction {
+    Target, NameAssignmentItem, NameOrFunction, Operator {
     override fun toCode() = text
 }
 

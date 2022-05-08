@@ -33,7 +33,7 @@ internal enum class TexTalkTokenType {
     LCurly,
     RCurly,
     Comma,
-    ColonEquals,
+    ColonEqual,
     Is,
     In,
     NotIn,
@@ -50,8 +50,9 @@ internal enum class TexTalkTokenType {
     Name,
     Operator,
     Colon,
+    ColonColon,
     Equals,
-    NotEquals
+    NotEqual
 }
 
 internal data class TexTalkToken(
@@ -175,15 +176,11 @@ internal data class PostfixOperatorExpression(
 internal sealed interface FunctionCall : Expression
 
 internal data class RegularFunctionCall(
-    val name: Name,
-    val args: List<Expression>,
-    override val metadata: MetaData
+    val name: Name, val args: List<Expression>, override val metadata: MetaData
 ) : FunctionCall
 
 internal data class SubParamFunctionCall(
-    val name: Name,
-    val subArgs: List<Expression>,
-    override val metadata: MetaData
+    val name: Name, val subArgs: List<Expression>, override val metadata: MetaData
 ) : FunctionCall
 
 internal data class SubAndRegularParamFunctionCall(
@@ -193,45 +190,31 @@ internal data class SubAndRegularParamFunctionCall(
     override val metadata: MetaData
 ) : FunctionCall
 
-internal data class TupleCall(
-    val args: List<Expression>,
-    override val metadata: MetaData
-) : Expression
+internal data class TupleCall(val args: List<Expression>, override val metadata: MetaData) :
+    Expression
 
 internal sealed interface AssignmentExpression : Expression
 
 internal data class NameAssignmentExpression(
-    val lhs: Name,
-    val rhs: Expression,
-    override val metadata: MetaData
+    val lhs: Name, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression
 
 internal data class FunctionAssignmentExpression(
-    val lhs: Function,
-    val rhs: Expression,
-    override val metadata: MetaData
+    val lhs: Function, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression
 
 internal data class SetAssignmentExpression(
-    val lhs: Set,
-    val rhs: Expression,
-    override val metadata: MetaData
+    val lhs: Set, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression
 
 internal data class SequenceAssignmentExpression(
-    val lhs: Sequence,
-    val rhs: Expression,
-    override val metadata: MetaData
+    val lhs: Sequence, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression
 
 internal data class TupleAssignmentExpression(
-    val lhs: Tuple,
-    val rhs: Expression,
-    override val metadata: MetaData
+    val lhs: Tuple, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression
 
 internal data class NameAssignmentAssignmentExpression(
-    val lhs: NameAssignment,
-    val rhs: Expression,
-    override val metadata: MetaData
+    val lhs: NameAssignment, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression

@@ -21,5 +21,6 @@ import mathlingua.lib.frontend.ast.TexTalkNode
 internal data class TexTalkUnifyResult(val unified: TexTalkNode?, val remainder: List<TexTalkNode>)
 
 internal fun unifyTexTalkNode(nodes: List<TexTalkNode>): TexTalkUnifyResult {
-    return null!!
+    // TODO: fix this to actually implement unification
+    return TexTalkUnifyResult(unified = nodes.first(), remainder = nodes.slice(1 until nodes.size))
 }

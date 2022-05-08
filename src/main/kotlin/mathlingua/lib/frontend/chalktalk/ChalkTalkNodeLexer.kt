@@ -292,7 +292,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return result
     }
 
-    private fun operator(isInline: Boolean): OperatorName? {
+    private fun operatorName(isInline: Boolean): OperatorName? {
         if (!lexer.has(ChalkTalkTokenType.Operator)) {
             return null
         }
@@ -363,7 +363,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             return name
         }
 
-        val op = operator(isInline)
+        val op = operatorName(isInline)
         if (op != null) {
             return op
         }

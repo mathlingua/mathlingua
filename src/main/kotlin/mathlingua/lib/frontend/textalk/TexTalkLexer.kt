@@ -159,12 +159,13 @@ private val TEXT_AND_TYPES =
         TextAndType("\\", TexTalkTokenType.Backslash),
         TextAndType("/", TexTalkTokenType.Slash),
         TextAndType("=", TexTalkTokenType.Equals),
-        TextAndType("!=", TexTalkTokenType.NotEquals),
-        TextAndType(":=", TexTalkTokenType.ColonEquals),
+        TextAndType("!=", TexTalkTokenType.NotEqual),
+        TextAndType(":=", TexTalkTokenType.ColonEqual),
         TextAndType(":Type:", TexTalkTokenType.ColonTypeColon),
         TextAndType(":Statement:", TexTalkTokenType.ColonStatementColon),
         TextAndType(":Expression:", TexTalkTokenType.ColonExpressionColon),
-        TextAndType(":", TexTalkTokenType.Colon))
+        TextAndType(":", TexTalkTokenType.Colon),
+        TextAndType("::", TexTalkTokenType.ColonColon))
 
 private fun String.checkTextAndType(index: Int): TextAndType? {
     for (textAndType in TEXT_AND_TYPES) {

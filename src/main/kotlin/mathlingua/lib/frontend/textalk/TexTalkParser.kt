@@ -41,10 +41,8 @@ import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
 import mathlingua.lib.frontend.ast.Tuple
 
-internal data class TexTalkParseResult(val node: TexTalkNode, val diagnostics: List<Diagnostic>)
-
 internal interface TexTalkParser {
-    fun parse(): TexTalkParseResult
+    fun parse(): TexTalkNode
     fun diagnostics(): List<Diagnostic>
 }
 
@@ -55,14 +53,14 @@ internal fun newTexTalkParser(lexer: TexTalkLexer): TexTalkParser = TexTalkParse
 private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkParser {
     private val diagnostics = mutableListOf<Diagnostic>()
 
-    override fun parse(): TexTalkParseResult {
-        TODO("Not yet implemented")
-    }
+    override fun parse() =
+        expression()
+            ?: Name(text = "", metadata = MetaData(row = -1, column = -1, isInline = false))
 
     override fun diagnostics() = diagnostics
 
     private fun expression(): Expression? =
-        name(false) ?: function(false) ?: tuple(false) ?: setOrSequence(false) as Expression?
+        function(false) ?: tuple(false) ?: name(false) ?: setOrSequence(false) as Expression?
 
     private fun name(isInline: Boolean): Name? {
         if (!lexer.has(TexTalkTokenType.Name)) {

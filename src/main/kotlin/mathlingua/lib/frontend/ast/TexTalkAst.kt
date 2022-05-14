@@ -217,3 +217,14 @@ internal data class TupleAssignmentExpression(
 internal data class NameAssignmentAssignmentExpression(
     val lhs: NameAssignment, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression
+
+internal enum class MetaIsFormItem {
+    Statement,
+    Assignment,
+    Specification,
+    Expression,
+    Definition
+}
+
+internal data class MetaIsForm(val items: List<MetaIsFormItem>, override val metadata: MetaData) :
+    TexTalkNode

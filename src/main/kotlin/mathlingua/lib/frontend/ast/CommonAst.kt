@@ -25,7 +25,12 @@ internal interface NameOrFunction : CommonNode
 
 // names
 internal data class Name(val text: String, override val metadata: MetaData) :
-    Target, NameOrNameAssignment, NameAssignmentItem, NameOrFunction, NameOrCommand, Expression {
+    SquareTargetItem,
+    NameOrNameAssignment,
+    NameAssignmentItem,
+    NameOrFunction,
+    NameOrCommand,
+    Expression {
     override fun toCode() = text
 }
 
@@ -44,7 +49,8 @@ internal data class NameParam(val name: Name, val isVarArgs: Boolean) {
 }
 
 // functions
-internal sealed interface Function : Target, NameAssignmentItem, NameOrFunction, Expression
+internal sealed interface Function :
+    SquareTargetItem, NameAssignmentItem, NameOrFunction, Expression
 
 internal data class RegularFunction(
     val name: Name, val params: List<NameParam>, override val metadata: MetaData
@@ -112,7 +118,7 @@ internal data class SubAndRegularParamFunction(
 }
 
 // sequences
-internal sealed interface Sequence : Target, NameAssignmentItem, Expression
+internal sealed interface Sequence : SquareTargetItem, NameAssignmentItem, Expression
 
 internal data class SubParamFunctionSequence(
     val func: SubParamFunction, override val metadata: MetaData
@@ -188,8 +194,11 @@ internal sealed interface Argument : CommonNode
 // <assignment> | <name> | <operator> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface Target : Argument
 
+// <name> | <tuple> | <sequence> | <function> | <set>
+internal sealed interface SquareTargetItem : Target
+
 internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) :
-    Target, NameAssignmentItem, Expression {
+    SquareTargetItem, NameAssignmentItem, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("(")
@@ -208,7 +217,7 @@ internal data class Tuple(val targets: List<Target>, override val metadata: Meta
 internal sealed interface NameOrNameAssignment : CommonNode
 
 internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) :
-    Target, NameAssignmentItem, Expression {
+    SquareTargetItem, NameAssignmentItem, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("{")

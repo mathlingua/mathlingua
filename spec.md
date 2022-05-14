@@ -83,15 +83,20 @@ in
 notin
 as
 
+<square target item> ::= <name> |
+                         <tuple> |
+                         <sequence> |
+                         <function> |
+                         <set>
 <textalk command exp> ::= "\" (<name> ".")* <name>
                               ("_" "{" <value textalk params>+ "}" "^" "{" <value textalk params>+ "}"
-                               "[" <name param list>+ "]")?
+                               "[" (<square target item>+) | (<name> "...") "]")?
                               ("{" <value textalk params>+ "}")?
                               (":" "{" <value textalk params>+ "}")*
                               ("(" <value textalk params>+ ")")?
 <textalk command form> ::= "\" (<name> ".")* <name>
                               ("_" "{" <name param list>+ "}" "^" "{" <name param list>+ "}"
-                               "[" <name param list>+ "]")?
+                               "[" (<square target item>+) | (<name> "...") "]")?
                               ("{" <name param list>+ "}")?
                               (":" "{" <name param list>+ "}")*
                               ("(" <name param list>+ ")")?

@@ -62,9 +62,24 @@ internal data class NamedParameterExpression(
     val name: Name, val params: List<Expression>, override val metadata: MetaData
 ) : TexTalkNode
 
+internal class SquareParams private constructor(private val value: Any) {
+    constructor(items: List<SquareTargetItem>) : this(items as Any)
+    constructor(nameParam: NameParam) : this(nameParam as Any)
+
+    fun isSquareTargetItems() = value is List<*>
+
+    @Suppress("UNCHECKED_CAST")
+    fun asSquareTargetItems(): List<SquareTargetItem> = value as List<SquareTargetItem>
+
+    fun isNameParam() = value is NameParam
+    fun asNameParam() = value as NameParam
+
+    override fun toString() = value.toString()
+}
+
 internal data class CommandExpression(
     val names: List<Name>,
-    val squareParams: List<Name>?,
+    val squareParams: SquareParams?,
     val subParams: List<Expression>?,
     val supParams: List<Expression>?,
     val curlyParams: List<Expression>?,
@@ -79,7 +94,7 @@ internal data class NamedParameterForm(
 
 internal data class CommandForm(
     val names: List<Name>,
-    val squareParams: List<Name>?,
+    val squareParams: SquareParams?,
     val subParams: List<Name>?,
     val supParams: List<Name>?,
     val curlyParams: List<Name>?,

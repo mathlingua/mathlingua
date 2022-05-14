@@ -223,9 +223,8 @@ internal interface ChalkTalkParser {
     fun diagnostics(): List<Diagnostic>
 }
 
-internal fun newChalkTalkParser(lexer: ChalkTalkNodeLexer): ChalkTalkParser {
-    return ChalkTalkParserImpl(lexer)
-}
+internal fun newChalkTalkParser(lexer: ChalkTalkNodeLexer): ChalkTalkParser =
+    ChalkTalkParserImpl(lexer)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

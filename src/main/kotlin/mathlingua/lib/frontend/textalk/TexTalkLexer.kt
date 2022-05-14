@@ -35,9 +35,7 @@ internal interface TexTalkLexer {
     fun diagnostics(): List<Diagnostic>
 }
 
-internal fun newTexTalkLexer(text: String): TexTalkLexer {
-    return TexTalkLexerImpl(text)
-}
+internal fun newTexTalkLexer(text: String): TexTalkLexer = TexTalkLexerImpl(text)
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

@@ -141,6 +141,8 @@ private val TEXT_AND_TYPES =
     mutableListOf(
         TextAndType("(", TexTalkTokenType.LParen),
         TextAndType(")", TexTalkTokenType.RParen),
+        TextAndType("[:", TexTalkTokenType.LSquareColon),
+        TextAndType(":]", TexTalkTokenType.ColonRSquare),
         TextAndType("[", TexTalkTokenType.LSquare),
         TextAndType("]", TexTalkTokenType.RSquare),
         TextAndType("{", TexTalkTokenType.LCurly),
@@ -159,9 +161,6 @@ private val TEXT_AND_TYPES =
         TextAndType("=", TexTalkTokenType.Equals),
         TextAndType("!=", TexTalkTokenType.NotEqual),
         TextAndType(":=", TexTalkTokenType.ColonEqual),
-        TextAndType(":Type:", TexTalkTokenType.ColonTypeColon),
-        TextAndType(":Statement:", TexTalkTokenType.ColonStatementColon),
-        TextAndType(":Expression:", TexTalkTokenType.ColonExpressionColon),
         TextAndType(":", TexTalkTokenType.Colon),
         TextAndType("::", TexTalkTokenType.ColonColon))
 

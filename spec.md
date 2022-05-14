@@ -105,6 +105,8 @@ as
 <name or command> ::= <name> | <textalk command exp>
 <name or command params> ::= <name or command> ("," <name or command>)*
 <is textalk exp> ::= <target params> "is" <name or command params>
+<meta is form item> ::= "statement" | "assignment" | "specification" | "expression" | "definition"
+<meta is form> ::= "[:" <meta is form item> ("," <meta is form item>)* ":]"
 <signature expression> ::= "\" (<name> ".")* <name> (":" <name>)*
 <as textalk exp> ::= <value textalk exp> "as" <signature expression>
 <in textalk exp> ::= <target params> "in" <name or command params>

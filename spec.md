@@ -82,9 +82,6 @@ is
 in
 notin
 as
-:Statement:
-:Type:
-:Expression:
 
 <textalk command exp> ::= "\" (<name> ".")* <name>
                               ("_" "{" <value textalk params>+ "}" "^" "{" <value textalk params>+ "}"

@@ -1,6 +1,6 @@
 
-Shared
-======
+## Shared
+```
 <name assignment> ::= <name> ":=" (<name> |
                                    <operator name> |
                                    <tuple> |
@@ -40,10 +40,10 @@ Shared
              <sequence> |
              <function> |
              <set>
+```
 
-Phase 1
-=======
-
+## Phase 1
+```
 <argument> ::= <target> |
                <string>[.*] |
                <statement>[.*]
@@ -65,14 +65,14 @@ name1: arg, arg
 . arg, arg
 name2: ...
 . name3: ...
+```
 
 ===========================================================================
 
-TexTalk
-=======
+## TexTalk
 
-Keywords:
----------
+### Keywords:
+```
 is
 in
 notin
@@ -162,10 +162,10 @@ as
                         <function call> |
                         <tuple call> |
                         <assignment expression>
+```
 
-Phase 2
-=======
-
+## Phase 2
+```yaml
 <clause> ::= and: |
              not: |
              or: |
@@ -363,3 +363,4 @@ is: <string>[\signature]
                       Note:
 
 <document> ::= (<top-level group> | <text block>)*
+```

@@ -4,64 +4,108 @@
 
 ### Shared
 ```
-NameAssignment ::= Name ":=" (Name |
-                              OperatorName |
-                              Tuple |
-                              Sequence |
-                              Function |
-                              Set)
-FunctionAssignment ::= Function ":=" Function
-Assignment ::= NameAssignment | FunctionAssignment
+NameAssignment ::=
+    Name ":=" (Name |
+               OperatorName |
+               Tuple |
+               Sequence |
+               Function |
+               Set)
 
-Name ::= [a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?
-OperatorName ::= [~!@#$%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?
-NameParam ::= (Name "..."?)
-List<NameParam> ::= NameParam ("," NameParam)*
+FunctionAssignment ::=
+    Function ":=" Function
 
-RegularFunction ::= Name "(" List<NameParam> ")"
-SubParamFunction ::= Name "_" "{" List<NameParam> "}"
-SubAndRegularParamFunction ::= Name "_" "{" List<NameParam> "}" "(" List<NameParam> ")"
-Function ::= RegularFunction |
-             SubParamFunction |
-             SubAndRegularParamFunction
+Assignment ::=
+    NameAssignment |
+    FunctionAssignment
 
-SubParamFunctionSequence ::= "{" SubParamFunction "}" "_" ""{" List<NameParam> "}"
-SubAndRegularParamFunctionSequence ::= "{" SubAndRegularParamFunction "}" "_" "{" List<NameParam> "}"
-Sequence ::= SubParamFunctionSequence |
-             SubAndRegularParamFunctionSequence
+Name ::=
+    [a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?
 
-Tuple ::= "(" Target ("," Target)* ")"
-NameOrNameAssignment ::= Name | NameAssignment
-Set ::= "{" NameOrNameAssignment ("," NameOrNameAssignment)* "}"
-Target ::= Assignment |
-           Name |
-           OperatorName |
-           Tuple |
-           Sequence |
-           Function |
-           Set
+OperatorName ::=
+    [~!@#$%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?
+
+NameParam ::=
+    (Name "..."?)
+
+List<NameParam> ::=
+    NameParam ("," NameParam)*
+
+RegularFunction ::=
+    Name "(" List<NameParam> ")"
+
+SubParamFunction ::=
+    Name "_" "{" List<NameParam> "}"
+
+SubAndRegularParamFunction ::=
+    Name "_" "{" List<NameParam> "}" "(" List<NameParam> ")"
+
+Function ::=
+    RegularFunction |
+    SubParamFunction |
+    SubAndRegularParamFunction
+
+SubParamFunctionSequence ::=
+    "{" SubParamFunction "}" "_" ""{" List<NameParam> "}"
+
+SubAndRegularParamFunctionSequence ::=
+    "{" SubAndRegularParamFunction "}" "_" "{" List<NameParam> "}"
+
+Sequence ::=
+    SubParamFunctionSequence |
+    SubAndRegularParamFunctionSequence
+
+Tuple ::=
+    "(" Target ("," Target)* ")"
+
+NameOrNameAssignment ::=
+    Name |
+    NameAssignment
+
+Set ::=
+    "{" NameOrNameAssignment ("," NameOrNameAssignment)* "}"
+
+Target ::=
+    Assignment |
+    Name |
+    OperatorName |
+    Tuple |
+    Sequence |
+    Function |
+    Set
 ```
 
 -----------------------------------------------------------------------------------
 
 ### Phase 1
 ```
-Argument ::= Target |
-             Text[.*] |
-             Statement[.*]
+Argument ::=
+    Target |
+    Text[.*] |
+    Statement[.*]
 
-Text[x] ::= "\"" x "\""         with " escaped with \"
-TextBlock ::= "::" .* "::"      with :: escaped with {::}
-Statement[x] ::= ("'" x "'"     without an escape for ') |
-                 ("`" x "`"     without an escape for `)
-                                where x is any character except the surrounding
-                                characters unless escaped
-Id ::= "[" (CommandForm |
-           (Name InfixCommandForm Name)) |
-           (OperatorName Name) |
-           (Name OperatorName) |
-           (Name OperatorName Name) "]"
+Text[x] ::=
+    "\"" x "\""    with " escaped with \"
 
+TextBlock ::=
+    "::" .* "::"   with :: escaped with {::}
+
+Statement[x] ::=
+    ("'" x "'"     without an escape for ') |
+    ("`" x "`"     without an escape for `)
+                   where x is any character except the surrounding
+                   characters unless escaped
+
+Id ::=
+    "[" (CommandForm |
+        (Name InfixCommandForm Name)) |
+        (OperatorName Name) |
+        (Name OperatorName) |
+        (Name OperatorName Name) "]"
+```
+
+Structure:
+````
 [Id]
 name1: arg, arg
 . arg, arg
@@ -79,111 +123,204 @@ is
 in
 notin
 as
+```
 
-SquareTargetItem ::= Name |
-                     Tuple |
-                     Sequence |
-                     Function |
-                     Set
-List<Expression> ::= Expression ("," Expression)*
-CommandExpression ::= "\" (Name ".")* Name
-                      ("_" "{" List<Expression>+ "}" "^" "{" List<Expression>+ "}"
-                      "[" (SquareTargetItem+) | (Name "...") "]")?
-                      ("{" List<Expression>+ "}")?
-                      (":" "{" List<Expression>+ "}")*
-                      ("(" List<Expression>+ ")")?
-CommandForm ::= "\" (Name ".")* Name
-                    ("_" "{" List<NameParam>+ "}" "^" "{" List<NameParam>+ "}"
-                    "[" (SquareTargetItem+) | (Name "...") "]")?
-                    ("{" List<NameParam>+ "}")?
-                    (":" "{" List<NameParam>+ "}")*
-                    ("(" List<NameParam>+ ")")?
-InfixCommandExpression ::= CommandExpression "/"
-InfixCommandForm ::= CommandForm "/"
-List<Target> ::= Target ("," Target)*
-NameOrCommand ::= Name | CommandExpression
-List<NameOrCommand> ::= NameOrCommand ("," NameOrCommand)*
-IsExpression ::= List<Target> "is" List<NameOrCommand>
-MetaIsFormItem ::= "statement" | "assignment" | "specification" | "expression" | "definition"
-MetaIsForm ::= "[:" MetaIsFormItem ("," MetaIsFormItem)* ":]"
-SignatureExpression ::= "\" (Name ".")* Name (":" Name)*
-AsExpression ::= Expression "as" SignatureExpression
-InExpression ::= List<Target> "in" List<NameOrCommand>
-NotInExpression ::= List<Target> "notin" <membership params>
-ColonEqualsExpression ::= Target ":=" Expression
-EqualsExpression ::= Expression "=" Expression
-NotEqualsExpression ::= Expression "!=" Expression
-TypeScopedOperatorName ::= SignatureExpression "::" OperatorName "/"
-MemberScopedOperatorName ::= "[" (Name ".")* OperatorName "]"
-MemberScopedName ::= (Name ".")* Name
-Operator ::= OperatorName |
-             MemberScopedOperatorName |
-             TypeScopedOperatorName
-InfixCommandExpression ::= Expression InfixCommandExpression Expression
-PrefixOperatorExpression ::= MemberScopedOperatorName Expression
-InfixOperatorExpression ::= Expression MemberScopedOperatorName Expression
-PostfixOperatorExpression ::= Expression MemberScopedOperatorName
-RegularFunctionCall ::= Name "(" List<Expression> ")"
-SubParamFunctionCall ::= Name "_" "{" List<Expression> "}"
-SubAndRegularParamFunctionCall ::= Name "_" "{" List<Expression> "}" "(" List<Expression> ")"
-FunctionCall ::= RegularFunctionCallRegularFunctionCall |
-                 SubParamFunctionCall |
-                 SubAndRegularParamFunctionCall
-TupleCall ::= "(" Expression ("," Expression)* ")"
-OperationExpression ::= PrefixOperatorExpression |
-                        InfixOperatorExpression |
-                        PostfixOperatorExpression |
-                        InfixCommandExpression
-NameAssignmentExpression ::= Name ":=" Expression
-FunctionAssignmentExpression ::= Function ":=" Expression
-SetAssignmentExpression ::= Set ":=" Expression
-SequenceAssignmentExpression ::= Sequence ":=" Expression
-TupleAssignmentExpression ::= Tuple ":=" Expression
-NameAssignmentAssignmentExpression ::= NameAssignment ":=" Expression
-AssignmentExpression ::= NameAssignmentExpression |
-                         FunctionAssignmentExpression |
-                         SetAssignmentExpression |
-                         SequenceAssignmentExpression |
-                         TupleAssignmentExpression |
-                         NameAssignmentAssignmentExpression |
-                         OperationExpression ":=" Expression
-GroupingExpression ::= "(" Expression ")" |
-                       "{" Expression "}"
-Expression ::= Name |
-               MemberScopedName |
-               Tuple |
-               Sequence |
-               Function |
-               Set |
-               GroupingExpression |
-               OperationExpression |
-               CommandExpression |
-               AsExpression |
-               ColonEqualsExpression |
-               EqualsExpression |
-               NotEqualsExpression |
-               FunctionCall |
-               TupleCall |
-               AssignmentExpression
+Syntax:
+```
+SquareTargetItem ::=
+    Name |
+    Tuple |
+    Sequence |
+    Function |
+    Set
+
+List<Expression> ::=
+    Expression ("," Expression)*
+
+CommandExpression ::=
+    "\" (Name ".")* Name
+    ("_" "{" List<Expression>+ "}" "^" "{" List<Expression>+ "}"
+    "[" (SquareTargetItem+) | (Name "...") "]")?
+    ("{" List<Expression>+ "}")?
+    (":" "{" List<Expression>+ "}")*
+    ("(" List<Expression>+ ")")?
+
+CommandForm ::=
+    "\" (Name ".")* Name
+    ("_" "{" List<NameParam>+ "}" "^" "{" List<NameParam>+ "}"
+    "[" (SquareTargetItem+) | (Name "...") "]")?
+    ("{" List<NameParam>+ "}")?
+    (":" "{" List<NameParam>+ "}")*
+    ("(" List<NameParam>+ ")")?
+
+InfixCommandExpression ::=
+    CommandExpression "/"
+
+InfixCommandForm ::=
+    CommandForm "/"
+
+List<Target> ::=
+    Target ("," Target)*
+
+NameOrCommand ::=
+    Name |
+    CommandExpression
+
+List<NameOrCommand> ::=
+    NameOrCommand ("," NameOrCommand)*
+
+IsExpression ::=
+    List<Target> "is" List<NameOrCommand>
+
+MetaIsFormItem ::=
+    "statement" |
+    "assignment" |
+    "specification" |
+    "expression" |
+    "definition"
+
+MetaIsForm ::=
+    "[:" MetaIsFormItem ("," MetaIsFormItem)* ":]"
+
+SignatureExpression ::=
+    "\" (Name ".")* Name (":" Name)*
+
+AsExpression ::=
+    Expression "as" SignatureExpression
+
+InExpression ::=
+    List<Target> "in" List<NameOrCommand>
+
+NotInExpression ::=
+    List<Target> "notin" <membership params>
+
+ColonEqualsExpression ::=
+    Target ":=" Expression
+
+EqualsExpression ::=
+    Expression "=" Expression
+
+NotEqualsExpression ::=
+    Expression "!=" Expression
+
+TypeScopedOperatorName ::=
+    SignatureExpression "::" OperatorName "/"
+
+MemberScopedOperatorName ::=
+    "[" (Name ".")* OperatorName "]"
+
+MemberScopedName ::=
+    (Name ".")* Name
+
+Operator ::=
+    OperatorName |
+    MemberScopedOperatorName |
+    TypeScopedOperatorName
+
+InfixCommandExpression ::=
+    Expression InfixCommandExpression Expression
+
+PrefixOperatorExpression ::=
+    MemberScopedOperatorName Expression
+
+InfixOperatorExpression ::=
+    Expression MemberScopedOperatorName Expression
+
+PostfixOperatorExpression ::=
+    Expression MemberScopedOperatorName
+
+RegularFunctionCall ::=
+    Name "(" List<Expression> ")"
+
+SubParamFunctionCall ::=
+    Name "_" "{" List<Expression> "}"
+
+SubAndRegularParamFunctionCall ::=
+    Name "_" "{" List<Expression> "}" "(" List<Expression> ")"
+
+FunctionCall ::=
+    RegularFunctionCallRegularFunctionCall |
+    SubParamFunctionCall |
+    SubAndRegularParamFunctionCall
+
+TupleCall ::=
+    "(" Expression ("," Expression)* ")"
+
+OperationExpression ::=
+    PrefixOperatorExpression |
+    InfixOperatorExpression |
+    PostfixOperatorExpression |
+    InfixCommandExpression
+
+NameAssignmentExpression ::=
+    Name ":=" Expression
+
+FunctionAssignmentExpression ::=
+    Function ":=" Expression
+
+SetAssignmentExpression ::=
+    Set ":=" Expression
+
+SequenceAssignmentExpression ::=
+    Sequence ":=" Expression
+
+TupleAssignmentExpression ::=
+    Tuple ":=" Expression
+
+NameAssignmentAssignmentExpression ::=
+    NameAssignment ":=" Expression
+
+AssignmentExpression ::=
+    NameAssignmentExpression |
+    FunctionAssignmentExpression |
+    SetAssignmentExpression |
+    SequenceAssignmentExpression |
+    TupleAssignmentExpression |
+    NameAssignmentAssignmentExpression |
+    OperationExpression ":=" Expression
+
+GroupingExpression ::=
+    "(" Expression ")" |
+    "{" Expression "}"
+
+Expression ::=
+    Name |
+    MemberScopedName |
+    Tuple |
+    Sequence |
+    Function |
+    Set |
+    GroupingExpression |
+    OperationExpression |
+    CommandExpression |
+    AsExpression |
+    ColonEqualsExpression |
+    EqualsExpression |
+    NotEqualsExpression |
+    FunctionCall |
+    TupleCall |
+    AssignmentExpression
 ```
 
 -----------------------------------------------------------------------------------
 
 ### Phase 2
 ```yaml
-Clause ::= and: |
-           not: |
-           or: |
-           exists: |
-           existsUnique: |
-           forAll: |
-           if: |
-           iff: |
-           Text[.*] |
-           Statement[Expression]
+Clause ::=
+    and: |
+    not: |
+    or: |
+    exists: |
+    existsUnique: |
+    forAll: |
+    if: |
+    iff: |
+    Text[.*] |
+    Statement[Expression]
 
-Spec ::= Statement[IsExpression] |
-         Statement[InExpression]
+Spec ::=
+    Statement[IsExpression] |
+     Statement[InExpression]
 
 and: Clause+
 
@@ -240,10 +377,18 @@ where: Statement[ColonEqualsExpression]+
 memberSymbols: Name+
 where: Statement[ColonEqualsExpression]+
 
-MetadataItem ::= note: |
-                 author: |
-                 tag: |
-                 reference:
+MetadataItem ::=
+    note: |
+    author: |
+    tag: |
+    reference:
+
+ProvidingItem ::=
+    (view:)* |
+    symbols: |
+    memberSymbols: |
+    equality: |
+    membership:
 
 [Id]
 Defines: Target
@@ -258,11 +403,7 @@ using?: Statement[ColonEqualsExpression]+
 writing?: Text[.*]+
 written: Text[.*]+
 called?: Text[.*]+
-Providing?: ((view:)* |
-             symbols: |
-             memberSymbols: |
-             equality: |
-             membership:)
+Providing?: ProvidingItem+
 Metadata?: MetadataItem+
 
 note: Text[.*]
@@ -272,8 +413,8 @@ author: Text[.*]+
 tag: Text[.*]+
 
 reference: Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
-           (":offset" "{" [0-9]+ "}")?
-           (":at" "{" Text[.*] "}"]+
+               (":offset" "{" [0-9]+ "}")?
+               (":at" "{" Text[.*] "}"]+
 
 [Id]
 States:
@@ -336,11 +477,14 @@ Note:
 content: Text[.*]
 Metadata?: MetadataItem+
 
-Specify: (zero: |
-          positiveInt: |
-          negativeInt: |
-          positiveFloat: |
-          negativeFloat:)
+SpecifyItem ::=
+    zero: |
+    positiveInt: |
+    negativeInt: |
+    positiveFloat: |
+    negativeFloat:
+
+Specify: SpecifyItem
 
 zero:
 is: Text[SignatureExpression]
@@ -357,19 +501,23 @@ is: Text[SignatureExpression]
 negativeFloat:
 is: Text[SignatureExpression]
 
-TopLevelGroup ::= Defines: |
-                  States: |
-                  Axiom: |
-                  Conjecture: |
-                  Theorem: |
-                  Topic: |
-                  Resource: |
-                  Specify: |
-                  Note:
+TopLevelGroup ::=
+    Defines: |
+    States: |
+    Axiom: |
+    Conjecture: |
+    Theorem: |
+    Topic: |
+    Resource: |
+    Specify: |
+    Note:
 
-TopLevelGroupOrTextBlock ::= TopLevelGroup | TextBlock
+TopLevelGroupOrTextBlock ::=
+    TopLevelGroup | TextBlock
 
-List<TopLevelGroupOrTextBlock> ::= TopLevelGroupOrTextBlock*
+List<TopLevelGroupOrTextBlock> ::=
+    TopLevelGroupOrTextBlock*
 
-Document ::= List<TopLevelGroupOrTextBlock>
+Document ::=
+    List<TopLevelGroupOrTextBlock>
 ```

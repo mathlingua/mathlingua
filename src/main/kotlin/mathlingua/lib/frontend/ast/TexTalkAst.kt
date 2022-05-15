@@ -164,6 +164,10 @@ internal data class MemberScopedOperatorName(
     val prefixes: List<Name>, val name: Name, override val metadata: MetaData
 ) : Operator
 
+internal data class TypeScopedInfixOperatorName(
+    val signature: SignatureExpression, val name: OperatorName, override val metadata: MetaData
+) : Operator
+
 internal data class TypeScopedOperatorName(
     val signature: SignatureExpression, val name: OperatorName, override val metadata: MetaData
 ) : Operator

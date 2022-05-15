@@ -203,8 +203,11 @@ EqualsExpression ::=
 NotEqualsExpression ::=
     Expression "!=" Expression
 
-TypeScopedOperatorName ::=
+TypeScopedInfixOperatorName ::=
     SignatureExpression "::" OperatorName "/"
+
+TypeScopedOperatorName ::=
+    SignatureExpression "::" OperatorName
 
 MemberScopedOperatorName ::=
     "[" (Name ".")* OperatorName "]"
@@ -215,7 +218,8 @@ MemberScopedName ::=
 Operator ::=
     OperatorName |
     MemberScopedOperatorName |
-    TypeScopedOperatorName
+    TypeScopedOperatorName |
+    TypeScopedInfixOperatorName
 
 InfixCommandExpression ::=
     Expression InfixCommandExpression Expression

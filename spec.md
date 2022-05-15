@@ -25,20 +25,20 @@ Name ::=
 OperatorName ::=
     [~!@#$%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?
 
-NameParam ::=
+VariadicName ::=
     (Name "..."?)
 
-List<NameParam> ::=
-    NameParam ("," NameParam)*
+List<VariadicName> ::=
+    VariadicName ("," VariadicName)*
 
 RegularFunction ::=
-    Name "(" List<NameParam> ")"
+    Name "(" List<VariadicName> ")"
 
 SubParamFunction ::=
-    Name "_" "{" List<NameParam> "}"
+    Name "_" "{" List<VariadicName> "}"
 
 SubAndRegularParamFunction ::=
-    Name "_" "{" List<NameParam> "}" "(" List<NameParam> ")"
+    Name "_" "{" List<VariadicName> "}" "(" List<VariadicName> ")"
 
 Function ::=
     RegularFunction |
@@ -46,10 +46,10 @@ Function ::=
     SubAndRegularParamFunction
 
 SubParamFunctionSequence ::=
-    "{" SubParamFunction "}" "_" ""{" List<NameParam> "}"
+    "{" SubParamFunction "}" "_" ""{" List<VariadicName> "}"
 
 SubAndRegularParamFunctionSequence ::=
-    "{" SubAndRegularParamFunction "}" "_" "{" List<NameParam> "}"
+    "{" SubAndRegularParamFunction "}" "_" "{" List<VariadicName> "}"
 
 Sequence ::=
     SubParamFunctionSequence |
@@ -147,11 +147,11 @@ CommandExpression ::=
 
 CommandForm ::=
     "\" (Name ".")* Name
-    ("_" "{" List<NameParam>+ "}" "^" "{" List<NameParam>+ "}"
+    ("_" "{" List<VariadicName>+ "}" "^" "{" List<VariadicName>+ "}"
     "[" (SquareTargetItem+) | (Name "...") "]")?
-    ("{" List<NameParam>+ "}")?
-    (":" "{" List<NameParam>+ "}")*
-    ("(" List<NameParam>+ ")")?
+    ("{" List<VariadicName>+ "}")?
+    (":" "{" List<VariadicName>+ "}")*
+    ("(" List<VariadicName>+ ")")?
 
 InfixCommandExpression ::=
     CommandExpression "/"

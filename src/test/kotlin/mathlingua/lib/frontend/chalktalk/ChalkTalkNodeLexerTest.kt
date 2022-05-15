@@ -27,7 +27,6 @@ import mathlingua.lib.frontend.ast.EndSection
 import mathlingua.lib.frontend.ast.Id
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
-import mathlingua.lib.frontend.ast.NameParam
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
@@ -40,6 +39,7 @@ import mathlingua.lib.frontend.ast.SubParamFunctionSequence
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
+import mathlingua.lib.frontend.ast.VariadicName
 import strikt.api.expect
 import strikt.assertions.isEmpty
 import strikt.assertions.isEqualTo
@@ -164,12 +164,12 @@ internal class ChalkTalkNodeLexerTest {
                             text = "f", metadata = MetaData(row = 0, column = 10, isInline = true)),
                     params =
                         listOf(
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "x",
                                     metadata = MetaData(row = 0, column = 12, isInline = true)),
                                 isVarArgs = false),
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "y",
                                     metadata = MetaData(row = 0, column = 15, isInline = true)),
@@ -195,12 +195,12 @@ internal class ChalkTalkNodeLexerTest {
                             text = "f", metadata = MetaData(row = 0, column = 10, isInline = true)),
                     subParams =
                         listOf(
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "x",
                                     metadata = MetaData(row = 0, column = 13, isInline = true)),
                                 isVarArgs = false),
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "y",
                                     metadata = MetaData(row = 0, column = 16, isInline = true)),
@@ -226,24 +226,24 @@ internal class ChalkTalkNodeLexerTest {
                             text = "f", metadata = MetaData(row = 0, column = 10, isInline = true)),
                     subParams =
                         listOf(
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "i",
                                     metadata = MetaData(row = 0, column = 13, isInline = true)),
                                 isVarArgs = false),
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "j",
                                     metadata = MetaData(row = 0, column = 16, isInline = true)),
                                 isVarArgs = false)),
                     params =
                         listOf(
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "x",
                                     metadata = MetaData(row = 0, column = 19, isInline = true)),
                                 isVarArgs = false),
-                            NameParam(
+                            VariadicName(
                                 Name(
                                     text = "y",
                                     metadata = MetaData(row = 0, column = 22, isInline = true)),
@@ -272,13 +272,13 @@ internal class ChalkTalkNodeLexerTest {
                                     metadata = MetaData(row = 0, column = 11, isInline = true)),
                             subParams =
                                 listOf(
-                                    NameParam(
+                                    VariadicName(
                                         Name(
                                             text = "x",
                                             metadata =
                                                 MetaData(row = 0, column = 14, isInline = true)),
                                         isVarArgs = false),
-                                    NameParam(
+                                    VariadicName(
                                         Name(
                                             text = "y",
                                             metadata =
@@ -309,13 +309,13 @@ internal class ChalkTalkNodeLexerTest {
                                     metadata = MetaData(row = 0, column = 11, isInline = true)),
                             subParams =
                                 listOf(
-                                    NameParam(
+                                    VariadicName(
                                         Name(
                                             text = "i",
                                             metadata =
                                                 MetaData(row = 0, column = 14, isInline = true)),
                                         isVarArgs = false),
-                                    NameParam(
+                                    VariadicName(
                                         Name(
                                             text = "j",
                                             metadata =
@@ -323,13 +323,13 @@ internal class ChalkTalkNodeLexerTest {
                                         isVarArgs = false)),
                             params =
                                 listOf(
-                                    NameParam(
+                                    VariadicName(
                                         Name(
                                             text = "x",
                                             metadata =
                                                 MetaData(row = 0, column = 20, isInline = true)),
                                         isVarArgs = false),
-                                    NameParam(
+                                    VariadicName(
                                         Name(
                                             text = "y",
                                             metadata =

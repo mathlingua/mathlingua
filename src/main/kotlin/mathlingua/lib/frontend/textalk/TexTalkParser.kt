@@ -27,7 +27,6 @@ import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameAssignmentItem
 import mathlingua.lib.frontend.ast.NameOrNameAssignment
-import mathlingua.lib.frontend.ast.NameParam
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
@@ -40,6 +39,7 @@ import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
 import mathlingua.lib.frontend.ast.Tuple
+import mathlingua.lib.frontend.ast.VariadicName
 
 internal interface TexTalkParser {
     fun parse(): TexTalkNode
@@ -72,7 +72,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
-    private fun nameParam(isInline: Boolean): NameParam? {
+    private fun nameParam(isInline: Boolean): VariadicName? {
         val name =
             name(isInline)
                 ?: if (lexer.has(TexTalkTokenType.Underscore)) {
@@ -95,11 +95,13 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             } else {
                 false
             }
-        return NameParam(name = name, isVarArgs = hasDotDotDot)
+        return VariadicName(name = name, isVarArgs = hasDotDotDot)
     }
 
-    private fun nameParamList(isInline: Boolean, expectedEnd: TexTalkTokenType): List<NameParam> {
-        val result = mutableListOf<NameParam>()
+    private fun nameParamList(
+        isInline: Boolean, expectedEnd: TexTalkTokenType
+    ): List<VariadicName> {
+        val result = mutableListOf<VariadicName>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
             val nameParam = nameParam(isInline) ?: break
             result.add(nameParam)
@@ -120,7 +122,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         return result
     }
 
-    private fun subParams(isInline: Boolean): List<NameParam>? {
+    private fun subParams(isInline: Boolean): List<VariadicName>? {
         if (!lexer.hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
             return null
         }
@@ -131,7 +133,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         return result
     }
 
-    private fun regularParams(isInline: Boolean): List<NameParam>? {
+    private fun regularParams(isInline: Boolean): List<VariadicName>? {
         if (!lexer.has(TexTalkTokenType.LParen)) {
             return null
         }

@@ -39,7 +39,7 @@ internal data class OperatorName(val text: String, override val metadata: MetaDa
     override fun toCode() = text
 }
 
-internal data class NameParam(val name: Name, val isVarArgs: Boolean) {
+internal data class VariadicName(val name: Name, val isVarArgs: Boolean) {
     fun toCode(): String =
         if (isVarArgs) {
             "$name..."
@@ -53,7 +53,7 @@ internal sealed interface Function :
     SquareTargetItem, NameAssignmentItem, NameOrFunction, Expression
 
 internal data class RegularFunction(
-    val name: Name, val params: List<NameParam>, override val metadata: MetaData
+    val name: Name, val params: List<VariadicName>, override val metadata: MetaData
 ) : Function {
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -71,7 +71,7 @@ internal data class RegularFunction(
 }
 
 internal data class SubParamFunction(
-    val name: Name, val subParams: List<NameParam>, override val metadata: MetaData
+    val name: Name, val subParams: List<VariadicName>, override val metadata: MetaData
 ) : Function {
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -90,8 +90,8 @@ internal data class SubParamFunction(
 
 internal data class SubAndRegularParamFunction(
     val name: Name,
-    val subParams: List<NameParam>,
-    val params: List<NameParam>,
+    val subParams: List<VariadicName>,
+    val params: List<VariadicName>,
     override val metadata: MetaData
 ) : Function {
     override fun toCode(): String {

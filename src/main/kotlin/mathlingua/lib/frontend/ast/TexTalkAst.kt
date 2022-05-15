@@ -64,15 +64,15 @@ internal data class NamedParameterExpression(
 
 internal class SquareParams private constructor(private val value: Any) {
     constructor(items: List<SquareTargetItem>) : this(items as Any)
-    constructor(nameParam: NameParam) : this(nameParam as Any)
+    constructor(variadicName: VariadicName) : this(variadicName as Any)
 
     fun isSquareTargetItems() = value is List<*>
 
     @Suppress("UNCHECKED_CAST")
     fun asSquareTargetItems(): List<SquareTargetItem> = value as List<SquareTargetItem>
 
-    fun isNameParam() = value is NameParam
-    fun asNameParam() = value as NameParam
+    fun isNameParam() = value is VariadicName
+    fun asNameParam() = value as VariadicName
 
     override fun toString() = value.toString()
 }

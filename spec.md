@@ -189,10 +189,10 @@ AsExpression ::=
     Expression "as" SignatureExpression
 
 InExpression ::=
-    List<Target> "in" List<NameOrCommand>
+    List<Target> "in" Expression
 
 NotInExpression ::=
-    List<Target> "notin" <membership params>
+    List<Target> "notin" Expression
 
 ColonEqualsExpression ::=
     Target ":=" Expression

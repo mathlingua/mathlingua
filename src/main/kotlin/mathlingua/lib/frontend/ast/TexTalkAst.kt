@@ -130,11 +130,11 @@ internal data class AsExpression(
 ) : Expression
 
 internal data class InExpression(
-    val lhs: List<Target>, val rhs: NameOrCommand, override val metadata: MetaData
+    val lhs: List<Target>, val rhs: Expression, override val metadata: MetaData
 ) : Expression
 
 internal data class NotInExpression(
-    val lhs: List<Target>, val rhs: NameOrCommand, override val metadata: MetaData
+    val lhs: List<Target>, val rhs: Expression, override val metadata: MetaData
 ) : Expression
 
 internal data class ColonEqualsExpression(

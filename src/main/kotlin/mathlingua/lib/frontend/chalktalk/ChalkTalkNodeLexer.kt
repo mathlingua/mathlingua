@@ -223,21 +223,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
     }
 
     private fun nameParam(isInline: Boolean): NameParam? {
-        val name =
-            name(isInline)
-                ?: if (lexer.has(ChalkTalkTokenType.Underscore)) {
-                    val underscore = lexer.next()
-                    Name(
-                        text = underscore.text,
-                        metadata =
-                            MetaData(
-                                row = underscore.row,
-                                column = underscore.column,
-                                isInline = isInline))
-                } else {
-                    null
-                }
-                    ?: return null
+        val name = name(isInline) ?: return null
         val hasDotDotDot =
             if (lexer.has(ChalkTalkTokenType.DotDotDot)) {
                 expect(ChalkTalkTokenType.DotDotDot)

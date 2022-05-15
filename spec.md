@@ -15,7 +15,7 @@ Assignment ::= NameAssignment | FunctionAssignment
 
 Name ::= [a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?
 OperatorName ::= [~!@#$%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?
-NameParam ::= (Name "..."?) | "_"
+NameParam ::= (Name "..."?)
 List<NameParam> ::= NameParam ("," NameParam)*
 
 RegularFunction ::= Name "(" List<NameParam> ")"

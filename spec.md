@@ -169,6 +169,13 @@ NameOrCommand ::=
 List<NameOrCommand> ::=
     NameOrCommand ("," NameOrCommand)*
 
+VariadicIsRhs ::=
+    VariadicName |
+    CommandExpression
+
+VariadicIsExpression ::=
+    VariadicTarget "is" VariadicIsRhs
+
 IsExpression ::=
     List<Target> "is" List<NameOrCommand>
 
@@ -188,11 +195,35 @@ SignatureExpression ::=
 AsExpression ::=
     Expression "as" SignatureExpression
 
+VariadicFunction ::=
+    Function "..."
+
+VariadicSequence ::=
+    Sequence "..."
+
+VariadicTarget ::=
+    VariadicName |
+    VariadicFunction |
+    VariadicSequence
+
+VariadicRhs ::=
+    VariadicTarget |
+    Expression
+
+VariadicInExpression ::=
+    VariadicTarget "in" VariadicRhs
+
 InExpression ::=
     List<Target> "in" Expression
 
+VariadicNotInExpression ::=
+    VariadicTarget "notin" VariadicRhs
+
 NotInExpression ::=
     List<Target> "notin" Expression
+
+VariadicColonEqualsExpression ::=
+    VariadicTarget ":=" VariadicRhs
 
 ColonEqualsExpression ::=
     Target ":=" Expression
@@ -298,6 +329,7 @@ Expression ::=
     OperationExpression |
     CommandExpression |
     AsExpression |
+    VariadicColonEqualsExpression |
     ColonEqualsExpression |
     EqualsExpression |
     NotEqualsExpression |
@@ -323,8 +355,8 @@ Clause ::=
     Statement[Expression]
 
 Spec ::=
-    Statement[IsExpression] |
-     Statement[InExpression]
+    Statement[IsExpression | VariadicIsExpression] |
+     Statement[InExpression | VariadicInExpression]
 
 and: Clause+
 
@@ -394,15 +426,30 @@ ProvidingItem ::=
     equality: |
     membership:
 
+SatisfyingItem ::=
+    generated: |
+    Clause |
+    Spec |
+    ColonEqualsExpression |
+    VariadicColonEqualsExpression
+
+ExpressingItem ::=
+    piecewise: |
+    match: |
+    Clause |
+    Spec |
+    ColonEqualsExpression |
+    VariadicColonEqualsExpression
+
 [Id]
 Defines: Target
 with?: Assignment+
 given?: Target+
 when?: Spec+
 suchThat?: Clause+
-means?: Statement[IsExpression]
-satisfying: (generated: | Clause+ | Spec+ | ColonEqualsExpression+)
-expressing: (piecewise: | match: | Clause+ | Spec+ | ColonEqualsExpression+)
+means?: Statement[IsExpression | VariadicIsExpression]
+satisfying: SatisfyingItem+
+expressing: ExpressingItem+
 using?: Statement[ColonEqualsExpression]+
 writing?: Text[.*]+
 written: Text[.*]+

@@ -34,18 +34,34 @@ internal data class Name(val text: String, override val metadata: MetaData) :
     override fun toCode() = text
 }
 
+// targets
+internal sealed interface VariadicRhs : CommonNode
+
+internal sealed interface VariadicIsRhs : CommonNode
+
+internal sealed interface VariadicTarget : VariadicRhs
+
+// <assignment> | <name> | <operator> | <tuple> | <sequence> | <function> | <set>
+internal sealed interface Target : Argument
+
 internal data class OperatorName(val text: String, override val metadata: MetaData) :
     Target, NameAssignmentItem, NameOrFunction, Operator {
     override fun toCode() = text
 }
 
-internal data class VariadicName(val name: Name, val isVarArgs: Boolean) {
-    fun toCode(): String =
-        if (isVarArgs) {
-            "$name..."
-        } else {
-            name.text
-        }
+internal data class VariadicName(val name: Name, override val metadata: MetaData) :
+    VariadicTarget, VariadicIsRhs {
+    override fun toCode(): String = "$name..."
+}
+
+internal data class VariadicFunction(val function: Function, override val metadata: MetaData) :
+    VariadicTarget {
+    override fun toCode() = "${function.toCode()}..."
+}
+
+internal data class VariadicSequence(val sequence: Sequence, override val metadata: MetaData) :
+    VariadicTarget {
+    override fun toCode() = "${sequence.toCode()}..."
 }
 
 // functions
@@ -189,10 +205,6 @@ internal data class FunctionAssignment(
 
 // <target> | <text> | <statement>
 internal sealed interface Argument : CommonNode
-
-// targets
-// <assignment> | <name> | <operator> | <tuple> | <sequence> | <function> | <set>
-internal sealed interface Target : Argument
 
 // <name> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface SquareTargetItem : Target

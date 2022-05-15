@@ -21,7 +21,7 @@ import mathlingua.lib.frontend.MetaData
 
 internal sealed interface TexTalkNode : HasMetaData, TexTalkNodeOrToken
 
-internal sealed interface Expression : TexTalkNode
+internal sealed interface Expression : TexTalkNode, VariadicRhs
 
 internal sealed interface TexTalkNodeOrToken
 
@@ -86,7 +86,9 @@ internal data class CommandExpression(
     val namedParams: List<NamedParameterExpression>?,
     val parenParams: List<Expression>?,
     override val metadata: MetaData
-) : TexTalkNode, NameOrCommand, Expression
+) : TexTalkNode, NameOrCommand, Expression, VariadicIsRhs {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class NamedParameterForm(
     val name: Name, val params: List<Name>, override val metadata: MetaData
@@ -110,16 +112,26 @@ internal data class InfixCommandExpression(
     val command: CommandExpression,
     val rhs: Expression,
     override val metadata: MetaData
-) : OperationExpression
+) : OperationExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class InfixCommandForm(val command: CommandForm, override val metadata: MetaData) :
     TexTalkNode
 
 internal sealed interface NameOrCommand : TexTalkNode
 
+internal data class VariadicIsExpression(
+    val lhs: VariadicTarget, val rhs: VariadicIsRhs, override val metadata: MetaData
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
+
 internal data class IsExpression(
     val lhs: List<Target>, val rhs: List<NameOrCommand>, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class SignatureExpression(
     val names: List<Name>, val colonNames: List<Name>, override val metadata: MetaData
@@ -127,27 +139,57 @@ internal data class SignatureExpression(
 
 internal data class AsExpression(
     val lhs: Expression, val rhs: SignatureExpression, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
+
+internal data class VariadicInExpression(
+    val lhs: VariadicTarget, val rhs: VariadicRhs, override val metadata: MetaData
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class InExpression(
     val lhs: List<Target>, val rhs: Expression, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
+
+internal data class VariadicNotInExpression(
+    val lhs: VariadicTarget, val rhs: VariadicRhs, override val metadata: MetaData
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class NotInExpression(
     val lhs: List<Target>, val rhs: Expression, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class ColonEqualsExpression(
     val lhs: Target, val rhs: Expression, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
+
+internal data class VariadicColonEqualsExpression(
+    val lhs: VariadicTarget, val rhs: VariadicRhs, override val metadata: MetaData
+) : Expression, SatisfyingItem, ExpressingItem {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class EqualsExpression(
     val lhs: Expression, val rhs: Expression, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class NotEqualsExpression(
     val lhs: Expression, val rhs: Expression, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal enum class GroupingType {
     Paren,
@@ -156,7 +198,9 @@ internal enum class GroupingType {
 
 internal data class GroupingExpression(
     val type: GroupingType, val expression: Expression, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal sealed interface Operator : TexTalkNode
 
@@ -174,68 +218,96 @@ internal data class TypeScopedOperatorName(
 
 internal data class MemberScopedName(
     val prefixes: List<Name>, val name: Name, override val metadata: MetaData
-) : Expression
+) : Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class InfixOperatorExpression(
     val operator: Operator,
     val lhs: Expression,
     val rhs: Expression,
     override val metadata: MetaData
-) : OperationExpression
+) : OperationExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class PrefixOperatorExpression(
     val operator: Operator, val value: Expression, override val metadata: MetaData
-) : OperationExpression
+) : OperationExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class PostfixOperatorExpression(
     val operator: Operator, val value: Expression, override val metadata: MetaData
-) : OperationExpression
+) : OperationExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal sealed interface FunctionCall : Expression
 
 internal data class RegularFunctionCall(
     val name: Name, val args: List<Expression>, override val metadata: MetaData
-) : FunctionCall
+) : FunctionCall {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class SubParamFunctionCall(
     val name: Name, val subArgs: List<Expression>, override val metadata: MetaData
-) : FunctionCall
+) : FunctionCall {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class SubAndRegularParamFunctionCall(
     val name: Name,
     val subArgs: List<Expression>,
     val args: List<Expression>,
     override val metadata: MetaData
-) : FunctionCall
+) : FunctionCall {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class TupleCall(val args: List<Expression>, override val metadata: MetaData) :
-    Expression
+    Expression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal sealed interface AssignmentExpression : Expression
 
 internal data class NameAssignmentExpression(
     val lhs: Name, val rhs: Expression, override val metadata: MetaData
-) : AssignmentExpression
+) : AssignmentExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class FunctionAssignmentExpression(
     val lhs: Function, val rhs: Expression, override val metadata: MetaData
-) : AssignmentExpression
+) : AssignmentExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class SetAssignmentExpression(
     val lhs: Set, val rhs: Expression, override val metadata: MetaData
-) : AssignmentExpression
+) : AssignmentExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class SequenceAssignmentExpression(
     val lhs: Sequence, val rhs: Expression, override val metadata: MetaData
-) : AssignmentExpression
+) : AssignmentExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class TupleAssignmentExpression(
     val lhs: Tuple, val rhs: Expression, override val metadata: MetaData
-) : AssignmentExpression
+) : AssignmentExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal data class NameAssignmentAssignmentExpression(
     val lhs: NameAssignment, val rhs: Expression, override val metadata: MetaData
-) : AssignmentExpression
+) : AssignmentExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
 
 internal enum class MetaIsFormItem {
     Statement,

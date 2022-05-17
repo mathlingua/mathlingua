@@ -1,0 +1,300 @@
+::
+# Ordered Sets
+
+To describe the First Fundamental Theorem of
+Calculus, we need to describe the real numbers.
+However, to do that, we need to describe what an
+*ordered set* is.
+
+An ordered set is a set along with a binary
+operation defined next.
+::
+
+[\binary.relation:on{A}]
+Defines: R
+when: 'A is \set'
+means: 'R is \set'
+satisfying: 'R \subset/ {A \set.product/ A}'
+written: "\textrm{Binary Relation on } A?"
+Metadata:
+. note: "Two elements $a, b \in A$ are said to be related
+         if $(a, b) \in R$."
+
+
+::
+Now, before defining an ordered set, we need to
+describe what it means for exactly one of several
+statements to be true.
+::
+
+
+[\that{a}:not{b}{c}]
+States:
+that:
+. 'a'
+. not: 'b'
+. not: 'c'
+written: "a? \textrm{ holds but not } b? \textrm{ and not } c?"
+
+
+
+
+[\exactly.one.of{a}{b}{c}]
+States:
+that:
+. or:
+  . '\that{a}:not{b}{c}'
+  . '\that{b}:not{a}{c}'
+  . '\that{c}:not{a}{b}'
+written: "\textrm{exactly one of } a?, b?, \textrm{ and } c?"
+
+
+::
+Now an ordered set is a set with a relation that allows
+elements to be ordered.  This is needed because the real
+number system will turn out to be an ordered set.
+::
+
+
+[\ordered.set]
+Defines: (S, <)
+means:
+. 'S is \set'
+satisfying:
+. '< is \binary.relation:on{S}'
+. forAll: x, y
+  where: 'x, y in S'
+  then:
+  . '\exactly.one.of{x < y}{y < x}{x = y}'
+. forAll: x, y, z
+  where: 'x, y, z in S'
+  then:
+  . if:
+    . 'x < y'
+    . 'y < z'
+    then:
+    . 'x < z'
+written: "\textrm{Ordered Set}"
+called: "abc"
+Providing:
+. membership:
+  through: 'S'
+
+
+::
+Within an ordered set the operations $<$, $>$, $\leq$,
+and $\geq$ can be defined.
+::
+
+
+[a \leq{X}/ b]
+States:
+given: (S, <)
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. or:
+  . 'a < b'
+  . 'a = b'
+written: "a? \leq b?"
+called: "$a?$ is less than or equal to $b?$"
+
+
+[a \lt{X}/ b]
+States:
+given: (S, <)
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. 'a < b'
+written: "a? < b?"
+called: "$a?$ is less than $b?$"
+
+
+[a \gt{X}/ b]
+States:
+given: (S, <)
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. 'b \lt{X}/ a'
+written: "a? > b?"
+called: "$a?$ is greater than $b?$"
+
+
+[a \geq{X}/ b]
+States:
+given: (S, <)
+when:
+. 'X := (S, <) is \ordered.set'
+. 'a, b in X'
+that:
+. 'b \leq{X}/ a'
+written: "a? \geq b?"
+called: "$a?$ is greater than or equal to $b?$"
+
+
+::
+Now to define the Riemann Integral we will need to
+generalize the *maximum* of a set of real numbers.
+
+First, we need to describe what it means for an element
+to be an upper bound of a set.
+::
+
+
+[\upper.bound:of{X}]
+Defines: b
+given: E, (S, <)
+when:
+. 'X := (S, <) is \ordered.set'
+. 'E \subset/ S'
+means: 'b in X'
+satisfying:
+. forAll: x
+  where: 'x in E'
+  then: 'x \leq{X}/ b'
+written: "\textrm{Upper Bound of } X?"
+
+
+::
+Any ordered set that has an upper bound is said to be
+*bounded above*.
+::
+
+
+[\bounded.above.set]
+Defines: X := (E, <)
+means: 'X is \ordered.set'
+satisfying:
+. exists: b
+  where:
+  . 'b is \upper.bound:of{X}'
+written: "\textrm{Bounded Above}"
+
+
+::
+Now we can define the *supremum* of a set that generalizes
+the maximum of a set.
+::
+
+
+[\supremum:of{X}]
+Defines: beta
+when: 'X is \bounded.above.set'
+means: 'beta is \upper.bound:of{X}'
+expressing:
+. forAll: b
+  where: 'b is \upper.bound:of{X}'
+  then: 'b \geq{X}/ beta'
+written: "\sup X?"
+called: "Supremum of $X?$"
+
+
+::
+In a similar way to how we generalized the maximum of a set,
+we generalize the minimum of a set.  Hence, similar to the
+upper bound of a set, we define a lower bound of a set.
+::
+
+
+[\lower.bound:of{X}]
+Defines: b
+given: E, (S, <)
+when:
+. 'X := (S, <) is \ordered.set'
+. 'E \subset/ S'
+means: 'b in X'
+satisfying:
+. forAll: x
+  where: 'x in E'
+  then: 'x \geq{X}/ b'
+written: "\textrm{Lower Bound of } X?"
+
+
+::
+Any set with a lower bound is said to be *bounded below*.
+::
+
+
+[\bounded.below.set]
+Defines: X := (E, <)
+means: 'X is \ordered.set'
+satisfying:
+. exists: b
+  where:
+  . 'b is \lower.bound:of{X}'
+written: "\textrm{Bounded Below}"
+
+
+::
+Next, we define the *infimum* of a set that generalizes
+the minimum of a set.
+::
+
+
+[\infimum:of{X}]
+Defines: alpha
+when: 'X is \bounded.above.set'
+means: 'alpha is \lower.bound:of{X}'
+expressing:
+. forAll: a
+  where: 'a is \lower.bound:of{X}'
+  then: 'a \leq{X}/ alpha'
+written: "\inf X?"
+called: "Infimum of $X?$"
+
+
+::
+Last, we`\'`ll define what it means for a set to have
+the *least-upper-bound property* which turns out to be
+a key characteristic of the real numbers.
+
+However, before doing so we need to define what it means for
+a set to be empty or non-empty.
+::
+
+
+[\empty.set]
+Defines: X
+means: 'X is \set'
+expressing:
+. not:
+  . exists: x
+    where:
+    . 'x in X'
+written: "\textrm{Empty Set}"
+
+
+[\nonempty.set]
+Defines: X
+means: 'X is \set'
+satisfying:
+. not: 'X := \empty.set'
+written: "\textrm{Non-Empty Set}"
+
+
+::
+With the above, we can define the *least-upper-bound property*
+as follows:
+::
+
+
+[\least.upper.bound.property.set]
+Defines: X := (S, <)
+means: 'X is \ordered.set'
+satisfying:
+. forAll: E
+  where:
+  . 'E is \nonempty.set'
+  . 'E is \bounded.above.set'
+  suchThat:
+  . 'E \subset/ S'
+  then:
+  . exists: b
+    suchThat:
+    . 'b = \supremum:of{X}'
+written: "\textrm{Least-Upper-Bound Property Set}"

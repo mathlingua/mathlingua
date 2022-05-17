@@ -1,0 +1,765 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="description" content="A codex of mathematical knowledge">
+    <meta name="keywords" content="math, maths, mathematics, knowledge, database, repository, codex, encyclopedia">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
+          integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
+          crossorigin="anonymous">
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
+            integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
+            crossorigin="anonymous">
+    </script>
+    <script defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js">
+    </script>
+
+        <script>
+            
+    function buildMathFragment(rawText) {
+        let text = rawText;
+        if (text[0] === '"') {
+            text = text.substring(1);
+        }
+        if (text[text.length - 1] === '"') {
+            text = text.substring(0, text.length - 1);
+        }
+        text = text.replace(/([a-zA-Z0-9])\?\??/g, '$1');
+        const fragment = document.createDocumentFragment();
+        let buffer = '';
+        let i = 0;
+        while (i < text.length) {
+            if (text[i] === '$' && text[i+1] === '$' && text[i+2] === '$') {
+                i += 3; // skip over the $s
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '$' && text[i+1] === '$' && text[i+2] === '$')) {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the second $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the third $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '[') {
+                i += 2; // skip over \ and [
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                span.className = 'display-mode';
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ']')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ']') {
+                    i++; // move past the ]
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '(') {
+                i += 2; // skip over \ and ()
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ')')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ')') {
+                    i++; // move past the )
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '$' && text[i+1] === '$') {
+                i += 2; // skip over $ and $
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                span.className = 'display-mode';
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '$' && text[i+1] === '$')) {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '$') {
+                i++; // skip over the $
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                     text[i] !== '$') {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else {
+                buffer += text[i++];
+            }
+        }
+
+        if (buffer.length > 0) {
+            fragment.appendChild(document.createTextNode(buffer));
+        }
+
+        return fragment;
+    }
+
+    function render(node) {
+        if (node.className && node.className.indexOf && node.className.indexOf('no-render') >= 0) {
+            return;
+        }
+
+        let isInWritten = false;
+        const parent = node.parentNode;
+        if (node.className === 'mathlingua') {
+            for (let i=0; i<node.childNodes.length; i++) {
+                const n = node.childNodes[i];
+                if (n && n.className === 'mathlingua-header' &&
+                    n.textContent === 'written:') {
+                    isInWritten = true;
+                    break;
+                }
+            }
+        }
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+            const child = node.childNodes[i];
+
+            // node is an element node => nodeType === 1
+            // node is an attribute node => nodeType === 2
+            // node is a text node => nodeType === 3
+            // node is a comment node => nodeType === 8
+            if (child.nodeType === 3) {
+                let text = child.textContent;
+                if (text.trim()) {
+                    if (isInWritten) {
+                        // if the text is in a written: section
+                        // turn "some text" to $$$some text$$$
+                        // so the text is in math mode
+                        if (text[0] === '"') {
+                            text = text.substring(1);
+                        }
+                        if (text[text.length - 1] === '"') {
+                            text = text.substring(0, text.length - 1);
+                        }
+                        text = '$$$' + text + '$$$';
+                    }
+                    const fragment = buildMathFragment(text);
+                    i += fragment.childNodes.length - 1;
+                    node.replaceChild(fragment, child);
+                }
+            } else if (child.nodeType === 1) {
+                render(child);
+            }
+        }
+    }
+
+
+            
+    function flipEntity(id) {
+        const renEl = document.getElementById('rendered-' + id);
+        const litEl = document.getElementById('literal-' + id);
+        if (renEl && litEl) {
+            if (renEl.className === 'mathlingua-rendered-visible') {
+                renEl.className = 'mathlingua-rendered-hidden';
+                litEl.className = 'mathlingua-literal-visible';
+            } else {
+                renEl.className = 'mathlingua-rendered-visible';
+                litEl.className = 'mathlingua-literal-hidden';
+            }
+        }
+    }
+
+    function toggleProof(id) {
+        const proofEl = document.getElementById('proof-' + id);
+        const iconEl = document.getElementById('icon-' + id);
+        if (proofEl) {
+            if (proofEl.className === 'mathlingua-proof-hidden') {
+                proofEl.className = 'mathlingua-proof-shown';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9652;';
+                }
+            } else {
+                proofEl.className = 'mathlingua-proof-hidden';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9662;';
+                }
+            }
+        }
+    }
+
+
+            function initPage() {
+                const el = document.getElementById('__main_content__');
+                if (el) {
+                    render(el);
+                }
+            }
+        </script>
+        <style>
+            
+    .content {
+        padding-top: 1.5em;
+        padding-bottom: 1em;
+        margin-top: 2.5em;
+        margin-bottom: 1em;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+        font-size: 1em;
+        width: 50em;
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-color: rgba(210, 210, 210);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(240, 240, 240, 0.5);
+    }
+
+    @media screen and (max-width: 500px) {
+        .content {
+            width: 99%;
+            margin-top: 2.5vh;
+            margin-bottom: 0;
+        }
+    }
+
+    body {
+        background-color: #f0f0f3;
+        padding-bottom: 1em;
+    }
+
+    hr {
+        border: 0.5px solid #efefef;
+    }
+
+    h1, h2, h3, h4 {
+        color: #0055bb;
+        text-align: center;
+    }
+
+    p {
+        text-align: left;
+        text-indent: 0;
+    }
+
+    .mathlingua-flip-icon {
+        position: sticky;
+        top: 1em;
+        left: 100%;
+        border: none;
+        color: #aaaaaa;
+        background: #ffffff;
+        margin: 0;
+        padding: 0;
+        padding-right: 2em;
+        font-size: 110%;
+    }
+
+    .mathlingua-rendered-visible {
+        display: block;
+    }
+
+    .mathlingua-rendered-hidden {
+        display: none;
+    }
+
+    .mathlingua-literal-visible {
+        display: block;
+    }
+
+    .mathlingua-literal-hidden {
+        display: none;
+    }
+
+    .mathlingua-home {
+        width: 80%;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .mathlingua-dir-item-hidden {
+        display: none;
+    }
+
+    .mathlingua-dir-item-shown {
+        display: block;
+    }
+
+    .mathlingua-home-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -1.25ex;
+        margin-bottom: -1ex;
+    }
+
+    .mathlingua-list-dir-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
+    }
+
+    .mathlingua-list-file-item {
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
+    }
+
+    .mathlingua-top-level {
+        overflow-y: hidden;
+        overflow-x: auto;
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-radius: 2px;
+        padding-top: 2em;
+        padding-bottom: 1em;
+        padding-left: 2em;
+        padding-right: 2em;
+        max-width: 75%;
+        width: max-content;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+        margin-top: 2.25em;
+        margin-bottom: 2.25em;
+        border-color: rgba(230, 230, 230);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(240, 240, 240, 0.5);
+    }
+
+    .mathlingua-block-comment {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-block-comment-top-level {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        text-align: left;
+        text-indent: 0;
+        background-color: #ffffff;
+        max-width: 80%;
+        width: 80%;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+    }
+
+    .end-mathlingua-top-level {
+        padding-top: 0.5em;
+        margin: 0;
+    }
+
+    .mathlingua-topic-group-id {
+        display: block;
+        padding: 0 0 1em 0;
+        font-family: monospace;
+        text-align: center;
+        color: #5500aa;
+    }
+
+    .mathlingua-topic-name {
+        display: block;
+        padding: 0 0 0.2em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        font-weight: bold;
+        text-align: center;
+        color: #0055bb;
+    }
+
+    .mathlingua-topic-content {
+        display: block;
+        padding: 0 0 1.2em 0;
+        margin: 0.2em 0 -1.2em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        color: #000000;
+    }
+
+    .mathlingua-overview {
+        display: block;
+        padding: 0.5em 0 0.5em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        color: #000000;
+        margin-top: -2ex;
+        margin-bottom: -2ex;
+    }
+
+    .mathlingua-resources-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.25em;
+    }
+
+    .mathlingua-resources-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+    
+    .mathlingua-topics-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.5em;
+    }
+
+    .mathlingua-topic-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+
+    .mathlingua-related-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.5em;
+    }
+
+    .mathlingua-related-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+
+    .mathlingua-foundation-header {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        text-align: center;
+        font-weight: normal;
+        padding-bottom: 1ex;
+        color: #777777;
+    }
+
+    .mathlingua {
+        font-family: monospace;
+    }
+
+    .mathlingua-proof-icon {
+        float:right;
+        color: #aaaaaa;
+        cursor: default;
+    }
+
+    .mathlingua-proof-shown {
+        display: block;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-hidden {
+        display: none;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-header {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-header-literal {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: monospace;
+    }
+
+    .mathlingua-whitespace {
+        padding: 0;
+        margin: 0;
+        margin-left: 1ex;
+    }
+
+    .mathlingua-id {
+        color: #5500aa;
+        overflow-x: scroll;
+    }
+
+    .mathlingua-text {
+        color: #000000;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
+    }
+
+    .mathlingua-text-no-render {
+        color: #000000;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
+    }
+
+    .literal-mathlingua-text {
+        color: #386930;
+        display: inline;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+
+    .literal-mathlingua-text-no-render {
+        color: #386930;
+        display: inline;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+
+    .mathlingua-url {
+        color: #0000aa;
+        text-decoration: none;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-link {
+        color: #0000aa;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .mathlingua-statement-no-render {
+        color: #007377;
+    }
+
+    .mathlingua-statement-container {
+        display: inline;
+    }
+
+    .literal-mathlingua-statement {
+        color: #007377;
+    }
+
+    .mathlingua-dropdown-menu-shown {
+        position: absolute;
+        display: block;
+        z-index: 1;
+        background-color: #ffffff;
+        box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                    inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+        border: solid;
+        border-width: 1px;
+        border-radius: 0px;
+        border-color: rgba(200, 200, 200);
+    }
+
+    .mathlingua-dropdown-menu-hidden {
+        display: none;
+    }
+
+    .mathlingua-dropdown-menu-item {
+        display: block;
+        margin: 0.75ex;
+    }
+
+    .mathlingua-dropdown-menu-item:hover {
+        font-style: italic;
+    }
+
+    .mathlingua-called {
+        font-weight: bold;
+        display: table;
+        margin-top: -1em;
+        margin-left: auto;
+        margin-bottom: -2em;
+        margin-right: auto;
+    }
+
+    .display-mode {
+        margin-left: auto;
+        margin-right: auto;
+        width: max-content;
+        display: block;
+        padding-top: 2ex;
+        padding-bottom: 3ex;
+    }
+
+    .katex {
+        font-size: 1em;
+    }
+
+    .katex-display {
+        display: contents;
+    }
+
+    .katex-display > .katex {
+        display: contents;
+    }
+
+    .katex-display > .katex > .katex-html {
+        display: contents;
+    }
+
+        </style>
+    </head>
+    <body onload="initPage()">
+        <div class="content" id="__main_content__">
+            <div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <h1>The MathLingua Language</h1><p><em>MathLingua is a language to create precise,
+automatically analyzed, beautifully rendered, collections
+of mathematical knowledge.</em></p><style>
+.icon {
+transform: scale(0.15);
+margin-top: -20em;
+margin-bottom: -20em;
+margin-left: -2.5em;
+margin-right: 0;
+padding: 0;
+}
+</style>
+<div class="icon">
+<img src="./content/mathlingua-icon.png" />
+</div>
+<h2>The Problem</h2><p>Today there is so much mathematical knowledge, (definitions,
+theorems, axioms, and conjectures) that it is hard to keep track
+of what is known and what is unknown.</p><p>To record mathematical knowledge today one typically uses either:</p><ul><li>LaTeX that describes what a math statement looks like and
+is convenient to write, but:</li></ul><ol><li>doesn<code>'</code>t describe what a math statement means</li><li>doesn<code>'</code>t have tools to verify that definitions and
+theorems are used correctly and don<code>'</code>t reference
+undefined symbols or definitions</li></ol><ul><li>proof assistant languages that describe what a math
+statement means and have verification capabilities but:</li></ul><ol><li>don<code>'</code>t describe what a math statement looks like</li><li>have a very steep learning curve</li><li>require all math statements to be expressed extremely
+formally often very differently from how they are
+typically expressed in math literature</li></ol><p>What we need is a language to easily describe the meaning
+and appearance of mathematical concepts with the same level of
+formality of traditional math literature, all with the ability
+to be analyzed automatically.</p><p>MathLingua is that language.</p><h2>Introducing MathLingua</h2><p>MathLingua is a unique language for creating collections of
+mathematical knowledge that are expressed precisely, rendered
+beautifully, and whose connections and usages are analyzed
+automatically.</p><p>This allows authors to focus on describing what definitions,
+theorems, axioms, and conjectures mean without having to manually
+check definitions are used correctly, every term used
+is defined, and statements are precise.</p><p>MathLingua is not a typesetting language like LaTeX, and it is
+not a proof assistant (or automated theorem prover) like Lean.
+Instead, it is in-between.</p><p>It provides checking of results (although doesn<code>'</code>t provide all
+of the checks of proof assistants) while providing an easy to use
+language for precisely describing the structure of results with
+the level of formality comparable to traditional math literature.</p><p>The goal of MathLingua isn<code>'</code>t automated theorem proving.  Instead
+it is to provide a robust and easy to use tool for describing
+mathematics with more structure than what is found in traditional
+books and encyclopedias.</p><h2>An Example</h2><p>Consider (one part of) the Fundamental Theorem of Calculus
+express in MathLingua:</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('1d500f6f-53e4-4388-b571-152a02264485')">&#8226;</button><div id='rendered-1d500f6f-53e4-4388-b571-152a02264485' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Fundamental Theorem of Calculus</p> </span><span class='mathlingua'><div id='957891bc-2ead-46bb-a9cc-f38426c294d4-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header'>Theorem:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$f(x)$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$F(x)$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$I$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$a$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$b$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>where:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7222145345917584412-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='a, b is \real'>$$$a, b$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Real}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--7222145345917584412-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\real', 'statement--7222145345917584412-CUSTOM_SUFFIX')">\real</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3155670203109193743-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='f(x) is \continuous.function:on{I}'>$$$f(x)$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Continuous Function on } I$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3155670203109193743-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\continuous.function:on', 'statement-3155670203109193743-CUSTOM_SUFFIX')">\continuous.function:on</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3925634127287792500-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='F(x) is \indefinite.integral:of{f(x)}:on{I}'>$$$F(x)$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Indefinite Integral of } f(x) \textrm{ on } A?$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3925634127287792500-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\indefinite.integral:of:on', 'statement-3925634127287792500-CUSTOM_SUFFIX')">\indefinite.integral:of:on</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>suchThat:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3924382214573609022-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='a < b'>$$$a < b$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3924382214573609022-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-796975472325014112-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='I := \open.interval{a, b}'>$$$I := (a, b)$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-796975472325014112-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\open.interval', 'statement-796975472325014112-CUSTOM_SUFFIX')">\open.interval</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>then:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5582455180220232596-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'>$$$\displaystyle \int_{a}^{b} f(x) \: d x = F(b) - F(a)$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-5582455180220232596-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\definite.integral:of', 'statement-5582455180220232596-CUSTOM_SUFFIX')">\definite.integral:of</a></div></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-1d500f6f-53e4-4388-b571-152a02264485' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='ca43f23b-66e3-465f-9963-d29755f021ad-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header-literal'>Theorem:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Fundamental Theorem of Calculus" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>f(x)</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>F(x)</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>I</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>a</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>b</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>where:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--8890759247196751243-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a, b is \real'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--8890759247196751243-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\real', 'statement--8890759247196751243-CUSTOM_SUFFIX')">\real</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7957467494538242443-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'f(x) is \continuous.function:on{I}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-7957467494538242443-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\continuous.function:on', 'statement-7957467494538242443-CUSTOM_SUFFIX')">\continuous.function:on</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3706696917525200100-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'F(x) is \indefinite.integral:of{f(x)}:on{I}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3706696917525200100-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\indefinite.integral:of:on', 'statement-3706696917525200100-CUSTOM_SUFFIX')">\indefinite.integral:of:on</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>suchThat:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-9089293750783895311-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a < b'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-9089293750783895311-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5640657549471747529-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'I := \open.interval{a, b}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-5640657549471747529-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\open.interval', 'statement-5640657549471747529-CUSTOM_SUFFIX')">\open.interval</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>then:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--175851697776047079-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--175851697776047079-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\definite.integral:of', 'statement--175851697776047079-CUSTOM_SUFFIX')">\definite.integral:of</a></div></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>The MathLingua code for the theorem is given below, and the
+MathLingua command line tool <code>mlg</code> automatically creates the
+above rendering of the theorem.</p> 
+  <div class='mathlingua-top-level-comment-block'><span class='mathlingua'><span class='mathlingua'><div id='bc85bc9e-7a2b-449e-8b83-bb0407d71fcc-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua'><span class='mathlingua-header-literal'>Theorem:</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Fundamental Theorem of Calculus" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>f(x)</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>F(x)</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>I</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>a</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>b</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>where:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5688750470612777948-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a, b is \real'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-5688750470612777948-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\real', 'statement-5688750470612777948-CUSTOM_SUFFIX')">\real</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4403912217167278365-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'f(x) is \continuous.function:on{I}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4403912217167278365-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\continuous.function:on', 'statement--4403912217167278365-CUSTOM_SUFFIX')">\continuous.function:on</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1322335556305974129-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'F(x) is \indefinite.integral:of{f(x)}:on{I}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1322335556305974129-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\indefinite.integral:of:on', 'statement--1322335556305974129-CUSTOM_SUFFIX')">\indefinite.integral:of:on</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>suchThat:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1245140889268184759-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'a < b'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1245140889268184759-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-2139305765521457346-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'I := \open.interval{a, b}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-2139305765521457346-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\open.interval', 'statement-2139305765521457346-CUSTOM_SUFFIX')">\open.interval</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>then:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2338128555952536598-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2338128555952536598-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\definite.integral:of', 'statement--2338128555952536598-CUSTOM_SUFFIX')">\definite.integral:of</a></div></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div>   <p>Note that MathLingua provides a clear syntax that is as
+verbose as spoken mathematics but renders to the symbols
+used in written mathematics.</p><p>Next, the MathLingua language uses a clean indented style with
+a consistent format for describing definitions, theorems, and
+other items to make recording and reading such information easy.</p><p>Further, the MathLingua language allows authors to define not
+just the meaning of definitions, but how the concepts they
+defined are written in the literature or spoken out loud.</p><p>Last, without any configuration needed, the MathLingua
+tooling generates beautiful dynamic web pages to explore
+the math catalog created.  This web page itself, is made
+entirely with MathLingua!</p><h2>The Power of MathLingua</h2><p>To see the power of the web pages created, click on the definite
+integral symbol inside the Fundamental Theorem of Calculus
+definition above.</p><p>A popup will appear that shows that this
+represents <code>\definite.integral:of</code> and if you click on that
+text, the definition of the definite integral is displayed.</p><p>Further, you can keep clicking on text in the definition
+of the definite integral to dive deeper into understanding
+the definition.</p><p>All an author needs to do is describe the Fundamental
+Theorem of Calclus and the definite integral in MathLingua.
+The MathLingua tooling then handles everything else to make
+a beautiful and powerful web page to explore that knowledge.</p><h2>More Examples</h2><p>The <em>A Detailed Example</em> section of this site contains a
+more detailed example of a collection of MathLingua documents.</p><p>In addition, the <a href="https://www.mathcodex.org">Math Codex</a> is
+an ongoing effort to build a library of mathematical knowledge
+written in MathLingua.  The source code can be found at the
+<a href="https://github.com/DominicKramer/codex">codex</a> GitHub repo.</p><h2>Contact</h2><p>MathLingua is still in beta.  It and this document are still
+under development.</p><p>To discuss MathLingua you can join the
+<a href="https://discord.gg/FsG7HvdmZ6">MathLingua Discord</a>
+or send an email to Dominic Kramer, the
+creator of MathLingua, at
+<a href="mailto:DominicKramer@gmail.com">DominicKramer@gmail.com</a>.</p><p>All questions, comments, and feedback are greatly
+appreciated.</p><h2>What$'$s Next</h2><p>Use the menu icon in the top left corner of the page to
+navigate this document and discover more about
+MathLingua or use the right arrow icon below to go to
+the next page.</p> 
+ </span></span></div>
+        </div>
+    </body>

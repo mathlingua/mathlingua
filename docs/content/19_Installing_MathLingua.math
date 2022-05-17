@@ -1,0 +1,44 @@
+::
+# Installing MathLingua
+
+To author MathLingua documents, you need to install `mlg`,
+the MathLingua command line tool, and have a Java Runtime
+Environment (version 8 or higher) on your computer.
+
+To install `mlg`, simply download the latest release for
+your particular computer from the
+[MathLingua releases page](https://github.com/DominicKramer/mathlingua/releases).
+
+For example, for a 64-bit computer running MacOS, download
+```
+mlg-<version>-darwin-amd64
+```
+
+Next, save that executable file to the directory where
+you want to write your MathLingua documents and make the
+file executable on MacOS and Linux systems, for example
+using,
+
+```
+chomd +x <downloaded mlg file>
+```
+
+**Note:** You can rename the executable to `mlg` (or `mlg.exe`
+on Windows) to make it easier to use.
+
+Next, see the [Java documentation](https://www.oracle.com/java/technologies/downloads/)
+for instructions on how to install a Java Runtime Environment.
+
+## Using `mlg` in a Git Repository
+
+If the `mlg` file downloaded above is stored in a Git
+repository, add `.mlg` to the repository's `.gitignore`
+file.
+
+This is needed because the `.mlg` directory is a location
+where `mlg` stores files it needs to run, but those files
+should not be stored in version control.
+
+For other version control systems, use the appropriate
+method for that system to ignore the `.mlg` directory.
+::

@@ -1,0 +1,340 @@
+::
+# The Riemann Integral
+
+Now we have the background needed to describe the Riemann
+Integral, the final concept needed to describe the First
+Fundamental Theorem of Calculus.
+
+Here we use the Darboux approach to define the Riemann
+Integral, but before doing so we must define what it
+means for a real-valued function to be *bounded* since,
+to keep things simple, we will be focusing only on
+bounded functions.
+::
+
+
+[\bounded.real.function:on{I}]
+Defines: f(x)
+given: a, b
+when: 'I := \closed.interval{a, b}'
+means: 'f is \function:on{I}:to{\real.numbers}'
+satisfying:
+. exists: M
+  where: 'M is \real'
+  suchThat:
+  . forAll: t
+    where: 't in I'
+    then: '\real.abs(f(t)) \real.leq/ M'
+written: "\textrm{Bounded Real Function on } I?"
+
+
+::
+The Riemann Integral of $f(x)$ from $x=a$ to $x=b$ describes
+a way to calculute the area under the curve of $f(x)$ on the
+interval $[a, b]$.
+
+To describe how this area is calculated, we need to define
+what it means to *partition* the interval $[a, b]$ into pieces.
+Any such partition is a sequence of real numbers, which we
+define next.
+::
+
+
+[\finite.real.sequence:size{n}]
+Defines: X := {x_{i}}_{i}
+when: 'n is \integer'
+satisfying:
+. forAll: j
+  where: 'j is \integer'
+  suchThat:
+  . 'j \integers.geq/ 0'
+  . 'j \integers.leq/ n'
+  then:
+  . 'x_{j} is \real'
+written: "\textrm{Finite Sequence of Size } n?"
+called: "Finite Sequence of Size $n?$"
+
+
+::
+Now we can define what it means for a sequence to be
+a *partition* of a closed interval.
+::
+
+
+[\partition:of{I}:size{n}]
+Defines: X := {x_{i}}_{i}
+given: a, b
+when: 'I := \closed.interval{a, b}'
+means:
+. 'X is \finite.real.sequence:size{n}'
+satisfying:
+. 'x_{0} = a'
+. 'x_{n} = b'
+. forAll: j
+  where: 'j is \integer'
+  suchThat:
+  . 'j \integers.geq/ 1'
+  . 'j \integers.leq/ n'
+  then:
+  . 'x_{j \integers.-/ 1} \integers.lt/ x_{j}'
+written: "\textrm{Partition of } I? \text{ of Size } n?"
+called: "Partition of $I?$ of size $n?$"
+
+
+::
+Now the area underneath a curve of $f(x)$ will be said to
+exist if better and better approximations to the area that
+overestimate the area and better and better approximations
+to the area that underestimate the area converge to the same
+value.
+
+Before describing this in more detail, though, we need to
+define what it means to take a sum of a finite quantity of
+real numbers.
+::
+
+
+[\finite.sum[i]_{a}^{b}{f(i)}]
+Defines: L
+given: S(n)
+when:
+. 'S(a) := f(a)'
+. forAll: j
+  where: 'j is \integer'
+  suchThat:
+  . 'j \integers.gt/ a'
+  . 'j \integers.leq/ b'
+  then:
+  . 'S(j) := f(j) \integers.+/ S(j \integers.-/ 1)'
+means: 'L is \real'
+expressing:
+. 'L := S(b)'
+written: "\displaystyle \sum_{i? = a?}^{b?} f?"
+called: "Finite Sum of $f$ from $a?$ to $b?$"
+
+
+::
+Next, given a partition of points, we define what it means
+for a rectangle at the $i$-th point in that partition to
+underestimate the area under the curve of $f(x)$ between
+the $i$-th point and the $(i+1)$-th point in the partition.
+::
+
+
+[\infimum:of{f}:over{P}:at{i}]
+Defines: L
+given: I, a, b, n, {p_{j}}_{j}
+when:
+. 'I := \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := {p_{j}}_{j} is \partition:of{I}:size{n}'
+. 'i is \integer'
+. 'i \integers.geq/ 1'
+. 'i \integers.leq/ n'
+means: 'L is \real'
+expressing:
+. 'L := \infimum:of{\set[x]:where{f(x)}
+                           :suchThat{x \real.geq/ x_{i - 1}}
+                                    {x \real.leq/ x_{i}}}'
+written: "m_{i?, P?, f?}"
+called: "Infimum of $f?$ over partition $P?$ at index $i?$"
+
+
+::
+Similarly, we define what it means for a rectangle to
+overestimate the area under the curve of $f(x)$ between
+two points in a partition.
+::
+
+
+[\supremum:of{f}:over{P}:at{i}]
+Defines: L
+given: I, a, b, n, {p_{j}}_{j}
+when:
+. 'I := \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := {p_{j}}_{j} is \partition:of{I}:size{n}'
+. 'i is \integer'
+. 'i \integers.geq/ 1'
+. 'i \integers.leq/ n'
+means: 'L is \real'
+expressing:
+. 'L := \supremum:of{\set[x]:where{f(x)}
+                            :suchThat{x \real.geq/ x_{i - 1}}
+                                     {x \real.leq/ x_{i}}}'
+written: "M_{i?, P?, f?}"
+called: "Supremum of $f?$ over partition $P?$ at index $i?$"
+
+
+::
+With this, we can define the lower and upper *Darboux Sums*
+of a function $f(x)$ for a partition $P$.
+
+The lower Darboux sum gives the underestimated approximation of
+the area under the curve $f(x)$ for *a particular* partition
+$P$.
+::
+
+
+[\lower.darboux.sum:of{f}:over{P}]
+Defines: S
+given: I, a, b, n, {x_{i}}_{i}
+when:
+. 'I := \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+means: 'S is \real'
+expressing:
+. 'S := \finite.sum[i]_{0}^{n}{m_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
+using:
+. 'm_{i} := \infimum:of{f}:over{P}:at{i}'
+written: "L(f?, P?)"
+called: "Lower Dorboux Sum of $f?$ over $P?$"
+
+
+::
+Similarly, the upper Darboux sum gives the overestimated
+approximation to the area under the curve $f(x)$ for
+*a particular* partion.
+::
+
+
+[\upper.darboux.sum:of{f}:over{P}]
+Defines: S
+given: I, a, b, n, {x_{i}}_{i}
+when:
+. 'I := \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+. 'P := {x_{i}}_{i} is \partition:of{I}:size{n}'
+means: 'S is \real'
+expressing:
+. 'S := \finite.sum[i]_{0}^{n}{M_{i} * (x_{i} \real.-/ x_{i \integers.-/ 1})}'
+using:
+. 'M_{i} := \supremum:of{f}:over{P}:at{i}'
+. 'p * q := p \real.*/ q'
+written: "U(L?, P?)"
+called: "Upper Darboux Sum of $f?$ over $P?$"
+
+
+::
+Now we can define what the lower and upper *Darboux Integrals*
+of a function $f(x)$ on an interval $[a, b]$ are.
+
+Essentially, the lower Darboux integral gives the best
+lower bound approximation of the area under $f(x)$ on
+$[a, b]$, while the upper Darboux integral gives the best
+upper bound approximation of the area, as defined below.
+::
+
+
+[\lower.darboux.integral:of{f}:on{a, b}]
+Defines: S
+given: I
+when:
+. 'I := \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+means: 'S is \real'
+expressing:
+. 'S := \supremum:of{\set[P, n]:where{L(f, P)}
+                               :suchThat{P is \partition:of{I}:size{n}}}'
+using:
+. 'L(g, P) := \lower.darboux.sum:of{g}:over{P}'
+written: "\underline{\displaystyle \int_{a?}^{b?}} f?"
+called: "Lower Darboux Integral of $f?$ on $[a?, b?]$"
+
+
+[\upper.darboux.integral:of{f}:on{a, b}]
+Defines: S
+given: I
+when:
+. 'I := \closed.interval{a, b}'
+. 'f is \bounded.real.function:on{I}'
+means: 'S is \real'
+expressing:
+. 'S := \infimum:of{\set[P, n]:where{U(f, P)}
+                              :suchThat{P is \partition:of{I}:size{n}}}'
+using:
+. 'U(g, P) := \upper.darboux.sum:of{g}:over{P}'
+written: "\overline{\displaystyle \int_{a?}^{b?}} f?"
+called: "Upper Darboux Integral of $f?$ on $[a?, b?]$"
+
+
+::
+Now, a function $f(x)$ on the interval $[a, b]$ is said to
+be *Riemann Integrable* if the lower and upper Darboux
+integrals of $f(x)$ are the same.
+
+That is, approximating the area under the curve by better
+and better underestimages and approximating the area under
+the curve by better and better overestimages yields the
+same number.
+::
+
+
+[\riemann.integrable.function:on{a, b}]
+Defines: f(x)
+means: 'f is \function:on{R}:to{R}'
+satisfying:
+. '\lower.darboux.integral:of{f}:on{a, b} =
+   \upper.darboux.integral:of{f}:on{a, b}'
+using: 'R := \real.numbers'
+written: "\textrm{Riemann integrable Function on } [a?, b?]"
+called: "Riemann Integrable Function on $[a?, b?]$"
+
+
+::
+Now the Definite Rieman Integral of a Riemann Integrable
+function $f(x)$ on the interval $[a, b]$ is defined to be
+the shared value of the lower and upper Darboux integrals,
+which are necessarily equal since the function is
+Riemann Integrable.
+::
+
+
+[\definite.integral[x]_{a}^{b}:of{f}]
+Defines: S
+when: 'f is \riemann.integrable.function:on{a, b}'
+means: 'S is \real'
+expressing:
+. 'S := \lower.darboux.integral:of{f}:on{a, b}'
+written: "\displaystyle \int_{a?}^{b?} f? \: d x?"
+called: "Definite Integral of $f?$ from $a?$ to $b?$"
+
+
+::
+Last, the fundamental theorems of Calculus shows that
+the operations of differentiation and integration are
+inverses.
+
+The following gives the definition of an *Indefinite
+Integral* of a function $f(x)$, which is a function whose
+derivative is $f(x)$.
+
+Note if $F(x)$ is an Indefinite Integral of $f(x)$ then
+so is $F(x) + C$ for any real number $C$.
+::
+
+
+[\indefinite.integral:of{f}:on{I}]
+Defines: F(x)
+given: a, b
+when:
+. 'I := \open.interval{a, b}'
+. 'f is \function:on{I}:to{\real.numbers}'
+means: 'F(x) is \function:on{I}:to{R}'
+satisfying:
+. forAll: t
+  where: 't in I'
+  then:
+  . '\derivative:of{F}:at{t} = f(t)'
+using: 'R := \real.numbers'
+written: "\textrm{Indefinite Integral of } f? \textrm{ on } A?"
+called: "Indefinite Integral of $f?$ on $A?$"
+
+
+::
+This concludes our description of the minimal set of
+definitions needed to understand the statement of the
+First Fundamental Theorem of Calculus given in the
+[Introduction](#/content/10_Introduction.math).
+::

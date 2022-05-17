@@ -1,0 +1,117 @@
+::
+# Continuous Functions
+
+If $f(x)$ is a real-valued function, it may behave strangely.
+In particular, it may have "holes", places where the
+function is not defined, or "gaps", points where there are
+sudden jumps in the function`\'`s output.
+
+*Continuous functions*, which we define in this section,
+do not have these properties.  However, before defining
+what a continuous function is, we need to define the
+absolute value function which will be used to measure how
+close two real numbers are.
+::
+
+
+[\real.abs(x)]
+Defines: f(x)
+means: 'f(x) is \function:on{\real.numbers}:to{\real.numbers}'
+expressing:
+. piecewise:
+  when: 'x is \positive:within{\real.numbers}'
+  then: 'f(x) := x'
+  else: 'f(x) := \additive.inverse:of{x}:inField{\real.numbers}'
+written: "\left | x? \right |"
+called: "The Absolute Value of $x?$"
+
+
+::
+In this section, our definition of a continuous function
+will be limited to continuous functions on intervals.
+
+An interval is the set of all numbers between two real
+numbers $a$ and $b$.  If neither endpoints are included in
+that set, the interval is said to be an *open interval*.
+
+Otherwise, if both endpoints are included in the set, the
+interval is said to be a *closed interval*.
+
+We make this definitions precise below.  Note that if an
+interval contains one endpoint but not the other, then
+it is neither an open interval nor a closed interval, but
+we won`\'`t be discussing such intervals here.
+::
+
+
+[\open.interval{a, b}]
+Defines: I
+means: 'I is \set'
+expressing:
+. 'I := \set[x]:where{x in \real.numbers}
+               :suchThat{a \real.lt/ x}
+                        {x \real.lt/ b}'
+written: "(a?, b?)"
+called: "The Open Interval from $a?$ to $b?$"
+
+
+[\closed.interval{a, b}]
+Defines: I
+means: 'I is \set'
+expressing:
+. 'I := \set[x]:where{x in \real.numbers}
+               :suchThat{a \real.leq/ x}
+                        {x \real.leq/ b}'
+written: "[a?, b?]"
+called: "The Closed Interval from $a?$ to $b?$"
+
+
+::
+Now we can describe what it means for a function $f(x)$
+to be continuous on an open interval $I$ at some point
+$c \in I$.
+
+Note that our definition of a continuous function assumes
+the function is defined on an open interval.  This restriction
+is not needed and what it means for a function to be
+continuous can be described for functions whose input set,
+or *domain*, is something other than an open interval.
+
+However, since we are only focused on describing the
+First Fundamental Theorem of Calculus stating in the
+[Introduction](#/content/10_Introduction.math), we will
+use the more restrictive definition.
+::
+
+
+[\continuous.function:on{I}:at{c}]
+Defines: f(x)
+given: a, b
+when:
+. 'I := \open.interval{a, b}'
+. 'c in I'
+means: 'f is \function:on{I}:to{\real.numbers}'
+satisfying:
+. 'f(c) = \function.limit[x]_{c}{f(x)}'
+written: "\textrm{Continuous Function on } I? \textrm{ at } c?"
+
+
+::
+Now that we have defined what it means for a function to
+be continuous at a point, we can define what it means for
+a function to be continuous on an entire set.
+::
+
+
+[\continuous.function:on{I}]
+Defines: f(x)
+given: a, b
+when:
+. 'I := \open.interval{a, b}'
+means: 'f is \function:on{I}:to{\real.numbers}'
+satisfying:
+. forAll: c
+  where: 'c in I'
+  then: 'f is \continuous.function:on{I}:at{c}'
+written: "\textrm{Continuous Function on } I?"
+

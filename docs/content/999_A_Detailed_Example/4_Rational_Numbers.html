@@ -1,0 +1,737 @@
+
+<!DOCTYPE html>
+<html>
+    <head>
+        
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+    <meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+    <meta content="utf-8" http-equiv="encoding">
+    <meta name="description" content="A codex of mathematical knowledge">
+    <meta name="keywords" content="math, maths, mathematics, knowledge, database, repository, codex, encyclopedia">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.css"
+          integrity="sha384-zB1R0rpPzHqg7Kpt0Aljp8JPLqbXI3bhnPWROx27a9N0Ll6ZP/+DiW/UqRcLbRjq"
+          crossorigin="anonymous">
+    <script defer
+            src="https://cdn.jsdelivr.net/npm/katex@0.11.1/dist/katex.min.js"
+            integrity="sha384-y23I5Q6l+B6vatafAwxRu/0oK/79VlbSz7Q9aiSZUvyWYIYsd+qj+o24G5ZU2zJz"
+            crossorigin="anonymous">
+    </script>
+    <script defer
+            src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js">
+    </script>
+
+        <script>
+            
+    function buildMathFragment(rawText) {
+        let text = rawText;
+        if (text[0] === '"') {
+            text = text.substring(1);
+        }
+        if (text[text.length - 1] === '"') {
+            text = text.substring(0, text.length - 1);
+        }
+        text = text.replace(/([a-zA-Z0-9])\?\??/g, '$1');
+        const fragment = document.createDocumentFragment();
+        let buffer = '';
+        let i = 0;
+        while (i < text.length) {
+            if (text[i] === '$' && text[i+1] === '$' && text[i+2] === '$') {
+                i += 3; // skip over the $s
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '$' && text[i+1] === '$' && text[i+2] === '$')) {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the second $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the third $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '[') {
+                i += 2; // skip over \ and [
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                span.className = 'display-mode';
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ']')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ']') {
+                    i++; // move past the ]
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '\\' && text[i+1] === '(') {
+                i += 2; // skip over \ and ()
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '\\' && text[i+1] === ')')) {
+                    math += text[i++];
+                }
+                if (text[i] === '\\') {
+                    i++; // move past the \
+                }
+                if (text[i] === ')') {
+                    i++; // move past the )
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '$' && text[i+1] === '$') {
+                i += 2; // skip over $ and $
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                span.className = 'display-mode';
+                let math = '';
+                while (i < text.length &&
+                    !(text[i] === '$' && text[i+1] === '$')) {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: true
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else if (text[i] === '$') {
+                i++; // skip over the $
+                fragment.appendChild(document.createTextNode(buffer));
+                buffer = '';
+
+                const span = document.createElement('span');
+                let math = '';
+                while (i < text.length &&
+                     text[i] !== '$') {
+                    math += text[i++];
+                }
+                if (text[i] === '$') {
+                    i++; // move past the $
+                }
+                try {
+                    katex.render(math, span, {
+                        throwOnError: true,
+                        displayMode: false
+                    });
+                } catch {
+                    span.appendChild(document.createTextNode(math));
+                }
+                fragment.appendChild(span);
+            } else {
+                buffer += text[i++];
+            }
+        }
+
+        if (buffer.length > 0) {
+            fragment.appendChild(document.createTextNode(buffer));
+        }
+
+        return fragment;
+    }
+
+    function render(node) {
+        if (node.className && node.className.indexOf && node.className.indexOf('no-render') >= 0) {
+            return;
+        }
+
+        let isInWritten = false;
+        const parent = node.parentNode;
+        if (node.className === 'mathlingua') {
+            for (let i=0; i<node.childNodes.length; i++) {
+                const n = node.childNodes[i];
+                if (n && n.className === 'mathlingua-header' &&
+                    n.textContent === 'written:') {
+                    isInWritten = true;
+                    break;
+                }
+            }
+        }
+
+        for (let i = 0; i < node.childNodes.length; i++) {
+            const child = node.childNodes[i];
+
+            // node is an element node => nodeType === 1
+            // node is an attribute node => nodeType === 2
+            // node is a text node => nodeType === 3
+            // node is a comment node => nodeType === 8
+            if (child.nodeType === 3) {
+                let text = child.textContent;
+                if (text.trim()) {
+                    if (isInWritten) {
+                        // if the text is in a written: section
+                        // turn "some text" to $$$some text$$$
+                        // so the text is in math mode
+                        if (text[0] === '"') {
+                            text = text.substring(1);
+                        }
+                        if (text[text.length - 1] === '"') {
+                            text = text.substring(0, text.length - 1);
+                        }
+                        text = '$$$' + text + '$$$';
+                    }
+                    const fragment = buildMathFragment(text);
+                    i += fragment.childNodes.length - 1;
+                    node.replaceChild(fragment, child);
+                }
+            } else if (child.nodeType === 1) {
+                render(child);
+            }
+        }
+    }
+
+
+            
+    function flipEntity(id) {
+        const renEl = document.getElementById('rendered-' + id);
+        const litEl = document.getElementById('literal-' + id);
+        if (renEl && litEl) {
+            if (renEl.className === 'mathlingua-rendered-visible') {
+                renEl.className = 'mathlingua-rendered-hidden';
+                litEl.className = 'mathlingua-literal-visible';
+            } else {
+                renEl.className = 'mathlingua-rendered-visible';
+                litEl.className = 'mathlingua-literal-hidden';
+            }
+        }
+    }
+
+    function toggleProof(id) {
+        const proofEl = document.getElementById('proof-' + id);
+        const iconEl = document.getElementById('icon-' + id);
+        if (proofEl) {
+            if (proofEl.className === 'mathlingua-proof-hidden') {
+                proofEl.className = 'mathlingua-proof-shown';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9652;';
+                }
+            } else {
+                proofEl.className = 'mathlingua-proof-hidden';
+                if (iconEl) {
+                    iconEl.innerHTML = '&#9662;';
+                }
+            }
+        }
+    }
+
+
+            function initPage() {
+                const el = document.getElementById('__main_content__');
+                if (el) {
+                    render(el);
+                }
+            }
+        </script>
+        <style>
+            
+    .content {
+        padding-top: 1.5em;
+        padding-bottom: 1em;
+        margin-top: 2.5em;
+        margin-bottom: 1em;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+        font-size: 1em;
+        width: 50em;
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-color: rgba(210, 210, 210);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(240, 240, 240, 0.5);
+    }
+
+    @media screen and (max-width: 500px) {
+        .content {
+            width: 99%;
+            margin-top: 2.5vh;
+            margin-bottom: 0;
+        }
+    }
+
+    body {
+        background-color: #f0f0f3;
+        padding-bottom: 1em;
+    }
+
+    hr {
+        border: 0.5px solid #efefef;
+    }
+
+    h1, h2, h3, h4 {
+        color: #0055bb;
+        text-align: center;
+    }
+
+    p {
+        text-align: left;
+        text-indent: 0;
+    }
+
+    .mathlingua-flip-icon {
+        position: sticky;
+        top: 1em;
+        left: 100%;
+        border: none;
+        color: #aaaaaa;
+        background: #ffffff;
+        margin: 0;
+        padding: 0;
+        padding-right: 2em;
+        font-size: 110%;
+    }
+
+    .mathlingua-rendered-visible {
+        display: block;
+    }
+
+    .mathlingua-rendered-hidden {
+        display: none;
+    }
+
+    .mathlingua-literal-visible {
+        display: block;
+    }
+
+    .mathlingua-literal-hidden {
+        display: none;
+    }
+
+    .mathlingua-home {
+        width: 80%;
+        display: block;
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .mathlingua-dir-item-hidden {
+        display: none;
+    }
+
+    .mathlingua-dir-item-shown {
+        display: block;
+    }
+
+    .mathlingua-home-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -1.25ex;
+        margin-bottom: -1ex;
+    }
+
+    .mathlingua-list-dir-item {
+        font-weight: bold;
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
+    }
+
+    .mathlingua-list-file-item {
+        display: block;
+        margin-top: -0.5ex;
+        margin-bottom: -0.5ex;
+    }
+
+    .mathlingua-top-level {
+        overflow-y: hidden;
+        overflow-x: auto;
+        background-color: white;
+        border: solid;
+        border-width: 1px;
+        border-radius: 2px;
+        padding-top: 2em;
+        padding-bottom: 1em;
+        padding-left: 2em;
+        padding-right: 2em;
+        max-width: 75%;
+        width: max-content;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+        margin-top: 2.25em;
+        margin-bottom: 2.25em;
+        border-color: rgba(230, 230, 230);
+        border-radius: 2px;
+        box-shadow: rgba(0, 0, 0, 0.1) 0px 3px 10px,
+                    inset 0  0 0 0 rgba(240, 240, 240, 0.5);
+    }
+
+    .mathlingua-block-comment {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-block-comment-top-level {
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        text-align: left;
+        text-indent: 0;
+        background-color: #ffffff;
+        max-width: 80%;
+        width: 80%;
+        margin-left: auto; /* for centering content */
+        margin-right: auto; /* for centering content */
+    }
+
+    .end-mathlingua-top-level {
+        padding-top: 0.5em;
+        margin: 0;
+    }
+
+    .mathlingua-topic-group-id {
+        display: block;
+        padding: 0 0 1em 0;
+        font-family: monospace;
+        text-align: center;
+        color: #5500aa;
+    }
+
+    .mathlingua-topic-name {
+        display: block;
+        padding: 0 0 0.2em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        font-weight: bold;
+        text-align: center;
+        color: #0055bb;
+    }
+
+    .mathlingua-topic-content {
+        display: block;
+        padding: 0 0 1.2em 0;
+        margin: 0.2em 0 -1.2em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        color: #000000;
+    }
+
+    .mathlingua-overview {
+        display: block;
+        padding: 0.5em 0 0.5em 0;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        line-height: 1.3;
+        color: #000000;
+        margin-top: -2ex;
+        margin-bottom: -2ex;
+    }
+
+    .mathlingua-resources-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.25em;
+    }
+
+    .mathlingua-resources-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+    
+    .mathlingua-topics-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.5em;
+    }
+
+    .mathlingua-topic-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+
+    .mathlingua-related-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding-top: 0.5em;
+    }
+
+    .mathlingua-related-item {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        padding: 0.1em 0 0.1em 0;
+    }
+
+    .mathlingua-foundation-header {
+        display: block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        text-align: center;
+        font-weight: normal;
+        padding-bottom: 1ex;
+        color: #777777;
+    }
+
+    .mathlingua {
+        font-family: monospace;
+    }
+
+    .mathlingua-proof-icon {
+        float:right;
+        color: #aaaaaa;
+        cursor: default;
+    }
+
+    .mathlingua-proof-shown {
+        display: block;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-hidden {
+        display: none;
+        margin-top: -0.6ex;
+    }
+
+    .mathlingua-proof-header {
+        display: block;
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-header {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-header-literal {
+        color: #0055bb;
+        text-shadow: 0px 1px 0px rgba(255,255,255,0), 0px 0.4px 0px rgba(0,0,0,0.2);
+        font-family: monospace;
+    }
+
+    .mathlingua-whitespace {
+        padding: 0;
+        margin: 0;
+        margin-left: 1ex;
+    }
+
+    .mathlingua-id {
+        color: #5500aa;
+        overflow-x: scroll;
+    }
+
+    .mathlingua-text {
+        color: #000000;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
+    }
+
+    .mathlingua-text-no-render {
+        color: #000000;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+        margin-top: -1.6ex;
+        margin-bottom: -1.6ex;
+    }
+
+    .literal-mathlingua-text {
+        color: #386930;
+        display: inline;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+
+    .literal-mathlingua-text-no-render {
+        color: #386930;
+        display: inline;
+        font-family: monospace;
+        line-height: 1.3;
+    }
+
+    .mathlingua-url {
+        color: #0000aa;
+        text-decoration: none;
+        display: inline-block;
+        font-family: Georgia, 'Times New Roman', Times, serif;
+    }
+
+    .mathlingua-link {
+        color: #0000aa;
+        text-decoration: none;
+        display: inline-block;
+    }
+
+    .mathlingua-statement-no-render {
+        color: #007377;
+    }
+
+    .mathlingua-statement-container {
+        display: inline;
+    }
+
+    .literal-mathlingua-statement {
+        color: #007377;
+    }
+
+    .mathlingua-dropdown-menu-shown {
+        position: absolute;
+        display: block;
+        z-index: 1;
+        background-color: #ffffff;
+        box-shadow: rgba(0, 0, 0, 0.5) 0px 3px 10px,
+                    inset 0  0 10px 0 rgba(200, 200, 200, 0.25);
+        border: solid;
+        border-width: 1px;
+        border-radius: 0px;
+        border-color: rgba(200, 200, 200);
+    }
+
+    .mathlingua-dropdown-menu-hidden {
+        display: none;
+    }
+
+    .mathlingua-dropdown-menu-item {
+        display: block;
+        margin: 0.75ex;
+    }
+
+    .mathlingua-dropdown-menu-item:hover {
+        font-style: italic;
+    }
+
+    .mathlingua-called {
+        font-weight: bold;
+        display: table;
+        margin-top: -1em;
+        margin-left: auto;
+        margin-bottom: -2em;
+        margin-right: auto;
+    }
+
+    .display-mode {
+        margin-left: auto;
+        margin-right: auto;
+        width: max-content;
+        display: block;
+        padding-top: 2ex;
+        padding-bottom: 3ex;
+    }
+
+    .katex {
+        font-size: 1em;
+    }
+
+    .katex-display {
+        display: contents;
+    }
+
+    .katex-display > .katex {
+        display: contents;
+    }
+
+    .katex-display > .katex > .katex-html {
+        display: contents;
+    }
+
+        </style>
+    </head>
+    <body onload="initPage()">
+        <div class="content" id="__main_content__">
+            <div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <h1>The Rational Numbers</h1><p>Now we need to describe what the rational numbers are.  It
+will turn out that an important characterstic of the real
+numbers is that they contain the rational numbers.</p><p>Before continuing, we need to define &quot;set builder notation&quot;.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('57775035-82d8-4735-b8d4-454038d71afe')">&#8226;</button><div id='rendered-57775035-82d8-4735-b8d4-454038d71afe' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Set of $x?$ where $within?$ such that $cond?$</p> </span><span class='mathlingua'><div id='57b93020-9c48-47a2-95fd-304e75ee8073-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\set[x...]:where{within}:suchThat{cond}...]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$Y := \{y...\}$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--135315487522468908-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='Y is \set'>$$$Y$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--135315487522468908-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--135315487522468908-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5162860103136276967-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='y... := x...'>$$$y... := x...$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-57775035-82d8-4735-b8d4-454038d71afe' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='a6d8b72b-396f-438d-bd14-17e67df4b07f-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\set[x...]:where{within}:suchThat{cond}...]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>Y := {y...}</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8910912418950481437-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'Y is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-8910912418950481437-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-8910912418950481437-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3021784339856567503-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y... := x...'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\left \{ within? \: | \: cond{... \textrm{ and } ...}? \right \}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Set of $x?$ where $within?$ such that $cond?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>The rational numbers are ratios of integers with operations
+of addition and multiplication defined with respect to
+addition and multiplication of integers.</p><p>The precise way in which the integers are defined is not
+important here.  Instead, we only need to accept their
+existence.  As such we describe them informally.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('8eeae4c3-171f-47bb-8d70-5f606e152cb1')">&#8226;</button><div id='rendered-8eeae4c3-171f-47bb-8d70-5f606e152cb1' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Naturals</p> </span><span class='mathlingua'><div id='91c70d32-34ed-4f00-b3c8-aa75333fa565-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\integers.set]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$N$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--27495374655464397-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='N is \set'>$$$N$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--27495374655464397-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--27495374655464397-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$}</p> ">  <p>The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$}</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\mathbb{N}"</span><br/><span class='mathlingua'><span class='mathlingua-header'>Providing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>view:</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>as:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5634629126407498346-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='\set'>$$$\textrm{Set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--5634629126407498346-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement--5634629126407498346-CUSTOM_SUFFIX')">\set</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>via:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--463765647622383869-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='N'>$$$N$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>membership:</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header'>through:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--6634661466275612910-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='N'>$$$N$$$</span></div></span></span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-8eeae4c3-171f-47bb-8d70-5f606e152cb1' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='6498f46c-bc43-4009-ba1b-6845d69c1e77-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\integers.set]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>N</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-221845057677072236-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'N is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-221845057677072236-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-221845057677072236-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "The set of numbers {$\ldots, -2, -1, 0, 1, 2, \ldots$} " </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\mathbb{N}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Naturals" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Providing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>view:</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>as:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-847419971643802338-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'\set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-847419971643802338-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-847419971643802338-CUSTOM_SUFFIX')">\set</a></div></span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>via:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-7087418346736823178-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'N'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>membership:</span></span><br/><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-whitespace'></span><span class='mathlingua-header-literal'>through:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--740889918752348469-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'N'</span></div></span></span></span></span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>When we say that $n$ is an integer, we mean that it is an
+element of the set of integers, as described below.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('0de83cb6-8d37-4e0f-ba19-d74c1ed6944c')">&#8226;</button><div id='rendered-0de83cb6-8d37-4e0f-ba19-d74c1ed6944c' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>$\textbf{Integer}$</p> </span><span class='mathlingua'><div id='9e117c84-5b7d-4b6d-91eb-addf757d033a-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\integer]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$N$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--58300345186308789-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='N in \integers.set'>$$$N \in \mathbb{N}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--58300345186308789-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integers.set', 'statement--58300345186308789-CUSTOM_SUFFIX')">\integers.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\textrm{Integer}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-0de83cb6-8d37-4e0f-ba19-d74c1ed6944c' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='eacde04c-cc28-49cd-a5c8-f75f0200ca8f-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\integer]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>N</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-1396304079396401265-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'N in \integers.set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-1396304079396401265-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integers.set', 'statement-1396304079396401265-CUSTOM_SUFFIX')">\integers.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\textrm{Integer}" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Again, we don<code>'</code>t need to concern ourselves with how the
+operations of addition and multplication of the integers
+is defined, and how the ordering of the integers is defined
+and so we simply state their existence below.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('e4f2c013-6a5f-4dc0-b344-908f59f733d3')">&#8226;</button><div id='rendered-e4f2c013-6a5f-4dc0-b344-908f59f733d3' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Integer Addition</p> </span><span class='mathlingua'><div id='f163024b-f9aa-486e-93b5-c1356e618868-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.+/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$z$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1826136024084128166-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='z is \integer'>$$$z$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Integer}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1826136024084128166-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement--1826136024084128166-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>The addition of two integers</p> ">  <p>The addition of two integers</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? + y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-e4f2c013-6a5f-4dc0-b344-908f59f733d3' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='6f7b36dc-39ff-4fc4-ae76-cf9c20f5d8f7-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.+/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>z</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3371882156970755942-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'z is \integer'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3371882156970755942-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement-3371882156970755942-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "The addition of two integers" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? + y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Integer Addition" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('ababd784-29a5-4acf-8ee9-38aba3e6c1d6')">&#8226;</button><div id='rendered-ababd784-29a5-4acf-8ee9-38aba3e6c1d6' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Integer Subtraction</p> </span><span class='mathlingua'><div id='85be94a0-69fd-4726-849f-7e78741e9ac3-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.-/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$z$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5032905158223442601-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='z is \integer'>$$$z$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Integer}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--5032905158223442601-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement--5032905158223442601-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>The difference of two integers</p> ">  <p>The difference of two integers</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? - y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-ababd784-29a5-4acf-8ee9-38aba3e6c1d6' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='6fa50f47-cf7f-4acd-b06e-28619e87e517-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.-/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>z</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--3547898912343168294-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'z is \integer'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--3547898912343168294-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement--3547898912343168294-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "The difference of two integers" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? - y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Integer Subtraction" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('deebd94c-518a-4d80-9ec5-f46af170992c')">&#8226;</button><div id='rendered-deebd94c-518a-4d80-9ec5-f46af170992c' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Integer Multiplication</p> </span><span class='mathlingua'><div id='4401232f-d559-4017-82c7-e4e459ae674e-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.*/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$z$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-2433842158269058514-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='z is \integer'>$$$z$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Integer}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-2433842158269058514-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement-2433842158269058514-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>The product of two integers</p> ">  <p>The product of two integers</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-deebd94c-518a-4d80-9ec5-f46af170992c' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='7646fa58-0a3c-4179-9e9c-8a77fa3b8e35-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.*/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>z</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-620903664394890704-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'z is \integer'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-620903664394890704-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement-620903664394890704-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "The product of two integers" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Integer Multiplication" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('a84c7c1e-8de3-4889-b9c2-b363e6d3b904')">&#8226;</button><div id='rendered-a84c7c1e-8de3-4889-b9c2-b363e6d3b904' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>$x?$ is greater than or equal to $y?$</p> </span><span class='mathlingua'><div id='8dccfe7d-353f-457c-8e14-89163cd5b23e-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.geq/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>$x?$ is greater than or equal to $y?$</p> ">  <p>$x?$ is greater than or equal to $y?$</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? \geq y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-a84c7c1e-8de3-4889-b9c2-b363e6d3b904' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='4fed75c8-15ce-4ce0-bb92-834ea7282ed8-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.geq/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is greater than or equal to $y?$" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? \geq y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is greater than or equal to $y?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('c019f2f8-cdc2-4df0-8f55-4526ad6de955')">&#8226;</button><div id='rendered-c019f2f8-cdc2-4df0-8f55-4526ad6de955' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>$x?$ is greater than $y?$</p> </span><span class='mathlingua'><div id='5e8e9023-d820-41f9-b067-ae9df6a66751-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.gt/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>$x?$ is greater than $y?$</p> ">  <p>$x?$ is greater than $y?$</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? > y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-c019f2f8-cdc2-4df0-8f55-4526ad6de955' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='bee25553-b7d2-463d-834e-9e6202d9fcda-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.gt/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is greater than $y?$" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? > y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is greater than $y?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('27af0184-90ee-43e2-92aa-a2ee703dbc57')">&#8226;</button><div id='rendered-27af0184-90ee-43e2-92aa-a2ee703dbc57' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>$x?$ is less than or equal to $y?$</p> </span><span class='mathlingua'><div id='48a71dcd-1ba0-4e80-ac07-488834b83ed1-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.leq/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>$x?$ is less than or equal to $y?$</p> ">  <p>$x?$ is less than or equal to $y?$</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? \leq y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-27af0184-90ee-43e2-92aa-a2ee703dbc57' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='60e87c6d-605d-4009-ae5d-25e0e0b4b0b1-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.leq/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is less than or equal to $y?$" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? \leq y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is less than or equal to $y?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('904af337-2f89-43b3-866f-738fb4aa5871')">&#8226;</button><div id='rendered-904af337-2f89-43b3-866f-738fb4aa5871' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>$x?$ is less than $y?$</p> </span><span class='mathlingua'><div id='d6aac691-e12a-4b35-809a-3bafc0b52cf6-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.lt/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-text' title=" <p>$x?$ is less than $y?$</p> ">  <p>$x?$ is less than $y?$</p> 
+ </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? < y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-904af337-2f89-43b3-866f-738fb4aa5871' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='1133ac2f-2f17-4964-b7b7-728c10157616-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \integers.lt/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>that:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is less than $y?$" </span></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? < y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is less than $y?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Now we can define what the set of rational numbers are,
+and we describe a rational number as a pair of integers.
+The first integer is the numerator and the second is the
+denominator.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('72922bfa-005f-49cd-9bd2-010e89fbcd45')">&#8226;</button><div id='rendered-72922bfa-005f-49cd-9bd2-010e89fbcd45' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Rationals</p> </span><span class='mathlingua'><div id='c308f2fa-8e00-4c9e-a3ff-22fd2171c11c-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\rationals.set]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$Q$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3036819155934063327-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='Q is \set'>$$$Q$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Set}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3036819155934063327-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-3036819155934063327-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5003947923262402542-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='Q := \set[x, p, q]:where{x := (p, q)}
+                               :suchThat{p in \integers.set}
+                                        {q in \integers.set}'>$$$Q := \left \{ x := (p, q) \: | \: p \in \mathbb{N} \textrm{ and } q \in \mathbb{N} \right \}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--5003947923262402542-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set:where:suchThat', 'statement--5003947923262402542-CUSTOM_SUFFIX')">\set:where:suchThat</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integers.set', 'statement--5003947923262402542-CUSTOM_SUFFIX')">\integers.set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\mathbb{Q}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-72922bfa-005f-49cd-9bd2-010e89fbcd45' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='e8274306-48be-4954-8e2c-88dc13ecd919-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\rationals.set]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>Q</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8217717815571266337-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'Q is \set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-8217717815571266337-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set', 'statement-8217717815571266337-CUSTOM_SUFFIX')">\set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-2805300088242105790-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'Q := \set[x, p, q]:where{x := (p, q)}
+                               :suchThat{p in \integers.set}
+                                        {q in \integers.set}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-2805300088242105790-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\set:where:suchThat', 'statement-2805300088242105790-CUSTOM_SUFFIX')">\set:where:suchThat</a><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integers.set', 'statement-2805300088242105790-CUSTOM_SUFFIX')">\integers.set</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\mathbb{Q}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Rationals" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Next we describe how to build a rational number from two
+integers $a$ and $b$ and describe the notation
+$\frac{a}{b}$.</p><p>At this point, $\frac{a}{b}$ is just a notation, but it will
+turn out that the notation will make sense even viewing the
+integers $a$ and $b$ as real numbers.</p><p>Specifically, $\frac{a}{b}$ can be also be read
+as the product of $a$ and the multiplicative inverse of $b$
+(provided $b \neq 0$) when viewing $a$ and $b$ as real numbers.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('bb771c47-d6ea-4b2e-8fc8-52b59247afcc')">&#8226;</button><div id='rendered-bb771c47-d6ea-4b2e-8fc8-52b59247afcc' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Rational</p> </span><span class='mathlingua'><div id='05cc47ec-0b4d-4e33-83d2-4d88d74a0acb-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\Rational{a, b}]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$x$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-6500552819908412167-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x in \rationals.set'>$$$x \in \mathbb{Q}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-6500552819908412167-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.set', 'statement-6500552819908412167-CUSTOM_SUFFIX')">\rationals.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4267374459253283789-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x := (a, b)'>$$$x := (a, b)$$$</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\frac{a?}{b?}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-bb771c47-d6ea-4b2e-8fc8-52b59247afcc' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='f6269e08-bcf4-466f-9a39-79fa79d7ba7a-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\Rational{a, b}]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>x</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2231723730917298650-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x in \rationals.set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2231723730917298650-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.set', 'statement--2231723730917298650-CUSTOM_SUFFIX')">\rationals.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--753351351427647547-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x := (a, b)'</span></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\frac{a?}{b?}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Rational" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Now we can define the operations of addition and multiplication
+of two rational numbers using the operations of addition
+and multplication of integers.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('4b1077a1-5dc6-4adf-b42d-3d0a4ee1f0f3')">&#8226;</button><div id='rendered-4b1077a1-5dc6-4adf-b42d-3d0a4ee1f0f3' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Rational Addition</p> </span><span class='mathlingua'><div id='74937c94-4787-4d38-9495-27d4454c5b9d-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \rational.+/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$z$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$p_{1}$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$q_{1}$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$p_{2}$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$q_{2}$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-5767659898669415782-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x := \Rational{p1, q1}'>$$$x := \frac{p_{1}}{q_{1}}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-5767659898669415782-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-5767659898669415782-CUSTOM_SUFFIX')">\Rational</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1728637656115026019-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='y := \Rational{p2, q2}'>$$$y := \frac{p_{2}}{q_{2}}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1728637656115026019-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement--1728637656115026019-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4194187785623419069-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='z is \integer'>$$$z$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Integer}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4194187785623419069-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement--4194187785623419069-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-6214163058274830015-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='z := \Rational{p1 * q2 + p2*q1, q1 * q2}'>$$$z := \frac{p_{1} * q_{2} + p_{2} * q_{1}}{q_{1} * q_{2}}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-6214163058274830015-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-6214163058274830015-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? + y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-4b1077a1-5dc6-4adf-b42d-3d0a4ee1f0f3' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='fa6bea78-bfef-4421-bcbf-0b3d1c244efe-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \rational.+/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>z</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>p1</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>q1</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>p2</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>q2</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--995056692567078063-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x := \Rational{p1, q1}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--995056692567078063-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement--995056692567078063-CUSTOM_SUFFIX')">\Rational</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-4180340333142050609-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y := \Rational{p2, q2}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-4180340333142050609-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-4180340333142050609-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2811877369105617214-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'z is \integer'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2811877369105617214-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement--2811877369105617214-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8460568635233733415-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'z := \Rational{p1 * q2 + p2*q1, q1 * q2}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-8460568635233733415-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-8460568635233733415-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? + y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Rational Addition" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('ba7f9a39-a9f7-46af-afc5-1b227240294d')">&#8226;</button><div id='rendered-ba7f9a39-a9f7-46af-afc5-1b227240294d' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Rational Multiplication</p> </span><span class='mathlingua'><div id='5d929d30-3940-4bcf-a591-8d89e32b3b02-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \rational.*/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$z$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$p_{1}$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$q_{1}$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$p_{2}$$$</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$q_{2}$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-711879479852250739-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x := \Rational{p1, q1}'>$$$x := \frac{p_{1}}{q_{1}}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-711879479852250739-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-711879479852250739-CUSTOM_SUFFIX')">\Rational</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-4175727401454702696-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='y := \Rational{p2, q2}'>$$$y := \frac{p_{2}}{q_{2}}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-4175727401454702696-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-4175727401454702696-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1058250136270395641-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='z is \integer'>$$$z$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Integer}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1058250136270395641-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement--1058250136270395641-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2974454454648905630-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='z := \Rational{p1 * p2, q1 * q2}'>$$$z := \frac{p_{1} * p_{2}}{q_{1} * q_{2}}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2974454454648905630-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement--2974454454648905630-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-ba7f9a39-a9f7-46af-afc5-1b227240294d' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='87d096ff-ea1c-425e-b5c6-b9ff84e7b617-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \rational.*/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>z</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>p1</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>q1</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>p2</span></span><span class='mathlingua-comma'>,</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>q2</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-4764881324275250515-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x := \Rational{p1, q1}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-4764881324275250515-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-4764881324275250515-CUSTOM_SUFFIX')">\Rational</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--5021921099931615622-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y := \Rational{p2, q2}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--5021921099931615622-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement--5021921099931615622-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2351105047351862629-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'z is \integer'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2351105047351862629-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\integer', 'statement--2351105047351862629-CUSTOM_SUFFIX')">\integer</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>expressing:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7003993492084077797-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'z := \Rational{p1 * p2, q1 * q2}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--7003993492084077797-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement--7003993492084077797-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Rational Multiplication" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>With the above operations of addition and multiplication
+and the defined <em>set</em> of rational numbers, the <em>field</em>
+of rational numbers can be defined.</p><p>That is, the set of rational numbers defined above equipped
+with the operations of addition and multiplication also defined
+above becomes a field.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('e0e856aa-a1cc-4cd5-8923-a58131dc49d6')">&#8226;</button><div id='rendered-e0e856aa-a1cc-4cd5-8923-a58131dc49d6' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Rationals as a Field</p> </span><span class='mathlingua'><div id='f90ff60f-df54-4000-9a73-0cfd52c95581-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\rationals.field]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$Q := (X, +, *, 0, 1)$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3966077278274453652-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='Q is \field'>$$$Q$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Field}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3966077278274453652-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\field', 'statement-3966077278274453652-CUSTOM_SUFFIX')">\field</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>satisfying:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4345059228105765897-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='X := \rationals.set'>$$$X := \mathbb{Q}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4345059228105765897-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.set', 'statement--4345059228105765897-CUSTOM_SUFFIX')">\rationals.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--4576410862655115562-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x + y := x \rational.+/ y'>$$$x + y := x + y$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--4576410862655115562-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-6819466637414054150-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x * y := x \rational.*/ y'>$$$x * y := x y$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-6819466637414054150-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--647055619385787732-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='0 := \Rational{0, 1}'>$$$0 := \frac{0}{1}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--647055619385787732-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement--647055619385787732-CUSTOM_SUFFIX')">\Rational</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-6645130861213386898-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='1 := \Rational{1, 1}'>$$$1 := \frac{1}{1}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-6645130861213386898-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-6645130861213386898-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\mathbb{Q}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-e0e856aa-a1cc-4cd5-8923-a58131dc49d6' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='b5de3283-5d6e-4af6-9892-e5cc4c1c69af-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\rationals.field]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>Q := (X, +, *, 0, 1)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7341815168488884145-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'Q is \field'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--7341815168488884145-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\field', 'statement--7341815168488884145-CUSTOM_SUFFIX')">\field</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>satisfying:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-4340961869663630274-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X := \rationals.set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-4340961869663630274-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.set', 'statement-4340961869663630274-CUSTOM_SUFFIX')">\rationals.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--3124781519367053261-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x + y := x \rational.+/ y'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--3124781519367053261-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-8908223780685400773-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x * y := x \rational.*/ y'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-8908223780685400773-CUSTOM_SUFFIX'></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1209485147566422092-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'0 := \Rational{0, 1}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1209485147566422092-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement--1209485147566422092-CUSTOM_SUFFIX')">\Rational</a></div></span><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-2038111301239001496-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'1 := \Rational{1, 1}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-2038111301239001496-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\Rational', 'statement-2038111301239001496-CUSTOM_SUFFIX')">\Rational</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\mathbb{Q}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Rationals as a Field" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Later we will need the precise description of what it
+means for $x &lt; y$ for two rational numbers $x$ and $y$.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('1ec14436-c9b9-4a32-ad00-298932a36036')">&#8226;</button><div id='rendered-1ec14436-c9b9-4a32-ad00-298932a36036' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>$x?$ is less than $y?$</p> </span><span class='mathlingua'><div id='c52b9193-e8c8-4e35-ac0a-fe576cbba2db-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \rational.lt/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$Q$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>when:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2553692228070058287-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='Q is \rationals.field'>$$$Q$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\mathbb{Q}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2553692228070058287-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.field', 'statement--2553692228070058287-CUSTOM_SUFFIX')">\rationals.field</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>that:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7571238288008076626-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='y \field{Q}.-/ x is \positive:within{Q}'>$$$y - x$$$<span class='mathlingua-whitespace'></span><span class='mathlingua-is'>is</span><span class='mathlingua-whitespace'></span>$$$\textrm{Positive}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--7571238288008076626-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\positive:within', 'statement--7571238288008076626-CUSTOM_SUFFIX')">\positive:within</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"x+? < y+?"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-1ec14436-c9b9-4a32-ad00-298932a36036' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='9b275be4-e1e7-4b1a-a433-90e6856bf4c3-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[x \rational.lt/ y]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>States:</span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>given:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>Q</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>when:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--1086578383607713989-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'Q is \rationals.field'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--1086578383607713989-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.field', 'statement--1086578383607713989-CUSTOM_SUFFIX')">\rationals.field</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>that:</span><span class='mathlingua'><br/><span class='mathlingua'><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--2386316317804592057-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'y \field{Q}.-/ x is \positive:within{Q}'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--2386316317804592057-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\positive:within', 'statement--2386316317804592057-CUSTOM_SUFFIX')">\positive:within</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "x+? < y+?" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "$x?$ is less than $y?$" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div><div class='mathlingua-block-comment-top-level'><span class='mathlingua'><span class='mathlingua-block-comment'>  <p>Now equipped with the definition of $&lt;$ above,
+the set of rational numbers is an ordered set.</p> 
+ </span></span></div><div><button class='mathlingua-flip-icon' onclick="flipEntity('0ce0a870-e8fa-459d-9278-61f76e0ecfa9')">&#8226;</button><div id='rendered-0ce0a870-e8fa-459d-9278-61f76e0ecfa9' class='mathlingua-rendered-visible'><span class='mathlingua-data'><span class='mathlingua-called'> <p>Rationals as an Ordered Set</p> </span><span class='mathlingua'><div id='84b84cbb-6a05-4ea1-853b-1a3e1313de12-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\rationals.ordered.set]</span><br/><span class='mathlingua'><span class='mathlingua-header'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument'>$$$Q := (X, <)$$$</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement-3345017193162939340-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='X := \rationals.set'>$$$X := \mathbb{Q}$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement-3345017193162939340-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.set', 'statement-3345017193162939340-CUSTOM_SUFFIX')">\rationals.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header'>satisfying:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--6470310689277419711-CUSTOM_SUFFIX')"><span class='mathlingua-statement' title='x < y := x \rational.lt/ y'>$$$x < y := x < y$$$</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--6470310689277419711-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rational.lt', 'statement--6470310689277419711-CUSTOM_SUFFIX')">\rational.lt</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span>"\mathbb{Q}"</span><br/><span class='mathlingua'></span><div class='end-mathlingua-top-level'></div></div></div></span></span></div><div id='literal-0ce0a870-e8fa-459d-9278-61f76e0ecfa9' class='mathlingua-literal-hidden'><span class='mathlingua'><div id='cfb1a08e-da79-44a5-817f-d622fe88d935-CUSTOM_SUFFIX'><div class='mathlingua-top-level'><span class='mathlingua-id'>[\rationals.ordered.set]</span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>Defines:</span><span class='mathlingua'><span class='mathlingua-whitespace'></span><span class='mathlingua-argument-no-render'>Q := (X, <)</span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>means:</span><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--7992294797893801964-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'X := \rationals.set'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--7992294797893801964-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rationals.set', 'statement--7992294797893801964-CUSTOM_SUFFIX')">\rationals.set</a></div></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>satisfying:</span><span class='mathlingua'><span class='mathlingua'><span class='mathlingua-whitespace'></span><div class='mathlingua-statement-container' onclick="mathlinguaToggleDropdown('statement--6096267620262318852-CUSTOM_SUFFIX')"><span class="mathlingua-statement-no-render">'x < y := x \rational.lt/ y'</span></div><div class='mathlingua-dropdown-menu-hidden' id='statement--6096267620262318852-CUSTOM_SUFFIX'><a class='mathlingua-dropdown-menu-item' onclick="mathlinguaViewSignature('\\rational.lt', 'statement--6096267620262318852-CUSTOM_SUFFIX')">\rational.lt</a></div></span></span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>written:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "\mathbb{Q}" </span></span><br/><span class='mathlingua'><span class='mathlingua-header-literal'>called:</span><br/><span class='mathlingua-dot'>.</span><span class='mathlingua-whitespace'></span><span class="literal-mathlingua-text-no-render"> "Rationals as an Ordered Set" </span></span><div class='end-mathlingua-top-level'></div></div></div></span></div></div>
+        </div>
+    </body>

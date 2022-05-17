@@ -1,0 +1,182 @@
+::
+# The MathLingua Language
+
+*MathLingua is a language to create precise,
+automatically analyzed, beautifully rendered, collections
+of mathematical knowledge.*
+
+<style>
+  .icon {
+    transform: scale(0.15);
+    margin-top: -20em;
+    margin-bottom: -20em;
+    margin-left: -2.5em;
+    margin-right: 0;
+    padding: 0;
+  }
+</style>
+<div class="icon">
+  <img src="./content/mathlingua-icon.png" />
+</div>
+
+## The Problem
+
+Today there is so much mathematical knowledge, (definitions,
+theorems, axioms, and conjectures) that it is hard to keep track
+of what is known and what is unknown.
+
+To record mathematical knowledge today one typically uses either:
+
+* LaTeX that describes what a math statement looks like and
+  is convenient to write, but:
+1. doesn`\'`t describe what a math statement means
+2. doesn`\'`t have tools to verify that definitions and
+   theorems are used correctly and don`\'`t reference
+   undefined symbols or definitions
+
+* proof assistant languages that describe what a math
+  statement means and have verification capabilities but:
+1. don`\'`t describe what a math statement looks like
+2. have a very steep learning curve
+3. require all math statements to be expressed extremely
+   formally often very differently from how they are
+   typically expressed in math literature
+
+What we need is a language to easily describe the meaning
+and appearance of mathematical concepts with the same level of
+formality of traditional math literature, all with the ability
+to be analyzed automatically.
+
+MathLingua is that language.
+
+## Introducing MathLingua
+
+MathLingua is a unique language for creating collections of
+mathematical knowledge that are expressed precisely, rendered
+beautifully, and whose connections and usages are analyzed
+automatically.
+
+This allows authors to focus on describing what definitions,
+theorems, axioms, and conjectures mean without having to manually
+check definitions are used correctly, every term used
+is defined, and statements are precise.
+
+MathLingua is not a typesetting language like LaTeX, and it is
+not a proof assistant (or automated theorem prover) like Lean.
+Instead, it is in-between.
+
+It provides checking of results (although doesn`\'`t provide all
+of the checks of proof assistants) while providing an easy to use
+language for precisely describing the structure of results with
+the level of formality comparable to traditional math literature.
+
+The goal of MathLingua isn`\'`t automated theorem proving.  Instead
+it is to provide a robust and easy to use tool for describing
+mathematics with more structure than what is found in traditional
+books and encyclopedias.
+
+## An Example
+
+Consider (one part of) the Fundamental Theorem of Calculus
+express in MathLingua:
+::
+
+
+Theorem: "Fundamental Theorem of Calculus"
+given: f(x), F(x), I, a, b
+where:
+. 'a, b is \real'
+. 'f(x) is \continuous.function:on{I}'
+. 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
+suchThat:
+. 'a < b'
+. 'I := \open.interval{a, b}'
+then:
+. '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
+
+
+::
+The MathLingua code for the theorem is given below, and the
+MathLingua command line tool `mlg` automatically creates the
+above rendering of the theorem.
+```math
+Theorem: "Fundamental Theorem of Calculus"
+given: f(x), F(x), I, a, b
+where:
+. 'a, b is \real'
+. 'f(x) is \continuous.function:on{I}'
+. 'F(x) is \indefinite.integral:of{f(x)}:on{I}'
+suchThat:
+. 'a < b'
+. 'I := \open.interval{a, b}'
+then:
+. '\definite.integral[x]_{a}^{b}:of{f(x)} = F(b) - F(a)'
+```
+
+Note that MathLingua provides a clear syntax that is as
+verbose as spoken mathematics but renders to the symbols
+used in written mathematics.
+
+Next, the MathLingua language uses a clean indented style with
+a consistent format for describing definitions, theorems, and
+other items to make recording and reading such information easy.
+
+Further, the MathLingua language allows authors to define not
+just the meaning of definitions, but how the concepts they
+defined are written in the literature or spoken out loud.
+
+Last, without any configuration needed, the MathLingua
+tooling generates beautiful dynamic web pages to explore
+the math catalog created.  This web page itself, is made
+entirely with MathLingua!
+
+## The Power of MathLingua
+
+To see the power of the web pages created, click on the definite
+integral symbol inside the Fundamental Theorem of Calculus
+definition above.
+
+A popup will appear that shows that this
+represents `\definite.integral:of` and if you click on that
+text, the definition of the definite integral is displayed.
+
+Further, you can keep clicking on text in the definition
+of the definite integral to dive deeper into understanding
+the definition.
+
+All an author needs to do is describe the Fundamental
+Theorem of Calclus and the definite integral in MathLingua.
+The MathLingua tooling then handles everything else to make
+a beautiful and powerful web page to explore that knowledge.
+
+## More Examples
+
+The *A Detailed Example* section of this site contains a
+more detailed example of a collection of MathLingua documents.
+
+In addition, the [Math Codex](https://www.mathcodex.org) is
+an ongoing effort to build a library of mathematical knowledge
+written in MathLingua.  The source code can be found at the
+[codex](https://github.com/DominicKramer/codex) GitHub repo.
+
+## Contact
+
+MathLingua is still in beta.  It and this document are still
+under development.
+
+To discuss MathLingua you can join the
+[MathLingua Discord](https://discord.gg/FsG7HvdmZ6)
+or send an email to Dominic Kramer, the
+creator of MathLingua, at
+[DominicKramer@gmail.com](mailto:DominicKramer@gmail.com).
+
+All questions, comments, and feedback are greatly
+appreciated.
+
+## What$\'$s Next
+
+Use the menu icon in the top left corner of the page to
+navigate this document and discover more about
+MathLingua or use the right arrow icon below to go to
+the next page.
+::

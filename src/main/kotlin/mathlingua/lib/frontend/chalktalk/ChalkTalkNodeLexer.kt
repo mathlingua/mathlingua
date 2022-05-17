@@ -37,6 +37,7 @@ import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameAssignmentItem
 import mathlingua.lib.frontend.ast.NameOrNameAssignment
+import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
@@ -222,7 +223,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
-    private fun nameParam(isInline: Boolean): VariadicName? {
+    private fun variadicName(isInline: Boolean): NameOrVariadicName? {
         val name = name(isInline) ?: return null
         val hasDotDotDot =
             if (lexer.has(ChalkTalkTokenType.DotDotDot)) {
@@ -231,15 +232,19 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             } else {
                 false
             }
-        return VariadicName(name = name, isVarArgs = hasDotDotDot)
+        return if (hasDotDotDot) {
+            VariadicName(name = name, metadata = name.metadata)
+        } else {
+            name
+        }
     }
 
     private fun nameParamList(
         isInline: Boolean, expectedEnd: ChalkTalkTokenType
-    ): List<VariadicName> {
-        val result = mutableListOf<VariadicName>()
+    ): List<NameOrVariadicName> {
+        val result = mutableListOf<NameOrVariadicName>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
-            val nameParam = nameParam(isInline) ?: break
+            val nameParam = variadicName(isInline) ?: break
             result.add(nameParam)
             if (!lexer.has(expectedEnd)) {
                 expect(ChalkTalkTokenType.Comma)
@@ -258,7 +263,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return result
     }
 
-    private fun subParams(isInline: Boolean): List<VariadicName>? {
+    private fun subParams(isInline: Boolean): List<NameOrVariadicName>? {
         if (!lexer.hasHas(ChalkTalkTokenType.Underscore, ChalkTalkTokenType.LCurly)) {
             return null
         }
@@ -269,7 +274,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return result
     }
 
-    private fun regularParams(isInline: Boolean): List<VariadicName>? {
+    private fun regularParams(isInline: Boolean): List<NameOrVariadicName>? {
         if (!lexer.has(ChalkTalkTokenType.LParen)) {
             return null
         }

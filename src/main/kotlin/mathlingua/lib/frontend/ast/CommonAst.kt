@@ -23,6 +23,8 @@ internal sealed interface CommonNode : ChalkTalkNode, TexTalkNode, NodeLexerToke
 
 internal interface NameOrFunction : CommonNode
 
+internal sealed interface NameOrVariadicName : CommonNode
+
 // names
 internal data class Name(val text: String, override val metadata: MetaData) :
     SquareTargetItem,
@@ -30,14 +32,15 @@ internal data class Name(val text: String, override val metadata: MetaData) :
     NameAssignmentItem,
     NameOrFunction,
     NameOrCommand,
+    NameOrVariadicName,
     Expression {
     override fun toCode() = text
 }
 
 // targets
-internal sealed interface VariadicRhs : CommonNode
+internal sealed interface VariadicRhs : ChalkTalkNode, TexTalkNode
 
-internal sealed interface VariadicIsRhs : CommonNode
+internal sealed interface VariadicIsRhs
 
 internal sealed interface VariadicTarget : VariadicRhs
 
@@ -50,7 +53,7 @@ internal data class OperatorName(val text: String, override val metadata: MetaDa
 }
 
 internal data class VariadicName(val name: Name, override val metadata: MetaData) :
-    VariadicTarget, VariadicIsRhs {
+    VariadicTarget, VariadicIsRhs, NameOrVariadicName {
     override fun toCode(): String = "$name..."
 }
 
@@ -69,7 +72,7 @@ internal sealed interface Function :
     SquareTargetItem, NameAssignmentItem, NameOrFunction, Expression
 
 internal data class RegularFunction(
-    val name: Name, val params: List<VariadicName>, override val metadata: MetaData
+    val name: Name, val params: List<NameOrVariadicName>, override val metadata: MetaData
 ) : Function {
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -87,7 +90,7 @@ internal data class RegularFunction(
 }
 
 internal data class SubParamFunction(
-    val name: Name, val subParams: List<VariadicName>, override val metadata: MetaData
+    val name: Name, val subParams: List<NameOrVariadicName>, override val metadata: MetaData
 ) : Function {
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -106,8 +109,8 @@ internal data class SubParamFunction(
 
 internal data class SubAndRegularParamFunction(
     val name: Name,
-    val subParams: List<VariadicName>,
-    val params: List<VariadicName>,
+    val subParams: List<NameOrVariadicName>,
+    val params: List<NameOrVariadicName>,
     override val metadata: MetaData
 ) : Function {
     override fun toCode(): String {

@@ -207,6 +207,7 @@ import mathlingua.lib.frontend.ast.TypeSection
 import mathlingua.lib.frontend.ast.UrlGroup
 import mathlingua.lib.frontend.ast.UrlSection
 import mathlingua.lib.frontend.ast.UsingSection
+import mathlingua.lib.frontend.ast.VariadicName
 import mathlingua.lib.frontend.ast.ViaSection
 import mathlingua.lib.frontend.ast.ViewGroup
 import mathlingua.lib.frontend.ast.ViewSection
@@ -1557,6 +1558,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             is SubAndRegularParamFunction -> "function"
             is SubParamFunction -> "function"
             is Name -> "name"
+            is VariadicName -> "name"
             is OperatorName -> "name"
             is SubAndRegularParamFunctionSequence -> "sequence"
             is SubParamFunctionSequence -> "sequence"

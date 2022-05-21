@@ -268,10 +268,10 @@ RegularFunctionCall ::=
     Name "(" List<Expression> ")"
 
 SubParamFunctionCall ::=
-    Name "_" "{" List<Expression> "}"
+    Name "_" "(" List<Expression> ")"
 
 SubAndRegularParamFunctionCall ::=
-    Name "_" "{" List<Expression> "}" "(" List<Expression> ")"
+    Name "_" "(" List<Expression> ")" "(" List<Expression> ")"
 
 FunctionCall ::=
     RegularFunctionCallRegularFunctionCall |

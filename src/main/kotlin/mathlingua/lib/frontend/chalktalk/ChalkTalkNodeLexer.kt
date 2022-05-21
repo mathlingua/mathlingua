@@ -264,13 +264,13 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
     }
 
     private fun subParams(isInline: Boolean): List<NameOrVariadicName>? {
-        if (!lexer.hasHas(ChalkTalkTokenType.Underscore, ChalkTalkTokenType.LCurly)) {
+        if (!lexer.hasHas(ChalkTalkTokenType.Underscore, ChalkTalkTokenType.LParen)) {
             return null
         }
         expect(ChalkTalkTokenType.Underscore)
-        expect(ChalkTalkTokenType.LCurly)
-        val result = nameParamList(isInline, ChalkTalkTokenType.RCurly)
-        expect(ChalkTalkTokenType.RCurly)
+        expect(ChalkTalkTokenType.LParen)
+        val result = nameParamList(isInline, ChalkTalkTokenType.RParen)
+        expect(ChalkTalkTokenType.RParen)
         return result
     }
 
@@ -749,3 +749,14 @@ private fun ChalkTalkTokenLexer.hasHas(type1: ChalkTalkTokenType, type2: ChalkTa
         this.hasNextNext() &&
         this.peek().type == type1 &&
         this.peekPeek().type == type2
+
+fun main() {
+    val text = "x: {a_(i)}_(i)"
+    val lexer1 = newChalkTalkTokenLexer(text)
+    val lexer2 = newChalkTalkNodeLexer(lexer1)
+    while (lexer2.hasNext()) {
+        println(lexer2.next())
+    }
+    lexer1.diagnostics().forEach(::println)
+    lexer2.diagnostics().forEach(::println)
+}

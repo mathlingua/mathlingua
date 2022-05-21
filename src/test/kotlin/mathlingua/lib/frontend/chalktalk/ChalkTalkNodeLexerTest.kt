@@ -174,6 +174,7 @@ internal class ChalkTalkNodeLexerTest {
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
 
+    /*
     @Test
     fun `correctly parses a single section group with an sub params function arg`() =
         runTest(
@@ -236,11 +237,12 @@ internal class ChalkTalkNodeLexerTest {
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
+    */
 
     @Test
     fun `correctly parses a single section group with a sub params function sequence arg`() =
         runTest(
-            "someName: {f_{x, y}}_{x, y}",
+            "someName: {f_(x, y)}_(x, y)",
             listOf(
                 BeginGroup(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
@@ -272,7 +274,7 @@ internal class ChalkTalkNodeLexerTest {
     @Test
     fun `correctly parses a single section group with a sub and regular params function sequence arg`() =
         runTest(
-            "someName: {f_{i, j}(x, y)}_{i, j}",
+            "someName: {f_(i, j)(x, y)}_(i, j)",
             listOf(
                 BeginGroup(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),

@@ -46,10 +46,10 @@ Function ::=
     SubAndRegularParamFunction
 
 SubParamFunctionSequence ::=
-    "{" SubParamFunction "}" "_" ""{" List<VariadicName> "}"
+    "{" SubParamFunction "}" "_" "(" List<VariadicName> ")"
 
 SubAndRegularParamFunctionSequence ::=
-    "{" SubAndRegularParamFunction "}" "_" "{" List<VariadicName> "}"
+    "{" SubAndRegularParamFunction "}" "_" "(" List<VariadicName> ")"
 
 Sequence ::=
     SubParamFunctionSequence |

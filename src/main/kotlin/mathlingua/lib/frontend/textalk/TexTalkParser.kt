@@ -20,16 +20,17 @@ import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
+import mathlingua.lib.frontend.ast.CommonNode
 import mathlingua.lib.frontend.ast.Expression
 import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.FunctionAssignment
+import mathlingua.lib.frontend.ast.FunctionCall
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameAssignmentItem
 import mathlingua.lib.frontend.ast.NameOrNameAssignment
 import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.OperatorName
-import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
 import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
@@ -144,7 +145,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
-    private fun function(isInline: Boolean): Function? {
+    private fun function(isInline: Boolean): FunctionCall? {
         // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
         if (!lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.LParen) &&
             !lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.Underscore)) {
@@ -174,7 +175,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                         column = name.metadata.column,
                         isInline = name.metadata.isInline))
         } else if (subParams == null && regularParams != null) {
-            RegularFunction(
+            Function(
                 name = name,
                 params = regularParams,
                 metadata =
@@ -194,7 +195,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         }
     }
 
-    private fun target(isInline: Boolean): Target? {
+    private fun target(isInline: Boolean): CommonNode? {
         val func = function(isInline)
         if (func != null) {
             return if (lexer.has(TexTalkTokenType.ColonEqual)) {
@@ -250,8 +251,8 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         return nameOrAssignmentItem(isInline) as Target?
     }
 
-    private fun targets(isInline: Boolean, expectedEnd: TexTalkTokenType): List<Target> {
-        val targets = mutableListOf<Target>()
+    private fun targets(isInline: Boolean, expectedEnd: TexTalkTokenType): List<TexTalkNode> {
+        val targets = mutableListOf<TexTalkNode>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
             val target = target(isInline) ?: break
             targets.add(target)
@@ -280,7 +281,21 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         val targets = targets(isInline, TexTalkTokenType.RParen)
         expect(TexTalkTokenType.RParen)
         return Tuple(
-            targets = targets,
+            targets =
+                targets
+                    .map {
+                        if (it !is Target) {
+                            diagnostics.add(
+                                Diagnostic(
+                                    type = DiagnosticType.Error,
+                                    message = "Expected a target",
+                                    origin = DiagnosticOrigin.TexTalkParser,
+                                    row = it.metadata.row,
+                                    column = it.metadata.column))
+                        }
+                        it
+                    }
+                    .filterIsInstance<Target>(),
             metadata = MetaData(row = lParen.row, column = lParen.column, isInline = isInline))
     }
 

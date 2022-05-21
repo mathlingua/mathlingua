@@ -31,7 +31,7 @@ VariadicName ::=
 List<VariadicName> ::=
     VariadicName ("," VariadicName)*
 
-RegularFunction ::=
+Function ::=
     Name "(" List<VariadicName> ")"
 
 SubParamCall ::=
@@ -40,10 +40,10 @@ SubParamCall ::=
 SubAndRegularParamCall ::=
     Name "_" "(" List<VariadicName> ")" "(" List<VariadicName> ")"
 
-Function ::=
-    RegularFunction |
-    SubParamFunction |
-    SubAndRegularParamFunction
+FunctionCall ::=
+    Function |
+    SubParamCall |
+    SubAndRegularParamCall
 
 SubParamSequence ::=
     "{" SubParamCall "}" "_" "(" List<VariadicName> ")"
@@ -264,21 +264,21 @@ InfixOperatorExpression ::=
 PostfixOperatorExpression ::=
     Expression MemberScopedOperatorName
 
-RegularFunctionCall ::=
+FunctionCallExpression ::=
     Name "(" List<Expression> ")"
 
-SubParamFunctionCall ::=
+SubParamCallExpression ::=
     Name "_" "(" List<Expression> ")"
 
-SubAndRegularParamFunctionCall ::=
+SubAndRegularParamCallExpression ::=
     Name "_" "(" List<Expression> ")" "(" List<Expression> ")"
 
-FunctionCall ::=
-    RegularFunctionCallRegularFunctionCall |
-    SubParamFunctionCall |
-    SubAndRegularParamFunctionCall
+CallExpression ::=
+    FunctionCallExpression |
+    SubParamCallExpression |
+    SubAndRegularParamCallExpression
 
-TupleCall ::=
+TupleExpression ::=
     "(" Expression ("," Expression)* ")"
 
 OperationExpression ::=
@@ -333,8 +333,8 @@ Expression ::=
     ColonEqualsExpression |
     EqualsExpression |
     NotEqualsExpression |
-    FunctionCall |
-    TupleCall |
+    CallExpression |
+    TupleExpression |
     AssignmentExpression
 ```
 

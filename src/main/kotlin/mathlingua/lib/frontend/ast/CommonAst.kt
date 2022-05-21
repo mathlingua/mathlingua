@@ -33,7 +33,8 @@ internal data class Name(val text: String, override val metadata: MetaData) :
     NameOrFunction,
     NameOrCommand,
     NameOrVariadicName,
-    Expression {
+    Expression,
+    Target {
     override fun toCode() = text
 }
 
@@ -57,7 +58,7 @@ internal data class VariadicName(val name: Name, override val metadata: MetaData
     override fun toCode(): String = "$name..."
 }
 
-internal data class VariadicFunction(val function: Function, override val metadata: MetaData) :
+internal data class VariadicFunction(val function: FunctionCall, override val metadata: MetaData) :
     VariadicTarget {
     override fun toCode() = "${function.toCode()}..."
 }
@@ -68,12 +69,12 @@ internal data class VariadicSequence(val sequence: Sequence, override val metada
 }
 
 // functions
-internal sealed interface Function :
+internal sealed interface FunctionCall :
     SquareTargetItem, NameAssignmentItem, NameOrFunction, Expression
 
-internal data class RegularFunction(
+internal data class Function(
     val name: Name, val params: List<NameOrVariadicName>, override val metadata: MetaData
-) : Function {
+) : FunctionCall, CallExpression, Target {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
@@ -91,7 +92,7 @@ internal data class RegularFunction(
 
 internal data class SubParamCall(
     val name: Name, val subParams: List<NameOrVariadicName>, override val metadata: MetaData
-) : Function {
+) : FunctionCall {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
@@ -112,7 +113,7 @@ internal data class SubAndRegularParamCall(
     val subParams: List<NameOrVariadicName>,
     val params: List<NameOrVariadicName>,
     override val metadata: MetaData
-) : Function {
+) : FunctionCall {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
@@ -136,11 +137,10 @@ internal data class SubAndRegularParamCall(
 }
 
 // sequences
-internal sealed interface Sequence : SquareTargetItem, NameAssignmentItem, Expression
+internal sealed interface Sequence : SquareTargetItem, NameAssignmentItem, Expression, Target
 
-internal data class SubParamSequence(
-    val func: SubParamCall, override val metadata: MetaData
-) : Sequence {
+internal data class SubParamSequence(val func: SubParamCall, override val metadata: MetaData) :
+    Sequence {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("{")
@@ -194,7 +194,7 @@ internal data class NameAssignment(
 }
 
 internal data class FunctionAssignment(
-    val lhs: Function, val rhs: Function, override val metadata: MetaData
+    val lhs: FunctionCall, val rhs: FunctionCall, override val metadata: MetaData
 ) : Assignment {
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -209,10 +209,10 @@ internal data class FunctionAssignment(
 internal sealed interface Argument : CommonNode
 
 // <name> | <tuple> | <sequence> | <function> | <set>
-internal sealed interface SquareTargetItem : Target
+internal sealed interface SquareTargetItem : CommonNode
 
 internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) :
-    SquareTargetItem, NameAssignmentItem, Expression {
+    SquareTargetItem, NameAssignmentItem, Target, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("(")
@@ -231,7 +231,7 @@ internal data class Tuple(val targets: List<Target>, override val metadata: Meta
 internal sealed interface NameOrNameAssignment : CommonNode
 
 internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) :
-    SquareTargetItem, NameAssignmentItem, Expression {
+    SquareTargetItem, NameAssignmentItem, Target, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("{")

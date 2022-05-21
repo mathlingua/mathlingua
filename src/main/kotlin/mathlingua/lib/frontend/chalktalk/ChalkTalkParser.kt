@@ -104,6 +104,7 @@ import mathlingua.lib.frontend.ast.ForAllSection
 import mathlingua.lib.frontend.ast.FromSection
 import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.FunctionAssignment
+import mathlingua.lib.frontend.ast.FunctionCall
 import mathlingua.lib.frontend.ast.GeneratedGroup
 import mathlingua.lib.frontend.ast.GeneratedSection
 import mathlingua.lib.frontend.ast.GeneratedWhenSection
@@ -162,7 +163,6 @@ import mathlingua.lib.frontend.ast.ProvidingItem
 import mathlingua.lib.frontend.ast.ProvidingSection
 import mathlingua.lib.frontend.ast.ReferenceGroup
 import mathlingua.lib.frontend.ast.ReferenceSection
-import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.ResourceGroup
 import mathlingua.lib.frontend.ast.ResourceItem
 import mathlingua.lib.frontend.ast.ResourceSection
@@ -319,7 +319,25 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun sequence(): Sequence? = getNextIfCorrectType()
 
     private fun target(): Target? =
-        name() ?: operator() ?: tuple() ?: sequence() ?: function() ?: set() ?: assignment()
+        name()
+            ?: operator() ?: tuple() ?: sequence()
+                ?: function().let {
+                if (it is Function) {
+                    it
+                } else {
+                    if (it != null) {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                message = "Expected a target",
+                                origin = DiagnosticOrigin.TexTalkParser,
+                                row = it.metadata.row,
+                                column = it.metadata.column))
+                    }
+                    null
+                }
+            }
+                ?: set() ?: assignment()
 
     private fun targets(): List<Target> = collect { argument { target() } }
 
@@ -436,7 +454,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun name(): Name? = getNextIfCorrectType()
 
-    private fun function(): Function? = getNextIfCorrectType()
+    private fun function(): FunctionCall? = getNextIfCorrectType()
 
     private fun nameOrFunction(): NameOrFunction? = name() ?: function()
 
@@ -1554,7 +1572,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             is Statement -> "statement"
             is FunctionAssignment -> "function assignment"
             is NameAssignment -> "name assignment"
-            is RegularFunction -> "function"
+            is Function -> "function"
             is SubAndRegularParamCall -> "function"
             is SubParamCall -> "function"
             is Name -> "name"

@@ -32,6 +32,7 @@ import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
 import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.FunctionAssignment
+import mathlingua.lib.frontend.ast.FunctionCall
 import mathlingua.lib.frontend.ast.Id
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
@@ -40,7 +41,6 @@ import mathlingua.lib.frontend.ast.NameOrNameAssignment
 import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
-import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.Statement
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
@@ -195,7 +195,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
-    private fun argument(isInline: Boolean): Argument? {
+    private fun argument(isInline: Boolean): ChalkTalkNode? {
         if (!lexer.hasNext() || lexer.has(ChalkTalkTokenType.Newline)) {
             return null
         }
@@ -294,7 +294,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
-    private fun function(isInline: Boolean): Function? {
+    private fun function(isInline: Boolean): FunctionCall? {
         // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
         if (!lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.LParen) &&
             !lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Underscore)) {
@@ -324,7 +324,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                         column = name.metadata.column,
                         isInline = name.metadata.isInline))
         } else if (subParams == null && regularParams != null) {
-            RegularFunction(
+            Function(
                 name = name,
                 params = regularParams,
                 metadata =
@@ -388,7 +388,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return null
     }
 
-    private fun target(isInline: Boolean): Target? {
+    private fun target(isInline: Boolean): ChalkTalkNode? {
         val func = function(isInline)
         if (func != null) {
             return if (lexer.has(ChalkTalkTokenType.ColonEqual)) {
@@ -444,8 +444,8 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return nameOrAssignmentItem(isInline) as Target?
     }
 
-    private fun targets(isInline: Boolean, expectedEnd: ChalkTalkTokenType): List<Target> {
-        val targets = mutableListOf<Target>()
+    private fun targets(isInline: Boolean, expectedEnd: ChalkTalkTokenType): List<ChalkTalkNode> {
+        val targets = mutableListOf<ChalkTalkNode>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
             val target = target(isInline) ?: break
             targets.add(target)
@@ -474,7 +474,21 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         val targets = targets(isInline, ChalkTalkTokenType.RParen)
         expect(ChalkTalkTokenType.RParen)
         return Tuple(
-            targets = targets,
+            targets =
+                targets
+                    .map {
+                        if (it !is Target) {
+                            diagnostics.add(
+                                Diagnostic(
+                                    type = DiagnosticType.Error,
+                                    message = "Expected a target",
+                                    origin = DiagnosticOrigin.TexTalkParser,
+                                    row = it.metadata.row,
+                                    column = it.metadata.column))
+                        }
+                        it
+                    }
+                    .filterIsInstance<Target>(),
             metadata = MetaData(row = lParen.row, column = lParen.column, isInline = isInline))
     }
 
@@ -709,7 +723,17 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                                 column = firstToken.column,
                                 isInline = isInline))
                 tokens.add(beginArgument)
-                tokens.add(arg)
+                if (arg is Argument) {
+                    tokens.add(arg)
+                } else {
+                    diagnostics.add(
+                        Diagnostic(
+                            type = DiagnosticType.Error,
+                            message = "Expected an Argument",
+                            origin = DiagnosticOrigin.TexTalkParser,
+                            row = arg.metadata.row,
+                            column = arg.metadata.column))
+                }
                 tokens.add(EndArgument(metadata = beginArgument.metadata.copy()))
             }
 
@@ -749,14 +773,3 @@ private fun ChalkTalkTokenLexer.hasHas(type1: ChalkTalkTokenType, type2: ChalkTa
         this.hasNextNext() &&
         this.peek().type == type1 &&
         this.peekPeek().type == type2
-
-fun main() {
-    val text = "x: {a_(i)}_(i)"
-    val lexer1 = newChalkTalkTokenLexer(text)
-    val lexer2 = newChalkTalkNodeLexer(lexer1)
-    while (lexer2.hasNext()) {
-        println(lexer2.next())
-    }
-    lexer1.diagnostics().forEach(::println)
-    lexer2.diagnostics().forEach(::println)
-}

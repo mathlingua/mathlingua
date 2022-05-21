@@ -24,12 +24,12 @@ import mathlingua.lib.frontend.ast.BeginSection
 import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
+import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.Id
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
-import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.Statement
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
@@ -157,7 +157,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                RegularFunction(
+                Function(
                     name =
                         Name(
                             text = "f", metadata = MetaData(row = 0, column = 10, isInline = true)),

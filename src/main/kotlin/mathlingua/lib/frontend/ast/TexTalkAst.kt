@@ -243,30 +243,30 @@ internal data class PostfixOperatorExpression(
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal sealed interface FunctionCall : Expression
+internal sealed interface CallExpression : Expression
 
-internal data class RegularFunctionCall(
+internal data class FunctionCallExpression(
     val name: Name, val args: List<Expression>, override val metadata: MetaData
-) : FunctionCall {
+) : CallExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal data class SubParamFunctionCall(
+internal data class SubParamCallExpression(
     val name: Name, val subArgs: List<Expression>, override val metadata: MetaData
-) : FunctionCall {
+) : CallExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal data class SubAndRegularParamFunctionCall(
+internal data class SubAndRegularParamCallExpression(
     val name: Name,
     val subArgs: List<Expression>,
     val args: List<Expression>,
     override val metadata: MetaData
-) : FunctionCall {
+) : CallExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal data class TupleCall(val args: List<Expression>, override val metadata: MetaData) :
+internal data class TupleExpression(val args: List<Expression>, override val metadata: MetaData) :
     Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -280,7 +280,7 @@ internal data class NameAssignmentExpression(
 }
 
 internal data class FunctionAssignmentExpression(
-    val lhs: Function, val rhs: Expression, override val metadata: MetaData
+    val lhs: FunctionCall, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression {
     override fun toCode() = TODO("Not yet implemented")
 }

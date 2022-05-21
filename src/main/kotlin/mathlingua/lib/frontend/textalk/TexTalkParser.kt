@@ -31,10 +31,10 @@ import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
-import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
-import mathlingua.lib.frontend.ast.SubAndRegularParamFunctionSequence
-import mathlingua.lib.frontend.ast.SubParamFunction
-import mathlingua.lib.frontend.ast.SubParamFunctionSequence
+import mathlingua.lib.frontend.ast.SubAndRegularParamCall
+import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
+import mathlingua.lib.frontend.ast.SubParamCall
+import mathlingua.lib.frontend.ast.SubParamSequence
 import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
@@ -155,7 +155,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         val subParams = subParams(isInline)
         val regularParams = regularParams(isInline)
         return if (subParams != null && regularParams != null) {
-            SubAndRegularParamFunction(
+            SubAndRegularParamCall(
                 name = name,
                 subParams = subParams,
                 params = regularParams,
@@ -165,7 +165,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                         column = name.metadata.column,
                         isInline = name.metadata.isInline))
         } else if (subParams != null && regularParams == null) {
-            SubParamFunction(
+            SubParamCall(
                 name = name,
                 subParams = subParams,
                 metadata =
@@ -316,15 +316,15 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             } else {
                 when (val first = targets.first()
                 ) {
-                    is SubParamFunction -> {
-                        SubParamFunctionSequence(
+                    is SubParamCall -> {
+                        SubParamSequence(
                             func = first,
                             metadata =
                                 MetaData(
                                     row = lCurly.row, column = lCurly.column, isInline = isInline))
                     }
-                    is SubAndRegularParamFunction -> {
-                        SubAndRegularParamFunctionSequence(
+                    is SubAndRegularParamCall -> {
+                        SubAndRegularParamSequence(
                             func = first,
                             metadata =
                                 MetaData(

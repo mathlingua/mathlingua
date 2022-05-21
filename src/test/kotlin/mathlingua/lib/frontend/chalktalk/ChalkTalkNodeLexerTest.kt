@@ -32,10 +32,10 @@ import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.RegularFunction
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.Statement
-import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
-import mathlingua.lib.frontend.ast.SubAndRegularParamFunctionSequence
-import mathlingua.lib.frontend.ast.SubParamFunction
-import mathlingua.lib.frontend.ast.SubParamFunctionSequence
+import mathlingua.lib.frontend.ast.SubAndRegularParamCall
+import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
+import mathlingua.lib.frontend.ast.SubParamCall
+import mathlingua.lib.frontend.ast.SubParamSequence
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
@@ -249,9 +249,9 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                SubParamFunctionSequence(
+                SubParamSequence(
                     func =
-                        SubParamFunction(
+                        SubParamCall(
                             name =
                                 Name(
                                     text = "f",
@@ -281,9 +281,9 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                SubAndRegularParamFunctionSequence(
+                SubAndRegularParamSequence(
                     func =
-                        SubAndRegularParamFunction(
+                        SubAndRegularParamCall(
                             name =
                                 Name(
                                     text = "f",

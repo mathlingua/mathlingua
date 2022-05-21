@@ -34,22 +34,22 @@ List<VariadicName> ::=
 RegularFunction ::=
     Name "(" List<VariadicName> ")"
 
-SubParamFunction ::=
-    Name "_" "{" List<VariadicName> "}"
+SubParamCall ::=
+    Name "_" "(" List<VariadicName> ")"
 
-SubAndRegularParamFunction ::=
-    Name "_" "{" List<VariadicName> "}" "(" List<VariadicName> ")"
+SubAndRegularParamCall ::=
+    Name "_" "(" List<VariadicName> ")" "(" List<VariadicName> ")"
 
 Function ::=
     RegularFunction |
     SubParamFunction |
     SubAndRegularParamFunction
 
-SubParamFunctionSequence ::=
-    "{" SubParamFunction "}" "_" "(" List<VariadicName> ")"
+SubParamSequence ::=
+    "{" SubParamCall "}" "_" "(" List<VariadicName> ")"
 
-SubAndRegularParamFunctionSequence ::=
-    "{" SubAndRegularParamFunction "}" "_" "(" List<VariadicName> ")"
+SubAndRegularParamSequence ::=
+    "{" SubAndRegularParamCall "}" "_" "(" List<VariadicName> ")"
 
 Sequence ::=
     SubParamFunctionSequence |

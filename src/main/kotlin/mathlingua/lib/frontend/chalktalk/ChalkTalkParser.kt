@@ -178,10 +178,10 @@ import mathlingua.lib.frontend.ast.SpecifySection
 import mathlingua.lib.frontend.ast.Statement
 import mathlingua.lib.frontend.ast.StatesGroup
 import mathlingua.lib.frontend.ast.StatesSection
-import mathlingua.lib.frontend.ast.SubAndRegularParamFunction
-import mathlingua.lib.frontend.ast.SubAndRegularParamFunctionSequence
-import mathlingua.lib.frontend.ast.SubParamFunction
-import mathlingua.lib.frontend.ast.SubParamFunctionSequence
+import mathlingua.lib.frontend.ast.SubAndRegularParamCall
+import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
+import mathlingua.lib.frontend.ast.SubParamCall
+import mathlingua.lib.frontend.ast.SubParamSequence
 import mathlingua.lib.frontend.ast.SuchThatSection
 import mathlingua.lib.frontend.ast.SymbolsGroup
 import mathlingua.lib.frontend.ast.SymbolsSection
@@ -1555,13 +1555,13 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             is FunctionAssignment -> "function assignment"
             is NameAssignment -> "name assignment"
             is RegularFunction -> "function"
-            is SubAndRegularParamFunction -> "function"
-            is SubParamFunction -> "function"
+            is SubAndRegularParamCall -> "function"
+            is SubParamCall -> "function"
             is Name -> "name"
             is VariadicName -> "name"
             is OperatorName -> "name"
-            is SubAndRegularParamFunctionSequence -> "sequence"
-            is SubParamFunctionSequence -> "sequence"
+            is SubAndRegularParamSequence -> "sequence"
+            is SubParamSequence -> "sequence"
             is Set -> "set"
             is Tuple -> "tuple"
             is Text -> "text"

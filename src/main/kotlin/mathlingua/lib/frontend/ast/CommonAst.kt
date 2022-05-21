@@ -89,25 +89,25 @@ internal data class RegularFunction(
     }
 }
 
-internal data class SubParamFunction(
+internal data class SubParamCall(
     val name: Name, val subParams: List<NameOrVariadicName>, override val metadata: MetaData
 ) : Function {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
-        builder.append("_{")
+        builder.append("_(")
         for (i in subParams.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
             builder.append(subParams[i].toCode())
         }
-        builder.append("}")
+        builder.append(")")
         return builder.toString()
     }
 }
 
-internal data class SubAndRegularParamFunction(
+internal data class SubAndRegularParamCall(
     val name: Name,
     val subParams: List<NameOrVariadicName>,
     val params: List<NameOrVariadicName>,
@@ -116,15 +116,14 @@ internal data class SubAndRegularParamFunction(
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
-        builder.append("_{")
+        builder.append("_(")
         for (i in subParams.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
             builder.append(subParams[i].toCode())
         }
-        builder.append("}")
-        builder.append("(")
+        builder.append(")(")
         for (i in params.indices) {
             if (i > 0) {
                 builder.append(", ")
@@ -139,27 +138,27 @@ internal data class SubAndRegularParamFunction(
 // sequences
 internal sealed interface Sequence : SquareTargetItem, NameAssignmentItem, Expression
 
-internal data class SubParamFunctionSequence(
-    val func: SubParamFunction, override val metadata: MetaData
+internal data class SubParamSequence(
+    val func: SubParamCall, override val metadata: MetaData
 ) : Sequence {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("{")
         builder.append(func.toCode())
-        builder.append("}_{")
+        builder.append("}_(")
         for (i in func.subParams.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
             builder.append(func.subParams[i].toCode())
         }
-        builder.append("}")
+        builder.append(")")
         return builder.toString()
     }
 }
 
-internal data class SubAndRegularParamFunctionSequence(
-    val func: SubAndRegularParamFunction, override val metadata: MetaData
+internal data class SubAndRegularParamSequence(
+    val func: SubAndRegularParamCall, override val metadata: MetaData
 ) : Sequence {
     override fun toCode(): String {
         val builder = StringBuilder()

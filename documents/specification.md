@@ -4,13 +4,16 @@
 
 ### Shared
 ```
+NameAssignmentItem ::=
+    Name |
+    OperatorName |
+    Tuple |
+    Sequence |
+    Function |
+    Set
+
 NameAssignment ::=
-    Name ":=" (Name |
-               OperatorName |
-               Tuple |
-               Sequence |
-               Function |
-               Set)
+    Name ":=" NameAssignmentItem
 
 FunctionAssignment ::=
     Function ":=" Function

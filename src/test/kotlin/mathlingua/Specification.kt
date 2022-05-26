@@ -5,47 +5,130 @@ import mathlingua.lib.util.red
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 
-private sealed interface Form
+private sealed interface Form {
+    fun toCode(): String
+}
 
 private enum class SequenceConstraint {
     ZeroOrMore,
     OneOrMore
 }
 
-private data class Literal(val of: String) : Form
+private enum class DefinitionType {
+    Common,
+    ChalkTalk,
+    TexTalk
+}
 
-private data class Regex(val of: String) : Form
+private data class Literal(val of: String) : Form {
+    override fun toCode() = "\"$of\""
+}
 
-private data class AnyOf(val of: List<String>) : Form
+private data class Regex(val of: String) : Form {
+    override fun toCode() = "Regex[$of]"
+}
+
+private data class AnyOf(val of: List<String>) : Form {
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        for (i in of.indices) {
+            if (i > 0) {
+                builder.append(" |\n")
+            }
+            builder.append(of[i])
+        }
+        return builder.toString()
+    }
+}
 
 private data class Sequence(
     val of: String, val separator: String, val constraint: SequenceConstraint
-) : Form
+) : Form {
+    override fun toCode() = when (constraint) {
+        SequenceConstraint.OneOrMore -> {
+            "$of (\"$separator\" $of)*"
+        }
+        else -> {
+            "(NONE | $of (\"$separator\" $of)*)"
+        }
+    }
+}
 
-private data class ZeroOrMore(val of: Form) : Form
+private data class SuffixSequence(
+    val of: String, val separator: String, val constraint: SequenceConstraint
+) : Form {
+    override fun toCode() = when (constraint) {
+        SequenceConstraint.OneOrMore -> {
+            "($of \".\") ($of \".\")*"
+        }
+        else -> {
+            "($of \".\")*"
+        }
+    }
+}
 
-private data class OneOrMore(val of: Form) : Form
+private data class ZeroOrMore(val of: Form) : Form {
+    override fun toCode() = "(${of.toCode()})*"
+}
 
-private data class Optionally(val of: Form) : Form
+private data class OneOrMore(val of: Form) : Form {
+    override fun toCode() = "(${of.toCode()})+"
+}
 
-private data class Item(val of: List<Form>) : Form
+private data class Optionally(val of: Form) : Form {
+    override fun toCode() = "(${of.toCode()})?"
+}
 
-private data class DefinitionOf(val name: String, val of: Form)
+private data class Either(val form1: Form, val form2: Form) : Form {
+    override fun toCode() = "(${form1.toCode()} | ${form2.toCode()})"
+}
 
-private data class Def(val name: String) : Form
+private data class Keyword(val text: String) : Form {
+    override fun toCode() = "'$text'"
+}
 
-private val COMMON_SPECIFICATION =
+private data class Item(val of: List<Form>) : Form {
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        for (i in of.indices) {
+            if (i > 0) {
+                builder.append(' ')
+            }
+            builder.append(of[i].toCode())
+        }
+        return builder.toString()
+    }
+}
+
+private data class CharSequence(val prefix: String, val suffix: String, val regex: String, val escape: String?) : Form {
+    override fun toCode() = "$prefix$regex$suffix [escape=$escape]"
+}
+
+private data class DefinitionOf(val name: String, val of: Form, val type: DefinitionType) {
+    fun toCode() = when (of) {
+        is AnyOf -> "$name ::= \n${of.toCode().split("\n").joinToString("\n") { "   $it" }}"
+        else -> "$name ::= ${of.toCode()}"
+    }
+}
+
+private data class Def(val name: String) : Form {
+    override fun toCode() = name
+}
+
+private data class Section(val name: String, val arg: Form, val required: Boolean)
+
+private val SPECIFICATION =
     listOf(
-        DefinitionOf("Name", Regex("""[a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?""")),
-        DefinitionOf("OperatorName", Regex("""[~!@#${'$'}%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?""")),
+        DefinitionOf("Name", Regex("""[a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?"""), DefinitionType.Common),
+        DefinitionOf("OperatorName", Regex("""[~!@#${'$'}%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?"""), DefinitionType.Common),
         DefinitionOf(
             "NameAssignmentItem",
-            anyOf("Name", "OperatorName", "Tuple", "Sequence", "Function", "Set")),
+            anyOf("Name", "OperatorName", "Tuple", "Sequence", "Function", "Set"), DefinitionType.Common),
         DefinitionOf(
-            "NameAssignment", items(Def("Name"), Literal(":="), Def("NameAssignmentItem"))),
-        DefinitionOf("FunctionAssignment", items(Def("Function"), Literal(":="), Def("Function"))),
-        DefinitionOf("Assignment", anyOf("NameAssignment", "FunctionAssignment")),
-        DefinitionOf("VariadicName", items(Def("Name"), Optionally(Literal("...")))),
+            "NameAssignment", items(Def("Name"), Literal(":="), Def("NameAssignmentItem")), DefinitionType.Common),
+        DefinitionOf("FunctionAssignment", items(Def("Function"), Literal(":="), Def("Function")), DefinitionType.Common),
+        DefinitionOf("Assignment", anyOf("NameAssignment", "FunctionAssignment"), DefinitionType.Common),
+        DefinitionOf("VariadicName", items(Def("Name"), Optionally(Literal("..."))), DefinitionType.Common),
         DefinitionOf(
             "Function",
             items(
@@ -55,7 +138,7 @@ private val COMMON_SPECIFICATION =
                     of = "VariadicName",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore),
-                Literal(")"))),
+                Literal(")")), DefinitionType.Common),
         DefinitionOf(
             "SubParamCall",
             items(
@@ -66,7 +149,7 @@ private val COMMON_SPECIFICATION =
                     of = "VariadicName",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore),
-                Literal(")"))),
+                Literal(")")), DefinitionType.Common),
         DefinitionOf(
             "SubAndRegularParamCall",
             items(
@@ -83,8 +166,8 @@ private val COMMON_SPECIFICATION =
                     of = "VariadicName",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore),
-                Literal(")"))),
-        DefinitionOf("FunctionCall", anyOf("Function", "SubParamCall", "SubAndRegularParamCall")),
+                Literal(")")), DefinitionType.Common),
+        DefinitionOf("FunctionCall", anyOf("Function", "SubParamCall", "SubAndRegularParamCall"), DefinitionType.Common),
         DefinitionOf(
             "SubParamSequence",
             items(
@@ -97,7 +180,7 @@ private val COMMON_SPECIFICATION =
                     of = "VariadicName",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore),
-                Literal(")"))),
+                Literal(")")), DefinitionType.Common),
         DefinitionOf(
             "SubAndRegularParamSequence",
             items(
@@ -110,16 +193,16 @@ private val COMMON_SPECIFICATION =
                     of = "VariadicName",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore),
-                Literal(")"))),
+                Literal(")")), DefinitionType.Common),
         DefinitionOf(
-            "Sequence", anyOf("SubParamFunctionSequence", "SubAndRegularParamFunctionSequence")),
+            "Sequence", anyOf("SubParamFunctionSequence", "SubAndRegularParamFunctionSequence"), DefinitionType.Common),
         DefinitionOf(
             "Tuple",
             items(
                 Literal("("),
                 Sequence(of = "Target", separator = ",", constraint = SequenceConstraint.OneOrMore),
-                Literal(")"))),
-        DefinitionOf("NameOrNameAssignment", anyOf("Name", "NameAssignment")),
+                Literal(")")), DefinitionType.Common),
+        DefinitionOf("NameOrNameAssignment", anyOf("Name", "NameAssignment"), DefinitionType.Common),
         DefinitionOf(
             "Set",
             items(
@@ -128,10 +211,821 @@ private val COMMON_SPECIFICATION =
                     of = "NameOrNameAssignment",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore),
-                Literal("}"))),
+                Literal("}")), DefinitionType.Common),
         DefinitionOf(
             "Target",
-            anyOf("Assignment", "Name", "OperatorName", "Tuple", "Sequence", "Function", "Set")))
+            anyOf("Assignment", "Name", "OperatorName", "Tuple", "Sequence", "Function", "Set"), DefinitionType.Common),
+        DefinitionOf(
+            "Argument",
+            anyOf("Target", "Text", "Statement"),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "Text",
+            CharSequence(
+                prefix = "\"",
+                suffix = "\"",
+                regex = ".*",
+                escape = """\""""
+            ),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "TextBlock",
+            CharSequence(
+                prefix = "::",
+                suffix = "::",
+                regex = ".*",
+                escape = "{::}",
+            ),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "Statement",
+            Either(
+                CharSequence(
+                    prefix = "'",
+                    suffix = "'",
+                    regex = ".*",
+                    escape = null
+                ),
+                CharSequence(
+                    prefix = "`",
+                    suffix = "`",
+                    regex = ".*",
+                    escape = null
+                )
+            ),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "InfixCommandFormCall",
+            items(
+                Def("Name"),
+                Def("InfixCommandForm"),
+                Def("Name")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "IdPrefixOperatorCall",
+            items(
+                Def("OperatorName"),
+                Def("Name")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "IdPostfixOperatorCall",
+            items(
+                Def("Name"),
+                Def("OperatorName")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "IdInfixOperatorCall",
+            items(
+                Def("Name"),
+                Def("OperatorName"),
+                Def("Name")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "IdForm",
+            anyOf(
+                "CommandForm",
+                "InfixCommandFormCall",
+                "IdPrefixOperatorCall",
+                "IdPostfixOperatorCall",
+                "IdInfixOperatorCall"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "Id",
+            items(
+                Literal("["),
+                Def("IdForm"),
+                Literal("]")
+            ),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "SquareTargetItem",
+            anyOf(
+                "Name",
+                "Tuple",
+                "Sequence",
+                "Function",
+                "Set"
+            ),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "CommandExpression",
+            items(
+                Literal("""\"""),
+                Sequence(
+                    of = "Name",
+                    separator = ".",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Optionally(
+                    items(
+                        Optionally(
+                            items(
+                                Literal("["),
+                                Sequence(
+                                    of = "SquareTargetItem",
+                                    separator = ",",
+                                    constraint = SequenceConstraint.OneOrMore
+                                ),
+                                Optionally(
+                                    items(
+                                        Literal("|"),
+                                        Def("Name"),
+                                        Literal("...")
+                                    ),
+                                ),
+                                Literal("]"),
+                            )
+                        ),
+                        Optionally(
+                            items(
+                                Literal("_"),
+                                Literal("{"),
+                                Sequence(
+                                    of = "Expression",
+                                    separator = ",",
+                                    constraint = SequenceConstraint.OneOrMore
+                                ),
+                                Literal("}")
+                            )
+                        ),
+                        Optionally(
+                            items(
+                                Literal("^"),
+                                Literal("{"),
+                                Sequence(
+                                    of = "Expression",
+                                    separator = ",",
+                                    constraint = SequenceConstraint.OneOrMore
+                                ),
+                                Literal("}")
+                            )
+                        )
+                    ),
+                ),
+                Optionally(
+                    items(
+                        Literal("{"),
+                        Sequence(
+                            of = "Expression",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore
+                        ),
+                        Literal("}")
+                    )
+                ),
+                ZeroOrMore(
+                    items(
+                        Literal(":"),
+                        Literal("{"),
+                        Sequence(
+                            of = "Expression",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore
+                        ),
+                        Literal("}")
+                    )
+                ),
+                Optionally(
+                    items(
+                        Literal("("),
+                        Sequence(
+                            of = "Expression",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore
+                        ),
+                        Literal(")")
+                    )
+                )
+            ),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "CommandForm",
+            items(
+                Literal("""\"""),
+                Sequence(
+                    of = "Name",
+                    separator = ".",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Optionally(
+                    items(
+                        Optionally(
+                            items(
+                                Literal("["),
+                                Sequence(
+                                    of = "SquareTargetItem",
+                                    separator = ",",
+                                    constraint = SequenceConstraint.OneOrMore
+                                ),
+                                Optionally(
+                                    items(
+                                        Literal("|"),
+                                        Def("Name"),
+                                        Literal("...")
+                                    ),
+                                ),
+                                Literal("]"),
+                            )
+                        ),
+                        Optionally(
+                            items(
+                                Literal("_"),
+                                Literal("{"),
+                                Sequence(
+                                    of = "VariadicName",
+                                    separator = ",",
+                                    constraint = SequenceConstraint.OneOrMore
+                                ),
+                                Literal("}")
+                            )
+                        ),
+                        Optionally(
+                            items(
+                                Literal("^"),
+                                Literal("{"),
+                                Sequence(
+                                    of = "VariadicName",
+                                    separator = ",",
+                                    constraint = SequenceConstraint.OneOrMore
+                                ),
+                                Literal("}")
+                            )
+                        )
+                    ),
+                ),
+                Optionally(
+                    items(
+                        Literal("{"),
+                        Sequence(
+                            of = "VariadicName",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore
+                        ),
+                        Literal("}")
+                    )
+                ),
+                ZeroOrMore(
+                    items(
+                        Literal(":"),
+                        Literal("{"),
+                        Sequence(
+                            of = "VariadicName",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore
+                        ),
+                        Literal("}")
+                    )
+                ),
+                Optionally(
+                    items(
+                        Literal("("),
+                        Sequence(
+                            of = "VariadicName",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore
+                        ),
+                        Literal(")")
+                    )
+                )
+            ),
+            DefinitionType.ChalkTalk
+        ),
+        DefinitionOf(
+            "InfixCommandExpression",
+            items(
+                Def("CommandExpression"),
+                Literal("/")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "InfixCommandForm",
+            items(
+                Def("CommandForm"),
+                Literal("/")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "NameOrCommand",
+            anyOf(
+                "Name",
+                "CommandExpression"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicIsRhs",
+            anyOf(
+                "VariadicName",
+                "CommandExpression"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicIsExpression",
+            items(
+                Def("VariadicTarget"),
+                Keyword("is"),
+                Def("VariadicIsRhs")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "IsExpression",
+            items(
+                Sequence(
+                    of = "Target",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Keyword("is"),
+                Sequence(
+                    of = "NameOrCommand",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                )
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "MetaIsFormItem",
+            anyOf(
+                "statement",
+                "assignment",
+                "specification",
+                "expression",
+                "definition"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "MetaIsForm",
+            items(
+                Literal("[:"),
+                Sequence(
+                    of = "MetaIsFormItem",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal(":]")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "SignatureExpression",
+            items(
+                Literal("""\"""),
+                Sequence(
+                    of = "Name",
+                    separator = ".",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                ZeroOrMore(
+                    items(
+                        Literal(":"),
+                        Def("Name")
+                    )
+                )
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "AsExpression",
+            items(
+                Def("Expression"),
+                Keyword("as"),
+                Def("SignatureExpression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicFunction",
+            items(
+                Def("Function"),
+                Literal("...")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicSequence",
+            items(
+                Def("Sequence"),
+                Literal("...")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicTarget",
+            anyOf(
+                "VariadicName",
+                "VariadicFunction",
+                "VariadicSequence"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicRhs",
+            anyOf(
+                "VariadicTarget",
+                "Expression"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicInExpression",
+            items(
+                Def("VariadicTarget"),
+                Literal("in"),
+                Def("VariadicRhs")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "InExpression",
+            items(
+                Sequence(
+                    of = "Target",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal("in"),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicNotInExpression",
+            items(
+                Def("VariadicTarget"),
+                Literal("notin"),
+                Def("VariadicRhs")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "NotInExpression",
+            items(
+                Sequence(
+                    of = "Target",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal("notin"),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "VariadicColonEqualsExpression",
+            items(
+                Def("VariadicTarget"),
+                Literal(":="),
+                Def("VariadicRhs")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "ColonEqualsExpression",
+            items(
+                Def("Target"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "EqualsExpression",
+            items(
+                Def("Expression"),
+                Literal("="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "NotEqualsExpression",
+            items(
+                Def("Expression"),
+                Literal("!="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "TypeScopedInfixOperatorName",
+            items(
+                Def("SignatureExpression"),
+                Literal("::"),
+                Def("OperatorName"),
+                Literal("/")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "TypeScopedOperatorName",
+            items(
+                Def("SignatureExpression"),
+                Literal("::"),
+                Def("OperatorName")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "MemberScopedOperatorName",
+            items(
+                Literal("["),
+                SuffixSequence(
+                    of = "Name",
+                    separator = ".",
+                    constraint = SequenceConstraint.ZeroOrMore
+                ),
+                Def("OperatorName"),
+                Literal("]")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "MemberScopedName",
+            items(
+                Sequence(
+                    of = "Name",
+                    separator = ".",
+                    constraint = SequenceConstraint.OneOrMore
+                )
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "Operator",
+            anyOf(
+                "OperatorName",
+                "MemberScopedOperatorName",
+                "TypeScopedOperatorName",
+                "TypeScopedInfixOperatorName"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "InfixCommandExpression",
+            items(
+                Def("Expression"),
+                Def("InfixCommandExpression"),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "PrefixOperatorExpression",
+            items(
+                Def("MemberScopedOperatorName"),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "InfixOperatorExpression",
+            items(
+                Def("Expression"),
+                Def("MemberScopedOperatorName"),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "PostfixOperatorExpression",
+            items(
+                Def("Expression"),
+                Def("MemberScopedOperatorName")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "FunctionCallExpression",
+            items(
+                Def("Name"),
+                Literal("("),
+                Sequence(
+                    of = "Expression",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal(")")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "SubParamCallExpression",
+            items(
+                Def("Name"),
+                Literal("_"),
+                Literal("("),
+                Sequence(
+                    of = "Expression",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal(")")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "SubAndRegularParamCallExpression",
+            items(
+                Def("Name"),
+                Literal("_"),
+                Literal("("),
+                Sequence(
+                    of = "Expression",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal(")"),
+                Literal("("),
+                Sequence(
+                    of = "Expression",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal(")")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "CallExpression",
+            anyOf(
+                "FunctionCallExpression",
+                "SubParamCallExpression",
+                "SubAndRegularParamCallExpression"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "TupleExpression",
+            items(
+                Literal("("),
+                Sequence(
+                    of = "Expression",
+                    separator = ",",
+                    constraint = SequenceConstraint.OneOrMore
+                ),
+                Literal(")")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "OperationExpression",
+            anyOf(
+                "PrefixOperatorExpression",
+                "InfixOperatorExpression",
+                "PostfixOperatorExpression",
+                "InfixCommandExpression"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "NameAssignmentExpression",
+            items(
+                Def("Name"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "FunctionAssignmentExpression",
+            items(
+                Def("Function"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "SetAssignmentExpression",
+            items(
+                Def("Set"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "SequenceAssignmentExpression",
+            items(
+                Def("Sequence"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "TupleAssignmentExpression",
+            items(
+                Def("Tuple"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "NameAssignmentAssignmentExpression",
+            items(
+                Def("NameAssignment"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "OperationAssignmentExpression",
+            items(
+                Def("OperationExpression"),
+                Literal(":="),
+                Def("Expression")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "AssignmentExpression",
+            anyOf(
+                "NameAssignmentExpression",
+                "FunctionAssignmentExpression",
+                "SetAssignmentExpression",
+                "SequenceAssignmentExpression",
+                "TupleAssignmentExpression",
+                "NameAssignmentAssignmentExpression",
+                "OperationAssignmentExpression"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "ParenGroupingExpression",
+            items(
+                Literal("("),
+                Def("Expression"),
+                Literal(")")
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "CurlyGroupingExpression",
+            items(
+                Literal("{"),
+                Def("Expression"),
+                Literal("}"),
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "GroupingExpression",
+            anyOf(
+                "ParenGroupingExpression",
+                "CurlyGroupingExpression"
+            ),
+            DefinitionType.TexTalk
+        ),
+        DefinitionOf(
+            "Expression",
+            anyOf(
+                "Name",
+                "MemberScopedName",
+                "Tuple",
+                "Sequence",
+                "Function",
+                "Set",
+                "GroupingExpression",
+                "OperationExpression",
+                "CommandExpression",
+                "AsExpression",
+                "VariadicColonEqualsExpression",
+                "ColonEqualsExpression",
+                "EqualsExpression",
+                "NotEqualsExpression",
+                "CallExpression",
+                "TupleExpression",
+                "AssignmentExpression"
+            ),
+            DefinitionType.TexTalk
+        )
+)
 
 private fun anyOf(vararg of: String) = AnyOf(of.toList())
 
@@ -166,7 +1060,7 @@ fun verifySpec() {
                 !it.contains("$")
         }
 
-    val allTypesInSpec = COMMON_SPECIFICATION.map { it.name.addAstPackagePrefix() }
+    val allTypesInSpec = SPECIFICATION.map { it.name.addAstPackagePrefix() }
 
     println(bold("Analyzing items declared in the spec but not in code:"))
     var notInCodeCount = 0
@@ -211,7 +1105,7 @@ fun verifySpec() {
     }
 
     val typeToSpecAnyOf = mutableMapOf<String, Set<String>>()
-    for (def in COMMON_SPECIFICATION) {
+    for (def in SPECIFICATION) {
         if (def.of is AnyOf) {
             typeToSpecAnyOf[def.name] = def.of.of.toSet()
         }
@@ -263,6 +1157,16 @@ fun verifySpec() {
      */
 }
 
+fun specToCode(): String {
+    val builder = StringBuilder()
+    for (c in SPECIFICATION) {
+        builder.append(c.toCode())
+        builder.append("\n\n")
+    }
+    return builder.toString()
+}
+
 fun main() {
-    verifySpec()
+    // verifySpec()
+    println(specToCode())
 }

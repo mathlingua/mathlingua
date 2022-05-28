@@ -28,14 +28,14 @@ private data class Regex(val of: String) : Form {
     override fun toCode() = "Regex[$of]"
 }
 
-private data class AnyOf(val of: List<String>) : Form {
+private data class AnyOf(val of: List<Form>) : Form {
     override fun toCode(): String {
         val builder = StringBuilder()
         for (i in of.indices) {
             if (i > 0) {
                 builder.append(" |\n")
             }
-            builder.append(of[i])
+            builder.append(of[i].toCode())
         }
         return builder.toString()
     }
@@ -155,7 +155,7 @@ private val SPECIFICATION =
             DefinitionType.Common),
         DefinitionOf(
             "NameAssignmentItem",
-            anyOf("Name", "OperatorName", "Tuple", "Sequence", "Function", "Set"),
+            anyOf(Def("Name"), Def("OperatorName"), Def("Tuple"), Def("Sequence"), Def("Function"), Def("Set")),
             DefinitionType.Common),
         DefinitionOf(
             "NameAssignment",
@@ -166,7 +166,7 @@ private val SPECIFICATION =
             items(Def("Function"), Literal(":="), Def("Function")),
             DefinitionType.Common),
         DefinitionOf(
-            "Assignment", anyOf("NameAssignment", "FunctionAssignment"), DefinitionType.Common),
+            "Assignment", anyOf(Def("NameAssignment"), Def("FunctionAssignment")), DefinitionType.Common),
         DefinitionOf(
             "VariadicName", items(Def("Name"), Optionally(Literal("..."))), DefinitionType.Common),
         DefinitionOf(
@@ -212,7 +212,7 @@ private val SPECIFICATION =
             DefinitionType.Common),
         DefinitionOf(
             "FunctionCall",
-            anyOf("Function", "SubParamCall", "SubAndRegularParamCall"),
+            anyOf(Def("Function"), Def("SubParamCall"), Def("SubAndRegularParamCall")),
             DefinitionType.Common),
         DefinitionOf(
             "SubParamSequence",
@@ -244,7 +244,7 @@ private val SPECIFICATION =
             DefinitionType.Common),
         DefinitionOf(
             "Sequence",
-            anyOf("SubParamFunctionSequence", "SubAndRegularParamFunctionSequence"),
+            anyOf(Def("SubParamFunctionSequence"), Def("SubAndRegularParamFunctionSequence")),
             DefinitionType.Common),
         DefinitionOf(
             "Tuple",
@@ -254,7 +254,7 @@ private val SPECIFICATION =
                 Literal(")")),
             DefinitionType.Common),
         DefinitionOf(
-            "NameOrNameAssignment", anyOf("Name", "NameAssignment"), DefinitionType.Common),
+            "NameOrNameAssignment", anyOf(Def("Name"), Def("NameAssignment")), DefinitionType.Common),
         DefinitionOf(
             "Set",
             items(
@@ -267,9 +267,9 @@ private val SPECIFICATION =
             DefinitionType.Common),
         DefinitionOf(
             "Target",
-            anyOf("Assignment", "Name", "OperatorName", "Tuple", "Sequence", "Function", "Set"),
+            anyOf(Def("Assignment"), Def("Name"), Def("OperatorName"), Def("Tuple"), Def("Sequence"), Def("Function"), Def("Set")),
             DefinitionType.Common),
-        DefinitionOf("Argument", anyOf("Target", "Text", "Statement"), DefinitionType.ChalkTalk),
+        DefinitionOf("Argument", anyOf(Def("Target"), Def("Text"), Def("Statement")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "Text",
             CharSequence(prefix = "\"", suffix = "\"", regex = ".*", escape = """\""""),
@@ -308,17 +308,17 @@ private val SPECIFICATION =
         DefinitionOf(
             "IdForm",
             anyOf(
-                "CommandForm",
-                "InfixCommandFormCall",
-                "IdPrefixOperatorCall",
-                "IdPostfixOperatorCall",
-                "IdInfixOperatorCall"),
+                Def("CommandForm"),
+                    Def("InfixCommandFormCall"),
+                        Def("IdPrefixOperatorCall"),
+                            Def("IdPostfixOperatorCall"),
+                                Def("IdInfixOperatorCall")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "Id", items(Literal("["), Def("IdForm"), Literal("]")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "SquareTargetItem",
-            anyOf("Name", "Tuple", "Sequence", "Function", "Set"),
+            anyOf(Def("Name"), Def("Tuple"), Def("Sequence"), Def("Function"), Def("Set")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "CommandExpression",
@@ -454,9 +454,9 @@ private val SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "InfixCommandForm", items(Def("CommandForm"), Literal("/")), DefinitionType.TexTalk),
-        DefinitionOf("NameOrCommand", anyOf("Name", "CommandExpression"), DefinitionType.TexTalk),
+        DefinitionOf("NameOrCommand", anyOf(Def("Name"), Def("CommandExpression")), DefinitionType.TexTalk),
         DefinitionOf(
-            "VariadicIsRhs", anyOf("VariadicName", "CommandExpression"), DefinitionType.TexTalk),
+            "VariadicIsRhs", anyOf(Def("VariadicName"), Def("CommandExpression")), DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicIsExpression",
             items(Def("VariadicTarget"), Keyword("is"), Def("VariadicIsRhs")),
@@ -473,7 +473,7 @@ private val SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "MetaIsFormItem",
-            anyOf("statement", "assignment", "specification", "expression", "definition"),
+            anyOf(Def("statement"), Def("assignment"), Def("specification"), Def("expression"), Def("definition")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "MetaIsForm",
@@ -502,9 +502,9 @@ private val SPECIFICATION =
             "VariadicSequence", items(Def("Sequence"), Literal("...")), DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicTarget",
-            anyOf("VariadicName", "VariadicFunction", "VariadicSequence"),
+            anyOf(Def("VariadicName"), Def("VariadicFunction"), Def("VariadicSequence")),
             DefinitionType.TexTalk),
-        DefinitionOf("VariadicRhs", anyOf("VariadicTarget", "Expression"), DefinitionType.TexTalk),
+        DefinitionOf("VariadicRhs", anyOf(Def("VariadicTarget"), Def("Expression")), DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicInExpression",
             items(Def("VariadicTarget"), Literal("in"), Def("VariadicRhs")),
@@ -568,10 +568,10 @@ private val SPECIFICATION =
         DefinitionOf(
             "Operator",
             anyOf(
-                "OperatorName",
-                "MemberScopedOperatorName",
-                "TypeScopedOperatorName",
-                "TypeScopedInfixOperatorName"),
+                Def("OperatorName"),
+                Def("MemberScopedOperatorName"),
+                Def("TypeScopedOperatorName"),
+                Def("TypeScopedInfixOperatorName")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "InfixCommandExpression",
@@ -625,9 +625,9 @@ private val SPECIFICATION =
         DefinitionOf(
             "CallExpression",
             anyOf(
-                "FunctionCallExpression",
-                "SubParamCallExpression",
-                "SubAndRegularParamCallExpression"),
+                Def("FunctionCallExpression"),
+                Def("SubParamCallExpression"),
+                Def("SubAndRegularParamCallExpression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "TupleExpression",
@@ -640,10 +640,10 @@ private val SPECIFICATION =
         DefinitionOf(
             "OperationExpression",
             anyOf(
-                "PrefixOperatorExpression",
-                "InfixOperatorExpression",
-                "PostfixOperatorExpression",
-                "InfixCommandExpression"),
+                Def("PrefixOperatorExpression"),
+                Def("InfixOperatorExpression"),
+                Def("PostfixOperatorExpression"),
+                Def("InfixCommandExpression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "NameAssignmentExpression",
@@ -676,13 +676,13 @@ private val SPECIFICATION =
         DefinitionOf(
             "AssignmentExpression",
             anyOf(
-                "NameAssignmentExpression",
-                "FunctionAssignmentExpression",
-                "SetAssignmentExpression",
-                "SequenceAssignmentExpression",
-                "TupleAssignmentExpression",
-                "NameAssignmentAssignmentExpression",
-                "OperationAssignmentExpression"),
+                Def("NameAssignmentExpression"),
+                Def("FunctionAssignmentExpression"),
+                Def("SetAssignmentExpression"),
+                Def("SequenceAssignmentExpression"),
+                Def("TupleAssignmentExpression"),
+                Def("NameAssignmentAssignmentExpression"),
+                Def("OperationAssignmentExpression") ),
             DefinitionType.TexTalk),
         DefinitionOf(
             "ParenGroupingExpression",
@@ -698,48 +698,48 @@ private val SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "GroupingExpression",
-            anyOf("ParenGroupingExpression", "CurlyGroupingExpression"),
+            anyOf(Def("ParenGroupingExpression"), Def("CurlyGroupingExpression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "Expression",
             anyOf(
-                "Name",
-                "MemberScopedName",
-                "Tuple",
-                "Sequence",
-                "Function",
-                "Set",
-                "GroupingExpression",
-                "OperationExpression",
-                "CommandExpression",
-                "AsExpression",
-                "VariadicColonEqualsExpression",
-                "ColonEqualsExpression",
-                "EqualsExpression",
-                "NotEqualsExpression",
-                "CallExpression",
-                "TupleExpression",
-                "AssignmentExpression"),
+                Def("Name"),
+                Def("MemberScopedName"),
+                Def("Tuple"),
+                Def("Sequence"),
+                Def("Function"),
+                Def("Set"),
+                Def("GroupingExpression"),
+                Def("OperationExpression"),
+                Def("CommandExpression"),
+                Def("AsExpression"),
+                Def("VariadicColonEqualsExpression"),
+                Def("ColonEqualsExpression"),
+                Def("EqualsExpression"),
+                Def("NotEqualsExpression"),
+                Def("CallExpression"),
+                Def("TupleExpression"),
+                Def("AssignmentExpression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "Clause",
             anyOf(
-                "and:",
-                "not:",
-                "or:",
-                "exists:",
-                "existsUnique:",
-                "forAll:",
-                "if:",
-                "iff:",
-                "Text[.*]",
-                "Statement[Expression]"),
+                Def("and:"),
+                Def("not:"),
+                Def("or:"),
+                Def("exists:"),
+                Def("existsUnique:"),
+                Def("forAll:"),
+                Def("if:"),
+                Def("iff:"),
+                Def("Text[.*]"),
+                Def("Statement[Expression]")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Spec",
             anyOf(
-                "Statement[IsExpression | VariadicIsExpression]",
-                "Statement[InExpression | VariadicInExpression]"),
+                Def("Statement[IsExpression | VariadicIsExpression]"),
+                    Def("Statement[InExpression | VariadicInExpression]")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "and:",
@@ -793,7 +793,7 @@ private val SPECIFICATION =
                 Section(name = "iff", arg = OneOrMore(Def("Clause")), required = true),
                 Section(name = "then", arg = OneOrMore(Def("Clause")), required = true)),
             DefinitionType.ChalkTalk),
-        DefinitionOf("NameOrFunction", anyOf("Name", "Function"), DefinitionType.ChalkTalk),
+        DefinitionOf("NameOrFunction", anyOf(Def("Name"), Def("Function")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "generated:",
             group(
@@ -833,8 +833,8 @@ private val SPECIFICATION =
         DefinitionOf(
             "ProvidedItem",
             anyOf(
-                "Statement[Expression InfixCommandExpression Expression]",
-                "Statement[Expression MemberScopedOperatorName Expression]"),
+                Def("Statement[Expression InfixCommandExpression Expression]"),
+                Def("Statement[Expression MemberScopedOperatorName Expression]")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "equality:",
@@ -884,31 +884,31 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "MetadataItem",
-            anyOf("note:", "author:", "tag:", "reference:"),
+            anyOf(Def("note:"), Def("author:"), Def("tag:"), Def("reference:")),
             DefinitionType.ChalkTalk),
         DefinitionOf("AnyView", ZeroOrMore(Def("View")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "ProvidingItem",
-            anyOf("AnyView", "symbols:", "memberSymbols:", "equality:", "membership:"),
+            anyOf(Def("AnyView"), Def("symbols:"), Def("memberSymbols:"), Def("equality:"), Def("membership:")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "SatisfyingItem",
             anyOf(
-                "generated:",
-                "Clause",
-                "Spec",
-                "ColonEqualsExpression",
-                "VariadicColonEqualsExpression"),
+                Def("generated:"),
+                Def("Clause"),
+                Def("Spec"),
+                Def("ColonEqualsExpression"),
+                Def("VariadicColonEqualsExpression")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ExpressingItem",
             anyOf(
-                "piecewise:",
-                "match:",
-                "Clause",
-                "Spec",
-                "ColonEqualsExpression",
-                "VariadicColonEqualsExpression"),
+                Def("piecewise:"),
+                Def("match:"),
+                Def("Clause"),
+                Def("Spec"),
+                Def("ColonEqualsExpression"),
+                Def("VariadicColonEqualsExpression")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Defines:",
@@ -968,7 +968,7 @@ private val SPECIFICATION =
                     required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "ThatItem", anyOf("Clause", "Spec", "ColonEqualsExpression"), DefinitionType.ChalkTalk),
+            "ThatItem", anyOf(Def("Clause"), Def("Spec"), Def("ColonEqualsExpression")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "Id",
             group(
@@ -1019,7 +1019,7 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ResourceItem",
-            anyOf("type", "name", "author", "homepage", "url", "offset"),
+            anyOf(Def("type"), Def("name"), Def("author"), Def("homepage"), Def("url"), Def("offset")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Resource:",
@@ -1101,7 +1101,7 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "SpecifyItem",
-            anyOf("zero:", "positiveInt:", "negativeInt:", "positiveFloat:", "negativeFloat:"),
+            anyOf(Def("zero:"), Def("positiveInt:"), Def("negativeInt:"), Def("positiveFloat:"), Def("negativeFloat:")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Specify:",
@@ -1145,24 +1145,24 @@ private val SPECIFICATION =
         DefinitionOf(
             "TopLevelGroup",
             anyOf(
-                "Defines:",
-                "States:",
-                "Axiom:",
-                "Conjecture:",
-                "Theorem:",
-                "Topic:",
-                "Resource:",
-                "Specify:",
-                "Note:"),
+                Def("Defines:"),
+                Def("States:"),
+                Def("Axiom:"),
+                Def("Conjecture:"),
+                Def("Theorem:"),
+                Def("Topic:"),
+                Def("Resource:"),
+                Def("Specify:"),
+                Def("Note:")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "TopLevelGroupOrTextBlock",
-            anyOf("TopLevelGroup", "TextBlock"),
+            anyOf(Def("TopLevelGroup"), Def("TextBlock")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Document", ZeroOrMore(Def("TopLevelGroupOrTextBlock")), DefinitionType.ChalkTalk))
 
-private fun anyOf(vararg of: String) = AnyOf(of.toList())
+private fun anyOf(vararg of: Form) = AnyOf(of.toList())
 
 private fun items(vararg of: Form) = Item(of.toList())
 
@@ -1243,7 +1243,7 @@ fun verifySpec() {
     val typeToSpecAnyOf = mutableMapOf<String, Set<String>>()
     for (def in SPECIFICATION) {
         if (def.of is AnyOf) {
-            typeToSpecAnyOf[def.name] = def.of.of.toSet()
+            typeToSpecAnyOf[def.name] = def.of.of.map { it.toCode() }.toSet()
         }
     }
 

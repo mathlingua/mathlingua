@@ -1244,6 +1244,8 @@ private class ErrorLogger {
         println("${bold(red("ERROR:"))} $message")
     }
 
+    fun log(message: String) = println(message)
+
     fun numErrors() = count
 }
 
@@ -1260,31 +1262,37 @@ private fun checkForDuplicateDefinitionOfNames(logger: ErrorLogger) {
     println("Checking for duplicate definition names found $count errors")
 }
 
-fun verifySpec() {
+private fun getAllTypesInCode(): List<String> {
     val reflections = Reflections(AST_PACKAGE, Scanners.values())
-    val allTypesInCode =
-        reflections.getAll(Scanners.SubTypes).filter {
-            // only find mathlingua types
-            it.contains(AST_PACKAGE) &&
-                // ignore types associated with tests (tests make a class
-                // for each test of the form <test-class>$<test-name>)
-                !it.contains("$")
-        }
+    return reflections.getAll(Scanners.SubTypes).filter {
+        // only find mathlingua types
+        it.contains(AST_PACKAGE) &&
+            // ignore types associated with tests (tests make a class
+            // for each test of the form <test-class>$<test-name>)
+            !it.contains("$")
+    }
+}
 
-    val allTypesInSpec = SPECIFICATION.map { it.name.addAstPackagePrefix() }
+private fun getAllTypesInSpec() = SPECIFICATION.map { it.name.addAstPackagePrefix() }
 
-    println(bold("Analyzing items declared in the spec but not in code:"))
+private fun checkAllItemsDeclaredInTheSpecButNotInCode(logger: ErrorLogger) {
+    val allTypesInSpec = getAllTypesInSpec()
+    val allTypesInCode = getAllTypesInCode()
+
+    logger.log(bold("Analyzing items declared in the spec but not in code:"))
     var notInCodeCount = 0
     for (t in allTypesInSpec) {
         if (t !in allTypesInCode) {
             notInCodeCount++
-            println(
+            logger.log(
                 "${red(bold("ERROR: "))} ${bold(t.removeAstPackagePrefix())} is declared in the spec but not defined in code")
         }
     }
-    println("Found $notInCodeCount errors")
-    println()
+    logger.log("Found $notInCodeCount errors")
+}
 
+/*
+fun verifySpec() {
     println(bold("Analyzing items declared in the code but not in the spec:"))
     var notInSpecCount = 0
     for (t in allTypesInCode) {
@@ -1372,6 +1380,7 @@ fun verifySpec() {
     println("Found $totalCount errors in total")
     println()
 }
+ */
 
 fun specToCode(): String {
     val builder = StringBuilder()
@@ -1383,13 +1392,15 @@ fun specToCode(): String {
 }
 
 fun main() {
-    println(specToCode())
-    println("------------------------------------------------------")
-    println()
-
     val logger = ErrorLogger()
-    checkForDuplicateDefinitionOfNames(logger)
 
-    println("Total number of errors: ${logger.numErrors()}")
+    logger.log(specToCode())
+    logger.log("------------------------------------------------------")
+    logger.log("")
+
+    checkForDuplicateDefinitionOfNames(logger)
+    checkAllItemsDeclaredInTheSpecButNotInCode(logger)
+
+    logger.log("Total number of errors: ${logger.numErrors()}")
     // verifySpec()
 }

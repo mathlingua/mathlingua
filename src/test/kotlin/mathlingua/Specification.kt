@@ -131,11 +131,11 @@ private data class Section(val name: String, val arg: Form, val required: Boolea
     fun toCode() = "$name${if (required) {""} else {"?"}}: ${arg.toCode()}"
 }
 
-private data class Group(val classname: String, val id: String?, val of: List<Section>) : Form {
+private data class Group(val classname: String, val id: Form?, val of: List<Section>) : Form {
     override fun toCode(): String {
         val builder = StringBuilder()
         if (id != null) {
-            builder.append("[$id]\n")
+            builder.append("[${id.toCode()}]\n")
         }
         for (sec in of) {
             if (builder.isNotEmpty() && !builder.endsWith("\n")) {
@@ -972,7 +972,7 @@ private val SPECIFICATION =
             "Defines:",
             group(
                 "DefinesGroup",
-                "Id",
+                Def("Id"),
                 Section(name = "Defines", arg = Def("Target"), required = true),
                 Section(name = "with", arg = OneOrMore(Def("Assignment")), required = false),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
@@ -1088,7 +1088,7 @@ private val SPECIFICATION =
             "Resource:",
             group(
                 "ResourceGroup",
-                "ResourceName",
+                Def("ResourceName"),
                 Section(name = "Resource", arg = OneOrMore(Def("ResourceItem")), required = true),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
@@ -1096,7 +1096,7 @@ private val SPECIFICATION =
             "Axiom:",
             group(
                 "AxiomGroup",
-                "Id?",
+                Optionally(Def("Id")),
                 Section(name = "Axiom", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
@@ -1113,7 +1113,7 @@ private val SPECIFICATION =
             "Conjecture:",
             group(
                 "ConjectureGroup",
-                "Id?",
+                Optionally(Def("Id")),
                 Section(name = "Conjecture", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
@@ -1130,7 +1130,7 @@ private val SPECIFICATION =
             "Theorem:",
             group(
                 "TheoremGroup",
-                "Id?",
+                Optionally(Def("Id")),
                 Section(name = "Theorem", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
@@ -1245,7 +1245,7 @@ private fun anyOf(vararg of: Form) = AnyOf(of.toList())
 
 private fun items(vararg of: Form) = Item(of.toList())
 
-private fun group(classname: String, id: String?, vararg of: Section) = Group(classname = classname, id = id, of = of.toList())
+private fun group(classname: String, id: Form?, vararg of: Section) = Group(classname = classname, id = id, of = of.toList())
 
 private fun String.addAstPackagePrefix() =
     if (this.startsWith(AST_PACKAGE)) {

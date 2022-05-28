@@ -477,7 +477,7 @@ private val SPECIFICATION =
                         Literal(")")))),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "InfixCommandExpression",
+            "InfixCommandExpressionForm",
             items(Def("CommandExpression"), Literal("/")),
             DefinitionType.TexTalk),
         DefinitionOf(
@@ -612,7 +612,7 @@ private val SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "InfixCommandExpression",
-            items(Def("Expression"), Def("InfixCommandExpression"), Def("Expression")),
+            items(Def("Expression"), Def("InfixCommandExpressionForm"), Def("Expression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "PrefixOperatorExpression",
@@ -986,10 +986,6 @@ private val SPECIFICATION =
             group(null, Section(name = "note", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "author:",
-            group(null, Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
-            DefinitionType.ChalkTalk),
-        DefinitionOf(
             "tag:",
             group(null, Section(name = "tag", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
@@ -1014,7 +1010,7 @@ private val SPECIFICATION =
             anyOf(Def("Clause"), Def("Spec"), Def("ColonEqualsExpression")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "Id",
+            "States:",
             group(
                 null,
                 Section(name = "States", arg = None, required = true),
@@ -1240,6 +1236,30 @@ private fun String.removeAstPackagePrefix() =
         this
     }
 
+private class ErrorLogger {
+    private var count = 0
+
+    fun error(message: String) {
+        count++
+        println("${bold(red("ERROR:"))} $message")
+    }
+
+    fun numErrors() = count
+}
+
+private fun checkForDuplicateDefinitionOfNames(logger: ErrorLogger) {
+    val usedNames = mutableSetOf<String>()
+    var count = 0
+    for (spec in SPECIFICATION) {
+        if (spec.name in usedNames) {
+            count++
+            logger.error("Duplicate defined name: ${bold(spec.name)}")
+        }
+        usedNames.add(spec.name)
+    }
+    println("Checking for duplicate definition names found $count errors")
+}
+
 fun verifySpec() {
     val reflections = Reflections(AST_PACKAGE, Scanners.values())
     val allTypesInCode =
@@ -1364,5 +1384,12 @@ fun specToCode(): String {
 
 fun main() {
     println(specToCode())
-    verifySpec()
+    println("------------------------------------------------------")
+    println()
+
+    val logger = ErrorLogger()
+    checkForDuplicateDefinitionOfNames(logger)
+
+    println("Total number of errors: ${logger.numErrors()}")
+    // verifySpec()
 }

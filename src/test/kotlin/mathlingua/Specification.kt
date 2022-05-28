@@ -5,6 +5,8 @@ import mathlingua.lib.util.red
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 
+private const val AST_PACKAGE = "mathlingua.lib.frontend.ast"
+
 private sealed interface Form {
     fun toCode(): String
 }
@@ -129,7 +131,7 @@ private data class Section(val name: String, val arg: Form, val required: Boolea
     fun toCode() = "$name${if (required) {""} else {"?"}}: ${arg.toCode()}"
 }
 
-private data class Group(val id: String?, val of: List<Section>) : Form {
+private data class Group(val classname: String, val id: String?, val of: List<Section>) : Form {
     override fun toCode(): String {
         val builder = StringBuilder()
         if (id != null) {
@@ -780,19 +782,20 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "and:",
-            group(null, Section(name = "and", arg = OneOrMore(Def("Clause")), required = true)),
+            group("AndGroup", null, Section(name = "and", arg = OneOrMore(Def("Clause")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "not:",
-            group(null, Section(name = "not", arg = Def("Clause"), required = true)),
+            group("NotGroup", null, Section(name = "not", arg = Def("Clause"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "or:",
-            group(null, Section(name = "or", arg = OneOrMore(Def("Clause")), required = true)),
+            group("OrGroup", null, Section(name = "or", arg = OneOrMore(Def("Clause")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "exists:",
             group(
+                "ExistsGroup",
                 null,
                 Section(name = "exists", arg = OneOrMore(Def("Target")), required = true),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
@@ -801,6 +804,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "existsUnique:",
             group(
+                "ExistsUniqueGroup",
                 null,
                 Section(name = "existsUnique", arg = OneOrMore(Def("Target")), required = true),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
@@ -809,6 +813,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "forAll:",
             group(
+                "ForAllGroup",
                 null,
                 Section(name = "forAll", arg = OneOrMore(Def("Target")), required = true),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
@@ -819,6 +824,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "if:",
             group(
+                "IfGroup",
                 null,
                 Section(name = "if", arg = OneOrMore(Def("Clause")), required = true),
                 Section(name = "then", arg = OneOrMore(Def("Clause")), required = true)),
@@ -826,6 +832,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "iff:",
             group(
+                "IffGroup",
                 null,
                 Section(name = "iff", arg = OneOrMore(Def("Clause")), required = true),
                 Section(name = "then", arg = OneOrMore(Def("Clause")), required = true)),
@@ -835,6 +842,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "generated:",
             group(
+                "GeneratedGroup",
                 null,
                 Section(name = "generated", arg = None, required = true),
                 Section(name = "from", arg = OneOrMore(Def("NameOrFunction")), required = true),
@@ -846,6 +854,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "piecewise:",
             group(
+                "PiecewiseGroup",
                 null,
                 Section(name = "piecewise", arg = None, required = true),
                 Section(name = "when", arg = OneOrMore(Def("Clause")), required = false),
@@ -862,6 +871,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "matching:",
             group(
+                "MatchingGroup",
                 null,
                 Section(
                     name = "matching",
@@ -877,6 +887,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "equality:",
             group(
+                "EqualityGroup",
                 null,
                 Section(name = "equality", arg = None, required = true),
                 Section(
@@ -886,6 +897,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "membership:",
             group(
+                "MembershipGroup",
                 null,
                 Section(name = "membership", arg = None, required = true),
                 Section(name = "through", arg = Statement(of = emptyList()), required = true)),
@@ -893,6 +905,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "view:",
             group(
+                "ViewGroup",
                 null,
                 Section(name = "view", arg = None, required = true),
                 Section(name = "as", arg = Text("SignatureExpression"), required = true),
@@ -903,6 +916,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "symbols:",
             group(
+                "SymbolsGroup",
                 null,
                 Section(name = "symbols", arg = OneOrMore(Def("Name")), required = true),
                 Section(
@@ -913,6 +927,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "memberSymbols:",
             group(
+                "MemberSymbolsGroup",
                 null,
                 Section(name = "memberSymbols", arg = OneOrMore(Def("Name")), required = true),
                 Section(
@@ -956,6 +971,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "Defines:",
             group(
+                "DefinesGroup",
                 "Id",
                 Section(name = "Defines", arg = Def("Target"), required = true),
                 Section(name = "with", arg = OneOrMore(Def("Assignment")), required = false),
@@ -983,15 +999,16 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "note:",
-            group(null, Section(name = "note", arg = Text(".*"), required = true)),
+            group("NoteGroup", null, Section(name = "note", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "tag:",
-            group(null, Section(name = "tag", arg = OneOrMore(Text(".*")), required = true)),
+            group("TagGroup", null, Section(name = "tag", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "reference:",
             group(
+                "ReferenceGroup",
                 null,
                 Section(
                     name = "reference",
@@ -1012,6 +1029,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "States:",
             group(
+                "StatesGroup",
                 null,
                 Section(name = "States", arg = None, required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
@@ -1034,27 +1052,27 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "type:",
-            group(null, Section(name = "type", arg = Text(".*"), required = true)),
+            group("TypeGroup", null, Section(name = "type", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "name:",
-            group(null, Section(name = "name", arg = Text(".*"), required = true)),
+            group("NameGroup", null, Section(name = "name", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "author:",
-            group(null, Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
+            group("AuthorGroup", null, Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "homepage:",
-            group(null, Section(name = "homepage", arg = Text(".*"), required = true)),
+            group("HomepageGroup", null, Section(name = "homepage", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "url:",
-            group(null, Section(name = "url", arg = Text(".*"), required = true)),
+            group("UrlGroup", null, Section(name = "url", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "offset:",
-            group(null, Section(name = "offset", arg = Text(".*"), required = true)),
+            group("OffsetGroup", null, Section(name = "offset", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ResourceItem",
@@ -1069,6 +1087,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "Resource:",
             group(
+                "ResourceGroup",
                 "ResourceName",
                 Section(name = "Resource", arg = OneOrMore(Def("ResourceItem")), required = true),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
@@ -1076,6 +1095,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "Axiom:",
             group(
+                "AxiomGroup",
                 "Id?",
                 Section(name = "Axiom", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
@@ -1092,6 +1112,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "Conjecture:",
             group(
+                "ConjectureGroup",
                 "Id?",
                 Section(name = "Conjecture", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
@@ -1108,6 +1129,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "Theorem:",
             group(
+                "TheoremGroup",
                 "Id?",
                 Section(name = "Theorem", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
@@ -1131,6 +1153,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "Topic:",
             group(
+                "TopicGroup",
                 null,
                 Section(name = "Topic", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "content", arg = Text(".*"), required = true),
@@ -1139,6 +1162,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "Note:",
             group(
+                "NoteGroup",
                 null,
                 Section(name = "Note", arg = None, required = true),
                 Section(name = "content", arg = Text(".*"), required = true),
@@ -1155,11 +1179,12 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Specify:",
-            group(null, Section(name = "Specify", arg = Def("SpecifyItem"), required = true)),
+            group("SpecifyGroup", null, Section(name = "Specify", arg = Def("SpecifyItem"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "zero:",
             group(
+                "ZeroGroup",
                 null,
                 Section(name = "zero", arg = None, required = true),
                 Section(name = "is", arg = Text("SignatureExpression"), required = true)),
@@ -1167,6 +1192,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "positiveInt:",
             group(
+                "PositiveIntGroup",
                 null,
                 Section(name = "positiveInt", arg = None, required = true),
                 Section(name = "is", arg = Text("SignatureExpression"), required = true)),
@@ -1174,6 +1200,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "negativeInt:",
             group(
+                "NegativeIntGroup",
                 null,
                 Section(name = "negativeInt", arg = None, required = true),
                 Section(name = "is", arg = Text("SignatureExpression"), required = true)),
@@ -1181,6 +1208,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "positiveFloat:",
             group(
+                "PositiveFloatGroup",
                 null,
                 Section(name = "positiveFloat", arg = None, required = true),
                 Section(name = "is", arg = Text("SignatureExpression"), required = true)),
@@ -1188,6 +1216,7 @@ private val SPECIFICATION =
         DefinitionOf(
             "negativeFloat:",
             group(
+                "NegativeFloatGroup",
                 null,
                 Section(name = "negativeFloat", arg = None, required = true),
                 Section(name = "is", arg = Text("SignatureExpression"), required = true)),
@@ -1216,9 +1245,7 @@ private fun anyOf(vararg of: Form) = AnyOf(of.toList())
 
 private fun items(vararg of: Form) = Item(of.toList())
 
-private fun group(id: String?, vararg of: Section) = Group(id = id, of = of.toList())
-
-val AST_PACKAGE = "mathlingua.lib.frontend.ast"
+private fun group(classname: String, id: String?, vararg of: Section) = Group(classname = classname, id = id, of = of.toList())
 
 private fun String.addAstPackagePrefix() =
     if (this.startsWith(AST_PACKAGE)) {
@@ -1273,7 +1300,13 @@ private fun getAllTypesInCode(): List<String> {
     }
 }
 
-private fun getAllTypesInSpec() = SPECIFICATION.map { it.name.addAstPackagePrefix() }
+private fun DefinitionOf.getClassname() = if (this.of is Group) {
+    this.of.classname.addAstPackagePrefix()
+} else {
+    this.name.addAstPackagePrefix()
+}
+
+private fun getAllTypesInSpec() = SPECIFICATION.map { it.getClassname() }
 
 private fun checkAllItemsDeclaredInTheSpecButNotInCode(logger: ErrorLogger) {
     val allTypesInSpec = getAllTypesInSpec()

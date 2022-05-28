@@ -145,6 +145,14 @@ private data class Group(val id: String?, val of: List<Section>) : Form {
     }
 }
 
+private data class Statement(val of: List<String>) : Form {
+    override fun toCode() = "Statement[${of.joinToString(" | ")}]"
+}
+
+private data class Text(val regex: String) : Form {
+    override fun toCode() = "Text[${regex}]"
+}
+
 private val SPECIFICATION =
     listOf(
         DefinitionOf(
@@ -155,7 +163,13 @@ private val SPECIFICATION =
             DefinitionType.Common),
         DefinitionOf(
             "NameAssignmentItem",
-            anyOf(Def("Name"), Def("OperatorName"), Def("Tuple"), Def("Sequence"), Def("Function"), Def("Set")),
+            anyOf(
+                Def("Name"),
+                Def("OperatorName"),
+                Def("Tuple"),
+                Def("Sequence"),
+                Def("Function"),
+                Def("Set")),
             DefinitionType.Common),
         DefinitionOf(
             "NameAssignment",
@@ -166,7 +180,9 @@ private val SPECIFICATION =
             items(Def("Function"), Literal(":="), Def("Function")),
             DefinitionType.Common),
         DefinitionOf(
-            "Assignment", anyOf(Def("NameAssignment"), Def("FunctionAssignment")), DefinitionType.Common),
+            "Assignment",
+            anyOf(Def("NameAssignment"), Def("FunctionAssignment")),
+            DefinitionType.Common),
         DefinitionOf(
             "VariadicName", items(Def("Name"), Optionally(Literal("..."))), DefinitionType.Common),
         DefinitionOf(
@@ -254,7 +270,9 @@ private val SPECIFICATION =
                 Literal(")")),
             DefinitionType.Common),
         DefinitionOf(
-            "NameOrNameAssignment", anyOf(Def("Name"), Def("NameAssignment")), DefinitionType.Common),
+            "NameOrNameAssignment",
+            anyOf(Def("Name"), Def("NameAssignment")),
+            DefinitionType.Common),
         DefinitionOf(
             "Set",
             items(
@@ -267,9 +285,19 @@ private val SPECIFICATION =
             DefinitionType.Common),
         DefinitionOf(
             "Target",
-            anyOf(Def("Assignment"), Def("Name"), Def("OperatorName"), Def("Tuple"), Def("Sequence"), Def("Function"), Def("Set")),
+            anyOf(
+                Def("Assignment"),
+                Def("Name"),
+                Def("OperatorName"),
+                Def("Tuple"),
+                Def("Sequence"),
+                Def("Function"),
+                Def("Set")),
             DefinitionType.Common),
-        DefinitionOf("Argument", anyOf(Def("Target"), Def("Text"), Def("Statement")), DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "Argument",
+            anyOf(Def("Target"), Text(""), Statement(of = emptyList())),
+            DefinitionType.ChalkTalk),
         DefinitionOf(
             "Text",
             CharSequence(prefix = "\"", suffix = "\"", regex = ".*", escape = """\""""),
@@ -309,10 +337,10 @@ private val SPECIFICATION =
             "IdForm",
             anyOf(
                 Def("CommandForm"),
-                    Def("InfixCommandFormCall"),
-                        Def("IdPrefixOperatorCall"),
-                            Def("IdPostfixOperatorCall"),
-                                Def("IdInfixOperatorCall")),
+                Def("InfixCommandFormCall"),
+                Def("IdPrefixOperatorCall"),
+                Def("IdPostfixOperatorCall"),
+                Def("IdInfixOperatorCall")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "Id", items(Literal("["), Def("IdForm"), Literal("]")), DefinitionType.ChalkTalk),
@@ -454,9 +482,12 @@ private val SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "InfixCommandForm", items(Def("CommandForm"), Literal("/")), DefinitionType.TexTalk),
-        DefinitionOf("NameOrCommand", anyOf(Def("Name"), Def("CommandExpression")), DefinitionType.TexTalk),
         DefinitionOf(
-            "VariadicIsRhs", anyOf(Def("VariadicName"), Def("CommandExpression")), DefinitionType.TexTalk),
+            "NameOrCommand", anyOf(Def("Name"), Def("CommandExpression")), DefinitionType.TexTalk),
+        DefinitionOf(
+            "VariadicIsRhs",
+            anyOf(Def("VariadicName"), Def("CommandExpression")),
+            DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicIsExpression",
             items(Def("VariadicTarget"), Keyword("is"), Def("VariadicIsRhs")),
@@ -473,7 +504,12 @@ private val SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "MetaIsFormItem",
-            anyOf(Def("statement"), Def("assignment"), Def("specification"), Def("expression"), Def("definition")),
+            anyOf(
+                Def("statement"),
+                Def("assignment"),
+                Def("specification"),
+                Def("expression"),
+                Def("definition")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "MetaIsForm",
@@ -504,7 +540,8 @@ private val SPECIFICATION =
             "VariadicTarget",
             anyOf(Def("VariadicName"), Def("VariadicFunction"), Def("VariadicSequence")),
             DefinitionType.TexTalk),
-        DefinitionOf("VariadicRhs", anyOf(Def("VariadicTarget"), Def("Expression")), DefinitionType.TexTalk),
+        DefinitionOf(
+            "VariadicRhs", anyOf(Def("VariadicTarget"), Def("Expression")), DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicInExpression",
             items(Def("VariadicTarget"), Literal("in"), Def("VariadicRhs")),
@@ -682,7 +719,7 @@ private val SPECIFICATION =
                 Def("SequenceAssignmentExpression"),
                 Def("TupleAssignmentExpression"),
                 Def("NameAssignmentAssignmentExpression"),
-                Def("OperationAssignmentExpression") ),
+                Def("OperationAssignmentExpression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "ParenGroupingExpression",
@@ -732,14 +769,14 @@ private val SPECIFICATION =
                 Def("forAll:"),
                 Def("if:"),
                 Def("iff:"),
-                Def("Text[.*]"),
-                Def("Statement[Expression]")),
+                Text(regex = ".*"),
+                Statement(of = listOf("Expression"))),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Spec",
             anyOf(
-                Def("Statement[IsExpression | VariadicIsExpression]"),
-                    Def("Statement[InExpression | VariadicInExpression]")),
+                Statement(of = listOf("IsExpression", "VariadicIsExpression")),
+                Statement(of = listOf("InExpression", "VariadicInExpression"))),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "and:",
@@ -793,7 +830,8 @@ private val SPECIFICATION =
                 Section(name = "iff", arg = OneOrMore(Def("Clause")), required = true),
                 Section(name = "then", arg = OneOrMore(Def("Clause")), required = true)),
             DefinitionType.ChalkTalk),
-        DefinitionOf("NameOrFunction", anyOf(Def("Name"), Def("Function")), DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "NameOrFunction", anyOf(Def("Name"), Def("Function")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "generated:",
             group(
@@ -802,7 +840,7 @@ private val SPECIFICATION =
                 Section(name = "from", arg = OneOrMore(Def("NameOrFunction")), required = true),
                 Section(
                     name = "when",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -813,11 +851,11 @@ private val SPECIFICATION =
                 Section(name = "when", arg = OneOrMore(Def("Clause")), required = false),
                 Section(
                     name = "then",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false),
                 Section(
                     name = "else",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false),
             ),
             DefinitionType.ChalkTalk),
@@ -827,14 +865,14 @@ private val SPECIFICATION =
                 null,
                 Section(
                     name = "matching",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ProvidedItem",
             anyOf(
-                Def("Statement[Expression InfixCommandExpression Expression]"),
-                Def("Statement[Expression MemberScopedOperatorName Expression]")),
+                Statement(of = listOf("Expression InfixCommandExpression Expression")),
+                Statement(of = listOf("OperationExpression"))),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "equality:",
@@ -850,16 +888,16 @@ private val SPECIFICATION =
             group(
                 null,
                 Section(name = "membership", arg = None, required = true),
-                Section(name = "through", arg = Def("Statement"), required = true)),
+                Section(name = "through", arg = Statement(of = emptyList()), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "view:",
             group(
                 null,
                 Section(name = "view", arg = None, required = true),
-                Section(name = "as", arg = Def("Text[SignatureExpression]"), required = true),
-                Section(name = "via", arg = Def("Statement[Expression]"), required = true),
-                Section(name = "by", arg = Def("Statement[CommandForm]"), required = false),
+                Section(name = "as", arg = Text("SignatureExpression"), required = true),
+                Section(name = "via", arg = Statement(of = listOf("Expression")), required = true),
+                Section(name = "by", arg = Statement(of = listOf("CommandForm")), required = false),
             ),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -869,7 +907,7 @@ private val SPECIFICATION =
                 Section(name = "symbols", arg = OneOrMore(Def("Name")), required = true),
                 Section(
                     name = "where",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -879,7 +917,7 @@ private val SPECIFICATION =
                 Section(name = "memberSymbols", arg = OneOrMore(Def("Name")), required = true),
                 Section(
                     name = "where",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -889,7 +927,12 @@ private val SPECIFICATION =
         DefinitionOf("AnyView", ZeroOrMore(Def("View")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "ProvidingItem",
-            anyOf(Def("AnyView"), Def("symbols:"), Def("memberSymbols:"), Def("equality:"), Def("membership:")),
+            anyOf(
+                Def("AnyView"),
+                Def("symbols:"),
+                Def("memberSymbols:"),
+                Def("equality:"),
+                Def("membership:")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "SatisfyingItem",
@@ -921,7 +964,7 @@ private val SPECIFICATION =
                 Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
                 Section(
                     name = "means",
-                    arg = Def("Statement[IsExpression | VariadicIsExpression]"),
+                    arg = Statement(of = listOf("IsExpression", "VariadicIsExpression")),
                     required = false),
                 Section(
                     name = "satisfying", arg = OneOrMore(Def("SatisfyingItem")), required = true),
@@ -929,27 +972,26 @@ private val SPECIFICATION =
                     name = "expressing", arg = OneOrMore(Def("ExpressingItem")), required = true),
                 Section(
                     name = "using",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false),
-                Section(name = "writing", arg = OneOrMore(Def("Text[.*]")), required = false),
-                Section(name = "written", arg = OneOrMore(Def("Text[.*]")), required = true),
-                Section(name = "called", arg = OneOrMore(Def("Text[.*]")), required = false),
+                Section(name = "writing", arg = OneOrMore(Text(".*")), required = false),
+                Section(name = "written", arg = OneOrMore(Text(".*")), required = true),
+                Section(name = "called", arg = OneOrMore(Text(".*")), required = false),
                 Section(
                     name = "Providing", arg = OneOrMore(Def("ProvidingItem")), required = false),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "note:",
-            group(null, Section(name = "note", arg = Def("Text[.*]"), required = true)),
+            group(null, Section(name = "note", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "author:",
-            group(
-                null, Section(name = "author", arg = OneOrMore(Def("Text[.*]")), required = true)),
+            group(null, Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "tag:",
-            group(null, Section(name = "tag", arg = OneOrMore(Def("Text[.*]")), required = true)),
+            group(null, Section(name = "tag", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "reference:",
@@ -968,7 +1010,9 @@ private val SPECIFICATION =
                     required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "ThatItem", anyOf(Def("Clause"), Def("Spec"), Def("ColonEqualsExpression")), DefinitionType.ChalkTalk),
+            "ThatItem",
+            anyOf(Def("Clause"), Def("Spec"), Def("ColonEqualsExpression")),
+            DefinitionType.ChalkTalk),
         DefinitionOf(
             "Id",
             group(
@@ -980,10 +1024,10 @@ private val SPECIFICATION =
                 Section(name = "that", arg = OneOrMore(Def("ThatItem")), required = true),
                 Section(
                     name = "using",
-                    arg = Def("Statement[ColonEqualsExpression]"),
+                    arg = Statement(of = listOf("ColonEqualsExpression")),
                     required = false),
-                Section(name = "written", arg = OneOrMore(Def("Text[.*]")), required = true),
-                Section(name = "called", arg = OneOrMore(Def("Text[.*]")), required = false),
+                Section(name = "written", arg = OneOrMore(Text(".*")), required = true),
+                Section(name = "called", arg = OneOrMore(Text(".*")), required = false),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -994,32 +1038,37 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "type:",
-            group(null, Section(name = "type", arg = Def("Text[.*]"), required = true)),
+            group(null, Section(name = "type", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "name:",
-            group(null, Section(name = "name", arg = Def("Text[.*]"), required = true)),
+            group(null, Section(name = "name", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "author:",
-            group(
-                null, Section(name = "author", arg = OneOrMore(Def("Text[.*]")), required = true)),
+            group(null, Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "homepage:",
-            group(null, Section(name = "homepage", arg = Def("Text[.*]"), required = true)),
+            group(null, Section(name = "homepage", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "url:",
-            group(null, Section(name = "url", arg = Def("Text[.*]"), required = true)),
+            group(null, Section(name = "url", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "offset:",
-            group(null, Section(name = "offset", arg = Def("Text[.*]"), required = true)),
+            group(null, Section(name = "offset", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ResourceItem",
-            anyOf(Def("type"), Def("name"), Def("author"), Def("homepage"), Def("url"), Def("offset")),
+            anyOf(
+                Def("type"),
+                Def("name"),
+                Def("author"),
+                Def("homepage"),
+                Def("url"),
+                Def("offset")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Resource:",
@@ -1032,7 +1081,7 @@ private val SPECIFICATION =
             "Axiom:",
             group(
                 "Id?",
-                Section(name = "Axiom", arg = ZeroOrMore(Def("Text[.*]")), required = true),
+                Section(name = "Axiom", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
                 Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
@@ -1040,7 +1089,7 @@ private val SPECIFICATION =
                 Section(name = "iff", arg = OneOrMore(Def("Clause")), required = false),
                 Section(
                     name = "using",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
@@ -1048,7 +1097,7 @@ private val SPECIFICATION =
             "Conjecture:",
             group(
                 "Id?",
-                Section(name = "Conjecture", arg = ZeroOrMore(Def("Text[.*]")), required = true),
+                Section(name = "Conjecture", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
                 Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
@@ -1056,7 +1105,7 @@ private val SPECIFICATION =
                 Section(name = "iff", arg = OneOrMore(Def("Clause")), required = false),
                 Section(
                     name = "using",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
@@ -1064,7 +1113,7 @@ private val SPECIFICATION =
             "Theorem:",
             group(
                 "Id?",
-                Section(name = "Theorem", arg = ZeroOrMore(Def("Text[.*]")), required = true),
+                Section(name = "Theorem", arg = ZeroOrMore(Text(".*")), required = true),
                 Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
                 Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
                 Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
@@ -1072,9 +1121,9 @@ private val SPECIFICATION =
                 Section(name = "iff", arg = OneOrMore(Def("Clause")), required = false),
                 Section(
                     name = "using",
-                    arg = OneOrMore(Def("Statement[ColonEqualsExpression]")),
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false),
-                Section(name = "Proof", arg = OneOrMore(Def("Text[.*]")), required = false),
+                Section(name = "Proof", arg = OneOrMore(Text(".*")), required = false),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -1087,8 +1136,8 @@ private val SPECIFICATION =
             "Topic:",
             group(
                 null,
-                Section(name = "Topic", arg = ZeroOrMore(Def("Text[.*]")), required = true),
-                Section(name = "content", arg = Def("Text[.*]"), required = true),
+                Section(name = "Topic", arg = ZeroOrMore(Text(".*")), required = true),
+                Section(name = "content", arg = Text(".*"), required = true),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -1096,12 +1145,17 @@ private val SPECIFICATION =
             group(
                 null,
                 Section(name = "Note", arg = None, required = true),
-                Section(name = "content", arg = Def("Text[.*]"), required = true),
+                Section(name = "content", arg = Text(".*"), required = true),
                 Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "SpecifyItem",
-            anyOf(Def("zero:"), Def("positiveInt:"), Def("negativeInt:"), Def("positiveFloat:"), Def("negativeFloat:")),
+            anyOf(
+                Def("zero:"),
+                Def("positiveInt:"),
+                Def("negativeInt:"),
+                Def("positiveFloat:"),
+                Def("negativeFloat:")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Specify:",
@@ -1112,35 +1166,35 @@ private val SPECIFICATION =
             group(
                 null,
                 Section(name = "zero", arg = None, required = true),
-                Section(name = "is", arg = Def("Text[SignatureExpression]"), required = true)),
+                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "positiveInt:",
             group(
                 null,
                 Section(name = "positiveInt", arg = None, required = true),
-                Section(name = "is", arg = Def("Text[SignatureExpression]"), required = true)),
+                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "negativeInt:",
             group(
                 null,
                 Section(name = "negativeInt", arg = None, required = true),
-                Section(name = "is", arg = Def("Text[SignatureExpression]"), required = true)),
+                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "positiveFloat:",
             group(
                 null,
                 Section(name = "positiveFloat", arg = None, required = true),
-                Section(name = "is", arg = Def("Text[SignatureExpression]"), required = true)),
+                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "negativeFloat:",
             group(
                 null,
                 Section(name = "negativeFloat", arg = None, required = true),
-                Section(name = "is", arg = Def("Text[SignatureExpression]"), required = true)),
+                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "TopLevelGroup",

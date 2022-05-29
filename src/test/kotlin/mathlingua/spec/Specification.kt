@@ -1,161 +1,22 @@
+/*
+ * Copyright 2022 Dominic Kramer
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package mathlingua.spec
 
-import mathlingua.lib.util.bold
-import mathlingua.lib.util.red
-import org.reflections.Reflections
-import org.reflections.scanners.Scanners
-
-private const val AST_PACKAGE = "mathlingua.lib.frontend.ast"
-
-private sealed interface Form {
-    fun toCode(): String
-}
-
-private enum class SequenceConstraint {
-    ZeroOrMore,
-    OneOrMore
-}
-
-private enum class DefinitionType {
-    Common,
-    ChalkTalk,
-    TexTalk
-}
-
-private data class Literal(val of: String) : Form {
-    override fun toCode() = "\"$of\""
-}
-
-private data class Regex(val of: String) : Form {
-    override fun toCode() = "Regex[$of]"
-}
-
-private data class AnyOf(val of: List<Form>) : Form {
-    override fun toCode(): String {
-        val builder = StringBuilder()
-        for (i in of.indices) {
-            if (i > 0) {
-                builder.append(" |\n")
-            }
-            builder.append(of[i].toCode())
-        }
-        return builder.toString()
-    }
-}
-
-private data class Sequence(
-    val of: String, val separator: String, val constraint: SequenceConstraint
-) : Form {
-    override fun toCode() =
-        when (constraint) {
-            SequenceConstraint.OneOrMore -> {
-                "$of (\"$separator\" $of)*"
-            }
-            else -> {
-                "(NONE | $of (\"$separator\" $of)*)"
-            }
-        }
-}
-
-private data class SuffixSequence(
-    val of: String, val separator: String, val constraint: SequenceConstraint
-) : Form {
-    override fun toCode() =
-        when (constraint) {
-            SequenceConstraint.OneOrMore -> {
-                "($of \".\") ($of \".\")*"
-            }
-            else -> {
-                "($of \".\")*"
-            }
-        }
-}
-
-private data class ZeroOrMore(val of: Form) : Form {
-    override fun toCode() = "(${of.toCode()})*"
-}
-
-private data class OneOrMore(val of: Form) : Form {
-    override fun toCode() = "(${of.toCode()})+"
-}
-
-private data class Optionally(val of: Form) : Form {
-    override fun toCode() = "(${of.toCode()})?"
-}
-
-private data class Either(val form1: Form, val form2: Form) : Form {
-    override fun toCode() = "(${form1.toCode()} | ${form2.toCode()})"
-}
-
-private object None : Form {
-    override fun toCode() = ""
-}
-
-private data class Keyword(val text: String) : Form {
-    override fun toCode() = "'$text'"
-}
-
-private data class Item(val of: List<Form>) : Form {
-    override fun toCode(): String {
-        val builder = StringBuilder()
-        for (i in of.indices) {
-            if (i > 0) {
-                builder.append(' ')
-            }
-            builder.append(of[i].toCode())
-        }
-        return builder.toString()
-    }
-}
-
-private data class CharSequence(
-    val prefix: String, val suffix: String, val regex: String, val escape: String?
-) : Form {
-    override fun toCode() = "$prefix$regex$suffix [escape=$escape]"
-}
-
-private data class DefinitionOf(val name: String, val of: Form, val type: DefinitionType) {
-    fun toCode() =
-        when (of) {
-            is AnyOf -> "$name ::= \n${of.toCode().split("\n").joinToString("\n") { "   $it" }}"
-            is Group -> of.toCode()
-            else -> "$name ::= ${of.toCode()}"
-        }
-}
-
-private data class Def(val name: String) : Form {
-    override fun toCode() = name
-}
-
-private data class Section(val name: String, val arg: Form, val required: Boolean) {
-    fun toCode() = "$name${if (required) {""} else {"?"}}: ${arg.toCode()}"
-}
-
-private data class Group(val classname: String, val id: Form?, val of: List<Section>) : Form {
-    override fun toCode(): String {
-        val builder = StringBuilder()
-        if (id != null) {
-            builder.append("[${id.toCode()}]\n")
-        }
-        for (sec in of) {
-            if (builder.isNotEmpty() && !builder.endsWith("\n")) {
-                builder.append("\n")
-            }
-            builder.append(sec.toCode())
-        }
-        return builder.toString()
-    }
-}
-
-private data class Statement(val of: List<String>) : Form {
-    override fun toCode() = "Statement[${of.joinToString(" | ")}]"
-}
-
-private data class Text(val regex: String) : Form {
-    override fun toCode() = "Text[${regex}]"
-}
-
-private val SPECIFICATION =
+internal val MATHLINGUA_SPECIFICATION =
     listOf(
         DefinitionOf(
             "Name", Regex("""[a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?"""), DefinitionType.Common),
@@ -782,7 +643,10 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "and:",
-            group("AndGroup", null, Section(name = "and", arg = OneOrMore(Def("Clause")), required = true)),
+            group(
+                "AndGroup",
+                null,
+                Section(name = "and", arg = OneOrMore(Def("Clause")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "not:",
@@ -790,7 +654,10 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "or:",
-            group("OrGroup", null, Section(name = "or", arg = OneOrMore(Def("Clause")), required = true)),
+            group(
+                "OrGroup",
+                null,
+                Section(name = "or", arg = OneOrMore(Def("Clause")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "exists:",
@@ -1003,7 +870,10 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "tag:",
-            group("TagGroup", null, Section(name = "tag", arg = OneOrMore(Text(".*")), required = true)),
+            group(
+                "TagGroup",
+                null,
+                Section(name = "tag", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "reference:",
@@ -1060,11 +930,17 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "author:",
-            group("AuthorGroup", null, Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
+            group(
+                "AuthorGroup",
+                null,
+                Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "homepage:",
-            group("HomepageGroup", null, Section(name = "homepage", arg = Text(".*"), required = true)),
+            group(
+                "HomepageGroup",
+                null,
+                Section(name = "homepage", arg = Text(".*"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "url:",
@@ -1179,7 +1055,10 @@ private val SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Specify:",
-            group("SpecifyGroup", null, Section(name = "Specify", arg = Def("SpecifyItem"), required = true)),
+            group(
+                "SpecifyGroup",
+                null,
+                Section(name = "Specify", arg = Def("SpecifyItem"), required = true)),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "zero:",
@@ -1241,199 +1120,157 @@ private val SPECIFICATION =
         DefinitionOf(
             "Document", ZeroOrMore(Def("TopLevelGroupOrTextBlock")), DefinitionType.ChalkTalk))
 
+internal sealed interface Form {
+    fun toCode(): String
+}
+
+internal enum class SequenceConstraint {
+    ZeroOrMore,
+    OneOrMore
+}
+
+internal enum class DefinitionType {
+    Common,
+    ChalkTalk,
+    TexTalk
+}
+
+internal data class Literal(val of: String) : Form {
+    override fun toCode() = "\"$of\""
+}
+
+internal data class Regex(val of: String) : Form {
+    override fun toCode() = "Regex[$of]"
+}
+
+internal data class AnyOf(val of: List<Form>) : Form {
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        for (i in of.indices) {
+            if (i > 0) {
+                builder.append(" |\n")
+            }
+            builder.append(of[i].toCode())
+        }
+        return builder.toString()
+    }
+}
+
+internal data class Sequence(
+    val of: String, val separator: String, val constraint: SequenceConstraint
+) : Form {
+    override fun toCode() =
+        when (constraint) {
+            SequenceConstraint.OneOrMore -> {
+                "$of (\"$separator\" $of)*"
+            }
+            else -> {
+                "(NONE | $of (\"$separator\" $of)*)"
+            }
+        }
+}
+
+internal data class SuffixSequence(
+    val of: String, val separator: String, val constraint: SequenceConstraint
+) : Form {
+    override fun toCode() =
+        when (constraint) {
+            SequenceConstraint.OneOrMore -> {
+                "($of \".\") ($of \".\")*"
+            }
+            else -> {
+                "($of \".\")*"
+            }
+        }
+}
+
+internal data class ZeroOrMore(val of: Form) : Form {
+    override fun toCode() = "(${of.toCode()})*"
+}
+
+internal data class OneOrMore(val of: Form) : Form {
+    override fun toCode() = "(${of.toCode()})+"
+}
+
+internal data class Optionally(val of: Form) : Form {
+    override fun toCode() = "(${of.toCode()})?"
+}
+
+internal data class Either(val form1: Form, val form2: Form) : Form {
+    override fun toCode() = "(${form1.toCode()} | ${form2.toCode()})"
+}
+
+internal object None : Form {
+    override fun toCode() = ""
+}
+
+internal data class Keyword(val text: String) : Form {
+    override fun toCode() = "'$text'"
+}
+
+internal data class Item(val of: List<Form>) : Form {
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        for (i in of.indices) {
+            if (i > 0) {
+                builder.append(' ')
+            }
+            builder.append(of[i].toCode())
+        }
+        return builder.toString()
+    }
+}
+
+internal data class CharSequence(
+    val prefix: String, val suffix: String, val regex: String, val escape: String?
+) : Form {
+    override fun toCode() = "$prefix$regex$suffix [escape=$escape]"
+}
+
+internal data class DefinitionOf(val name: String, val of: Form, val type: DefinitionType) {
+    fun toCode() =
+        when (of) {
+            is AnyOf -> "$name ::= \n${of.toCode().split("\n").joinToString("\n") { "   $it" }}"
+            is Group -> of.toCode()
+            else -> "$name ::= ${of.toCode()}"
+        }
+}
+
+internal data class Def(val name: String) : Form {
+    override fun toCode() = name
+}
+
+internal data class Section(val name: String, val arg: Form, val required: Boolean) {
+    fun toCode() = "$name${if (required) {""} else {"?"}}: ${arg.toCode()}"
+}
+
+internal data class Group(val classname: String, val id: Form?, val of: List<Section>) : Form {
+    override fun toCode(): String {
+        val builder = StringBuilder()
+        if (id != null) {
+            builder.append("[${id.toCode()}]\n")
+        }
+        for (sec in of) {
+            if (builder.isNotEmpty() && !builder.endsWith("\n")) {
+                builder.append("\n")
+            }
+            builder.append(sec.toCode())
+        }
+        return builder.toString()
+    }
+}
+
+internal data class Statement(val of: List<String>) : Form {
+    override fun toCode() = "Statement[${of.joinToString(" | ")}]"
+}
+
+internal data class Text(val regex: String) : Form {
+    override fun toCode() = "Text[${regex}]"
+}
+
 private fun anyOf(vararg of: Form) = AnyOf(of.toList())
 
 private fun items(vararg of: Form) = Item(of.toList())
 
-private fun group(classname: String, id: Form?, vararg of: Section) = Group(classname = classname, id = id, of = of.toList())
-
-private fun String.addAstPackagePrefix() =
-    if (this.startsWith(AST_PACKAGE)) {
-        this
-    } else {
-        "${AST_PACKAGE}.${this}"
-    }
-
-private fun String.removeAstPackagePrefix() =
-    if (this.startsWith(AST_PACKAGE)) {
-        // an additional character is removed to account
-        // for the period after the package prefix
-        this.substring(AST_PACKAGE.length + 1)
-    } else {
-        this
-    }
-
-private class ErrorLogger {
-    private var count = 0
-
-    fun error(message: String) {
-        count++
-        println("${bold(red("ERROR:"))} $message")
-    }
-
-    fun log(message: String) = println(message)
-
-    fun numErrors() = count
-}
-
-private fun checkForDuplicateDefinitionOfNames(logger: ErrorLogger) {
-    val usedNames = mutableSetOf<String>()
-    var count = 0
-    for (spec in SPECIFICATION) {
-        if (spec.name in usedNames) {
-            count++
-            logger.error("Duplicate defined name: ${bold(spec.name)}")
-        }
-        usedNames.add(spec.name)
-    }
-    println("Checking for duplicate definition names found $count errors")
-}
-
-private fun getAllTypesInCode(): List<String> {
-    val reflections = Reflections(AST_PACKAGE, Scanners.values())
-    return reflections.getAll(Scanners.SubTypes).filter {
-        // only find mathlingua types
-        it.contains(AST_PACKAGE) &&
-            // ignore types associated with tests (tests make a class
-            // for each test of the form <test-class>$<test-name>)
-            !it.contains("$")
-    }
-}
-
-private fun DefinitionOf.getClassname() = if (this.of is Group) {
-    this.of.classname.addAstPackagePrefix()
-} else {
-    this.name.addAstPackagePrefix()
-}
-
-private fun getAllTypesInSpec() = SPECIFICATION.map { it.getClassname() }
-
-private fun checkAllItemsDeclaredInTheSpecButNotInCode(logger: ErrorLogger) {
-    val allTypesInSpec = getAllTypesInSpec()
-    val allTypesInCode = getAllTypesInCode()
-
-    logger.log(bold("Analyzing items declared in the spec but not in code:"))
-    var notInCodeCount = 0
-    for (t in allTypesInSpec) {
-        if (t !in allTypesInCode) {
-            notInCodeCount++
-            logger.log(
-                "${red(bold("ERROR: "))} ${bold(t.removeAstPackagePrefix())} is declared in the spec but not defined in code")
-        }
-    }
-    logger.log("Found $notInCodeCount errors")
-}
-
-/*
-fun verifySpec() {
-    println(bold("Analyzing items declared in the code but not in the spec:"))
-    var notInSpecCount = 0
-    for (t in allTypesInCode) {
-        if (t !in allTypesInSpec) {
-            notInSpecCount++
-            println(
-                "${red(bold("ERROR: "))} ${bold(t.removeAstPackagePrefix())} is declared in code but not defined in the spec")
-        }
-    }
-    println("Found $notInSpecCount errors")
-    println()
-
-    val typeToCodeDirectImplementors = mutableMapOf<String, Set<String>>()
-    val loader = ClassLoader.getSystemClassLoader()
-    for (targetType in allTypesInCode) {
-        val targetClass = loader.loadClass(targetType)
-        if (targetClass.isInterface) {
-            val result = mutableSetOf<String>()
-            for (possibleImplementor in allTypesInCode) {
-                val possibleImplementorClass = loader.loadClass(possibleImplementor)
-                val interfaces = possibleImplementorClass.interfaces.map { it.name }.toSet()
-                if (targetType in interfaces) {
-                    result.add(possibleImplementor)
-                }
-            }
-            typeToCodeDirectImplementors[targetType] = result
-        }
-    }
-
-    val typeToSpecAnyOf = mutableMapOf<String, Set<String>>()
-    for (def in SPECIFICATION) {
-        if (def.of is AnyOf) {
-            typeToSpecAnyOf[def.name] = def.of.of.map { it.toCode() }.toSet()
-        }
-    }
-
-    println(bold("Analyzing any-of items in spec that don't match the code:"))
-    var anyOfErrorCount = 0
-    for (item in typeToSpecAnyOf) {
-        val subclasses = typeToCodeDirectImplementors[item.key.addAstPackagePrefix()] ?: emptySet()
-        val expected =
-            item.value.toList().map { it.removeAstPackagePrefix() }.sortedDescending().reversed()
-        val found =
-            subclasses.toList().map { it.removeAstPackagePrefix() }.sortedDescending().reversed()
-        if (expected != found) {
-            anyOfErrorCount++
-            println(
-                "${bold(red("ERROR: "))} The spec states that the interface ${bold(item.key.removeAstPackagePrefix())} should be implemented by [")
-            expected.forEach { println("  ${it.removeAstPackagePrefix()}") }
-            println("] but found [")
-            found.forEach { println("  ${it.removeAstPackagePrefix()}") }
-            println("]")
-            println()
-        }
-    }
-    println("Found $anyOfErrorCount errors")
-    println()
-
-    println(bold("Matching interfaces in the code that don't match any-of items in the spec"))
-    var interfaceErrorCount = 0
-    for (item in typeToCodeDirectImplementors) {
-        val expected =
-            item.value.toList().map { it.removeAstPackagePrefix() }.sortedDescending().reversed()
-        val actual =
-            typeToSpecAnyOf[item.key.removeAstPackagePrefix()]
-                ?.map { it.removeAstPackagePrefix() }
-                ?.sortedDescending()
-                ?.reversed()
-                ?: listOf("<not in spec>")
-        if (actual != expected) {
-            interfaceErrorCount++
-            println(
-                "${bold(red("ERROR: "))} Expected interface ${bold(item.key.removeAstPackagePrefix())} to be implemented by [")
-            expected.forEach { println("  $it") }
-            println("] but in the spec found [")
-            actual.forEach { println("  $it") }
-            println("]")
-            println()
-        }
-    }
-    println("Found $interfaceErrorCount errors")
-    println()
-
-    val totalCount = notInCodeCount + notInSpecCount + anyOfErrorCount + interfaceErrorCount
-    println("Found $totalCount errors in total")
-    println()
-}
- */
-
-fun specToCode(): String {
-    val builder = StringBuilder()
-    for (c in SPECIFICATION) {
-        builder.append(c.toCode())
-        builder.append("\n\n")
-    }
-    return builder.toString()
-}
-
-fun main() {
-    val logger = ErrorLogger()
-
-    logger.log(specToCode())
-    logger.log("------------------------------------------------------")
-    logger.log("")
-
-    checkForDuplicateDefinitionOfNames(logger)
-    checkAllItemsDeclaredInTheSpecButNotInCode(logger)
-
-    logger.log("Total number of errors: ${logger.numErrors()}")
-    // verifySpec()
-}
+private fun group(classname: String, id: Form?, vararg of: Section) =
+    Group(classname = classname, id = id, of = of.toList())

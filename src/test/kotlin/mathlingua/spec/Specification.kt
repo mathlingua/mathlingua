@@ -646,46 +646,98 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "AndGroup",
                 null,
-                Section(name = "and", arg = OneOrMore(Def("Clause")), required = true)),
+                Section(
+                    name = "and",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "AndSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "not:",
-            group("NotGroup", null, Section(name = "not", arg = Def("Clause"), required = true)),
+            group(
+                "NotGroup",
+                null,
+                Section(
+                    name = "not", arg = Def("Clause"), required = true, classname = "NotSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "or:",
             group(
                 "OrGroup",
                 null,
-                Section(name = "or", arg = OneOrMore(Def("Clause")), required = true)),
+                Section(
+                    name = "or",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "OrSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "exists:",
             group(
                 "ExistsGroup",
                 null,
-                Section(name = "exists", arg = OneOrMore(Def("Target")), required = true),
-                Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false)),
+                Section(
+                    name = "exists",
+                    arg = OneOrMore(Def("Target")),
+                    required = true,
+                    classname = "ExistsSection"),
+                Section(
+                    name = "where",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhereSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "existsUnique:",
             group(
                 "ExistsUniqueGroup",
                 null,
-                Section(name = "existsUnique", arg = OneOrMore(Def("Target")), required = true),
-                Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false)),
+                Section(
+                    name = "existsUnique",
+                    arg = OneOrMore(Def("Target")),
+                    required = true,
+                    classname = "ExistsUniqueSection"),
+                Section(
+                    name = "where",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhereSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "forAll:",
             group(
                 "ForAllGroup",
                 null,
-                Section(name = "forAll", arg = OneOrMore(Def("Target")), required = true),
-                Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
-                Section(name = "then", arg = OneOrMore(Def("Clause")), required = true),
+                Section(
+                    name = "forAll",
+                    arg = OneOrMore(Def("Target")),
+                    required = true,
+                    classname = "ForAllSection"),
+                Section(
+                    name = "where",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhereSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection"),
+                Section(
+                    name = "then",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "ThenSection"),
             ),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -693,16 +745,32 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "IfGroup",
                 null,
-                Section(name = "if", arg = OneOrMore(Def("Clause")), required = true),
-                Section(name = "then", arg = OneOrMore(Def("Clause")), required = true)),
+                Section(
+                    name = "if",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "IfSection"),
+                Section(
+                    name = "then",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "ThenSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "iff:",
             group(
                 "IffGroup",
                 null,
-                Section(name = "iff", arg = OneOrMore(Def("Clause")), required = true),
-                Section(name = "then", arg = OneOrMore(Def("Clause")), required = true)),
+                Section(
+                    name = "iff",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "IffSection"),
+                Section(
+                    name = "then",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "ThenSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "NameOrFunction", anyOf(Def("Name"), Def("Function")), DefinitionType.ChalkTalk),
@@ -711,28 +779,47 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "GeneratedGroup",
                 null,
-                Section(name = "generated", arg = None, required = true),
-                Section(name = "from", arg = OneOrMore(Def("NameOrFunction")), required = true),
+                Section(
+                    name = "generated",
+                    arg = None,
+                    required = true,
+                    classname = "GeneratedSection"),
+                Section(
+                    name = "from",
+                    arg = OneOrMore(Def("NameOrFunction")),
+                    required = true,
+                    classname = "FromSection"),
                 Section(
                     name = "when",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false)),
+                    required = false,
+                    classname = "WhenSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "piecewise:",
             group(
                 "PiecewiseGroup",
                 null,
-                Section(name = "piecewise", arg = None, required = true),
-                Section(name = "when", arg = OneOrMore(Def("Clause")), required = false),
+                Section(
+                    name = "piecewise",
+                    arg = None,
+                    required = true,
+                    classname = "PiecewiseSection"),
+                Section(
+                    name = "when",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "WhenSection"),
                 Section(
                     name = "then",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false),
+                    required = false,
+                    classname = "ThenSection"),
                 Section(
                     name = "else",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false),
+                    required = false,
+                    classname = "ElseSection"),
             ),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -743,7 +830,8 @@ internal val MATHLINGUA_SPECIFICATION =
                 Section(
                     name = "matching",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = true)),
+                    required = true,
+                    classname = "MatchingSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ProvidedItem",
@@ -756,28 +844,56 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "EqualityGroup",
                 null,
-                Section(name = "equality", arg = None, required = true),
                 Section(
-                    name = "between", arg = items(Def("Target"), Def("Target")), required = true),
-                Section(name = "provided", arg = Def("ProvidedItem"), required = true)),
+                    name = "equality", arg = None, required = true, classname = "EqualitySection"),
+                Section(
+                    name = "between",
+                    arg = items(Def("Target"), Def("Target")),
+                    required = true,
+                    classname = "BetweenSection"),
+                Section(
+                    name = "provided",
+                    arg = Def("ProvidedItem"),
+                    required = true,
+                    classname = "ProvidedSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "membership:",
             group(
                 "MembershipGroup",
                 null,
-                Section(name = "membership", arg = None, required = true),
-                Section(name = "through", arg = Statement(of = emptyList()), required = true)),
+                Section(
+                    name = "membership",
+                    arg = None,
+                    required = true,
+                    classname = "MembershipSection"),
+                Section(
+                    name = "through",
+                    arg = Statement(of = emptyList()),
+                    required = true,
+                    classname = "ThroughSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "view:",
             group(
                 "ViewGroup",
                 null,
-                Section(name = "view", arg = None, required = true),
-                Section(name = "as", arg = Text("SignatureExpression"), required = true),
-                Section(name = "via", arg = Statement(of = listOf("Expression")), required = true),
-                Section(name = "by", arg = Statement(of = listOf("CommandForm")), required = false),
+                Section(name = "view", arg = None, required = true, classname = "ViewSection"),
+                Section(
+                    name = "as",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "AsSection"),
+                Section(
+                    name = "via",
+                    arg = Statement(of = listOf("Expression")),
+                    required = true,
+                    classname = "ViaSection"),
+                Section(
+                    name = "by",
+                    arg = Statement(of = listOf("CommandForm")),
+                    required = false,
+                    classname = "BySection"),
             ),
             DefinitionType.ChalkTalk),
         DefinitionOf(
@@ -785,22 +901,32 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "SymbolsGroup",
                 null,
-                Section(name = "symbols", arg = OneOrMore(Def("Name")), required = true),
+                Section(
+                    name = "symbols",
+                    arg = OneOrMore(Def("Name")),
+                    required = true,
+                    classname = "SymbolsSection"),
                 Section(
                     name = "where",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = true)),
+                    required = true,
+                    classname = "WhereSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "memberSymbols:",
             group(
                 "MemberSymbolsGroup",
                 null,
-                Section(name = "memberSymbols", arg = OneOrMore(Def("Name")), required = true),
+                Section(
+                    name = "memberSymbols",
+                    arg = OneOrMore(Def("Name")),
+                    required = true,
+                    classname = "MemberSymbols"),
                 Section(
                     name = "where",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = true)),
+                    required = true,
+                    classname = "WhereSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "MetadataItem",
@@ -840,40 +966,95 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "DefinesGroup",
                 Def("Id"),
-                Section(name = "Defines", arg = Def("Target"), required = true),
-                Section(name = "with", arg = OneOrMore(Def("Assignment")), required = false),
-                Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
-                Section(name = "when", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
+                Section(
+                    name = "Defines",
+                    arg = Def("Target"),
+                    required = true,
+                    classname = "DefinesSection"),
+                Section(
+                    name = "with",
+                    arg = OneOrMore(Def("Assignment")),
+                    required = false,
+                    classname = "WithSection"),
+                Section(
+                    name = "given",
+                    arg = OneOrMore(Def("Target")),
+                    required = false,
+                    classname = "GivenSection"),
+                Section(
+                    name = "when",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhenSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection"),
                 Section(
                     name = "means",
                     arg = Statement(of = listOf("IsExpression", "VariadicIsExpression")),
-                    required = false),
+                    required = false,
+                    classname = "MeansSection"),
                 Section(
-                    name = "satisfying", arg = OneOrMore(Def("SatisfyingItem")), required = true),
+                    name = "satisfying",
+                    arg = OneOrMore(Def("SatisfyingItem")),
+                    required = true,
+                    classname = "SatisfyingSection"),
                 Section(
-                    name = "expressing", arg = OneOrMore(Def("ExpressingItem")), required = true),
+                    name = "expressing",
+                    arg = OneOrMore(Def("ExpressingItem")),
+                    required = true,
+                    classname = "ExpressingSection"),
                 Section(
                     name = "using",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false),
-                Section(name = "writing", arg = OneOrMore(Text(".*")), required = false),
-                Section(name = "written", arg = OneOrMore(Text(".*")), required = true),
-                Section(name = "called", arg = OneOrMore(Text(".*")), required = false),
+                    required = false,
+                    classname = "UsingSection"),
                 Section(
-                    name = "Providing", arg = OneOrMore(Def("ProvidingItem")), required = false),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                    name = "writing",
+                    arg = OneOrMore(Text(".*")),
+                    required = false,
+                    classname = "WritingSection"),
+                Section(
+                    name = "written",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "WrittenSection"),
+                Section(
+                    name = "called",
+                    arg = OneOrMore(Text(".*")),
+                    required = false,
+                    classname = "CalledSection"),
+                Section(
+                    name = "Providing",
+                    arg = OneOrMore(Def("ProvidingItem")),
+                    required = false,
+                    classname = "ProvidingSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "note:",
-            group("NoteGroup", null, Section(name = "note", arg = Text(".*"), required = true)),
+            group(
+                "NoteGroup",
+                null,
+                Section(
+                    name = "note", arg = Text(".*"), required = true, classname = "NoteSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "tag:",
             group(
                 "TagGroup",
                 null,
-                Section(name = "tag", arg = OneOrMore(Text(".*")), required = true)),
+                Section(
+                    name = "tag",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "TagSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "reference:",
@@ -890,7 +1071,8 @@ internal val MATHLINGUA_SPECIFICATION =
                            (":offset" "{" [0-9]+ "}")?
                            (":at" "{" Text[.*] "}"]
                     """.trimIndent())),
-                    required = true)),
+                    required = true,
+                    classname = "ReferenceSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ThatItem",
@@ -901,18 +1083,47 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "StatesGroup",
                 null,
-                Section(name = "States", arg = None, required = true),
-                Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
-                Section(name = "when", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
-                Section(name = "that", arg = OneOrMore(Def("ThatItem")), required = true),
+                Section(name = "States", arg = None, required = true, classname = "StatesSection"),
+                Section(
+                    name = "given",
+                    arg = OneOrMore(Def("Target")),
+                    required = false,
+                    classname = "GivenSection"),
+                Section(
+                    name = "when",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhenSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection"),
+                Section(
+                    name = "that",
+                    arg = OneOrMore(Def("ThatItem")),
+                    required = true,
+                    classname = "ThatSection"),
                 Section(
                     name = "using",
                     arg = Statement(of = listOf("ColonEqualsExpression")),
-                    required = false),
-                Section(name = "written", arg = OneOrMore(Text(".*")), required = true),
-                Section(name = "called", arg = OneOrMore(Text(".*")), required = false),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                    required = false,
+                    classname = "UsingSection"),
+                Section(
+                    name = "written",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "WrittenSection"),
+                Section(
+                    name = "called",
+                    arg = OneOrMore(Text(".*")),
+                    required = false,
+                    classname = "CalledSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ResourceName",
@@ -922,33 +1133,59 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "type:",
-            group("TypeGroup", null, Section(name = "type", arg = Text(".*"), required = true)),
+            group(
+                "TypeGroup",
+                null,
+                Section(
+                    name = "type", arg = Text(".*"), required = true, classname = "TypeSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "name:",
-            group("NameGroup", null, Section(name = "name", arg = Text(".*"), required = true)),
+            group(
+                "NameGroup",
+                null,
+                Section(
+                    name = "name", arg = Text(".*"), required = true, classname = "NameSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "author:",
             group(
                 "AuthorGroup",
                 null,
-                Section(name = "author", arg = OneOrMore(Text(".*")), required = true)),
+                Section(
+                    name = "author",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "AuthorSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "homepage:",
             group(
                 "HomepageGroup",
                 null,
-                Section(name = "homepage", arg = Text(".*"), required = true)),
+                Section(
+                    name = "homepage",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "HomepageSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "url:",
-            group("UrlGroup", null, Section(name = "url", arg = Text(".*"), required = true)),
+            group(
+                "UrlGroup",
+                null,
+                Section(name = "url", arg = Text(".*"), required = true, classname = "UrlSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "offset:",
-            group("OffsetGroup", null, Section(name = "offset", arg = Text(".*"), required = true)),
+            group(
+                "OffsetGroup",
+                null,
+                Section(
+                    name = "offset",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "OffsetSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ResourceItem",
@@ -965,60 +1202,159 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "ResourceGroup",
                 Def("ResourceName"),
-                Section(name = "Resource", arg = OneOrMore(Def("ResourceItem")), required = true),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                Section(
+                    name = "Resource",
+                    arg = OneOrMore(Def("ResourceItem")),
+                    required = true,
+                    classname = "ResourceSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Axiom:",
             group(
                 "AxiomGroup",
                 Optionally(Def("Id")),
-                Section(name = "Axiom", arg = ZeroOrMore(Text(".*")), required = true),
-                Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
-                Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
-                Section(name = "then", arg = OneOrMore(Def("Clause")), required = true),
-                Section(name = "iff", arg = OneOrMore(Def("Clause")), required = false),
+                Section(
+                    name = "Axiom",
+                    arg = ZeroOrMore(Text(".*")),
+                    required = true,
+                    classname = "AxiomSection"),
+                Section(
+                    name = "given",
+                    arg = OneOrMore(Def("Target")),
+                    required = false,
+                    classname = "GivenSection"),
+                Section(
+                    name = "where",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhereSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection"),
+                Section(
+                    name = "then",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "ThenSection"),
+                Section(
+                    name = "iff",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "IffSection"),
                 Section(
                     name = "using",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                    required = false,
+                    classname = "UsingSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Conjecture:",
             group(
                 "ConjectureGroup",
                 Optionally(Def("Id")),
-                Section(name = "Conjecture", arg = ZeroOrMore(Text(".*")), required = true),
-                Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
-                Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
-                Section(name = "then", arg = OneOrMore(Def("Clause")), required = true),
-                Section(name = "iff", arg = OneOrMore(Def("Clause")), required = false),
+                Section(
+                    name = "Conjecture",
+                    arg = ZeroOrMore(Text(".*")),
+                    required = true,
+                    classname = "ConjectureSection"),
+                Section(
+                    name = "given",
+                    arg = OneOrMore(Def("Target")),
+                    required = false,
+                    classname = "GivenSection"),
+                Section(
+                    name = "where",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhereSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection"),
+                Section(
+                    name = "then",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "ThenSection"),
+                Section(
+                    name = "iff",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "IffSection"),
                 Section(
                     name = "using",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                    required = false,
+                    classname = "UsingSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Theorem:",
             group(
                 "TheoremGroup",
                 Optionally(Def("Id")),
-                Section(name = "Theorem", arg = ZeroOrMore(Text(".*")), required = true),
-                Section(name = "given", arg = OneOrMore(Def("Target")), required = false),
-                Section(name = "where", arg = OneOrMore(Def("Spec")), required = false),
-                Section(name = "suchThat", arg = OneOrMore(Def("Clause")), required = false),
-                Section(name = "then", arg = OneOrMore(Def("Clause")), required = true),
-                Section(name = "iff", arg = OneOrMore(Def("Clause")), required = false),
+                Section(
+                    name = "Theorem",
+                    arg = ZeroOrMore(Text(".*")),
+                    required = true,
+                    classname = "TheoremSection"),
+                Section(
+                    name = "given",
+                    arg = OneOrMore(Def("Target")),
+                    required = false,
+                    classname = "GivenSection"),
+                Section(
+                    name = "where",
+                    arg = OneOrMore(Def("Spec")),
+                    required = false,
+                    classname = "WhereSection"),
+                Section(
+                    name = "suchThat",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "SuchThatSection"),
+                Section(
+                    name = "then",
+                    arg = OneOrMore(Def("Clause")),
+                    required = true,
+                    classname = "ThenSection"),
+                Section(
+                    name = "iff",
+                    arg = OneOrMore(Def("Clause")),
+                    required = false,
+                    classname = "IffSection"),
                 Section(
                     name = "using",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false),
-                Section(name = "Proof", arg = OneOrMore(Text(".*")), required = false),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                    required = false,
+                    classname = "UsingSection"),
+                Section(
+                    name = "Proof",
+                    arg = OneOrMore(Text(".*")),
+                    required = false,
+                    classname = "ProofSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "TopicName",
@@ -1031,18 +1367,38 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "TopicGroup",
                 null,
-                Section(name = "Topic", arg = ZeroOrMore(Text(".*")), required = true),
-                Section(name = "content", arg = Text(".*"), required = true),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                Section(
+                    name = "Topic",
+                    arg = ZeroOrMore(Text(".*")),
+                    required = true,
+                    classname = "TopicSection"),
+                Section(
+                    name = "content",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "ContentSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Note:",
             group(
                 "NoteGroup",
                 null,
-                Section(name = "Note", arg = None, required = true),
-                Section(name = "content", arg = Text(".*"), required = true),
-                Section(name = "Metadata", arg = OneOrMore(Def("MetadataItem")), required = false)),
+                Section(name = "Note", arg = None, required = true, classname = "NoteSection"),
+                Section(
+                    name = "content",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "ContentSection"),
+                Section(
+                    name = "Metadata",
+                    arg = OneOrMore(Def("MetadataItem")),
+                    required = false,
+                    classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "SpecifyItem",
@@ -1058,47 +1414,87 @@ internal val MATHLINGUA_SPECIFICATION =
             group(
                 "SpecifyGroup",
                 null,
-                Section(name = "Specify", arg = Def("SpecifyItem"), required = true)),
+                Section(
+                    name = "Specify",
+                    arg = Def("SpecifyItem"),
+                    required = true,
+                    classname = "SpecifySection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "zero:",
             group(
                 "ZeroGroup",
                 null,
-                Section(name = "zero", arg = None, required = true),
-                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
+                Section(name = "zero", arg = None, required = true, classname = "ZeroSection"),
+                Section(
+                    name = "is",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "IsSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "positiveInt:",
             group(
                 "PositiveIntGroup",
                 null,
-                Section(name = "positiveInt", arg = None, required = true),
-                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
+                Section(
+                    name = "positiveInt",
+                    arg = None,
+                    required = true,
+                    classname = "PositiveIntSection"),
+                Section(
+                    name = "is",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "IsSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "negativeInt:",
             group(
                 "NegativeIntGroup",
                 null,
-                Section(name = "negativeInt", arg = None, required = true),
-                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
+                Section(
+                    name = "negativeInt",
+                    arg = None,
+                    required = true,
+                    classname = "NegativeIntSection"),
+                Section(
+                    name = "is",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "IsSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "positiveFloat:",
             group(
                 "PositiveFloatGroup",
                 null,
-                Section(name = "positiveFloat", arg = None, required = true),
-                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
+                Section(
+                    name = "positiveFloat",
+                    arg = None,
+                    required = true,
+                    classname = "PositiveFloatSection"),
+                Section(
+                    name = "is",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "IsSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "negativeFloat:",
             group(
                 "NegativeFloatGroup",
                 null,
-                Section(name = "negativeFloat", arg = None, required = true),
-                Section(name = "is", arg = Text("SignatureExpression"), required = true)),
+                Section(
+                    name = "negativeFloat",
+                    arg = None,
+                    required = true,
+                    classname = "NegativeFloatSection"),
+                Section(
+                    name = "is",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "IsSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "TopLevelGroup",
@@ -1240,7 +1636,9 @@ internal data class Def(val name: String) : Form {
     override fun toCode() = name
 }
 
-internal data class Section(val name: String, val arg: Form, val required: Boolean) {
+internal data class Section(
+    val name: String, val arg: Form, val required: Boolean, val classname: String
+) {
     fun toCode() = "$name${if (required) {""} else {"?"}}: ${arg.toCode()}"
 }
 

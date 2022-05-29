@@ -17,7 +17,6 @@
 package mathlingua.spec
 
 import kotlin.test.Test
-import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -39,20 +38,9 @@ class SpecificationTest {
 
     @Test
     fun `verify all definitions in spec are in code`() {
-        val typesInCode = getAllTypesInCode().toSet()
-        val typesInSpec = getAllTypesInSpec()
-        for (type in typesInSpec) {
-            assertContains(iterable = typesInCode, element = type)
-        }
-    }
-
-    @Test
-    fun `verify all types in code are specified in the spec`() {
-        val typesInSpec = getAllTypesInSpec().toSet()
-        val typesInCode = getAllTypesInCode()
-        for (type in typesInCode) {
-            assertContains(iterable = typesInSpec, element = type)
-        }
+        val typesInCode = getAllTypesInCode().sorted()
+        val typesInSpec = getAllTypesInSpec().sorted()
+        assertEquals(expected = typesInSpec, actual = typesInCode)
     }
 
     @Test
@@ -60,12 +48,16 @@ class SpecificationTest {
         val anyOfTypesInSpec = MATHLINGUA_SPECIFICATION.filter { it.of is AnyOf }
         for (type in anyOfTypesInSpec) {
             val classname = type.getClassname()
+            // verify that the classname of the type in the spec is an interface in the code
             assertTrue(actual = isInterface(classname), message = "$type is an interface")
+            // get all the direct implements of the interface in the code
             val implementors = getDirectAstImplementorsOf(classname)
             val anyOf = type.of as AnyOf
+            // assert the items specified in the union in the spec are exactly the
+            // implementors of the interface in the code
             assertEquals(
-                expected = anyOf.of.map { it.toCode().addAstPackagePrefix() }.toSet(),
-                actual = implementors,
+                expected = anyOf.of.map { it.toCode().addAstPackagePrefix() }.sorted(),
+                actual = implementors.toList().sorted(),
                 message = "implementors of $classname")
         }
     }
@@ -123,7 +115,13 @@ private fun getAllTypesInCode(): List<String> {
             it != "mathlingua.lib.frontend.ast.TexTalkNode" &&
             it != "mathlingua.lib.frontend.ast.CommonNode" &&
             it != "mathlingua.lib.frontend.ast.NodeLexerToken" &&
-            it != "mathlingua.lib.frontend.ast.HasMetaData"
+            it != "mathlingua.lib.frontend.ast.HasMetaData" &&
+            it != "mathlingua.lib.frontend.ast.BeginGroup" &&
+            it != "mathlingua.lib.frontend.ast.EndGroup" &&
+            it != "mathlingua.lib.frontend.ast.BeginSection" &&
+            it != "mathlingua.lib.frontend.ast.EndSection" &&
+            it != "mathlingua.lib.frontend.ast.BeginArgument" &&
+            it != "mathlingua.lib.frontend.ast.EndArgument"
     }
 }
 
@@ -135,7 +133,16 @@ private fun DefinitionOf.getClassname() =
         }
         .addAstPackagePrefix()
 
-private fun getAllTypesInSpec() = MATHLINGUA_SPECIFICATION.map { it.getClassname() }
+private fun getAllTypesInSpec(): List<String> {
+    val result = mutableListOf<String>()
+    for (def in MATHLINGUA_SPECIFICATION) {
+        result.add(def.getClassname())
+        if (def.of is Group) {
+            result.addAll(def.of.of.map { it.classname.addAstPackagePrefix() })
+        }
+    }
+    return result
+}
 
 private fun isInterface(classname: String) =
     try {

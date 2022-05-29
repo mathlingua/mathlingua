@@ -1,4 +1,4 @@
-package mathlingua
+package mathlingua.spec
 
 import mathlingua.lib.util.bold
 import mathlingua.lib.util.red

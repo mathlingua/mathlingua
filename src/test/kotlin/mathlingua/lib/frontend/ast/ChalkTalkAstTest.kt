@@ -17,79 +17,75 @@
 package mathlingua.lib.frontend.ast
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import mathlingua.lib.frontend.MetaData
-import strikt.api.expect
-import strikt.assertions.isEqualTo
 
 internal class ChalkTalkAstTest {
     @Test
     fun `correctly renders args to code`() {
         val metadata = MetaData(row = -1, column = -1, isInline = false)
-        expect {
-            that(
-                    IfSection(
-                            clauses =
-                                listOf(
-                                    Statement(
-                                        text = "a",
-                                        metadata = MetaData(row = 0, column = 0, isInline = true)),
-                                    Statement(
-                                        text = "b",
-                                        metadata = MetaData(row = 0, column = 0, isInline = true)),
-                                    Statement(
-                                        text = "c",
-                                        metadata = MetaData(row = 0, column = 0, isInline = false)),
-                                    Statement(
-                                        text = "d",
-                                        metadata = MetaData(row = 0, column = 0, isInline = true)),
-                                    Statement(
-                                        text = "e",
-                                        metadata = MetaData(row = 0, column = 0, isInline = false)),
-                                ),
-                            metadata = metadata)
-                        .toCode())
-                .isEqualTo(
-                    """
+        assertEquals(
+            expected =
+                """
                 if: 'a', 'b'
                 . 'c', 'd'
                 . 'e'
-            """.trimIndent())
-        }
+            """.trimIndent(),
+            actual =
+                IfSection(
+                        clauses =
+                            listOf(
+                                Statement(
+                                    text = "a",
+                                    metadata = MetaData(row = 0, column = 0, isInline = true)),
+                                Statement(
+                                    text = "b",
+                                    metadata = MetaData(row = 0, column = 0, isInline = true)),
+                                Statement(
+                                    text = "c",
+                                    metadata = MetaData(row = 0, column = 0, isInline = false)),
+                                Statement(
+                                    text = "d",
+                                    metadata = MetaData(row = 0, column = 0, isInline = true)),
+                                Statement(
+                                    text = "e",
+                                    metadata = MetaData(row = 0, column = 0, isInline = false)),
+                            ),
+                        metadata = metadata)
+                    .toCode())
     }
 
     @Test
     fun `correctly renders a group with multiple sections`() {
         val metadata = MetaData(row = -1, column = -1, isInline = false)
-        expect {
-            that(
-                    IfGroup(
-                            ifSection =
-                                IfSection(
-                                    clauses =
-                                        listOf(
-                                            Statement(
-                                                text = "a",
-                                                metadata =
-                                                    MetaData(
-                                                        row = 0, column = 0, isInline = true))),
-                                    metadata = metadata),
-                            thenSection =
-                                ThenSection(
-                                    clauses =
-                                        listOf(
-                                            Statement(
-                                                text = "b",
-                                                metadata =
-                                                    MetaData(row = 0, column = 0, isInline = true)),
-                                        ),
-                                    metadata = metadata),
-                            metadata = metadata)
-                        .toCode())
-                .isEqualTo(
-                    """
+        assertEquals(
+            expected =
+                """
                 if: 'a'
                 then: 'b'
-            """.trimIndent())
-        }
+            """.trimIndent(),
+            actual =
+                IfGroup(
+                        ifSection =
+                            IfSection(
+                                clauses =
+                                    listOf(
+                                        Statement(
+                                            text = "a",
+                                            metadata =
+                                                MetaData(row = 0, column = 0, isInline = true))),
+                                metadata = metadata),
+                        thenSection =
+                            ThenSection(
+                                clauses =
+                                    listOf(
+                                        Statement(
+                                            text = "b",
+                                            metadata =
+                                                MetaData(row = 0, column = 0, isInline = true)),
+                                    ),
+                                metadata = metadata),
+                        metadata = metadata)
+                    .toCode())
     }
 }

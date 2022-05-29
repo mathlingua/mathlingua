@@ -16,12 +16,11 @@
 
 package mathlingua.spec
 
-import assertk.assertThat
-import assertk.assertions.isEqualTo
-import assertk.assertions.isIn
-import assertk.assertions.isNotIn
-import assertk.assertions.isTrue
 import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 
@@ -30,7 +29,10 @@ class SpecificationTest {
     fun `verify spec has no duplicate definitions`() {
         val usedNames = mutableSetOf<String>()
         for (spec in MATHLINGUA_SPECIFICATION) {
-            assertThat(spec.name).isNotIn(usedNames)
+            assertFalse(
+                actual = spec.name in usedNames,
+                message =
+                    "Expected ${spec.name} to not be in the already defined names: $usedNames")
             usedNames.add(spec.name)
         }
     }
@@ -40,7 +42,7 @@ class SpecificationTest {
         val typesInCode = getAllTypesInCode().toSet()
         val typesInSpec = getAllTypesInSpec()
         for (type in typesInSpec) {
-            assertThat(type).isIn(typesInCode)
+            assertContains(iterable = typesInCode, element = type)
         }
     }
 
@@ -49,7 +51,7 @@ class SpecificationTest {
         val typesInSpec = getAllTypesInSpec().toSet()
         val typesInCode = getAllTypesInCode()
         for (type in typesInCode) {
-            assertThat(type).isIn(typesInSpec)
+            assertContains(iterable = typesInSpec, element = type)
         }
     }
 
@@ -58,11 +60,13 @@ class SpecificationTest {
         val anyOfTypesInSpec = MATHLINGUA_SPECIFICATION.filter { it.of is AnyOf }
         for (type in anyOfTypesInSpec) {
             val classname = type.getClassname()
-            assertThat(isInterface(classname), "$type is an interface").isTrue()
+            assertTrue(actual = isInterface(classname), message = "$type is an interface")
             val implementors = getDirectAstImplementorsOf(classname)
             val anyOf = type.of as AnyOf
-            assertThat(implementors, "implementors of $classname")
-                .isEqualTo(anyOf.of.map { it.toCode().addAstPackagePrefix() }.toSet())
+            assertEquals(
+                expected = anyOf.of.map { it.toCode().addAstPackagePrefix() }.toSet(),
+                actual = implementors,
+                message = "implementors of $classname")
         }
     }
 
@@ -71,7 +75,7 @@ class SpecificationTest {
         val allInterfacesInCode = getAllTypesInCode().filter { isInterface(it) }.sorted()
         val anyOfTypesInSpec =
             MATHLINGUA_SPECIFICATION.filter { it.of is AnyOf }.map { it.getClassname() }.sorted()
-        assertThat(allInterfacesInCode).isEqualTo(anyOfTypesInSpec)
+        assertEquals(expected = anyOfTypesInSpec, actual = allInterfacesInCode)
     }
 
     @Test

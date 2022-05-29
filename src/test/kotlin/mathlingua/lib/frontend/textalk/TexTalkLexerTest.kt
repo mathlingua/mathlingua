@@ -17,14 +17,11 @@
 package mathlingua.lib.frontend.textalk
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
-import strikt.api.expect
-import strikt.api.expectThat
-import strikt.assertions.isEmpty
-import strikt.assertions.isEqualTo
-import strikt.assertions.isFalse
-import strikt.assertions.isTrue
 
 internal class TexTalkLexerTest {
     @Test
@@ -35,10 +32,8 @@ internal class TexTalkLexerTest {
             prefixLexer.next()
             tokenCount++
         }
-        expect {
-            that(tokenCount).isEqualTo(NUM_PREFIX_TOKENS)
-            that(prefixLexer.diagnostics()).isEmpty()
-        }
+        assertEquals(expected = NUM_PREFIX_TOKENS, actual = tokenCount)
+        assertEquals(expected = 0, actual = prefixLexer.diagnostics().size)
 
         for (case in TEST_CASES) {
             val lexer = newTexTalkLexer(PREFIX + case.input)
@@ -46,23 +41,23 @@ internal class TexTalkLexerTest {
             for (i in 0 until NUM_PREFIX_TOKENS) {
                 lexer.next()
             }
-            expectThat(lexer.hasNext())
-                .describedAs("Case '${case.input}' doesn't leave a remaining token")
-                .isTrue()
+            assertTrue(
+                actual = lexer.hasNext(),
+                message = "Case '${case.input}' doesn't leave a remaining token")
             val peek = lexer.peek()
             val next = lexer.next()
-            expect {
-                that(next).isEqualTo(peek)
-                that(lexer.hasNext()).isFalse()
-                that(next)
-                    .isEqualTo(
-                        TexTalkToken(
-                            type = case.expectedType,
-                            text = case.input,
-                            row = 0,
-                            column = PREFIX.length))
-                that(lexer.diagnostics()).isEmpty()
-            }
+
+            assertEquals(expected = peek, actual = next)
+            assertFalse(actual = lexer.hasNext())
+            assertEquals(
+                expected =
+                    TexTalkToken(
+                        type = case.expectedType,
+                        text = case.input,
+                        row = 0,
+                        column = PREFIX.length),
+                actual = next)
+            assertEquals(expected = 0, actual = lexer.diagnostics().size)
         }
     }
 }

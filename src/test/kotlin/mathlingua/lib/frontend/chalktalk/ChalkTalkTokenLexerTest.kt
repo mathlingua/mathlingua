@@ -17,12 +17,9 @@
 package mathlingua.lib.frontend.chalktalk
 
 import kotlin.test.Test
-import strikt.api.expect
-import strikt.api.expectThat
-import strikt.assertions.isEmpty
-import strikt.assertions.isEqualTo
-import strikt.assertions.isFalse
-import strikt.assertions.isTrue
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertTrue
 
 internal class ChalkTalkTokenLexerTest {
     @Test
@@ -33,10 +30,9 @@ internal class ChalkTalkTokenLexerTest {
             prefixLexer.next()
             tokenCount++
         }
-        expect {
-            that(tokenCount).isEqualTo(NUM_PREFIX_TOKENS)
-            that(prefixLexer.diagnostics()).isEmpty()
-        }
+
+        assertEquals(expected = NUM_PREFIX_TOKENS, actual = tokenCount)
+        assertEquals(expected = 0, actual = prefixLexer.diagnostics().size)
 
         for (case in TEST_CASES) {
             val lexer = newChalkTalkTokenLexer(PREFIX + case.input)
@@ -44,23 +40,23 @@ internal class ChalkTalkTokenLexerTest {
             for (i in 0 until NUM_PREFIX_TOKENS) {
                 lexer.next()
             }
-            expectThat(lexer.hasNext())
-                .describedAs("Case '${case.input}' doesn't leave a remaining token")
-                .isTrue()
+            assertTrue(
+                actual = lexer.hasNext(),
+                message = "Case '${case.input}' doesn't leave a remaining token")
             val peek = lexer.peek()
             val next = lexer.next()
-            expect {
-                that(next).isEqualTo(peek)
-                that(lexer.hasNext()).isFalse()
-                that(next)
-                    .isEqualTo(
-                        ChalkTalkToken(
-                            type = case.expectedType,
-                            text = case.expectedText,
-                            row = 0,
-                            column = PREFIX.length))
-                that(lexer.diagnostics()).isEmpty()
-            }
+
+            assertEquals(expected = peek, actual = next)
+            assertFalse(actual = lexer.hasNext())
+            assertEquals(
+                expected =
+                    ChalkTalkToken(
+                        type = case.expectedType,
+                        text = case.expectedText,
+                        row = 0,
+                        column = PREFIX.length),
+                actual = next)
+            assertEquals(expected = 0, actual = lexer.diagnostics().size)
         }
     }
 
@@ -351,8 +347,7 @@ private fun runIndentUnIndentTest(input: String, expected: List<ChalkTalkToken>)
     while (lexer.hasNext()) {
         actual.add(lexer.next())
     }
-    expect {
-        that(actual.toList()).isEqualTo(expected)
-        that(lexer.diagnostics()).isEmpty()
-    }
+
+    assertEquals(expected = 0, actual = lexer.diagnostics().size)
+    assertEquals(expected = expected, actual = actual.toList())
 }

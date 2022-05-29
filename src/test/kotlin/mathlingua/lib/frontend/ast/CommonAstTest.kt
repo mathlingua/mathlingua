@@ -17,21 +17,21 @@
 package mathlingua.lib.frontend.ast
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import mathlingua.lib.frontend.MetaData
-import strikt.api.expect
-import strikt.assertions.isEqualTo
 
 internal class CommonAstTest {
     @Test
     fun `correctly renders items to code`() {
         val metadata = MetaData(row = -1, column = -1, isInline = false)
-        expect {
-            that(Statement(text = "some' statement", metadata = metadata).toCode())
-                .isEqualTo("`some' statement`")
-            that(Statement(text = "some` statement", metadata = metadata).toCode())
-                .isEqualTo("'some` statement'")
-            that(Statement(text = "some statement", metadata = metadata).toCode())
-                .isEqualTo("'some statement'")
-        }
+        assertEquals(
+            expected = "`some' statement`",
+            actual = Statement(text = "some' statement", metadata = metadata).toCode())
+        assertEquals(
+            expected = "'some` statement'",
+            actual = Statement(text = "some` statement", metadata = metadata).toCode())
+        assertEquals(
+            expected = "'some statement'",
+            actual = Statement(text = "some statement", metadata = metadata).toCode())
     }
 }

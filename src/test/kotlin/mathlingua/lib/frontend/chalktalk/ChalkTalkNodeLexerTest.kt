@@ -17,6 +17,7 @@
 package mathlingua.lib.frontend.chalktalk
 
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ast.BeginArgument
 import mathlingua.lib.frontend.ast.BeginGroup
@@ -39,9 +40,6 @@ import mathlingua.lib.frontend.ast.SubParamSequence
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
-import strikt.api.expect
-import strikt.assertions.isEmpty
-import strikt.assertions.isEqualTo
 
 internal class ChalkTalkNodeLexerTest {
     @Test fun `correctly parses empty input`() = runTest("", emptyList())
@@ -930,8 +928,7 @@ private fun runTest(text: String, expected: List<NodeLexerToken>) {
     while (nodeLexer.hasNext()) {
         nodes.add(nodeLexer.next())
     }
-    expect {
-        that(nodeLexer.diagnostics()).isEmpty()
-        that(nodes.toList()).isEqualTo(expected)
-    }
+
+    assertEquals(expected = 0, actual = nodeLexer.diagnostics().size)
+    assertEquals(expected = expected, actual = nodes.toList())
 }

@@ -294,7 +294,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
-    private fun function(isInline: Boolean): FunctionCall? {
+    private fun function(isInline: Boolean): ChalkTalkNode? {
         // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
         if (!lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.LParen) &&
             !lexer.hasHas(ChalkTalkTokenType.Name, ChalkTalkTokenType.Underscore)) {
@@ -347,7 +347,18 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
     private fun nameOrAssignmentItem(isInline: Boolean): NameAssignmentItem? {
         val func = function(isInline)
         if (func != null) {
-            return func
+            return if (func is NameAssignmentItem) {
+                func
+            } else {
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.ChalkTalkNodeLexer,
+                        message = "Expected a name assignment item",
+                        row = func.metadata.row,
+                        column = func.metadata.column))
+                null
+            }
         }
 
         val name = name(isInline)
@@ -404,7 +415,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                             row = func.metadata.row,
                             column = func.metadata.column))
                     null
-                } else {
+                } else if (func is FunctionCall && rhs is FunctionCall) {
                     FunctionAssignment(
                         lhs = func,
                         rhs = rhs,
@@ -413,6 +424,28 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                                 row = func.metadata.row,
                                 column = func.metadata.column,
                                 isInline = isInline))
+                } else {
+                    if (func !is FunctionCall) {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
+                                message = "Expected a FunctionCall",
+                                row = func.metadata.row,
+                                column = func.metadata.column))
+                    }
+
+                    if (rhs !is FunctionCall) {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
+                                message = "Expected a FunctionCall",
+                                row = rhs.metadata.row,
+                                column = rhs.metadata.column))
+                    }
+
+                    null
                 }
             } else {
                 func

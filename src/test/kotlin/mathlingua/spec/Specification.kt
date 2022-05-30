@@ -125,7 +125,7 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.Common),
         DefinitionOf(
             "Sequence",
-            anyOf(Def("SubParamFunctionSequence"), Def("SubAndRegularParamFunctionSequence")),
+            anyOf(Def("SubParamSequence"), Def("SubAndRegularParamSequence")),
             DefinitionType.Common),
         DefinitionOf(
             "Tuple",
@@ -341,14 +341,19 @@ internal val MATHLINGUA_SPECIFICATION =
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore)),
             DefinitionType.TexTalk),
+        DefinitionOf("StatementIsFormItem", Literal("statement"), DefinitionType.TexTalk),
+        DefinitionOf("AssignmentIsFormItem", Literal("assignment"), DefinitionType.TexTalk),
+        DefinitionOf("SpecificationIsFormItem", Literal("specification"), DefinitionType.TexTalk),
+        DefinitionOf("ExpressionIsFormItem", Literal("expression"), DefinitionType.TexTalk),
+        DefinitionOf("DefinitionIsFormItem", Literal("definition"), DefinitionType.TexTalk),
         DefinitionOf(
             "MetaIsFormItem",
             anyOf(
-                Def("statement"),
-                Def("assignment"),
-                Def("specification"),
-                Def("expression"),
-                Def("definition")),
+                Def("StatementIsFormItem"),
+                Def("AssignmentIsFormItem"),
+                Def("SpecificationIsFormItem"),
+                Def("ExpressionIsFormItem"),
+                Def("DefinitionIsFormItem")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "MetaIsForm",
@@ -584,6 +589,7 @@ internal val MATHLINGUA_SPECIFICATION =
                 Def("Tuple"),
                 Def("Sequence"),
                 Def("Function"),
+                Def("FunctionCall"),
                 Def("Set"),
                 Def("GroupingExpression"),
                 Def("OperationExpression"),
@@ -595,7 +601,13 @@ internal val MATHLINGUA_SPECIFICATION =
                 Def("NotEqualsExpression"),
                 Def("CallExpression"),
                 Def("TupleExpression"),
-                Def("AssignmentExpression")),
+                Def("AssignmentExpression"),
+                Def("InExpression"),
+                Def("IsExpression"),
+                Def("NotInExpression"),
+                Def("VariadicInExpression"),
+                Def("VariadicIsExpression"),
+                Def("VariadicNotInExpression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "Clause",
@@ -608,6 +620,7 @@ internal val MATHLINGUA_SPECIFICATION =
                 Def("forAll:"),
                 Def("if:"),
                 Def("iff:"),
+                Def("Spec"),
                 Text(regex = ".*"),
                 Statement(of = listOf("Expression"))),
             DefinitionType.ChalkTalk),
@@ -749,7 +762,9 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "ThenSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "NameOrFunction", anyOf(Def("Name"), Def("Function")), DefinitionType.ChalkTalk),
+            "NameOrFunction",
+            anyOf(Def("Name"), Def("Function"), Def("FunctionCall")),
+            DefinitionType.ChalkTalk),
         DefinitionOf(
             "generated:",
             group(
@@ -911,7 +926,7 @@ internal val MATHLINGUA_SPECIFICATION =
         DefinitionOf(
             "ProvidingItem",
             anyOf(
-                Def("View"),
+                Def("view:"),
                 Def("symbols:"),
                 Def("memberSymbols:"),
                 Def("equality:"),
@@ -930,7 +945,7 @@ internal val MATHLINGUA_SPECIFICATION =
             "ExpressingItem",
             anyOf(
                 Def("piecewise:"),
-                Def("match:"),
+                Def("matching:"),
                 Def("Clause"),
                 Def("Spec"),
                 Def("ColonEqualsExpression"),
@@ -1165,12 +1180,12 @@ internal val MATHLINGUA_SPECIFICATION =
         DefinitionOf(
             "ResourceItem",
             anyOf(
-                Def("type"),
-                Def("name"),
-                Def("author"),
-                Def("homepage"),
-                Def("url"),
-                Def("offset")),
+                Def("type:"),
+                Def("name:"),
+                Def("author:"),
+                Def("homepage:"),
+                Def("url:"),
+                Def("offset:")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Resource:",

@@ -20,6 +20,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlin.text.Regex
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 
@@ -46,18 +47,47 @@ class SpecificationTest {
     @Test
     fun `verify all any-of types in spec align with interfaces in code`() {
         val anyOfTypesInSpec = MATHLINGUA_SPECIFICATION.filter { it.of is AnyOf }
-        for (type in anyOfTypesInSpec) {
+        for (i in anyOfTypesInSpec.indices) {
+            val type = anyOfTypesInSpec[i]
             val classname = type.getClassname()
             // verify that the classname of the type in the spec is an interface in the code
-            assertTrue(actual = isInterface(classname), message = "$type is an interface")
+            assertTrue(
+                actual = isInterface(classname), message = "Expected $classname to be an interface")
             // get all the direct implements of the interface in the code
             val implementors = getDirectAstImplementorsOf(classname)
             val anyOf = type.of as AnyOf
             // assert the items specified in the union in the spec are exactly the
             // implementors of the interface in the code
+            val nameToClassname = mutableMapOf<String, String>()
+            for (item in MATHLINGUA_SPECIFICATION) {
+                nameToClassname[item.name] = item.getClassname()
+            }
             assertEquals(
-                expected = anyOf.of.map { it.toCode().addAstPackagePrefix() }.sorted(),
-                actual = implementors.toList().sorted(),
+                // Statement[...] and Text[...] forms should be replaced with Statement and Text
+                expected =
+                    anyOf
+                        .of
+                        .asSequence()
+                        .mapNotNull {
+                            when (it) {
+                                is Text -> {
+                                    "Text".addAstPackagePrefix()
+                                }
+                                is Statement -> {
+                                    "Statement".addAstPackagePrefix()
+                                }
+                                else -> {
+                                    nameToClassname[it.toCode()]
+                                        ?.replace(Regex("\\[.*\\]"), "")
+                                        ?.addAstPackagePrefix()
+                                }
+                            }
+                        }
+                        .toSet()
+                        .toList()
+                        .sorted()
+                        .joinToString("\n"),
+                actual = implementors.toSet().toList().sorted().joinToString("\n"),
                 message = "implementors of $classname")
         }
     }
@@ -135,16 +165,21 @@ private fun getAllTypesInCode(): List<String> {
 
 private fun DefinitionOf.getClassname() =
     if (this.of is Group) {
-            this.of.classname
-        } else {
-            this.name
-        }
-        .addAstPackagePrefix()
+        this.of.classname
+    } else if (this.of is Text) {
+        "Text"
+    } else
+        if (this.of is Statement) {
+                "Statement"
+            } else {
+                this.name
+            }
+            .addAstPackagePrefix()
 
 private fun getAllTypesInSpec(): List<String> {
     val result = mutableSetOf<String>()
     for (def in MATHLINGUA_SPECIFICATION) {
-        result.add(def.getClassname())
+        result.add(def.getClassname().addAstPackagePrefix())
         if (def.of is Group) {
             result.addAll(def.of.of.map { it.classname.addAstPackagePrefix() })
         }

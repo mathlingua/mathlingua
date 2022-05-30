@@ -20,7 +20,6 @@ import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
-import mathlingua.lib.frontend.ast.CommonNode
 import mathlingua.lib.frontend.ast.Expression
 import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.FunctionAssignment
@@ -62,7 +61,8 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
     override fun diagnostics() = diagnostics
 
     private fun expression(): Expression? =
-        function(false) ?: tuple(false) ?: name(false) ?: setOrSequence(false) as Expression?
+        function(false) as Expression?
+            ?: tuple(false) ?: name(false) ?: setOrSequence(false) as Expression?
 
     private fun name(isInline: Boolean): Name? {
         if (!lexer.has(TexTalkTokenType.Name)) {
@@ -145,7 +145,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
 
-    private fun function(isInline: Boolean): FunctionCall? {
+    private fun function(isInline: Boolean): TexTalkNode? {
         // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
         if (!lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.LParen) &&
             !lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.Underscore)) {
@@ -195,7 +195,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         }
     }
 
-    private fun target(isInline: Boolean): CommonNode? {
+    private fun target(isInline: Boolean): TexTalkNode? {
         val func = function(isInline)
         if (func != null) {
             return if (lexer.has(TexTalkTokenType.ColonEqual)) {
@@ -211,7 +211,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                             row = func.metadata.row,
                             column = func.metadata.column))
                     null
-                } else {
+                } else if (func is FunctionCall && rhs is FunctionCall) {
                     FunctionAssignment(
                         lhs = func,
                         rhs = rhs,
@@ -220,6 +220,28 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                                 row = func.metadata.row,
                                 column = func.metadata.column,
                                 isInline = isInline))
+                } else {
+                    if (func !is FunctionCall) {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
+                                message = "Expected a FunctionCall",
+                                row = func.metadata.row,
+                                column = func.metadata.column))
+                    }
+
+                    if (rhs !is FunctionCall) {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
+                                message = "Expected a FunctionCall",
+                                row = rhs.metadata.row,
+                                column = rhs.metadata.column))
+                    }
+
+                    null
                 }
             } else {
                 func
@@ -379,7 +401,18 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
     private fun nameOrAssignmentItem(isInline: Boolean): NameAssignmentItem? {
         val func = function(isInline)
         if (func != null) {
-            return func
+            return if (func is NameAssignmentItem) {
+                func
+            } else {
+                diagnostics.add(
+                    Diagnostic(
+                        type = DiagnosticType.Error,
+                        origin = DiagnosticOrigin.TexTalkParser,
+                        message = "Expected a name assignment item",
+                        row = func.metadata.row,
+                        column = func.metadata.column))
+                null
+            }
         }
 
         val name = name(isInline)

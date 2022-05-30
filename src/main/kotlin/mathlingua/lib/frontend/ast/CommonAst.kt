@@ -49,7 +49,7 @@ internal sealed interface VariadicTarget : VariadicRhs
 internal sealed interface Target : Argument
 
 internal data class OperatorName(val text: String, override val metadata: MetaData) :
-    Target, NameAssignmentItem, NameOrFunction, Operator {
+    Target, NameAssignmentItem, Operator {
     override fun toCode() = text
 }
 
@@ -69,12 +69,11 @@ internal data class VariadicSequence(val sequence: Sequence, override val metada
 }
 
 // functions
-internal sealed interface FunctionCall :
-    SquareTargetItem, NameAssignmentItem, NameOrFunction, Expression
+internal sealed interface FunctionCall : NameOrFunction, Expression
 
 internal data class Function(
     val name: Name, val params: List<NameOrVariadicName>, override val metadata: MetaData
-) : FunctionCall, CallExpression, Target {
+) : FunctionCall, NameOrFunction, Target, NameAssignmentItem, SquareTargetItem, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())

@@ -103,7 +103,11 @@ internal data class CommandForm(
     val namedParams: List<NamedParameterForm>?,
     val parenParams: List<Name>?,
     override val metadata: MetaData
-) : TexTalkNode
+) : IdForm, TexTalkNode {
+    override fun toCode(): String {
+        TODO("Not yet implemented")
+    }
+}
 
 internal sealed interface OperationExpression : Expression
 
@@ -169,7 +173,7 @@ internal data class NotInExpression(
 
 internal data class ColonEqualsExpression(
     val lhs: Target, val rhs: Expression, override val metadata: MetaData
-) : Expression {
+) : Expression, SatisfyingItem, ExpressingItem, ThatItem {
     override fun toCode() = TODO("Not yet implemented")
 }
 
@@ -318,13 +322,17 @@ internal data class OperationAssignmentExpression(
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal enum class MetaIsFormItem {
-    Statement,
-    Assignment,
-    Specification,
-    Expression,
-    Definition
-}
+internal interface MetaIsFormItem : TexTalkNode
+
+internal data class StatementIsFormItem(override val metadata: MetaData) : MetaIsFormItem
+
+internal data class AssignmentIsFormItem(override val metadata: MetaData) : MetaIsFormItem
+
+internal data class SpecificationIsFormItem(override val metadata: MetaData) : MetaIsFormItem
+
+internal data class ExpressionIsFormItem(override val metadata: MetaData) : MetaIsFormItem
+
+internal data class DefinitionIsFormItem(override val metadata: MetaData) : MetaIsFormItem
 
 internal data class MetaIsForm(val items: List<MetaIsFormItem>, override val metadata: MetaData) :
     TexTalkNode

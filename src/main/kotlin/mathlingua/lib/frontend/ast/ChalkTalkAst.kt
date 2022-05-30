@@ -38,7 +38,7 @@ internal data class Id(val text: String, override val metadata: MetaData) :
 internal sealed interface IdForm : ChalkTalkNode
 
 internal data class Statement(val text: String, override val metadata: MetaData) :
-    Argument, Spec, ProvidedItem {
+    Argument, Spec, ProvidedItem, Clause {
     override fun toCode() =
         if (this.text.contains("'")) {
             "`${this.text}`"
@@ -69,7 +69,7 @@ internal interface Clause : ThatItem, SatisfyingItem, ExpressingItem
  * <spec> ::= <statement>[<is textalk exp>] |
  *            <statement>[<in textalk exp>]
  */
-internal interface Spec : Clause
+internal interface Spec : Clause, SatisfyingItem, ExpressingItem, ThatItem
 
 internal open class Section(val name: String, override val metadata: MetaData) : ChalkTalkNode {
     override fun toCode(): String {

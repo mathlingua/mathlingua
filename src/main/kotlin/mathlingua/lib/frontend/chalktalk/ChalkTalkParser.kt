@@ -106,7 +106,6 @@ import mathlingua.lib.frontend.ast.ForAllSection
 import mathlingua.lib.frontend.ast.FromSection
 import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.FunctionAssignment
-import mathlingua.lib.frontend.ast.FunctionCall
 import mathlingua.lib.frontend.ast.GeneratedGroup
 import mathlingua.lib.frontend.ast.GeneratedSection
 import mathlingua.lib.frontend.ast.GeneratedWhenSection
@@ -458,7 +457,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun name(): Name? = getNextIfCorrectType()
 
-    private fun function(): FunctionCall? = getNextIfCorrectType()
+    private fun function(): Function? = getNextIfCorrectType()
 
     private fun nameOrFunction(): NameOrFunction? = name() ?: function()
 

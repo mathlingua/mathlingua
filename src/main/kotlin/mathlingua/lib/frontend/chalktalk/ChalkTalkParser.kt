@@ -72,6 +72,7 @@ import mathlingua.lib.frontend.ast.DEFAULT_POSITIVE_FLOAT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_POSITIVE_INT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_REFERENCE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_RESOURCE_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_RESOURCE_NAME
 import mathlingua.lib.frontend.ast.DEFAULT_SPECIFY_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_STATEMENT
 import mathlingua.lib.frontend.ast.DEFAULT_STATES_GROUP
@@ -81,6 +82,7 @@ import mathlingua.lib.frontend.ast.DEFAULT_TARGET
 import mathlingua.lib.frontend.ast.DEFAULT_TEXT
 import mathlingua.lib.frontend.ast.DEFAULT_THEOREM_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_TOPIC_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_TOPIC_NAME
 import mathlingua.lib.frontend.ast.DEFAULT_TYPE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_URL_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_VIEW_GROUP
@@ -165,6 +167,7 @@ import mathlingua.lib.frontend.ast.ReferenceGroup
 import mathlingua.lib.frontend.ast.ReferenceSection
 import mathlingua.lib.frontend.ast.ResourceGroup
 import mathlingua.lib.frontend.ast.ResourceItem
+import mathlingua.lib.frontend.ast.ResourceName
 import mathlingua.lib.frontend.ast.ResourceSection
 import mathlingua.lib.frontend.ast.SatisfyingItem
 import mathlingua.lib.frontend.ast.SatisfyingSection
@@ -200,6 +203,7 @@ import mathlingua.lib.frontend.ast.ThroughSection
 import mathlingua.lib.frontend.ast.TopLevelGroup
 import mathlingua.lib.frontend.ast.TopLevelGroupOrTextBlock
 import mathlingua.lib.frontend.ast.TopicGroup
+import mathlingua.lib.frontend.ast.TopicName
 import mathlingua.lib.frontend.ast.TopicSection
 import mathlingua.lib.frontend.ast.Tuple
 import mathlingua.lib.frontend.ast.TypeGroup
@@ -966,7 +970,19 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 listOf(SectionSpec(name = "Resource", required = true) { this.resourceSection() }),
             default = DEFAULT_RESOURCE_GROUP) { id, sections, metadata ->
             ResourceGroup(
-                id = id?.text ?: "",
+                id =
+                    if (id != null) {
+                        ResourceName(name = id.text, metadata = id.metadata)
+                    } else {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkParser,
+                                message = "Expected a resource name",
+                                row = sections["Resource"]?.metadata?.row ?: -1,
+                                column = sections["Resource"]?.metadata?.column ?: -1))
+                        DEFAULT_RESOURCE_NAME
+                    },
                 resourceSection = sections["Resource"] as ResourceSection,
                 metadata = metadata)
         }
@@ -1084,7 +1100,19 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_TOPIC_GROUP) { id, sections, metadata ->
             TopicGroup(
-                id = id?.text ?: "",
+                id =
+                    if (id != null) {
+                        TopicName(name = id.text, metadata = id.metadata)
+                    } else {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                origin = DiagnosticOrigin.ChalkTalkParser,
+                                message = "Expected a topic name",
+                                row = sections["Topic"]?.metadata?.row ?: -1,
+                                column = sections["Topic"]?.metadata?.column ?: -1))
+                        DEFAULT_TOPIC_NAME
+                    },
                 topicSection = sections["Topic"] as TopicSection,
                 contentSection = sections["content"] as ContentSection,
                 metadataSection = sections["Metadata"] as MetadataSection?,

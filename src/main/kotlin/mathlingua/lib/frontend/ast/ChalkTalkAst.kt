@@ -19,9 +19,11 @@ package mathlingua.lib.frontend.ast
 import mathlingua.lib.frontend.HasMetaData
 import mathlingua.lib.frontend.MetaData
 
-internal sealed interface ChalkTalkNode : HasMetaData {
+internal sealed interface ToCode {
     fun toCode(): String
 }
+
+internal sealed interface ChalkTalkNode : HasMetaData, ToCode
 
 internal data class TextBlock(val text: String, override val metadata: MetaData) :
     ChalkTalkNode, TopLevelGroupOrTextBlock, NodeLexerToken {
@@ -30,10 +32,13 @@ internal data class TextBlock(val text: String, override val metadata: MetaData)
 
 internal data class Id(val text: String, override val metadata: MetaData) :
     ChalkTalkNode, NodeLexerToken {
-    override fun toCode() = "[$text]"
+    override fun toCode() = text
 }
 
-internal data class Statement(val text: String, override val metadata: MetaData) : Argument, Spec {
+internal sealed interface IdForm : ChalkTalkNode
+
+internal data class Statement(val text: String, override val metadata: MetaData) :
+    Argument, Spec, ProvidedItem {
     override fun toCode() =
         if (this.text.contains("'")) {
             "`${this.text}`"
@@ -274,7 +279,9 @@ internal data class BetweenSection(
     override fun toCode() = sectionToCode(this, first, second)
 }
 
-internal data class ProvidedSection(val statement: Statement, override val metadata: MetaData) :
+internal interface ProvidedItem : ChalkTalkNode
+
+internal data class ProvidedSection(val statement: ProvidedItem, override val metadata: MetaData) :
     Section("provided", metadata) {
     override fun toCode() = sectionToCode(this, statement)
 }
@@ -626,8 +633,13 @@ internal data class OffsetGroup(val offsetSection: OffsetSection, override val m
     override fun toCode() = groupToCode(null, offsetSection)
 }
 
+internal data class ResourceName(val name: String, override val metadata: MetaData) :
+    ChalkTalkNode {
+    override fun toCode() = "@$name"
+}
+
 internal data class ResourceGroup(
-    val id: String, val resourceSection: ResourceSection, override val metadata: MetaData
+    val id: ResourceName, val resourceSection: ResourceSection, override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
     override fun toCode() = groupToCode(null, resourceSection)
 }
@@ -739,8 +751,12 @@ internal data class ContentSection(val content: Text, override val metadata: Met
     override fun toCode() = sectionToCode(this, content)
 }
 
+internal data class TopicName(val name: String, override val metadata: MetaData) : ChalkTalkNode {
+    override fun toCode() = "#$name"
+}
+
 internal data class TopicGroup(
-    val id: String,
+    val id: TopicName,
     val topicSection: TopicSection,
     val contentSection: ContentSection,
     val metadataSection: MetadataSection?,
@@ -904,20 +920,15 @@ private fun sectionToCode(section: Section, vararg args: ChalkTalkNode): String 
     return builder.toString()
 }
 
-private fun groupToCode(id: Id?, vararg sections: Section?) =
-    groupToCodeWithStringId(
-        if (id != null) {
-            "[${id.text}]"
-        } else {
-            null
-        },
-        *sections)
+private fun groupToCode(id: ToCode?, vararg sections: Section?) =
+    groupToCodeWithStringId(id, *sections)
 
-private fun groupToCodeWithStringId(id: String?, vararg sections: Section?): String {
+private fun groupToCodeWithStringId(id: ToCode?, vararg sections: Section?): String {
     val builder = StringBuilder()
     if (id != null) {
-        builder.append(id)
-        builder.append("\n")
+        builder.append("[")
+        builder.append(id.toCode())
+        builder.append("]\n")
     }
     var isFirstPrinted = true
     for (sect in sections) {

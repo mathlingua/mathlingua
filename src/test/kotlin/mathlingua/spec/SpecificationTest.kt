@@ -38,8 +38,8 @@ class SpecificationTest {
 
     @Test
     fun `verify all definitions in spec are in code`() {
-        val typesInCode = getAllTypesInCode().sorted()
-        val typesInSpec = getAllTypesInSpec().sorted()
+        val typesInCode = getAllTypesInCode().sorted().joinToString("\n")
+        val typesInSpec = getAllTypesInSpec().sorted().joinToString("\n")
         assertEquals(expected = typesInSpec, actual = typesInCode)
     }
 
@@ -111,6 +111,8 @@ private fun getAllTypesInCode(): List<String> {
             // ignore types associated with tests (tests make a class
             // for each test of the form <test-class>$<test-name>)
             !it.contains("$") &&
+            !it.endsWith("Test") &&
+            !it.endsWith("Kt") &&
             it != "mathlingua.lib.frontend.ast.ChalkTalkNode" &&
             it != "mathlingua.lib.frontend.ast.TexTalkNode" &&
             it != "mathlingua.lib.frontend.ast.CommonNode" &&
@@ -121,7 +123,13 @@ private fun getAllTypesInCode(): List<String> {
             it != "mathlingua.lib.frontend.ast.BeginSection" &&
             it != "mathlingua.lib.frontend.ast.EndSection" &&
             it != "mathlingua.lib.frontend.ast.BeginArgument" &&
-            it != "mathlingua.lib.frontend.ast.EndArgument"
+            it != "mathlingua.lib.frontend.ast.EndArgument" &&
+            it != "mathlingua.lib.frontend.ast.Group" &&
+            it != "mathlingua.lib.frontend.ast.TexTalkToken" &&
+            it != "mathlingua.lib.frontend.ast.TexTalkTokenType" &&
+            it != "mathlingua.lib.frontend.ast.ToCode" &&
+            it != "mathlingua.lib.frontend.ast.TexTalkNodeOrToken" &&
+            it != "mathlingua.lib.frontend.ast.Section"
     }
 }
 
@@ -134,14 +142,14 @@ private fun DefinitionOf.getClassname() =
         .addAstPackagePrefix()
 
 private fun getAllTypesInSpec(): List<String> {
-    val result = mutableListOf<String>()
+    val result = mutableSetOf<String>()
     for (def in MATHLINGUA_SPECIFICATION) {
         result.add(def.getClassname())
         if (def.of is Group) {
             result.addAll(def.of.of.map { it.classname.addAstPackagePrefix() })
         }
     }
-    return result
+    return result.toList().sorted()
 }
 
 private fun isInterface(classname: String) =

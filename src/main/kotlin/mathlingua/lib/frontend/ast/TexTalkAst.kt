@@ -191,14 +191,17 @@ internal data class NotEqualsExpression(
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal enum class GroupingType {
-    Paren,
-    Curly
+internal interface GroupingExpression : Expression
+
+internal data class CurlyGroupingExpression(
+    val expression: Expression, override val metadata: MetaData
+) : GroupingExpression {
+    override fun toCode() = TODO("Not yet implemented")
 }
 
-internal data class GroupingExpression(
-    val type: GroupingType, val expression: Expression, override val metadata: MetaData
-) : Expression {
+internal data class ParenGroupingExpression(
+    val expression: Expression, override val metadata: MetaData
+) : GroupingExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
@@ -309,6 +312,12 @@ internal data class NameAssignmentAssignmentExpression(
     override fun toCode() = TODO("Not yet implemented")
 }
 
+internal data class OperationAssignmentExpression(
+    val lhs: NameAssignment, val rhs: Expression, override val metadata: MetaData
+) : AssignmentExpression {
+    override fun toCode() = TODO("Not yet implemented")
+}
+
 internal enum class MetaIsFormItem {
     Statement,
     Assignment,
@@ -319,3 +328,39 @@ internal enum class MetaIsFormItem {
 
 internal data class MetaIsForm(val items: List<MetaIsFormItem>, override val metadata: MetaData) :
     TexTalkNode
+
+internal data class IdInfixOperatorCall(
+    val lhs: Name, val center: OperatorName, val rhs: Name, override val metadata: MetaData
+) : IdForm {
+    override fun toCode(): String {
+        TODO("Not yet implemented")
+    }
+}
+
+internal data class IdPostfixOperatorCall(
+    val lhs: Name, val center: OperatorName, override val metadata: MetaData
+) : IdForm {
+    override fun toCode(): String {
+        TODO("Not yet implemented")
+    }
+}
+
+internal data class IdPrefixOperatorCall(
+    val center: OperatorName, val rhs: Name, override val metadata: MetaData
+) : IdForm {
+    override fun toCode(): String {
+        TODO("Not yet implemented")
+    }
+}
+
+internal data class InfixCommandFormCall(
+    val lhs: Name, val center: InfixCommandForm, val rhs: Name, override val metadata: MetaData
+) : IdForm {
+    override fun toCode(): String {
+        TODO("Not yet implemented")
+    }
+}
+
+internal data class InfixCommandExpressionForm(
+    val expression: CommandExpression, override val metadata: MetaData
+) : TexTalkNode {}

@@ -332,8 +332,13 @@ internal val DEFAULT_OFFSET_SECTION =
 internal val DEFAULT_OFFSET_GROUP =
     OffsetGroup(offsetSection = DEFAULT_OFFSET_SECTION, metadata = DEFAULT_METADATA)
 
+internal val DEFAULT_RESOURCE_NAME = ResourceName(name = "", metadata = DEFAULT_METADATA)
+
 internal val DEFAULT_RESOURCE_GROUP =
-    ResourceGroup(id = "", resourceSection = DEFAULT_RESOURCE_SECTION, metadata = DEFAULT_METADATA)
+    ResourceGroup(
+        id = DEFAULT_RESOURCE_NAME,
+        resourceSection = DEFAULT_RESOURCE_SECTION,
+        metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_AXIOM_SECTION = AxiomSection(names = emptyList(), metadata = DEFAULT_METADATA)
 
@@ -390,9 +395,11 @@ internal val DEFAULT_TOPIC_SECTION = TopicSection(names = emptyList(), metadata 
 internal val DEFAULT_CONTENT_SECTION =
     ContentSection(content = DEFAULT_TEXT, metadata = DEFAULT_METADATA)
 
+internal val DEFAULT_TOPIC_NAME = TopicName(name = "", metadata = DEFAULT_METADATA)
+
 internal val DEFAULT_TOPIC_GROUP =
     TopicGroup(
-        id = "",
+        id = DEFAULT_TOPIC_NAME,
         topicSection = DEFAULT_TOPIC_SECTION,
         contentSection = DEFAULT_CONTENT_SECTION,
         metadataSection = null,

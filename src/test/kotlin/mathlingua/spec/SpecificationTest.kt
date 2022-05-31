@@ -16,6 +16,7 @@
 
 package mathlingua.spec
 
+import java.util.Locale
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
@@ -118,7 +119,57 @@ class SpecificationTest {
 
     @Test
     fun `verify all groups match the spec`() {
-        // TODO: implement this test that verifies that all groups have the correct sections
+        // map from each group's classname to newline separate list of expected fields
+        // in order where each line contains the fields full classname
+        val specGroupsToFields = mutableMapOf<String, String>()
+        for (item in MATHLINGUA_SPECIFICATION) {
+            if (item.of is Group) {
+                val expectedFields = mutableListOf<String>()
+                if (item.of.id != null) {
+                    val name = item.of.id.getName()
+                    if (name != null) {
+                        val classname = name.addAstPackagePrefix()
+                        expectedFields.add("id: $classname")
+                    }
+                }
+                for (sec in item.of.of) {
+                    val fieldName =
+                        sec.classname.replaceFirstChar { it.lowercase(Locale.getDefault()) }
+                    val className = sec.classname.addAstPackagePrefix()
+                    expectedFields.add("$fieldName: $className")
+                }
+                // every group should also have a field for MetaData
+                expectedFields.add("metadata: mathlingua.lib.frontend.MetaData")
+                specGroupsToFields[item.of.classname] = expectedFields.joinToString("\n")
+            }
+        }
+
+        val expected = StringBuilder()
+        for (classname in specGroupsToFields.keys.toList().sorted()) {
+            expected.append("${classname.addAstPackagePrefix()}:\n")
+            expected.append(specGroupsToFields[classname])
+            expected.append("\n\n")
+        }
+
+        val actual = StringBuilder()
+
+        val loader = ClassLoader.getSystemClassLoader()
+        for (classname in
+            getAllTypesInCode()
+                .filter {
+                    it.endsWith("Group") && it != "mathlingua.lib.frontend.ast.TopLevelGroup"
+                }
+                .sorted()) {
+            val klass = loader.loadClass(classname)
+            actual.append("$classname:\n")
+            for (field in klass.declaredFields) {
+                actual.append("${field.name}: ${field.type.name}")
+                actual.append("\n")
+            }
+            actual.append("\n")
+        }
+
+        assertEquals(expected = expected.toString(), actual = actual.toString())
     }
 }
 

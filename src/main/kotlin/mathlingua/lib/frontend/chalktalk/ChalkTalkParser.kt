@@ -485,7 +485,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             GeneratedGroup(
                 generatedSection = sections["generated"] as GeneratedSection,
                 fromSection = sections["from"] as FromSection,
-                whenSection = sections["when"] as GeneratedWhenSection,
+                generatedWhenSection = sections["when"] as GeneratedWhenSection,
                 metadata = metadata)
         }
 
@@ -517,8 +517,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             default = DEFAULT_PIECEWISE_GROUP) { _, sections, metadata ->
             PiecewiseGroup(
                 piecewiseSection = sections["piecewise"] as PiecewiseSection,
-                whenSection = sections["when"] as PiecewiseWhenSection?,
-                thenSection = sections["then"] as PiecewiseThenSection?,
+                piecewiseWhenSection = sections["when"] as PiecewiseWhenSection?,
+                piecewiseThenSection = sections["then"] as PiecewiseThenSection?,
                 piecewiseElseSection = sections["else"] as PiecewiseElseSection?,
                 metadata = metadata)
         }
@@ -649,7 +649,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             default = DEFAULT_SYMBOLS_GROUP) { _, sections, metadata ->
             SymbolsGroup(
                 symbolsSection = sections["symbols"] as SymbolsSection,
-                whereSection = sections["where"] as SymbolsWhereSection,
+                symbolsWhereSection = sections["where"] as SymbolsWhereSection,
                 metadata = metadata)
         }
 
@@ -677,7 +677,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             default = DEFAULT_MEMBER_SYMBOLS_GROUP) { _, sections, metadata ->
             MemberSymbolsGroup(
                 memberSymbolsSection = sections["memberSymbols"] as MemberSymbolsSection,
-                whereSection = sections["where"] as MemberSymbolsWhereSection,
+                memberSymbolsWhereSection = sections["where"] as MemberSymbolsWhereSection,
                 metadata = metadata)
         }
 
@@ -1131,7 +1131,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_NOTE_TOP_LEVEL_GROUP) { _, sections, metadata ->
             NoteTopLevelGroup(
-                noteSection = sections["Note"] as NoteTopLevelSection,
+                noteTopLevelSection = sections["Note"] as NoteTopLevelSection,
                 contentSection = sections["content"] as ContentSection,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)

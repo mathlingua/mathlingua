@@ -411,6 +411,7 @@ ThatItem ::=
    Spec |
    ColonEqualsExpression
 
+[Id]
 States: 
 given?: (Target)+
 when?: (Spec)+
@@ -445,7 +446,6 @@ ResourceItem ::=
 
 [ResourceName]
 Resource: (ResourceItem)+
-Metadata?: (MetadataItem)+
 
 [(Id)?]
 Axiom: (Text[.*])*

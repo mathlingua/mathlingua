@@ -1074,7 +1074,7 @@ internal val MATHLINGUA_SPECIFICATION =
             "States:",
             group(
                 "StatesGroup",
-                null,
+                Def("Id"),
                 Section(name = "States", arg = None, required = true, classname = "StatesSection"),
                 Section(
                     name = "given",
@@ -1198,12 +1198,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     name = "Resource",
                     arg = OneOrMore(Def("ResourceItem")),
                     required = true,
-                    classname = "ResourceSection"),
-                Section(
-                    name = "Metadata",
-                    arg = OneOrMore(Def("MetadataItem")),
-                    required = false,
-                    classname = "MetadataSection")),
+                    classname = "ResourceSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Axiom:",
@@ -1742,11 +1737,12 @@ internal fun getClassnameForDefName(name: String): String? {
     return DEF_NAME_TO_CLASSNAME[name]
 }
 
-internal fun Form.getName() =
+internal fun Form.getName(): String? =
     when (this) {
         is Text -> "Text"
         is Statement -> "Statement"
         is Def -> this.name
+        is Optionally -> this.of.getName()
         else -> null
     }
 

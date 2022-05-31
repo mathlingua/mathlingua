@@ -105,7 +105,7 @@ internal val DEFAULT_GENERATED_GROUP =
     GeneratedGroup(
         generatedSection = DEFAULT_GENERATED_SECTION,
         fromSection = DEFAULT_FROM_SECTION,
-        whenSection = DEFAULT_GENERATED_WHEN_SECTION,
+        generatedWhenSection = DEFAULT_GENERATED_WHEN_SECTION,
         metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_PIECEWISE_SECTION = PiecewiseSection(metadata = DEFAULT_METADATA)
@@ -122,8 +122,8 @@ internal val DEFAULT_PIECEWISE_ELSE_SECTION =
 internal val DEFAULT_PIECEWISE_GROUP =
     PiecewiseGroup(
         piecewiseSection = DEFAULT_PIECEWISE_SECTION,
-        whenSection = null,
-        thenSection = null,
+        piecewiseWhenSection = null,
+        piecewiseThenSection = null,
         piecewiseElseSection = null,
         metadata = DEFAULT_METADATA)
 
@@ -190,7 +190,7 @@ internal val DEFAULT_SYMBOLS_WHERE_SECTION =
 internal val DEFAULT_SYMBOLS_GROUP =
     SymbolsGroup(
         symbolsSection = DEFAULT_SYMBOLS_SECTION,
-        whereSection = DEFAULT_SYMBOLS_WHERE_SECTION,
+        symbolsWhereSection = DEFAULT_SYMBOLS_WHERE_SECTION,
         metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_MEMBER_SYMBOLS_SECTION =
@@ -202,7 +202,7 @@ internal val DEFAULT_MEMBER_SYMBOLS_WHERE_SECTION =
 internal val DEFAULT_MEMBER_SYMBOLS_GROUP =
     MemberSymbolsGroup(
         memberSymbolsSection = DEFAULT_MEMBER_SYMBOLS_SECTION,
-        whereSection = DEFAULT_MEMBER_SYMBOLS_WHERE_SECTION,
+        memberSymbolsWhereSection = DEFAULT_MEMBER_SYMBOLS_WHERE_SECTION,
         metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_NOTE_SECTION = NoteSection(items = emptyList(), metadata = DEFAULT_METADATA)
@@ -409,7 +409,7 @@ internal val DEFAULT_NOTE_TOP_LEVEL_SECTION = NoteTopLevelSection(metadata = DEF
 
 internal val DEFAULT_NOTE_TOP_LEVEL_GROUP =
     NoteTopLevelGroup(
-        noteSection = DEFAULT_NOTE_TOP_LEVEL_SECTION,
+        noteTopLevelSection = DEFAULT_NOTE_TOP_LEVEL_SECTION,
         contentSection = DEFAULT_CONTENT_SECTION,
         metadataSection = null,
         metadata = DEFAULT_METADATA)

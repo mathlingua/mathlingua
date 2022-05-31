@@ -216,10 +216,10 @@ internal data class GeneratedWhenSection(
 internal data class GeneratedGroup(
     val generatedSection: GeneratedSection,
     val fromSection: FromSection,
-    val whenSection: GeneratedWhenSection,
+    val generatedWhenSection: GeneratedWhenSection,
     override val metadata: MetaData
 ) : Group(metadata), SatisfyingItem {
-    override fun toCode() = groupToCode(null, generatedSection, fromSection, whenSection)
+    override fun toCode() = groupToCode(null, generatedSection, fromSection, generatedWhenSection)
 }
 
 internal data class PiecewiseSection(override val metadata: MetaData) :
@@ -247,13 +247,18 @@ internal data class PiecewiseElseSection(
 
 internal data class PiecewiseGroup(
     val piecewiseSection: PiecewiseSection,
-    val whenSection: PiecewiseWhenSection?,
-    val thenSection: PiecewiseThenSection?,
+    val piecewiseWhenSection: PiecewiseWhenSection?,
+    val piecewiseThenSection: PiecewiseThenSection?,
     val piecewiseElseSection: PiecewiseElseSection?,
     override val metadata: MetaData
 ) : Group(metadata), ExpressingItem {
     override fun toCode() =
-        groupToCode(null, piecewiseSection, whenSection, thenSection, piecewiseElseSection)
+        groupToCode(
+            null,
+            piecewiseSection,
+            piecewiseWhenSection,
+            piecewiseThenSection,
+            piecewiseElseSection)
 }
 
 internal data class MatchingSection(
@@ -355,10 +360,10 @@ internal data class SymbolsWhereSection(
 
 internal data class SymbolsGroup(
     val symbolsSection: SymbolsSection,
-    val whereSection: SymbolsWhereSection,
+    val symbolsWhereSection: SymbolsWhereSection,
     override val metadata: MetaData
 ) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, symbolsSection, whereSection)
+    override fun toCode() = groupToCode(null, symbolsSection, symbolsWhereSection)
 }
 
 internal data class MemberSymbolsSection(val names: List<Name>, override val metadata: MetaData) :
@@ -374,10 +379,10 @@ internal data class MemberSymbolsWhereSection(
 
 internal data class MemberSymbolsGroup(
     val memberSymbolsSection: MemberSymbolsSection,
-    val whereSection: MemberSymbolsWhereSection,
+    val memberSymbolsWhereSection: MemberSymbolsWhereSection,
     override val metadata: MetaData
 ) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, memberSymbolsSection, whereSection)
+    override fun toCode() = groupToCode(null, memberSymbolsSection, memberSymbolsWhereSection)
 }
 
 internal data class NoteSection(val items: List<Text>, override val metadata: MetaData) :
@@ -772,12 +777,12 @@ internal data class NoteTopLevelSection(override val metadata: MetaData) :
 }
 
 internal data class NoteTopLevelGroup(
-    val noteSection: NoteTopLevelSection,
+    val noteTopLevelSection: NoteTopLevelSection,
     val contentSection: ContentSection,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
-    override fun toCode() = groupToCode(null, noteSection, contentSection, metadataSection)
+    override fun toCode() = groupToCode(null, noteTopLevelSection, contentSection, metadataSection)
 }
 
 internal interface SpecifyItem : ChalkTalkNode

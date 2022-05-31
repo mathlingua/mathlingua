@@ -20,7 +20,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
-import kotlin.text.Regex
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 
@@ -60,7 +59,7 @@ class SpecificationTest {
             // implementors of the interface in the code
             val nameToClassname = mutableMapOf<String, String>()
             for (item in MATHLINGUA_SPECIFICATION) {
-                nameToClassname[item.name] = item.getClassname()
+                nameToClassname[item.name] = item.getClassname().addAstPackagePrefix()
             }
             assertEquals(
                 // Statement[...] and Text[...] forms should be replaced with Statement and Text
@@ -78,8 +77,6 @@ class SpecificationTest {
                                 }
                                 else -> {
                                     nameToClassname[it.toCode()]
-                                        ?.replace(Regex("\\[.*\\]"), "")
-                                        ?.addAstPackagePrefix()
                                 }
                             }
                         }
@@ -165,16 +162,11 @@ private fun getAllTypesInCode(): List<String> {
 
 private fun DefinitionOf.getClassname() =
     if (this.of is Group) {
-        this.of.classname
-    } else if (this.of is Text) {
-        "Text"
-    } else
-        if (this.of is Statement) {
-                "Statement"
-            } else {
-                this.name
-            }
-            .addAstPackagePrefix()
+            this.of.classname
+        } else {
+            this.name
+        }
+        .addAstPackagePrefix()
 
 private fun getAllTypesInSpec(): List<String> {
     val result = mutableSetOf<String>()

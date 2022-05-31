@@ -17,6 +17,7 @@
 package mathlingua.spec
 
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
@@ -33,6 +34,22 @@ class SpecificationTest {
                 message =
                     "Expected ${spec.name} to not be in the already defined names: $usedNames")
             usedNames.add(spec.name)
+        }
+    }
+
+    @Test
+    fun `no undefined names are used`() {
+        val allDefNames = getAllDefinedClassNames()
+        val allUsedClassNames = mutableSetOf<String>()
+        for (item in MATHLINGUA_SPECIFICATION) {
+            allUsedClassNames.addAll(
+                item.getUsedDefNames().mapNotNull { getClassnameForDefName(it) })
+        }
+        for (classname in allUsedClassNames) {
+            assertContains(
+                iterable = allDefNames,
+                element = classname,
+                message = "Expected used name $classname to be defined but it is not")
         }
     }
 

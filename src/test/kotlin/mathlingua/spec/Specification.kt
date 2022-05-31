@@ -1508,6 +1508,7 @@ internal val MATHLINGUA_SPECIFICATION =
             "Document", ZeroOrMore(Def("TopLevelGroupOrTextBlock")), DefinitionType.ChalkTalk))
 
 internal sealed interface Form {
+    fun getUsedDefNames(): Set<String>
     fun toCode(): String
 }
 
@@ -1523,14 +1524,24 @@ internal enum class DefinitionType {
 }
 
 internal data class Literal(val of: String) : Form {
+    override fun getUsedDefNames() = emptySet<String>()
     override fun toCode() = "\"$of\""
 }
 
 internal data class Regex(val of: String) : Form {
+    override fun getUsedDefNames() = emptySet<String>()
     override fun toCode() = "Regex[$of]"
 }
 
 internal data class AnyOf(val of: List<Form>) : Form {
+    override fun getUsedDefNames(): Set<String> {
+        val result = mutableSetOf<String>()
+        for (item in of) {
+            result.addAll(item.getUsedDefNames())
+        }
+        return result
+    }
+
     override fun toCode(): String {
         val builder = StringBuilder()
         for (i in of.indices) {
@@ -1546,6 +1557,7 @@ internal data class AnyOf(val of: List<Form>) : Form {
 internal data class Sequence(
     val of: String, val separator: String, val constraint: SequenceConstraint
 ) : Form {
+    override fun getUsedDefNames() = setOf(of)
     override fun toCode() =
         when (constraint) {
             SequenceConstraint.OneOrMore -> {
@@ -1560,6 +1572,7 @@ internal data class Sequence(
 internal data class SuffixSequence(
     val of: String, val separator: String, val constraint: SequenceConstraint
 ) : Form {
+    override fun getUsedDefNames() = setOf(of)
     override fun toCode() =
         when (constraint) {
             SequenceConstraint.OneOrMore -> {
@@ -1572,30 +1585,43 @@ internal data class SuffixSequence(
 }
 
 internal data class ZeroOrMore(val of: Form) : Form {
+    override fun getUsedDefNames() = of.getUsedDefNames()
     override fun toCode() = "(${of.toCode()})*"
 }
 
 internal data class OneOrMore(val of: Form) : Form {
+    override fun getUsedDefNames() = of.getUsedDefNames()
     override fun toCode() = "(${of.toCode()})+"
 }
 
 internal data class Optionally(val of: Form) : Form {
+    override fun getUsedDefNames() = of.getUsedDefNames()
     override fun toCode() = "(${of.toCode()})?"
 }
 
 internal data class Either(val form1: Form, val form2: Form) : Form {
+    override fun getUsedDefNames() = form1.getUsedDefNames().plus(form2.getUsedDefNames())
     override fun toCode() = "(${form1.toCode()} | ${form2.toCode()})"
 }
 
 internal object None : Form {
+    override fun getUsedDefNames() = emptySet<String>()
     override fun toCode() = ""
 }
 
 internal data class Keyword(val text: String) : Form {
+    override fun getUsedDefNames() = emptySet<String>()
     override fun toCode() = "'$text'"
 }
 
 internal data class Item(val of: List<Form>) : Form {
+    override fun getUsedDefNames(): Set<String> {
+        val result = mutableSetOf<String>()
+        for (item in of) {
+            result.addAll(item.getUsedDefNames())
+        }
+        return result
+    }
     override fun toCode(): String {
         val builder = StringBuilder()
         for (i in of.indices) {
@@ -1611,10 +1637,12 @@ internal data class Item(val of: List<Form>) : Form {
 internal data class CharSequence(
     val prefix: String, val suffix: String, val regex: String, val escape: String?
 ) : Form {
+    override fun getUsedDefNames() = emptySet<String>()
     override fun toCode() = "$prefix$regex$suffix [escape=$escape]"
 }
 
 internal data class DefinitionOf(val name: String, val of: Form, val type: DefinitionType) {
+    fun getUsedDefNames() = of.getUsedDefNames()
     fun toCode() =
         when (of) {
             is AnyOf -> "$name ::= \n${of.toCode().split("\n").joinToString("\n") { "   $it" }}"
@@ -1624,6 +1652,7 @@ internal data class DefinitionOf(val name: String, val of: Form, val type: Defin
 }
 
 internal data class Def(val name: String) : Form {
+    override fun getUsedDefNames() = setOf(name)
     override fun toCode() = name
 }
 
@@ -1634,6 +1663,7 @@ internal data class Section(
 }
 
 internal data class Group(val classname: String, val id: Form?, val of: List<Section>) : Form {
+    override fun getUsedDefNames() = of.map { it.name }.toSet()
     override fun toCode(): String {
         val builder = StringBuilder()
         if (id != null) {
@@ -1650,10 +1680,12 @@ internal data class Group(val classname: String, val id: Form?, val of: List<Sec
 }
 
 internal data class Statement(val of: List<String>) : Form {
+    override fun getUsedDefNames() = setOf("Statement")
     override fun toCode() = "Statement[${of.joinToString(" | ")}]"
 }
 
 internal data class Text(val regex: String) : Form {
+    override fun getUsedDefNames() = setOf("Text")
     override fun toCode() = "Text[${regex}]"
 }
 
@@ -1701,6 +1733,26 @@ internal fun Form.getName() =
         is Def -> this.name
         else -> null
     }
+
+/**
+ * Returns all class names specified in the specification including class names for DefinitionOf
+ * items, groups, sections, Text, and Section.
+ */
+internal fun getAllDefinedClassNames(): Set<String> {
+    val result = mutableSetOf<String>()
+    result.addAll(MATHLINGUA_SPECIFICATION.mapNotNull { getClassnameForDefName(it.name) })
+    result.add("Text".addAstPackagePrefix())
+    result.add("Statement".addAstPackagePrefix())
+    for (item in MATHLINGUA_SPECIFICATION) {
+        if (item.of is Group) {
+            result.add(item.of.classname.addAstPackagePrefix())
+            for (sec in item.of.of) {
+                result.add(sec.classname.addAstPackagePrefix())
+            }
+        }
+    }
+    return result
+}
 
 private val DEF_NAME_TO_CLASSNAME = mutableMapOf<String, String>()
 

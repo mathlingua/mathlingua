@@ -57,10 +57,6 @@ class SpecificationTest {
             val anyOf = type.of as AnyOf
             // assert the items specified in the union in the spec are exactly the
             // implementors of the interface in the code
-            val nameToClassname = mutableMapOf<String, String>()
-            for (item in MATHLINGUA_SPECIFICATION) {
-                nameToClassname[item.name] = item.getClassname().addAstPackagePrefix()
-            }
             assertEquals(
                 // Statement[...] and Text[...] forms should be replaced with Statement and Text
                 expected =
@@ -68,16 +64,11 @@ class SpecificationTest {
                         .of
                         .asSequence()
                         .mapNotNull {
-                            when (it) {
-                                is Text -> {
-                                    "Text".addAstPackagePrefix()
-                                }
-                                is Statement -> {
-                                    "Statement".addAstPackagePrefix()
-                                }
-                                else -> {
-                                    nameToClassname[it.toCode()]
-                                }
+                            val name = it.getName()
+                            if (name != null) {
+                                getClassnameForDefName(name)
+                            } else {
+                                null
                             }
                         }
                         .toSet()
@@ -102,19 +93,6 @@ class SpecificationTest {
         // TODO: implement this test that verifies that all groups have the correct sections
     }
 }
-
-private const val AST_PACKAGE = "mathlingua.lib.frontend.ast"
-
-/**
- * Adds the ast package prefix for a simple classname and does nothing for a fully qualified
- * classname
- */
-private fun String.addAstPackagePrefix() =
-    if (this.startsWith(AST_PACKAGE)) {
-        this
-    } else {
-        "${AST_PACKAGE}.${this}"
-    }
 
 /**
  * Removes the ast package prefix from the given fully qualified classname and does nothing for a
@@ -159,14 +137,6 @@ private fun getAllTypesInCode(): List<String> {
             it != "mathlingua.lib.frontend.ast.Section"
     }
 }
-
-private fun DefinitionOf.getClassname() =
-    if (this.of is Group) {
-            this.of.classname
-        } else {
-            this.name
-        }
-        .addAstPackagePrefix()
 
 private fun getAllTypesInSpec(): List<String> {
     val result = mutableSetOf<String>()

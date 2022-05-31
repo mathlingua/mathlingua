@@ -1657,6 +1657,53 @@ internal data class Text(val regex: String) : Form {
     override fun toCode() = "Text[${regex}]"
 }
 
+internal const val AST_PACKAGE = "mathlingua.lib.frontend.ast"
+
+/**
+ * Adds the ast package prefix for a simple classname and does nothing for a fully qualified
+ * classname
+ */
+internal fun String.addAstPackagePrefix() =
+    if (this.startsWith(AST_PACKAGE)) {
+        this
+    } else {
+        "${AST_PACKAGE}.${this}"
+    }
+
+internal fun DefinitionOf.getClassname() =
+    if (this.of is Group) {
+            this.of.classname
+        } else {
+            this.name
+        }
+        .addAstPackagePrefix()
+
+internal fun getClassnameForDefName(name: String): String? {
+    if (DEF_NAME_TO_CLASSNAME.isEmpty()) {
+        DEF_NAME_TO_CLASSNAME["Text"] = "Text".addAstPackagePrefix()
+        DEF_NAME_TO_CLASSNAME["Statement"] = "Statement".addAstPackagePrefix()
+        for (item in MATHLINGUA_SPECIFICATION) {
+            DEF_NAME_TO_CLASSNAME[item.name] = item.getClassname().addAstPackagePrefix()
+            if (item.of is Group) {
+                for (sec in item.of.of) {
+                    DEF_NAME_TO_CLASSNAME[sec.name] = sec.classname.addAstPackagePrefix()
+                }
+            }
+        }
+    }
+    return DEF_NAME_TO_CLASSNAME[name]
+}
+
+internal fun Form.getName() =
+    when (this) {
+        is Text -> "Text"
+        is Statement -> "Statement"
+        is Def -> this.name
+        else -> null
+    }
+
+private val DEF_NAME_TO_CLASSNAME = mutableMapOf<String, String>()
+
 private fun anyOf(vararg of: Form) = AnyOf(of.toList())
 
 private fun items(vararg of: Form) = Item(of.toList())

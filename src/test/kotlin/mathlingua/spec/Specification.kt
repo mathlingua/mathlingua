@@ -16,6 +16,8 @@
 
 package mathlingua.spec
 
+import java.nio.file.Paths
+
 internal val MATHLINGUA_SPECIFICATION =
     listOf(
         DefinitionOf(
@@ -1645,7 +1647,7 @@ internal data class DefinitionOf(val name: String, val of: Form, val type: Defin
     fun getUsedDefNames() = of.getUsedDefNames()
     fun toCode() =
         when (of) {
-            is AnyOf -> "$name ::= \n${of.toCode().split("\n").joinToString("\n") { "   $it" }}"
+            is AnyOf -> "$name ::=\n${of.toCode().split("\n").joinToString("\n") { "   $it" }}"
             is Group -> of.toCode()
             else -> "$name ::= ${of.toCode()}"
         }
@@ -1688,6 +1690,20 @@ internal data class Text(val regex: String) : Form {
     override fun getUsedDefNames() = setOf("Text")
     override fun toCode() = "Text[${regex}]"
 }
+
+internal fun getSpecificationMarkdown(): String {
+    val builder = StringBuilder()
+    builder.append("# MathLingua Language Specification\n\n")
+    builder.append("```\n")
+    for (c in MATHLINGUA_SPECIFICATION) {
+        builder.append(c.toCode())
+        builder.append("\n\n")
+    }
+    builder.append("```")
+    return builder.toString()
+}
+
+internal fun getSpecificationMarkdownFile() = Paths.get("documents", "specification.md").toFile()
 
 internal const val AST_PACKAGE = "mathlingua.lib.frontend.ast"
 

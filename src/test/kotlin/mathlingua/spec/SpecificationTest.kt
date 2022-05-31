@@ -106,6 +106,17 @@ class SpecificationTest {
     }
 
     @Test
+    fun `verify specification markdown file is up-to-date`() {
+        val specMdFile = getSpecificationMarkdownFile()
+        val specMdContent = specMdFile.readText()
+        val spec = getSpecificationMarkdown()
+        assertEquals(
+            expected = spec,
+            actual = specMdContent,
+            message = "$specMdFile is out of sync.  Run SpecificationMain to regenerate it.")
+    }
+
+    @Test
     fun `verify all groups match the spec`() {
         // TODO: implement this test that verifies that all groups have the correct sections
     }

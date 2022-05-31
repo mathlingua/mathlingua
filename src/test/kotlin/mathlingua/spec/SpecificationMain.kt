@@ -17,8 +17,7 @@
 package mathlingua.spec
 
 fun main() {
-    for (c in MATHLINGUA_SPECIFICATION) {
-        println(c.toCode())
-        println()
-    }
+    val specFile = getSpecificationMarkdownFile()
+    specFile.writeText(getSpecificationMarkdown())
+    println("Wrote $specFile")
 }

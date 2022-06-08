@@ -366,6 +366,19 @@ internal data class SymbolsGroup(
     override fun toCode() = groupToCode(null, symbolsSection, symbolsWhereSection)
 }
 
+internal data class SymbolsAsGroup(
+    val symbolsSection: SymbolsSection,
+    val symbolsAsSection: SymbolsAsSection,
+    override val metadata: MetaData
+) : Group(metadata), ProvidingItem {
+    override fun toCode() = groupToCode(null, symbolsSection, symbolsAsSection)
+}
+
+internal data class SymbolsAsSection(val asSection: Text, override val metadata: MetaData) :
+    Section("as", metadata) {
+    override fun toCode() = sectionToCode(this, asSection)
+}
+
 internal data class MemberSymbolsSection(val names: List<Name>, override val metadata: MetaData) :
     Section("memberSymbols", metadata) {
     override fun toCode() = sectionToCode(this, *names.toTypedArray())
@@ -377,12 +390,25 @@ internal data class MemberSymbolsWhereSection(
     override fun toCode() = sectionToCode(this, *statements.toTypedArray())
 }
 
+internal data class MemberSymbolsAsSection(val asSection: Text, override val metadata: MetaData) :
+    Section("as", metadata) {
+    override fun toCode() = sectionToCode(this, asSection)
+}
+
 internal data class MemberSymbolsGroup(
     val memberSymbolsSection: MemberSymbolsSection,
     val memberSymbolsWhereSection: MemberSymbolsWhereSection,
     override val metadata: MetaData
 ) : Group(metadata), ProvidingItem {
     override fun toCode() = groupToCode(null, memberSymbolsSection, memberSymbolsWhereSection)
+}
+
+internal data class MemberSymbolsAsGroup(
+    val memberSymbolsSection: MemberSymbolsSection,
+    val memberSymbolsAsSection: MemberSymbolsAsSection,
+    override val metadata: MetaData
+) : Group(metadata), ProvidingItem {
+    override fun toCode() = groupToCode(null, memberSymbolsSection, memberSymbolsAsSection)
 }
 
 internal data class NoteSection(val items: List<Text>, override val metadata: MetaData) :

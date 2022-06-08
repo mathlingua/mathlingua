@@ -906,6 +906,22 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "SymbolsWhereSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
+            "symbols:as:",
+            group(
+                "SymbolsAsGroup",
+                null,
+                Section(
+                    name = "symbols",
+                    arg = OneOrMore(Def("Name")),
+                    required = true,
+                    classname = "SymbolsSection"),
+                Section(
+                    name = "as",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "SymbolsAsSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
             "memberSymbols:",
             group(
                 "MemberSymbolsGroup",
@@ -922,6 +938,22 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "MemberSymbolsWhereSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
+            "memberSymbols:as:",
+            group(
+                "MemberSymbolsAsGroup",
+                null,
+                Section(
+                    name = "memberSymbols",
+                    arg = OneOrMore(Def("Name")),
+                    required = true,
+                    classname = "MemberSymbolsSection"),
+                Section(
+                    name = "as",
+                    arg = Text("SignatureExpression"),
+                    required = true,
+                    classname = "MemberSymbolsAsSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
             "MetadataItem",
             anyOf(Def("note:"), Def("author:"), Def("tag:"), Def("reference:")),
             DefinitionType.ChalkTalk),
@@ -931,6 +963,8 @@ internal val MATHLINGUA_SPECIFICATION =
                 Def("view:"),
                 Def("symbols:"),
                 Def("memberSymbols:"),
+                Def("symbols:as:"),
+                Def("memberSymbols:as:"),
                 Def("equality:"),
                 Def("membership:")),
             DefinitionType.ChalkTalk),

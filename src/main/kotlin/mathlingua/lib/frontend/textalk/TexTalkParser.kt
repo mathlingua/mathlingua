@@ -61,21 +61,21 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
     override fun diagnostics() = diagnostics
 
     private fun expression(): Expression? =
-        function(false) as Expression?
-            ?: tuple(false) ?: name(false) ?: setOrSequence(false) as Expression?
+        function() as Expression?
+            ?: tuple() ?: name() ?: setOrSequence() as Expression?
 
-    private fun name(isInline: Boolean): Name? {
+    private fun name(): Name? {
         if (!lexer.has(TexTalkTokenType.Name)) {
             return null
         }
         val next = lexer.next()
         return Name(
             text = next.text,
-            metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
+            metadata = MetaData(row = next.row, column = next.column, isInline = null))
     }
 
-    private fun nameParam(isInline: Boolean): NameOrVariadicName? {
-        val name = name(isInline) ?: return null
+    private fun nameParam(): NameOrVariadicName? {
+        val name = name() ?: return null
         val hasDotDotDot =
             if (lexer.has(TexTalkTokenType.DotDotDot)) {
                 expect(TexTalkTokenType.DotDotDot)
@@ -90,12 +90,10 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         }
     }
 
-    private fun nameParamList(
-        isInline: Boolean, expectedEnd: TexTalkTokenType
-    ): List<NameOrVariadicName> {
+    private fun nameParamList(expectedEnd: TexTalkTokenType): List<NameOrVariadicName> {
         val result = mutableListOf<NameOrVariadicName>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
-            val nameParam = nameParam(isInline) ?: break
+            val nameParam = nameParam() ?: break
             result.add(nameParam)
             if (!lexer.has(expectedEnd)) {
                 expect(TexTalkTokenType.Comma)
@@ -114,47 +112,47 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         return result
     }
 
-    private fun subParams(isInline: Boolean): List<NameOrVariadicName>? {
+    private fun subParams(): List<NameOrVariadicName>? {
         if (!lexer.hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
             return null
         }
         expect(TexTalkTokenType.Underscore)
         expect(TexTalkTokenType.LCurly)
-        val result = nameParamList(isInline, TexTalkTokenType.RCurly)
+        val result = nameParamList(TexTalkTokenType.RCurly)
         expect(TexTalkTokenType.RCurly)
         return result
     }
 
-    private fun regularParams(isInline: Boolean): List<NameOrVariadicName>? {
+    private fun regularParams(): List<NameOrVariadicName>? {
         if (!lexer.has(TexTalkTokenType.LParen)) {
             return null
         }
         expect(TexTalkTokenType.LParen)
-        val result = nameParamList(isInline, TexTalkTokenType.RParen)
+        val result = nameParamList(TexTalkTokenType.RParen)
         expect(TexTalkTokenType.RParen)
         return result
     }
 
-    private fun operatorName(isInline: Boolean): OperatorName? {
+    private fun operatorName(): OperatorName? {
         if (!lexer.has(TexTalkTokenType.Operator)) {
             return null
         }
         val next = lexer.next()
         return OperatorName(
             text = next.text,
-            metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
+            metadata = MetaData(row = next.row, column = next.column, isInline = null))
     }
 
-    private fun function(isInline: Boolean): TexTalkNode? {
+    private fun function(): TexTalkNode? {
         // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
         if (!lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.LParen) &&
             !lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.Underscore)) {
             return null
         }
 
-        val name = name(isInline)!!
-        val subParams = subParams(isInline)
-        val regularParams = regularParams(isInline)
+        val name = name()!!
+        val subParams = subParams()
+        val regularParams = regularParams()
         return if (subParams != null && regularParams != null) {
             SubAndRegularParamCall(
                 name = name,
@@ -195,12 +193,12 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         }
     }
 
-    private fun target(isInline: Boolean): TexTalkNode? {
-        val func = function(isInline)
+    private fun target(): TexTalkNode? {
+        val func = function()
         if (func != null) {
             return if (lexer.has(TexTalkTokenType.ColonEqual)) {
                 expect(TexTalkTokenType.ColonEqual)
-                val rhs = function(isInline)
+                val rhs = function()
                 if (rhs == null) {
                     diagnostics.add(
                         Diagnostic(
@@ -219,7 +217,7 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                             MetaData(
                                 row = func.metadata.row,
                                 column = func.metadata.column,
-                                isInline = isInline))
+                                isInline = null))
                 } else {
                     if (func !is FunctionCall) {
                         diagnostics.add(
@@ -248,11 +246,11 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             }
         }
 
-        val name = name(isInline)
+        val name = name()
         if (name != null) {
             return if (lexer.has(TexTalkTokenType.ColonEqual)) {
                 expect(TexTalkTokenType.ColonEqual)
-                val rhs = nameOrAssignmentItem(isInline)
+                val rhs = nameOrAssignmentItem()
                 if (rhs == null) {
                     null
                 } else {
@@ -263,20 +261,20 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                             MetaData(
                                 row = name.metadata.row,
                                 column = name.metadata.column,
-                                isInline = isInline))
+                                isInline = null))
                 }
             } else {
                 name
             }
         }
 
-        return nameOrAssignmentItem(isInline) as Target?
+        return nameOrAssignmentItem() as Target?
     }
 
-    private fun targets(isInline: Boolean, expectedEnd: TexTalkTokenType): List<TexTalkNode> {
+    private fun targets(expectedEnd: TexTalkTokenType): List<TexTalkNode> {
         val targets = mutableListOf<TexTalkNode>()
         while (lexer.hasNext() && !lexer.has(expectedEnd)) {
-            val target = target(isInline) ?: break
+            val target = target() ?: break
             targets.add(target)
             if (!lexer.has(expectedEnd)) {
                 expect(TexTalkTokenType.Comma)
@@ -295,12 +293,12 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
         return targets
     }
 
-    private fun tuple(isInline: Boolean): Tuple? {
+    private fun tuple(): Tuple? {
         if (!lexer.has(TexTalkTokenType.LParen)) {
             return null
         }
         val lParen = expect(TexTalkTokenType.LParen)!!
-        val targets = targets(isInline, TexTalkTokenType.RParen)
+        val targets = targets(TexTalkTokenType.RParen)
         expect(TexTalkTokenType.RParen)
         return Tuple(
             targets =
@@ -318,17 +316,17 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                         it
                     }
                     .filterIsInstance<Target>(),
-            metadata = MetaData(row = lParen.row, column = lParen.column, isInline = isInline))
+            metadata = MetaData(row = lParen.row, column = lParen.column, isInline = null))
     }
 
-    private fun setOrSequence(isInline: Boolean): TexTalkNode? {
+    private fun setOrSequence(): TexTalkNode? {
         if (!lexer.has(TexTalkTokenType.LCurly)) {
             return null
         }
         val lCurly = expect(TexTalkTokenType.LCurly)!!
-        val targets = targets(isInline, TexTalkTokenType.RCurly)
+        val targets = targets(TexTalkTokenType.RCurly)
         expect(TexTalkTokenType.RCurly)
-        val subParams = subParams(isInline)
+        val subParams = subParams()
         return if (subParams != null) {
             // it is a sequence
             if (targets.isEmpty()) {
@@ -358,14 +356,14 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
                             func = first,
                             metadata =
                                 MetaData(
-                                    row = lCurly.row, column = lCurly.column, isInline = isInline))
+                                    row = lCurly.row, column = lCurly.column, isInline = null))
                     }
                     is SubAndRegularParamCall -> {
                         SubAndRegularParamSequence(
                             func = first,
                             metadata =
                                 MetaData(
-                                    row = lCurly.row, column = lCurly.column, isInline = isInline))
+                                    row = lCurly.row, column = lCurly.column, isInline = null))
                     }
                     else -> {
                         diagnostics.add(
@@ -394,12 +392,12 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             }
             Set(
                 items = targets.filterIsInstance<NameOrNameAssignment>(),
-                metadata = MetaData(row = lCurly.row, column = lCurly.column, isInline = isInline))
+                metadata = MetaData(row = lCurly.row, column = lCurly.column, isInline = null))
         }
     }
 
-    private fun nameOrAssignmentItem(isInline: Boolean): NameAssignmentItem? {
-        val func = function(isInline)
+    private fun nameOrAssignmentItem(): NameAssignmentItem? {
+        val func = function()
         if (func != null) {
             return if (func is NameAssignmentItem) {
                 func
@@ -415,22 +413,22 @@ private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkP
             }
         }
 
-        val name = name(isInline)
+        val name = name()
         if (name != null) {
             return name
         }
 
-        val op = operatorName(isInline)
+        val op = operatorName()
         if (op != null) {
             return op
         }
 
-        val tuple = tuple(isInline)
+        val tuple = tuple()
         if (tuple != null) {
             return tuple
         }
 
-        val setOrSequence = setOrSequence(isInline)
+        val setOrSequence = setOrSequence()
         if (setOrSequence != null) {
             return setOrSequence as NameAssignmentItem
         }
@@ -485,3 +483,16 @@ private fun TexTalkLexer.hasHas(type1: TexTalkTokenType, type2: TexTalkTokenType
         this.hasNextNext() &&
         this.peek().type == type1 &&
         this.peekPeek().type == type2
+
+
+fun main() {
+    val text = """
+        x + y
+    """.trimIndent()
+    val lexer = newTexTalkLexer(text)
+    val parser = newTexTalkParser(lexer)
+    val node = parser.parse()
+    println(node)
+    lexer.diagnostics().forEach(::println)
+    parser.diagnostics().forEach(::println)
+}

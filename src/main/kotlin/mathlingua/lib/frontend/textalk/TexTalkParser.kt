@@ -16,483 +16,142 @@
 
 package mathlingua.lib.frontend.textalk
 
+import java.lang.RuntimeException
 import mathlingua.lib.frontend.Diagnostic
-import mathlingua.lib.frontend.DiagnosticOrigin
-import mathlingua.lib.frontend.DiagnosticType
-import mathlingua.lib.frontend.MetaData
-import mathlingua.lib.frontend.ast.Expression
-import mathlingua.lib.frontend.ast.Function
-import mathlingua.lib.frontend.ast.FunctionAssignment
-import mathlingua.lib.frontend.ast.FunctionCall
-import mathlingua.lib.frontend.ast.Name
-import mathlingua.lib.frontend.ast.NameAssignment
-import mathlingua.lib.frontend.ast.NameAssignmentItem
-import mathlingua.lib.frontend.ast.NameOrNameAssignment
-import mathlingua.lib.frontend.ast.NameOrVariadicName
-import mathlingua.lib.frontend.ast.OperatorName
-import mathlingua.lib.frontend.ast.Set
-import mathlingua.lib.frontend.ast.SubAndRegularParamCall
-import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
-import mathlingua.lib.frontend.ast.SubParamCall
-import mathlingua.lib.frontend.ast.SubParamSequence
-import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
-import mathlingua.lib.frontend.ast.Tuple
-import mathlingua.lib.frontend.ast.VariadicName
 
 internal interface TexTalkParser {
     fun parse(): TexTalkNode
     fun diagnostics(): List<Diagnostic>
 }
 
-internal fun newTexTalkParser(lexer: TexTalkLexer): TexTalkParser = TexTalkParserImpl(lexer)
+internal fun newTexTalkParser(lexer: TexTalkLexer): TexTalkParser = null!!
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-private data class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkParser {
-    private val diagnostics = mutableListOf<Diagnostic>()
+private sealed interface TreeNode {
+    fun toString(indent: String): String
+}
 
-    override fun parse() =
-        expression()
-            ?: Name(text = "", metadata = MetaData(row = -1, column = -1, isInline = false))
+private data class AtomTreeNode(var token: TexTalkToken) : TreeNode {
+    override fun toString(indent: String) = "$indent${token.text}"
+}
 
-    override fun diagnostics() = diagnostics
+private data class ListTreeNode(val nodes: List<TreeNode>) : TreeNode {
+    override fun toString(indent: String) = "$indent${nodes.map { it.toString("") }}"
+}
 
-    private fun expression(): Expression? =
-        function() as Expression?
-            ?: tuple() ?: name() ?: setOrSequence() as Expression?
+private data class SplitTreeNode(var lhs: TreeNode?, var center: TreeNode, var rhs: TreeNode?) :
+    TreeNode {
+    override fun toString(indent: String): String {
+        val builder = StringBuilder()
+        builder.append("\n")
+        builder.append(center.toString(indent))
+        builder.append("\n")
+        builder.append(lhs?.toString("$indent  "))
+        builder.append("\n")
+        builder.append("$indent  _____\n")
+        builder.append(rhs?.toString("$indent  "))
+        builder.append("\n")
+        return builder.toString()
+    }
+}
 
-    private fun name(): Name? {
-        if (!lexer.has(TexTalkTokenType.Name)) {
-            return null
-        }
-        val next = lexer.next()
-        return Name(
-            text = next.text,
-            metadata = MetaData(row = next.row, column = next.column, isInline = null))
+private fun listToTreeNode(nodes: List<TreeNode>): TreeNode? =
+    if (nodes.isEmpty()) {
+        null
+    } else if (nodes.size == 1) {
+        nodes.first()
+    } else {
+        ListTreeNode(nodes = nodes)
     }
 
-    private fun nameParam(): NameOrVariadicName? {
-        val name = name() ?: return null
-        val hasDotDotDot =
-            if (lexer.has(TexTalkTokenType.DotDotDot)) {
-                expect(TexTalkTokenType.DotDotDot)
-                true
-            } else {
-                false
-            }
-        return if (hasDotDotDot) {
-            VariadicName(name = name, metadata = name.metadata)
-        } else {
-            name
-        }
+private fun splitByIsInOrNotInNodes(lexer: TexTalkLexer): TreeNode? {
+    val lhsNodes = mutableListOf<TreeNode>()
+    while (lexer.hasNext() &&
+        lexer.peek().type != TexTalkTokenType.Is &&
+        lexer.peek().type != TexTalkTokenType.In &&
+        lexer.peek().type != TexTalkTokenType.NotIn) {
+        lhsNodes.add(AtomTreeNode(token = lexer.next()))
     }
-
-    private fun nameParamList(expectedEnd: TexTalkTokenType): List<NameOrVariadicName> {
-        val result = mutableListOf<NameOrVariadicName>()
-        while (lexer.hasNext() && !lexer.has(expectedEnd)) {
-            val nameParam = nameParam() ?: break
-            result.add(nameParam)
-            if (!lexer.has(expectedEnd)) {
-                expect(TexTalkTokenType.Comma)
-            }
-        }
-        while (lexer.hasNext() && lexer.peek().type != expectedEnd) {
-            val next = lexer.next()
-            diagnostics.add(
-                Diagnostic(
-                    type = DiagnosticType.Error,
-                    origin = DiagnosticOrigin.TexTalkParser,
-                    message = "Unexpected token ${next.text}",
-                    row = next.row,
-                    column = next.column))
-        }
-        return result
+    val lhs = listToTreeNode(lhsNodes)
+    if (!lexer.hasNext()) {
+        return lhs
     }
-
-    private fun subParams(): List<NameOrVariadicName>? {
-        if (!lexer.hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
-            return null
-        }
-        expect(TexTalkTokenType.Underscore)
-        expect(TexTalkTokenType.LCurly)
-        val result = nameParamList(TexTalkTokenType.RCurly)
-        expect(TexTalkTokenType.RCurly)
-        return result
+    val peek = lexer.peek()
+    if (peek.type != TexTalkTokenType.Is &&
+        peek.type != TexTalkTokenType.In &&
+        peek.type != TexTalkTokenType.NotIn) {
+        throw RuntimeException("Expected an 'is', 'in', or 'notin' node but found ${lexer.peek()}")
     }
+    val isNode = lexer.next()
+    val rhs = splitByIsInOrNotInNodes(lexer)
+    return SplitTreeNode(lhs = lhs, center = AtomTreeNode(token = isNode), rhs = rhs)
+}
 
-    private fun regularParams(): List<NameOrVariadicName>? {
-        if (!lexer.has(TexTalkTokenType.LParen)) {
-            return null
-        }
-        expect(TexTalkTokenType.LParen)
-        val result = nameParamList(TexTalkTokenType.RParen)
-        expect(TexTalkTokenType.RParen)
-        return result
-    }
-
-    private fun operatorName(): OperatorName? {
-        if (!lexer.has(TexTalkTokenType.Operator)) {
-            return null
-        }
-        val next = lexer.next()
-        return OperatorName(
-            text = next.text,
-            metadata = MetaData(row = next.row, column = next.column, isInline = null))
-    }
-
-    private fun function(): TexTalkNode? {
-        // to be a function, the next tokens must be either `<name> "("` or `<name> "_"`
-        if (!lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.LParen) &&
-            !lexer.hasHas(TexTalkTokenType.Name, TexTalkTokenType.Underscore)) {
-            return null
-        }
-
-        val name = name()!!
-        val subParams = subParams()
-        val regularParams = regularParams()
-        return if (subParams != null && regularParams != null) {
-            SubAndRegularParamCall(
-                name = name,
-                subParams = subParams,
-                params = regularParams,
-                metadata =
-                    MetaData(
-                        row = name.metadata.row,
-                        column = name.metadata.column,
-                        isInline = name.metadata.isInline))
-        } else if (subParams != null && regularParams == null) {
-            SubParamCall(
-                name = name,
-                subParams = subParams,
-                metadata =
-                    MetaData(
-                        row = name.metadata.row,
-                        column = name.metadata.column,
-                        isInline = name.metadata.isInline))
-        } else if (subParams == null && regularParams != null) {
-            Function(
-                name = name,
-                params = regularParams,
-                metadata =
-                    MetaData(
-                        row = name.metadata.row,
-                        column = name.metadata.column,
-                        isInline = name.metadata.isInline))
-        } else {
-            diagnostics.add(
-                Diagnostic(
-                    type = DiagnosticType.Error,
-                    origin = DiagnosticOrigin.ChalkTalkParser,
-                    message = "Expected a function",
-                    row = name.metadata.row,
-                    column = name.metadata.column))
-            null
-        }
-    }
-
-    private fun target(): TexTalkNode? {
-        val func = function()
-        if (func != null) {
-            return if (lexer.has(TexTalkTokenType.ColonEqual)) {
-                expect(TexTalkTokenType.ColonEqual)
-                val rhs = function()
-                if (rhs == null) {
-                    diagnostics.add(
-                        Diagnostic(
-                            type = DiagnosticType.Error,
-                            origin = DiagnosticOrigin.TexTalkParser,
-                            message =
-                                "The right hand side of a := must be a function if the left hand side is a function",
-                            row = func.metadata.row,
-                            column = func.metadata.column))
-                    null
-                } else if (func is FunctionCall && rhs is FunctionCall) {
-                    FunctionAssignment(
-                        lhs = func,
-                        rhs = rhs,
-                        metadata =
-                            MetaData(
-                                row = func.metadata.row,
-                                column = func.metadata.column,
-                                isInline = null))
-                } else {
-                    if (func !is FunctionCall) {
-                        diagnostics.add(
-                            Diagnostic(
-                                type = DiagnosticType.Error,
-                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
-                                message = "Expected a FunctionCall",
-                                row = func.metadata.row,
-                                column = func.metadata.column))
-                    }
-
-                    if (rhs !is FunctionCall) {
-                        diagnostics.add(
-                            Diagnostic(
-                                type = DiagnosticType.Error,
-                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
-                                message = "Expected a FunctionCall",
-                                row = rhs.metadata.row,
-                                column = rhs.metadata.column))
-                    }
-
-                    null
-                }
-            } else {
-                func
-            }
-        }
-
-        val name = name()
-        if (name != null) {
-            return if (lexer.has(TexTalkTokenType.ColonEqual)) {
-                expect(TexTalkTokenType.ColonEqual)
-                val rhs = nameOrAssignmentItem()
-                if (rhs == null) {
-                    null
-                } else {
-                    NameAssignment(
-                        lhs = name,
-                        rhs = rhs,
-                        metadata =
-                            MetaData(
-                                row = name.metadata.row,
-                                column = name.metadata.column,
-                                isInline = null))
-                }
-            } else {
-                name
-            }
-        }
-
-        return nameOrAssignmentItem() as Target?
-    }
-
-    private fun targets(expectedEnd: TexTalkTokenType): List<TexTalkNode> {
-        val targets = mutableListOf<TexTalkNode>()
-        while (lexer.hasNext() && !lexer.has(expectedEnd)) {
-            val target = target() ?: break
-            targets.add(target)
-            if (!lexer.has(expectedEnd)) {
-                expect(TexTalkTokenType.Comma)
-            }
-        }
-        while (lexer.hasNext() && !lexer.has(expectedEnd)) {
-            val next = lexer.next()
-            diagnostics.add(
-                Diagnostic(
-                    type = DiagnosticType.Error,
-                    origin = DiagnosticOrigin.TexTalkParser,
-                    message = "Expected a target",
-                    row = next.row,
-                    column = next.column))
-        }
-        return targets
-    }
-
-    private fun tuple(): Tuple? {
-        if (!lexer.has(TexTalkTokenType.LParen)) {
-            return null
-        }
-        val lParen = expect(TexTalkTokenType.LParen)!!
-        val targets = targets(TexTalkTokenType.RParen)
-        expect(TexTalkTokenType.RParen)
-        return Tuple(
-            targets =
-                targets
-                    .map {
-                        if (it !is Target) {
-                            diagnostics.add(
-                                Diagnostic(
-                                    type = DiagnosticType.Error,
-                                    message = "Expected a target",
-                                    origin = DiagnosticOrigin.TexTalkParser,
-                                    row = it.metadata.row,
-                                    column = it.metadata.column))
-                        }
-                        it
-                    }
-                    .filterIsInstance<Target>(),
-            metadata = MetaData(row = lParen.row, column = lParen.column, isInline = null))
-    }
-
-    private fun setOrSequence(): TexTalkNode? {
-        if (!lexer.has(TexTalkTokenType.LCurly)) {
-            return null
-        }
-        val lCurly = expect(TexTalkTokenType.LCurly)!!
-        val targets = targets(TexTalkTokenType.RCurly)
-        expect(TexTalkTokenType.RCurly)
-        val subParams = subParams()
-        return if (subParams != null) {
-            // it is a sequence
-            if (targets.isEmpty()) {
-                diagnostics.add(
-                    Diagnostic(
-                        type = DiagnosticType.Error,
-                        origin = DiagnosticOrigin.TexTalkParser,
-                        message = "Expected a function with sub params",
-                        row = lCurly.row,
-                        column = lCurly.column))
-                null
-            } else if (targets.size != 1) {
-                diagnostics.add(
-                    Diagnostic(
-                        type = DiagnosticType.Error,
-                        origin = DiagnosticOrigin.TexTalkParser,
-                        message =
-                            "Expected exactly one function with sub params but found ${targets.size}",
-                        row = lCurly.row,
-                        column = lCurly.column))
-                null
-            } else {
-                when (val first = targets.first()
-                ) {
-                    is SubParamCall -> {
-                        SubParamSequence(
-                            func = first,
-                            metadata =
-                                MetaData(
-                                    row = lCurly.row, column = lCurly.column, isInline = null))
-                    }
-                    is SubAndRegularParamCall -> {
-                        SubAndRegularParamSequence(
-                            func = first,
-                            metadata =
-                                MetaData(
-                                    row = lCurly.row, column = lCurly.column, isInline = null))
-                    }
-                    else -> {
-                        diagnostics.add(
-                            Diagnostic(
-                                type = DiagnosticType.Error,
-                                origin = DiagnosticOrigin.ChalkTalkNodeLexer,
-                                message = "The given function must have sub params",
-                                row = lCurly.row,
-                                column = lCurly.column))
-                        null
-                    }
-                }
-            }
-        } else {
-            // it is a set
-            for (t in targets) {
-                if (t !is NameOrNameAssignment) {
-                    diagnostics.add(
-                        Diagnostic(
-                            type = DiagnosticType.Error,
-                            origin = DiagnosticOrigin.ChalkTalkNodeLexer,
-                            message = "Expected a name or name assignment",
-                            row = t.metadata.row,
-                            column = t.metadata.column))
-                }
-            }
-            Set(
-                items = targets.filterIsInstance<NameOrNameAssignment>(),
-                metadata = MetaData(row = lCurly.row, column = lCurly.column, isInline = null))
-        }
-    }
-
-    private fun nameOrAssignmentItem(): NameAssignmentItem? {
-        val func = function()
-        if (func != null) {
-            return if (func is NameAssignmentItem) {
-                func
-            } else {
-                diagnostics.add(
-                    Diagnostic(
-                        type = DiagnosticType.Error,
-                        origin = DiagnosticOrigin.TexTalkParser,
-                        message = "Expected a name assignment item",
-                        row = func.metadata.row,
-                        column = func.metadata.column))
-                null
-            }
-        }
-
-        val name = name()
-        if (name != null) {
-            return name
-        }
-
-        val op = operatorName()
-        if (op != null) {
-            return op
-        }
-
-        val tuple = tuple()
-        if (tuple != null) {
-            return tuple
-        }
-
-        val setOrSequence = setOrSequence()
-        if (setOrSequence != null) {
-            return setOrSequence as NameAssignmentItem
-        }
-
-        val nextText =
-            if (lexer.hasNext()) {
-                lexer.next().text
-            } else {
-                "end of text"
-            }
-
-        diagnostics.add(
-            Diagnostic(
-                type = DiagnosticType.Error,
-                origin = DiagnosticOrigin.TexTalkParser,
-                message = "Expected a name assignment item but found $nextText",
-                row = -1,
-                column = -1))
-
+private fun TreeNode?.splitByEqualsOrNotEqualsNodes(): TreeNode? {
+    if (this == null) {
         return null
     }
 
-    private fun expect(type: TexTalkTokenType): TexTalkToken? {
-        if (!lexer.hasNext()) {
-            diagnostics.add(
-                Diagnostic(
-                    type = DiagnosticType.Error,
-                    origin = DiagnosticOrigin.TexTalkParser,
-                    message = "Expected a $type token but found the end of text",
-                    row = -1,
-                    column = -1))
-            return null
+    return when (this) {
+        is AtomTreeNode -> this
+        is ListTreeNode -> {
+            val index =
+                this.nodes.indexOfFirst {
+                    it is AtomTreeNode &&
+                        (it.token.type == TexTalkTokenType.Equals ||
+                            it.token.type == TexTalkTokenType.NotEqual)
+                }
+            if (index == -1) {
+                this
+            } else {
+                SplitTreeNode(
+                    lhs = listToTreeNode(this.nodes.subList(0, index)),
+                    center = this.nodes[index],
+                    rhs = listToTreeNode(this.nodes.subList(index + 1, this.nodes.size)))
+            }
         }
-        val next = lexer.next()
-        if (next.type != type) {
-            diagnostics.add(
-                Diagnostic(
-                    type = DiagnosticType.Error,
-                    origin = DiagnosticOrigin.TexTalkParser,
-                    message = "Expected a $type but found ${next.type}",
-                    row = next.row,
-                    column = next.column))
+        is SplitTreeNode -> {
+            SplitTreeNode(
+                lhs = this.lhs.splitByEqualsOrNotEqualsNodes(),
+                center = this.center,
+                rhs = this.rhs.splitByEqualsOrNotEqualsNodes())
         }
-        return next
     }
 }
 
-private fun TexTalkLexer.has(type: TexTalkTokenType) = this.hasNext() && this.peek().type == type
+private fun TreeNode?.splitByAsNodes(): TreeNode? {
+    if (this == null) {
+        return null
+    }
 
-private fun TexTalkLexer.hasHas(type1: TexTalkTokenType, type2: TexTalkTokenType) =
-    this.hasNext() &&
-        this.hasNextNext() &&
-        this.peek().type == type1 &&
-        this.peekPeek().type == type2
-
-
-fun main() {
-    val text = """
-        x + y
-    """.trimIndent()
-    val lexer = newTexTalkLexer(text)
-    val parser = newTexTalkParser(lexer)
-    val node = parser.parse()
-    println(node)
-    lexer.diagnostics().forEach(::println)
-    parser.diagnostics().forEach(::println)
+    return when (this) {
+        is AtomTreeNode -> this
+        is ListTreeNode -> {
+            val index =
+                this.nodes.indexOfFirst {
+                    it is AtomTreeNode && it.token.type == TexTalkTokenType.As
+                }
+            if (index == -1) {
+                this
+            } else {
+                SplitTreeNode(
+                    lhs = listToTreeNode(this.nodes.subList(0, index)),
+                    center = this.nodes[index],
+                    rhs = listToTreeNode(this.nodes.subList(index + 1, this.nodes.size)))
+            }
+        }
+        is SplitTreeNode -> {
+            SplitTreeNode(
+                lhs = this.lhs.splitByAsNodes(),
+                center = this.center,
+                rhs = this.rhs.splitByAsNodes())
+        }
+    }
 }
+
+private fun lexerToTree(lexer: TexTalkLexer) =
+    splitByIsInOrNotInNodes(lexer)?.splitByEqualsOrNotEqualsNodes()?.splitByAsNodes()

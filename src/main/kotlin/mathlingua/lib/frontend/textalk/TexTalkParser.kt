@@ -18,9 +18,16 @@ package mathlingua.lib.frontend.textalk
 
 import java.lang.RuntimeException
 import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.DiagnosticOrigin
+import mathlingua.lib.frontend.DiagnosticType
+import mathlingua.lib.frontend.MetaData
+import mathlingua.lib.frontend.ast.Expression
+import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
+import java.util.LinkedList
+import java.util.Queue
 
 internal interface TexTalkParser {
     fun parse(): TexTalkNode
@@ -155,3 +162,85 @@ private fun TreeNode?.splitByAsNodes(): TreeNode? {
 
 private fun lexerToTree(lexer: TexTalkLexer) =
     splitByIsInOrNotInNodes(lexer)?.splitByEqualsOrNotEqualsNodes()?.splitByAsNodes()
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+private fun listToLexer(tokens: List<TexTalkToken>) =
+    object : TexTalkLexer {
+        private val queue: Queue<TexTalkToken> = LinkedList(tokens)
+
+        override fun hasNext() = queue.isNotEmpty()
+
+        override fun peek() = queue.peek()
+
+        override fun next() = queue.poll()
+
+        override fun hasNextNext() = queue.size >= 2
+
+        override fun peekPeek() = queue.elementAt(1)
+
+        override fun nextNext(): TexTalkToken {
+            queue.poll()
+            return queue.poll()
+        }
+
+        override fun diagnostics() = emptyList<Diagnostic>()
+    }
+
+private fun TexTalkLexer.has(type: TexTalkTokenType) = this.hasNext() && this.peek().type == type
+
+private fun TexTalkLexer.hasHas(type1: TexTalkTokenType, type2: TexTalkTokenType) =
+    this.hasNext() &&
+        this.hasNextNext() &&
+        this.peek().type == type1 &&
+        this.peekPeek().type == type2
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+private data class SimpleTexTalkLexer(private val lexer: TexTalkLexer) : TexTalkParser {
+    private val diagnostics = mutableListOf<Diagnostic>()
+
+    override fun diagnostics() = diagnostics
+
+    override fun parse() = parse(emptySet())
+
+    private fun parse(expectedEnd: Set<TexTalkTokenType>): TexTalkNode {
+        val nodes = mutableListOf<TexTalkNode>()
+        while (lexer.hasNext() && lexer.peek().type !in expectedEnd) {
+            val exp = expression() ?: break
+            nodes.add(exp)
+        }
+        while (lexer.hasNext()) {
+            val next = lexer.next()
+            diagnostics.add(
+                Diagnostic(
+                    type = DiagnosticType.Error,
+                    origin = DiagnosticOrigin.TexTalkParser,
+                    message = "Unexpected token '${next.text}'",
+                    row = next.row,
+                    column = next.column
+                )
+            )
+        }
+        return shuntingYard(nodes)
+    }
+
+    private fun expression(): Expression? {
+        return null
+    }
+}
+
+private fun shuntingYard(nodes: List<TexTalkNode>): TexTalkNode {
+    return Name(text = "", metadata = MetaData(
+        row = -1,
+        column = -1,
+        isInline = null
+    ))
+}
+
+fun main() {
+    val text = """
+        \sum{a, b is A}{a + b} is X
+    """.trimIndent()
+    println(lexerToTree(newTexTalkLexer(text))?.toString(""))
+}

@@ -40,7 +40,7 @@ data class Diagnostic(
     val row: Int,
     val column: Int)
 
-internal data class MetaData(var row: Int, var column: Int, var isInline: Boolean)
+internal data class MetaData(var row: Int, var column: Int, var isInline: Boolean?)
 
 internal interface HasMetaData {
     val metadata: MetaData

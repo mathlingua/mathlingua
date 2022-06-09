@@ -932,17 +932,17 @@ private fun sectionToCode(section: Section, vararg args: ChalkTalkNode): String 
     var i = 0
     while (i < args.size) {
         val arg = args[i++]
-        if (!arg.metadata.isInline) {
+        if (arg.metadata.isInline == false) {
             builder.append("\n")
             builder.append(codeToDotSpaceArg(arg.toCode()))
-            while (i < args.size && args[i].metadata.isInline) {
+            while (i < args.size && args[i].metadata.isInline == true) {
                 builder.append(", ")
                 builder.append(args[i++].toCode())
             }
         } else {
             builder.append(" ")
             builder.append(arg.toCode())
-            while (i < args.size && args[i].metadata.isInline) {
+            while (i < args.size && args[i].metadata.isInline == true) {
                 builder.append(", ")
                 builder.append(args[i++].toCode())
             }

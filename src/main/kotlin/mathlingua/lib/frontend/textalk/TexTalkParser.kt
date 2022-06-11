@@ -650,7 +650,7 @@ private fun MutableList<TreeNode>.commandExpression(
     if (this.has(TexTalkTokenType.Backslash)) {
         val backslash = this.expect(diagnostics, TexTalkTokenType.Backslash)!!
         val names = mutableListOf<Name>()
-        while (true) {
+        while (this.isNotEmpty()) {
             val name = name() ?: break
             names.add(name)
             if (this.has(TexTalkTokenType.Dot)) {
@@ -671,7 +671,7 @@ private fun MutableList<TreeNode>.commandExpression(
         val supParams = this.supExpressionParams(diagnostics)
         val curlyParams = this.curlyExpressionParameterList(diagnostics)
         val namedParams = mutableListOf<NamedParameterExpression>()
-        while (true) {
+        while (this.isNotEmpty()) {
             val namedParam = this.namedParameterExpression(diagnostics) ?: break
             namedParams.add(namedParam)
         }

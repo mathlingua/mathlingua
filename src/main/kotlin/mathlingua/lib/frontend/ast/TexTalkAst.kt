@@ -372,3 +372,7 @@ internal data class InfixCommandFormCall(
 internal data class InfixCommandExpressionForm(
     val expression: CommandExpression, override val metadata: MetaData
 ) : TexTalkNode {}
+
+internal object EmptyTexTalkNode : TexTalkNode {
+    override val metadata = MetaData(row = -1, column = -1, isInline = null)
+}

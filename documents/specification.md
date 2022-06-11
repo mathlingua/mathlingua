@@ -351,8 +351,14 @@ by?: Statement[CommandForm]
 symbols: (Name)+
 where: (Statement[ColonEqualsExpression])+
 
+symbols: (Name)+
+as: Text[SignatureExpression]
+
 memberSymbols: (Name)+
 where: (Statement[ColonEqualsExpression])+
+
+memberSymbols: (Name)+
+as: Text[SignatureExpression]
 
 MetadataItem ::=
    note: |
@@ -364,6 +370,8 @@ ProvidingItem ::=
    view: |
    symbols: |
    memberSymbols: |
+   symbols:as: |
+   memberSymbols:as: |
    equality: |
    membership:
 

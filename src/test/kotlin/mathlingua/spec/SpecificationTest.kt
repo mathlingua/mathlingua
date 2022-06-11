@@ -213,7 +213,8 @@ private fun getAllTypesInCode(): List<String> {
             it != "mathlingua.lib.frontend.ast.TexTalkTokenType" &&
             it != "mathlingua.lib.frontend.ast.ToCode" &&
             it != "mathlingua.lib.frontend.ast.TexTalkNodeOrToken" &&
-            it != "mathlingua.lib.frontend.ast.Section"
+            it != "mathlingua.lib.frontend.ast.Section" &&
+            it != "mathlingua.lib.frontend.ast.EmptyTexTalkNode"
     }
 }
 

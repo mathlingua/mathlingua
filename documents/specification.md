@@ -104,9 +104,9 @@ NamedParameterExpression ::= ":" "{" Expression ("," Expression)* "}"
 
 CommandExpression ::= "\" Name ("." Name)* (SquareParams)? ("{" Expression ("," Expression)* "}")? (NamedParameterExpression)* ("(" Expression ("," Expression)* ")")?
 
-NamedParameterForm ::= ":" "{" VariadicName ("," VariadicName)* "}"
+NamedParameterForm ::= ":" "Name" "{" NameOrVariadicName ("," NameOrVariadicName)* "}"
 
-CommandForm ::= "\" Name ("." Name)* (SquareParams)? ("{" VariadicName ("," VariadicName)* "}")? (NamedParameterForm)* ("(" VariadicName ("," VariadicName)* ")")?
+CommandForm ::= "\" Name ("." Name)* (SquareParams)? ("{" NameOrVariadicName ("," NameOrVariadicName)* "}")? (NamedParameterForm)* ("(" NameOrVariadicName ("," NameOrVariadicName)* ")")?
 
 InfixCommandExpressionForm ::= CommandExpression "/"
 

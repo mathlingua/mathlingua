@@ -286,9 +286,10 @@ internal val MATHLINGUA_SPECIFICATION =
             "NamedParameterForm",
             items(
                 Literal(":"),
+                Literal("Name"),
                 Literal("{"),
                 Sequence(
-                    of = "VariadicName",
+                    of = "NameOrVariadicName",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore),
                 Literal("}")),
@@ -303,7 +304,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     items(
                         Literal("{"),
                         Sequence(
-                            of = "VariadicName",
+                            of = "NameOrVariadicName",
                             separator = ",",
                             constraint = SequenceConstraint.OneOrMore),
                         Literal("}"))),
@@ -312,7 +313,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     items(
                         Literal("("),
                         Sequence(
-                            of = "VariadicName",
+                            of = "NameOrVariadicName",
                             separator = ",",
                             constraint = SequenceConstraint.OneOrMore),
                         Literal(")")))),

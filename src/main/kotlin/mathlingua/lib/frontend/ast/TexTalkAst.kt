@@ -91,17 +91,17 @@ internal data class CommandExpression(
 }
 
 internal data class NamedParameterForm(
-    val name: Name, val params: List<Name>, override val metadata: MetaData
+    val name: Name, val params: List<NameOrVariadicName>, override val metadata: MetaData
 ) : TexTalkNode
 
 internal data class CommandForm(
     val names: List<Name>,
     val squareParams: SquareParams?,
-    val subParams: List<Name>?,
-    val supParams: List<Name>?,
-    val curlyParams: List<Name>?,
+    val subParams: List<NameOrVariadicName>?,
+    val supParams: List<NameOrVariadicName>?,
+    val curlyParams: List<NameOrVariadicName>?,
     val namedParams: List<NamedParameterForm>?,
-    val parenParams: List<Name>?,
+    val parenParams: List<NameOrVariadicName>?,
     override val metadata: MetaData
 ) : IdForm, TexTalkNode {
     override fun toCode(): String {

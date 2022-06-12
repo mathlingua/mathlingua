@@ -22,27 +22,37 @@ import mathlingua.lib.frontend.DiagnosticOrigin
 import mathlingua.lib.frontend.DiagnosticType
 import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ast.AsExpression
+import mathlingua.lib.frontend.ast.AssignmentIsFormItem
 import mathlingua.lib.frontend.ast.CommandExpression
+import mathlingua.lib.frontend.ast.CommandForm
 import mathlingua.lib.frontend.ast.DEFAULT_NAME
+import mathlingua.lib.frontend.ast.DefinitionIsFormItem
 import mathlingua.lib.frontend.ast.EmptyTexTalkNode
 import mathlingua.lib.frontend.ast.EqualsExpression
 import mathlingua.lib.frontend.ast.Expression
+import mathlingua.lib.frontend.ast.ExpressionIsFormItem
 import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.FunctionCall
 import mathlingua.lib.frontend.ast.InExpression
 import mathlingua.lib.frontend.ast.IsExpression
+import mathlingua.lib.frontend.ast.MetaIsForm
+import mathlingua.lib.frontend.ast.MetaIsFormItem
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameOrCommand
 import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NamedParameterExpression
+import mathlingua.lib.frontend.ast.NamedParameterForm
 import mathlingua.lib.frontend.ast.NotEqualsExpression
 import mathlingua.lib.frontend.ast.NotInExpression
+import mathlingua.lib.frontend.ast.SpecificationIsFormItem
 import mathlingua.lib.frontend.ast.SquareParams
+import mathlingua.lib.frontend.ast.StatementIsFormItem
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
 import mathlingua.lib.frontend.ast.SubParamCall
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
+import mathlingua.lib.frontend.ast.VariadicIsRhs
 import mathlingua.lib.frontend.ast.VariadicName
 
 internal interface TexTalkParser {
@@ -222,6 +232,9 @@ private fun <T> emptyMutableList(): MutableList<T> = mutableListOf()
 private fun MutableList<TreeNode>.has(type: TexTalkTokenType) =
     this.isNotEmpty() && this.first().isAtomOfType(type)
 
+private fun MutableList<TreeNode>.hasNameText(text: String) =
+    this.has(TexTalkTokenType.Name) && (this.get(0) as AtomTreeNode).token.text == text
+
 private fun MutableList<TreeNode>.hasHas(type1: TexTalkTokenType, type2: TexTalkTokenType) =
     this.size >= 2 &&
         this.elementAtOrNull(0)?.isAtomOfType(type1) == true &&
@@ -236,6 +249,13 @@ private fun MutableList<TreeNode>.hasHasHas(
         this.elementAtOrNull(2)?.startsWith(type3) == true
 
 private fun MutableList<TreeNode>.pollToken() = (this.removeAt(0) as AtomTreeNode).token
+
+private fun MutableList<TreeNode>.peekParenPrefix() =
+    if (this.isNotEmpty() && this.first() is ParenTreeNode) {
+        (this.first() as ParenTreeNode).prefix
+    } else {
+        null
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -619,6 +639,30 @@ private fun MutableList<TreeNode>.namedParameterExpression(
         metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
 }
 
+private fun MutableList<TreeNode>.namedParameterForm(
+    diagnostics: MutableList<Diagnostic>
+): NamedParameterForm? {
+    if (!this.hasHas(TexTalkTokenType.Colon, TexTalkTokenType.Name)) {
+        return null
+    }
+    val colon = this.token(TexTalkTokenType.Colon) ?: return null
+    val name =
+        this.name().orError(diagnostics, "Expected a Name", colon.row, colon.column, DEFAULT_NAME)
+    val params =
+        this.curlyNameOrVariadicNameParameterList(diagnostics)
+            ?.orError(
+                diagnostics = diagnostics,
+                message = "Expected a {...}",
+                row = colon.row,
+                column = colon.column,
+                default = emptyList())
+            ?: emptyList()
+    return NamedParameterForm(
+        name = name,
+        params = params,
+        metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
+}
+
 private fun MutableList<TreeNode>.subExpressionParams(
     diagnostics: MutableList<Diagnostic>
 ): List<Expression>? =
@@ -632,12 +676,37 @@ private fun MutableList<TreeNode>.subExpressionParams(
         null
     }
 
+private fun MutableList<TreeNode>.subNameOrVariadicNameParams(
+    diagnostics: MutableList<Diagnostic>
+): List<NameOrVariadicName>? =
+    if (this.hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
+        val underscore = this.expect(diagnostics, TexTalkTokenType.Underscore)!!
+        this.curlyNameOrVariadicNameParameterList(diagnostics)
+            ?.errorIfNullOrEmpty(
+                diagnostics = diagnostics, row = underscore.row, column = underscore.column)
+            ?: emptyList()
+    } else {
+        null
+    }
+
 private fun MutableList<TreeNode>.supExpressionParams(
     diagnostics: MutableList<Diagnostic>
 ): List<Expression>? =
     if (this.hasHas(TexTalkTokenType.Caret, TexTalkTokenType.LCurly)) {
         val caret = this.expect(diagnostics, TexTalkTokenType.Caret)!!
         this.curlyExpressionParameterList(diagnostics)
+            ?.errorIfNullOrEmpty(diagnostics = diagnostics, row = caret.row, column = caret.column)
+            ?: emptyList()
+    } else {
+        null
+    }
+
+private fun MutableList<TreeNode>.supNameOrVariadicNameParams(
+    diagnostics: MutableList<Diagnostic>
+): List<NameOrVariadicName>? =
+    if (this.hasHas(TexTalkTokenType.Caret, TexTalkTokenType.LCurly)) {
+        val caret = this.expect(diagnostics, TexTalkTokenType.Caret)!!
+        this.curlyNameOrVariadicNameParameterList(diagnostics)
             ?.errorIfNullOrEmpty(diagnostics = diagnostics, row = caret.row, column = caret.column)
             ?: emptyList()
     } else {
@@ -677,6 +746,49 @@ private fun MutableList<TreeNode>.commandExpression(
         }
         val parenParams = this.parenExpressionParameterList(diagnostics)
         CommandExpression(
+            names = names,
+            squareParams = squareParams,
+            subParams = subParams,
+            supParams = supParams,
+            curlyParams = curlyParams,
+            namedParams = namedParams,
+            parenParams = parenParams,
+            metadata = MetaData(row = backslash.row, column = backslash.column, isInline = null))
+    } else {
+        null
+    }
+
+private fun MutableList<TreeNode>.commandForm(diagnostics: MutableList<Diagnostic>): CommandForm? =
+    if (this.has(TexTalkTokenType.Backslash)) {
+        val backslash = this.expect(diagnostics, TexTalkTokenType.Backslash)!!
+        val names = mutableListOf<Name>()
+        while (this.isNotEmpty()) {
+            val name = name() ?: break
+            names.add(name)
+            if (this.has(TexTalkTokenType.Dot)) {
+                this.expect(diagnostics, TexTalkTokenType.Dot)
+            } else {
+                break
+            }
+        }
+        if (names.isEmpty()) {
+            diagnostics.add(
+                error(
+                    message = "Expected at least one Name",
+                    row = backslash.row,
+                    column = backslash.column))
+        }
+        val squareParams = this.squareParams(diagnostics)
+        val subParams = this.subNameOrVariadicNameParams(diagnostics)
+        val supParams = this.supNameOrVariadicNameParams(diagnostics)
+        val curlyParams = this.curlyNameOrVariadicNameParameterList(diagnostics)
+        val namedParams = mutableListOf<NamedParameterForm>()
+        while (this.isNotEmpty()) {
+            val namedParam = this.namedParameterForm(diagnostics) ?: break
+            namedParams.add(namedParam)
+        }
+        val parenParams = this.parenNameOrVariadicNameParameterList(diagnostics)
+        CommandForm(
             names = names,
             squareParams = squareParams,
             subParams = subParams,
@@ -755,10 +867,74 @@ private fun MutableList<TreeNode>.curlyNameOrVariadicNameParameterList(
     diagnostics: MutableList<Diagnostic>
 ): MutableList<NameOrVariadicName>? = this.curlyNodeList(diagnostics)?.filterAndError(diagnostics)
 
-private fun MutableList<TreeNode>.squareColonNameOrVariadicNameParameterList(
+private fun MutableList<TreeNode>.squareColonMetaIsFormItemParameterList(
     diagnostics: MutableList<Diagnostic>
-): MutableList<NameOrVariadicName>? =
-    this.squareColonNodeList(diagnostics)?.filterAndError(diagnostics)
+): MutableList<MetaIsFormItem>? = this.squareColonNodeList(diagnostics)?.filterAndError(diagnostics)
+
+private fun MutableList<TreeNode>.variadicIsRhs(
+    diagnostics: MutableList<Diagnostic>
+): VariadicIsRhs? = this.variadicName(diagnostics) ?: this.commandExpression(diagnostics)
+
+private fun MutableList<TreeNode>.statementIsFormItem(): StatementIsFormItem? =
+    if (this.hasNameText("statement")) {
+        val next = pollToken()
+        StatementIsFormItem(
+            metadata = MetaData(row = next.row, column = next.column, isInline = null))
+    } else {
+        null
+    }
+
+private fun MutableList<TreeNode>.assignmentIsFormItem(): AssignmentIsFormItem? =
+    if (this.hasNameText("assignment")) {
+        val next = pollToken()
+        AssignmentIsFormItem(
+            metadata = MetaData(row = next.row, column = next.column, isInline = null))
+    } else {
+        null
+    }
+
+private fun MutableList<TreeNode>.specificationIsFormItem(): SpecificationIsFormItem? =
+    if (this.hasNameText("specification")) {
+        val next = pollToken()
+        SpecificationIsFormItem(
+            metadata = MetaData(row = next.row, column = next.column, isInline = null))
+    } else {
+        null
+    }
+
+private fun MutableList<TreeNode>.expressionIsFormItem(): ExpressionIsFormItem? =
+    if (this.hasNameText("expression")) {
+        val next = pollToken()
+        ExpressionIsFormItem(
+            metadata = MetaData(row = next.row, column = next.column, isInline = null))
+    } else {
+        null
+    }
+
+private fun MutableList<TreeNode>.definitionIsFormItem(): DefinitionIsFormItem? =
+    if (this.hasNameText("definition")) {
+        val next = pollToken()
+        DefinitionIsFormItem(
+            metadata = MetaData(row = next.row, column = next.column, isInline = null))
+    } else {
+        null
+    }
+
+private fun MutableList<TreeNode>.metaIsFormItem(): MetaIsFormItem? =
+    this.statementIsFormItem()
+        ?: this.assignmentIsFormItem() ?: this.specificationIsFormItem()
+            ?: this.expressionIsFormItem() ?: this.definitionIsFormItem()
+
+private fun MutableList<TreeNode>.metaIsForm(diagnostics: MutableList<Diagnostic>): MetaIsForm? =
+    if (this.has(TexTalkTokenType.LSquareColon)) {
+        val prefix = this.peekParenPrefix()
+        MetaIsForm(
+            items = this.squareColonMetaIsFormItemParameterList(diagnostics) ?: emptyList(),
+            metadata =
+                MetaData(row = prefix?.row ?: -1, column = prefix?.column ?: -1, isInline = null))
+    } else {
+        null
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

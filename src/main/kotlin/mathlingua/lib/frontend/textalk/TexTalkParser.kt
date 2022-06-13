@@ -26,6 +26,8 @@ import mathlingua.lib.frontend.ast.AssignmentIsFormItem
 import mathlingua.lib.frontend.ast.CommandExpression
 import mathlingua.lib.frontend.ast.CommandForm
 import mathlingua.lib.frontend.ast.DEFAULT_NAME
+import mathlingua.lib.frontend.ast.DEFAULT_VARIADIC_RHS
+import mathlingua.lib.frontend.ast.DEFAULT_VARIADIC_TARGET
 import mathlingua.lib.frontend.ast.DefinitionIsFormItem
 import mathlingua.lib.frontend.ast.EmptyTexTalkNode
 import mathlingua.lib.frontend.ast.EqualsExpression
@@ -49,11 +51,15 @@ import mathlingua.lib.frontend.ast.SquareParams
 import mathlingua.lib.frontend.ast.StatementIsFormItem
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
 import mathlingua.lib.frontend.ast.SubParamCall
+import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
+import mathlingua.lib.frontend.ast.VariadicInExpression
 import mathlingua.lib.frontend.ast.VariadicIsRhs
 import mathlingua.lib.frontend.ast.VariadicName
+import mathlingua.lib.frontend.ast.VariadicRhs
+import mathlingua.lib.frontend.ast.VariadicTarget
 
 internal interface TexTalkParser {
     fun parse(): TexTalkNode
@@ -338,8 +344,7 @@ private fun MutableList<TreeNode>.parseIntoSingleNode(
 ): TexTalkNode? {
     // process the list one by one and then run shunting-yard on the result
     // this is where a list of tokens is constructed into a list of parsed nodes that only need to
-    // be processed
-    // into a tree based on operator usage using the shunting-yard algorithm
+    // be processed into a tree based on operator usage using the shunting-yard algorithm
     val nodesToProcess = mutableListOf<TexTalkNode>()
     while (this.isNotEmpty()) {
         val node =
@@ -384,12 +389,80 @@ private fun MutableList<TexTalkNode>.pollFirstAndError(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private fun SplitTreeNode.toTexTalkNode(diagnostics: MutableList<Diagnostic>): TexTalkNode? =
-    this.toIsExpression(diagnostics)
+    this.toIsExpressionOrVariadicIsExpression(diagnostics)
         ?: this.toInExpression(diagnostics) ?: this.toNotInExpression(diagnostics)
             ?: this.toAsExpression(diagnostics) ?: this.toEqualsExpression(diagnostics)
             ?: this.toNotEqualsExpression(diagnostics)
 
-private fun SplitTreeNode.toIsExpression(diagnostics: MutableList<Diagnostic>): IsExpression? {
+private fun SplitTreeNode.toIsExpressionOrVariadicIsExpression(
+    diagnostics: MutableList<Diagnostic>
+): TexTalkNode? {
+    val row = this.center?.row() ?: -1
+    val column = this.center?.column() ?: -1
+
+    val lhs = this.lhs?.treeNodeToTexTalkNodeList(diagnostics) ?: emptyList()
+    val rhs = this.rhs?.treeNodeToTexTalkNodeList(diagnostics) ?: emptyList()
+
+    if (lhs.isEmpty()) {
+        diagnostics.add(
+            error(
+                message = "The left-hand-side of an 'is' expression cannot be empty",
+                row = row,
+                column = column))
+        return IsExpression(
+            lhs = emptyList(),
+            rhs = emptyList(),
+            metadata = MetaData(row = row, column = column, isInline = null))
+    }
+
+    if (rhs.isEmpty()) {
+        diagnostics.add(
+            error(
+                message = "The right-hand-side of an 'is' expression cannot be empty",
+                row = row,
+                column = column))
+        return IsExpression(
+            lhs = emptyList(),
+            rhs = emptyList(),
+            metadata = MetaData(row = row, column = column, isInline = null))
+    }
+
+    if (lhs.size == 1 && rhs.size == 1) {
+        // determine if it is a VariadicIsExpression or an IsExpression
+        val left = lhs.first()
+        val right = rhs.first()
+
+        if (left is VariadicTarget || right is VariadicIsRhs) {
+            // parse it as a VariadicIsExpression
+            if (left !is VariadicTarget) {
+                diagnostics.add(
+                    error(
+                        message = "The left-hand-side must be a VariadicTarget",
+                        row = row,
+                        column = column))
+            }
+
+            if (right !is VariadicRhs) {
+                diagnostics.add(
+                    error(
+                        message = "The right-hand-side must be a VariadicRhs",
+                        row = row,
+                        column = column))
+            }
+
+            return VariadicInExpression(
+                lhs = (left as? VariadicTarget) ?: DEFAULT_VARIADIC_TARGET,
+                rhs = (right as? VariadicRhs) ?: DEFAULT_VARIADIC_RHS,
+                metadata = MetaData(row = row, column = column, isInline = null))
+        } else {
+            // parse it as an IsExpression
+            return IsExpression(
+                lhs = lhs.filterAndError(diagnostics),
+                rhs = rhs.filterAndError(diagnostics),
+                metadata = MetaData(row = row, column = column, isInline = null))
+        }
+    }
+
     return null
 }
 
@@ -935,6 +1008,13 @@ private fun MutableList<TreeNode>.metaIsForm(diagnostics: MutableList<Diagnostic
     } else {
         null
     }
+
+// TODO: IMPLEMENT THIS
+private fun MutableList<TreeNode>.expression(diagnostics: MutableList<Diagnostic>): Expression? =
+    null
+
+// TODO: IMPLEMENT THIS
+private fun MutableList<TreeNode>.target(diagnostics: MutableList<Diagnostic>): Target? = null
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

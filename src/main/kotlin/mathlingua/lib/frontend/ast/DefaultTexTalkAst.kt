@@ -21,5 +21,5 @@ internal val DEFAULT_NAME = Name(text = "", metadata = DEFAULT_METADATA)
 internal val DEFAULT_VARIADIC_TARGET: VariadicTarget =
     VariadicName(name = DEFAULT_NAME, metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_VARIADIC_RHS: VariadicRhs =
+internal val DEFAULT_VARIADIC_IS_RHS: VariadicIsRhs =
     VariadicName(name = DEFAULT_NAME, metadata = DEFAULT_METADATA)

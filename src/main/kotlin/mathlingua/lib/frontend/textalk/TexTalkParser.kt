@@ -26,7 +26,7 @@ import mathlingua.lib.frontend.ast.AssignmentIsFormItem
 import mathlingua.lib.frontend.ast.CommandExpression
 import mathlingua.lib.frontend.ast.CommandForm
 import mathlingua.lib.frontend.ast.DEFAULT_NAME
-import mathlingua.lib.frontend.ast.DEFAULT_VARIADIC_RHS
+import mathlingua.lib.frontend.ast.DEFAULT_VARIADIC_IS_RHS
 import mathlingua.lib.frontend.ast.DEFAULT_VARIADIC_TARGET
 import mathlingua.lib.frontend.ast.DefinitionIsFormItem
 import mathlingua.lib.frontend.ast.EmptyTexTalkNode
@@ -40,12 +40,12 @@ import mathlingua.lib.frontend.ast.IsExpression
 import mathlingua.lib.frontend.ast.MetaIsForm
 import mathlingua.lib.frontend.ast.MetaIsFormItem
 import mathlingua.lib.frontend.ast.Name
-import mathlingua.lib.frontend.ast.NameOrCommand
 import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NamedParameterExpression
 import mathlingua.lib.frontend.ast.NamedParameterForm
 import mathlingua.lib.frontend.ast.NotEqualsExpression
 import mathlingua.lib.frontend.ast.NotInExpression
+import mathlingua.lib.frontend.ast.SignatureExpression
 import mathlingua.lib.frontend.ast.SpecificationIsFormItem
 import mathlingua.lib.frontend.ast.SquareParams
 import mathlingua.lib.frontend.ast.StatementIsFormItem
@@ -55,11 +55,16 @@ import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
-import mathlingua.lib.frontend.ast.VariadicInExpression
+import mathlingua.lib.frontend.ast.Tuple
+import mathlingua.lib.frontend.ast.TupleExpression
+import mathlingua.lib.frontend.ast.VariadicIsExpression
 import mathlingua.lib.frontend.ast.VariadicIsRhs
 import mathlingua.lib.frontend.ast.VariadicName
 import mathlingua.lib.frontend.ast.VariadicRhs
 import mathlingua.lib.frontend.ast.VariadicTarget
+import mathlingua.lib.util.BiUnion
+import mathlingua.lib.util.BiUnionFirst
+import mathlingua.lib.util.BiUnionSecond
 
 internal interface TexTalkParser {
     fun parse(): TexTalkNode
@@ -348,7 +353,7 @@ private fun MutableList<TreeNode>.parseIntoSingleNode(
     val nodesToProcess = mutableListOf<TexTalkNode>()
     while (this.isNotEmpty()) {
         val node =
-            this.commandExpression(diagnostics)
+            this.commandExpressionOrCommandForm(diagnostics)?.value
                 ?: this.variadicName(diagnostics) ?: this.name() ?: break
         nodesToProcess.add(node)
     }
@@ -389,14 +394,14 @@ private fun MutableList<TexTalkNode>.pollFirstAndError(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private fun SplitTreeNode.toTexTalkNode(diagnostics: MutableList<Diagnostic>): TexTalkNode? =
-    this.toIsExpressionOrVariadicIsExpression(diagnostics)
+    this.toIsExpressionOrVariadicIsExpression(diagnostics)?.value
         ?: this.toInExpression(diagnostics) ?: this.toNotInExpression(diagnostics)
             ?: this.toAsExpression(diagnostics) ?: this.toEqualsExpression(diagnostics)
             ?: this.toNotEqualsExpression(diagnostics)
 
 private fun SplitTreeNode.toIsExpressionOrVariadicIsExpression(
     diagnostics: MutableList<Diagnostic>
-): TexTalkNode? {
+): BiUnion<IsExpression, VariadicIsExpression, TexTalkNode>? {
     val row = this.center?.row() ?: -1
     val column = this.center?.column() ?: -1
 
@@ -409,10 +414,11 @@ private fun SplitTreeNode.toIsExpressionOrVariadicIsExpression(
                 message = "The left-hand-side of an 'is' expression cannot be empty",
                 row = row,
                 column = column))
-        return IsExpression(
-            lhs = emptyList(),
-            rhs = emptyList(),
-            metadata = MetaData(row = row, column = column, isInline = null))
+        return BiUnionFirst(
+            IsExpression(
+                lhs = emptyList(),
+                rhs = emptyList(),
+                metadata = MetaData(row = row, column = column, isInline = null)))
     }
 
     if (rhs.isEmpty()) {
@@ -421,10 +427,11 @@ private fun SplitTreeNode.toIsExpressionOrVariadicIsExpression(
                 message = "The right-hand-side of an 'is' expression cannot be empty",
                 row = row,
                 column = column))
-        return IsExpression(
-            lhs = emptyList(),
-            rhs = emptyList(),
-            metadata = MetaData(row = row, column = column, isInline = null))
+        return BiUnionFirst(
+            IsExpression(
+                lhs = emptyList(),
+                rhs = emptyList(),
+                metadata = MetaData(row = row, column = column, isInline = null)))
     }
 
     if (lhs.size == 1 && rhs.size == 1) {
@@ -450,16 +457,18 @@ private fun SplitTreeNode.toIsExpressionOrVariadicIsExpression(
                         column = column))
             }
 
-            return VariadicInExpression(
-                lhs = (left as? VariadicTarget) ?: DEFAULT_VARIADIC_TARGET,
-                rhs = (right as? VariadicRhs) ?: DEFAULT_VARIADIC_RHS,
-                metadata = MetaData(row = row, column = column, isInline = null))
+            return BiUnionSecond(
+                VariadicIsExpression(
+                    lhs = (left as? VariadicTarget) ?: DEFAULT_VARIADIC_TARGET,
+                    rhs = (right as? VariadicIsRhs) ?: DEFAULT_VARIADIC_IS_RHS,
+                    metadata = MetaData(row = row, column = column, isInline = null)))
         } else {
             // parse it as an IsExpression
-            return IsExpression(
-                lhs = lhs.filterAndError(diagnostics),
-                rhs = rhs.filterAndError(diagnostics),
-                metadata = MetaData(row = row, column = column, isInline = null))
+            return BiUnionFirst(
+                IsExpression(
+                    lhs = lhs.filterAndError(diagnostics),
+                    rhs = rhs.filterAndError(diagnostics),
+                    metadata = MetaData(row = row, column = column, isInline = null)))
         }
     }
 
@@ -688,28 +697,31 @@ private fun MutableList<TreeNode>.squareParams(
     }
 }
 
-private fun MutableList<TreeNode>.namedParameterExpression(
+private fun MutableList<TreeNode>.nameOrNamedParameterExpression(
     diagnostics: MutableList<Diagnostic>
-): NamedParameterExpression? {
+): BiUnion<Name, NamedParameterExpression, TexTalkNode>? {
     if (!this.hasHas(TexTalkTokenType.Colon, TexTalkTokenType.Name)) {
         return null
     }
     val colon = this.token(TexTalkTokenType.Colon) ?: return null
     val name =
         this.name().orError(diagnostics, "Expected a Name", colon.row, colon.column, DEFAULT_NAME)
-    val curlyExpression =
-        this.curlyExpressionParameterList(diagnostics)
-            ?.orError(
-                diagnostics = diagnostics,
-                message = "Expected a {...}",
-                row = colon.row,
-                column = colon.column,
-                default = emptyList())
-            ?: emptyList()
-    return NamedParameterExpression(
-        name = name,
-        params = curlyExpression,
-        metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
+    val curlyExpression = this.curlyExpressionParameterList(diagnostics)
+    return if (curlyExpression == null) {
+        BiUnionFirst(name)
+    } else {
+        BiUnionSecond(
+            NamedParameterExpression(
+                name = name,
+                params =
+                    curlyExpression.orError(
+                        diagnostics = diagnostics,
+                        message = "Expected a {...}",
+                        row = colon.row,
+                        column = colon.column,
+                        default = emptyList()),
+                metadata = MetaData(row = colon.row, column = colon.column, isInline = null)))
+    }
 }
 
 private fun MutableList<TreeNode>.namedParameterForm(
@@ -786,9 +798,9 @@ private fun MutableList<TreeNode>.supNameOrVariadicNameParams(
         null
     }
 
-private fun MutableList<TreeNode>.commandExpression(
+private fun MutableList<TreeNode>.commandExpressionOrCommandForm(
     diagnostics: MutableList<Diagnostic>
-): CommandExpression? =
+): BiUnion<CommandExpression, SignatureExpression, TexTalkNode>? =
     if (this.has(TexTalkTokenType.Backslash)) {
         val backslash = this.expect(diagnostics, TexTalkTokenType.Backslash)!!
         val names = mutableListOf<Name>()
@@ -812,21 +824,67 @@ private fun MutableList<TreeNode>.commandExpression(
         val subParams = this.subExpressionParams(diagnostics)
         val supParams = this.supExpressionParams(diagnostics)
         val curlyParams = this.curlyExpressionParameterList(diagnostics)
-        val namedParams = mutableListOf<NamedParameterExpression>()
+        val namesOrNamedParams =
+            mutableListOf<BiUnion<Name, NamedParameterExpression, TexTalkNode>>()
         while (this.isNotEmpty()) {
-            val namedParam = this.namedParameterExpression(diagnostics) ?: break
-            namedParams.add(namedParam)
+            val namedParam = this.nameOrNamedParameterExpression(diagnostics) ?: break
+            namesOrNamedParams.add(namedParam)
         }
         val parenParams = this.parenExpressionParameterList(diagnostics)
-        CommandExpression(
-            names = names,
-            squareParams = squareParams,
-            subParams = subParams,
-            supParams = supParams,
-            curlyParams = curlyParams,
-            namedParams = namedParams,
-            parenParams = parenParams,
-            metadata = MetaData(row = backslash.row, column = backslash.column, isInline = null))
+
+        if (squareParams != null ||
+            subParams != null ||
+            supParams != null ||
+            curlyParams != null ||
+            namesOrNamedParams.any { it.value is Expression } ||
+            parenParams != null) {
+            // process as a CommandExpression
+            BiUnionFirst(
+                CommandExpression(
+                    names = names,
+                    squareParams = squareParams,
+                    subParams = subParams,
+                    supParams = supParams,
+                    curlyParams = curlyParams,
+                    namedParams =
+                        namesOrNamedParams.mapNotNull {
+                            val value = it.value
+                            if (value is NamedParameterExpression) {
+                                value
+                            } else {
+                                diagnostics.add(
+                                    error(
+                                        message = "Expected a NamedParameterExpression",
+                                        row = backslash.row,
+                                        column = backslash.column))
+                                null
+                            }
+                        },
+                    parenParams = parenParams,
+                    metadata =
+                        MetaData(row = backslash.row, column = backslash.column, isInline = null)))
+        } else {
+            // process as a CommandForm
+            BiUnionSecond(
+                SignatureExpression(
+                    names = names,
+                    colonNames =
+                        namesOrNamedParams.mapNotNull {
+                            val value = it.value
+                            if (value is Name) {
+                                value
+                            } else {
+                                diagnostics.add(
+                                    error(
+                                        message = "Expected a Named",
+                                        row = backslash.row,
+                                        column = backslash.column))
+                                null
+                            }
+                        },
+                    metadata =
+                        MetaData(row = backslash.row, column = backslash.column, isInline = null)))
+        }
     } else {
         null
     }
@@ -874,9 +932,12 @@ private fun MutableList<TreeNode>.commandForm(diagnostics: MutableList<Diagnosti
         null
     }
 
+/*
+// TODO: FIX THIS
 private fun MutableList<TreeNode>.nameOrCommand(
     diagnostics: MutableList<Diagnostic>
 ): NameOrCommand? = this.name() ?: this.commandExpression(diagnostics)
+*/
 
 // returns `null` if the next node in the list is not a ParenTreeNode
 private fun MutableList<TreeNode>.bracketedNodeList(
@@ -944,9 +1005,12 @@ private fun MutableList<TreeNode>.squareColonMetaIsFormItemParameterList(
     diagnostics: MutableList<Diagnostic>
 ): MutableList<MetaIsFormItem>? = this.squareColonNodeList(diagnostics)?.filterAndError(diagnostics)
 
+/*
+// TODO: FIX THIS
 private fun MutableList<TreeNode>.variadicIsRhs(
     diagnostics: MutableList<Diagnostic>
 ): VariadicIsRhs? = this.variadicName(diagnostics) ?: this.commandExpression(diagnostics)
+ */
 
 private fun MutableList<TreeNode>.statementIsFormItem(): StatementIsFormItem? =
     if (this.hasNameText("statement")) {
@@ -1015,6 +1079,29 @@ private fun MutableList<TreeNode>.expression(diagnostics: MutableList<Diagnostic
 
 // TODO: IMPLEMENT THIS
 private fun MutableList<TreeNode>.target(diagnostics: MutableList<Diagnostic>): Target? = null
+
+private fun MutableList<TreeNode>.tupleOrTupleExpression(
+    diagnostics: MutableList<Diagnostic>
+): BiUnion<Tuple, TupleExpression, TexTalkNode>? {
+    val paren = this.peekParenPrefix()
+    val nodes = this.parenNodeList(diagnostics) ?: return null
+
+    return if (nodes.all { it is Target }) {
+        BiUnionFirst(
+            Tuple(
+                targets = nodes.filterAndError(diagnostics),
+                metadata =
+                    MetaData(
+                        row = paren?.row ?: -1, column = paren?.column ?: -1, isInline = null)))
+    } else {
+        BiUnionSecond(
+            TupleExpression(
+                args = nodes.filterAndError(diagnostics),
+                metadata =
+                    MetaData(
+                        row = paren?.row ?: -1, column = paren?.column ?: -1, isInline = null)))
+    }
+}
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

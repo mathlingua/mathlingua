@@ -783,7 +783,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun usingSection(): UsingSection? =
-        section("using") { UsingSection(statements = oneOrMore(statements(), it), metadata = it) }
+        section("Using") { UsingSection(statements = oneOrMore(statements(), it), metadata = it) }
 
     private fun writingSection(): WritingSection? =
         section("writing") { WritingSection(items = oneOrMore(texts(), it), metadata = it) }
@@ -868,8 +868,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "means", required = false) { this.meansSection() },
                     SectionSpec(name = "satisfying", required = false) { this.satisfyingSection() },
                     SectionSpec(name = "expressing", required = false) { this.expressingSection() },
-                    SectionSpec(name = "using", required = false) { this.usingSection() },
                     SectionSpec(name = "Providing", required = false) { this.providingSection() },
+                    SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_DEFINES_GROUP) { id, sections, metadata ->
@@ -883,8 +883,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 meansSection = sections["means"] as MeansSection?,
                 satisfyingSection = sections["satisfying"] as SatisfyingSection?,
                 expressingSection = sections["expressing"] as ExpressingSection?,
-                usingSection = sections["using"] as UsingSection?,
                 providingSection = sections["Providing"] as ProvidingSection?,
+                usingSection = sections["Using"] as UsingSection?,
                 codifiedSection = sections["Codified"] as CodifiedSection,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
@@ -902,7 +902,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "when", required = false) { this.whenSection() },
                     SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
                     SectionSpec(name = "that", required = false) { this.thatSection() },
-                    SectionSpec(name = "using", required = false) { this.usingSection() },
+                    SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_STATES_GROUP) { id, sections, metadata ->
@@ -913,7 +913,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 whenSection = sections["when"] as WhenSection?,
                 suchThatSection = sections["suchThat"] as SuchThatSection?,
                 thatSection = sections["that"] as ThatSection,
-                usingSection = sections["using"] as UsingSection?,
+                usingSection = sections["Using"] as UsingSection?,
                 codifiedSection = sections["Codified"] as CodifiedSection,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
@@ -1042,7 +1042,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
-                    SectionSpec(name = "using", required = false) { this.usingSection() },
+                    SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_AXIOM_GROUP) { id, sections, metadata ->
             AxiomGroup(
@@ -1053,7 +1053,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 suchThatSection = sections["suchThat"] as SuchThatSection?,
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
-                usingSection = sections["using"] as UsingSection?,
+                usingSection = sections["Using"] as UsingSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
@@ -1072,7 +1072,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
-                    SectionSpec(name = "using", required = false) { this.usingSection() },
+                    SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_CONJECTURE_GROUP) { id, sections, metadata ->
             ConjectureGroup(
@@ -1083,7 +1083,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 suchThatSection = sections["suchThat"] as SuchThatSection?,
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
-                usingSection = sections["using"] as UsingSection?,
+                usingSection = sections["Using"] as UsingSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
@@ -1102,7 +1102,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
-                    SectionSpec(name = "using", required = false) { this.usingSection() },
+                    SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Proof", required = false) { this.proofSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_THEOREM_GROUP) { id, sections, metadata ->
@@ -1114,7 +1114,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 suchThatSection = sections["suchThat"] as SuchThatSection?,
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
-                usingSection = sections["using"] as UsingSection?,
+                usingSection = sections["Using"] as UsingSection?,
                 proofSection = sections["Proof"] as ProofSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)

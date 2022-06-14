@@ -410,8 +410,8 @@ suchThat?: (Clause)+
 means?: Statement[IsExpression | VariadicIsExpression]
 satisfying: (SatisfyingItem)+
 expressing: (ExpressingItem)+
-using?: (Statement[ColonEqualsExpression])+
 Providing?: (ProvidingItem)+
+Using?: (Statement[ColonEqualsExpression])+
 Codified: (CodifiedItem)+
 Metadata?: (MetadataItem)+
 
@@ -434,7 +434,7 @@ given?: (Target)+
 when?: (Spec)+
 suchThat?: (Clause)+
 that: (ThatItem)+
-using?: Statement[ColonEqualsExpression]
+Using?: Statement[ColonEqualsExpression]
 Codified: (CodifiedItem)+
 Metadata?: (MetadataItem)+
 
@@ -470,7 +470,7 @@ where?: (Spec)+
 suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
-using?: (Statement[ColonEqualsExpression])+
+Using?: (Statement[ColonEqualsExpression])+
 Metadata?: (MetadataItem)+
 
 [(Id)?]
@@ -480,7 +480,7 @@ where?: (Spec)+
 suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
-using?: (Statement[ColonEqualsExpression])+
+Using?: (Statement[ColonEqualsExpression])+
 Metadata?: (MetadataItem)+
 
 [(Id)?]
@@ -490,7 +490,7 @@ where?: (Spec)+
 suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
-using?: (Statement[ColonEqualsExpression])+
+Using?: (Statement[ColonEqualsExpression])+
 Proof?: (Text[.*])+
 Metadata?: (MetadataItem)+
 

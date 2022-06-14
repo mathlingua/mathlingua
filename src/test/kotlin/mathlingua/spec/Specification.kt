@@ -1074,15 +1074,15 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = true,
                     classname = "ExpressingSection"),
                 Section(
-                    name = "using",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
-                    required = false,
-                    classname = "UsingSection"),
-                Section(
                     name = "Providing",
                     arg = OneOrMore(Def("ProvidingItem")),
                     required = false,
                     classname = "ProvidingSection"),
+                Section(
+                    name = "Using",
+                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    required = false,
+                    classname = "UsingSection"),
                 Section(
                     name = "Codified",
                     arg = OneOrMore(Def("CodifiedItem")),
@@ -1162,7 +1162,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = true,
                     classname = "ThatSection"),
                 Section(
-                    name = "using",
+                    name = "Using",
                     arg = Statement(of = listOf("ColonEqualsExpression")),
                     required = false,
                     classname = "UsingSection"),
@@ -1296,7 +1296,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = false,
                     classname = "IffSection"),
                 Section(
-                    name = "using",
+                    name = "Using",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
@@ -1342,7 +1342,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = false,
                     classname = "IffSection"),
                 Section(
-                    name = "using",
+                    name = "Using",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
@@ -1388,7 +1388,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = false,
                     classname = "IffSection"),
                 Section(
-                    name = "using",
+                    name = "Using",
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),

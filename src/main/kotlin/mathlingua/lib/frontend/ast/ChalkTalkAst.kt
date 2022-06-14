@@ -495,7 +495,7 @@ internal data class ExpressingSection(
 }
 
 internal data class UsingSection(val statements: List<Statement>, override val metadata: MetaData) :
-    Section("using", metadata) {
+    Section("Using", metadata) {
     override fun toCode() = sectionToCode(this, *statements.toTypedArray())
 }
 
@@ -565,8 +565,8 @@ internal data class DefinesGroup(
     val meansSection: MeansSection?,
     val satisfyingSection: SatisfyingSection?,
     val expressingSection: ExpressingSection?,
-    val usingSection: UsingSection?,
     val providingSection: ProvidingSection?,
+    val usingSection: UsingSection?,
     val codifiedSection: CodifiedSection,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
@@ -582,8 +582,8 @@ internal data class DefinesGroup(
             meansSection,
             satisfyingSection,
             expressingSection,
-            usingSection,
             providingSection,
+            usingSection,
             codifiedSection,
             metadataSection)
 }

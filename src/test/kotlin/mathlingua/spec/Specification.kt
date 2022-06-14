@@ -989,6 +989,46 @@ internal val MATHLINGUA_SPECIFICATION =
                 Def("VariadicColonEqualsExpression")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
+            "written:",
+            group(
+                "WrittenGroup",
+                null,
+                Section(
+                    name = "written",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "WrittenSection"),
+            ),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "writing:",
+            group(
+                "WritingGroup",
+                null,
+                Section(
+                    name = "writing",
+                    arg = OneOrMore(Text(".*")),
+                    required = false,
+                    classname = "WritingSection"),
+            ),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "called:",
+            group(
+                "CalledGroup",
+                null,
+                Section(
+                    name = "called",
+                    arg = OneOrMore(Text(".*")),
+                    required = false,
+                    classname = "CalledSection"),
+            ),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "CodifiedItem",
+            anyOf(Def("written:"), Def("writing:"), Def("called:")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
             "Defines:",
             group(
                 "DefinesGroup",
@@ -1039,25 +1079,15 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = false,
                     classname = "UsingSection"),
                 Section(
-                    name = "writing",
-                    arg = OneOrMore(Text(".*")),
-                    required = false,
-                    classname = "WritingSection"),
-                Section(
-                    name = "written",
-                    arg = OneOrMore(Text(".*")),
-                    required = true,
-                    classname = "WrittenSection"),
-                Section(
-                    name = "called",
-                    arg = OneOrMore(Text(".*")),
-                    required = false,
-                    classname = "CalledSection"),
-                Section(
                     name = "Providing",
                     arg = OneOrMore(Def("ProvidingItem")),
                     required = false,
                     classname = "ProvidingSection"),
+                Section(
+                    name = "Codified",
+                    arg = OneOrMore(Def("CodifiedItem")),
+                    required = true,
+                    classname = "CodifiedSection"),
                 Section(
                     name = "Metadata",
                     arg = OneOrMore(Def("MetadataItem")),
@@ -1137,15 +1167,10 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = false,
                     classname = "UsingSection"),
                 Section(
-                    name = "written",
-                    arg = OneOrMore(Text(".*")),
+                    name = "Codified",
+                    arg = OneOrMore(Def("CodifiedItem")),
                     required = true,
-                    classname = "WrittenSection"),
-                Section(
-                    name = "called",
-                    arg = OneOrMore(Text(".*")),
-                    required = false,
-                    classname = "CalledSection"),
+                    classname = "CodifiedSection"),
                 Section(
                     name = "Metadata",
                     arg = OneOrMore(Def("MetadataItem")),

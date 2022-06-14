@@ -35,15 +35,19 @@ import mathlingua.lib.frontend.ast.BeginGroup
 import mathlingua.lib.frontend.ast.BeginSection
 import mathlingua.lib.frontend.ast.BetweenSection
 import mathlingua.lib.frontend.ast.BySection
+import mathlingua.lib.frontend.ast.CalledGroup
 import mathlingua.lib.frontend.ast.CalledSection
 import mathlingua.lib.frontend.ast.ChalkTalkNode
 import mathlingua.lib.frontend.ast.Clause
+import mathlingua.lib.frontend.ast.CodifiedItem
+import mathlingua.lib.frontend.ast.CodifiedSection
 import mathlingua.lib.frontend.ast.ConjectureGroup
 import mathlingua.lib.frontend.ast.ConjectureSection
 import mathlingua.lib.frontend.ast.ContentSection
 import mathlingua.lib.frontend.ast.DEFAULT_AND_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_AUTHOR_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_AXIOM_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_CALLED_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_CLAUSE
 import mathlingua.lib.frontend.ast.DEFAULT_CONJECTURE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_DEFINES_GROUP
@@ -86,6 +90,8 @@ import mathlingua.lib.frontend.ast.DEFAULT_TOPIC_NAME
 import mathlingua.lib.frontend.ast.DEFAULT_TYPE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_URL_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_VIEW_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_WRITING_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_WRITTEN_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_ZERO_GROUP
 import mathlingua.lib.frontend.ast.DefinesGroup
 import mathlingua.lib.frontend.ast.DefinesSection
@@ -217,7 +223,9 @@ import mathlingua.lib.frontend.ast.ViewSection
 import mathlingua.lib.frontend.ast.WhenSection
 import mathlingua.lib.frontend.ast.WhereSection
 import mathlingua.lib.frontend.ast.WithSection
+import mathlingua.lib.frontend.ast.WritingGroup
 import mathlingua.lib.frontend.ast.WritingSection
+import mathlingua.lib.frontend.ast.WrittenGroup
 import mathlingua.lib.frontend.ast.WrittenSection
 import mathlingua.lib.frontend.ast.ZeroGroup
 import mathlingua.lib.frontend.ast.ZeroSection
@@ -780,11 +788,51 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun writingSection(): WritingSection? =
         section("writing") { WritingSection(items = oneOrMore(texts(), it), metadata = it) }
 
+    private fun writingGroup(): WritingGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "writing", required = true) { this.writingSection() }),
+            default = DEFAULT_WRITING_GROUP,
+        ) { _, sections, metadata ->
+            WritingGroup(
+                writingSection = sections["writing"] as WritingSection, metadata = metadata)
+        }
+
     private fun writtenSection(): WrittenSection? =
         section("written") { WrittenSection(items = oneOrMore(texts(), it), metadata = it) }
 
+    private fun writtenGroup(): WrittenGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "written", required = true) { this.writtenSection() }),
+            default = DEFAULT_WRITTEN_GROUP,
+        ) { _, sections, metadata ->
+            WrittenGroup(
+                writtenSection = sections["written"] as WrittenSection, metadata = metadata)
+        }
+
     private fun calledSection(): CalledSection? =
         section("called") { CalledSection(items = oneOrMore(texts(), it), metadata = it) }
+
+    private fun calledGroup(): CalledGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "called", required = true) { this.calledSection() }),
+            default = DEFAULT_CALLED_GROUP,
+        ) { _, sections, metadata ->
+            CalledGroup(calledSection = sections["called"] as CalledSection, metadata = metadata)
+        }
+
+    private fun codifiedItem(): CodifiedItem? = writingGroup() ?: writtenGroup() ?: calledGroup()
+
+    private fun codifiedItems(): List<CodifiedItem> = collect { argument { codifiedItem() } }
+
+    private fun codifiedSection(): CodifiedSection? =
+        section("Codified") {
+            CodifiedSection(items = oneOrMore(codifiedItems(), it), metadata = it)
+        }
 
     private fun providingItem(): ProvidingItem? =
         viewGroup()
@@ -821,10 +869,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "satisfying", required = false) { this.satisfyingSection() },
                     SectionSpec(name = "expressing", required = false) { this.expressingSection() },
                     SectionSpec(name = "using", required = false) { this.usingSection() },
-                    SectionSpec(name = "writing", required = false) { this.writingSection() },
-                    SectionSpec(name = "written", required = true) { this.writtenSection() },
-                    SectionSpec(name = "called", required = false) { this.calledSection() },
                     SectionSpec(name = "Providing", required = false) { this.providingSection() },
+                    SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_DEFINES_GROUP) { id, sections, metadata ->
             DefinesGroup(
@@ -838,10 +884,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 satisfyingSection = sections["satisfying"] as SatisfyingSection?,
                 expressingSection = sections["expressing"] as ExpressingSection?,
                 usingSection = sections["using"] as UsingSection?,
-                writingSection = sections["writing"] as WritingSection?,
-                writtenSection = sections["written"] as WrittenSection,
-                calledSection = sections["called"] as CalledSection?,
                 providingSection = sections["Providing"] as ProvidingSection?,
+                codifiedSection = sections["Codified"] as CodifiedSection,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
@@ -859,8 +903,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "suchThat", required = false) { this.suchThatSection() },
                     SectionSpec(name = "that", required = false) { this.thatSection() },
                     SectionSpec(name = "using", required = false) { this.usingSection() },
-                    SectionSpec(name = "written", required = true) { this.writtenSection() },
-                    SectionSpec(name = "called", required = false) { this.calledSection() },
+                    SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_STATES_GROUP) { id, sections, metadata ->
             StatesGroup(
@@ -871,8 +914,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 suchThatSection = sections["suchThat"] as SuchThatSection?,
                 thatSection = sections["that"] as ThatSection,
                 usingSection = sections["using"] as UsingSection?,
-                writtenSection = sections["written"] as WrittenSection,
-                calledSection = sections["called"] as CalledSection?,
+                codifiedSection = sections["Codified"] as CodifiedSection,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }

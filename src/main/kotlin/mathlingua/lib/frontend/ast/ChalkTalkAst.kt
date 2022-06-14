@@ -499,9 +499,23 @@ internal data class UsingSection(val statements: List<Statement>, override val m
     override fun toCode() = sectionToCode(this, *statements.toTypedArray())
 }
 
+internal sealed interface CodifiedItem : ChalkTalkNode
+
+internal data class WritingGroup(
+    val writingSection: WritingSection, override val metadata: MetaData
+) : Group(metadata), CodifiedItem {
+    override fun toCode() = groupToCode(null, writingSection)
+}
+
 internal data class WritingSection(val items: List<Text>, override val metadata: MetaData) :
     Section("writing", metadata) {
     override fun toCode() = sectionToCode(this, *items.toTypedArray())
+}
+
+internal data class WrittenGroup(
+    val writtenSection: WrittenSection, override val metadata: MetaData
+) : Group(metadata), CodifiedItem {
+    override fun toCode() = groupToCode(null, writtenSection)
 }
 
 internal data class WrittenSection(val items: List<Text>, override val metadata: MetaData) :
@@ -509,8 +523,19 @@ internal data class WrittenSection(val items: List<Text>, override val metadata:
     override fun toCode() = sectionToCode(this, *items.toTypedArray())
 }
 
+internal data class CalledGroup(val calledSection: CalledSection, override val metadata: MetaData) :
+    Group(metadata), CodifiedItem {
+    override fun toCode() = groupToCode(null, calledSection)
+}
+
 internal data class CalledSection(val items: List<Text>, override val metadata: MetaData) :
     Section("called", metadata) {
+    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+}
+
+internal data class CodifiedSection(
+    val items: List<CodifiedItem>, override val metadata: MetaData
+) : Section("Codified", metadata) {
     override fun toCode() = sectionToCode(this, *items.toTypedArray())
 }
 
@@ -541,10 +566,8 @@ internal data class DefinesGroup(
     val satisfyingSection: SatisfyingSection?,
     val expressingSection: ExpressingSection?,
     val usingSection: UsingSection?,
-    val writingSection: WritingSection?,
-    val writtenSection: WrittenSection,
-    val calledSection: CalledSection?,
     val providingSection: ProvidingSection?,
+    val codifiedSection: CodifiedSection,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
@@ -560,10 +583,8 @@ internal data class DefinesGroup(
             satisfyingSection,
             expressingSection,
             usingSection,
-            writingSection,
-            writtenSection,
-            calledSection,
             providingSection,
+            codifiedSection,
             metadataSection)
 }
 
@@ -586,8 +607,7 @@ internal data class StatesGroup(
     val suchThatSection: SuchThatSection?,
     val thatSection: ThatSection,
     val usingSection: UsingSection?,
-    val writtenSection: WrittenSection,
-    val calledSection: CalledSection?,
+    val codifiedSection: CodifiedSection,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
@@ -600,8 +620,7 @@ internal data class StatesGroup(
             suchThatSection,
             thatSection,
             usingSection,
-            writtenSection,
-            calledSection,
+            codifiedSection,
             metadataSection)
 }
 

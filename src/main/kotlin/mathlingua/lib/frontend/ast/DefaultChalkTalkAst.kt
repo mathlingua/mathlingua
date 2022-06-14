@@ -253,17 +253,29 @@ internal val DEFAULT_USING_SECTION =
 internal val DEFAULT_WRITING_SECTION =
     WritingSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
+internal val DEFAULT_WRITING_GROUP =
+    WritingGroup(writingSection = DEFAULT_WRITING_SECTION, metadata = DEFAULT_METADATA)
+
 internal val DEFAULT_WRITTEN_SECTION =
     WrittenSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
+internal val DEFAULT_WRITTEN_GROUP =
+    WrittenGroup(writtenSection = DEFAULT_WRITTEN_SECTION, metadata = DEFAULT_METADATA)
+
 internal val DEFAULT_CALLED_SECTION =
     CalledSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_CALLED_GROUP =
+    CalledGroup(calledSection = DEFAULT_CALLED_SECTION, metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_PROVIDING_SECTION =
     ProvidingSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_METADATA_SECTION =
     MetadataSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_CODIFIED_SECTION =
+    CodifiedSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_DEFINES_GROUP =
     DefinesGroup(
@@ -277,10 +289,8 @@ internal val DEFAULT_DEFINES_GROUP =
         satisfyingSection = null,
         expressingSection = null,
         usingSection = null,
-        writingSection = null,
-        writtenSection = DEFAULT_WRITTEN_SECTION,
-        calledSection = null,
         providingSection = null,
+        codifiedSection = DEFAULT_CODIFIED_SECTION,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
@@ -297,8 +307,7 @@ internal val DEFAULT_STATES_GROUP =
         suchThatSection = null,
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = null,
-        writtenSection = DEFAULT_WRITTEN_SECTION,
-        calledSection = null,
+        codifiedSection = DEFAULT_CODIFIED_SECTION,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 

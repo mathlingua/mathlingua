@@ -390,6 +390,17 @@ ExpressingItem ::=
    ColonEqualsExpression |
    VariadicColonEqualsExpression
 
+written: (Text[.*])+
+
+writing?: (Text[.*])+
+
+called?: (Text[.*])+
+
+CodifiedItem ::=
+   written: |
+   writing: |
+   called:
+
 [Id]
 Defines: Target
 with?: (Assignment)+
@@ -400,10 +411,8 @@ means?: Statement[IsExpression | VariadicIsExpression]
 satisfying: (SatisfyingItem)+
 expressing: (ExpressingItem)+
 using?: (Statement[ColonEqualsExpression])+
-writing?: (Text[.*])+
-written: (Text[.*])+
-called?: (Text[.*])+
 Providing?: (ProvidingItem)+
+Codified: (CodifiedItem)+
 Metadata?: (MetadataItem)+
 
 note: Text[.*]
@@ -426,8 +435,7 @@ when?: (Spec)+
 suchThat?: (Clause)+
 that: (ThatItem)+
 using?: Statement[ColonEqualsExpression]
-written: (Text[.*])+
-called?: (Text[.*])+
+Codified: (CodifiedItem)+
 Metadata?: (MetadataItem)+
 
 ResourceName ::= "@" Name ("." Name)*

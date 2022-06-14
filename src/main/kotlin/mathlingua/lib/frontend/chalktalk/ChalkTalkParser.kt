@@ -74,7 +74,6 @@ import mathlingua.lib.frontend.ast.DEFAULT_OR_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_PIECEWISE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_POSITIVE_FLOAT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_POSITIVE_INT_GROUP
-import mathlingua.lib.frontend.ast.DEFAULT_REFERENCE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_RESOURCE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_RESOURCE_NAME
 import mathlingua.lib.frontend.ast.DEFAULT_SPECIFY_GROUP
@@ -168,8 +167,7 @@ import mathlingua.lib.frontend.ast.ProofSection
 import mathlingua.lib.frontend.ast.ProvidedSection
 import mathlingua.lib.frontend.ast.ProvidingItem
 import mathlingua.lib.frontend.ast.ProvidingSection
-import mathlingua.lib.frontend.ast.ReferenceGroup
-import mathlingua.lib.frontend.ast.ReferenceSection
+import mathlingua.lib.frontend.ast.ReferencesSection
 import mathlingua.lib.frontend.ast.ResourceGroup
 import mathlingua.lib.frontend.ast.ResourceItem
 import mathlingua.lib.frontend.ast.ResourceName
@@ -724,19 +722,8 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             TagGroup(tagSection = sections["tag"] as TagSection, metadata = metadata)
         }
 
-    private fun referenceSection(): ReferenceSection? =
-        section("reference") { ReferenceSection(items = oneOrMore(texts(), it), metadata = it) }
-
-    private fun referenceGroup(): ReferenceGroup? =
-        group(
-            idSpec = IdRequirement.NotAllowed,
-            specs =
-                listOf(
-                    SectionSpec(name = "reference", required = true) { this.referenceSection() }),
-            default = DEFAULT_REFERENCE_GROUP) { _, sections, metadata ->
-            ReferenceGroup(
-                referenceSection = sections["reference"] as ReferenceSection, metadata = metadata)
-        }
+    private fun referencesSection(): ReferencesSection? =
+        section("References") { ReferencesSection(items = oneOrMore(texts(), it), metadata = it) }
 
     private fun definesSection(): DefinesSection? =
         section("Defines") {
@@ -845,8 +832,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             ProvidingSection(items = oneOrMore(providingItems(), it), metadata = it)
         }
 
-    private fun metadataItem(): MetadataItem? =
-        noteGroup() ?: authorGroup() ?: tagGroup() ?: referenceGroup()
+    private fun metadataItem(): MetadataItem? = noteGroup() ?: authorGroup() ?: tagGroup()
 
     private fun metadataItems(): List<MetadataItem> = collect { argument { metadataItem() } }
 
@@ -871,6 +857,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "Providing", required = false) { this.providingSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
+                    SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_DEFINES_GROUP) { id, sections, metadata ->
             DefinesGroup(
@@ -886,6 +873,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 providingSection = sections["Providing"] as ProvidingSection?,
                 usingSection = sections["Using"] as UsingSection?,
                 codifiedSection = sections["Codified"] as CodifiedSection,
+                referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
@@ -904,6 +892,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "that", required = false) { this.thatSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
+                    SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_STATES_GROUP) { id, sections, metadata ->
             StatesGroup(
@@ -915,6 +904,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 thatSection = sections["that"] as ThatSection,
                 usingSection = sections["Using"] as UsingSection?,
                 codifiedSection = sections["Codified"] as CodifiedSection,
+                referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
@@ -1043,6 +1033,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
+                    SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_AXIOM_GROUP) { id, sections, metadata ->
             AxiomGroup(
@@ -1054,6 +1045,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
                 usingSection = sections["Using"] as UsingSection?,
+                referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
@@ -1073,6 +1065,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
+                    SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_CONJECTURE_GROUP) { id, sections, metadata ->
             ConjectureGroup(
@@ -1084,6 +1077,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
                 usingSection = sections["Using"] as UsingSection?,
+                referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }
@@ -1104,6 +1098,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Proof", required = false) { this.proofSection() },
+                    SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_THEOREM_GROUP) { id, sections, metadata ->
             TheoremGroup(
@@ -1116,6 +1111,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 iffSection = sections["iff"] as IffSection?,
                 usingSection = sections["Using"] as UsingSection?,
                 proofSection = sections["Proof"] as ProofSection?,
+                referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
         }

@@ -441,15 +441,9 @@ internal data class TagGroup(val tagSection: TagSection, override val metadata: 
     override fun toCode() = groupToCode(null, tagSection)
 }
 
-internal data class ReferenceSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("reference", metadata) {
+internal data class ReferencesSection(val items: List<Text>, override val metadata: MetaData) :
+    Section("References", metadata) {
     override fun toCode() = sectionToCode(this, *items.toTypedArray())
-}
-
-internal data class ReferenceGroup(
-    val referenceSection: ReferenceSection, override val metadata: MetaData
-) : Group(metadata), MetadataItem {
-    override fun toCode() = groupToCode(null, referenceSection)
 }
 
 internal data class DefinesSection(val target: Target, override val metadata: MetaData) :
@@ -568,6 +562,7 @@ internal data class DefinesGroup(
     val providingSection: ProvidingSection?,
     val usingSection: UsingSection?,
     val codifiedSection: CodifiedSection,
+    val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
@@ -585,6 +580,7 @@ internal data class DefinesGroup(
             providingSection,
             usingSection,
             codifiedSection,
+            referencesSection,
             metadataSection)
 }
 
@@ -608,6 +604,7 @@ internal data class StatesGroup(
     val thatSection: ThatSection,
     val usingSection: UsingSection?,
     val codifiedSection: CodifiedSection,
+    val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
@@ -621,6 +618,7 @@ internal data class StatesGroup(
             thatSection,
             usingSection,
             codifiedSection,
+            referencesSection,
             metadataSection)
 }
 
@@ -708,6 +706,7 @@ internal data class AxiomGroup(
     val thenSection: ThenSection,
     val iffSection: IffSection?,
     val usingSection: UsingSection?,
+    val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
@@ -721,6 +720,7 @@ internal data class AxiomGroup(
             thenSection,
             iffSection,
             usingSection,
+            referencesSection,
             metadataSection)
 }
 
@@ -738,6 +738,7 @@ internal data class ConjectureGroup(
     val thenSection: ThenSection,
     val iffSection: IffSection?,
     val usingSection: UsingSection?,
+    val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
@@ -751,6 +752,7 @@ internal data class ConjectureGroup(
             thenSection,
             iffSection,
             usingSection,
+            referencesSection,
             metadataSection)
 }
 
@@ -769,6 +771,7 @@ internal data class TheoremGroup(
     val iffSection: IffSection?,
     val usingSection: UsingSection?,
     val proofSection: ProofSection?,
+    val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
 ) : Group(metadata), TopLevelGroup {
@@ -783,6 +786,7 @@ internal data class TheoremGroup(
             iffSection,
             usingSection,
             proofSection,
+            referencesSection,
             metadataSection)
 }
 

@@ -221,11 +221,8 @@ internal val DEFAULT_TAG_SECTION = TagSection(items = emptyList(), metadata = DE
 internal val DEFAULT_TAG_GROUP =
     TagGroup(tagSection = DEFAULT_TAG_SECTION, metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_REFERENCE_SECTION =
-    ReferenceSection(items = emptyList(), metadata = DEFAULT_METADATA)
-
-internal val DEFAULT_REFERENCE_GROUP =
-    ReferenceGroup(referenceSection = DEFAULT_REFERENCE_SECTION, metadata = DEFAULT_METADATA)
+internal val DEFAULT_REFERENCES_SECTION =
+    ReferencesSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_DEFINES_SECTION =
     DefinesSection(target = DEFAULT_TARGET, metadata = DEFAULT_METADATA)
@@ -291,6 +288,7 @@ internal val DEFAULT_DEFINES_GROUP =
         usingSection = null,
         providingSection = null,
         codifiedSection = DEFAULT_CODIFIED_SECTION,
+        referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
@@ -308,6 +306,7 @@ internal val DEFAULT_STATES_GROUP =
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = null,
         codifiedSection = DEFAULT_CODIFIED_SECTION,
+        referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
@@ -361,6 +360,7 @@ internal val DEFAULT_AXIOM_GROUP =
         thenSection = DEFAULT_THEN_SECTION,
         iffSection = null,
         usingSection = null,
+        referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
@@ -377,6 +377,7 @@ internal val DEFAULT_CONJECTURE_GROUP =
         thenSection = DEFAULT_THEN_SECTION,
         iffSection = null,
         usingSection = null,
+        referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 
@@ -396,6 +397,7 @@ internal val DEFAULT_THEOREM_GROUP =
         iffSection = null,
         usingSection = null,
         proofSection = null,
+        referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
 

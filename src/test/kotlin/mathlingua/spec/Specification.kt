@@ -956,7 +956,7 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "MetadataItem",
-            anyOf(Def("note:"), Def("author:"), Def("tag:"), Def("reference:")),
+            anyOf(Def("note:"), Def("author:"), Def("tag:")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ProvidingItem",
@@ -1089,6 +1089,18 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = true,
                     classname = "CodifiedSection"),
                 Section(
+                    name = "References",
+                    arg =
+                        OneOrMore(
+                            Def(
+                                """
+                        Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+                           (":offset" "{" [0-9]+ "}")?
+                           (":at" "{" Text[.*] "}"]
+                    """.trimIndent())),
+                    required = false,
+                    classname = "ReferencesSection"),
+                Section(
                     name = "Metadata",
                     arg = OneOrMore(Def("MetadataItem")),
                     required = false,
@@ -1112,24 +1124,6 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Text(".*")),
                     required = true,
                     classname = "TagSection")),
-            DefinitionType.ChalkTalk),
-        DefinitionOf(
-            "reference:",
-            group(
-                "ReferenceGroup",
-                null,
-                Section(
-                    name = "reference",
-                    arg =
-                        OneOrMore(
-                            Def(
-                                """
-                        Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
-                           (":offset" "{" [0-9]+ "}")?
-                           (":at" "{" Text[.*] "}"]
-                    """.trimIndent())),
-                    required = true,
-                    classname = "ReferenceSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ThatItem",
@@ -1171,6 +1165,18 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Def("CodifiedItem")),
                     required = true,
                     classname = "CodifiedSection"),
+                Section(
+                    name = "References",
+                    arg =
+                        OneOrMore(
+                            Def(
+                                """
+                        Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+                           (":offset" "{" [0-9]+ "}")?
+                           (":at" "{" Text[.*] "}"]
+                    """.trimIndent())),
+                    required = false,
+                    classname = "ReferencesSection"),
                 Section(
                     name = "Metadata",
                     arg = OneOrMore(Def("MetadataItem")),
@@ -1301,6 +1307,18 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = false,
                     classname = "UsingSection"),
                 Section(
+                    name = "References",
+                    arg =
+                        OneOrMore(
+                            Def(
+                                """
+                        Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+                           (":offset" "{" [0-9]+ "}")?
+                           (":at" "{" Text[.*] "}"]
+                    """.trimIndent())),
+                    required = false,
+                    classname = "ReferencesSection"),
+                Section(
                     name = "Metadata",
                     arg = OneOrMore(Def("MetadataItem")),
                     required = false,
@@ -1346,6 +1364,18 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
+                Section(
+                    name = "References",
+                    arg =
+                        OneOrMore(
+                            Def(
+                                """
+                        Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+                           (":offset" "{" [0-9]+ "}")?
+                           (":at" "{" Text[.*] "}"]
+                    """.trimIndent())),
+                    required = false,
+                    classname = "ReferencesSection"),
                 Section(
                     name = "Metadata",
                     arg = OneOrMore(Def("MetadataItem")),
@@ -1397,6 +1427,18 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Text(".*")),
                     required = false,
                     classname = "ProofSection"),
+                Section(
+                    name = "References",
+                    arg =
+                        OneOrMore(
+                            Def(
+                                """
+                        Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+                           (":offset" "{" [0-9]+ "}")?
+                           (":at" "{" Text[.*] "}"]
+                    """.trimIndent())),
+                    required = false,
+                    classname = "ReferencesSection"),
                 Section(
                     name = "Metadata",
                     arg = OneOrMore(Def("MetadataItem")),

@@ -363,8 +363,7 @@ as: Text[SignatureExpression]
 MetadataItem ::=
    note: |
    author: |
-   tag: |
-   reference:
+   tag:
 
 ProvidingItem ::=
    view: |
@@ -413,15 +412,14 @@ expressing: (ExpressingItem)+
 Providing?: (ProvidingItem)+
 Using?: (Statement[ColonEqualsExpression])+
 Codified: (CodifiedItem)+
+References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+   (":offset" "{" [0-9]+ "}")?
+   (":at" "{" Text[.*] "}"])+
 Metadata?: (MetadataItem)+
 
 note: Text[.*]
 
 tag: (Text[.*])+
-
-reference: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
-   (":offset" "{" [0-9]+ "}")?
-   (":at" "{" Text[.*] "}"])+
 
 ThatItem ::=
    Clause |
@@ -436,6 +434,9 @@ suchThat?: (Clause)+
 that: (ThatItem)+
 Using?: Statement[ColonEqualsExpression]
 Codified: (CodifiedItem)+
+References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+   (":offset" "{" [0-9]+ "}")?
+   (":at" "{" Text[.*] "}"])+
 Metadata?: (MetadataItem)+
 
 ResourceName ::= "@" Name ("." Name)*
@@ -471,6 +472,9 @@ suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
 Using?: (Statement[ColonEqualsExpression])+
+References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+   (":offset" "{" [0-9]+ "}")?
+   (":at" "{" Text[.*] "}"])+
 Metadata?: (MetadataItem)+
 
 [(Id)?]
@@ -481,6 +485,9 @@ suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
 Using?: (Statement[ColonEqualsExpression])+
+References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+   (":offset" "{" [0-9]+ "}")?
+   (":at" "{" Text[.*] "}"])+
 Metadata?: (MetadataItem)+
 
 [(Id)?]
@@ -492,6 +499,9 @@ then: (Clause)+
 iff?: (Clause)+
 Using?: (Statement[ColonEqualsExpression])+
 Proof?: (Text[.*])+
+References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
+   (":offset" "{" [0-9]+ "}")?
+   (":at" "{" Text[.*] "}"])+
 Metadata?: (MetadataItem)+
 
 TopicName ::= "#" Name ("." Name)*

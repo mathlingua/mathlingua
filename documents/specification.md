@@ -361,8 +361,7 @@ memberSymbols: (Name)+
 as: Text[SignatureExpression]
 
 MetadataItem ::=
-   note: |
-   author: |
+   contributor: |
    tag:
 
 ProvidingItem ::=
@@ -417,8 +416,6 @@ References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":at" "{" Text[.*] "}"])+
 Metadata?: (MetadataItem)+
 
-note: Text[.*]
-
 tag: (Text[.*])+
 
 ThatItem ::=
@@ -446,6 +443,8 @@ type: Text[.*]
 name: Text[.*]
 
 author: (Text[.*])+
+
+contributor: (Text[.*])+
 
 homepage: Text[.*]
 
@@ -538,6 +537,32 @@ is: Text[SignatureExpression]
 
 negativeFloat: 
 is: Text[SignatureExpression]
+
+DocumentedItem ::=
+   loosely: |
+   overview: |
+   motivation: |
+   history: |
+   examples: |
+   related: |
+   discovered: |
+   notes:
+
+loosely: Text[.*]
+
+overview: Text[.*]
+
+motivation: Text[.*]
+
+history: Text[.*]
+
+examples: (Text[.*])+
+
+related: (Text[.*])+
+
+discovered: (Text[.*])+
+
+notes: (Text[.*])+
 
 TopLevelGroup ::=
    Defines: |

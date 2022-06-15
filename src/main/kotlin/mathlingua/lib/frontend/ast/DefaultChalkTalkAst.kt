@@ -205,16 +205,17 @@ internal val DEFAULT_MEMBER_SYMBOLS_GROUP =
         memberSymbolsWhereSection = DEFAULT_MEMBER_SYMBOLS_WHERE_SECTION,
         metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_NOTE_SECTION = NoteSection(items = emptyList(), metadata = DEFAULT_METADATA)
-
-internal val DEFAULT_NOTE_GROUP =
-    NoteGroup(noteSection = DEFAULT_NOTE_SECTION, metadata = DEFAULT_METADATA)
-
 internal val DEFAULT_AUTHOR_SECTION =
     AuthorSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_AUTHOR_GROUP =
     AuthorGroup(authorSection = DEFAULT_AUTHOR_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_CONTRIBUTOR_SECTION =
+    ContributorSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_CONTRIBUTOR_GROUP =
+    ContributorGroup(contributorSection = DEFAULT_CONTRIBUTOR_SECTION, metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_TAG_SECTION = TagSection(items = emptyList(), metadata = DEFAULT_METADATA)
 

@@ -44,12 +44,15 @@ import mathlingua.lib.frontend.ast.CodifiedSection
 import mathlingua.lib.frontend.ast.ConjectureGroup
 import mathlingua.lib.frontend.ast.ConjectureSection
 import mathlingua.lib.frontend.ast.ContentSection
+import mathlingua.lib.frontend.ast.ContributorGroup
+import mathlingua.lib.frontend.ast.ContributorSection
 import mathlingua.lib.frontend.ast.DEFAULT_AND_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_AUTHOR_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_AXIOM_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_CALLED_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_CLAUSE
 import mathlingua.lib.frontend.ast.DEFAULT_CONJECTURE_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_CONTRIBUTOR_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_DEFINES_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_EQUALITY_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_EXISTS_GROUP
@@ -66,7 +69,6 @@ import mathlingua.lib.frontend.ast.DEFAULT_MEMBER_SYMBOLS_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NAME_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NEGATIVE_FLOAT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NEGATIVE_INT_GROUP
-import mathlingua.lib.frontend.ast.DEFAULT_NOTE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NOTE_TOP_LEVEL_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NOT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_OFFSET_GROUP
@@ -145,8 +147,6 @@ import mathlingua.lib.frontend.ast.NegativeIntSection
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.NotGroup
 import mathlingua.lib.frontend.ast.NotSection
-import mathlingua.lib.frontend.ast.NoteGroup
-import mathlingua.lib.frontend.ast.NoteSection
 import mathlingua.lib.frontend.ast.NoteTopLevelGroup
 import mathlingua.lib.frontend.ast.NoteTopLevelSection
 import mathlingua.lib.frontend.ast.OffsetGroup
@@ -689,17 +689,6 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun texts(): List<Text> = collect { argument { text() } }
 
-    private fun noteSection(): NoteSection? =
-        section("note") { NoteSection(items = oneOrMore(texts(), it), metadata = it) }
-
-    private fun noteGroup(): NoteGroup? =
-        group(
-            idSpec = IdRequirement.NotAllowed,
-            specs = listOf(SectionSpec(name = "note", required = true) { this.noteSection() }),
-            default = DEFAULT_NOTE_GROUP) { _, sections, metadata ->
-            NoteGroup(noteSection = sections["note"] as NoteSection, metadata = metadata)
-        }
-
     private fun authorSection(): AuthorSection? =
         section("author") { AuthorSection(items = oneOrMore(texts(), it), metadata = it) }
 
@@ -709,6 +698,23 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             specs = listOf(SectionSpec(name = "author", required = true) { this.authorSection() }),
             default = DEFAULT_AUTHOR_GROUP) { _, sections, metadata ->
             AuthorGroup(authorSection = sections["author"] as AuthorSection, metadata = metadata)
+        }
+
+    private fun contributorSection(): ContributorSection? =
+        section("contributor") { ContributorSection(items = oneOrMore(texts(), it), metadata = it) }
+
+    private fun contributorGroup(): ContributorGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "contributor", required = true) {
+                        this.contributorSection()
+                    }),
+            default = DEFAULT_CONTRIBUTOR_GROUP) { _, sections, metadata ->
+            ContributorGroup(
+                contributorSection = sections["contributor"] as ContributorSection,
+                metadata = metadata)
         }
 
     private fun tagSection(): TagSection? =
@@ -832,7 +838,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             ProvidingSection(items = oneOrMore(providingItems(), it), metadata = it)
         }
 
-    private fun metadataItem(): MetadataItem? = noteGroup() ?: authorGroup() ?: tagGroup()
+    private fun metadataItem(): MetadataItem? = contributorGroup() ?: tagGroup()
 
     private fun metadataItems(): List<MetadataItem> = collect { argument { metadataItem() } }
 

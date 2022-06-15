@@ -955,9 +955,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "MemberSymbolsAsSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "MetadataItem",
-            anyOf(Def("note:"), Def("author:"), Def("tag:")),
-            DefinitionType.ChalkTalk),
+            "MetadataItem", anyOf(Def("contributor:"), Def("tag:")), DefinitionType.ChalkTalk),
         DefinitionOf(
             "ProvidingItem",
             anyOf(
@@ -1107,14 +1105,6 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "MetadataSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "note:",
-            group(
-                "NoteGroup",
-                null,
-                Section(
-                    name = "note", arg = Text(".*"), required = true, classname = "NoteSection")),
-            DefinitionType.ChalkTalk),
-        DefinitionOf(
             "tag:",
             group(
                 "TagGroup",
@@ -1215,6 +1205,17 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Text(".*")),
                     required = true,
                     classname = "AuthorSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "contributor:",
+            group(
+                "ContributorGroup",
+                null,
+                Section(
+                    name = "contributor",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "ContributorSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "homepage:",
@@ -1585,6 +1586,106 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = Text("SignatureExpression"),
                     required = true,
                     classname = "IsSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "DocumentedItem",
+            anyOf(
+                Def("loosely:"),
+                Def("overview:"),
+                Def("motivation:"),
+                Def("history:"),
+                Def("examples:"),
+                Def("related:"),
+                Def("discovered:"),
+                Def("notes:")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "loosely:",
+            group(
+                "LooselyGroup",
+                null,
+                Section(
+                    name = "loosely",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "LooselySection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "overview:",
+            group(
+                "OverviewGroup",
+                null,
+                Section(
+                    name = "overview",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "OverviewSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "motivation:",
+            group(
+                "MotivationGroup",
+                null,
+                Section(
+                    name = "motivation",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "MotivationSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "history:",
+            group(
+                "HistoryGroup",
+                null,
+                Section(
+                    name = "history",
+                    arg = Text(".*"),
+                    required = true,
+                    classname = "HistorySection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "examples:",
+            group(
+                "ExamplesGroup",
+                null,
+                Section(
+                    name = "examples",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "ExamplesSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "related:",
+            group(
+                "RelatedGroup",
+                null,
+                Section(
+                    name = "related",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "RelatedSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "discovered:",
+            group(
+                "DiscoveredGroup",
+                null,
+                Section(
+                    name = "discovered",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "DiscoveredSection")),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "notes:",
+            group(
+                "NotesGroup",
+                null,
+                Section(
+                    name = "notes",
+                    arg = OneOrMore(Text(".*")),
+                    required = true,
+                    classname = "NotesSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "TopLevelGroup",

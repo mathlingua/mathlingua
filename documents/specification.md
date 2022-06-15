@@ -411,6 +411,7 @@ expressing: (ExpressingItem)+
 Providing?: (ProvidingItem)+
 Using?: (Statement[ColonEqualsExpression])+
 Codified: (CodifiedItem)+
+Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":offset" "{" [0-9]+ "}")?
    (":at" "{" Text[.*] "}"])+
@@ -431,6 +432,7 @@ suchThat?: (Clause)+
 that: (ThatItem)+
 Using?: Statement[ColonEqualsExpression]
 Codified: (CodifiedItem)+
+Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":offset" "{" [0-9]+ "}")?
    (":at" "{" Text[.*] "}"])+
@@ -471,6 +473,7 @@ suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
 Using?: (Statement[ColonEqualsExpression])+
+Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":offset" "{" [0-9]+ "}")?
    (":at" "{" Text[.*] "}"])+
@@ -484,6 +487,7 @@ suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
 Using?: (Statement[ColonEqualsExpression])+
+Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":offset" "{" [0-9]+ "}")?
    (":at" "{" Text[.*] "}"])+
@@ -498,6 +502,7 @@ then: (Clause)+
 iff?: (Clause)+
 Using?: (Statement[ColonEqualsExpression])+
 Proof?: (Text[.*])+
+Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":offset" "{" [0-9]+ "}")?
    (":at" "{" Text[.*] "}"])+

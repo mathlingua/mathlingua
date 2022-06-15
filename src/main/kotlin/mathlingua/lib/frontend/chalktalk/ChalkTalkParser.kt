@@ -54,28 +54,36 @@ import mathlingua.lib.frontend.ast.DEFAULT_CLAUSE
 import mathlingua.lib.frontend.ast.DEFAULT_CONJECTURE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_CONTRIBUTOR_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_DEFINES_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_DISCOVERED_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_EQUALITY_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_EXAMPLES_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_EXISTS_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_EXISTS_UNIQUE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_FOR_ALL_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_GENERATED_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_HISTORY_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_HOMEPAGE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_ID
 import mathlingua.lib.frontend.ast.DEFAULT_IFF_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_IF_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_LOOSELY_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_MATCHING_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_MEMBERSHIP_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_MEMBER_SYMBOLS_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_MOTIVATION_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NAME_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NEGATIVE_FLOAT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NEGATIVE_INT_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_NOTES_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NOTE_TOP_LEVEL_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_NOT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_OFFSET_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_OR_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_OVERVIEW_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_PIECEWISE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_POSITIVE_FLOAT_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_POSITIVE_INT_GROUP
+import mathlingua.lib.frontend.ast.DEFAULT_RELATED_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_RESOURCE_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_RESOURCE_NAME
 import mathlingua.lib.frontend.ast.DEFAULT_SPECIFY_GROUP
@@ -96,12 +104,18 @@ import mathlingua.lib.frontend.ast.DEFAULT_WRITTEN_GROUP
 import mathlingua.lib.frontend.ast.DEFAULT_ZERO_GROUP
 import mathlingua.lib.frontend.ast.DefinesGroup
 import mathlingua.lib.frontend.ast.DefinesSection
+import mathlingua.lib.frontend.ast.DiscoveredGroup
+import mathlingua.lib.frontend.ast.DiscoveredSection
 import mathlingua.lib.frontend.ast.Document
+import mathlingua.lib.frontend.ast.DocumentedItem
+import mathlingua.lib.frontend.ast.DocumentedSection
 import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
 import mathlingua.lib.frontend.ast.EqualityGroup
 import mathlingua.lib.frontend.ast.EqualitySection
+import mathlingua.lib.frontend.ast.ExamplesGroup
+import mathlingua.lib.frontend.ast.ExamplesSection
 import mathlingua.lib.frontend.ast.ExistsGroup
 import mathlingua.lib.frontend.ast.ExistsSection
 import mathlingua.lib.frontend.ast.ExistsUniqueGroup
@@ -117,6 +131,8 @@ import mathlingua.lib.frontend.ast.GeneratedGroup
 import mathlingua.lib.frontend.ast.GeneratedSection
 import mathlingua.lib.frontend.ast.GeneratedWhenSection
 import mathlingua.lib.frontend.ast.GivenSection
+import mathlingua.lib.frontend.ast.HistoryGroup
+import mathlingua.lib.frontend.ast.HistorySection
 import mathlingua.lib.frontend.ast.HomepageGroup
 import mathlingua.lib.frontend.ast.HomepageSection
 import mathlingua.lib.frontend.ast.Id
@@ -125,6 +141,8 @@ import mathlingua.lib.frontend.ast.IfSection
 import mathlingua.lib.frontend.ast.IffGroup
 import mathlingua.lib.frontend.ast.IffSection
 import mathlingua.lib.frontend.ast.IsSection
+import mathlingua.lib.frontend.ast.LooselyGroup
+import mathlingua.lib.frontend.ast.LooselySection
 import mathlingua.lib.frontend.ast.MatchingGroup
 import mathlingua.lib.frontend.ast.MatchingSection
 import mathlingua.lib.frontend.ast.MeansSection
@@ -135,6 +153,8 @@ import mathlingua.lib.frontend.ast.MembershipGroup
 import mathlingua.lib.frontend.ast.MembershipSection
 import mathlingua.lib.frontend.ast.MetadataItem
 import mathlingua.lib.frontend.ast.MetadataSection
+import mathlingua.lib.frontend.ast.MotivationGroup
+import mathlingua.lib.frontend.ast.MotivationSection
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NameGroup
@@ -149,11 +169,15 @@ import mathlingua.lib.frontend.ast.NotGroup
 import mathlingua.lib.frontend.ast.NotSection
 import mathlingua.lib.frontend.ast.NoteTopLevelGroup
 import mathlingua.lib.frontend.ast.NoteTopLevelSection
+import mathlingua.lib.frontend.ast.NotesGroup
+import mathlingua.lib.frontend.ast.NotesSection
 import mathlingua.lib.frontend.ast.OffsetGroup
 import mathlingua.lib.frontend.ast.OffsetSection
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.OrGroup
 import mathlingua.lib.frontend.ast.OrSection
+import mathlingua.lib.frontend.ast.OverviewGroup
+import mathlingua.lib.frontend.ast.OverviewSection
 import mathlingua.lib.frontend.ast.PiecewiseElseSection
 import mathlingua.lib.frontend.ast.PiecewiseGroup
 import mathlingua.lib.frontend.ast.PiecewiseSection
@@ -168,6 +192,8 @@ import mathlingua.lib.frontend.ast.ProvidedSection
 import mathlingua.lib.frontend.ast.ProvidingItem
 import mathlingua.lib.frontend.ast.ProvidingSection
 import mathlingua.lib.frontend.ast.ReferencesSection
+import mathlingua.lib.frontend.ast.RelatedGroup
+import mathlingua.lib.frontend.ast.RelatedSection
 import mathlingua.lib.frontend.ast.ResourceGroup
 import mathlingua.lib.frontend.ast.ResourceItem
 import mathlingua.lib.frontend.ast.ResourceName
@@ -847,6 +873,132 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             MetadataSection(items = oneOrMore(metadataItems(), it), metadata = it)
         }
 
+    private fun looselySection(): LooselySection? =
+        section("loosely") {
+            LooselySection(content = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
+
+    private fun looselyGroup(): LooselyGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "loosely", required = true) { this.looselySection() }),
+            default = DEFAULT_LOOSELY_GROUP) { _, sections, metadata ->
+            LooselyGroup(
+                looselySection = sections["loosely"] as LooselySection, metadata = metadata)
+        }
+
+    private fun overviewSection(): OverviewSection? =
+        section("overview") {
+            OverviewSection(content = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
+
+    private fun overviewGroup(): OverviewGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "overview", required = true) { this.overviewSection() }),
+            default = DEFAULT_OVERVIEW_GROUP) { _, sections, metadata ->
+            OverviewGroup(
+                overviewSection = sections["overview"] as OverviewSection, metadata = metadata)
+        }
+
+    private fun motivationSection(): MotivationSection? =
+        section("motivation") {
+            MotivationSection(content = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
+
+    private fun motivationGroup(): MotivationGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "motivation", required = true) { this.motivationSection() }),
+            default = DEFAULT_MOTIVATION_GROUP) { _, sections, metadata ->
+            MotivationGroup(
+                motivationSection = sections["motivation"] as MotivationSection,
+                metadata = metadata)
+        }
+
+    private fun historySection(): HistorySection? =
+        section("history") {
+            HistorySection(content = required(argument { text() }, DEFAULT_TEXT), metadata = it)
+        }
+
+    private fun historyGroup(): HistoryGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "history", required = true) { this.historySection() }),
+            default = DEFAULT_HISTORY_GROUP) { _, sections, metadata ->
+            HistoryGroup(
+                historySection = sections["history"] as HistorySection, metadata = metadata)
+        }
+
+    private fun examplesSection(): ExamplesSection? =
+        section("examples") { ExamplesSection(items = oneOrMore(texts(), it), metadata = it) }
+
+    private fun examplesGroup(): ExamplesGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "examples", required = true) { this.examplesSection() }),
+            default = DEFAULT_EXAMPLES_GROUP) { _, sections, metadata ->
+            ExamplesGroup(
+                examplesSection = sections["examples"] as ExamplesSection, metadata = metadata)
+        }
+
+    private fun relatedSection(): RelatedSection? =
+        section("related") { RelatedSection(items = oneOrMore(texts(), it), metadata = it) }
+
+    private fun relatedGroup(): RelatedGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(SectionSpec(name = "related", required = true) { this.relatedSection() }),
+            default = DEFAULT_RELATED_GROUP) { _, sections, metadata ->
+            RelatedGroup(
+                relatedSection = sections["related"] as RelatedSection, metadata = metadata)
+        }
+
+    private fun discoveredSection(): DiscoveredSection? =
+        section("discovered") { DiscoveredSection(items = oneOrMore(texts(), it), metadata = it) }
+
+    private fun discoveredGroup(): DiscoveredGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs =
+                listOf(
+                    SectionSpec(name = "discovered", required = true) { this.discoveredSection() }),
+            default = DEFAULT_DISCOVERED_GROUP) { _, sections, metadata ->
+            DiscoveredGroup(
+                discoveredSection = sections["discovered"] as DiscoveredSection,
+                metadata = metadata)
+        }
+
+    private fun notesSection(): NotesSection? =
+        section("notes") { NotesSection(items = oneOrMore(texts(), it), metadata = it) }
+
+    private fun notesGroup(): NotesGroup? =
+        group(
+            idSpec = IdRequirement.NotAllowed,
+            specs = listOf(SectionSpec(name = "notes", required = true) { this.notesSection() }),
+            default = DEFAULT_NOTES_GROUP) { _, sections, metadata ->
+            NotesGroup(notesSection = sections["notes"] as NotesSection, metadata = metadata)
+        }
+
+    private fun documentedItem(): DocumentedItem? =
+        looselyGroup()
+            ?: overviewGroup() ?: motivationGroup() ?: historyGroup() ?: examplesGroup()
+                ?: relatedGroup() ?: discoveredGroup() ?: notesGroup()
+
+    private fun documentedItems(): List<DocumentedItem> = collect { argument { documentedItem() } }
+
+    private fun documentedSection(): DocumentedSection? =
+        section("Documented") {
+            DocumentedSection(items = oneOrMore(documentedItems(), it), metadata = it)
+        }
+
     private fun definesGroup(): DefinesGroup? =
         group(
             idSpec = IdRequirement.Required,
@@ -863,6 +1015,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "Providing", required = false) { this.providingSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
+                    SectionSpec(name = "Documented", required = false) { this.documentedSection() },
                     SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_DEFINES_GROUP) { id, sections, metadata ->
@@ -879,6 +1032,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 providingSection = sections["Providing"] as ProvidingSection?,
                 usingSection = sections["Using"] as UsingSection?,
                 codifiedSection = sections["Codified"] as CodifiedSection,
+                documentedSection = sections["Documented"] as DocumentedSection?,
                 referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
@@ -898,6 +1052,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "that", required = false) { this.thatSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Codified", required = true) { this.codifiedSection() },
+                    SectionSpec(name = "Documented", required = false) { this.documentedSection() },
                     SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_STATES_GROUP) { id, sections, metadata ->
@@ -910,6 +1065,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 thatSection = sections["that"] as ThatSection,
                 usingSection = sections["Using"] as UsingSection?,
                 codifiedSection = sections["Codified"] as CodifiedSection,
+                documentedSection = sections["Documented"] as DocumentedSection?,
                 referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
@@ -1039,6 +1195,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
+                    SectionSpec(name = "Documented", required = false) { this.documentedSection() },
                     SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_AXIOM_GROUP) { id, sections, metadata ->
@@ -1051,6 +1208,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
                 usingSection = sections["Using"] as UsingSection?,
+                documentedSection = sections["Documented"] as DocumentedSection?,
                 referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
@@ -1071,6 +1229,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "then", required = true) { this.thenSection() },
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
+                    SectionSpec(name = "Documented", required = false) { this.documentedSection() },
                     SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_CONJECTURE_GROUP) { id, sections, metadata ->
@@ -1083,6 +1242,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 thenSection = sections["then"] as ThenSection,
                 iffSection = sections["iff"] as IffSection?,
                 usingSection = sections["Using"] as UsingSection?,
+                documentedSection = sections["Documented"] as DocumentedSection?,
                 referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)
@@ -1104,6 +1264,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     SectionSpec(name = "iff", required = false) { this.iffSection() },
                     SectionSpec(name = "Using", required = false) { this.usingSection() },
                     SectionSpec(name = "Proof", required = false) { this.proofSection() },
+                    SectionSpec(name = "Documented", required = false) { this.documentedSection() },
                     SectionSpec(name = "References", required = false) { this.referencesSection() },
                     SectionSpec(name = "Metadata", required = false) { this.metadataSection() }),
             default = DEFAULT_THEOREM_GROUP) { id, sections, metadata ->
@@ -1117,6 +1278,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 iffSection = sections["iff"] as IffSection?,
                 usingSection = sections["Using"] as UsingSection?,
                 proofSection = sections["Proof"] as ProofSection?,
+                documentedSection = sections["Documented"] as DocumentedSection?,
                 referencesSection = sections["References"] as ReferencesSection?,
                 metadataSection = sections["Metadata"] as MetadataSection?,
                 metadata = metadata)

@@ -1087,6 +1087,12 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = true,
                     classname = "CodifiedSection"),
                 Section(
+                    name = "Documented",
+                    arg = OneOrMore(Def("DocumentedItem")),
+                    required = false,
+                    classname = "DocumentedSection",
+                ),
+                Section(
                     name = "References",
                     arg =
                         OneOrMore(
@@ -1155,6 +1161,12 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Def("CodifiedItem")),
                     required = true,
                     classname = "CodifiedSection"),
+                Section(
+                    name = "Documented",
+                    arg = OneOrMore(Def("DocumentedItem")),
+                    required = false,
+                    classname = "DocumentedSection",
+                ),
                 Section(
                     name = "References",
                     arg =
@@ -1308,6 +1320,12 @@ internal val MATHLINGUA_SPECIFICATION =
                     required = false,
                     classname = "UsingSection"),
                 Section(
+                    name = "Documented",
+                    arg = OneOrMore(Def("DocumentedItem")),
+                    required = false,
+                    classname = "DocumentedSection",
+                ),
+                Section(
                     name = "References",
                     arg =
                         OneOrMore(
@@ -1365,6 +1383,12 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
+                Section(
+                    name = "Documented",
+                    arg = OneOrMore(Def("DocumentedItem")),
+                    required = false,
+                    classname = "DocumentedSection",
+                ),
                 Section(
                     name = "References",
                     arg =
@@ -1428,6 +1452,12 @@ internal val MATHLINGUA_SPECIFICATION =
                     arg = OneOrMore(Text(".*")),
                     required = false,
                     classname = "ProofSection"),
+                Section(
+                    name = "Documented",
+                    arg = OneOrMore(Def("DocumentedItem")),
+                    required = false,
+                    classname = "DocumentedSection",
+                ),
                 Section(
                     name = "References",
                     arg =

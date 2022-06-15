@@ -275,6 +275,9 @@ internal val DEFAULT_METADATA_SECTION =
 internal val DEFAULT_CODIFIED_SECTION =
     CodifiedSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
+internal val DEFAULT_DOCUMENTED_SECTION =
+    DocumentedSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
 internal val DEFAULT_DEFINES_GROUP =
     DefinesGroup(
         id = DEFAULT_ID,
@@ -289,6 +292,7 @@ internal val DEFAULT_DEFINES_GROUP =
         usingSection = null,
         providingSection = null,
         codifiedSection = DEFAULT_CODIFIED_SECTION,
+        documentedSection = null,
         referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
@@ -307,6 +311,7 @@ internal val DEFAULT_STATES_GROUP =
         thatSection = DEFAULT_THAT_SECTION,
         usingSection = null,
         codifiedSection = DEFAULT_CODIFIED_SECTION,
+        documentedSection = null,
         referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
@@ -361,6 +366,7 @@ internal val DEFAULT_AXIOM_GROUP =
         thenSection = DEFAULT_THEN_SECTION,
         iffSection = null,
         usingSection = null,
+        documentedSection = null,
         referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
@@ -378,6 +384,7 @@ internal val DEFAULT_CONJECTURE_GROUP =
         thenSection = DEFAULT_THEN_SECTION,
         iffSection = null,
         usingSection = null,
+        documentedSection = null,
         referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
@@ -398,6 +405,7 @@ internal val DEFAULT_THEOREM_GROUP =
         iffSection = null,
         usingSection = null,
         proofSection = null,
+        documentedSection = null,
         referencesSection = null,
         metadataSection = null,
         metadata = DEFAULT_METADATA)
@@ -473,5 +481,52 @@ internal val DEFAULT_NEGATIVE_FLOAT_GROUP =
         negativeFloatSection = DEFAULT_NEGATIVE_FLOAT_SECTION,
         isSection = DEFAULT_IS_SECTION,
         metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_LOOSELY_SECTION =
+    LooselySection(content = DEFAULT_TEXT, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_LOOSELY_GROUP =
+    LooselyGroup(looselySection = DEFAULT_LOOSELY_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_OVERVIEW_SECTION =
+    OverviewSection(content = DEFAULT_TEXT, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_OVERVIEW_GROUP =
+    OverviewGroup(overviewSection = DEFAULT_OVERVIEW_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_MOTIVATION_SECTION =
+    MotivationSection(content = DEFAULT_TEXT, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_MOTIVATION_GROUP =
+    MotivationGroup(motivationSection = DEFAULT_MOTIVATION_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_HISTORY_SECTION =
+    HistorySection(content = DEFAULT_TEXT, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_HISTORY_GROUP =
+    HistoryGroup(historySection = DEFAULT_HISTORY_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_EXAMPLES_SECTION =
+    ExamplesSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_EXAMPLES_GROUP =
+    ExamplesGroup(examplesSection = DEFAULT_EXAMPLES_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_RELATED_SECTION =
+    RelatedSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_RELATED_GROUP =
+    RelatedGroup(relatedSection = DEFAULT_RELATED_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_DISCOVERED_SECTION =
+    DiscoveredSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_DISCOVERED_GROUP =
+    DiscoveredGroup(discoveredSection = DEFAULT_DISCOVERED_SECTION, metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_NOTES_SECTION = NotesSection(items = emptyList(), metadata = DEFAULT_METADATA)
+
+internal val DEFAULT_NOTES_GROUP =
+    NotesGroup(notesSection = DEFAULT_NOTES_SECTION, metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_DOCUMENT = Document(items = emptyList())

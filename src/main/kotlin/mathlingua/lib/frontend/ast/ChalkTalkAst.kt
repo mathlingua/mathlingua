@@ -453,7 +453,7 @@ internal data class DefinesSection(val target: Target, override val metadata: Me
 }
 
 internal data class WithSection(
-    val assignments: List<Assignment>, override val metadata: MetaData
+    val assignments: List<NameAssignment>, override val metadata: MetaData
 ) : Section("with", metadata) {
     override fun toCode() = sectionToCode(this, *assignments.toTypedArray())
 }

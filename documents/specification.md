@@ -15,12 +15,6 @@ NameAssignmentItem ::=
 
 NameAssignment ::= Name ":=" NameAssignmentItem
 
-FunctionAssignment ::= Function ":=" Function
-
-Assignment ::=
-   NameAssignment |
-   FunctionAssignment
-
 NameOrVariadicName ::=
    Name |
    VariadicName
@@ -55,7 +49,7 @@ NameOrNameAssignment ::=
 Set ::= "{" NameOrNameAssignment ("," NameOrNameAssignment)* "}"
 
 Target ::=
-   Assignment |
+   NameAssignment |
    Name |
    OperatorName |
    Tuple |

@@ -25,7 +25,6 @@ import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ast.AndGroup
 import mathlingua.lib.frontend.ast.AndSection
 import mathlingua.lib.frontend.ast.AsSection
-import mathlingua.lib.frontend.ast.Assignment
 import mathlingua.lib.frontend.ast.AuthorGroup
 import mathlingua.lib.frontend.ast.AuthorSection
 import mathlingua.lib.frontend.ast.AxiomGroup
@@ -126,7 +125,6 @@ import mathlingua.lib.frontend.ast.ForAllGroup
 import mathlingua.lib.frontend.ast.ForAllSection
 import mathlingua.lib.frontend.ast.FromSection
 import mathlingua.lib.frontend.ast.Function
-import mathlingua.lib.frontend.ast.FunctionAssignment
 import mathlingua.lib.frontend.ast.GeneratedGroup
 import mathlingua.lib.frontend.ast.GeneratedSection
 import mathlingua.lib.frontend.ast.GeneratedWhenSection
@@ -372,7 +370,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                     null
                 }
             }
-                ?: set() ?: assignment()
+                ?: set() ?: nameAssignment()
 
     private fun targets(): List<Target> = collect { argument { target() } }
 
@@ -762,12 +760,14 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             DefinesSection(target = required(argument { target() }, DEFAULT_TARGET), metadata = it)
         }
 
-    private fun assignment(): Assignment? = getNextIfCorrectType()
+    private fun nameAssignment(): NameAssignment? = getNextIfCorrectType()
 
-    private fun assignments(): List<Assignment> = collect { argument { assignment() } }
+    private fun nameAssignments(): List<NameAssignment> = collect { argument { nameAssignment() } }
 
     private fun withSection(): WithSection? =
-        section("with") { WithSection(assignments = oneOrMore(assignments(), it), metadata = it) }
+        section("with") {
+            WithSection(assignments = oneOrMore(nameAssignments(), it), metadata = it)
+        }
 
     private fun givenSection(): GivenSection? =
         section("given") { GivenSection(targets = oneOrMore(targets(), it), metadata = it) }
@@ -1803,7 +1803,6 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 null
             }
             is Statement -> "statement"
-            is FunctionAssignment -> "function assignment"
             is NameAssignment -> "name assignment"
             is Function -> "function"
             is SubAndRegularParamCall -> "function"

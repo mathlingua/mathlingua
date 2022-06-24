@@ -16,6 +16,9 @@
 
 package mathlingua.spec
 
+import mathlingua.lib.getSpecificationMarkdown
+import mathlingua.lib.getSpecificationMarkdownFile
+
 fun main() {
     val specFile = getSpecificationMarkdownFile()
     specFile.writeText(getSpecificationMarkdown())

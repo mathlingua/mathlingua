@@ -175,14 +175,11 @@ internal data class SubAndRegularParamSequence(
     }
 }
 
-// assignments
-internal sealed interface Assignment : Target
-// <name> | <operator> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface NameAssignmentItem : CommonNode
 
 internal data class NameAssignment(
     val lhs: Name, val rhs: NameAssignmentItem, override val metadata: MetaData
-) : Assignment, NameOrNameAssignment {
+) : Target, NameOrNameAssignment {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(lhs.toCode())
@@ -192,22 +189,8 @@ internal data class NameAssignment(
     }
 }
 
-internal data class FunctionAssignment(
-    val lhs: FunctionCall, val rhs: FunctionCall, override val metadata: MetaData
-) : Assignment {
-    override fun toCode(): String {
-        val builder = StringBuilder()
-        builder.append(lhs.toCode())
-        builder.append(" := ")
-        builder.append(rhs.toCode())
-        return builder.toString()
-    }
-}
-
-// <target> | <text> | <statement>
 internal sealed interface Argument : CommonNode
 
-// <name> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface SquareTargetItem : CommonNode
 
 internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) :

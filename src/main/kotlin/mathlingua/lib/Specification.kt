@@ -41,14 +41,6 @@ internal val MATHLINGUA_SPECIFICATION =
             items(Def("Name"), Literal(":="), Def("NameAssignmentItem")),
             DefinitionType.Common),
         DefinitionOf(
-            "FunctionAssignment",
-            items(Def("Function"), Literal(":="), Def("Function")),
-            DefinitionType.Common),
-        DefinitionOf(
-            "Assignment",
-            anyOf(Def("NameAssignment"), Def("FunctionAssignment")),
-            DefinitionType.Common),
-        DefinitionOf(
             "NameOrVariadicName", anyOf(Def("Name"), Def("VariadicName")), DefinitionType.Common),
         DefinitionOf(
             "VariadicName", items(Def("Name"), Optionally(Literal("..."))), DefinitionType.Common),
@@ -153,7 +145,7 @@ internal val MATHLINGUA_SPECIFICATION =
         DefinitionOf(
             "Target",
             anyOf(
-                Def("Assignment"),
+                Def("NameAssignment"),
                 Def("Name"),
                 Def("OperatorName"),
                 Def("Tuple"),

@@ -31,7 +31,6 @@ import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
 import mathlingua.lib.frontend.ast.Function
-import mathlingua.lib.frontend.ast.FunctionAssignment
 import mathlingua.lib.frontend.ast.FunctionCall
 import mathlingua.lib.frontend.ast.Id
 import mathlingua.lib.frontend.ast.Name
@@ -415,15 +414,6 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                             row = func.metadata.row,
                             column = func.metadata.column))
                     null
-                } else if (func is FunctionCall && rhs is FunctionCall) {
-                    FunctionAssignment(
-                        lhs = func,
-                        rhs = rhs,
-                        metadata =
-                            MetaData(
-                                row = func.metadata.row,
-                                column = func.metadata.column,
-                                isInline = isInline))
                 } else {
                     if (func !is FunctionCall) {
                         diagnostics.add(

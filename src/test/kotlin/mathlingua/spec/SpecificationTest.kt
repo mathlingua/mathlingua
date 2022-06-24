@@ -22,6 +22,17 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import mathlingua.lib.AST_PACKAGE
+import mathlingua.lib.AnyOf
+import mathlingua.lib.Group
+import mathlingua.lib.MATHLINGUA_SPECIFICATION
+import mathlingua.lib.addAstPackagePrefix
+import mathlingua.lib.getAllDefinedClassNames
+import mathlingua.lib.getClassname
+import mathlingua.lib.getClassnameForDefName
+import mathlingua.lib.getName
+import mathlingua.lib.getSpecificationMarkdown
+import mathlingua.lib.getSpecificationMarkdownFile
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 

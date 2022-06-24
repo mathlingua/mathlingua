@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package mathlingua.spec
+package mathlingua.lib
 
 import java.nio.file.Paths
 

@@ -16,9 +16,9 @@
 
 package mathlingua.lib.frontend.textalk
 
+import java.util.LinkedList
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenType
-import java.util.LinkedList
 
 internal sealed interface TreeNode {
     fun toString(indent: String): String
@@ -105,11 +105,11 @@ private fun TreeNode.splitByNodesMatching(splitTypes: Set<TexTalkTokenType>): Tr
             } else {
                 val nodeList = this.nodes.toMutableList()
                 SplitTreeNode(
-                    lhs =
-                    listToTreeNode(nodeList.subList(0, index))
-                        ?.splitByNodesMatching(splitTypes),
-                    center = nodeList[index].splitByNodesMatching(splitTypes),
-                    rhs = listToTreeNode(nodeList.subList(index + 1, this.nodes.size)))
+                        lhs =
+                            listToTreeNode(nodeList.subList(0, index))
+                                ?.splitByNodesMatching(splitTypes),
+                        center = nodeList[index].splitByNodesMatching(splitTypes),
+                        rhs = listToTreeNode(nodeList.subList(index + 1, this.nodes.size)))
                     .splitByNodesMatching(splitTypes)
             }
         }

@@ -44,6 +44,10 @@ internal fun getContentDir(baseDir: File) = File(baseDir, "content")
 
 internal fun cwd() = Paths.get(".").toAbsolutePath().normalize().toFile()
 
+// the extension should be of the form .ext
+internal fun File.findFilesWithExtension(ext: String) =
+    this.walkTopDown().filter { it.isFile && it.name.endsWith(ext) }
+
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private data class WorkspaceItem(

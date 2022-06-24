@@ -17,6 +17,8 @@
 package mathlingua.lib
 
 import java.io.File
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
 import mathlingua.lib.backend.cwd
 import mathlingua.lib.backend.getDocsDir
 import mathlingua.lib.backend.newWorkspace
@@ -26,8 +28,13 @@ private const val VERSION = "0.16"
 
 private const val CNAME_FILE_NAME = "CNAME"
 
+@Serializable
 data class FileDiagnostic(
-    val file: File, val type: DiagnosticType, val message: String, val row: Int, val column: Int)
+    @Contextual val file: File,
+    val type: DiagnosticType,
+    val message: String,
+    val row: Int,
+    val column: Int)
 
 interface Mlg {
     fun check(files: List<File>): List<FileDiagnostic>

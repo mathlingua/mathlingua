@@ -180,7 +180,7 @@ internal fun TreeNode.treeNodeToTexTalkNodeList(
                 is ListTreeNode -> {
                     toTexTalkNodeList(
                         diagnostics,
-                        this.content as ListTreeNode,
+                        (this.content as ListTreeNode).nodes,
                         this.prefix?.row ?: -1,
                         this.prefix?.column ?: -1)
                 }
@@ -190,10 +190,13 @@ internal fun TreeNode.treeNodeToTexTalkNodeList(
             }
         }
         is ListTreeNode -> {
-            toTexTalkNodeList(diagnostics, this, -1, -1)
+            toTexTalkNodeList(diagnostics, this.nodes, -1, -1)
         }
         is SplitTreeNode -> {
             mutableListOfNotNull(this.toTexTalkNode(diagnostics))
+        }
+        is UnitTreeNode -> {
+            toTexTalkNodeList(diagnostics, this.nodes, -1, -1)
         }
     }
 
@@ -201,11 +204,10 @@ internal fun TreeNode.treeNodeToTexTalkNodeList(
 
 private fun toTexTalkNodeList(
     diagnostics: MutableList<Diagnostic>,
-    treeNode: ListTreeNode,
+    nodes: MutableList<TreeNode>,
     fallbackRow: Int,
     fallbackColumn: Int
 ): MutableList<TexTalkNode> {
-    val nodes = treeNode.nodes
     val result = mutableListOf<TexTalkNode>()
     while (nodes.isNotEmpty()) {
         val subQueue = mutableListOf<TreeNode>()

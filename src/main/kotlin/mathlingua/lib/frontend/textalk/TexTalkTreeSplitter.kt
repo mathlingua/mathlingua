@@ -70,12 +70,22 @@ internal data class SplitTreeNode(var lhs: TreeNode?, var center: TreeNode?, var
     override fun startsWith(type: TexTalkTokenType) = lhs?.startsWith(type) ?: false
 }
 
+internal data class UnitTreeNode(val nodes: MutableList<TreeNode>, val terminator: TexTalkToken?) :
+    TreeNode {
+    override fun toString(indent: String) =
+        "$indent${nodes.map { it.toString("") }}${terminator?.text ?: ""}"
+    override fun row() = nodes.firstOrNull()?.row()
+    override fun column() = nodes.firstOrNull()?.column()
+    override fun startsWith(type: TexTalkTokenType) = nodes.firstOrNull()?.startsWith(type) ?: false
+}
+
 internal fun lexerToTree(lexer: TexTalkLexer) =
     groupByParens(lexer)
         ?.splitByNodesMatching(
             setOf(TexTalkTokenType.Is, TexTalkTokenType.In, TexTalkTokenType.NotIn))
         ?.splitByNodesMatching(setOf(TexTalkTokenType.Equals, TexTalkTokenType.NotEqual))
         ?.splitByNodesMatching(setOf(TexTalkTokenType.As))
+        ?.splitForUnitNodes()
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -97,6 +107,8 @@ private fun TreeNode.splitByNodesMatching(splitTypes: Set<TexTalkTokenType>): Tr
                 content = this.content?.splitByNodesMatching(splitTypes),
                 suffix = this.suffix)
         }
+        is UnitTreeNode ->
+            throw Exception("Unit nodes shouldn't exist when splitting by $splitTypes")
         is ListTreeNode -> {
             val index =
                 this.nodes.indexOfFirst { it is AtomTreeNode && it.token.type in splitTypes }
@@ -141,6 +153,55 @@ private fun groupByParens(lexer: TexTalkLexer): TreeNode? {
     }
     return listToTreeNode(nodes)
 }
+
+private fun TreeNode.splitForUnitNodes(): TreeNode =
+    when (this) {
+        is SplitTreeNode -> {
+            SplitTreeNode(
+                lhs = lhs?.splitForUnitNodes(),
+                center = center?.splitForUnitNodes(),
+                rhs = rhs?.splitForUnitNodes())
+        }
+        is UnitTreeNode ->
+            throw Exception("Unit nodes shouldn't be encountered when splitting for Unit nodes")
+        is AtomTreeNode -> this
+        is ParenTreeNode -> {
+            ParenTreeNode(
+                prefix = this.prefix,
+                content = this.content?.splitForUnitNodes(),
+                suffix = this.suffix)
+        }
+        is ListTreeNode -> {
+            val newNodes = mutableListOf<TreeNode>()
+            var i = 0
+            while (i < this.nodes.size) {
+                val subNodes = mutableListOf<TreeNode>()
+                while (i < this.nodes.size && !this.nodes.has(TexTalkTokenType.Comma)) {
+                    subNodes.add(this.nodes[i++])
+                }
+                val commaNode =
+                    if (this.nodes.has(TexTalkTokenType.Comma)) {
+                        this.nodes[i++] // move past the comma
+                    } else {
+                        null
+                    }
+                val comma =
+                    if (commaNode is AtomTreeNode) {
+                        commaNode.token
+                    } else {
+                        null
+                    }
+                if (subNodes.isNotEmpty()) {
+                    newNodes.add(UnitTreeNode(nodes = subNodes, terminator = comma))
+                }
+            }
+            if (newNodes.size == 1) {
+                newNodes[0]
+            } else {
+                ListTreeNode(newNodes)
+            }
+        }
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 

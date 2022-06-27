@@ -23,3 +23,12 @@ internal val DEFAULT_VARIADIC_TARGET: VariadicTarget =
 
 internal val DEFAULT_VARIADIC_IS_RHS: VariadicIsRhs =
     VariadicName(name = DEFAULT_NAME, metadata = DEFAULT_METADATA)
+
+internal fun <T : TexTalkNode> defaultParenNodeList(): ParenNodeList<T> =
+    ParenNodeList(nodes = emptyList(), metadata = DEFAULT_METADATA)
+
+internal fun <T : TexTalkNode> defaultSquareNodeList(): SquareNodeList<T> =
+    SquareNodeList(nodes = emptyList(), metadata = DEFAULT_METADATA)
+
+internal fun <T : TexTalkNode> defaultCurlyNodeList(): CurlyNodeList<T> =
+    CurlyNodeList(nodes = emptyList(), metadata = DEFAULT_METADATA)

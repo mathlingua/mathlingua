@@ -58,18 +58,43 @@ internal data class TexTalkToken(
     val type: TexTalkTokenType, val text: String, val row: Int, val column: Int
 ) : TexTalkNodeOrToken
 
+internal sealed interface NodeList<T : TexTalkNode> : TexTalkNode {
+    val nodes: List<T>
+}
+
+internal data class NonBracketNodeList<T : TexTalkNode>(
+    override val nodes: List<T>, override val metadata: MetaData
+) : NodeList<T>
+
+internal data class ParenNodeList<T : TexTalkNode>(
+    override val nodes: List<T>, override val metadata: MetaData
+) : NodeList<T>
+
+internal data class SquareNodeList<T : TexTalkNode>(
+    override val nodes: List<T>, override val metadata: MetaData
+) : NodeList<T>
+
+internal data class SquareColonNodeList<T : TexTalkNode>(
+    override val nodes: List<T>, override val metadata: MetaData
+) : NodeList<T>
+
+internal data class CurlyNodeList<T : TexTalkNode>(
+    override val nodes: List<T>, override val metadata: MetaData
+) : NodeList<T>
+
 internal data class NamedParameterExpression(
-    val name: Name, val params: List<Expression>, override val metadata: MetaData
+    val name: Name, val params: CurlyNodeList<Expression>, override val metadata: MetaData
 ) : TexTalkNode
 
 internal class SquareParams private constructor(private val value: Any) {
-    constructor(items: List<SquareTargetItem>) : this(items as Any)
+    constructor(items: SquareNodeList<SquareTargetItem>) : this(items as Any)
     constructor(variadicName: VariadicName) : this(variadicName as Any)
 
-    fun isSquareTargetItems() = value is List<*>
+    fun isSquareTargetItems() = value is SquareNodeList<*>
 
     @Suppress("UNCHECKED_CAST")
-    fun asSquareTargetItems(): List<SquareTargetItem> = value as List<SquareTargetItem>
+    fun asSquareTargetItems(): SquareNodeList<SquareTargetItem> =
+        value as SquareNodeList<SquareTargetItem>
 
     fun isNameParam() = value is VariadicName
     fun asNameParam() = value as VariadicName
@@ -78,30 +103,30 @@ internal class SquareParams private constructor(private val value: Any) {
 }
 
 internal data class CommandExpression(
-    val names: List<Name>,
+    val names: NonBracketNodeList<Name>,
     val squareParams: SquareParams?,
-    val subParams: List<Expression>?,
-    val supParams: List<Expression>?,
-    val curlyParams: List<Expression>?,
-    val namedParams: List<NamedParameterExpression>?,
-    val parenParams: List<Expression>?,
+    val subParams: CurlyNodeList<Expression>?,
+    val supParams: CurlyNodeList<Expression>?,
+    val curlyParams: CurlyNodeList<Expression>?,
+    val namedParams: NonBracketNodeList<NamedParameterExpression>?,
+    val parenParams: ParenNodeList<Expression>?,
     override val metadata: MetaData
 ) : TexTalkNode, NameOrCommand, Expression, VariadicIsRhs {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class NamedParameterForm(
-    val name: Name, val params: List<NameOrVariadicName>, override val metadata: MetaData
+    val name: Name, val params: CurlyNodeList<NameOrVariadicName>, override val metadata: MetaData
 ) : TexTalkNode
 
 internal data class CommandForm(
-    val names: List<Name>,
+    val names: NonBracketNodeList<Name>,
     val squareParams: SquareParams?,
-    val subParams: List<NameOrVariadicName>?,
-    val supParams: List<NameOrVariadicName>?,
-    val curlyParams: List<NameOrVariadicName>?,
-    val namedParams: List<NamedParameterForm>?,
-    val parenParams: List<NameOrVariadicName>?,
+    val subParams: CurlyNodeList<NameOrVariadicName>?,
+    val supParams: CurlyNodeList<NameOrVariadicName>?,
+    val curlyParams: CurlyNodeList<NameOrVariadicName>?,
+    val namedParams: NonBracketNodeList<NamedParameterForm>?,
+    val parenParams: ParenNodeList<NameOrVariadicName>?,
     override val metadata: MetaData
 ) : IdForm, TexTalkNode {
     override fun toCode(): String {
@@ -132,13 +157,17 @@ internal data class VariadicIsExpression(
 }
 
 internal data class IsExpression(
-    val lhs: List<Target>, val rhs: List<NameOrCommand>, override val metadata: MetaData
+    val lhs: NonBracketNodeList<Target>,
+    val rhs: NonBracketNodeList<NameOrCommand>,
+    override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class SignatureExpression(
-    val names: List<Name>, val colonNames: List<Name>, override val metadata: MetaData
+    val names: NonBracketNodeList<Name>,
+    val colonNames: NonBracketNodeList<Name>,
+    override val metadata: MetaData
 ) : TexTalkNode
 
 internal data class AsExpression(
@@ -154,7 +183,7 @@ internal data class VariadicInExpression(
 }
 
 internal data class InExpression(
-    val lhs: List<Target>, val rhs: Expression, override val metadata: MetaData
+    val lhs: NonBracketNodeList<Target>, val rhs: Expression, override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -166,7 +195,7 @@ internal data class VariadicNotInExpression(
 }
 
 internal data class NotInExpression(
-    val lhs: List<Target>, val rhs: Expression, override val metadata: MetaData
+    val lhs: NonBracketNodeList<Target>, val rhs: Expression, override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -212,7 +241,7 @@ internal data class ParenGroupingExpression(
 internal sealed interface Operator : TexTalkNode
 
 internal data class MemberScopedOperatorName(
-    val prefixes: List<Name>, val name: Name, override val metadata: MetaData
+    val prefixes: NonBracketNodeList<Name>, val name: Name, override val metadata: MetaData
 ) : Operator
 
 internal data class TypeScopedInfixOperatorName(
@@ -224,7 +253,7 @@ internal data class TypeScopedOperatorName(
 ) : Operator
 
 internal data class MemberScopedName(
-    val prefixes: List<Name>, val name: Name, override val metadata: MetaData
+    val prefixes: NonBracketNodeList<Name>, val name: Name, override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -253,28 +282,29 @@ internal data class PostfixOperatorExpression(
 internal sealed interface CallExpression : Expression
 
 internal data class FunctionCallExpression(
-    val name: Name, val args: List<Expression>, override val metadata: MetaData
+    val name: Name, val args: ParenNodeList<Expression>, override val metadata: MetaData
 ) : CallExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class SubParamCallExpression(
-    val name: Name, val subArgs: List<Expression>, override val metadata: MetaData
+    val name: Name, val subArgs: ParenNodeList<Expression>, override val metadata: MetaData
 ) : CallExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class SubAndRegularParamCallExpression(
     val name: Name,
-    val subArgs: List<Expression>,
-    val args: List<Expression>,
+    val subArgs: ParenNodeList<Expression>,
+    val args: ParenNodeList<Expression>,
     override val metadata: MetaData
 ) : CallExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal data class TupleExpression(val args: List<Expression>, override val metadata: MetaData) :
-    Expression {
+internal data class TupleExpression(
+    val args: ParenNodeList<Expression>, override val metadata: MetaData
+) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
@@ -334,8 +364,9 @@ internal data class ExpressionIsFormItem(override val metadata: MetaData) : Meta
 
 internal data class DefinitionIsFormItem(override val metadata: MetaData) : MetaIsFormItem
 
-internal data class MetaIsForm(val items: List<MetaIsFormItem>, override val metadata: MetaData) :
-    TexTalkNode
+internal data class MetaIsForm(
+    val items: SquareColonNodeList<MetaIsFormItem>, override val metadata: MetaData
+) : TexTalkNode
 
 internal data class IdInfixOperatorCall(
     val lhs: Name, val center: OperatorName, val rhs: Name, override val metadata: MetaData
@@ -375,4 +406,12 @@ internal data class InfixCommandExpressionForm(
 
 internal object EmptyTexTalkNode : TexTalkNode {
     override val metadata = MetaData(row = -1, column = -1, isInline = null)
+}
+
+/**
+ * This class is only used to wrap a TexTalkToken into a form that is a TexTalkNode that can be used
+ * in the parser.
+ */
+internal data class TexTalkTokenNode(val token: TexTalkToken) : TexTalkNode {
+    override val metadata = MetaData(row = token.row, column = token.column, isInline = null)
 }

@@ -17,6 +17,7 @@
 package mathlingua.lib.frontend.textalk
 
 import mathlingua.lib.frontend.Diagnostic
+import mathlingua.lib.frontend.ast.EmptyTexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkNode
 
 internal interface TexTalkParser {
@@ -29,11 +30,9 @@ internal fun newTexTalkParser(lexer: TexTalkLexer): TexTalkParser = TexTalkParse
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private class TexTalkParserImpl(private val lexer: TexTalkLexer) : TexTalkParser {
-    override fun parse(): TexTalkNode {
-        TODO("Not yet implemented")
-    }
+    private val diagnostic = mutableListOf<Diagnostic>()
 
-    override fun diagnostics(): List<Diagnostic> {
-        TODO("Not yet implemented")
-    }
+    override fun diagnostics() = diagnostic
+
+    override fun parse() = lexer.toTree()?.toTexTalkNode(diagnostics()) ?: EmptyTexTalkNode
 }

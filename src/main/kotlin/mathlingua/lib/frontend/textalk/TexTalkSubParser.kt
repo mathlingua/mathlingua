@@ -18,37 +18,31 @@ package mathlingua.lib.frontend.textalk
 
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.MetaData
-import mathlingua.lib.frontend.ast.AssignmentIsFormItem
 import mathlingua.lib.frontend.ast.CommandExpression
 import mathlingua.lib.frontend.ast.CommandForm
+import mathlingua.lib.frontend.ast.CurlyNodeList
 import mathlingua.lib.frontend.ast.DEFAULT_NAME
-import mathlingua.lib.frontend.ast.DefinitionIsFormItem
 import mathlingua.lib.frontend.ast.Expression
-import mathlingua.lib.frontend.ast.ExpressionIsFormItem
 import mathlingua.lib.frontend.ast.Function
 import mathlingua.lib.frontend.ast.FunctionCall
-import mathlingua.lib.frontend.ast.MetaIsForm
-import mathlingua.lib.frontend.ast.MetaIsFormItem
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NamedParameterExpression
 import mathlingua.lib.frontend.ast.NamedParameterForm
+import mathlingua.lib.frontend.ast.NonBracketNodeList
+import mathlingua.lib.frontend.ast.ParenNodeList
 import mathlingua.lib.frontend.ast.SignatureExpression
-import mathlingua.lib.frontend.ast.SpecificationIsFormItem
+import mathlingua.lib.frontend.ast.SquareNodeList
 import mathlingua.lib.frontend.ast.SquareParams
-import mathlingua.lib.frontend.ast.StatementIsFormItem
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
 import mathlingua.lib.frontend.ast.SubParamCall
-import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
+import mathlingua.lib.frontend.ast.TexTalkTokenNode
 import mathlingua.lib.frontend.ast.TexTalkTokenType
-import mathlingua.lib.frontend.ast.Tuple
-import mathlingua.lib.frontend.ast.TupleExpression
 import mathlingua.lib.frontend.ast.VariadicName
-import mathlingua.lib.util.BiUnion
-import mathlingua.lib.util.BiUnionFirst
-import mathlingua.lib.util.BiUnionSecond
+import mathlingua.lib.frontend.ast.defaultCurlyNodeList
+import mathlingua.lib.frontend.ast.defaultParenNodeList
 
 internal interface TexTalkSubParser {
     fun parse(): TexTalkNode?
@@ -61,37 +55,15 @@ internal fun newTexTalkSubParser(
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 private class TexTalkSubParserImpl(
-    private val nodes: MutableList<TreeNode>, private val diagnostics: MutableList<Diagnostic>
+    val treeNodes: MutableList<TreeNode>, private val diagnostics: MutableList<Diagnostic>
 ) : TexTalkSubParser {
+    private val nodes = treeNodes.mapNotNull { it.toTexTalkNode(diagnostics) }.toMutableList()
 
-    override fun parse(): TexTalkNode? = parseIntoSingleNode(diagnostics)
-
-    private fun parseIntoSingleNode(diagnostics: MutableList<Diagnostic>): TexTalkNode? {
-        // process the list one by one and then run shunting-yard on the result
-        // this is where a list of tokens is constructed into a list of parsed nodes that only need
-        // to
-        // be processed into a tree based on operator usage using the shunting-yard algorithm
-        val nodesToProcess = mutableListOf<TexTalkNode>()
-        while (this.nodes.isNotEmpty()) {
-            val node =
-                this.commandExpressionOrCommandForm(diagnostics)?.value
-                    ?: this.variadicName(diagnostics) ?: this.name() ?: break
-            nodesToProcess.add(node)
-        }
-        // TODO: FINISH THIS
-        return shuntingYard(diagnostics, nodesToProcess)
-    }
-
-    private fun shuntingYard(
-        diagnostics: MutableList<Diagnostic>, nodes: MutableList<TexTalkNode>
-    ): TexTalkNode? {
-        // TODO: FINISH THIS
-        return nodes.firstOrNull()
-    }
+    override fun parse(): TexTalkNode? = null // parseIntoSingleNode(diagnostics)
 
     private fun token(type: TexTalkTokenType): TexTalkToken? =
-        if (this.has(type)) {
-            this.pollToken()
+        if (has(type)) {
+            pollToken()
         } else {
             null
         }
@@ -109,7 +81,7 @@ private class TexTalkSubParserImpl(
     private fun variadicName(diagnostics: MutableList<Diagnostic>): VariadicName? =
         if (this.hasHas(TexTalkTokenType.Name, TexTalkTokenType.DotDotDot)) {
             val name = name()!!
-            this.expect(diagnostics, TexTalkTokenType.DotDotDot)
+            this.expect(TexTalkTokenType.DotDotDot)
             this.pollToken() // move past the ...
             VariadicName(name = name, metadata = name.metadata.copy())
         } else {
@@ -119,18 +91,25 @@ private class TexTalkSubParserImpl(
     private fun nameOrVariadicName(diagnostics: MutableList<Diagnostic>): NameOrVariadicName? =
         this.name() ?: this.variadicName(diagnostics)
 
+    private fun parenNodeList(): ParenNodeList<*>? = pollIfHasNode()
+
+    private fun squareNodeList(): SquareNodeList<*>? = pollIfHasNode()
+
+    private fun curlyNodeList(): CurlyNodeList<*>? = pollIfHasNode()
+
     private fun function(diagnostics: MutableList<Diagnostic>): Function? =
         if (this.hasHas(TexTalkTokenType.Name, TexTalkTokenType.LParen)) {
             val name = name()!!
             Function(
                 name = name,
                 params =
-                    this.parenNameOrVariadicNameParameterList(diagnostics)
+                    parenNodeList()
+                        ?.asParenNodeListOfType<NameOrVariadicName>()
                         ?.errorIfNullOrEmpty(
                             diagnostics = diagnostics,
                             row = name.metadata.row,
                             column = name.metadata.column)
-                        ?: emptyList(),
+                        ?: defaultParenNodeList(),
                 metadata = name.metadata.copy())
         } else {
             null
@@ -142,15 +121,22 @@ private class TexTalkSubParserImpl(
         if (this.hasHasHas(
             TexTalkTokenType.Name, TexTalkTokenType.Underscore, TexTalkTokenType.LParen)) {
             val name = name()!!
-            this.expect(diagnostics, TexTalkTokenType.Underscore)
+            this.expect(TexTalkTokenType.Underscore)
             val subParams =
-                this.parenNameOrVariadicNameParameterList(diagnostics)
+                parenNodeList()
+                    ?.asParenNodeListOfType<NameOrVariadicName>()
                     ?.errorIfNullOrEmpty(
                         diagnostics = diagnostics,
                         row = name.metadata.row,
                         column = name.metadata.column)
-                    ?: emptyList()
-            val params = this.parenNameOrVariadicNameParameterList(diagnostics)
+                    ?: defaultParenNodeList()
+            val params =
+                parenNodeList()
+                    ?.asParenNodeListOfType<NameOrVariadicName>()
+                    ?.errorIfNullOrEmpty(
+                        diagnostics = diagnostics,
+                        row = name.metadata.row,
+                        column = name.metadata.column)
             if (params != null) {
                 SubAndRegularParamCall(
                     name = name,
@@ -169,14 +155,18 @@ private class TexTalkSubParserImpl(
 
     private fun squareParams(diagnostics: MutableList<Diagnostic>): SquareParams? {
         val peek = this.nodes.firstOrNull()
-        val row = peek?.row() ?: -1
-        val column = peek?.column() ?: -1
+        val row = peek?.metadata?.row ?: -1
+        val column = peek?.metadata?.column ?: -1
 
-        val nodes = this.squareNodeList(diagnostics) ?: return null
-        if (nodes.isEmpty()) {
+        val squareNodes = this.squareNodeList() ?: return null
+        if (squareNodes.nodes.isEmpty()) {
             diagnostics.add(
                 error(message = "Expected at least one parameter", row = row, column = column))
-            return SquareParams(emptyList())
+            return SquareParams(
+                items =
+                    SquareNodeList(
+                        nodes = emptyList(),
+                        metadata = MetaData(row = row, column = column, isInline = null)))
         }
 
         return if (nodes.first() is VariadicName) {
@@ -189,35 +179,39 @@ private class TexTalkSubParserImpl(
             }
             SquareParams(nodes.first() as VariadicName)
         } else {
-            SquareParams(nodes.filterAndError(diagnostics))
+            SquareParams(
+                items =
+                    SquareNodeList(
+                        nodes = nodes.filterAndError(diagnostics),
+                        metadata = MetaData(row = row, column = column, isInline = null)))
         }
     }
 
-    private fun nameOrNamedParameterExpression(
-        diagnostics: MutableList<Diagnostic>
-    ): BiUnion<Name, NamedParameterExpression, TexTalkNode>? {
+    private fun nameOrNamedParameterExpression(diagnostics: MutableList<Diagnostic>): TexTalkNode? {
         if (!this.hasHas(TexTalkTokenType.Colon, TexTalkTokenType.Name)) {
             return null
         }
         val colon = this.token(TexTalkTokenType.Colon) ?: return null
-        val name =
-            this.name()
-                .orError(diagnostics, "Expected a Name", colon.row, colon.column, DEFAULT_NAME)
-        val curlyExpression = this.curlyExpressionParameterList(diagnostics)
+        val name = this.name().orError("Expected a Name", colon.row, colon.column, DEFAULT_NAME)
+        val curlyExpression =
+            curlyNodeList()
+                ?.asCurlyNodeListOfType<Expression>()
+                ?.errorIfNullOrEmpty(
+                    diagnostics = diagnostics,
+                    row = name.metadata.row,
+                    column = name.metadata.column)
         return if (curlyExpression == null) {
-            BiUnionFirst(name)
+            name
         } else {
-            BiUnionSecond(
-                NamedParameterExpression(
-                    name = name,
-                    params =
-                        curlyExpression.orError(
-                            diagnostics = diagnostics,
-                            message = "Expected a {...}",
-                            row = colon.row,
-                            column = colon.column,
-                            default = emptyList()),
-                    metadata = MetaData(row = colon.row, column = colon.column, isInline = null)))
+            NamedParameterExpression(
+                name = name,
+                params =
+                    curlyExpression.orError(
+                        message = "Expected a {...}",
+                        row = colon.row,
+                        column = colon.column,
+                        default = defaultCurlyNodeList()),
+                metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
         }
     }
 
@@ -226,83 +220,63 @@ private class TexTalkSubParserImpl(
             return null
         }
         val colon = this.token(TexTalkTokenType.Colon) ?: return null
-        val name =
-            this.name()
-                .orError(diagnostics, "Expected a Name", colon.row, colon.column, DEFAULT_NAME)
+        val name = this.name().orError("Expected a Name", colon.row, colon.column, DEFAULT_NAME)
         val params =
-            this.curlyNameOrVariadicNameParameterList(diagnostics)
-                ?.orError(
+            curlyNodeList()
+                ?.asCurlyNodeListOfType<NameOrVariadicName>()
+                ?.errorIfNullOrEmpty(
                     diagnostics = diagnostics,
-                    message = "Expected a {...}",
-                    row = colon.row,
-                    column = colon.column,
-                    default = emptyList())
-                ?: emptyList()
+                    row = name.metadata.row,
+                    column = name.metadata.column)
+                ?: defaultCurlyNodeList()
         return NamedParameterForm(
             name = name,
             params = params,
             metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
     }
 
-    private fun subExpressionParams(diagnostics: MutableList<Diagnostic>): List<Expression>? =
-        if (this.hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
-            val underscore = this.expect(diagnostics, TexTalkTokenType.Underscore)!!
-            this.curlyExpressionParameterList(diagnostics)
-                ?.errorIfNullOrEmpty(
-                    diagnostics = diagnostics, row = underscore.row, column = underscore.column)
-                ?: emptyList()
+    private fun subExpressionParams(): CurlyNodeList<Expression>? =
+        if (hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
+            expect(TexTalkTokenType.Underscore)
+            curlyNodeList()?.asCurlyNodeListOfType()
         } else {
             null
         }
 
-    private fun subNameOrVariadicNameParams(
-        diagnostics: MutableList<Diagnostic>
-    ): List<NameOrVariadicName>? =
-        if (this.hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
-            val underscore = this.expect(diagnostics, TexTalkTokenType.Underscore)!!
-            this.curlyNameOrVariadicNameParameterList(diagnostics)
-                ?.errorIfNullOrEmpty(
-                    diagnostics = diagnostics, row = underscore.row, column = underscore.column)
-                ?: emptyList()
+    private fun subNameOrVariadicNameParams(): CurlyNodeList<NameOrVariadicName>? =
+        if (hasHas(TexTalkTokenType.Underscore, TexTalkTokenType.LCurly)) {
+            expect(TexTalkTokenType.Underscore)
+            curlyNodeList()?.asCurlyNodeListOfType()
         } else {
             null
         }
 
-    private fun supExpressionParams(diagnostics: MutableList<Diagnostic>): List<Expression>? =
-        if (this.hasHas(TexTalkTokenType.Caret, TexTalkTokenType.LCurly)) {
-            val caret = this.expect(diagnostics, TexTalkTokenType.Caret)!!
-            this.curlyExpressionParameterList(diagnostics)
-                ?.errorIfNullOrEmpty(
-                    diagnostics = diagnostics, row = caret.row, column = caret.column)
-                ?: emptyList()
+    private fun supExpressionParams(): CurlyNodeList<Expression>? =
+        if (hasHas(TexTalkTokenType.Caret, TexTalkTokenType.LCurly)) {
+            expect(TexTalkTokenType.Caret)
+            curlyNodeList()?.asCurlyNodeListOfType()
         } else {
             null
         }
 
-    private fun supNameOrVariadicNameParams(
-        diagnostics: MutableList<Diagnostic>
-    ): List<NameOrVariadicName>? =
-        if (this.hasHas(TexTalkTokenType.Caret, TexTalkTokenType.LCurly)) {
-            val caret = this.expect(diagnostics, TexTalkTokenType.Caret)!!
-            this.curlyNameOrVariadicNameParameterList(diagnostics)
-                ?.errorIfNullOrEmpty(
-                    diagnostics = diagnostics, row = caret.row, column = caret.column)
-                ?: emptyList()
+    private fun supNameOrVariadicNameParams(): CurlyNodeList<NameOrVariadicName>? =
+        if (hasHas(TexTalkTokenType.Caret, TexTalkTokenType.LCurly)) {
+            expect(TexTalkTokenType.Caret)!!
+            curlyNodeList()?.asCurlyNodeListOfType()
         } else {
             null
         }
 
-    private fun commandExpressionOrCommandForm(
-        diagnostics: MutableList<Diagnostic>
-    ): BiUnion<CommandExpression, SignatureExpression, TexTalkNode>? =
+    // CommandExpression or SignatureExpression
+    private fun commandExpressionOrCommandForm(diagnostics: MutableList<Diagnostic>): TexTalkNode? =
         if (this.has(TexTalkTokenType.Backslash)) {
-            val backslash = this.expect(diagnostics, TexTalkTokenType.Backslash)!!
+            val backslash = this.expect(TexTalkTokenType.Backslash)!!
             val names = mutableListOf<Name>()
             while (this.nodes.isNotEmpty()) {
                 val name = name() ?: break
                 names.add(name)
                 if (this.has(TexTalkTokenType.Dot)) {
-                    this.expect(diagnostics, TexTalkTokenType.Dot)
+                    this.expect(TexTalkTokenType.Dot)
                 } else {
                     break
                 }
@@ -315,71 +289,92 @@ private class TexTalkSubParserImpl(
                         column = backslash.column))
             }
             val squareParams = this.squareParams(diagnostics)
-            val subParams = this.subExpressionParams(diagnostics)
-            val supParams = this.supExpressionParams(diagnostics)
-            val curlyParams = this.curlyExpressionParameterList(diagnostics)
-            val namesOrNamedParams =
-                mutableListOf<BiUnion<Name, NamedParameterExpression, TexTalkNode>>()
+            val subParams = this.subExpressionParams()
+            val supParams = this.supExpressionParams()
+            val curlyParams = curlyNodeList()?.asCurlyNodeListOfType<Expression>()
+            val namesOrNamedParams = mutableListOf<TexTalkNode>()
             while (this.nodes.isNotEmpty()) {
                 val namedParam = this.nameOrNamedParameterExpression(diagnostics) ?: break
                 namesOrNamedParams.add(namedParam)
             }
-            val parenParams = this.parenExpressionParameterList(diagnostics)
+            val parenParams = parenNodeList()?.asParenNodeListOfType<Expression>()
 
             if (squareParams != null ||
                 subParams != null ||
                 supParams != null ||
                 curlyParams != null ||
-                namesOrNamedParams.any { it.value is Expression } ||
+                namesOrNamedParams.any { it is Expression } ||
                 parenParams != null) {
                 // process as a CommandExpression
-                BiUnionFirst(
-                    CommandExpression(
-                        names = names,
-                        squareParams = squareParams,
-                        subParams = subParams,
-                        supParams = supParams,
-                        curlyParams = curlyParams,
-                        namedParams =
-                            namesOrNamedParams.mapNotNull {
-                                val value = it.value
-                                if (value is NamedParameterExpression) {
-                                    value
-                                } else {
-                                    diagnostics.add(
-                                        error(
-                                            message = "Expected a NamedParameterExpression",
-                                            row = backslash.row,
-                                            column = backslash.column))
-                                    null
-                                }
-                            },
-                        parenParams = parenParams,
-                        metadata =
-                            MetaData(
-                                row = backslash.row, column = backslash.column, isInline = null)))
+                CommandExpression(
+                    names =
+                        NonBracketNodeList(
+                            nodes = names,
+                            metadata =
+                                MetaData(
+                                    row = backslash.row,
+                                    column = backslash.column,
+                                    isInline = null)),
+                    squareParams = squareParams,
+                    subParams = subParams,
+                    supParams = supParams,
+                    curlyParams = curlyParams,
+                    namedParams =
+                        NonBracketNodeList(
+                            nodes =
+                                namesOrNamedParams.mapNotNull {
+                                    if (it is NamedParameterExpression) {
+                                        it
+                                    } else {
+                                        diagnostics.add(
+                                            error(
+                                                message = "Expected a NamedParameterExpression",
+                                                row = backslash.row,
+                                                column = backslash.column))
+                                        null
+                                    }
+                                },
+                            metadata =
+                                MetaData(
+                                    row = backslash.row,
+                                    column = backslash.column,
+                                    isInline = null)),
+                    parenParams = parenParams,
+                    metadata =
+                        MetaData(row = backslash.row, column = backslash.column, isInline = null))
             } else {
                 // process as a CommandForm
-                BiUnionSecond(
-                    SignatureExpression(
-                        names = names,
-                        colonNames =
-                            namesOrNamedParams.mapNotNull {
-                                val value = it.value
-                                if (value is Name) {
-                                    value
-                                } else {
-                                    diagnostics.add(
-                                        error(
-                                            message = "Expected a Named",
-                                            row = backslash.row,
-                                            column = backslash.column))
-                                    null
-                                }
-                            },
-                        metadata =
-                            MetaData(
-                                row = backslash.row, column = backslash.column, isInline = null)))
+                SignatureExpression(
+                    names =
+                        NonBracketNodeList(
+                            nodes = names,
+                            metadata =
+                                MetaData(
+                                    row = backslash.row,
+                                    column = backslash.column,
+                                    isInline = null)),
+                    colonNames =
+                        NonBracketNodeList(
+                            nodes =
+                                namesOrNamedParams.mapNotNull {
+                                    if (it is Name) {
+                                        it
+                                    } else {
+                                        diagnostics.add(
+                                            error(
+                                                message = "Expected a Named",
+                                                row = backslash.row,
+                                                column = backslash.column))
+                                        null
+                                    }
+                                },
+                            metadata =
+                                MetaData(
+                                    row = backslash.row,
+                                    column = backslash.column,
+                                    isInline = null)),
+                    metadata =
+                        MetaData(row = backslash.row, column = backslash.column, isInline = null))
             }
         } else {
             null
@@ -387,18 +382,18 @@ private class TexTalkSubParserImpl(
 
     private fun commandForm(diagnostics: MutableList<Diagnostic>): CommandForm? =
         if (this.has(TexTalkTokenType.Backslash)) {
-            val backslash = this.expect(diagnostics, TexTalkTokenType.Backslash)!!
-            val names = mutableListOf<Name>()
+            val backslash = this.expect(TexTalkTokenType.Backslash)!!
+            val nameList = mutableListOf<Name>()
             while (this.nodes.isNotEmpty()) {
                 val name = name() ?: break
-                names.add(name)
+                nameList.add(name)
                 if (this.has(TexTalkTokenType.Dot)) {
-                    this.expect(diagnostics, TexTalkTokenType.Dot)
+                    this.expect(TexTalkTokenType.Dot)
                 } else {
                     break
                 }
             }
-            if (names.isEmpty()) {
+            if (nameList.isEmpty()) {
                 diagnostics.add(
                     error(
                         message = "Expected at least one Name",
@@ -406,22 +401,35 @@ private class TexTalkSubParserImpl(
                         column = backslash.column))
             }
             val squareParams = this.squareParams(diagnostics)
-            val subParams = this.subNameOrVariadicNameParams(diagnostics)
-            val supParams = this.supNameOrVariadicNameParams(diagnostics)
-            val curlyParams = this.curlyNameOrVariadicNameParameterList(diagnostics)
-            val namedParams = mutableListOf<NamedParameterForm>()
+            val subParams = this.subNameOrVariadicNameParams()
+            val supParams = this.supNameOrVariadicNameParams()
+            val curlyParams = curlyNodeList()?.asCurlyNodeListOfType<NameOrVariadicName>()
+            val namedParamList = mutableListOf<NamedParameterForm>()
             while (this.nodes.isNotEmpty()) {
                 val namedParam = this.namedParameterForm(diagnostics) ?: break
-                namedParams.add(namedParam)
+                namedParamList.add(namedParam)
             }
-            val parenParams = this.parenNameOrVariadicNameParameterList(diagnostics)
+            val firstNamedParam = namedParamList.firstOrNull()
+            val parenParams = parenNodeList()?.asParenNodeListOfType<NameOrVariadicName>()
             CommandForm(
-                names = names,
+                names =
+                    NonBracketNodeList(
+                        nodes = nameList,
+                        metadata =
+                            MetaData(
+                                row = backslash.row, column = backslash.column, isInline = null)),
                 squareParams = squareParams,
                 subParams = subParams,
                 supParams = supParams,
                 curlyParams = curlyParams,
-                namedParams = namedParams,
+                namedParams =
+                    NonBracketNodeList(
+                        nodes = namedParamList,
+                        metadata =
+                            MetaData(
+                                row = firstNamedParam?.metadata?.row ?: -1,
+                                column = firstNamedParam?.metadata?.column ?: -1,
+                                isInline = null)),
                 parenParams = parenParams,
                 metadata =
                     MetaData(row = backslash.row, column = backslash.column, isInline = null))
@@ -429,197 +437,35 @@ private class TexTalkSubParserImpl(
             null
         }
 
-    /*
-    // TODO: FIX THIS
-    private fun nameOrCommand(
-        diagnostics: MutableList<Diagnostic>
-    ): NameOrCommand? = this.name() ?: this.commandExpression(diagnostics)
-    */
-
-    // returns `null` if the next node in the list is not a ParenTreeNode
-    private fun bracketedNodeList(
-        diagnostics: MutableList<Diagnostic>, bracketType: TexTalkTokenType
-    ): List<TexTalkNode>? {
-        if (this.nodes.isEmpty() || this.nodes.first() !is ParenTreeNode) {
-            return null
-        }
-        val peek = this.nodes.first() as ParenTreeNode
-        if (peek.prefix?.type != bracketType) {
-            return null
-        }
-        if (peek.suffix == null) {
-            diagnostics.add(
-                error(
-                    message = "Expected a closing bracket",
-                    row = peek.prefix!!.row,
-                    column = peek.prefix!!.column))
-        }
-        val parenTreeNode = this.nodes.removeAt(0) as ParenTreeNode
-        return parenTreeNode.treeNodeToTexTalkNodeList(diagnostics)
-    }
-
-    private fun parenNodeList(diagnostics: MutableList<Diagnostic>) =
-        bracketedNodeList(diagnostics, TexTalkTokenType.LParen)
-
-    private fun squareNodeList(diagnostics: MutableList<Diagnostic>) =
-        bracketedNodeList(diagnostics, TexTalkTokenType.LSquare)
-
-    private fun curlyNodeList(diagnostics: MutableList<Diagnostic>) =
-        bracketedNodeList(diagnostics, TexTalkTokenType.LCurly)
-
-    private fun squareColonNodeList(diagnostics: MutableList<Diagnostic>) =
-        bracketedNodeList(diagnostics, TexTalkTokenType.LSquareColon)
-
-    private fun parenExpressionParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<Expression>? = this.parenNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    private fun squareExpressionParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<Expression>? = this.squareNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    private fun curlyExpressionParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<Expression>? = this.curlyNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    private fun squareColonExpressionParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<Expression>? = this.squareColonNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    private fun parenNameOrVariadicNameParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<NameOrVariadicName>? =
-        this.parenNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    private fun squareNameOrVariadicNameParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<NameOrVariadicName>? =
-        this.squareNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    private fun curlyNameOrVariadicNameParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<NameOrVariadicName>? =
-        this.curlyNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    private fun squareColonMetaIsFormItemParameterList(
-        diagnostics: MutableList<Diagnostic>
-    ): MutableList<MetaIsFormItem>? =
-        this.squareColonNodeList(diagnostics)?.filterAndError(diagnostics)
-
-    /*
-    // TODO: FIX THIS
-    private fun variadicIsRhs(
-        diagnostics: MutableList<Diagnostic>
-    ): VariadicIsRhs? = this.variadicName(diagnostics) ?: this.commandExpression(diagnostics)
-     */
-
-    private fun statementIsFormItem(): StatementIsFormItem? =
-        if (this.hasNameText("statement")) {
-            val next = pollToken()
-            StatementIsFormItem(
-                metadata = MetaData(row = next.row, column = next.column, isInline = null))
-        } else {
-            null
-        }
-
-    private fun assignmentIsFormItem(): AssignmentIsFormItem? =
-        if (this.hasNameText("assignment")) {
-            val next = pollToken()
-            AssignmentIsFormItem(
-                metadata = MetaData(row = next.row, column = next.column, isInline = null))
-        } else {
-            null
-        }
-
-    private fun specificationIsFormItem(): SpecificationIsFormItem? =
-        if (this.hasNameText("specification")) {
-            val next = pollToken()
-            SpecificationIsFormItem(
-                metadata = MetaData(row = next.row, column = next.column, isInline = null))
-        } else {
-            null
-        }
-
-    private fun expressionIsFormItem(): ExpressionIsFormItem? =
-        if (this.hasNameText("expression")) {
-            val next = pollToken()
-            ExpressionIsFormItem(
-                metadata = MetaData(row = next.row, column = next.column, isInline = null))
-        } else {
-            null
-        }
-
-    private fun definitionIsFormItem(): DefinitionIsFormItem? =
-        if (this.hasNameText("definition")) {
-            val next = pollToken()
-            DefinitionIsFormItem(
-                metadata = MetaData(row = next.row, column = next.column, isInline = null))
-        } else {
-            null
-        }
-
-    private fun metaIsFormItem(): MetaIsFormItem? =
-        this.statementIsFormItem()
-            ?: this.assignmentIsFormItem() ?: this.specificationIsFormItem()
-                ?: this.expressionIsFormItem() ?: this.definitionIsFormItem()
-
-    private fun metaIsForm(diagnostics: MutableList<Diagnostic>): MetaIsForm? =
-        if (this.has(TexTalkTokenType.LSquareColon)) {
-            val prefix = this.peekParenPrefix()
-            MetaIsForm(
-                items = this.squareColonMetaIsFormItemParameterList(diagnostics) ?: emptyList(),
-                metadata =
-                    MetaData(
-                        row = prefix?.row ?: -1, column = prefix?.column ?: -1, isInline = null))
-        } else {
-            null
-        }
-
-    // TODO: IMPLEMENT THIS
-    private fun expression(diagnostics: MutableList<Diagnostic>): Expression? = null
-
-    // TODO: IMPLEMENT THIS
-    private fun target(diagnostics: MutableList<Diagnostic>): Target? = null
-
-    private fun tupleOrTupleExpression(
-        diagnostics: MutableList<Diagnostic>
-    ): BiUnion<Tuple, TupleExpression, TexTalkNode>? {
-        val paren = this.peekParenPrefix()
-        val nodes = this.parenNodeList(diagnostics) ?: return null
-
-        return if (nodes.all { it is Target }) {
-            BiUnionFirst(
-                Tuple(
-                    targets = nodes.filterAndError(diagnostics),
-                    metadata =
-                        MetaData(
-                            row = paren?.row ?: -1, column = paren?.column ?: -1, isInline = null)))
-        } else {
-            BiUnionSecond(
-                TupleExpression(
-                    args = nodes.filterAndError(diagnostics),
-                    metadata =
-                        MetaData(
-                            row = paren?.row ?: -1, column = paren?.column ?: -1, isInline = null)))
-        }
-    }
-
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+    private fun expect(type: TexTalkTokenType): TexTalkToken? =
+        if (has(type)) {
+            pollToken()
+        } else {
+            val peek = nodes.firstOrNull()
+            diagnostics.add(
+                error(
+                    message = "Expected a ${type.name}",
+                    row = peek?.metadata?.row ?: -1,
+                    column = peek?.metadata?.column ?: -1))
+            null
+        }
+
     private inline fun <reified T> T?.orError(
-        diagnostics: MutableList<Diagnostic>, message: String, row: Int, column: Int, default: T
+        message: String, row: Int, column: Int, default: T
     ): T =
         if (this != null) {
-            this
+            this!!
         } else {
             diagnostics.add(error(message, row, column))
             default
         }
 
-    private inline fun <reified T> MutableList<T>?.errorIfNullOrEmpty(
+    private inline fun <reified T : TexTalkNode> ParenNodeList<T>?.errorIfNullOrEmpty(
         diagnostics: MutableList<Diagnostic>, row: Int, column: Int
-    ): MutableList<T>? =
-        if (this == null || this.isEmpty()) {
+    ): ParenNodeList<T>? =
+        if (this == null || this.nodes.isEmpty()) {
             diagnostics.add(
                 error(
                     message = "Expected at least one ${T::class.java.simpleName}",
@@ -630,47 +476,142 @@ private class TexTalkSubParserImpl(
             this
         }
 
-    private fun expect(
-        diagnostics: MutableList<Diagnostic>, type: TexTalkTokenType
-    ): TexTalkToken? =
-        if (this.has(type)) {
-            this.pollToken()
-        } else {
-            val peek = nodes.firstOrNull()
+    private inline fun <reified T : TexTalkNode> SquareNodeList<T>?.errorIfNullOrEmpty(
+        diagnostics: MutableList<Diagnostic>, row: Int, column: Int
+    ): SquareNodeList<T>? =
+        if (this == null || this.nodes.isEmpty()) {
             diagnostics.add(
                 error(
-                    message = "Expected a ${type.name}",
-                    row = peek?.row() ?: -1,
-                    column = peek?.column() ?: -1))
+                    message = "Expected at least one ${T::class.java.simpleName}",
+                    row = row,
+                    column = column))
+            this
+        } else {
+            this
+        }
+
+    private inline fun <reified T : TexTalkNode> CurlyNodeList<T>?.errorIfNullOrEmpty(
+        diagnostics: MutableList<Diagnostic>, row: Int, column: Int
+    ): CurlyNodeList<T>? =
+        if (this == null || this.nodes.isEmpty()) {
+            diagnostics.add(
+                error(
+                    message = "Expected at least one ${T::class.java.simpleName}",
+                    row = row,
+                    column = column))
+            this
+        } else {
+            this
+        }
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private inline fun <reified T : TexTalkNode> hasNode() = nodes.isNotEmpty() && nodes[0] is T
+
+    private fun peekNode(): TexTalkNode = nodes[0]
+
+    private fun pollNode(): TexTalkNode = nodes.removeAt(0)
+
+    private inline fun <reified T : TexTalkNode> pollIfHasNode(): T? =
+        if (hasNode<T>()) {
+            pollNode() as T
+        } else {
             null
         }
 
     ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    private fun has(type: TexTalkTokenType) = this.nodes.has(type)
-
-    private fun hasNameText(text: String) =
-        has(TexTalkTokenType.Name) && (this.nodes[0] as AtomTreeNode).token.text == text
+    private fun has(type: TexTalkTokenType) =
+        if (nodes.isEmpty()) {
+            false
+        } else if (nodes[0] !is TexTalkTokenNode) {
+            false
+        } else {
+            (nodes[0] as TexTalkTokenNode).token.type == type
+        }
 
     private fun hasHas(type1: TexTalkTokenType, type2: TexTalkTokenType) =
-        this.nodes.size >= 2 &&
-            this.nodes.elementAtOrNull(0)?.isAtomOfType(type1) == true &&
-            this.nodes.elementAtOrNull(1)?.startsWith(type2) == true
+        if (nodes.size < 2) {
+            false
+        } else if (nodes[0] !is TexTalkTokenNode || nodes[1] !is TexTalkTokenNode) {
+            false
+        } else {
+            (nodes[0] as TexTalkTokenNode).token.type == type1 &&
+                (nodes[1] as TexTalkTokenNode).token.type == type2
+        }
 
     private fun hasHasHas(
         type1: TexTalkTokenType, type2: TexTalkTokenType, type3: TexTalkTokenType
     ) =
-        this.nodes.size >= 3 &&
-            this.nodes.elementAtOrNull(0)?.isAtomOfType(type1) == true &&
-            this.nodes.elementAtOrNull(1)?.isAtomOfType(type2) == true &&
-            this.nodes.elementAtOrNull(2)?.startsWith(type3) == true
-
-    private fun pollToken() = (this.nodes.removeAt(0) as AtomTreeNode).token
-
-    private fun peekParenPrefix() =
-        if (this.nodes.isNotEmpty() && this.nodes.first() is ParenTreeNode) {
-            (this.nodes.first() as ParenTreeNode).prefix
+        if (nodes.size < 3) {
+            false
+        } else if (nodes[0] !is TexTalkTokenNode ||
+            nodes[1] !is TexTalkTokenNode ||
+            nodes[2] !is TexTalkTokenNode) {
+            false
         } else {
-            null
+            (nodes[0] as TexTalkTokenNode).token.type == type1 &&
+                (nodes[1] as TexTalkTokenNode).token.type == type2 &&
+                (nodes[2] as TexTalkTokenNode).token.type == type3
         }
+
+    private fun peekToken() = (nodes[0] as TexTalkTokenNode).token
+
+    private fun pollToken() = (nodes.removeAt(0) as TexTalkTokenNode).token
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    private inline fun <reified T : TexTalkNode> ParenNodeList<*>.asParenNodeListOfType():
+        ParenNodeList<T> =
+        ParenNodeList(
+            nodes =
+                this.nodes.mapNotNull {
+                    if (it is T) {
+                        it
+                    } else {
+                        diagnostics.add(
+                            error(
+                                message = "Expected an item of type ${T::class.java.simpleName}",
+                                row = this.metadata.row,
+                                column = this.metadata.column))
+                        null
+                    }
+                },
+            metadata = this.metadata)
+
+    private inline fun <reified T : TexTalkNode> SquareNodeList<*>.asSquareNodeListOfType():
+        SquareNodeList<T> =
+        SquareNodeList(
+            nodes =
+                this.nodes.mapNotNull {
+                    if (it is T) {
+                        it
+                    } else {
+                        diagnostics.add(
+                            error(
+                                message = "Expected an item of type ${T::class.java.simpleName}",
+                                row = this.metadata.row,
+                                column = this.metadata.column))
+                        null
+                    }
+                },
+            metadata = this.metadata)
+
+    private inline fun <reified T : TexTalkNode> CurlyNodeList<*>.asCurlyNodeListOfType():
+        CurlyNodeList<T> =
+        CurlyNodeList(
+            nodes =
+                this.nodes.mapNotNull {
+                    if (it is T) {
+                        it
+                    } else {
+                        diagnostics.add(
+                            error(
+                                message = "Expected an item of type ${T::class.java.simpleName}",
+                                row = this.metadata.row,
+                                column = this.metadata.column))
+                        null
+                    }
+                },
+            metadata = this.metadata)
 }

@@ -225,7 +225,14 @@ private fun getAllTypesInCode(): List<String> {
             it != "mathlingua.lib.frontend.ast.ToCode" &&
             it != "mathlingua.lib.frontend.ast.TexTalkNodeOrToken" &&
             it != "mathlingua.lib.frontend.ast.Section" &&
-            it != "mathlingua.lib.frontend.ast.EmptyTexTalkNode"
+            it != "mathlingua.lib.frontend.ast.EmptyTexTalkNode" &&
+            it != "mathlingua.lib.frontend.ast.NodeList" &&
+            it != "mathlingua.lib.frontend.ast.ParenNodeList" &&
+            it != "mathlingua.lib.frontend.ast.SquareNodeList" &&
+            it != "mathlingua.lib.frontend.ast.CurlyNodeList" &&
+            it != "mathlingua.lib.frontend.ast.SquareColonNodeList" &&
+            it != "mathlingua.lib.frontend.ast.NonBracketNodeList" &&
+            it != "mathlingua.lib.frontend.ast.TexTalkTokenNode"
     }
 }
 

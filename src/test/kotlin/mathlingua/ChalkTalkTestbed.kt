@@ -16,7 +16,6 @@
 
 package mathlingua
 
-import mathlingua.lib.frontend.Frontend
 import java.awt.Font
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
@@ -27,6 +26,7 @@ import javax.swing.JScrollPane
 import javax.swing.JSplitPane
 import javax.swing.JTextArea
 import javax.swing.WindowConstants
+import mathlingua.lib.frontend.Frontend
 
 fun main() {
     val font = Font("Courier New", Font.PLAIN, 22)
@@ -37,24 +37,23 @@ fun main() {
 
     val editor = JTextArea()
     editor.font = font
-    editor.addKeyListener(object : KeyListener {
-        override fun keyTyped(e: KeyEvent?) {
-            errorPane.text = ""
-            val result = Frontend.parse(editor.text)
-            val builder = StringBuilder()
-            for (diag in result.diagnostics) {
-                builder.append(
-                    "${diag.type}: ${diag.message} (${diag.row + 1}, ${diag.column + 1}) @${diag.origin}\n")
+    editor.addKeyListener(
+        object : KeyListener {
+            override fun keyTyped(e: KeyEvent?) {
+                errorPane.text = ""
+                val result = Frontend.parse(editor.text)
+                val builder = StringBuilder()
+                for (diag in result.diagnostics) {
+                    builder.append(
+                        "${diag.type}: ${diag.message} (${diag.row + 1}, ${diag.column + 1}) @${diag.origin}\n")
+                }
+                errorPane.text = builder.toString()
             }
-            errorPane.text = builder.toString()
-        }
 
-        override fun keyPressed(e: KeyEvent?) {
-        }
+            override fun keyPressed(e: KeyEvent?) {}
 
-        override fun keyReleased(e: KeyEvent?) {
-        }
-    })
+            override fun keyReleased(e: KeyEvent?) {}
+        })
 
     val splitPane = JSplitPane(JSplitPane.VERTICAL_SPLIT)
     splitPane.dividerLocation = 750

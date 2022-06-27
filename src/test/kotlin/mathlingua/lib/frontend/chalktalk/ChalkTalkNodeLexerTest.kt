@@ -22,6 +22,7 @@ import mathlingua.lib.frontend.MetaData
 import mathlingua.lib.frontend.ast.BeginArgument
 import mathlingua.lib.frontend.ast.BeginGroup
 import mathlingua.lib.frontend.ast.BeginSection
+import mathlingua.lib.frontend.ast.CurlyNodeList
 import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
@@ -31,6 +32,7 @@ import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
+import mathlingua.lib.frontend.ast.ParenNodeList
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.Statement
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
@@ -160,13 +162,17 @@ internal class ChalkTalkNodeLexerTest {
                         Name(
                             text = "f", metadata = MetaData(row = 0, column = 10, isInline = true)),
                     params =
-                        listOf(
-                            Name(
-                                text = "x",
-                                metadata = MetaData(row = 0, column = 12, isInline = true)),
-                            Name(
-                                text = "y",
-                                metadata = MetaData(row = 0, column = 15, isInline = true))),
+                        ParenNodeList(
+                            nodes =
+                                listOf(
+                                    Name(
+                                        text = "x",
+                                        metadata = MetaData(row = 0, column = 12, isInline = true)),
+                                    Name(
+                                        text = "y",
+                                        metadata =
+                                            MetaData(row = 0, column = 15, isInline = true))),
+                            metadata = MetaData(row = 0, column = 12, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
@@ -255,14 +261,20 @@ internal class ChalkTalkNodeLexerTest {
                                     text = "f",
                                     metadata = MetaData(row = 0, column = 11, isInline = true)),
                             subParams =
-                                listOf(
-                                    Name(
-                                        text = "x",
-                                        metadata = MetaData(row = 0, column = 14, isInline = true)),
-                                    Name(
-                                        text = "y",
-                                        metadata =
-                                            MetaData(row = 0, column = 17, isInline = true))),
+                                ParenNodeList(
+                                    nodes =
+                                        listOf(
+                                            Name(
+                                                text = "x",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 14, isInline = true)),
+                                            Name(
+                                                text = "y",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 17, isInline = true))),
+                                    metadata = MetaData(row = 0, column = 14, isInline = true)),
                             metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
@@ -287,23 +299,37 @@ internal class ChalkTalkNodeLexerTest {
                                     text = "f",
                                     metadata = MetaData(row = 0, column = 11, isInline = true)),
                             subParams =
-                                listOf(
-                                    Name(
-                                        text = "i",
-                                        metadata = MetaData(row = 0, column = 14, isInline = true)),
-                                    Name(
-                                        text = "j",
-                                        metadata = MetaData(row = 0, column = 17, isInline = true)),
-                                ),
+                                ParenNodeList(
+                                    nodes =
+                                        listOf(
+                                            Name(
+                                                text = "i",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 14, isInline = true)),
+                                            Name(
+                                                text = "j",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 17, isInline = true)),
+                                        ),
+                                    metadata = MetaData(row = 0, column = 14, isInline = true)),
                             params =
-                                listOf(
-                                    Name(
-                                        text = "x",
-                                        metadata = MetaData(row = 0, column = 20, isInline = true)),
-                                    Name(
-                                        text = "y",
-                                        metadata = MetaData(row = 0, column = 23, isInline = true)),
-                                ),
+                                ParenNodeList(
+                                    nodes =
+                                        listOf(
+                                            Name(
+                                                text = "x",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 20, isInline = true)),
+                                            Name(
+                                                text = "y",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 23, isInline = true)),
+                                        ),
+                                    metadata = MetaData(row = 0, column = 20, isInline = true)),
                             metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
@@ -322,13 +348,17 @@ internal class ChalkTalkNodeLexerTest {
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 Set(
                     items =
-                        listOf(
-                            Name(
-                                text = "x",
-                                metadata = MetaData(row = 0, column = 11, isInline = true)),
-                            Name(
-                                text = "y",
-                                metadata = MetaData(row = 0, column = 14, isInline = true))),
+                        CurlyNodeList(
+                            nodes =
+                                listOf(
+                                    Name(
+                                        text = "x",
+                                        metadata = MetaData(row = 0, column = 11, isInline = true)),
+                                    Name(
+                                        text = "y",
+                                        metadata =
+                                            MetaData(row = 0, column = 14, isInline = true))),
+                            metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
@@ -346,20 +376,28 @@ internal class ChalkTalkNodeLexerTest {
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 Set(
                     items =
-                        listOf(
-                            NameAssignment(
-                                lhs =
-                                    Name(
-                                        text = "x",
+                        CurlyNodeList(
+                            nodes =
+                                listOf(
+                                    NameAssignment(
+                                        lhs =
+                                            Name(
+                                                text = "x",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 11, isInline = true)),
+                                        rhs =
+                                            Name(
+                                                text = "a",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 16, isInline = true)),
                                         metadata = MetaData(row = 0, column = 11, isInline = true)),
-                                rhs =
                                     Name(
-                                        text = "a",
-                                        metadata = MetaData(row = 0, column = 16, isInline = true)),
-                                metadata = MetaData(row = 0, column = 11, isInline = true)),
-                            Name(
-                                text = "y",
-                                metadata = MetaData(row = 0, column = 19, isInline = true))),
+                                        text = "y",
+                                        metadata =
+                                            MetaData(row = 0, column = 19, isInline = true))),
+                            metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
@@ -377,13 +415,17 @@ internal class ChalkTalkNodeLexerTest {
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 Tuple(
                     targets =
-                        listOf(
-                            Name(
-                                text = "x",
-                                metadata = MetaData(row = 0, column = 11, isInline = true)),
-                            Name(
-                                text = "y",
-                                metadata = MetaData(row = 0, column = 14, isInline = true))),
+                        ParenNodeList(
+                            nodes =
+                                listOf(
+                                    Name(
+                                        text = "x",
+                                        metadata = MetaData(row = 0, column = 11, isInline = true)),
+                                    Name(
+                                        text = "y",
+                                        metadata =
+                                            MetaData(row = 0, column = 14, isInline = true))),
+                            metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),
@@ -401,20 +443,28 @@ internal class ChalkTalkNodeLexerTest {
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 Tuple(
                     targets =
-                        listOf(
-                            NameAssignment(
-                                lhs =
-                                    Name(
-                                        text = "x",
+                        ParenNodeList(
+                            nodes =
+                                listOf(
+                                    NameAssignment(
+                                        lhs =
+                                            Name(
+                                                text = "x",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 11, isInline = true)),
+                                        rhs =
+                                            Name(
+                                                text = "a",
+                                                metadata =
+                                                    MetaData(
+                                                        row = 0, column = 16, isInline = true)),
                                         metadata = MetaData(row = 0, column = 11, isInline = true)),
-                                rhs =
                                     Name(
-                                        text = "a",
-                                        metadata = MetaData(row = 0, column = 16, isInline = true)),
-                                metadata = MetaData(row = 0, column = 11, isInline = true)),
-                            Name(
-                                text = "y",
-                                metadata = MetaData(row = 0, column = 19, isInline = true))),
+                                        text = "y",
+                                        metadata =
+                                            MetaData(row = 0, column = 19, isInline = true))),
+                            metadata = MetaData(row = 0, column = 11, isInline = true)),
                     metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
                 EndSection(metadata = MetaData(row = 0, column = 0, isInline = false)),

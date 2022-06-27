@@ -27,6 +27,7 @@ import mathlingua.lib.frontend.ast.BeginArgument
 import mathlingua.lib.frontend.ast.BeginGroup
 import mathlingua.lib.frontend.ast.BeginSection
 import mathlingua.lib.frontend.ast.ChalkTalkNode
+import mathlingua.lib.frontend.ast.CurlyNodeList
 import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
@@ -40,6 +41,7 @@ import mathlingua.lib.frontend.ast.NameOrNameAssignment
 import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
+import mathlingua.lib.frontend.ast.ParenNodeList
 import mathlingua.lib.frontend.ast.Set
 import mathlingua.lib.frontend.ast.Statement
 import mathlingua.lib.frontend.ast.SubAndRegularParamCall
@@ -47,6 +49,7 @@ import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
 import mathlingua.lib.frontend.ast.SubParamCall
 import mathlingua.lib.frontend.ast.SubParamSequence
 import mathlingua.lib.frontend.ast.Target
+import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
 import mathlingua.lib.frontend.ast.Tuple
@@ -306,8 +309,11 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return if (subParams != null && regularParams != null) {
             SubAndRegularParamCall(
                 name = name,
-                subParams = subParams,
-                params = regularParams,
+                subParams =
+                    ParenNodeList(nodes = subParams, metadata = firstMetadataOrDefault(subParams)),
+                params =
+                    ParenNodeList(
+                        nodes = regularParams, metadata = firstMetadataOrDefault(regularParams)),
                 metadata =
                     MetaData(
                         row = name.metadata.row,
@@ -316,7 +322,8 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         } else if (subParams != null && regularParams == null) {
             SubParamCall(
                 name = name,
-                subParams = subParams,
+                subParams =
+                    ParenNodeList(nodes = subParams, metadata = firstMetadataOrDefault(subParams)),
                 metadata =
                     MetaData(
                         row = name.metadata.row,
@@ -325,7 +332,9 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         } else if (subParams == null && regularParams != null) {
             Function(
                 name = name,
-                params = regularParams,
+                params =
+                    ParenNodeList(
+                        nodes = regularParams, metadata = firstMetadataOrDefault(regularParams)),
                 metadata =
                     MetaData(
                         row = name.metadata.row,
@@ -496,22 +505,23 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         val lParen = expect(ChalkTalkTokenType.LParen)!!
         val targets = targets(isInline, ChalkTalkTokenType.RParen)
         expect(ChalkTalkTokenType.RParen)
-        return Tuple(
-            targets =
-                targets
-                    .map {
-                        if (it !is Target) {
-                            diagnostics.add(
-                                Diagnostic(
-                                    type = DiagnosticType.Error,
-                                    message = "Expected a target",
-                                    origin = DiagnosticOrigin.TexTalkParser,
-                                    row = it.metadata.row,
-                                    column = it.metadata.column))
-                        }
-                        it
+        val items =
+            targets
+                .map {
+                    if (it !is Target) {
+                        diagnostics.add(
+                            Diagnostic(
+                                type = DiagnosticType.Error,
+                                message = "Expected a target",
+                                origin = DiagnosticOrigin.TexTalkParser,
+                                row = it.metadata.row,
+                                column = it.metadata.column))
                     }
-                    .filterIsInstance<Target>(),
+                    it
+                }
+                .filterIsInstance<Target>()
+        return Tuple(
+            targets = ParenNodeList(nodes = items, metadata = firstMetadataOrDefault(items)),
             metadata = MetaData(row = lParen.row, column = lParen.column, isInline = isInline))
     }
 
@@ -586,8 +596,9 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                             column = t.metadata.column))
                 }
             }
+            val items = targets.filterIsInstance<NameOrNameAssignment>()
             Set(
-                items = targets.filterIsInstance<NameOrNameAssignment>(),
+                items = CurlyNodeList(nodes = items, metadata = firstMetadataOrDefault(items)),
                 metadata = MetaData(row = lCurly.row, column = lCurly.column, isInline = isInline))
         }
     }
@@ -796,3 +807,10 @@ private fun ChalkTalkTokenLexer.hasHas(type1: ChalkTalkTokenType, type2: ChalkTa
         this.hasNextNext() &&
         this.peek().type == type1 &&
         this.peekPeek().type == type2
+
+private fun <T : TexTalkNode> firstMetadataOrDefault(nodes: List<T>): MetaData =
+    if (nodes.isEmpty()) {
+        MetaData(row = -1, column = -1, isInline = null)
+    } else {
+        nodes[0].metadata.copy()
+    }

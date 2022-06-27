@@ -34,7 +34,7 @@ internal data class AtomTreeNode(var token: TexTalkToken) : TreeNode {
     override fun startsWith(type: TexTalkTokenType) = token.type == type
 }
 
-internal data class ParenTreeNode(
+internal data class BracketTreeNode(
     var prefix: TexTalkToken?, var content: TreeNode?, var suffix: TexTalkToken?
 ) : TreeNode {
     override fun toString(indent: String) =
@@ -79,8 +79,8 @@ internal data class UnitTreeNode(val nodes: MutableList<TreeNode>, val terminato
     override fun startsWith(type: TexTalkTokenType) = nodes.firstOrNull()?.startsWith(type) ?: false
 }
 
-internal fun lexerToTree(lexer: TexTalkLexer) =
-    groupByParens(lexer)
+internal fun TexTalkLexer.toTree() =
+    groupByParens(this)
         ?.splitByNodesMatching(
             setOf(TexTalkTokenType.Is, TexTalkTokenType.In, TexTalkTokenType.NotIn))
         ?.splitByNodesMatching(setOf(TexTalkTokenType.Equals, TexTalkTokenType.NotEqual))
@@ -101,8 +101,8 @@ private fun listToTreeNode(nodes: MutableList<TreeNode>): TreeNode? =
 private fun TreeNode.splitByNodesMatching(splitTypes: Set<TexTalkTokenType>): TreeNode =
     when (this) {
         is AtomTreeNode -> this
-        is ParenTreeNode -> {
-            ParenTreeNode(
+        is BracketTreeNode -> {
+            BracketTreeNode(
                 prefix = this.prefix,
                 content = this.content?.splitByNodesMatching(splitTypes),
                 suffix = this.suffix)
@@ -146,7 +146,7 @@ private fun groupByParens(lexer: TexTalkLexer): TreeNode? {
                 } else {
                     null
                 }
-            nodes.add(ParenTreeNode(prefix = next, content = content, suffix = suffix))
+            nodes.add(BracketTreeNode(prefix = next, content = content, suffix = suffix))
         } else {
             nodes.add(AtomTreeNode(token = next))
         }
@@ -165,8 +165,8 @@ private fun TreeNode.splitForUnitNodes(): TreeNode =
         is UnitTreeNode ->
             throw Exception("Unit nodes shouldn't be encountered when splitting for Unit nodes")
         is AtomTreeNode -> this
-        is ParenTreeNode -> {
-            ParenTreeNode(
+        is BracketTreeNode -> {
+            BracketTreeNode(
                 prefix = this.prefix,
                 content = this.content?.splitForUnitNodes(),
                 suffix = this.suffix)

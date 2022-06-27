@@ -72,17 +72,17 @@ internal data class VariadicSequence(val sequence: Sequence, override val metada
 internal sealed interface FunctionCall : NameOrFunction, Expression
 
 internal data class Function(
-    val name: Name, val params: List<NameOrVariadicName>, override val metadata: MetaData
+    val name: Name, val params: ParenNodeList<NameOrVariadicName>, override val metadata: MetaData
 ) : FunctionCall, NameOrFunction, Target, NameAssignmentItem, SquareTargetItem, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
         builder.append("(")
-        for (i in params.indices) {
+        for (i in params.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(params[i].toCode())
+            builder.append(params.nodes[i].toCode())
         }
         builder.append(")")
         return builder.toString()
@@ -90,17 +90,19 @@ internal data class Function(
 }
 
 internal data class SubParamCall(
-    val name: Name, val subParams: List<NameOrVariadicName>, override val metadata: MetaData
+    val name: Name,
+    val subParams: ParenNodeList<NameOrVariadicName>,
+    override val metadata: MetaData
 ) : FunctionCall {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
         builder.append("_(")
-        for (i in subParams.indices) {
+        for (i in subParams.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(subParams[i].toCode())
+            builder.append(subParams.nodes[i].toCode())
         }
         builder.append(")")
         return builder.toString()
@@ -109,26 +111,26 @@ internal data class SubParamCall(
 
 internal data class SubAndRegularParamCall(
     val name: Name,
-    val subParams: List<NameOrVariadicName>,
-    val params: List<NameOrVariadicName>,
+    val subParams: ParenNodeList<NameOrVariadicName>,
+    val params: ParenNodeList<NameOrVariadicName>,
     override val metadata: MetaData
 ) : FunctionCall {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
         builder.append("_(")
-        for (i in subParams.indices) {
+        for (i in subParams.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(subParams[i].toCode())
+            builder.append(subParams.nodes[i].toCode())
         }
         builder.append(")(")
-        for (i in params.indices) {
+        for (i in params.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(params[i].toCode())
+            builder.append(params.nodes[i].toCode())
         }
         builder.append(")")
         return builder.toString()
@@ -145,11 +147,11 @@ internal data class SubParamSequence(val func: SubParamCall, override val metada
         builder.append("{")
         builder.append(func.toCode())
         builder.append("}_(")
-        for (i in func.subParams.indices) {
+        for (i in func.subParams.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(func.subParams[i].toCode())
+            builder.append(func.subParams.nodes[i].toCode())
         }
         builder.append(")")
         return builder.toString()
@@ -164,11 +166,11 @@ internal data class SubAndRegularParamSequence(
         builder.append("{")
         builder.append(func.toCode())
         builder.append("}_{")
-        for (i in func.subParams.indices) {
+        for (i in func.subParams.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(func.subParams[i].toCode())
+            builder.append(func.subParams.nodes[i].toCode())
         }
         builder.append("}")
         return builder.toString()
@@ -193,16 +195,16 @@ internal sealed interface Argument : CommonNode
 
 internal sealed interface SquareTargetItem : CommonNode
 
-internal data class Tuple(val targets: List<Target>, override val metadata: MetaData) :
+internal data class Tuple(val targets: ParenNodeList<Target>, override val metadata: MetaData) :
     SquareTargetItem, NameAssignmentItem, Target, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("(")
-        for (i in targets.indices) {
+        for (i in targets.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(targets[i].toCode())
+            builder.append(targets.nodes[i].toCode())
         }
         builder.append(")")
         return builder.toString()
@@ -212,16 +214,17 @@ internal data class Tuple(val targets: List<Target>, override val metadata: Meta
 // <name> | <name assignment>
 internal sealed interface NameOrNameAssignment : CommonNode
 
-internal data class Set(val items: List<NameOrNameAssignment>, override val metadata: MetaData) :
-    SquareTargetItem, NameAssignmentItem, Target, Expression {
+internal data class Set(
+    val items: CurlyNodeList<NameOrNameAssignment>, override val metadata: MetaData
+) : SquareTargetItem, NameAssignmentItem, Target, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("{")
-        for (i in items.indices) {
+        for (i in items.nodes.indices) {
             if (i > 0) {
                 builder.append(", ")
             }
-            builder.append(items[i].toCode())
+            builder.append(items.nodes[i].toCode())
         }
         builder.append("}")
         return builder.toString()

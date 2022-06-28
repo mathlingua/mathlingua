@@ -3,120 +3,122 @@
 ```
 Name ::= Regex[[a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?]
 
-OperatorName ::= Regex[[~!@#$%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?]
-
-NameAssignmentItem ::=
-   Name |
-   OperatorName |
-   Tuple |
-   Sequence |
-   Function |
-   Set
-
-NameAssignment ::= Name ":=" NameAssignmentItem
+VariadicName ::= Name ("...")?
 
 NameOrVariadicName ::=
    Name |
    VariadicName
 
-VariadicName ::= Name ("...")?
+OperatorName ::= Regex[[~!@#$%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?]
 
-Function ::= Name "(" NameOrVariadicName ("," NameOrVariadicName)* ")"
+NameAssignmentItem ::=
+   Name |
+   OperatorName |
+   TupleForm |
+   SequenceForm |
+   FunctionForm |
+   SetForm
 
-SubParamCall ::= Name "_" "(" NameOrVariadicName ("," NameOrVariadicName)* ")"
-
-SubAndRegularParamCall ::= Name "_" "(" NameOrVariadicName ("," NameOrVariadicName)* ")" "(" NameOrVariadicName ("," NameOrVariadicName)* ")"
-
-FunctionCall ::=
-   Function |
-   SubParamCall |
-   SubAndRegularParamCall
-
-SubParamSequence ::= "{" SubParamCall "}" "_" "(" VariadicName ("," VariadicName)* ")"
-
-SubAndRegularParamSequence ::= "{" SubAndRegularParamCall "}" "_" "(" VariadicName ("," VariadicName)* ")"
-
-Sequence ::=
-   SubParamSequence |
-   SubAndRegularParamSequence
-
-Tuple ::= "(" Target ("," Target)* ")"
+NameAssignment ::= Name ":=" NameAssignmentItem
 
 NameOrNameAssignment ::=
    Name |
    NameAssignment
 
-Set ::= "{" NameOrNameAssignment ("," NameOrNameAssignment)* "}"
+FunctionForm ::= Name "(" NameOrVariadicName ("," NameOrVariadicName)* ")"
+
+VariadicFunctionForm ::= FunctionForm "..."
+
+SubParamFormCall ::= Name "_" "(" NameOrVariadicName ("," NameOrVariadicName)* ")"
+
+SubAndRegularParamFormCall ::= Name "_" "(" NameOrVariadicName ("," NameOrVariadicName)* ")" "(" NameOrVariadicName ("," NameOrVariadicName)* ")"
+
+FunctionFormCall ::=
+   FunctionForm |
+   SubParamFormCall |
+   SubAndRegularParamFormCall
+
+SubParamSequenceForm ::= "{" SubParamFormCall "}" "_" "(" VariadicName ("," VariadicName)* ")"
+
+SubAndRegularParamSequenceForm ::= "{" SubAndRegularParamFormCall "}" "_" "(" VariadicName ("," VariadicName)* ")"
+
+SequenceForm ::=
+   SubParamSequenceForm |
+   SubAndRegularParamSequenceForm
+
+TupleForm ::= "(" Target ("," Target)* ")"
+
+SetForm ::= "{" NameOrNameAssignment ("," NameOrNameAssignment)* "}"
 
 Target ::=
    NameAssignment |
    Name |
    OperatorName |
-   Tuple |
-   Sequence |
-   Function |
-   Set
+   TupleForm |
+   SequenceForm |
+   FunctionForm |
+   SetForm
 
 Argument ::=
    Target |
    Text[] |
-   Statement[]
+   Formulation[]
 
 Text ::= ".*" [escape=\"]
 
 TextBlock ::= ::.*:: [escape={::}]
 
-Statement ::= ('.*' [escape=null] | `.*` [escape=null])
+Formulation ::= ('.*' [escape=null] | `.*` [escape=null])
 
-InfixCommandFormCall ::= Name InfixCommandForm Name
+InfixCommandFormPart ::= CommandFormCall "/"
 
-IdPrefixOperatorCall ::= OperatorName Name
+InfixCommandFormCall ::= Name InfixCommandFormPart Name
 
-IdPostfixOperatorCall ::= Name OperatorName
+PrefixOperatorFormCall ::= OperatorName Name
 
-IdInfixOperatorCall ::= Name OperatorName Name
+PostfixOperatorFormCall ::= Name OperatorName
+
+InfixOperatorFormCall ::= Name OperatorName Name
 
 IdForm ::=
-   CommandForm |
+   CommandFormCall |
    InfixCommandFormCall |
-   IdPrefixOperatorCall |
-   IdPostfixOperatorCall |
-   IdInfixOperatorCall
+   PrefixOperatorFormCall |
+   PostfixOperatorFormCall |
+   InfixOperatorFormCall
 
 Id ::= "[" IdForm "]"
 
+CommandFormCall ::= "\" Name ("." Name)* (SquareParams)? ("{" NameOrVariadicName ("," NameOrVariadicName)* "}")? (NamedParameterForm)* ("(" NameOrVariadicName ("," NameOrVariadicName)* ")")?
+
+CommandExpressionCall ::= "\" Name ("." Name)* (SquareParams)? ("{" Expression ("," Expression)* "}")? (NamedParameterExpression)* ("(" Expression ("," Expression)* ")")?
+
+InfixCommandExpressionPart ::= CommandExpressionCall "/"
+
 SquareTargetItem ::=
    Name |
-   Tuple |
-   Sequence |
-   Function |
-   Set
+   TupleForm |
+   SequenceForm |
+   FunctionForm |
+   SetForm
 
 SquareParams ::= ("[" SquareTargetItem ("," SquareTargetItem)* ("|" Name "...")? "]")? ("_" "{" Expression ("," Expression)* "}")? ("^" "{" Expression ("," Expression)* "}")?
 
 NamedParameterExpression ::= ":" "{" Expression ("," Expression)* "}"
 
-CommandExpression ::= "\" Name ("." Name)* (SquareParams)? ("{" Expression ("," Expression)* "}")? (NamedParameterExpression)* ("(" Expression ("," Expression)* ")")?
-
 NamedParameterForm ::= ":" "Name" "{" NameOrVariadicName ("," NameOrVariadicName)* "}"
 
-CommandForm ::= "\" Name ("." Name)* (SquareParams)? ("{" NameOrVariadicName ("," NameOrVariadicName)* "}")? (NamedParameterForm)* ("(" NameOrVariadicName ("," NameOrVariadicName)* ")")?
-
-InfixCommandExpressionForm ::= CommandExpression "/"
-
-InfixCommandForm ::= CommandForm "/"
-
-NameOrCommand ::=
+NameOrCommandExpressionCall ::=
    Name |
-   CommandExpression
+   CommandExpressionCall
 
 VariadicIsRhs ::=
    VariadicName |
-   CommandExpression
+   CommandExpressionCall
 
-VariadicIsExpression ::= VariadicTarget 'is' VariadicIsRhs
+VariadicIsExpression ::= VariadicTargetForm 'is' VariadicIsRhs
 
-IsExpression ::= Target ("," Target)* 'is' NameOrCommand ("," NameOrCommand)*
+IsExpression ::= Target ("," Target)* 'is' NameOrCommandExpressionCall ("," NameOrCommandExpressionCall)*
 
 StatementIsFormItem ::= "statement"
 
@@ -141,28 +143,26 @@ SignatureExpression ::= "\" Name ("." Name)* (":" Name)*
 
 AsExpression ::= Expression 'as' SignatureExpression
 
-VariadicFunction ::= Function "..."
+VariadicSequenceForm ::= SequenceForm "..."
 
-VariadicSequence ::= Sequence "..."
-
-VariadicTarget ::=
+VariadicTargetForm ::=
    VariadicName |
-   VariadicFunction |
-   VariadicSequence
+   VariadicFunctionForm |
+   VariadicSequenceForm
 
 VariadicRhs ::=
-   VariadicTarget |
+   VariadicTargetForm |
    Expression
 
-VariadicInExpression ::= VariadicTarget "in" VariadicRhs
+VariadicInExpression ::= VariadicTargetForm "in" VariadicRhs
 
 InExpression ::= Target ("," Target)* "in" Expression
 
-VariadicNotInExpression ::= VariadicTarget "notin" VariadicRhs
+VariadicNotInExpression ::= VariadicTargetForm "notin" VariadicRhs
 
 NotInExpression ::= Target ("," Target)* "notin" Expression
 
-VariadicColonEqualsExpression ::= VariadicTarget ":=" VariadicRhs
+VariadicColonEqualsExpression ::= VariadicTargetForm ":=" VariadicRhs
 
 ColonEqualsExpression ::= Target ":=" Expression
 
@@ -184,7 +184,7 @@ Operator ::=
    TypeScopedOperatorName |
    TypeScopedInfixOperatorName
 
-InfixCommandExpression ::= Expression InfixCommandExpressionForm Expression
+InfixCommandExpression ::= Expression InfixCommandExpressionPart Expression
 
 PrefixOperatorExpression ::= MemberScopedOperatorName Expression
 
@@ -213,13 +213,13 @@ OperationExpression ::=
 
 NameAssignmentExpression ::= Name ":=" Expression
 
-FunctionAssignmentExpression ::= Function ":=" Expression
+FunctionAssignmentExpression ::= FunctionForm ":=" Expression
 
-SetAssignmentExpression ::= Set ":=" Expression
+SetAssignmentExpression ::= SetForm ":=" Expression
 
-SequenceAssignmentExpression ::= Sequence ":=" Expression
+SequenceAssignmentExpression ::= SequenceForm ":=" Expression
 
-TupleAssignmentExpression ::= Tuple ":=" Expression
+TupleAssignmentExpression ::= TupleForm ":=" Expression
 
 NameAssignmentAssignmentExpression ::= NameAssignment ":=" Expression
 
@@ -245,14 +245,14 @@ GroupingExpression ::=
 Expression ::=
    Name |
    MemberScopedName |
-   Tuple |
-   Sequence |
-   Function |
-   FunctionCall |
-   Set |
+   TupleForm |
+   SequenceForm |
+   FunctionForm |
+   FunctionFormCall |
+   SetForm |
    GroupingExpression |
    OperationExpression |
-   CommandExpression |
+   CommandExpressionCall |
    AsExpression |
    VariadicColonEqualsExpression |
    ColonEqualsExpression |
@@ -279,11 +279,11 @@ Clause ::=
    iff: |
    Spec |
    Text[.*] |
-   Statement[Expression]
+   Formulation[Expression]
 
 Spec ::=
-   Statement[IsExpression | VariadicIsExpression] |
-   Statement[InExpression | VariadicInExpression]
+   Formulation[IsExpression | VariadicIsExpression] |
+   Formulation[InExpression | VariadicInExpression]
 
 and: (Clause)+
 
@@ -312,44 +312,44 @@ then: (Clause)+
 
 NameOrFunction ::=
    Name |
-   Function |
-   FunctionCall
+   FunctionForm |
+   FunctionFormCall
 
 generated: 
 from: (NameOrFunction)+
-when?: (Statement[ColonEqualsExpression])+
+when?: (Formulation[ColonEqualsExpression])+
 
 piecewise: 
 when?: (Clause)+
-then?: (Statement[ColonEqualsExpression])+
-else?: (Statement[ColonEqualsExpression])+
+then?: (Formulation[ColonEqualsExpression])+
+else?: (Formulation[ColonEqualsExpression])+
 
-matching: (Statement[ColonEqualsExpression])+
+matching: (Formulation[ColonEqualsExpression])+
 
 ProvidedItem ::=
-   Statement[Expression InfixCommandExpression Expression] |
-   Statement[OperationExpression]
+   Formulation[Expression InfixCommandExpression Expression] |
+   Formulation[OperationExpression]
 
 equality: 
 between: Target Target
 provided: ProvidedItem
 
 membership: 
-through: Statement[]
+through: Formulation[]
 
 view: 
 as: Text[SignatureExpression]
-via: Statement[Expression]
-by?: Statement[CommandForm]
+via: Formulation[Expression]
+by?: Formulation[CommandFormCall]
 
 symbols: (Name)+
-where: (Statement[ColonEqualsExpression])+
+where: (Formulation[ColonEqualsExpression])+
 
 symbols: (Name)+
 as: Text[SignatureExpression]
 
 memberSymbols: (Name)+
-where: (Statement[ColonEqualsExpression])+
+where: (Formulation[ColonEqualsExpression])+
 
 memberSymbols: (Name)+
 as: Text[SignatureExpression]
@@ -399,11 +399,11 @@ with?: (Assignment)+
 given?: (Target)+
 when?: (Spec)+
 suchThat?: (Clause)+
-means?: Statement[IsExpression | VariadicIsExpression]
+means?: Formulation[IsExpression | VariadicIsExpression]
 satisfying: (SatisfyingItem)+
 expressing: (ExpressingItem)+
 Providing?: (ProvidingItem)+
-Using?: (Statement[ColonEqualsExpression])+
+Using?: (Formulation[ColonEqualsExpression])+
 Codified: (CodifiedItem)+
 Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
@@ -424,7 +424,7 @@ given?: (Target)+
 when?: (Spec)+
 suchThat?: (Clause)+
 that: (ThatItem)+
-Using?: Statement[ColonEqualsExpression]
+Using?: Formulation[ColonEqualsExpression]
 Codified: (CodifiedItem)+
 Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
@@ -466,7 +466,7 @@ where?: (Spec)+
 suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
-Using?: (Statement[ColonEqualsExpression])+
+Using?: (Formulation[ColonEqualsExpression])+
 Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":offset" "{" [0-9]+ "}")?
@@ -480,7 +480,7 @@ where?: (Spec)+
 suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
-Using?: (Statement[ColonEqualsExpression])+
+Using?: (Formulation[ColonEqualsExpression])+
 Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?
    (":offset" "{" [0-9]+ "}")?
@@ -494,7 +494,7 @@ where?: (Spec)+
 suchThat?: (Clause)+
 then: (Clause)+
 iff?: (Clause)+
-Using?: (Statement[ColonEqualsExpression])+
+Using?: (Formulation[ColonEqualsExpression])+
 Proof?: (Text[.*])+
 Documented?: (DocumentedItem)+
 References?: (Text["@" (Name ".") Name (":page" "{" [0-9]+ "}")?

@@ -102,7 +102,7 @@ internal class SquareParams private constructor(private val value: Any) {
     override fun toString() = value.toString()
 }
 
-internal data class CommandExpression(
+internal data class CommandExpressionCall(
     val names: NonBracketNodeList<Name>,
     val squareParams: SquareParams?,
     val subParams: CurlyNodeList<Expression>?,
@@ -111,7 +111,7 @@ internal data class CommandExpression(
     val namedParams: NonBracketNodeList<NamedParameterExpression>?,
     val parenParams: ParenNodeList<Expression>?,
     override val metadata: MetaData
-) : TexTalkNode, NameOrCommand, Expression, VariadicIsRhs {
+) : TexTalkNode, NameOrCommandExpressionCall, Expression, VariadicIsRhs {
     override fun toCode() = TODO("Not yet implemented")
 }
 
@@ -119,7 +119,7 @@ internal data class NamedParameterForm(
     val name: Name, val params: CurlyNodeList<NameOrVariadicName>, override val metadata: MetaData
 ) : TexTalkNode
 
-internal data class CommandForm(
+internal data class CommandFormCall(
     val names: NonBracketNodeList<Name>,
     val squareParams: SquareParams?,
     val subParams: CurlyNodeList<NameOrVariadicName>?,
@@ -138,27 +138,28 @@ internal sealed interface OperationExpression : Expression
 
 internal data class InfixCommandExpression(
     val lhs: Expression,
-    val command: CommandExpression,
+    val command: CommandExpressionCall,
     val rhs: Expression,
     override val metadata: MetaData
 ) : OperationExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
-internal data class InfixCommandForm(val command: CommandForm, override val metadata: MetaData) :
-    TexTalkNode
+internal data class InfixCommandFormPart(
+    val command: CommandFormCall, override val metadata: MetaData
+) : TexTalkNode
 
-internal sealed interface NameOrCommand : TexTalkNode
+internal sealed interface NameOrCommandExpressionCall : TexTalkNode
 
 internal data class VariadicIsExpression(
-    val lhs: VariadicTarget, val rhs: VariadicIsRhs, override val metadata: MetaData
+    val lhs: VariadicTargetForm, val rhs: VariadicIsRhs, override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class IsExpression(
     val lhs: NonBracketNodeList<Target>,
-    val rhs: NonBracketNodeList<NameOrCommand>,
+    val rhs: NonBracketNodeList<NameOrCommandExpressionCall>,
     override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
@@ -177,7 +178,7 @@ internal data class AsExpression(
 }
 
 internal data class VariadicInExpression(
-    val lhs: VariadicTarget, val rhs: VariadicRhs, override val metadata: MetaData
+    val lhs: VariadicTargetForm, val rhs: VariadicRhs, override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -189,7 +190,7 @@ internal data class InExpression(
 }
 
 internal data class VariadicNotInExpression(
-    val lhs: VariadicTarget, val rhs: VariadicRhs, override val metadata: MetaData
+    val lhs: VariadicTargetForm, val rhs: VariadicRhs, override val metadata: MetaData
 ) : Expression {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -207,7 +208,7 @@ internal data class ColonEqualsExpression(
 }
 
 internal data class VariadicColonEqualsExpression(
-    val lhs: VariadicTarget, val rhs: VariadicRhs, override val metadata: MetaData
+    val lhs: VariadicTargetForm, val rhs: VariadicRhs, override val metadata: MetaData
 ) : Expression, SatisfyingItem, ExpressingItem {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -317,25 +318,25 @@ internal data class NameAssignmentExpression(
 }
 
 internal data class FunctionAssignmentExpression(
-    val lhs: FunctionCall, val rhs: Expression, override val metadata: MetaData
+    val lhs: FunctionFormCall, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class SetAssignmentExpression(
-    val lhs: Set, val rhs: Expression, override val metadata: MetaData
+    val lhs: SetForm, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class SequenceAssignmentExpression(
-    val lhs: Sequence, val rhs: Expression, override val metadata: MetaData
+    val lhs: SequenceForm, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
 
 internal data class TupleAssignmentExpression(
-    val lhs: Tuple, val rhs: Expression, override val metadata: MetaData
+    val lhs: TupleForm, val rhs: Expression, override val metadata: MetaData
 ) : AssignmentExpression {
     override fun toCode() = TODO("Not yet implemented")
 }
@@ -368,7 +369,7 @@ internal data class MetaIsForm(
     val items: SquareColonNodeList<MetaIsFormItem>, override val metadata: MetaData
 ) : TexTalkNode
 
-internal data class IdInfixOperatorCall(
+internal data class InfixOperatorFormCall(
     val lhs: Name, val center: OperatorName, val rhs: Name, override val metadata: MetaData
 ) : IdForm {
     override fun toCode(): String {
@@ -376,7 +377,7 @@ internal data class IdInfixOperatorCall(
     }
 }
 
-internal data class IdPostfixOperatorCall(
+internal data class PostfixOperatorFormCall(
     val lhs: Name, val center: OperatorName, override val metadata: MetaData
 ) : IdForm {
     override fun toCode(): String {
@@ -384,7 +385,7 @@ internal data class IdPostfixOperatorCall(
     }
 }
 
-internal data class IdPrefixOperatorCall(
+internal data class PrefixOperatorFormCall(
     val center: OperatorName, val rhs: Name, override val metadata: MetaData
 ) : IdForm {
     override fun toCode(): String {
@@ -393,15 +394,15 @@ internal data class IdPrefixOperatorCall(
 }
 
 internal data class InfixCommandFormCall(
-    val lhs: Name, val center: InfixCommandForm, val rhs: Name, override val metadata: MetaData
+    val lhs: Name, val center: InfixCommandFormPart, val rhs: Name, override val metadata: MetaData
 ) : IdForm {
     override fun toCode(): String {
         TODO("Not yet implemented")
     }
 }
 
-internal data class InfixCommandExpressionForm(
-    val expression: CommandExpression, override val metadata: MetaData
+internal data class InfixCommandExpressionPart(
+    val expression: CommandExpressionCall, override val metadata: MetaData
 ) : TexTalkNode {}
 
 internal object EmptyTexTalkNode : TexTalkNode {

@@ -20,8 +20,13 @@ import java.nio.file.Paths
 
 internal val MATHLINGUA_SPECIFICATION =
     listOf(
+        // names
         DefinitionOf(
             "Name", Regex("""[a-zA-Z0-9'"`]+("_"[a-zA-Z0-9'"`]+)?"""), DefinitionType.Common),
+        DefinitionOf(
+            "VariadicName", items(Def("Name"), Optionally(Literal("..."))), DefinitionType.Common),
+        DefinitionOf(
+            "NameOrVariadicName", anyOf(Def("Name"), Def("VariadicName")), DefinitionType.Common),
         DefinitionOf(
             "OperatorName",
             Regex("""[~!@#${'$'}%^&*-+=|<>?'`"]+("_"[a-zA-Z0-9'"`]+)?"""),
@@ -31,21 +36,24 @@ internal val MATHLINGUA_SPECIFICATION =
             anyOf(
                 Def("Name"),
                 Def("OperatorName"),
-                Def("Tuple"),
-                Def("Sequence"),
-                Def("Function"),
-                Def("Set")),
+                Def("TupleForm"),
+                Def("SequenceForm"),
+                Def("FunctionForm"),
+                Def("SetForm")),
             DefinitionType.Common),
         DefinitionOf(
             "NameAssignment",
             items(Def("Name"), Literal(":="), Def("NameAssignmentItem")),
             DefinitionType.Common),
         DefinitionOf(
-            "NameOrVariadicName", anyOf(Def("Name"), Def("VariadicName")), DefinitionType.Common),
+            "NameOrNameAssignment",
+            anyOf(Def("Name"), Def("NameAssignment")),
+            DefinitionType.Common),
+
+        // functions
+
         DefinitionOf(
-            "VariadicName", items(Def("Name"), Optionally(Literal("..."))), DefinitionType.Common),
-        DefinitionOf(
-            "Function",
+            "FunctionForm",
             items(
                 Def("Name"),
                 Literal("("),
@@ -56,7 +64,14 @@ internal val MATHLINGUA_SPECIFICATION =
                 Literal(")")),
             DefinitionType.Common),
         DefinitionOf(
-            "SubParamCall",
+            "VariadicFunctionForm",
+            items(Def("FunctionForm"), Literal("...")),
+            DefinitionType.TexTalk),
+
+        // calls
+
+        DefinitionOf(
+            "SubParamFormCall",
             items(
                 Def("Name"),
                 Literal("_"),
@@ -68,7 +83,7 @@ internal val MATHLINGUA_SPECIFICATION =
                 Literal(")")),
             DefinitionType.Common),
         DefinitionOf(
-            "SubAndRegularParamCall",
+            "SubAndRegularParamFormCall",
             items(
                 Def("Name"),
                 Literal("_"),
@@ -86,14 +101,14 @@ internal val MATHLINGUA_SPECIFICATION =
                 Literal(")")),
             DefinitionType.Common),
         DefinitionOf(
-            "FunctionCall",
-            anyOf(Def("Function"), Def("SubParamCall"), Def("SubAndRegularParamCall")),
+            "FunctionFormCall",
+            anyOf(Def("FunctionForm"), Def("SubParamFormCall"), Def("SubAndRegularParamFormCall")),
             DefinitionType.Common),
         DefinitionOf(
-            "SubParamSequence",
+            "SubParamSequenceForm",
             items(
                 Literal("{"),
-                Def("SubParamCall"),
+                Def("SubParamFormCall"),
                 Literal("}"),
                 Literal("_"),
                 Literal("("),
@@ -104,10 +119,10 @@ internal val MATHLINGUA_SPECIFICATION =
                 Literal(")")),
             DefinitionType.Common),
         DefinitionOf(
-            "SubAndRegularParamSequence",
+            "SubAndRegularParamSequenceForm",
             items(
                 Literal("{"),
-                Def("SubAndRegularParamCall"),
+                Def("SubAndRegularParamFormCall"),
                 Literal("}"),
                 Literal("_"),
                 Literal("("),
@@ -117,23 +132,28 @@ internal val MATHLINGUA_SPECIFICATION =
                     constraint = SequenceConstraint.OneOrMore),
                 Literal(")")),
             DefinitionType.Common),
+
+        // sequences
+
         DefinitionOf(
-            "Sequence",
-            anyOf(Def("SubParamSequence"), Def("SubAndRegularParamSequence")),
+            "SequenceForm",
+            anyOf(Def("SubParamSequenceForm"), Def("SubAndRegularParamSequenceForm")),
             DefinitionType.Common),
+
+        // tuples
+
         DefinitionOf(
-            "Tuple",
+            "TupleForm",
             items(
                 Literal("("),
                 Sequence(of = "Target", separator = ",", constraint = SequenceConstraint.OneOrMore),
                 Literal(")")),
             DefinitionType.Common),
+
+        // sets
+
         DefinitionOf(
-            "NameOrNameAssignment",
-            anyOf(Def("Name"), Def("NameAssignment")),
-            DefinitionType.Common),
-        DefinitionOf(
-            "Set",
+            "SetForm",
             items(
                 Literal("{"),
                 Sequence(
@@ -148,14 +168,14 @@ internal val MATHLINGUA_SPECIFICATION =
                 Def("NameAssignment"),
                 Def("Name"),
                 Def("OperatorName"),
-                Def("Tuple"),
-                Def("Sequence"),
-                Def("Function"),
-                Def("Set")),
+                Def("TupleForm"),
+                Def("SequenceForm"),
+                Def("FunctionForm"),
+                Def("SetForm")),
             DefinitionType.Common),
         DefinitionOf(
             "Argument",
-            anyOf(Def("Target"), Text(""), Statement(of = emptyList())),
+            anyOf(Def("Target"), Text(""), Formulation(of = emptyList())),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Text",
@@ -171,41 +191,108 @@ internal val MATHLINGUA_SPECIFICATION =
             ),
             DefinitionType.ChalkTalk),
         DefinitionOf(
-            "Statement",
+            "Formulation",
             Either(
                 CharSequence(prefix = "'", suffix = "'", regex = ".*", escape = null),
                 CharSequence(prefix = "`", suffix = "`", regex = ".*", escape = null)),
             DefinitionType.ChalkTalk),
+
+        // ids
+
         DefinitionOf(
-            "InfixCommandFormCall",
-            items(Def("Name"), Def("InfixCommandForm"), Def("Name")),
+            "InfixCommandFormPart",
+            items(Def("CommandFormCall"), Literal("/")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "IdPrefixOperatorCall",
+            "InfixCommandFormCall",
+            items(Def("Name"), Def("InfixCommandFormPart"), Def("Name")),
+            DefinitionType.TexTalk),
+        DefinitionOf(
+            "PrefixOperatorFormCall",
             items(Def("OperatorName"), Def("Name")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "IdPostfixOperatorCall",
+            "PostfixOperatorFormCall",
             items(Def("Name"), Def("OperatorName")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "IdInfixOperatorCall",
+            "InfixOperatorFormCall",
             items(Def("Name"), Def("OperatorName"), Def("Name")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "IdForm",
             anyOf(
-                Def("CommandForm"),
+                Def("CommandFormCall"),
                 Def("InfixCommandFormCall"),
-                Def("IdPrefixOperatorCall"),
-                Def("IdPostfixOperatorCall"),
-                Def("IdInfixOperatorCall")),
+                Def("PrefixOperatorFormCall"),
+                Def("PostfixOperatorFormCall"),
+                Def("InfixOperatorFormCall")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "Id", items(Literal("["), Def("IdForm"), Literal("]")), DefinitionType.ChalkTalk),
+
+        // commands
+
+        DefinitionOf(
+            "CommandFormCall",
+            items(
+                Literal("""\"""),
+                Sequence(of = "Name", separator = ".", constraint = SequenceConstraint.OneOrMore),
+                Optionally(Def("SquareParams")),
+                Optionally(
+                    items(
+                        Literal("{"),
+                        Sequence(
+                            of = "NameOrVariadicName",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore),
+                        Literal("}"))),
+                ZeroOrMore(Def("NamedParameterForm")),
+                Optionally(
+                    items(
+                        Literal("("),
+                        Sequence(
+                            of = "NameOrVariadicName",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore),
+                        Literal(")")))),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "CommandExpressionCall",
+            items(
+                Literal("""\"""),
+                Sequence(of = "Name", separator = ".", constraint = SequenceConstraint.OneOrMore),
+                Optionally(Def("SquareParams")),
+                Optionally(
+                    items(
+                        Literal("{"),
+                        Sequence(
+                            of = "Expression",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore),
+                        Literal("}"))),
+                ZeroOrMore(Def("NamedParameterExpression")),
+                Optionally(
+                    items(
+                        Literal("("),
+                        Sequence(
+                            of = "Expression",
+                            separator = ",",
+                            constraint = SequenceConstraint.OneOrMore),
+                        Literal(")")))),
+            DefinitionType.ChalkTalk),
+        DefinitionOf(
+            "InfixCommandExpressionPart",
+            items(Def("CommandExpressionCall"), Literal("/")),
+            DefinitionType.TexTalk),
         DefinitionOf(
             "SquareTargetItem",
-            anyOf(Def("Name"), Def("Tuple"), Def("Sequence"), Def("Function"), Def("Set")),
+            anyOf(
+                Def("Name"),
+                Def("TupleForm"),
+                Def("SequenceForm"),
+                Def("FunctionForm"),
+                Def("SetForm")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "SquareParams",
@@ -251,30 +338,6 @@ internal val MATHLINGUA_SPECIFICATION =
                 Literal("}")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "CommandExpression",
-            items(
-                Literal("""\"""),
-                Sequence(of = "Name", separator = ".", constraint = SequenceConstraint.OneOrMore),
-                Optionally(Def("SquareParams")),
-                Optionally(
-                    items(
-                        Literal("{"),
-                        Sequence(
-                            of = "Expression",
-                            separator = ",",
-                            constraint = SequenceConstraint.OneOrMore),
-                        Literal("}"))),
-                ZeroOrMore(Def("NamedParameterExpression")),
-                Optionally(
-                    items(
-                        Literal("("),
-                        Sequence(
-                            of = "Expression",
-                            separator = ",",
-                            constraint = SequenceConstraint.OneOrMore),
-                        Literal(")")))),
-            DefinitionType.ChalkTalk),
-        DefinitionOf(
             "NamedParameterForm",
             items(
                 Literal(":"),
@@ -287,44 +350,16 @@ internal val MATHLINGUA_SPECIFICATION =
                 Literal("}")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "CommandForm",
-            items(
-                Literal("""\"""),
-                Sequence(of = "Name", separator = ".", constraint = SequenceConstraint.OneOrMore),
-                Optionally(Def("SquareParams")),
-                Optionally(
-                    items(
-                        Literal("{"),
-                        Sequence(
-                            of = "NameOrVariadicName",
-                            separator = ",",
-                            constraint = SequenceConstraint.OneOrMore),
-                        Literal("}"))),
-                ZeroOrMore(Def("NamedParameterForm")),
-                Optionally(
-                    items(
-                        Literal("("),
-                        Sequence(
-                            of = "NameOrVariadicName",
-                            separator = ",",
-                            constraint = SequenceConstraint.OneOrMore),
-                        Literal(")")))),
-            DefinitionType.ChalkTalk),
-        DefinitionOf(
-            "InfixCommandExpressionForm",
-            items(Def("CommandExpression"), Literal("/")),
+            "NameOrCommandExpressionCall",
+            anyOf(Def("Name"), Def("CommandExpressionCall")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "InfixCommandForm", items(Def("CommandForm"), Literal("/")), DefinitionType.TexTalk),
-        DefinitionOf(
-            "NameOrCommand", anyOf(Def("Name"), Def("CommandExpression")), DefinitionType.TexTalk),
-        DefinitionOf(
             "VariadicIsRhs",
-            anyOf(Def("VariadicName"), Def("CommandExpression")),
+            anyOf(Def("VariadicName"), Def("CommandExpressionCall")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicIsExpression",
-            items(Def("VariadicTarget"), Keyword("is"), Def("VariadicIsRhs")),
+            items(Def("VariadicTargetForm"), Keyword("is"), Def("VariadicIsRhs")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "IsExpression",
@@ -332,7 +367,7 @@ internal val MATHLINGUA_SPECIFICATION =
                 Sequence(of = "Target", separator = ",", constraint = SequenceConstraint.OneOrMore),
                 Keyword("is"),
                 Sequence(
-                    of = "NameOrCommand",
+                    of = "NameOrCommandExpressionCall",
                     separator = ",",
                     constraint = SequenceConstraint.OneOrMore)),
             DefinitionType.TexTalk),
@@ -372,18 +407,20 @@ internal val MATHLINGUA_SPECIFICATION =
             items(Def("Expression"), Keyword("as"), Def("SignatureExpression")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "VariadicFunction", items(Def("Function"), Literal("...")), DefinitionType.TexTalk),
-        DefinitionOf(
-            "VariadicSequence", items(Def("Sequence"), Literal("...")), DefinitionType.TexTalk),
-        DefinitionOf(
-            "VariadicTarget",
-            anyOf(Def("VariadicName"), Def("VariadicFunction"), Def("VariadicSequence")),
+            "VariadicSequenceForm",
+            items(Def("SequenceForm"), Literal("...")),
             DefinitionType.TexTalk),
         DefinitionOf(
-            "VariadicRhs", anyOf(Def("VariadicTarget"), Def("Expression")), DefinitionType.TexTalk),
+            "VariadicTargetForm",
+            anyOf(Def("VariadicName"), Def("VariadicFunctionForm"), Def("VariadicSequenceForm")),
+            DefinitionType.TexTalk),
+        DefinitionOf(
+            "VariadicRhs",
+            anyOf(Def("VariadicTargetForm"), Def("Expression")),
+            DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicInExpression",
-            items(Def("VariadicTarget"), Literal("in"), Def("VariadicRhs")),
+            items(Def("VariadicTargetForm"), Literal("in"), Def("VariadicRhs")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "InExpression",
@@ -394,7 +431,7 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicNotInExpression",
-            items(Def("VariadicTarget"), Literal("notin"), Def("VariadicRhs")),
+            items(Def("VariadicTargetForm"), Literal("notin"), Def("VariadicRhs")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "NotInExpression",
@@ -405,7 +442,7 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "VariadicColonEqualsExpression",
-            items(Def("VariadicTarget"), Literal(":="), Def("VariadicRhs")),
+            items(Def("VariadicTargetForm"), Literal(":="), Def("VariadicRhs")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "ColonEqualsExpression",
@@ -451,7 +488,7 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "InfixCommandExpression",
-            items(Def("Expression"), Def("InfixCommandExpressionForm"), Def("Expression")),
+            items(Def("Expression"), Def("InfixCommandExpressionPart"), Def("Expression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "PrefixOperatorExpression",
@@ -527,19 +564,19 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.TexTalk),
         DefinitionOf(
             "FunctionAssignmentExpression",
-            items(Def("Function"), Literal(":="), Def("Expression")),
+            items(Def("FunctionForm"), Literal(":="), Def("Expression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "SetAssignmentExpression",
-            items(Def("Set"), Literal(":="), Def("Expression")),
+            items(Def("SetForm"), Literal(":="), Def("Expression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "SequenceAssignmentExpression",
-            items(Def("Sequence"), Literal(":="), Def("Expression")),
+            items(Def("SequenceForm"), Literal(":="), Def("Expression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "TupleAssignmentExpression",
-            items(Def("Tuple"), Literal(":="), Def("Expression")),
+            items(Def("TupleForm"), Literal(":="), Def("Expression")),
             DefinitionType.TexTalk),
         DefinitionOf(
             "NameAssignmentAssignmentExpression",
@@ -581,14 +618,14 @@ internal val MATHLINGUA_SPECIFICATION =
             anyOf(
                 Def("Name"),
                 Def("MemberScopedName"),
-                Def("Tuple"),
-                Def("Sequence"),
-                Def("Function"),
-                Def("FunctionCall"),
-                Def("Set"),
+                Def("TupleForm"),
+                Def("SequenceForm"),
+                Def("FunctionForm"),
+                Def("FunctionFormCall"),
+                Def("SetForm"),
                 Def("GroupingExpression"),
                 Def("OperationExpression"),
-                Def("CommandExpression"),
+                Def("CommandExpressionCall"),
                 Def("AsExpression"),
                 Def("VariadicColonEqualsExpression"),
                 Def("ColonEqualsExpression"),
@@ -617,13 +654,13 @@ internal val MATHLINGUA_SPECIFICATION =
                 Def("iff:"),
                 Def("Spec"),
                 Text(regex = ".*"),
-                Statement(of = listOf("Expression"))),
+                Formulation(of = listOf("Expression"))),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "Spec",
             anyOf(
-                Statement(of = listOf("IsExpression", "VariadicIsExpression")),
-                Statement(of = listOf("InExpression", "VariadicInExpression"))),
+                Formulation(of = listOf("IsExpression", "VariadicIsExpression")),
+                Formulation(of = listOf("InExpression", "VariadicInExpression"))),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "and:",
@@ -758,7 +795,7 @@ internal val MATHLINGUA_SPECIFICATION =
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "NameOrFunction",
-            anyOf(Def("Name"), Def("Function"), Def("FunctionCall")),
+            anyOf(Def("Name"), Def("FunctionForm"), Def("FunctionFormCall")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "generated:",
@@ -777,7 +814,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "FromSection"),
                 Section(
                     name = "when",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "GeneratedWhenSection")),
             DefinitionType.ChalkTalk),
@@ -798,12 +835,12 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "PiecewiseWhenSection"),
                 Section(
                     name = "then",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "PiecewiseThenSection"),
                 Section(
                     name = "else",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "PiecewiseElseSection"),
             ),
@@ -815,15 +852,15 @@ internal val MATHLINGUA_SPECIFICATION =
                 null,
                 Section(
                     name = "matching",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = true,
                     classname = "MatchingSection")),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "ProvidedItem",
             anyOf(
-                Statement(of = listOf("Expression InfixCommandExpression Expression")),
-                Statement(of = listOf("OperationExpression"))),
+                Formulation(of = listOf("Expression InfixCommandExpression Expression")),
+                Formulation(of = listOf("OperationExpression"))),
             DefinitionType.ChalkTalk),
         DefinitionOf(
             "equality:",
@@ -855,7 +892,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "MembershipSection"),
                 Section(
                     name = "through",
-                    arg = Statement(of = emptyList()),
+                    arg = Formulation(of = emptyList()),
                     required = true,
                     classname = "ThroughSection")),
             DefinitionType.ChalkTalk),
@@ -872,12 +909,12 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "AsSection"),
                 Section(
                     name = "via",
-                    arg = Statement(of = listOf("Expression")),
+                    arg = Formulation(of = listOf("Expression")),
                     required = true,
                     classname = "ViaSection"),
                 Section(
                     name = "by",
-                    arg = Statement(of = listOf("CommandForm")),
+                    arg = Formulation(of = listOf("CommandFormCall")),
                     required = false,
                     classname = "BySection"),
             ),
@@ -894,7 +931,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "SymbolsSection"),
                 Section(
                     name = "where",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = true,
                     classname = "SymbolsWhereSection")),
             DefinitionType.ChalkTalk),
@@ -926,7 +963,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "MemberSymbolsSection"),
                 Section(
                     name = "where",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = true,
                     classname = "MemberSymbolsWhereSection")),
             DefinitionType.ChalkTalk),
@@ -1050,7 +1087,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "SuchThatSection"),
                 Section(
                     name = "means",
-                    arg = Statement(of = listOf("IsExpression", "VariadicIsExpression")),
+                    arg = Formulation(of = listOf("IsExpression", "VariadicIsExpression")),
                     required = false,
                     classname = "MeansSection"),
                 Section(
@@ -1070,7 +1107,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "ProvidingSection"),
                 Section(
                     name = "Using",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
                 Section(
@@ -1145,7 +1182,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "ThatSection"),
                 Section(
                     name = "Using",
-                    arg = Statement(of = listOf("ColonEqualsExpression")),
+                    arg = Formulation(of = listOf("ColonEqualsExpression")),
                     required = false,
                     classname = "UsingSection"),
                 Section(
@@ -1308,7 +1345,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "IffSection"),
                 Section(
                     name = "Using",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
                 Section(
@@ -1372,7 +1409,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "IffSection"),
                 Section(
                     name = "Using",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
                 Section(
@@ -1436,7 +1473,7 @@ internal val MATHLINGUA_SPECIFICATION =
                     classname = "IffSection"),
                 Section(
                     name = "Using",
-                    arg = OneOrMore(Statement(of = listOf("ColonEqualsExpression"))),
+                    arg = OneOrMore(Formulation(of = listOf("ColonEqualsExpression"))),
                     required = false,
                     classname = "UsingSection"),
                 Section(
@@ -1901,9 +1938,9 @@ internal data class Group(val classname: String, val id: Form?, val of: List<Sec
     }
 }
 
-internal data class Statement(val of: List<String>) : Form {
-    override fun getUsedDefNames() = setOf("Statement")
-    override fun toCode() = "Statement[${of.joinToString(" | ")}]"
+internal data class Formulation(val of: List<String>) : Form {
+    override fun getUsedDefNames() = setOf("Formulation")
+    override fun toCode() = "Formulation[${of.joinToString(" | ")}]"
 }
 
 internal data class Text(val regex: String) : Form {
@@ -1949,7 +1986,7 @@ internal fun DefinitionOf.getClassname() =
 internal fun getClassnameForDefName(name: String): String? {
     if (DEF_NAME_TO_CLASSNAME.isEmpty()) {
         DEF_NAME_TO_CLASSNAME["Text"] = "Text".addAstPackagePrefix()
-        DEF_NAME_TO_CLASSNAME["Statement"] = "Statement".addAstPackagePrefix()
+        DEF_NAME_TO_CLASSNAME["Formulation"] = "Formulation".addAstPackagePrefix()
         for (item in MATHLINGUA_SPECIFICATION) {
             DEF_NAME_TO_CLASSNAME[item.name] = item.getClassname().addAstPackagePrefix()
             if (item.of is Group) {
@@ -1965,7 +2002,7 @@ internal fun getClassnameForDefName(name: String): String? {
 internal fun Form.getName(): String? =
     when (this) {
         is Text -> "Text"
-        is Statement -> "Statement"
+        is Formulation -> "Formulation"
         is Def -> this.name
         is Optionally -> this.of.getName()
         else -> null
@@ -1979,7 +2016,7 @@ internal fun getAllDefinedClassNames(): Set<String> {
     val result = mutableSetOf<String>()
     result.addAll(MATHLINGUA_SPECIFICATION.mapNotNull { getClassnameForDefName(it.name) })
     result.add("Text".addAstPackagePrefix())
-    result.add("Statement".addAstPackagePrefix())
+    result.add("Formulation".addAstPackagePrefix())
     for (item in MATHLINGUA_SPECIFICATION) {
         if (item.of is Group) {
             result.add(item.of.classname.addAstPackagePrefix())

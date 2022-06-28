@@ -18,13 +18,13 @@ package mathlingua.lib.frontend.textalk
 
 import mathlingua.lib.frontend.Diagnostic
 import mathlingua.lib.frontend.MetaData
-import mathlingua.lib.frontend.ast.CommandExpression
-import mathlingua.lib.frontend.ast.CommandForm
+import mathlingua.lib.frontend.ast.CommandExpressionCall
+import mathlingua.lib.frontend.ast.CommandFormCall
 import mathlingua.lib.frontend.ast.CurlyNodeList
 import mathlingua.lib.frontend.ast.DEFAULT_NAME
 import mathlingua.lib.frontend.ast.Expression
-import mathlingua.lib.frontend.ast.Function
-import mathlingua.lib.frontend.ast.FunctionCall
+import mathlingua.lib.frontend.ast.FunctionForm
+import mathlingua.lib.frontend.ast.FunctionFormCall
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NamedParameterExpression
@@ -34,8 +34,8 @@ import mathlingua.lib.frontend.ast.ParenNodeList
 import mathlingua.lib.frontend.ast.SignatureExpression
 import mathlingua.lib.frontend.ast.SquareNodeList
 import mathlingua.lib.frontend.ast.SquareParams
-import mathlingua.lib.frontend.ast.SubAndRegularParamCall
-import mathlingua.lib.frontend.ast.SubParamCall
+import mathlingua.lib.frontend.ast.SubAndRegularParamFormCall
+import mathlingua.lib.frontend.ast.SubParamFormCall
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.TexTalkToken
 import mathlingua.lib.frontend.ast.TexTalkTokenNode
@@ -97,10 +97,10 @@ private class TexTalkSubParserImpl(
 
     private fun curlyNodeList(): CurlyNodeList<*>? = pollIfHasNode()
 
-    private fun function(diagnostics: MutableList<Diagnostic>): Function? =
+    private fun function(diagnostics: MutableList<Diagnostic>): FunctionForm? =
         if (this.hasHas(TexTalkTokenType.Name, TexTalkTokenType.LParen)) {
             val name = name()!!
-            Function(
+            FunctionForm(
                 name = name,
                 params =
                     parenNodeList()
@@ -117,7 +117,7 @@ private class TexTalkSubParserImpl(
 
     private fun subParamCallOrSubAndRegularParamCall(
         diagnostics: MutableList<Diagnostic>
-    ): FunctionCall? =
+    ): FunctionFormCall? =
         if (this.hasHasHas(
             TexTalkTokenType.Name, TexTalkTokenType.Underscore, TexTalkTokenType.LParen)) {
             val name = name()!!
@@ -138,19 +138,20 @@ private class TexTalkSubParserImpl(
                         row = name.metadata.row,
                         column = name.metadata.column)
             if (params != null) {
-                SubAndRegularParamCall(
+                SubAndRegularParamFormCall(
                     name = name,
                     subParams = subParams,
                     params = params,
                     metadata = name.metadata.copy())
             } else {
-                SubParamCall(name = name, subParams = subParams, metadata = name.metadata.copy())
+                SubParamFormCall(
+                    name = name, subParams = subParams, metadata = name.metadata.copy())
             }
         } else {
             null
         }
 
-    private fun functionCall(diagnostics: MutableList<Diagnostic>): FunctionCall? =
+    private fun functionCall(diagnostics: MutableList<Diagnostic>): FunctionFormCall? =
         this.function(diagnostics) ?: this.subParamCallOrSubAndRegularParamCall(diagnostics)
 
     private fun squareParams(diagnostics: MutableList<Diagnostic>): SquareParams? {
@@ -306,7 +307,7 @@ private class TexTalkSubParserImpl(
                 namesOrNamedParams.any { it is Expression } ||
                 parenParams != null) {
                 // process as a CommandExpression
-                CommandExpression(
+                CommandExpressionCall(
                     names =
                         NonBracketNodeList(
                             nodes = names,
@@ -380,7 +381,7 @@ private class TexTalkSubParserImpl(
             null
         }
 
-    private fun commandForm(diagnostics: MutableList<Diagnostic>): CommandForm? =
+    private fun commandForm(diagnostics: MutableList<Diagnostic>): CommandFormCall? =
         if (this.has(TexTalkTokenType.Backslash)) {
             val backslash = this.expect(TexTalkTokenType.Backslash)!!
             val nameList = mutableListOf<Name>()
@@ -411,7 +412,7 @@ private class TexTalkSubParserImpl(
             }
             val firstNamedParam = namedParamList.firstOrNull()
             val parenParams = parenNodeList()?.asParenNodeListOfType<NameOrVariadicName>()
-            CommandForm(
+            CommandFormCall(
                 names =
                     NonBracketNodeList(
                         nodes = nameList,

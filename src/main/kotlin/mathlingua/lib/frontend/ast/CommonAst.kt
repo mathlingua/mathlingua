@@ -25,27 +25,24 @@ internal interface NameOrFunction : CommonNode
 
 internal sealed interface NameOrVariadicName : CommonNode
 
-// names
 internal data class Name(val text: String, override val metadata: MetaData) :
     SquareTargetItem,
     NameOrNameAssignment,
     NameAssignmentItem,
     NameOrFunction,
-    NameOrCommand,
+    NameOrCommandExpressionCall,
     NameOrVariadicName,
     Expression,
     Target {
     override fun toCode() = text
 }
 
-// targets
 internal sealed interface VariadicRhs : ChalkTalkNode, TexTalkNode
 
 internal sealed interface VariadicIsRhs
 
-internal sealed interface VariadicTarget : VariadicRhs
+internal sealed interface VariadicTargetForm : VariadicRhs
 
-// <assignment> | <name> | <operator> | <tuple> | <sequence> | <function> | <set>
 internal sealed interface Target : Argument
 
 internal data class OperatorName(val text: String, override val metadata: MetaData) :
@@ -54,26 +51,27 @@ internal data class OperatorName(val text: String, override val metadata: MetaDa
 }
 
 internal data class VariadicName(val name: Name, override val metadata: MetaData) :
-    VariadicTarget, VariadicIsRhs, NameOrVariadicName {
+    VariadicTargetForm, VariadicIsRhs, NameOrVariadicName {
     override fun toCode(): String = "$name..."
 }
 
-internal data class VariadicFunction(val function: FunctionCall, override val metadata: MetaData) :
-    VariadicTarget {
+internal data class VariadicFunctionForm(
+    val function: FunctionFormCall, override val metadata: MetaData
+) : VariadicTargetForm {
     override fun toCode() = "${function.toCode()}..."
 }
 
-internal data class VariadicSequence(val sequence: Sequence, override val metadata: MetaData) :
-    VariadicTarget {
+internal data class VariadicSequenceForm(
+    val sequence: SequenceForm, override val metadata: MetaData
+) : VariadicTargetForm {
     override fun toCode() = "${sequence.toCode()}..."
 }
 
-// functions
-internal sealed interface FunctionCall : NameOrFunction, Expression
+internal sealed interface FunctionFormCall : NameOrFunction, Expression
 
-internal data class Function(
+internal data class FunctionForm(
     val name: Name, val params: ParenNodeList<NameOrVariadicName>, override val metadata: MetaData
-) : FunctionCall, NameOrFunction, Target, NameAssignmentItem, SquareTargetItem, Expression {
+) : FunctionFormCall, NameOrFunction, Target, NameAssignmentItem, SquareTargetItem, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
@@ -89,11 +87,11 @@ internal data class Function(
     }
 }
 
-internal data class SubParamCall(
+internal data class SubParamFormCall(
     val name: Name,
     val subParams: ParenNodeList<NameOrVariadicName>,
     override val metadata: MetaData
-) : FunctionCall {
+) : FunctionFormCall {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
@@ -109,12 +107,12 @@ internal data class SubParamCall(
     }
 }
 
-internal data class SubAndRegularParamCall(
+internal data class SubAndRegularParamFormCall(
     val name: Name,
     val subParams: ParenNodeList<NameOrVariadicName>,
     val params: ParenNodeList<NameOrVariadicName>,
     override val metadata: MetaData
-) : FunctionCall {
+) : FunctionFormCall {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append(name.toCode())
@@ -137,11 +135,11 @@ internal data class SubAndRegularParamCall(
     }
 }
 
-// sequences
-internal sealed interface Sequence : SquareTargetItem, NameAssignmentItem, Expression, Target
+internal sealed interface SequenceForm : SquareTargetItem, NameAssignmentItem, Expression, Target
 
-internal data class SubParamSequence(val func: SubParamCall, override val metadata: MetaData) :
-    Sequence {
+internal data class SubParamSequenceForm(
+    val func: SubParamFormCall, override val metadata: MetaData
+) : SequenceForm {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("{")
@@ -158,9 +156,9 @@ internal data class SubParamSequence(val func: SubParamCall, override val metada
     }
 }
 
-internal data class SubAndRegularParamSequence(
-    val func: SubAndRegularParamCall, override val metadata: MetaData
-) : Sequence {
+internal data class SubAndRegularParamSequenceForm(
+    val func: SubAndRegularParamFormCall, override val metadata: MetaData
+) : SequenceForm {
     override fun toCode(): String {
         val builder = StringBuilder()
         builder.append("{")
@@ -195,7 +193,7 @@ internal sealed interface Argument : CommonNode
 
 internal sealed interface SquareTargetItem : CommonNode
 
-internal data class Tuple(val targets: ParenNodeList<Target>, override val metadata: MetaData) :
+internal data class TupleForm(val targets: ParenNodeList<Target>, override val metadata: MetaData) :
     SquareTargetItem, NameAssignmentItem, Target, Expression {
     override fun toCode(): String {
         val builder = StringBuilder()
@@ -211,10 +209,9 @@ internal data class Tuple(val targets: ParenNodeList<Target>, override val metad
     }
 }
 
-// <name> | <name assignment>
 internal sealed interface NameOrNameAssignment : CommonNode
 
-internal data class Set(
+internal data class SetForm(
     val items: CurlyNodeList<NameOrNameAssignment>, override val metadata: MetaData
 ) : SquareTargetItem, NameAssignmentItem, Target, Expression {
     override fun toCode(): String {

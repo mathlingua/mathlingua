@@ -35,19 +35,19 @@ internal class ChalkTalkAstTest {
                 IfSection(
                         clauses =
                             listOf(
-                                Statement(
+                                Formulation(
                                     text = "a",
                                     metadata = MetaData(row = 0, column = 0, isInline = true)),
-                                Statement(
+                                Formulation(
                                     text = "b",
                                     metadata = MetaData(row = 0, column = 0, isInline = true)),
-                                Statement(
+                                Formulation(
                                     text = "c",
                                     metadata = MetaData(row = 0, column = 0, isInline = false)),
-                                Statement(
+                                Formulation(
                                     text = "d",
                                     metadata = MetaData(row = 0, column = 0, isInline = true)),
-                                Statement(
+                                Formulation(
                                     text = "e",
                                     metadata = MetaData(row = 0, column = 0, isInline = false)),
                             ),
@@ -70,7 +70,7 @@ internal class ChalkTalkAstTest {
                             IfSection(
                                 clauses =
                                     listOf(
-                                        Statement(
+                                        Formulation(
                                             text = "a",
                                             metadata =
                                                 MetaData(row = 0, column = 0, isInline = true))),
@@ -79,7 +79,7 @@ internal class ChalkTalkAstTest {
                             ThenSection(
                                 clauses =
                                     listOf(
-                                        Statement(
+                                        Formulation(
                                             text = "b",
                                             metadata =
                                                 MetaData(row = 0, column = 0, isInline = true)),

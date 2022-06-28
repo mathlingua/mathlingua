@@ -37,7 +37,7 @@ internal data class Id(val text: String, override val metadata: MetaData) :
 
 internal sealed interface IdForm : ChalkTalkNode
 
-internal data class Statement(val text: String, override val metadata: MetaData) :
+internal data class Formulation(val text: String, override val metadata: MetaData) :
     Argument, Spec, ProvidedItem, Clause {
     override fun toCode() =
         if (this.text.contains("'")) {
@@ -208,9 +208,9 @@ internal data class FromSection(val items: List<NameOrFunction>, override val me
 }
 
 internal data class GeneratedWhenSection(
-    val statements: List<Statement>, override val metadata: MetaData
+    val formulations: List<Formulation>, override val metadata: MetaData
 ) : Section("when", metadata) {
-    override fun toCode() = sectionToCode(this, *statements.toTypedArray())
+    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
 }
 
 internal data class GeneratedGroup(
@@ -234,15 +234,15 @@ internal data class PiecewiseWhenSection(
 }
 
 internal data class PiecewiseThenSection(
-    val statements: List<Statement>, override val metadata: MetaData
+    val formulations: List<Formulation>, override val metadata: MetaData
 ) : Section("then", metadata) {
-    override fun toCode() = sectionToCode(this, *statements.toTypedArray())
+    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
 }
 
 internal data class PiecewiseElseSection(
-    val statements: List<Statement>, override val metadata: MetaData
+    val formulations: List<Formulation>, override val metadata: MetaData
 ) : Section("else", metadata) {
-    override fun toCode() = sectionToCode(this, *statements.toTypedArray())
+    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
 }
 
 internal data class PiecewiseGroup(
@@ -262,9 +262,9 @@ internal data class PiecewiseGroup(
 }
 
 internal data class MatchingSection(
-    val statements: List<Statement>, override val metadata: MetaData
+    val formulations: List<Formulation>, override val metadata: MetaData
 ) : Section("matching", metadata) {
-    override fun toCode() = sectionToCode(this, *statements.toTypedArray())
+    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
 }
 
 internal data class MatchingGroup(
@@ -305,7 +305,7 @@ internal data class MembershipSection(override val metadata: MetaData) :
     override fun toCode() = sectionToCode(this)
 }
 
-internal data class ThroughSection(val through: Statement, override val metadata: MetaData) :
+internal data class ThroughSection(val through: Formulation, override val metadata: MetaData) :
     Section("through", metadata) {
     override fun toCode() = sectionToCode(this, through)
 }
@@ -327,12 +327,12 @@ internal data class AsSection(val asText: Text, override val metadata: MetaData)
     override fun toCode() = sectionToCode(this, asText)
 }
 
-internal data class ViaSection(val via: Statement, override val metadata: MetaData) :
+internal data class ViaSection(val via: Formulation, override val metadata: MetaData) :
     Section("via", metadata) {
     override fun toCode() = sectionToCode(this, via)
 }
 
-internal data class BySection(val by: Statement, override val metadata: MetaData) :
+internal data class BySection(val by: Formulation, override val metadata: MetaData) :
     Section("by", metadata) {
     override fun toCode() = sectionToCode(this, by)
 }
@@ -353,9 +353,9 @@ internal data class SymbolsSection(val names: List<Name>, override val metadata:
 }
 
 internal data class SymbolsWhereSection(
-    val statements: List<Statement>, override val metadata: MetaData
+    val formulations: List<Formulation>, override val metadata: MetaData
 ) : Section("where", metadata) {
-    override fun toCode() = sectionToCode(this, *statements.toTypedArray())
+    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
 }
 
 internal data class SymbolsGroup(
@@ -385,9 +385,9 @@ internal data class MemberSymbolsSection(val names: List<Name>, override val met
 }
 
 internal data class MemberSymbolsWhereSection(
-    val statements: List<Statement>, override val metadata: MetaData
+    val formulations: List<Formulation>, override val metadata: MetaData
 ) : Section("where", metadata) {
-    override fun toCode() = sectionToCode(this, *statements.toTypedArray())
+    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
 }
 
 internal data class MemberSymbolsAsSection(val asSection: Text, override val metadata: MetaData) :
@@ -468,7 +468,7 @@ internal data class WhenSection(val specs: List<Spec>, override val metadata: Me
     override fun toCode() = sectionToCode(this, *specs.toTypedArray())
 }
 
-internal data class MeansSection(val statement: Statement, override val metadata: MetaData) :
+internal data class MeansSection(val statement: Formulation, override val metadata: MetaData) :
     Section("means", metadata) {
     override fun toCode() = sectionToCode(this, statement)
 }
@@ -489,9 +489,10 @@ internal data class ExpressingSection(
     override fun toCode() = sectionToCode(this, *items.toTypedArray())
 }
 
-internal data class UsingSection(val statements: List<Statement>, override val metadata: MetaData) :
-    Section("Using", metadata) {
-    override fun toCode() = sectionToCode(this, *statements.toTypedArray())
+internal data class UsingSection(
+    val formulations: List<Formulation>, override val metadata: MetaData
+) : Section("Using", metadata) {
+    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
 }
 
 internal sealed interface CodifiedItem : ChalkTalkNode

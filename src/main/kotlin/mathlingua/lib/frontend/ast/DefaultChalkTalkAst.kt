@@ -99,7 +99,7 @@ internal val DEFAULT_GENERATED_SECTION = GeneratedSection(metadata = DEFAULT_MET
 internal val DEFAULT_FROM_SECTION = FromSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_GENERATED_WHEN_SECTION =
-    GeneratedWhenSection(statements = emptyList(), metadata = DEFAULT_METADATA)
+    GeneratedWhenSection(formulations = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_GENERATED_GROUP =
     GeneratedGroup(
@@ -114,10 +114,10 @@ internal val DEFAULT_PIECEWISE_WHEN_SECTION =
     PiecewiseWhenSection(clauses = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_PIECEWISE_THEN_SECTION =
-    PiecewiseThenSection(statements = emptyList(), metadata = DEFAULT_METADATA)
+    PiecewiseThenSection(formulations = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_PIECEWISE_ELSE_SECTION =
-    PiecewiseElseSection(statements = emptyList(), metadata = DEFAULT_METADATA)
+    PiecewiseElseSection(formulations = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_PIECEWISE_GROUP =
     PiecewiseGroup(
@@ -128,7 +128,7 @@ internal val DEFAULT_PIECEWISE_GROUP =
         metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_MATCHING_SECTION =
-    MatchingSection(statements = emptyList(), metadata = DEFAULT_METADATA)
+    MatchingSection(formulations = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_MATCHING_GROUP =
     MatchingGroup(matchingSection = DEFAULT_MATCHING_SECTION, metadata = DEFAULT_METADATA)
@@ -140,7 +140,7 @@ internal val DEFAULT_TARGET: Target = Name(text = "", metadata = DEFAULT_METADAT
 internal val DEFAULT_BETWEEN_SECTION =
     BetweenSection(first = DEFAULT_TARGET, second = DEFAULT_TARGET, metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_STATEMENT = Statement(text = "", metadata = DEFAULT_METADATA)
+internal val DEFAULT_STATEMENT = Formulation(text = "", metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_PROVIDED_SECTION =
     ProvidedSection(statement = DEFAULT_STATEMENT, metadata = DEFAULT_METADATA)
@@ -185,7 +185,7 @@ internal val DEFAULT_SYMBOLS_SECTION =
     SymbolsSection(names = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_SYMBOLS_WHERE_SECTION =
-    SymbolsWhereSection(statements = emptyList(), metadata = DEFAULT_METADATA)
+    SymbolsWhereSection(formulations = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_SYMBOLS_GROUP =
     SymbolsGroup(
@@ -197,7 +197,7 @@ internal val DEFAULT_MEMBER_SYMBOLS_SECTION =
     MemberSymbolsSection(names = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_MEMBER_SYMBOLS_WHERE_SECTION =
-    MemberSymbolsWhereSection(statements = emptyList(), metadata = DEFAULT_METADATA)
+    MemberSymbolsWhereSection(formulations = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_MEMBER_SYMBOLS_GROUP =
     MemberSymbolsGroup(
@@ -246,7 +246,7 @@ internal val DEFAULT_EXPRESSING_SECTION =
     ExpressingSection(items = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_USING_SECTION =
-    UsingSection(statements = emptyList(), metadata = DEFAULT_METADATA)
+    UsingSection(formulations = emptyList(), metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_WRITING_SECTION =
     WritingSection(items = emptyList(), metadata = DEFAULT_METADATA)

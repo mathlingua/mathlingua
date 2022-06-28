@@ -123,8 +123,9 @@ import mathlingua.lib.frontend.ast.ExpressingItem
 import mathlingua.lib.frontend.ast.ExpressingSection
 import mathlingua.lib.frontend.ast.ForAllGroup
 import mathlingua.lib.frontend.ast.ForAllSection
+import mathlingua.lib.frontend.ast.Formulation
 import mathlingua.lib.frontend.ast.FromSection
-import mathlingua.lib.frontend.ast.Function
+import mathlingua.lib.frontend.ast.FunctionForm
 import mathlingua.lib.frontend.ast.GeneratedGroup
 import mathlingua.lib.frontend.ast.GeneratedSection
 import mathlingua.lib.frontend.ast.GeneratedWhenSection
@@ -199,19 +200,18 @@ import mathlingua.lib.frontend.ast.ResourceSection
 import mathlingua.lib.frontend.ast.SatisfyingItem
 import mathlingua.lib.frontend.ast.SatisfyingSection
 import mathlingua.lib.frontend.ast.Section
-import mathlingua.lib.frontend.ast.Sequence
-import mathlingua.lib.frontend.ast.Set
+import mathlingua.lib.frontend.ast.SequenceForm
+import mathlingua.lib.frontend.ast.SetForm
 import mathlingua.lib.frontend.ast.Spec
 import mathlingua.lib.frontend.ast.SpecifyGroup
 import mathlingua.lib.frontend.ast.SpecifyItem
 import mathlingua.lib.frontend.ast.SpecifySection
-import mathlingua.lib.frontend.ast.Statement
 import mathlingua.lib.frontend.ast.StatesGroup
 import mathlingua.lib.frontend.ast.StatesSection
-import mathlingua.lib.frontend.ast.SubAndRegularParamCall
-import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
-import mathlingua.lib.frontend.ast.SubParamCall
-import mathlingua.lib.frontend.ast.SubParamSequence
+import mathlingua.lib.frontend.ast.SubAndRegularParamFormCall
+import mathlingua.lib.frontend.ast.SubAndRegularParamSequenceForm
+import mathlingua.lib.frontend.ast.SubParamFormCall
+import mathlingua.lib.frontend.ast.SubParamSequenceForm
 import mathlingua.lib.frontend.ast.SuchThatSection
 import mathlingua.lib.frontend.ast.SymbolsGroup
 import mathlingua.lib.frontend.ast.SymbolsSection
@@ -232,7 +232,7 @@ import mathlingua.lib.frontend.ast.TopLevelGroupOrTextBlock
 import mathlingua.lib.frontend.ast.TopicGroup
 import mathlingua.lib.frontend.ast.TopicName
 import mathlingua.lib.frontend.ast.TopicSection
-import mathlingua.lib.frontend.ast.Tuple
+import mathlingua.lib.frontend.ast.TupleForm
 import mathlingua.lib.frontend.ast.TypeGroup
 import mathlingua.lib.frontend.ast.TypeSection
 import mathlingua.lib.frontend.ast.UrlGroup
@@ -294,7 +294,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun id(): Id? = getNextIfCorrectType()
 
-    private fun statement(): Statement? = getNextIfCorrectType()
+    private fun statement(): Formulation? = getNextIfCorrectType()
 
     private fun text(): Text? = getNextIfCorrectType()
 
@@ -345,17 +345,17 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun operator(): OperatorName? = getNextIfCorrectType()
 
-    private fun tuple(): Tuple? = getNextIfCorrectType()
+    private fun tuple(): TupleForm? = getNextIfCorrectType()
 
-    private fun set(): Set? = getNextIfCorrectType()
+    private fun set(): SetForm? = getNextIfCorrectType()
 
-    private fun sequence(): Sequence? = getNextIfCorrectType()
+    private fun sequence(): SequenceForm? = getNextIfCorrectType()
 
     private fun target(): Target? =
         name()
             ?: operator() ?: tuple() ?: sequence()
                 ?: function().let {
-                if (it is Function) {
+                if (it is FunctionForm) {
                     it
                 } else {
                     if (it != null) {
@@ -487,7 +487,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun name(): Name? = getNextIfCorrectType()
 
-    private fun function(): Function? = getNextIfCorrectType()
+    private fun function(): FunctionForm? = getNextIfCorrectType()
 
     private fun nameOrFunction(): NameOrFunction? = name() ?: function()
 
@@ -496,11 +496,11 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
     private fun fromSection(): FromSection? =
         section("from") { FromSection(items = oneOrMore(nameOrFunctions(), it), metadata = it) }
 
-    private fun statements(): List<Statement> = collect { argument { statement() } }
+    private fun formulations(): List<Formulation> = collect { argument { statement() } }
 
     private fun generatedWhenSection(): GeneratedWhenSection? =
         section("when") {
-            GeneratedWhenSection(statements = oneOrMore(statements(), it), metadata = it)
+            GeneratedWhenSection(formulations = oneOrMore(formulations(), it), metadata = it)
         }
 
     private fun generatedGroup(): GeneratedGroup? =
@@ -527,12 +527,12 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun piecewiseThenSection(): PiecewiseThenSection? =
         section("then") {
-            PiecewiseThenSection(statements = oneOrMore(statements(), it), metadata = it)
+            PiecewiseThenSection(formulations = oneOrMore(formulations(), it), metadata = it)
         }
 
     private fun piecewiseElseSection(): PiecewiseElseSection? =
         section("else") {
-            PiecewiseElseSection(statements = oneOrMore(statements(), it), metadata = it)
+            PiecewiseElseSection(formulations = oneOrMore(formulations(), it), metadata = it)
         }
 
     private fun piecewiseGroup(): PiecewiseGroup? =
@@ -555,7 +555,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun matchingSection(): MatchingSection? =
         section("matching") {
-            MatchingSection(statements = oneOrMore(statements(), it), metadata = it)
+            MatchingSection(formulations = oneOrMore(formulations(), it), metadata = it)
         }
 
     private fun matchingGroup(): MatchingGroup? =
@@ -666,7 +666,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun symbolsWhereSection(): SymbolsWhereSection? =
         section("where") {
-            SymbolsWhereSection(statements = oneOrMore(statements(), it), metadata = it)
+            SymbolsWhereSection(formulations = oneOrMore(formulations(), it), metadata = it)
         }
 
     private fun symbolsGroup(): SymbolsGroup? =
@@ -690,7 +690,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
 
     private fun memberSymbolsWhereSection(): MemberSymbolsWhereSection? =
         section("where") {
-            MemberSymbolsWhereSection(statements = oneOrMore(statements(), it), metadata = it)
+            MemberSymbolsWhereSection(formulations = oneOrMore(formulations(), it), metadata = it)
         }
 
     private fun memberSymbolsGroup(): MemberSymbolsGroup? =
@@ -802,7 +802,9 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
         }
 
     private fun usingSection(): UsingSection? =
-        section("Using") { UsingSection(statements = oneOrMore(statements(), it), metadata = it) }
+        section("Using") {
+            UsingSection(formulations = oneOrMore(formulations(), it), metadata = it)
+        }
 
     private fun writingSection(): WritingSection? =
         section("writing") { WritingSection(items = oneOrMore(texts(), it), metadata = it) }
@@ -1802,18 +1804,18 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 // don't report about this to the user since it is an implementation detail
                 null
             }
-            is Statement -> "statement"
+            is Formulation -> "statement"
             is NameAssignment -> "name assignment"
-            is Function -> "function"
-            is SubAndRegularParamCall -> "function"
-            is SubParamCall -> "function"
+            is FunctionForm -> "function"
+            is SubAndRegularParamFormCall -> "function"
+            is SubParamFormCall -> "function"
             is Name -> "name"
             is VariadicName -> "name"
             is OperatorName -> "name"
-            is SubAndRegularParamSequence -> "sequence"
-            is SubParamSequence -> "sequence"
-            is Set -> "set"
-            is Tuple -> "tuple"
+            is SubAndRegularParamSequenceForm -> "sequence"
+            is SubParamSequenceForm -> "sequence"
+            is SetForm -> "set"
+            is TupleForm -> "tuple"
             is Text -> "text"
             is NameOrFunction -> "name or function"
             is Id -> "id"

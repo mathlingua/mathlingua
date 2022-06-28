@@ -26,22 +26,22 @@ import mathlingua.lib.frontend.ast.CurlyNodeList
 import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
-import mathlingua.lib.frontend.ast.Function
+import mathlingua.lib.frontend.ast.Formulation
+import mathlingua.lib.frontend.ast.FunctionForm
 import mathlingua.lib.frontend.ast.Id
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.ParenNodeList
-import mathlingua.lib.frontend.ast.Set
-import mathlingua.lib.frontend.ast.Statement
-import mathlingua.lib.frontend.ast.SubAndRegularParamCall
-import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
-import mathlingua.lib.frontend.ast.SubParamCall
-import mathlingua.lib.frontend.ast.SubParamSequence
+import mathlingua.lib.frontend.ast.SetForm
+import mathlingua.lib.frontend.ast.SubAndRegularParamFormCall
+import mathlingua.lib.frontend.ast.SubAndRegularParamSequenceForm
+import mathlingua.lib.frontend.ast.SubParamFormCall
+import mathlingua.lib.frontend.ast.SubParamSequenceForm
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
-import mathlingua.lib.frontend.ast.Tuple
+import mathlingua.lib.frontend.ast.TupleForm
 
 internal class ChalkTalkNodeLexerTest {
     @Test fun `correctly parses empty input`() = runTest("", emptyList())
@@ -157,7 +157,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                Function(
+                FunctionForm(
                     name =
                         Name(
                             text = "f", metadata = MetaData(row = 0, column = 10, isInline = true)),
@@ -253,9 +253,9 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                SubParamSequence(
+                SubParamSequenceForm(
                     func =
-                        SubParamCall(
+                        SubParamFormCall(
                             name =
                                 Name(
                                     text = "f",
@@ -291,9 +291,9 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                SubAndRegularParamSequence(
+                SubAndRegularParamSequenceForm(
                     func =
-                        SubAndRegularParamCall(
+                        SubAndRegularParamFormCall(
                             name =
                                 Name(
                                     text = "f",
@@ -346,7 +346,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                Set(
+                SetForm(
                     items =
                         CurlyNodeList(
                             nodes =
@@ -374,7 +374,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                Set(
+                SetForm(
                     items =
                         CurlyNodeList(
                             nodes =
@@ -413,7 +413,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                Tuple(
+                TupleForm(
                     targets =
                         ParenNodeList(
                             nodes =
@@ -441,7 +441,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "someName", metadata = MetaData(row = 0, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 0, column = 10, isInline = true)),
-                Tuple(
+                TupleForm(
                     targets =
                         ParenNodeList(
                             nodes =
@@ -726,7 +726,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "then", metadata = MetaData(row = 2, column = 0, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 2, column = 6, isInline = true)),
-                Statement(text = "y", metadata = MetaData(row = 2, column = 6, isInline = true)),
+                Formulation(text = "y", metadata = MetaData(row = 2, column = 6, isInline = true)),
                 EndArgument(metadata = MetaData(row = 2, column = 6, isInline = true)),
                 EndSection(metadata = MetaData(row = 2, column = 0, isInline = false)),
                 EndGroup(metadata = MetaData(row = 0, column = 0, isInline = false))))
@@ -897,7 +897,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "then", metadata = MetaData(row = 4, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 4, column = 8, isInline = true)),
-                Statement(text = "d", metadata = MetaData(row = 4, column = 8, isInline = true)),
+                Formulation(text = "d", metadata = MetaData(row = 4, column = 8, isInline = true)),
                 EndArgument(metadata = MetaData(row = 4, column = 8, isInline = true)),
                 EndSection(metadata = MetaData(row = 4, column = 2, isInline = false)),
                 EndGroup(metadata = MetaData(row = 3, column = 2, isInline = false)),
@@ -914,7 +914,7 @@ internal class ChalkTalkNodeLexerTest {
                 BeginSection(
                     name = "then", metadata = MetaData(row = 6, column = 2, isInline = false)),
                 BeginArgument(metadata = MetaData(row = 6, column = 8, isInline = true)),
-                Statement(text = "f", metadata = MetaData(row = 6, column = 8, isInline = true)),
+                Formulation(text = "f", metadata = MetaData(row = 6, column = 8, isInline = true)),
                 EndArgument(metadata = MetaData(row = 6, column = 8, isInline = true)),
                 EndSection(metadata = MetaData(row = 6, column = 2, isInline = false)),
                 EndGroup(metadata = MetaData(row = 5, column = 2, isInline = false)),

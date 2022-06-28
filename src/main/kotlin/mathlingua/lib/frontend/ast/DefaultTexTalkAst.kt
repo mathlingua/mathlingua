@@ -18,7 +18,7 @@ package mathlingua.lib.frontend.ast
 
 internal val DEFAULT_NAME = Name(text = "", metadata = DEFAULT_METADATA)
 
-internal val DEFAULT_VARIADIC_TARGET: VariadicTarget =
+internal val DEFAULT_VARIADIC_TARGET: VariadicTargetForm =
     VariadicName(name = DEFAULT_NAME, metadata = DEFAULT_METADATA)
 
 internal val DEFAULT_VARIADIC_IS_RHS: VariadicIsRhs =

@@ -31,8 +31,9 @@ import mathlingua.lib.frontend.ast.CurlyNodeList
 import mathlingua.lib.frontend.ast.EndArgument
 import mathlingua.lib.frontend.ast.EndGroup
 import mathlingua.lib.frontend.ast.EndSection
-import mathlingua.lib.frontend.ast.Function
-import mathlingua.lib.frontend.ast.FunctionCall
+import mathlingua.lib.frontend.ast.Formulation
+import mathlingua.lib.frontend.ast.FunctionForm
+import mathlingua.lib.frontend.ast.FunctionFormCall
 import mathlingua.lib.frontend.ast.Id
 import mathlingua.lib.frontend.ast.Name
 import mathlingua.lib.frontend.ast.NameAssignment
@@ -42,17 +43,16 @@ import mathlingua.lib.frontend.ast.NameOrVariadicName
 import mathlingua.lib.frontend.ast.NodeLexerToken
 import mathlingua.lib.frontend.ast.OperatorName
 import mathlingua.lib.frontend.ast.ParenNodeList
-import mathlingua.lib.frontend.ast.Set
-import mathlingua.lib.frontend.ast.Statement
-import mathlingua.lib.frontend.ast.SubAndRegularParamCall
-import mathlingua.lib.frontend.ast.SubAndRegularParamSequence
-import mathlingua.lib.frontend.ast.SubParamCall
-import mathlingua.lib.frontend.ast.SubParamSequence
+import mathlingua.lib.frontend.ast.SetForm
+import mathlingua.lib.frontend.ast.SubAndRegularParamFormCall
+import mathlingua.lib.frontend.ast.SubAndRegularParamSequenceForm
+import mathlingua.lib.frontend.ast.SubParamFormCall
+import mathlingua.lib.frontend.ast.SubParamSequenceForm
 import mathlingua.lib.frontend.ast.Target
 import mathlingua.lib.frontend.ast.TexTalkNode
 import mathlingua.lib.frontend.ast.Text
 import mathlingua.lib.frontend.ast.TextBlock
-import mathlingua.lib.frontend.ast.Tuple
+import mathlingua.lib.frontend.ast.TupleForm
 import mathlingua.lib.frontend.ast.VariadicName
 
 internal interface ChalkTalkNodeLexer {
@@ -177,12 +177,12 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return next
     }
 
-    private fun statement(isInline: Boolean): Statement? {
+    private fun statement(isInline: Boolean): Formulation? {
         if (!lexer.has(ChalkTalkTokenType.Statement)) {
             return null
         }
         val next = lexer.next()
-        return Statement(
+        return Formulation(
             text = next.text,
             metadata = MetaData(row = next.row, column = next.column, isInline = isInline))
     }
@@ -307,7 +307,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         val subParams = subParams(isInline)
         val regularParams = regularParams(isInline)
         return if (subParams != null && regularParams != null) {
-            SubAndRegularParamCall(
+            SubAndRegularParamFormCall(
                 name = name,
                 subParams =
                     ParenNodeList(nodes = subParams, metadata = firstMetadataOrDefault(subParams)),
@@ -320,7 +320,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                         column = name.metadata.column,
                         isInline = name.metadata.isInline))
         } else if (subParams != null && regularParams == null) {
-            SubParamCall(
+            SubParamFormCall(
                 name = name,
                 subParams =
                     ParenNodeList(nodes = subParams, metadata = firstMetadataOrDefault(subParams)),
@@ -330,7 +330,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                         column = name.metadata.column,
                         isInline = name.metadata.isInline))
         } else if (subParams == null && regularParams != null) {
-            Function(
+            FunctionForm(
                 name = name,
                 params =
                     ParenNodeList(
@@ -424,7 +424,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                             column = func.metadata.column))
                     null
                 } else {
-                    if (func !is FunctionCall) {
+                    if (func !is FunctionFormCall) {
                         diagnostics.add(
                             Diagnostic(
                                 type = DiagnosticType.Error,
@@ -434,7 +434,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                                 column = func.metadata.column))
                     }
 
-                    if (rhs !is FunctionCall) {
+                    if (rhs !is FunctionFormCall) {
                         diagnostics.add(
                             Diagnostic(
                                 type = DiagnosticType.Error,
@@ -498,7 +498,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return targets
     }
 
-    private fun tuple(isInline: Boolean): Tuple? {
+    private fun tuple(isInline: Boolean): TupleForm? {
         if (!lexer.has(ChalkTalkTokenType.LParen)) {
             return null
         }
@@ -520,7 +520,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                     it
                 }
                 .filterIsInstance<Target>()
-        return Tuple(
+        return TupleForm(
             targets = ParenNodeList(nodes = items, metadata = firstMetadataOrDefault(items)),
             metadata = MetaData(row = lParen.row, column = lParen.column, isInline = isInline))
     }
@@ -557,15 +557,15 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             } else {
                 when (val first = targets.first()
                 ) {
-                    is SubParamCall -> {
-                        SubParamSequence(
+                    is SubParamFormCall -> {
+                        SubParamSequenceForm(
                             func = first,
                             metadata =
                                 MetaData(
                                     row = lCurly.row, column = lCurly.column, isInline = isInline))
                     }
-                    is SubAndRegularParamCall -> {
-                        SubAndRegularParamSequence(
+                    is SubAndRegularParamFormCall -> {
+                        SubAndRegularParamSequenceForm(
                             func = first,
                             metadata =
                                 MetaData(
@@ -597,7 +597,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
                 }
             }
             val items = targets.filterIsInstance<NameOrNameAssignment>()
-            Set(
+            SetForm(
                 items = CurlyNodeList(nodes = items, metadata = firstMetadataOrDefault(items)),
                 metadata = MetaData(row = lCurly.row, column = lCurly.column, isInline = isInline))
         }

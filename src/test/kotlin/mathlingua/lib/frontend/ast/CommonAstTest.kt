@@ -26,12 +26,12 @@ internal class CommonAstTest {
         val metadata = MetaData(row = -1, column = -1, isInline = false)
         assertEquals(
             expected = "`some' statement`",
-            actual = Statement(text = "some' statement", metadata = metadata).toCode())
+            actual = Formulation(text = "some' statement", metadata = metadata).toCode())
         assertEquals(
             expected = "'some` statement'",
-            actual = Statement(text = "some` statement", metadata = metadata).toCode())
+            actual = Formulation(text = "some` statement", metadata = metadata).toCode())
         assertEquals(
             expected = "'some statement'",
-            actual = Statement(text = "some statement", metadata = metadata).toCode())
+            actual = Formulation(text = "some statement", metadata = metadata).toCode())
     }
 }

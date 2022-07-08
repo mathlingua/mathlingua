@@ -177,8 +177,8 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
         return next
     }
 
-    private fun statement(isInline: Boolean): Formulation? {
-        if (!lexer.has(ChalkTalkTokenType.Statement)) {
+    private fun formulation(isInline: Boolean): Formulation? {
+        if (!lexer.has(ChalkTalkTokenType.Formulation)) {
             return null
         }
         val next = lexer.next()
@@ -202,7 +202,7 @@ private class ChalkTalkNodeLexerImpl(private val lexer: ChalkTalkTokenLexer) : C
             return null
         }
 
-        val statement = statement(isInline)
+        val statement = formulation(isInline)
         if (statement != null) {
             return statement
         }

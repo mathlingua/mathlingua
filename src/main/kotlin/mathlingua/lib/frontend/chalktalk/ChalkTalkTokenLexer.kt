@@ -47,7 +47,7 @@ internal enum class ChalkTalkTokenType {
     Colon,
     Underscore,
     Text,
-    Statement,
+    Formulation,
     TextBlock,
     Name,
     Operator,
@@ -378,8 +378,8 @@ private data class StreamAndType(
 
 private val STREAMS_AND_TYPES =
     mutableListOf(
-        StreamAndType("'", "'", null, ChalkTalkTokenType.Statement),
-        StreamAndType("`", "`", null, ChalkTalkTokenType.Statement),
+        StreamAndType("'", "'", null, ChalkTalkTokenType.Formulation),
+        StreamAndType("`", "`", null, ChalkTalkTokenType.Formulation),
         StreamAndType("\"", "\"", "\\\"", ChalkTalkTokenType.Text),
         StreamAndType("::", "::", "{::}", ChalkTalkTokenType.TextBlock))
 

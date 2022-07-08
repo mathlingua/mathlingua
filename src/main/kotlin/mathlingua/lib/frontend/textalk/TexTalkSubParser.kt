@@ -131,10 +131,7 @@ private class TexTalkSubParserImpl(
     private fun variadicFunctionForm(diagnostics: MutableList<Diagnostic>): VariadicFunctionForm? {
         val funcForm = this.functionForm(diagnostics) ?: return null
         this.expect(TexTalkTokenType.DotDotDot)
-        return VariadicFunctionForm(
-            function = funcForm,
-            metadata = funcForm.metadata.copy()
-        )
+        return VariadicFunctionForm(function = funcForm, metadata = funcForm.metadata.copy())
     }
 
     private fun subParamFormCallOrSubAndRegularParamFormCall(
@@ -174,7 +171,8 @@ private class TexTalkSubParserImpl(
         }
 
     private fun functionFormCall(diagnostics: MutableList<Diagnostic>): FunctionFormCall? =
-        this.functionForm(diagnostics) ?: this.subParamFormCallOrSubAndRegularParamFormCall(diagnostics)
+        this.functionForm(diagnostics)
+            ?: this.subParamFormCallOrSubAndRegularParamFormCall(diagnostics)
 
     private fun squareParams(diagnostics: MutableList<Diagnostic>): SquareParams? {
         val peek = this.nodes.firstOrNull()
@@ -226,15 +224,17 @@ private class TexTalkSubParserImpl(
         return NamedParameterForm(
             name = name,
             params =
-            curlyExpression.orError(
-                message = "Expected a {...}",
-                row = colon.row,
-                column = colon.column,
-                default = defaultCurlyNodeList()),
+                curlyExpression.orError(
+                    message = "Expected a {...}",
+                    row = colon.row,
+                    column = colon.column,
+                    default = defaultCurlyNodeList()),
             metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
     }
 
-    private fun namedParameterExpression(diagnostics: MutableList<Diagnostic>): NamedParameterExpression? {
+    private fun namedParameterExpression(
+        diagnostics: MutableList<Diagnostic>
+    ): NamedParameterExpression? {
         if (!this.hasHas(TexTalkTokenType.Colon, TexTalkTokenType.Name)) {
             return null
         }
@@ -248,14 +248,14 @@ private class TexTalkSubParserImpl(
                     row = name.metadata.row,
                     column = name.metadata.column)
         return NamedParameterExpression(
-                name = name,
-                params =
-                    curlyExpression.orError(
-                        message = "Expected a {...}",
-                        row = colon.row,
-                        column = colon.column,
-                        default = defaultCurlyNodeList()),
-                metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
+            name = name,
+            params =
+                curlyExpression.orError(
+                    message = "Expected a {...}",
+                    row = colon.row,
+                    column = colon.column,
+                    default = defaultCurlyNodeList()),
+            metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
     }
 
     private fun namedParameterForm(diagnostics: MutableList<Diagnostic>): NamedParameterForm? {
@@ -278,8 +278,9 @@ private class TexTalkSubParserImpl(
             metadata = MetaData(row = colon.row, column = colon.column, isInline = null))
     }
 
-    private fun nameOrCommandExpressionCall(diagnostics: MutableList<Diagnostic>): NameOrCommandExpressionCall? =
-        this.name() ?: this.commandExpressionCall(diagnostics)
+    private fun nameOrCommandExpressionCall(
+        diagnostics: MutableList<Diagnostic>
+    ): NameOrCommandExpressionCall? = this.name() ?: this.commandExpressionCall(diagnostics)
 
     private fun variadicIsRhs(): VariadicIsRhs? =
         this.variadicName(diagnostics) ?: this.commandExpressionCall(diagnostics)
@@ -316,7 +317,9 @@ private class TexTalkSubParserImpl(
             null
         }
 
-    private fun commandExpressionCall(diagnostics: MutableList<Diagnostic>): CommandExpressionCall? =
+    private fun commandExpressionCall(
+        diagnostics: MutableList<Diagnostic>
+    ): CommandExpressionCall? =
         if (!this.has(TexTalkTokenType.Backslash)) {
             null
         } else {
@@ -351,28 +354,24 @@ private class TexTalkSubParserImpl(
 
             CommandExpressionCall(
                 names =
-                NonBracketNodeList(
-                    nodes = names,
-                    metadata =
-                    MetaData(
-                        row = backslash.row,
-                        column = backslash.column,
-                        isInline = null)),
+                    NonBracketNodeList(
+                        nodes = names,
+                        metadata =
+                            MetaData(
+                                row = backslash.row, column = backslash.column, isInline = null)),
                 squareParams = squareParams,
                 subParams = subParams,
                 supParams = supParams,
                 curlyParams = curlyParams,
                 namedParams =
-                NonBracketNodeList(
-                    nodes = namedParams,
-                    metadata =
-                    MetaData(
-                        row = backslash.row,
-                        column = backslash.column,
-                        isInline = null)),
+                    NonBracketNodeList(
+                        nodes = namedParams,
+                        metadata =
+                            MetaData(
+                                row = backslash.row, column = backslash.column, isInline = null)),
                 parenParams = parenParams,
                 metadata =
-                MetaData(row = backslash.row, column = backslash.column, isInline = null))
+                    MetaData(row = backslash.row, column = backslash.column, isInline = null))
         }
 
     private fun commandFormCall(diagnostics: MutableList<Diagnostic>): CommandFormCall? =
@@ -410,28 +409,24 @@ private class TexTalkSubParserImpl(
 
             CommandFormCall(
                 names =
-                NonBracketNodeList(
-                    nodes = names,
-                    metadata =
-                    MetaData(
-                        row = backslash.row,
-                        column = backslash.column,
-                        isInline = null)),
+                    NonBracketNodeList(
+                        nodes = names,
+                        metadata =
+                            MetaData(
+                                row = backslash.row, column = backslash.column, isInline = null)),
                 squareParams = squareParams,
                 subParams = subParams,
                 supParams = supParams,
                 curlyParams = curlyParams,
                 namedParams =
-                NonBracketNodeList(
-                    nodes = namedParams,
-                    metadata =
-                    MetaData(
-                        row = backslash.row,
-                        column = backslash.column,
-                        isInline = null)),
+                    NonBracketNodeList(
+                        nodes = namedParams,
+                        metadata =
+                            MetaData(
+                                row = backslash.row, column = backslash.column, isInline = null)),
                 parenParams = parenParams,
                 metadata =
-                MetaData(row = backslash.row, column = backslash.column, isInline = null))
+                    MetaData(row = backslash.row, column = backslash.column, isInline = null))
         }
 
     private fun commandForm(diagnostics: MutableList<Diagnostic>): CommandFormCall? =

@@ -1804,7 +1804,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
                 // don't report about this to the user since it is an implementation detail
                 null
             }
-            is Formulation -> "statement"
+            is Formulation -> "formulation"
             is NameAssignment -> "name assignment"
             is FunctionForm -> "function"
             is SubAndRegularParamFormCall -> "function"

@@ -17,6 +17,7 @@
 package mathlingua
 
 import mathlingua.lib.frontend.Frontend
+import mathlingua.lib.frontend.ast.toCode
 
 fun main() {
     var exit = false

@@ -33,9 +33,8 @@ internal interface ChalkTalkTokenLexer {
     fun diagnostics(): List<Diagnostic>
 }
 
-internal fun newChalkTalkTokenLexer(text: String): ChalkTalkTokenLexer {
-    return ChalkTalkTokenLexerImpl(text)
-}
+internal fun newChalkTalkTokenLexer(text: String): ChalkTalkTokenLexer =
+    ChalkTalkTokenLexerImpl(text)
 
 internal enum class ChalkTalkTokenType {
     ColonEqual,

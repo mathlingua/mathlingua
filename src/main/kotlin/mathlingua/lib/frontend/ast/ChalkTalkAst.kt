@@ -19,115 +19,66 @@ package mathlingua.lib.frontend.ast
 import mathlingua.lib.frontend.HasMetaData
 import mathlingua.lib.frontend.MetaData
 
-internal sealed interface ToCode {
-    fun toCode(): String
-}
-
-internal sealed interface ChalkTalkNode : HasMetaData, ToCode
+internal sealed interface ChalkTalkNode : HasMetaData, Node
 
 internal data class TextBlock(val text: String, override val metadata: MetaData) :
-    ChalkTalkNode, TopLevelGroupOrTextBlock, NodeLexerToken {
-    override fun toCode() = "::$text::"
-}
+    ChalkTalkNode, TopLevelGroupOrTextBlock, NodeLexerToken
 
 internal data class Id(val text: String, override val metadata: MetaData) :
-    ChalkTalkNode, NodeLexerToken {
-    override fun toCode() = text
-}
+    ChalkTalkNode, NodeLexerToken
 
 internal sealed interface IdForm : ChalkTalkNode
 
 internal data class Formulation(val text: String, override val metadata: MetaData) :
-    Argument, Spec, ProvidedItem, Clause {
-    override fun toCode() =
-        if (this.text.contains("'")) {
-            "`${this.text}`"
-        } else {
-            "'${this.text}'"
-        }
+    Argument, Spec, ProvidedItem, Clause
+
+internal data class Text(val text: String, override val metadata: MetaData) : Argument, Clause
+
+internal sealed interface Clause : ThatItem, SatisfyingItem, ExpressingItem
+
+internal sealed interface Spec : Clause, SatisfyingItem, ExpressingItem, ThatItem
+
+internal sealed interface Section : ChalkTalkNode {
+    val name: String
 }
 
-internal data class Text(val text: String, override val metadata: MetaData) : Argument, Clause {
-    override fun toCode() = "\"$text\""
-}
-
-/*
- * <clause> ::= and: |
- *              not: |
- *              or: |
- *              exists: |
- *              existsUnique: |
- *              forAll: |
- *              if: |
- *              iff: |
- *              <text>[.*] |
- *              <statement>[<value textalk exp>]
- */
-internal interface Clause : ThatItem, SatisfyingItem, ExpressingItem
-
-/*
- * <spec> ::= <statement>[<is textalk exp>] |
- *            <statement>[<in textalk exp>]
- */
-internal interface Spec : Clause, SatisfyingItem, ExpressingItem, ThatItem
-
-internal open class Section(val name: String, override val metadata: MetaData) : ChalkTalkNode {
-    override fun toCode(): String {
-        throw Exception("Not implemented")
-    }
-}
-
-internal open class Group(override val metadata: MetaData) : ChalkTalkNode {
-    override fun toCode(): String {
-        throw Exception("Not implemented")
-    }
-}
-
-// internal data class Group(, override val metadata: MetaData) : Group(metadata)
+internal sealed interface Group : ChalkTalkNode
 
 internal data class AndSection(val clauses: List<Clause>, override val metadata: MetaData) :
-    Section("and", metadata) {
-    override fun toCode() = sectionToCode(this, *clauses.toTypedArray())
+    Section {
+    override val name = "and"
 }
 
 internal data class AndGroup(val andSection: AndSection, override val metadata: MetaData) :
-    Group(metadata), Clause {
-    override fun toCode() = groupToCode(null, andSection)
-}
+    Group, Clause
 
-internal data class NotSection(val clause: Clause, override val metadata: MetaData) :
-    Section("not", metadata) {
-    override fun toCode() = sectionToCode(this, clause)
+internal data class NotSection(val clause: Clause, override val metadata: MetaData) : Section {
+    override val name = "not"
 }
 
 internal data class NotGroup(val notSection: NotSection, override val metadata: MetaData) :
-    Group(metadata), Clause {
-    override fun toCode() = groupToCode(null, notSection)
-}
+    Group, Clause
 
 internal data class OrSection(val clauses: List<Clause>, override val metadata: MetaData) :
-    Section("or", metadata) {
-    override fun toCode() = sectionToCode(this, *clauses.toTypedArray())
+    Section {
+    override val name = "or"
 }
 
 internal data class OrGroup(val orSection: OrSection, override val metadata: MetaData) :
-    Group(metadata), Clause {
-    override fun toCode() = groupToCode(null, orSection)
-}
+    Group, Clause
 
 internal data class ExistsSection(val targets: List<Target>, override val metadata: MetaData) :
-    Section("exists", metadata) {
-    override fun toCode() = sectionToCode(this, *targets.toTypedArray())
+    Section {
+    override val name = "exists"
 }
 
-internal data class WhereSection(val specs: List<Spec>, override val metadata: MetaData) :
-    Section("where", metadata) {
-    override fun toCode() = sectionToCode(this, *specs.toTypedArray())
+internal data class WhereSection(val specs: List<Spec>, override val metadata: MetaData) : Section {
+    override val name = "where"
 }
 
 internal data class SuchThatSection(val clauses: List<Clause>, override val metadata: MetaData) :
-    Section("suchThat", metadata) {
-    override fun toCode() = sectionToCode(this, *clauses.toTypedArray())
+    Section {
+    override val name = "suchThat"
 }
 
 internal data class ExistsGroup(
@@ -135,14 +86,12 @@ internal data class ExistsGroup(
     val whereSection: WhereSection?,
     val suchThatSection: SuchThatSection?,
     override val metadata: MetaData
-) : Group(metadata), Clause {
-    override fun toCode() = groupToCode(null, existsSection, whereSection, suchThatSection)
-}
+) : Group, Clause
 
 internal data class ExistsUniqueSection(
     val targets: List<Target>, override val metadata: MetaData
-) : Section("existsUnique", metadata) {
-    override fun toCode() = sectionToCode(this, *targets.toTypedArray())
+) : Section {
+    override val name = "existsUnique"
 }
 
 internal data class ExistsUniqueGroup(
@@ -150,13 +99,11 @@ internal data class ExistsUniqueGroup(
     val whereSection: WhereSection?,
     val suchThatSection: SuchThatSection?,
     override val metadata: MetaData
-) : Group(metadata), Clause {
-    override fun toCode() = groupToCode(null, existsUniqueSection, whereSection, suchThatSection)
-}
+) : Group, Clause
 
 internal data class ForAllSection(val targets: List<Target>, override val metadata: MetaData) :
-    Section("forAll", metadata) {
-    override fun toCode() = sectionToCode(this, *targets.toTypedArray())
+    Section {
+    override val name = "forAll"
 }
 
 internal data class ForAllGroup(
@@ -165,52 +112,44 @@ internal data class ForAllGroup(
     val suchThatSection: SuchThatSection?,
     val thenSection: ThenSection,
     override val metadata: MetaData
-) : Group(metadata), Clause {
-    override fun toCode() =
-        groupToCode(null, forAllSection, whereSection, suchThatSection, thenSection)
-}
+) : Group, Clause
 
 internal data class ThenSection(val clauses: List<Clause>, override val metadata: MetaData) :
-    Section("then", metadata) {
-    override fun toCode() = sectionToCode(this, *clauses.toTypedArray())
+    Section {
+    override val name = "then"
 }
 
 internal data class IfSection(val clauses: List<Clause>, override val metadata: MetaData) :
-    Section("if", metadata) {
-    override fun toCode() = sectionToCode(this, *clauses.toTypedArray())
+    Section {
+    override val name = "if"
 }
 
 internal data class IfGroup(
     val ifSection: IfSection, val thenSection: ThenSection, override val metadata: MetaData
-) : Group(metadata), Clause {
-    override fun toCode() = groupToCode(null, ifSection, thenSection)
-}
+) : Group, Clause
 
 internal data class IffSection(val clauses: List<Clause>, override val metadata: MetaData) :
-    Section("iff", metadata) {
-    override fun toCode() = sectionToCode(this, *clauses.toTypedArray())
+    Section {
+    override val name = "iff"
 }
 
 internal data class IffGroup(
     val iffSection: IffSection, val thenSection: ThenSection, override val metadata: MetaData
-) : Group(metadata), Clause {
-    override fun toCode() = groupToCode(null, iffSection, thenSection)
-}
+) : Group, Clause
 
-internal data class GeneratedSection(override val metadata: MetaData) :
-    Section("generated", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class GeneratedSection(override val metadata: MetaData) : Section {
+    override val name = "generated"
 }
 
 internal data class FromSection(val items: List<NameOrFunction>, override val metadata: MetaData) :
-    Section("from", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "from"
 }
 
 internal data class GeneratedWhenSection(
     val formulations: List<Formulation>, override val metadata: MetaData
-) : Section("when", metadata) {
-    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
+) : Section {
+    override val name = "when"
 }
 
 internal data class GeneratedGroup(
@@ -218,31 +157,28 @@ internal data class GeneratedGroup(
     val fromSection: FromSection,
     val generatedWhenSection: GeneratedWhenSection,
     override val metadata: MetaData
-) : Group(metadata), SatisfyingItem {
-    override fun toCode() = groupToCode(null, generatedSection, fromSection, generatedWhenSection)
-}
+) : Group, SatisfyingItem
 
-internal data class PiecewiseSection(override val metadata: MetaData) :
-    Section("piecewise", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class PiecewiseSection(override val metadata: MetaData) : Section {
+    override val name = "piecewise"
 }
 
 internal data class PiecewiseWhenSection(
     val clauses: List<Clause>, override val metadata: MetaData
-) : Section("when", metadata) {
-    override fun toCode() = sectionToCode(this, *clauses.toTypedArray())
+) : Section {
+    override val name = "when"
 }
 
 internal data class PiecewiseThenSection(
     val formulations: List<Formulation>, override val metadata: MetaData
-) : Section("then", metadata) {
-    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
+) : Section {
+    override val name = "then"
 }
 
 internal data class PiecewiseElseSection(
     val formulations: List<Formulation>, override val metadata: MetaData
-) : Section("else", metadata) {
-    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
+) : Section {
+    override val name = "else"
 }
 
 internal data class PiecewiseGroup(
@@ -251,44 +187,33 @@ internal data class PiecewiseGroup(
     val piecewiseThenSection: PiecewiseThenSection?,
     val piecewiseElseSection: PiecewiseElseSection?,
     override val metadata: MetaData
-) : Group(metadata), ExpressingItem {
-    override fun toCode() =
-        groupToCode(
-            null,
-            piecewiseSection,
-            piecewiseWhenSection,
-            piecewiseThenSection,
-            piecewiseElseSection)
-}
+) : Group, ExpressingItem
 
 internal data class MatchingSection(
     val formulations: List<Formulation>, override val metadata: MetaData
-) : Section("matching", metadata) {
-    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
+) : Section {
+    override val name = "matching"
 }
 
 internal data class MatchingGroup(
     val matchingSection: MatchingSection, override val metadata: MetaData
-) : Group(metadata), ExpressingItem {
-    override fun toCode() = groupToCode(null, matchingSection)
-}
+) : Group, ExpressingItem
 
-internal data class EqualitySection(override val metadata: MetaData) :
-    Section("equality", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class EqualitySection(override val metadata: MetaData) : Section {
+    override val name = "quality"
 }
 
 internal data class BetweenSection(
     val first: Target, val second: Target, override val metadata: MetaData
-) : Section("between", metadata) {
-    override fun toCode() = sectionToCode(this, first, second)
+) : Section {
+    override val name = "between"
 }
 
-internal interface ProvidedItem : ChalkTalkNode
+internal sealed interface ProvidedItem : ChalkTalkNode
 
 internal data class ProvidedSection(val statement: ProvidedItem, override val metadata: MetaData) :
-    Section("provided", metadata) {
-    override fun toCode() = sectionToCode(this, statement)
+    Section {
+    override val name = "provided"
 }
 
 internal data class EqualityGroup(
@@ -296,45 +221,37 @@ internal data class EqualityGroup(
     val betweenSection: BetweenSection,
     val providedSection: ProvidedSection,
     override val metadata: MetaData
-) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, equalitySection, betweenSection, providedSection)
-}
+) : Group, ProvidingItem
 
-internal data class MembershipSection(override val metadata: MetaData) :
-    Section("membership", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class MembershipSection(override val metadata: MetaData) : Section {
+    override val name = "membership"
 }
 
 internal data class ThroughSection(val through: Formulation, override val metadata: MetaData) :
-    Section("through", metadata) {
-    override fun toCode() = sectionToCode(this, through)
+    Section {
+    override val name = "through"
 }
 
 internal data class MembershipGroup(
     val membershipSection: MembershipSection,
     val throughSection: ThroughSection,
     override val metadata: MetaData
-) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, membershipSection, throughSection)
+) : Group, ProvidingItem
+
+internal data class ViewSection(override val metadata: MetaData) : Section {
+    override val name = "view"
 }
 
-internal data class ViewSection(override val metadata: MetaData) : Section("view", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class AsSection(val asText: Text, override val metadata: MetaData) : Section {
+    override val name = "as"
 }
 
-internal data class AsSection(val asText: Text, override val metadata: MetaData) :
-    Section("as", metadata) {
-    override fun toCode() = sectionToCode(this, asText)
+internal data class ViaSection(val via: Formulation, override val metadata: MetaData) : Section {
+    override val name = "via"
 }
 
-internal data class ViaSection(val via: Formulation, override val metadata: MetaData) :
-    Section("via", metadata) {
-    override fun toCode() = sectionToCode(this, via)
-}
-
-internal data class BySection(val by: Formulation, override val metadata: MetaData) :
-    Section("by", metadata) {
-    override fun toCode() = sectionToCode(this, by)
+internal data class BySection(val by: Formulation, override val metadata: MetaData) : Section {
+    override val name = "by"
 }
 
 internal data class ViewGroup(
@@ -343,212 +260,187 @@ internal data class ViewGroup(
     val viaSection: ViaSection,
     val bySection: BySection?,
     override val metadata: MetaData
-) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, viewSection, asSection, viaSection, bySection)
-}
+) : Group, ProvidingItem
 
 internal data class SymbolsSection(val names: List<Name>, override val metadata: MetaData) :
-    Section("symbols", metadata) {
-    override fun toCode() = sectionToCode(this, *names.toTypedArray())
+    Section {
+    override val name = "symbols"
 }
 
 internal data class SymbolsWhereSection(
     val formulations: List<Formulation>, override val metadata: MetaData
-) : Section("where", metadata) {
-    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
+) : Section {
+    override val name = "where"
 }
 
 internal data class SymbolsGroup(
     val symbolsSection: SymbolsSection,
     val symbolsWhereSection: SymbolsWhereSection,
     override val metadata: MetaData
-) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, symbolsSection, symbolsWhereSection)
-}
+) : Group, ProvidingItem
 
 internal data class SymbolsAsGroup(
     val symbolsSection: SymbolsSection,
     val symbolsAsSection: SymbolsAsSection,
     override val metadata: MetaData
-) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, symbolsSection, symbolsAsSection)
-}
+) : Group, ProvidingItem
 
 internal data class SymbolsAsSection(val asSection: Text, override val metadata: MetaData) :
-    Section("as", metadata) {
-    override fun toCode() = sectionToCode(this, asSection)
+    Section {
+    override val name = "as"
 }
 
 internal data class MemberSymbolsSection(val names: List<Name>, override val metadata: MetaData) :
-    Section("memberSymbols", metadata) {
-    override fun toCode() = sectionToCode(this, *names.toTypedArray())
+    Section {
+    override val name = "memberSymbols"
 }
 
 internal data class MemberSymbolsWhereSection(
     val formulations: List<Formulation>, override val metadata: MetaData
-) : Section("where", metadata) {
-    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
+) : Section {
+    override val name = "where"
 }
 
 internal data class MemberSymbolsAsSection(val asSection: Text, override val metadata: MetaData) :
-    Section("as", metadata) {
-    override fun toCode() = sectionToCode(this, asSection)
+    Section {
+    override val name = "as"
 }
 
 internal data class MemberSymbolsGroup(
     val memberSymbolsSection: MemberSymbolsSection,
     val memberSymbolsWhereSection: MemberSymbolsWhereSection,
     override val metadata: MetaData
-) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, memberSymbolsSection, memberSymbolsWhereSection)
-}
+) : Group, ProvidingItem
 
 internal data class MemberSymbolsAsGroup(
     val memberSymbolsSection: MemberSymbolsSection,
     val memberSymbolsAsSection: MemberSymbolsAsSection,
     override val metadata: MetaData
-) : Group(metadata), ProvidingItem {
-    override fun toCode() = groupToCode(null, memberSymbolsSection, memberSymbolsAsSection)
-}
+) : Group, ProvidingItem
 
 internal data class ContributorSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("author", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "author"
 }
 
 internal data class ContributorGroup(
     val contributorSection: ContributorSection, override val metadata: MetaData
-) : Group(metadata), MetadataItem {
-    override fun toCode() = groupToCode(null, contributorSection)
-}
+) : Group, MetadataItem
 
 internal data class AuthorSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("author", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "author"
 }
 
 internal data class AuthorGroup(val authorSection: AuthorSection, override val metadata: MetaData) :
-    Group(metadata), ResourceItem {
-    override fun toCode() = groupToCode(null, authorSection)
-}
+    Group, ResourceItem
 
-internal data class TagSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("tag", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+internal data class TagSection(val items: List<Text>, override val metadata: MetaData) : Section {
+    override val name = "tag"
 }
 
 internal data class TagGroup(val tagSection: TagSection, override val metadata: MetaData) :
-    Group(metadata), MetadataItem {
-    override fun toCode() = groupToCode(null, tagSection)
-}
+    Group, MetadataItem
 
 internal data class ReferencesSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("References", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "References"
 }
 
-internal data class DefinesSection(val target: Target, override val metadata: MetaData) :
-    Section("Defines", metadata) {
-    override fun toCode() = sectionToCode(this, target)
+internal data class DefinesSection(val target: Target, override val metadata: MetaData) : Section {
+    override val name = "Defines"
 }
 
 internal data class WithSection(
     val assignments: List<NameAssignment>, override val metadata: MetaData
-) : Section("with", metadata) {
-    override fun toCode() = sectionToCode(this, *assignments.toTypedArray())
+) : Section {
+    override val name = "with"
 }
 
 internal data class GivenSection(val targets: List<Target>, override val metadata: MetaData) :
-    Section("given", metadata) {
-    override fun toCode() = sectionToCode(this, *targets.toTypedArray())
+    Section {
+    override val name = "given"
 }
 
-internal data class WhenSection(val specs: List<Spec>, override val metadata: MetaData) :
-    Section("when", metadata) {
-    override fun toCode() = sectionToCode(this, *specs.toTypedArray())
+internal data class WhenSection(val specs: List<Spec>, override val metadata: MetaData) : Section {
+    override val name = "when"
 }
 
 internal data class MeansSection(val statement: Formulation, override val metadata: MetaData) :
-    Section("means", metadata) {
-    override fun toCode() = sectionToCode(this, statement)
+    Section {
+    override val name = "means"
 }
 
-internal interface SatisfyingItem : ChalkTalkNode
+internal sealed interface SatisfyingItem : ChalkTalkNode
 
 internal data class SatisfyingSection(
     val items: List<SatisfyingItem>, override val metadata: MetaData
-) : Section("satisfying", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+) : Section {
+    override val name = "satisfying"
 }
 
-internal interface ExpressingItem : ChalkTalkNode
+internal sealed interface ExpressingItem : ChalkTalkNode
 
 internal data class ExpressingSection(
     val items: List<ExpressingItem>, override val metadata: MetaData
-) : Section("expressing", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+) : Section {
+    override val name = "expressing"
 }
 
 internal data class UsingSection(
     val formulations: List<Formulation>, override val metadata: MetaData
-) : Section("Using", metadata) {
-    override fun toCode() = sectionToCode(this, *formulations.toTypedArray())
+) : Section {
+    override val name = "using"
 }
 
 internal sealed interface CodifiedItem : ChalkTalkNode
 
 internal data class WritingGroup(
     val writingSection: WritingSection, override val metadata: MetaData
-) : Group(metadata), CodifiedItem {
-    override fun toCode() = groupToCode(null, writingSection)
-}
+) : Group, CodifiedItem
 
 internal data class WritingSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("writing", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "writing"
 }
 
 internal data class WrittenGroup(
     val writtenSection: WrittenSection, override val metadata: MetaData
-) : Group(metadata), CodifiedItem {
-    override fun toCode() = groupToCode(null, writtenSection)
-}
+) : Group, CodifiedItem
 
 internal data class WrittenSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("written", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "written"
 }
 
 internal data class CalledGroup(val calledSection: CalledSection, override val metadata: MetaData) :
-    Group(metadata), CodifiedItem {
-    override fun toCode() = groupToCode(null, calledSection)
-}
+    Group, CodifiedItem
 
 internal data class CalledSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("called", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "called"
 }
 
 internal data class CodifiedSection(
     val items: List<CodifiedItem>, override val metadata: MetaData
-) : Section("Codified", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+) : Section {
+    override val name = "Codified"
 }
 
-internal interface ProvidingItem : ChalkTalkNode
+internal sealed interface ProvidingItem : ChalkTalkNode
 
 internal data class ProvidingSection(
     val items: List<ProvidingItem>, override val metadata: MetaData
-) : Section("Providing", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+) : Section {
+    override val name = "Providing"
 }
 
-internal interface MetadataItem : ChalkTalkNode
+internal sealed interface MetadataItem : ChalkTalkNode
 
 internal data class MetadataSection(
     val items: List<MetadataItem>, override val metadata: MetaData
-) : Section("Metadata", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+) : Section {
+    override val name = "Metadata"
 }
 
 internal data class DefinesGroup(
@@ -568,35 +460,17 @@ internal data class DefinesGroup(
     val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() =
-        groupToCode(
-            id,
-            definesSection,
-            withSection,
-            givenSection,
-            whenSection,
-            suchThatSection,
-            meansSection,
-            satisfyingSection,
-            expressingSection,
-            providingSection,
-            usingSection,
-            codifiedSection,
-            documentedSection,
-            referencesSection,
-            metadataSection)
-}
+) : Group, TopLevelGroup
 
-internal data class StatesSection(override val metadata: MetaData) : Section("States", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class StatesSection(override val metadata: MetaData) : Section {
+    override val name = "States"
 }
 
 internal sealed interface ThatItem : ChalkTalkNode
 
 internal data class ThatSection(val items: List<ThatItem>, override val metadata: MetaData) :
-    Section("that", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "that"
 }
 
 internal data class StatesGroup(
@@ -612,95 +486,60 @@ internal data class StatesGroup(
     val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() =
-        groupToCode(
-            id,
-            statesSection,
-            givenSection,
-            whenSection,
-            suchThatSection,
-            thatSection,
-            usingSection,
-            codifiedSection,
-            documentedSection,
-            referencesSection,
-            metadataSection)
-}
+) : Group, TopLevelGroup
 
-internal interface ResourceItem : ChalkTalkNode
+internal sealed interface ResourceItem : ChalkTalkNode
 
 internal data class ResourceSection(
     val items: List<ResourceItem>, override val metadata: MetaData
-) : Section("Resource", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+) : Section {
+    override val name = "Resource"
 }
 
-internal data class TypeSection(val type: Text, override val metadata: MetaData) :
-    Section("type", metadata) {
-    override fun toCode() = sectionToCode(this, type)
+internal data class TypeSection(val type: Text, override val metadata: MetaData) : Section {
+    override val name = "type"
 }
 
 internal data class TypeGroup(val typeSection: TypeSection, override val metadata: MetaData) :
-    Group(metadata), ResourceItem {
-    override fun toCode() = groupToCode(null, typeSection)
-}
+    Group, ResourceItem
 
-internal data class NameSection(val text: Text, override val metadata: MetaData) :
-    Section("name", metadata) {
-    override fun toCode() = sectionToCode(this, text)
+internal data class NameSection(val text: Text, override val metadata: MetaData) : Section {
+    override val name = "name"
 }
 
 internal data class NameGroup(val nameSection: NameSection, override val metadata: MetaData) :
-    Group(metadata), ResourceItem {
-    override fun toCode() = groupToCode(null, nameSection)
-}
+    Group, ResourceItem
 
-internal data class HomepageSection(val homepage: Text, override val metadata: MetaData) :
-    Section("homepage", metadata) {
-    override fun toCode() = sectionToCode(this, homepage)
+internal data class HomepageSection(val homepage: Text, override val metadata: MetaData) : Section {
+    override val name = "homepage"
 }
 
 internal data class HomepageGroup(
     val homepageSection: HomepageSection, override val metadata: MetaData
-) : Group(metadata), ResourceItem {
-    override fun toCode() = groupToCode(null, homepageSection)
-}
+) : Group, ResourceItem
 
-internal data class UrlSection(val url: Text, override val metadata: MetaData) :
-    Section("url", metadata) {
-    override fun toCode() = sectionToCode(this, url)
+internal data class UrlSection(val url: Text, override val metadata: MetaData) : Section {
+    override val name = "url"
 }
 
 internal data class UrlGroup(val urlSection: UrlSection, override val metadata: MetaData) :
-    Group(metadata), ResourceItem {
-    override fun toCode() = groupToCode(null, urlSection)
-}
+    Group, ResourceItem
 
-internal data class OffsetSection(val offset: Text, override val metadata: MetaData) :
-    Section("offset", metadata) {
-    override fun toCode() = sectionToCode(this, offset)
+internal data class OffsetSection(val offset: Text, override val metadata: MetaData) : Section {
+    override val name = "offset"
 }
 
 internal data class OffsetGroup(val offsetSection: OffsetSection, override val metadata: MetaData) :
-    Group(metadata), ResourceItem {
-    override fun toCode() = groupToCode(null, offsetSection)
-}
+    Group, ResourceItem
 
-internal data class ResourceName(val name: String, override val metadata: MetaData) :
-    ChalkTalkNode {
-    override fun toCode() = "@$name"
-}
+internal data class ResourceName(val name: String, override val metadata: MetaData) : ChalkTalkNode
 
 internal data class ResourceGroup(
     val id: ResourceName, val resourceSection: ResourceSection, override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() = groupToCode(null, resourceSection)
-}
+) : Group, TopLevelGroup
 
-internal data class AxiomSection(val names: List<Text>, override val metadata: MetaData) :
-    Section("Axiom", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class AxiomSection(val names: List<Text>, override val metadata: MetaData) : Section {
+    override val name = "Axiom"
 }
 
 internal data class AxiomGroup(
@@ -716,25 +555,11 @@ internal data class AxiomGroup(
     val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() =
-        groupToCode(
-            id,
-            axiomSection,
-            givenSection,
-            whereSection,
-            suchThatSection,
-            thenSection,
-            iffSection,
-            usingSection,
-            documentedSection,
-            referencesSection,
-            metadataSection)
-}
+) : Group, TopLevelGroup
 
 internal data class ConjectureSection(val names: List<Text>, override val metadata: MetaData) :
-    Section("Conjecture", metadata) {
-    override fun toCode() = sectionToCode(this)
+    Section {
+    override val name = "Conjecture"
 }
 
 internal data class ConjectureGroup(
@@ -750,25 +575,11 @@ internal data class ConjectureGroup(
     val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() =
-        groupToCode(
-            id,
-            conjectureSection,
-            givenSection,
-            whereSection,
-            suchThatSection,
-            thenSection,
-            iffSection,
-            usingSection,
-            documentedSection,
-            referencesSection,
-            metadataSection)
-}
+) : Group, TopLevelGroup
 
 internal data class TheoremSection(val names: List<Text>, override val metadata: MetaData) :
-    Section("Theorem", metadata) {
-    override fun toCode() = sectionToCode(this)
+    Section {
+    override val name = "Theorem"
 }
 
 internal data class TheoremGroup(
@@ -785,41 +596,22 @@ internal data class TheoremGroup(
     val referencesSection: ReferencesSection?,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() =
-        groupToCode(
-            id,
-            theoremSection,
-            givenSection,
-            whereSection,
-            suchThatSection,
-            thenSection,
-            iffSection,
-            usingSection,
-            proofSection,
-            documentedSection,
-            referencesSection,
-            metadataSection)
-}
+) : Group, TopLevelGroup
 
 internal data class ProofSection(val proofs: List<Text>, override val metadata: MetaData) :
-    Section("Proof", metadata) {
-    override fun toCode() = sectionToCode(this, *proofs.toTypedArray())
+    Section {
+    override val name = "Proof"
 }
 
-internal data class TopicSection(val names: List<Text>, override val metadata: MetaData) :
-    Section("Topic", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class TopicSection(val names: List<Text>, override val metadata: MetaData) : Section {
+    override val name = "Topic"
 }
 
-internal data class ContentSection(val content: Text, override val metadata: MetaData) :
-    Section("content", metadata) {
-    override fun toCode() = sectionToCode(this, content)
+internal data class ContentSection(val content: Text, override val metadata: MetaData) : Section {
+    override val name = "content"
 }
 
-internal data class TopicName(val name: String, override val metadata: MetaData) : ChalkTalkNode {
-    override fun toCode() = "#$name"
-}
+internal data class TopicName(val name: String, override val metadata: MetaData) : ChalkTalkNode
 
 internal data class TopicGroup(
     val id: TopicName,
@@ -827,14 +619,10 @@ internal data class TopicGroup(
     val contentSection: ContentSection,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() =
-        groupToCodeWithStringId(id, topicSection, contentSection, metadataSection)
-}
+) : Group, TopLevelGroup
 
-internal data class NoteTopLevelSection(override val metadata: MetaData) :
-    Section("Note", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class NoteTopLevelSection(override val metadata: MetaData) : Section {
+    override val name = "Note"
 }
 
 internal data class NoteTopLevelGroup(
@@ -842,264 +630,148 @@ internal data class NoteTopLevelGroup(
     val contentSection: ContentSection,
     val metadataSection: MetadataSection?,
     override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() = groupToCode(null, noteTopLevelSection, contentSection, metadataSection)
-}
+) : Group, TopLevelGroup
 
-internal interface SpecifyItem : ChalkTalkNode
+internal sealed interface SpecifyItem : ChalkTalkNode
 
 internal data class SpecifySection(val items: List<SpecifyItem>, override val metadata: MetaData) :
-    Section("Specify", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "Specify"
 }
 
 internal data class SpecifyGroup(
     val specifySection: SpecifySection, override val metadata: MetaData
-) : Group(metadata), TopLevelGroup {
-    override fun toCode() = groupToCode(null, specifySection)
-}
+) : Group, TopLevelGroup
 
-internal data class ZeroSection(override val metadata: MetaData) : Section("zero", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class ZeroSection(override val metadata: MetaData) : Section {
+    override val name = "zero"
 }
 
 internal data class ZeroGroup(
     val zeroSection: ZeroSection, val isSection: IsSection, override val metadata: MetaData
-) : Group(metadata), SpecifyItem {
-    override fun toCode() = groupToCode(null, zeroSection, isSection)
-}
+) : Group, SpecifyItem
 
-internal data class PositiveIntSection(override val metadata: MetaData) :
-    Section("positiveInt", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class PositiveIntSection(override val metadata: MetaData) : Section {
+    override val name = "positiveInt"
 }
 
 internal data class PositiveIntGroup(
     val positiveIntSection: PositiveIntSection,
     val isSection: IsSection,
     override val metadata: MetaData
-) : Group(metadata), SpecifyItem {
-    override fun toCode() = groupToCode(null, positiveIntSection, isSection)
-}
+) : Group, SpecifyItem
 
-internal data class NegativeIntSection(override val metadata: MetaData) :
-    Section("negativeInt", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class NegativeIntSection(override val metadata: MetaData) : Section {
+    override val name = "negativeInt"
 }
 
 internal data class NegativeIntGroup(
     val negativeIntSection: NegativeIntSection,
     val isSection: IsSection,
     override val metadata: MetaData
-) : Group(metadata), SpecifyItem {
-    override fun toCode() = groupToCode(null, negativeIntSection, isSection)
-}
+) : Group, SpecifyItem
 
-internal data class PositiveFloatSection(override val metadata: MetaData) :
-    Section("positiveFloat", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class PositiveFloatSection(override val metadata: MetaData) : Section {
+    override val name = "positiveFloat"
 }
 
 internal data class PositiveFloatGroup(
     val positiveFloatSection: PositiveFloatSection,
     val isSection: IsSection,
     override val metadata: MetaData
-) : Group(metadata), SpecifyItem {
-    override fun toCode() = groupToCode(null, positiveFloatSection, isSection)
-}
+) : Group, SpecifyItem
 
-internal data class NegativeFloatSection(override val metadata: MetaData) :
-    Section("negativeFloat", metadata) {
-    override fun toCode() = sectionToCode(this)
+internal data class NegativeFloatSection(override val metadata: MetaData) : Section {
+    override val name = "negativeFloat"
 }
 
 internal data class NegativeFloatGroup(
     val negativeFloatSection: NegativeFloatSection,
     val isSection: IsSection,
     override val metadata: MetaData
-) : Group(metadata), SpecifyItem {
-    override fun toCode() = groupToCode(null, negativeFloatSection, isSection)
+) : Group, SpecifyItem
+
+internal data class IsSection(val form: Text, override val metadata: MetaData) : Section {
+    override val name = "is"
 }
 
-internal data class IsSection(val form: Text, override val metadata: MetaData) :
-    Section("is", metadata) {
-    override fun toCode() = sectionToCode(this, form)
-}
+internal sealed interface DocumentedItem : ChalkTalkNode
 
-internal interface DocumentedItem : ChalkTalkNode
-
-internal data class LooselySection(val content: Text, override val metadata: MetaData) :
-    Section("loosely", metadata) {
-    override fun toCode() = sectionToCode(this, content)
+internal data class LooselySection(val content: Text, override val metadata: MetaData) : Section {
+    override val name = "loosely"
 }
 
 internal data class LooselyGroup(
     val looselySection: LooselySection, override val metadata: MetaData
-) : Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, looselySection)
-}
+) : Group, DocumentedItem
 
-internal data class OverviewSection(val content: Text, override val metadata: MetaData) :
-    Section("overview", metadata) {
-    override fun toCode() = sectionToCode(this, content)
+internal data class OverviewSection(val content: Text, override val metadata: MetaData) : Section {
+    override val name = "overview"
 }
 
 internal data class OverviewGroup(
     val overviewSection: OverviewSection, override val metadata: MetaData
-) : Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, overviewSection)
-}
+) : Group, DocumentedItem
 
 internal data class MotivationSection(val content: Text, override val metadata: MetaData) :
-    Section("motivation", metadata) {
-    override fun toCode() = sectionToCode(this, content)
+    Section {
+    override val name = "motivation"
 }
 
 internal data class MotivationGroup(
     val motivationSection: MotivationSection, override val metadata: MetaData
-) : Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, motivationSection)
-}
+) : Group, DocumentedItem
 
-internal data class HistorySection(val content: Text, override val metadata: MetaData) :
-    Section("history", metadata) {
-    override fun toCode() = sectionToCode(this, content)
+internal data class HistorySection(val content: Text, override val metadata: MetaData) : Section {
+    override val name = "history"
 }
 
 internal data class HistoryGroup(
     val historySection: HistorySection, override val metadata: MetaData
-) : Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, historySection)
-}
+) : Group, DocumentedItem
 
 internal data class ExamplesSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("examples", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "examples"
 }
 
 internal data class ExamplesGroup(
     val examplesSection: ExamplesSection, override val metadata: MetaData
-) : Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, examplesSection)
-}
+) : Group, DocumentedItem
 
 internal data class RelatedSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("related", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "related"
 }
 
 internal data class RelatedGroup(
     val relatedSection: RelatedSection, override val metadata: MetaData
-) : Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, relatedSection)
-}
+) : Group, DocumentedItem
 
 internal data class DiscoveredSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("discovered", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+    Section {
+    override val name = "discovered"
 }
 
 internal data class DiscoveredGroup(
     val discoveredSection: DiscoveredSection, override val metadata: MetaData
-) : Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, discoveredSection)
-}
+) : Group, DocumentedItem
 
-internal data class NotesSection(val items: List<Text>, override val metadata: MetaData) :
-    Section("notes", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+internal data class NotesSection(val items: List<Text>, override val metadata: MetaData) : Section {
+    override val name = "notes"
 }
 
 internal data class NotesGroup(val notesSection: NotesSection, override val metadata: MetaData) :
-    Group(metadata), DocumentedItem {
-    override fun toCode() = groupToCode(null, notesSection)
-}
+    Group, DocumentedItem
 
 internal data class DocumentedSection(
     val items: List<DocumentedItem>, override val metadata: MetaData
-) : Section("Documented", metadata) {
-    override fun toCode() = sectionToCode(this, *items.toTypedArray())
+) : Section {
+    override val name = "Documented"
 }
 
-internal interface TopLevelGroup : TopLevelGroupOrTextBlock
+internal sealed interface TopLevelGroup : TopLevelGroupOrTextBlock
 
-internal interface TopLevelGroupOrTextBlock : ChalkTalkNode
+internal sealed interface TopLevelGroupOrTextBlock : ChalkTalkNode
 
-internal data class Document(val items: List<TopLevelGroupOrTextBlock>) {
-    fun toCode(): String {
-        val builder = StringBuilder()
-        for (i in items.indices) {
-            if (i > 0) {
-                builder.append("\n\n\n")
-            }
-            builder.append(items[i].toCode())
-        }
-        return builder.toString()
-    }
-}
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-// adds a `. ` to the start of the code and indents the subsequent lines
-private fun codeToDotSpaceArg(code: String): String {
-    val builder = StringBuilder()
-    val lines = code.split("\n")
-    if (lines.isNotEmpty()) {
-        builder.append(". ")
-        builder.append(lines[0])
-    }
-    for (i in 1 until lines.size) {
-        builder.append("\n  ")
-        builder.append(lines[i])
-    }
-    return builder.toString()
-}
-
-private fun sectionToCode(section: Section, vararg args: ChalkTalkNode): String {
-    val builder = StringBuilder()
-    builder.append(section.name)
-    builder.append(":")
-    var i = 0
-    while (i < args.size) {
-        val arg = args[i++]
-        if (arg.metadata.isInline == false) {
-            builder.append("\n")
-            builder.append(codeToDotSpaceArg(arg.toCode()))
-            while (i < args.size && args[i].metadata.isInline == true) {
-                builder.append(", ")
-                builder.append(args[i++].toCode())
-            }
-        } else {
-            builder.append(" ")
-            builder.append(arg.toCode())
-            while (i < args.size && args[i].metadata.isInline == true) {
-                builder.append(", ")
-                builder.append(args[i++].toCode())
-            }
-        }
-    }
-    return builder.toString()
-}
-
-private fun groupToCode(id: ToCode?, vararg sections: Section?) =
-    groupToCodeWithStringId(id, *sections)
-
-private fun groupToCodeWithStringId(id: ToCode?, vararg sections: Section?): String {
-    val builder = StringBuilder()
-    if (id != null) {
-        builder.append("[")
-        builder.append(id.toCode())
-        builder.append("]\n")
-    }
-    var isFirstPrinted = true
-    for (sect in sections) {
-        if (sect != null) {
-            if (!isFirstPrinted) {
-                builder.append("\n")
-            }
-            builder.append(sect.toCode())
-            isFirstPrinted = false
-        }
-    }
-    return builder.toString()
-}
+internal data class Document(val items: List<TopLevelGroupOrTextBlock>)

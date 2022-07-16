@@ -232,7 +232,8 @@ private fun getAllTypesInCode(): List<String> {
             it != "mathlingua.lib.frontend.ast.CurlyNodeList" &&
             it != "mathlingua.lib.frontend.ast.SquareColonNodeList" &&
             it != "mathlingua.lib.frontend.ast.NonBracketNodeList" &&
-            it != "mathlingua.lib.frontend.ast.TexTalkTokenNode"
+            it != "mathlingua.lib.frontend.ast.TexTalkTokenNode" &&
+            it != "mathlingua.lib.frontend.ast.Node"
     }
 }
 

@@ -200,7 +200,7 @@ internal data class MatchingGroup(
 ) : Group, ExpressingItem
 
 internal data class EqualitySection(override val metadata: MetaData) : Section {
-    override val name = "quality"
+    override val name = "equality"
 }
 
 internal data class BetweenSection(
@@ -390,7 +390,7 @@ internal data class ExpressingSection(
 internal data class UsingSection(
     val formulations: List<Formulation>, override val metadata: MetaData
 ) : Section {
-    override val name = "using"
+    override val name = "Using"
 }
 
 internal sealed interface CodifiedItem : ChalkTalkNode

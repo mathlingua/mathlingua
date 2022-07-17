@@ -1309,7 +1309,7 @@ private class ChalkTalkParserImpl(val lexer: ChalkTalkNodeLexer) : ChalkTalkPars
             TopicGroup(
                 id =
                     if (id != null) {
-                        TopicName(name = id.text, metadata = id.metadata)
+                        TopicName(name = id.text.removePrefix("#"), metadata = id.metadata)
                     } else {
                         diagnostics.add(
                             Diagnostic(

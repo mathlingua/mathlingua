@@ -1,1 +1,0 @@
-# The Mathlingua Web Application

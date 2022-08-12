@@ -261,11 +261,17 @@ type KindType interface {
 	KindType()
 }
 
+// [: specification, states :]
+type MetaKinds struct {
+	Kinds []string
+}
+
 func (n NameForm) KindType()                      {} // x could refer to a type
 func (c CommandExpression) KindType()             {} // \function:on{A}:to{B}
 func (p PrefixOperatorCallExpression) KindType()  {} // *A
 func (p PostfixOperatorCallExpression) KindType() {} // B!
 func (i InfixOperatorCallExpression) KindType()   {} // A \to/ B
+func (m MetaKinds) KindType()                     {} // [: specification, states :]
 
 ///////////////////////////////////////////////////////////////////////////////
 

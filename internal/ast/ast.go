@@ -32,6 +32,7 @@ type StructuralFormType interface {
 func (n NameForm) StructuralForm()               {}
 func (f FunctionForm) StructuralForm()           {}
 func (f FunctionExpressionForm) StructuralForm() {}
+func (f FunctionSequenceForm) StructuralForm()   {}
 func (s SequenceForm) StructuralForm()           {}
 func (t TupleForm) StructuralForm()              {}
 func (FixedSetForm) StructuralForm()             {}
@@ -65,6 +66,14 @@ type SequenceForm struct {
 	Target NameForm
 	Params []NameForm
 	VarArg VarArgData
+}
+
+// {f_(i, j)(x, y)}_(i, j)
+type FunctionSequenceForm struct {
+	Target    NameForm
+	SubParams []NameForm
+	Params    []NameForm
+	VarArg    VarArgData
 }
 
 // (x, y)
@@ -134,18 +143,19 @@ type ExpressionType interface {
 	ExpressionType()
 }
 
-func (f FunctionCallExpression) ExpressionType()        {}
-func (s SequenceCallExpression) ExpressionType()        {}
-func (t TupleExpression) ExpressionType()               {}
-func (f FixedSetExpression) ExpressionType()            {}
-func (c CommandExpression) ExpressionType()             {}
-func (c CommandAtExpression) ExpressionType()           {}
-func (p PrefixOperatorCallExpression) ExpressionType()  {}
-func (p PostfixOperatorCallExpression) ExpressionType() {}
-func (i InfixOperatorCallExpression) ExpressionType()   {}
-func (a AsExpression) ExpressionType()                  {}
-func (n NameOrdinalCallExpression) ExpressionType()     {}
-func (c ChainExpression) ExpressionType()               {}
+func (f FunctionCallExpression) ExpressionType()         {}
+func (s SequenceCallExpression) ExpressionType()         {}
+func (f FunctionSequenceCallExpression) ExpressionType() {}
+func (t TupleExpression) ExpressionType()                {}
+func (f FixedSetExpression) ExpressionType()             {}
+func (c CommandExpression) ExpressionType()              {}
+func (c CommandAtExpression) ExpressionType()            {}
+func (p PrefixOperatorCallExpression) ExpressionType()   {}
+func (p PostfixOperatorCallExpression) ExpressionType()  {}
+func (i InfixOperatorCallExpression) ExpressionType()    {}
+func (a AsExpression) ExpressionType()                   {}
+func (n NameOrdinalCallExpression) ExpressionType()      {}
+func (c ChainExpression) ExpressionType()                {}
 
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
@@ -157,6 +167,13 @@ type FunctionCallExpression struct {
 type SequenceCallExpression struct {
 	Target NameForm
 	Args   []ExpressionType
+}
+
+// f_(i + j, k)(x + y, z)
+type FunctionSequenceCallExpression struct {
+	Target  NameForm
+	SubArgs []ExpressionType
+	Args    []ExpressionType
 }
 
 // (x + y, z)

@@ -58,13 +58,12 @@ func (lexer *phase1Lexer) init(text string) {
 		lexer.tokens = append(lexer.tokens, token)
 	}
 
-	appendDiagnostic := func(message string, row int, column int) {
+	appendDiagnostic := func(message string, position Position) {
 		lexer.diagnostics = append(lexer.diagnostics, Diagnostic{
-			Type:    Error,
-			Origin:  Phase1LexerOrigin,
-			Message: message,
-			Row:     row,
-			Column:  column,
+			Type:     Error,
+			Origin:   Phase1LexerOrigin,
+			Message:  message,
+			Position: position,
 		})
 	}
 
@@ -74,49 +73,45 @@ func (lexer *phase1Lexer) init(text string) {
 		for i < len(chars) {
 			c := chars[i]
 			i++
-			if allowsEscape && c.symbol == '\\' && i < len(chars) && chars[i].symbol == terminator {
-				result += string(c.symbol) + string(chars[i].symbol)
+			if allowsEscape && c.Symbol == '\\' && i < len(chars) && chars[i].Symbol == terminator {
+				result += string(c.Symbol) + string(chars[i].Symbol)
 				i++
-			} else if c.symbol == terminator {
+			} else if c.Symbol == terminator {
 				terminatorFound = true
 				break
 			} else {
-				result += string(c.symbol)
+				result += string(c.Symbol)
 			}
 		}
 		if !terminatorFound {
-			appendDiagnostic(fmt.Sprintf("Unterminated %c", terminator), start.row, start.column)
+			appendDiagnostic(fmt.Sprintf("Unterminated %c", terminator), start.Position)
 		}
 		return result
 	}
 
 	absorbNewlines := func() {
-		for i < len(chars) && chars[i].symbol == '\n' {
+		for i < len(chars) && chars[i].Symbol == '\n' {
 			c := chars[i]
 			i++
 			appendToken(Token{
-				Type:   Newline,
-				Text:   "<Newline>",
-				Offset: c.offset,
-				Column: c.column,
-				Row:    c.row,
+				Type:     Newline,
+				Text:     "<Newline>",
+				Position: c.Position,
 			})
-			for i < len(chars) && chars[i].symbol == ' ' {
+			for i < len(chars) && chars[i].Symbol == ' ' {
 				c := chars[i]
 				i++
 				appendToken(Token{
-					Type:   Space,
-					Text:   "<Space>",
-					Offset: c.offset,
-					Column: c.column,
-					Row:    c.row,
+					Type:     Space,
+					Text:     "<Space>",
+					Position: c.Position,
 				})
 			}
 		}
 	}
 
 	collectEnclosedArgument := func() (Token, bool) {
-		for i < len(chars) && chars[i].symbol == ' ' {
+		for i < len(chars) && chars[i].Symbol == ' ' {
 			i++
 		}
 
@@ -125,32 +120,26 @@ func (lexer *phase1Lexer) init(text string) {
 		}
 
 		c := chars[i]
-		if c.symbol == '"' {
+		if c.Symbol == '"' {
 			i++
 			return Token{
-				Type:   Text,
-				Text:   collectUntil(c, '"', true),
-				Offset: c.offset,
-				Row:    c.row,
-				Column: c.column,
+				Type:     Text,
+				Text:     collectUntil(c, '"', true),
+				Position: c.Position,
 			}, true
-		} else if c.symbol == '\'' {
+		} else if c.Symbol == '\'' {
 			i++
 			return Token{
-				Type:   Formulation,
-				Text:   collectUntil(c, '\'', false),
-				Offset: c.offset,
-				Row:    c.row,
-				Column: c.column,
+				Type:     Formulation,
+				Text:     collectUntil(c, '\'', false),
+				Position: c.Position,
 			}, true
-		} else if c.symbol == '`' {
+		} else if c.Symbol == '`' {
 			i++
 			return Token{
-				Type:   Formulation,
-				Text:   collectUntil(c, '`', false),
-				Offset: c.offset,
-				Row:    c.row,
-				Column: c.column,
+				Type:     Formulation,
+				Text:     collectUntil(c, '`', false),
+				Position: c.Position,
 			}, true
 		} else {
 			return Token{}, false
@@ -158,7 +147,7 @@ func (lexer *phase1Lexer) init(text string) {
 	}
 
 	collectNonEnclosedArgument := func() (Token, bool) {
-		for i < len(chars) && chars[i].symbol == ' ' {
+		for i < len(chars) && chars[i].Symbol == ' ' {
 			i++
 		}
 
@@ -171,22 +160,22 @@ func (lexer *phase1Lexer) init(text string) {
 		stack := mlglib.NewStack[rune]()
 		for i < len(chars) {
 			c := chars[i]
-			if stack.IsEmpty() && (c.symbol == '\n' || c.symbol == ',') {
+			if stack.IsEmpty() && (c.Symbol == '\n' || c.Symbol == ',') {
 				break
 			}
 			i++
-			result += string(c.symbol)
-			if c.symbol == '(' || c.symbol == '[' || c.symbol == '{' {
-				stack.Push(c.symbol)
-			} else if c.symbol == ')' {
+			result += string(c.Symbol)
+			if c.Symbol == '(' || c.Symbol == '[' || c.Symbol == '{' {
+				stack.Push(c.Symbol)
+			} else if c.Symbol == ')' {
 				if !stack.IsEmpty() && stack.Peek() == '(' {
 					stack.Pop()
 				}
-			} else if c.symbol == ']' {
+			} else if c.Symbol == ']' {
 				if !stack.IsEmpty() && stack.Peek() == '[' {
 					stack.Pop()
 				}
-			} else if c.symbol == '}' {
+			} else if c.Symbol == '}' {
 				if !stack.IsEmpty() && stack.Peek() == '{' {
 					stack.Pop()
 				}
@@ -198,11 +187,9 @@ func (lexer *phase1Lexer) init(text string) {
 		}
 
 		return Token{
-			Type:   ArgumentText,
-			Text:   result,
-			Offset: start.offset,
-			Row:    start.row,
-			Column: start.column,
+			Type:     ArgumentText,
+			Text:     result,
+			Position: start.Position,
 		}, true
 	}
 
@@ -221,69 +208,63 @@ func (lexer *phase1Lexer) init(text string) {
 				break
 			}
 			appendToken(arg)
-			if i >= len(chars) || chars[i].symbol == '\n' {
+			if i >= len(chars) || chars[i].Symbol == '\n' {
 				break
-			} else if chars[i].symbol == ',' {
+			} else if chars[i].Symbol == ',' {
 				start := chars[i]
 				i++
 				appendToken(Token{
-					Type:   Comma,
-					Text:   ",",
-					Offset: start.offset,
-					Row:    start.row,
-					Column: start.column,
+					Type:     Comma,
+					Text:     ",",
+					Position: start.Position,
 				})
-			} else if chars[i].symbol == ' ' {
-				appendDiagnostic("Unnecessary trailing whitespace", arg.Row, arg.Column)
+			} else if chars[i].Symbol == ' ' {
+				appendDiagnostic("Unnecessary trailing whitespace", arg.Position)
 			} else {
-				appendDiagnostic("Expected a , to follow this argument", arg.Row, arg.Column)
+				appendDiagnostic("Expected a , to follow this argument", arg.Position)
 			}
 		}
 	}
 
 	collectName := func(start Char) {
-		result := string(start.symbol)
-		for i < len(chars) && unicode.IsLetter(chars[i].symbol) {
-			result += string(chars[i].symbol)
+		result := string(start.Symbol)
+		for i < len(chars) && unicode.IsLetter(chars[i].Symbol) {
+			result += string(chars[i].Symbol)
 			i++
 		}
 		appendToken(Token{
-			Type:   Name,
-			Text:   result,
-			Offset: start.offset,
-			Row:    start.row,
-			Column: start.column,
+			Type:     Name,
+			Text:     result,
+			Position: start.Position,
 		})
 	}
 
 	collectId := func(start Char) {
 		result := ""
 		stack := mlglib.NewStack[rune]()
-		for i < len(chars) && chars[i].symbol != '\n' {
+		for i < len(chars) && chars[i].Symbol != '\n' {
 			c := chars[i]
 			i++
-			if c.symbol == '[' {
-				stack.Push(c.symbol)
-				result += string(c.symbol)
-			} else if c.symbol == ']' {
+			if c.Symbol == '[' {
+				stack.Push(c.Symbol)
+				result += string(c.Symbol)
+			} else if c.Symbol == ']' {
 				if !stack.IsEmpty() && stack.Peek() == '[' {
 					stack.Pop()
 				}
 				if stack.IsEmpty() {
 					break
 				} else {
-					result += string(c.symbol)
+					result += string(c.Symbol)
 				}
 			} else {
-				result += string(c.symbol)
+				result += string(c.Symbol)
 			}
 		}
 		appendToken(Token{
-			Type:   Id,
-			Text:   result,
-			Offset: start.offset,
-			Row:    start.row,
-			Column: start.column,
+			Type:     Id,
+			Text:     result,
+			Position: start.Position,
 		})
 	}
 
@@ -292,31 +273,29 @@ func (lexer *phase1Lexer) init(text string) {
 		for i < len(chars) {
 			c := chars[i]
 			i++
-			if c.symbol == ':' && i < len(chars) && chars[i].symbol == ':' {
+			if c.Symbol == ':' && i < len(chars) && chars[i].Symbol == ':' {
 				// move past the second :
 				i++
 				break
 			} else {
-				result += string(c.symbol)
+				result += string(c.Symbol)
 			}
 		}
 		appendToken(Token{
-			Type:   TextBlock,
-			Text:   result,
-			Offset: start.offset,
-			Row:    start.row,
-			Column: start.column,
+			Type:     TextBlock,
+			Text:     result,
+			Position: start.Position,
 		})
 	}
 
 	isNextNameColon := func() bool {
 		hasName := false
 		j := i
-		for j < len(chars) && unicode.IsLetter(chars[j].symbol) {
+		for j < len(chars) && unicode.IsLetter(chars[j].Symbol) {
 			j++
 			hasName = true
 		}
-		return hasName && j < len(chars) && chars[j].symbol == ':'
+		return hasName && j < len(chars) && chars[j].Symbol == ':'
 	}
 
 	for i < len(chars) {
@@ -328,10 +307,10 @@ func (lexer *phase1Lexer) init(text string) {
 		c := chars[i]
 		i++
 
-		if unicode.IsLetter(c.symbol) {
+		if unicode.IsLetter(c.Symbol) {
 			collectName(c)
-		} else if c.symbol == ':' {
-			if i < len(chars) && chars[i].symbol == ':' {
+		} else if c.Symbol == ':' {
+			if i < len(chars) && chars[i].Symbol == ':' {
 				// process :: text blocks
 				// move past the second :
 				i++
@@ -339,35 +318,31 @@ func (lexer *phase1Lexer) init(text string) {
 			} else {
 				// the : is processed as being at the end of <name>:
 				appendToken(Token{
-					Type:   Colon,
-					Text:   ":",
-					Offset: c.offset,
-					Row:    c.row,
-					Column: c.column,
+					Type:     Colon,
+					Text:     ":",
+					Position: c.Position,
 				})
 				collectAllArguments()
 			}
-		} else if c.symbol == '.' {
-			if i < len(chars) && chars[i].symbol == ' ' {
+		} else if c.Symbol == '.' {
+			if i < len(chars) && chars[i].Symbol == ' ' {
 				// move past the space
 				i++
 				appendToken(Token{
-					Type:   DotSpace,
-					Text:   "<DotSpace>",
-					Offset: c.offset,
-					Row:    c.row,
-					Column: c.column,
+					Type:     DotSpace,
+					Text:     "<DotSpace>",
+					Position: c.Position,
 				})
 				if !isNextNameColon() {
 					collectAllArguments()
 				}
 			} else {
-				appendDiagnostic(fmt.Sprintf("Unexpected character '%c'", c.symbol), c.row, c.column)
+				appendDiagnostic(fmt.Sprintf("Unexpected character '%c'", c.Symbol), c.Position)
 			}
-		} else if c.symbol == '[' {
+		} else if c.Symbol == '[' {
 			collectId(c)
 		} else {
-			appendDiagnostic(fmt.Sprintf("Unrecognized character '%c'", c.symbol), c.row, c.column)
+			appendDiagnostic(fmt.Sprintf("Unrecognized character '%c'", c.Symbol), c.Position)
 		}
 	}
 }

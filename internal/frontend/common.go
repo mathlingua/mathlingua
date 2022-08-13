@@ -30,12 +30,17 @@ const (
 	Phase3LexerOrigin DiagnosticOrigin = "Phase3LexerOrigin"
 )
 
+type Position struct {
+	Offset int
+	Row    int
+	Column int
+}
+
 type Diagnostic struct {
-	Type    DiagnosticType
-	Origin  DiagnosticOrigin
-	Message string
-	Row     int
-	Column  int
+	Type     DiagnosticType
+	Origin   DiagnosticOrigin
+	Message  string
+	Position Position
 }
 
 type TokenType string
@@ -67,9 +72,7 @@ const (
 )
 
 type Token struct {
-	Type   TokenType
-	Text   string
-	Offset int
-	Row    int
-	Column int
+	Type     TokenType
+	Text     string
+	Position Position
 }

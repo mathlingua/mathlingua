@@ -17,10 +17,8 @@
 package frontend
 
 type Char struct {
-	symbol rune
-	offset int
-	row    int
-	column int
+	Symbol   rune
+	Position Position
 }
 
 func GetChars(text string) []Char {
@@ -37,10 +35,12 @@ func GetChars(text string) []Char {
 		}
 		prevPos = pos
 		chars = append(chars, Char{
-			symbol: c,
-			offset: pos,
-			row:    curRow,
-			column: curColumn,
+			Symbol: c,
+			Position: Position{
+				Offset: pos,
+				Row:    curRow,
+				Column: curColumn,
+			},
 		})
 	}
 	return chars

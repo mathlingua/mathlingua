@@ -52,84 +52,68 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 
 	appendEndSection := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   EndSection,
-			Text:   "<EndSection>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     EndSection,
+			Text:     "<EndSection>",
+			Position: lexer2.Position(),
 		})
 	}
 
 	appendEndArgumentGroup := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   EndArgumentGroup,
-			Text:   "<EndArgumentGroup>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     EndArgumentGroup,
+			Text:     "<EndArgumentGroup>",
+			Position: lexer2.Position(),
 		})
 	}
 
 	appendEndTopLevelGroup := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   EndTopLevelGroup,
-			Text:   "<EndTopLevelGroup>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     EndTopLevelGroup,
+			Text:     "<EndTopLevelGroup>",
+			Position: lexer2.Position(),
 		})
 	}
 
 	appendEndArgument := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   EndArgument,
-			Text:   "<EndArgument>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     EndArgument,
+			Text:     "<EndArgument>",
+			Position: lexer2.Position(),
 		})
 	}
 
 	beginSection := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   BeginSection,
-			Text:   "<BeginSection>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     BeginSection,
+			Text:     "<BeginSection>",
+			Position: lexer2.Position(),
 		})
 		stack.Push(BeginSection)
 	}
 
 	beginTopLevelGroup := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   BeginTopLevelGroup,
-			Text:   "<BeginTopLevelGroup>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     BeginTopLevelGroup,
+			Text:     "<BeginTopLevelGroup>",
+			Position: lexer2.Position(),
 		})
 		stack.Push(BeginTopLevelGroup)
 	}
 
 	beginArgumentGroup := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   BeginArgumentGroup,
-			Text:   "<BeginArgumentGroup>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     BeginArgumentGroup,
+			Text:     "<BeginArgumentGroup>",
+			Position: lexer2.Position(),
 		})
 		stack.Push(BeginArgumentGroup)
 	}
 
 	beginArgument := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:   BeginArgument,
-			Text:   "<BeginArgument>",
-			Offset: lexer2.Offset(),
-			Row:    lexer2.Row(),
-			Column: lexer2.Column(),
+			Type:     BeginArgument,
+			Text:     "<BeginArgument>",
+			Position: lexer2.Position(),
 		})
 		stack.Push(BeginArgument)
 	}
@@ -167,13 +151,12 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		lexer2.Next()
 	}
 
-	appendDiagnostic := func(message string, row int, column int) {
+	appendDiagnostic := func(message string, position Position) {
 		lexer.diagnostics = append(lexer.diagnostics, Diagnostic{
-			Type:    Error,
-			Origin:  Phase3LexerOrigin,
-			Message: message,
-			Row:     row,
-			Column:  column,
+			Type:     Error,
+			Origin:   Phase3LexerOrigin,
+			Message:  message,
+			Position: position,
 		})
 	}
 
@@ -240,14 +223,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 			skipNext()
 		} else if has(Indent) {
 			if !has(DotSpace) {
-				row := -1
-				column := -1
-				if lexer2.HasNext() {
-					peek := lexer2.Peek()
-					row = peek.Row
-					column = peek.Column
-				}
-				appendDiagnostic("Unexpected indent", row, column)
+				appendDiagnostic("Unexpected indent", lexer2.Position())
 			}
 			skipNext()
 		} else if has(Newline) {

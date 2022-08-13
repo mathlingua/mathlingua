@@ -24,9 +24,7 @@ type Phase2Lexer interface {
 	Next() Token
 	Peek() Token
 	PeekPeek() Token
-	Row() int
-	Column() int
-	Offset() int
+	Position() Position
 	Diagnostics() []Diagnostic
 }
 
@@ -56,25 +54,21 @@ func (lexer *phase2Lexer) init(lexer1 Phase1Lexer) {
 		lexer.tokens = append(lexer.tokens, tok)
 	}
 
-	handleIndentsOrUnIndents := func(curIndent int, offset int, row int, column int) {
+	handleIndentsOrUnIndents := func(curIndent int, position Position) {
 		if curIndent > prevIndent {
 			for j := 0; j < curIndent-prevIndent; j++ {
 				appendToken(Token{
-					Type:   Indent,
-					Text:   "<Indent>",
-					Offset: offset,
-					Row:    row,
-					Column: column,
+					Type:     Indent,
+					Text:     "<Indent>",
+					Position: position,
 				})
 			}
 		} else {
 			for j := 0; j < prevIndent-curIndent; j++ {
 				appendToken(Token{
-					Type:   UnIndent,
-					Text:   "<UnIndent>",
-					Offset: offset,
-					Row:    row,
-					Column: column,
+					Type:     UnIndent,
+					Text:     "<UnIndent>",
+					Position: position,
 				})
 			}
 		}
@@ -92,16 +86,14 @@ func (lexer *phase2Lexer) init(lexer1 Phase1Lexer) {
 					lexer1.Next()
 				}
 				appendToken(Token{
-					Type:   LineBreak,
-					Text:   "<LineBreak>",
-					Offset: cur.Offset,
-					Row:    cur.Row,
-					Column: cur.Column,
+					Type:     LineBreak,
+					Text:     "<LineBreak>",
+					Position: cur.Position,
 				})
 			}
 			if lexer1.HasNext() && lexer1.Peek().Type != Space && lexer1.Peek().Type != DotSpace {
 				// since there isn't a space handle any unindents
-				handleIndentsOrUnIndents(0, cur.Offset, cur.Row, cur.Column)
+				handleIndentsOrUnIndents(0, cur.Position)
 				prevIndent = 0
 			}
 		} else if cur.Type == Space {
@@ -112,25 +104,24 @@ func (lexer *phase2Lexer) init(lexer1 Phase1Lexer) {
 			}
 			if numSpaces%2 == 1 {
 				lexer.diagnostics = append(lexer.diagnostics, Diagnostic{
-					Type:    Error,
-					Origin:  Phase2LexerOrigin,
-					Message: fmt.Sprintf("Expected an even indent but found %d", numSpaces),
-					Row:     cur.Row,
-					Column:  cur.Column,
+					Type:     Error,
+					Origin:   Phase2LexerOrigin,
+					Message:  fmt.Sprintf("Expected an even indent but found %d", numSpaces),
+					Position: cur.Position,
 				})
 			}
 			curIndent := numSpaces / 2
 			if lexer1.HasNext() && lexer1.Peek().Type == DotSpace {
 				curIndent++
 			}
-			handleIndentsOrUnIndents(curIndent, cur.Offset, cur.Row, cur.Column)
+			handleIndentsOrUnIndents(curIndent, cur.Position)
 			if lexer1.HasNext() && lexer1.Peek().Type == DotSpace {
 				appendToken(lexer1.Next())
 			}
 			prevIndent = curIndent
 		} else if cur.Type == DotSpace {
 			curIndent := 1
-			handleIndentsOrUnIndents(curIndent, cur.Offset, cur.Row, cur.Column)
+			handleIndentsOrUnIndents(curIndent, cur.Position)
 			appendToken(cur)
 			prevIndent = curIndent
 		} else {
@@ -161,27 +152,15 @@ func (lexer *phase2Lexer) PeekPeek() Token {
 	return lexer.tokens[lexer.index+1]
 }
 
-func (lexer *phase2Lexer) Row() int {
+func (lexer *phase2Lexer) Position() Position {
 	if lexer.HasNext() {
-		return lexer.Peek().Row
+		return lexer.Peek().Position
 	} else {
-		return -1
-	}
-}
-
-func (lexer *phase2Lexer) Column() int {
-	if lexer.HasNext() {
-		return lexer.Peek().Column
-	} else {
-		return -1
-	}
-}
-
-func (lexer *phase2Lexer) Offset() int {
-	if lexer.HasNext() {
-		return lexer.Peek().Offset
-	} else {
-		return -1
+		return Position{
+			Offset: -1,
+			Row:    -1,
+			Column: -1,
+		}
 	}
 }
 

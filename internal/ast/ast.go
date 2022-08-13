@@ -29,14 +29,12 @@ type StructuralFormType interface {
 	StructuralForm()
 }
 
-func (n NameForm) StructuralForm()               {}
-func (f FunctionForm) StructuralForm()           {}
-func (f FunctionExpressionForm) StructuralForm() {}
-func (f FunctionSequenceForm) StructuralForm()   {}
-func (s SequenceForm) StructuralForm()           {}
-func (t TupleForm) StructuralForm()              {}
-func (FixedSetForm) StructuralForm()             {}
-func (c ConditionalSetForm) StructuralForm()     {}
+func (*NameForm) StructuralForm()               {}
+func (*FunctionForm) StructuralForm()           {}
+func (*FunctionExpressionForm) StructuralForm() {}
+func (*TupleForm) StructuralForm()              {}
+func (*FixedSetForm) StructuralForm()           {}
+func (*ConditionalSetForm) StructuralForm()     {}
 
 // x
 type NameForm struct {
@@ -59,21 +57,6 @@ type FunctionExpressionForm struct {
 	Target NameForm
 	Params []NameForm
 	VarArg VarArgData
-}
-
-// {x_(i, j)}_(i, j)
-type SequenceForm struct {
-	Target NameForm
-	Params []NameForm
-	VarArg VarArgData
-}
-
-// {f_(i, j)(x, y)}_(i, j)
-type FunctionSequenceForm struct {
-	Target    NameForm
-	SubParams []NameForm
-	Params    []NameForm
-	VarArg    VarArgData
 }
 
 // (x, y)
@@ -108,12 +91,11 @@ type ConditionalSetIdForm struct {
 	Condition FunctionExpressionForm
 }
 
-func (n NameForm) LiteralFormType()             {}
-func (f FunctionForm) LiteralFormType()         {}
-func (s SequenceForm) LiteralFormType()         {}
-func (t TupleForm) LiteralFormType()            {}
-func (f FixedSetForm) LiteralFormType()         {}
-func (c ConditionalSetIdForm) LiteralFormType() {}
+func (*NameForm) LiteralFormType()             {}
+func (*FunctionForm) LiteralFormType()         {}
+func (*TupleForm) LiteralFormType()            {}
+func (*FixedSetForm) LiteralFormType()         {}
+func (*ConditionalSetIdForm) LiteralFormType() {}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -122,11 +104,10 @@ type LiteralExpressionType interface {
 	LiteralExpressionType()
 }
 
-func (f FunctionCallExpression) LiteralExpressionType()   {}
-func (s SequenceCallExpression) LiteralExpressionType()   {}
-func (t TupleExpression) LiteralExpressionType()          {}
-func (f FixedSetExpression) LiteralExpressionType()       {}
-func (c ConditionalSetExpression) LiteralExpressionType() {}
+func (*FunctionCallExpression) LiteralExpressionType()   {}
+func (*TupleExpression) LiteralExpressionType()          {}
+func (*FixedSetExpression) LiteralExpressionType()       {}
+func (*ConditionalSetExpression) LiteralExpressionType() {}
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -143,37 +124,22 @@ type ExpressionType interface {
 	ExpressionType()
 }
 
-func (f FunctionCallExpression) ExpressionType()         {}
-func (s SequenceCallExpression) ExpressionType()         {}
-func (f FunctionSequenceCallExpression) ExpressionType() {}
-func (t TupleExpression) ExpressionType()                {}
-func (f FixedSetExpression) ExpressionType()             {}
-func (c CommandExpression) ExpressionType()              {}
-func (c CommandAtExpression) ExpressionType()            {}
-func (p PrefixOperatorCallExpression) ExpressionType()   {}
-func (p PostfixOperatorCallExpression) ExpressionType()  {}
-func (i InfixOperatorCallExpression) ExpressionType()    {}
-func (a AsExpression) ExpressionType()                   {}
-func (n NameOrdinalCallExpression) ExpressionType()      {}
-func (c ChainExpression) ExpressionType()                {}
+func (*FunctionCallExpression) ExpressionType()        {}
+func (*TupleExpression) ExpressionType()               {}
+func (*FixedSetExpression) ExpressionType()            {}
+func (*CommandExpression) ExpressionType()             {}
+func (*CommandAtExpression) ExpressionType()           {}
+func (*PrefixOperatorCallExpression) ExpressionType()  {}
+func (*PostfixOperatorCallExpression) ExpressionType() {}
+func (*InfixOperatorCallExpression) ExpressionType()   {}
+func (*AsExpression) ExpressionType()                  {}
+func (*NameOrdinalCallExpression) ExpressionType()     {}
+func (*ChainExpression) ExpressionType()               {}
 
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
 	Target ExpressionType
 	Args   []ExpressionType
-}
-
-// x_(i + j, k)
-type SequenceCallExpression struct {
-	Target NameForm
-	Args   []ExpressionType
-}
-
-// f_(i + j, k)(x + y, z)
-type FunctionSequenceCallExpression struct {
-	Target  NameForm
-	SubArgs []ExpressionType
-	Args    []ExpressionType
 }
 
 // (x + y, z)
@@ -266,12 +232,12 @@ type MetaKinds struct {
 	Kinds []string
 }
 
-func (n NameForm) KindType()                      {} // x could refer to a type
-func (c CommandExpression) KindType()             {} // \function:on{A}:to{B}
-func (p PrefixOperatorCallExpression) KindType()  {} // *A
-func (p PostfixOperatorCallExpression) KindType() {} // B!
-func (i InfixOperatorCallExpression) KindType()   {} // A \to/ B
-func (m MetaKinds) KindType()                     {} // [: specification, states :]
+func (*NameForm) KindType()                      {} // x could refer to a type
+func (*CommandExpression) KindType()             {} // \function:on{A}:to{B}
+func (*PrefixOperatorCallExpression) KindType()  {} // *A
+func (*PostfixOperatorCallExpression) KindType() {} // B!
+func (*InfixOperatorCallExpression) KindType()   {} // A \to/ B
+func (*MetaKinds) KindType()                     {} // [: specification, states :]
 
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -282,11 +248,11 @@ type ColonEqualsType interface {
 	ColonEqualsType()
 }
 
-func (s StructuralColonEqualsForm) ColonEqualsType()   {}
-func (e ExpressionColonEqualsItem) ColonEqualsType()   {}
-func (e ExpressionColonEqualsIsItem) ColonEqualsType() {}
+func (*StructuralColonEqualsForm) ColonEqualsType()   {}
+func (*ExpressionColonEqualsItem) ColonEqualsType()   {}
+func (*ExpressionColonEqualsIsItem) ColonEqualsType() {}
 
-// X := {x_(i, j)}_(i, j)
+// X := (a, b)
 type StructuralColonEqualsForm struct {
 	Lhs NameForm
 	Rhs StructuralFormType
@@ -314,8 +280,8 @@ type OperatorType interface {
 	OperatorType()
 }
 
-func (n NonCommandOperatorTarget) OperatorType() {}
-func (c CommandOperatorTarget) OperatorType()    {}
+func (*NonCommandOperatorTarget) OperatorType() {}
+func (*CommandOperatorTarget) OperatorType()    {}
 
 // * or [x] or [x + y]
 type NonCommandOperatorTarget struct {

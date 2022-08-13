@@ -50,38 +50,8 @@ type phase1Lexer struct {
 	diagnostics []Diagnostic
 }
 
-type char struct {
-	symbol rune
-	offset int
-	row    int
-	column int
-}
-
-func getChars(text string) []char {
-	chars := make([]char, 0)
-	curRow := 0
-	curColumn := 0
-	prevPos := 0
-	for pos, c := range text {
-		if c == '\n' {
-			curRow++
-			curColumn = 0
-		} else {
-			curColumn += pos - prevPos
-		}
-		prevPos = pos
-		chars = append(chars, char{
-			symbol: c,
-			offset: pos,
-			row:    curRow,
-			column: curColumn,
-		})
-	}
-	return chars
-}
-
 func (lexer *phase1Lexer) init(text string) {
-	chars := getChars(text)
+	chars := GetChars(text)
 	i := 0
 
 	appendToken := func(token Token) {
@@ -98,7 +68,7 @@ func (lexer *phase1Lexer) init(text string) {
 		})
 	}
 
-	collectUntil := func(start char, terminator rune, allowsEscape bool) string {
+	collectUntil := func(start Char, terminator rune, allowsEscape bool) string {
 		result := ""
 		terminatorFound := false
 		for i < len(chars) {
@@ -271,7 +241,7 @@ func (lexer *phase1Lexer) init(text string) {
 		}
 	}
 
-	collectName := func(start char) {
+	collectName := func(start Char) {
 		result := string(start.symbol)
 		for i < len(chars) && unicode.IsLetter(chars[i].symbol) {
 			result += string(chars[i].symbol)
@@ -286,7 +256,7 @@ func (lexer *phase1Lexer) init(text string) {
 		})
 	}
 
-	collectId := func(start char) {
+	collectId := func(start Char) {
 		result := ""
 		stack := mlglib.NewStack[rune]()
 		for i < len(chars) && chars[i].symbol != '\n' {
@@ -317,7 +287,7 @@ func (lexer *phase1Lexer) init(text string) {
 		})
 	}
 
-	collectTexBlock := func(start char) {
+	collectTexBlock := func(start Char) {
 		result := ""
 		for i < len(chars) {
 			c := chars[i]

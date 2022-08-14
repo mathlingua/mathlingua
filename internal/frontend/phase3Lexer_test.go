@@ -23,6 +23,85 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestPhase3LexerSingleSection(t *testing.T) {
+	lexer1 := NewPhase1Lexer(`
+a:
+`)
+	lexer2 := NewPhase2Lexer(lexer1)
+	lexer3 := NewPhase3Lexer(lexer2)
+
+	actual := "\n"
+	for lexer3.HasNext() {
+		actual += lexer3.Next().Text + "\n"
+	}
+
+	expected := strings.ReplaceAll(`
+<BeginTopLevelGroup>
+	<BeginSection>
+		a
+		:
+	<EndSection>
+<EndTopLevelGroup>
+`, "\t", "")
+
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+}
+
+func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
+	lexer1 := NewPhase1Lexer(`
+a: xyz
+`)
+	lexer2 := NewPhase2Lexer(lexer1)
+	lexer3 := NewPhase3Lexer(lexer2)
+
+	actual := "\n"
+	for lexer3.HasNext() {
+		actual += lexer3.Next().Text + "\n"
+	}
+
+	expected := strings.ReplaceAll(`
+<BeginTopLevelGroup>
+	<BeginSection>
+		a
+		:
+		xyz
+	<EndSection>
+<EndTopLevelGroup>
+`, "\t", "")
+
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+}
+
+func TestPhase3LexerSingleSectionWithMultiArgs(t *testing.T) {
+	lexer1 := NewPhase1Lexer(`
+a: xyz, abc
+`)
+	lexer2 := NewPhase2Lexer(lexer1)
+	lexer3 := NewPhase3Lexer(lexer2)
+
+	actual := "\n"
+	for lexer3.HasNext() {
+		actual += lexer3.Next().Text + "\n"
+	}
+
+	expected := strings.ReplaceAll(`
+<BeginTopLevelGroup>
+	<BeginSection>
+		a
+		:
+		xyz
+		,
+		abc
+	<EndSection>
+<EndTopLevelGroup>
+`, "\t", "")
+
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+}
+
 func TestPhase3LexerIndentWithDoubleUnindent(t *testing.T) {
 	lexer1 := NewPhase1Lexer(`
 a:
@@ -159,85 +238,6 @@ a:
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
-	<EndSection>
-<EndTopLevelGroup>
-`, "\t", "")
-
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
-}
-
-func TestPhase3LexerSingleSection(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
-a:
-`)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
-
-	actual := "\n"
-	for lexer3.HasNext() {
-		actual += lexer3.Next().Text + "\n"
-	}
-
-	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
-	<BeginSection>
-		a
-		:
-	<EndSection>
-<EndTopLevelGroup>
-`, "\t", "")
-
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
-}
-
-func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
-a: xyz
-`)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
-
-	actual := "\n"
-	for lexer3.HasNext() {
-		actual += lexer3.Next().Text + "\n"
-	}
-
-	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
-	<BeginSection>
-		a
-		:
-		xyz
-	<EndSection>
-<EndTopLevelGroup>
-`, "\t", "")
-
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
-}
-
-func TestPhase3LexerSingleSectionWithMultiArgs(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
-a: xyz, abc
-`)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
-
-	actual := "\n"
-	for lexer3.HasNext() {
-		actual += lexer3.Next().Text + "\n"
-	}
-
-	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
-	<BeginSection>
-		a
-		:
-		xyz
-		,
-		abc
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")

@@ -25,9 +25,10 @@ const (
 type DiagnosticOrigin string
 
 const (
-	Phase1LexerOrigin DiagnosticOrigin = "Phase1LexerOrigin"
-	Phase2LexerOrigin DiagnosticOrigin = "Phase2LexerOrigin"
-	Phase3LexerOrigin DiagnosticOrigin = "Phase3LexerOrigin"
+	Phase1LexerOrigin      DiagnosticOrigin = "Phase1LexerOrigin"
+	Phase2LexerOrigin      DiagnosticOrigin = "Phase2LexerOrigin"
+	Phase3LexerOrigin      DiagnosticOrigin = "Phase3LexerOrigin"
+	FormulationLexerOrigin DiagnosticOrigin = "FormulationLexerOrigin"
 )
 
 type Position struct {
@@ -69,6 +70,25 @@ const (
 	EndSection         TokenType = "EndSection"
 	BeginArgument      TokenType = "BeginArgument"
 	EndArgument        TokenType = "EndArgument"
+	Operator           TokenType = "Operator"
+	LParen             TokenType = "LParen"
+	RParen             TokenType = "RParen"
+	LSquare            TokenType = "LSquare"
+	RSquare            TokenType = "RSquare"
+	LCurly             TokenType = "LCurly"
+	RCurly             TokenType = "RCurly"
+	Underscore         TokenType = "Underscore"
+	Bar                TokenType = "Bar"
+	Dot                TokenType = "Dot"
+	Slash              TokenType = "Slash"
+	BackSlash          TokenType = "BackSlash"
+	Semicolon          TokenType = "Semicolon"
+	ColonEquals        TokenType = "ColonEquals"
+	DotDotDot          TokenType = "DotDotDot"
+	QuestionMark       TokenType = "QuestionMark"
+	Is                 TokenType = "Is"
+	As                 TokenType = "As"
+	Caret              TokenType = "Caret"
 )
 
 type Token struct {

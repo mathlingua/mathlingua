@@ -43,22 +43,22 @@ d:
 	<BeginSection>
 		a
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
 					:
-					<BeginArgument>
+					<BeginDotSpaceArgument>
 						<BeginArgumentGroup>
 							<BeginSection>
 								c
 								:
 							<EndSection>
 						<EndArgumentGroup>
-					<EndArgument>
+					<EndDotSpaceArgument>
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		d
@@ -92,22 +92,22 @@ e:
 	<BeginSection>
 		a
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
 					:
-					<BeginArgument>
+					<BeginDotSpaceArgument>
 						<BeginArgumentGroup>
 							<BeginSection>
 								c
 								:
 							<EndSection>
 						<EndArgumentGroup>
-					<EndArgument>
+					<EndDotSpaceArgument>
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		d
@@ -143,22 +143,22 @@ a:
 	<BeginSection>
 		a
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
 					:
-					<BeginArgument>
+					<BeginDotSpaceArgument>
 						<BeginArgumentGroup>
 							<BeginSection>
 								c
 								:
 							<EndSection>
 						<EndArgumentGroup>
-					<EndArgument>
+					<EndDotSpaceArgument>
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -265,12 +265,12 @@ a:
 	<BeginSection>
 		a
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			b
-		<EndArgument>
-		<BeginArgument>
+		<EndDotSpaceArgument>
+		<BeginDotSpaceArgument>
 			c
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -298,22 +298,22 @@ a:
 	<BeginSection>
 		a
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
 					:
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
-		<BeginArgument>
+		<EndDotSpaceArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					c
 					:
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -382,7 +382,7 @@ c:
 	<BeginSection>
 		a
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					x
@@ -393,24 +393,24 @@ c:
 					:
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		b
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					A
 					:
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		c
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					P
@@ -425,7 +425,7 @@ c:
 					:
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -459,7 +459,7 @@ c:
 	<BeginSection>
 		a
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					x
@@ -476,12 +476,12 @@ c:
 					y1
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		b
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					A
@@ -491,12 +491,12 @@ c:
 					A2
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		c
 		:
-		<BeginArgument>
+		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					P
@@ -512,7 +512,7 @@ c:
 					:
 				<EndSection>
 			<EndArgumentGroup>
-		<EndArgument>
+		<EndDotSpaceArgument>
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")

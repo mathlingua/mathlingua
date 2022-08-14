@@ -74,10 +74,10 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		})
 	}
 
-	appendEndArgument := func() {
+	appendEndDotSpaceArgument := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:     EndArgument,
-			Text:     "<EndArgument>",
+			Type:     EndDotSpaceArgument,
+			Text:     "<EndDotSpaceArgument>",
 			Position: lexer2.Position(),
 		})
 	}
@@ -109,13 +109,13 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		stack.Push(BeginArgumentGroup)
 	}
 
-	beginArgument := func() {
+	beginDotSpaceArgument := func() {
 		lexer.tokens = append(lexer.tokens, Token{
-			Type:     BeginArgument,
-			Text:     "<BeginArgument>",
+			Type:     BeginDotSpaceArgument,
+			Text:     "<BeginDotSpaceArgument>",
 			Position: lexer2.Position(),
 		})
-		stack.Push(BeginArgument)
+		stack.Push(BeginDotSpaceArgument)
 	}
 
 	maybeEndSection := func() {
@@ -132,10 +132,10 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		}
 	}
 
-	maybeEndArgument := func() {
-		if !stack.IsEmpty() && stack.Peek() == BeginArgument {
+	maybeEndDotSpaceArgument := func() {
+		if !stack.IsEmpty() && stack.Peek() == BeginDotSpaceArgument {
 			stack.Pop()
-			appendEndArgument()
+			appendEndDotSpaceArgument()
 		}
 	}
 
@@ -187,7 +187,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		} else if hasHas(Indent, DotSpace) {
 			skipNext()
 			skipNext()
-			beginArgument()
+			beginDotSpaceArgument()
 			if hasNameColon() {
 				beginArgumentGroup()
 			}
@@ -195,8 +195,8 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 			skipNext()
 			maybeEndSection()
 			maybeEndArgumentGroup()
-			maybeEndArgument()
-			beginArgument()
+			maybeEndDotSpaceArgument()
+			beginDotSpaceArgument()
 			if hasNameColon() {
 				beginArgumentGroup()
 			}
@@ -204,7 +204,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 			skipNext()
 			maybeEndSection()
 			maybeEndArgumentGroup()
-			maybeEndArgument()
+			maybeEndDotSpaceArgument()
 		} else if has(LineBreak) {
 			for !stack.IsEmpty() {
 				top := stack.Pop()
@@ -214,8 +214,8 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 					appendEndArgumentGroup()
 				} else if top == BeginTopLevelGroup {
 					appendEndTopLevelGroup()
-				} else if top == BeginArgument {
-					appendEndArgument()
+				} else if top == BeginDotSpaceArgument {
+					appendEndDotSpaceArgument()
 				} else {
 					panic(fmt.Sprintf("Unexpected structural type %s", top))
 				}

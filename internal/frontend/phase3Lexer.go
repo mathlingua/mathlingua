@@ -206,8 +206,8 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 			}
 			maybeEndSection()
 			beginSection()
-			appendNext()
-			appendNext()
+			appendNext() // append the name
+			skipNext()   // but skip the :
 			beginInlineArgument()
 		} else if hasHas(Indent, DotSpace) {
 			skipNext()
@@ -241,6 +241,8 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 					appendEndTopLevelGroup()
 				} else if top == BeginDotSpaceArgument {
 					appendEndDotSpaceArgument()
+				} else if top == BeginInlineArgument {
+					appendEndInlineArgument()
 				} else {
 					panic(fmt.Sprintf("Unexpected structural type %s", top))
 				}

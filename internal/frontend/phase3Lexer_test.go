@@ -39,7 +39,6 @@ a:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -64,7 +63,6 @@ a: xyz
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginInlineArgument>
 			xyz
 		<EndInlineArgument>
@@ -92,7 +90,6 @@ a: xyz, abc
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginInlineArgument>
 		xyz
 		<EndInlineArgument>
@@ -126,17 +123,14 @@ d:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
-					:
 					<BeginDotSpaceArgument>
 						<BeginArgumentGroup>
 							<BeginSection>
 								c
-								:
 							<EndSection>
 						<EndArgumentGroup>
 					<EndDotSpaceArgument>
@@ -146,7 +140,6 @@ d:
 	<EndSection>
 	<BeginSection>
 		d
-		:
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -175,17 +168,14 @@ e:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
-					:
 					<BeginDotSpaceArgument>
 						<BeginArgumentGroup>
 							<BeginSection>
 								c
-								:
 							<EndSection>
 						<EndArgumentGroup>
 					<EndDotSpaceArgument>
@@ -195,11 +185,9 @@ e:
 	<EndSection>
 	<BeginSection>
 		d
-		:
 	<EndSection>
 	<BeginSection>
 		e
-		:
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -226,17 +214,14 @@ a:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
-					:
 					<BeginDotSpaceArgument>
 						<BeginArgumentGroup>
 							<BeginSection>
 								c
-								:
 							<EndSection>
 						<EndArgumentGroup>
 					<EndDotSpaceArgument>
@@ -269,7 +254,6 @@ a:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginDotSpaceArgument>
 			b
 		<EndDotSpaceArgument>
@@ -302,12 +286,10 @@ a:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					b
-					:
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
@@ -315,7 +297,6 @@ a:
 			<BeginArgumentGroup>
 				<BeginSection>
 					c
-					:
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
@@ -345,15 +326,12 @@ c:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 	<EndSection>
 	<BeginSection>
 		b
-		:
 	<EndSection>
 	<BeginSection>
 		c
-		:
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -386,48 +364,39 @@ c:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					x
-					:
 				<EndSection>
 				<BeginSection>
 					y
-					:
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		b
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					A
-					:
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		c
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					P
-					:
 				<EndSection>
 				<BeginSection>
 					Q
-					:
 				<EndSection>
 				<BeginSection>
 					R
-					:
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
@@ -463,27 +432,24 @@ c:
 <BeginTopLevelGroup>
 	<BeginSection>
 		a
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					x
-					:
 					<BeginInlineArgument>
-					x1
+						x1
 					<EndInlineArgument>
 					<BeginInlineArgument>
-					x2
+						x2
 					<EndInlineArgument>
 					<BeginInlineArgument>
-					x3
+						x3
 					<EndInlineArgument>
 				<EndSection>
 				<BeginSection>
 					y
-					:
 					<BeginInlineArgument>
-					y1
+						y1
 					<EndInlineArgument>
 				<EndSection>
 			<EndArgumentGroup>
@@ -491,17 +457,15 @@ c:
 	<EndSection>
 	<BeginSection>
 		b
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					A
-					:
 					<BeginInlineArgument>
-					A1
+						A1
 					<EndInlineArgument>
 					<BeginInlineArgument>
-					A2
+						A2
 					<EndInlineArgument>
 				<EndSection>
 			<EndArgumentGroup>
@@ -509,23 +473,19 @@ c:
 	<EndSection>
 	<BeginSection>
 		c
-		:
 		<BeginDotSpaceArgument>
 			<BeginArgumentGroup>
 				<BeginSection>
 					P
-					:
 				<EndSection>
 				<BeginSection>
 					Q
-					:
 					<BeginInlineArgument>
-					Q1
+						Q1
 					<EndInlineArgument>
 				<EndSection>
 				<BeginSection>
 					R
-					:
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>

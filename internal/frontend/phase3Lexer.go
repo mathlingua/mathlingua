@@ -82,6 +82,14 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		})
 	}
 
+	appendEndInlineArgument := func() {
+		lexer.tokens = append(lexer.tokens, Token{
+			Type:     EndInlineArgument,
+			Text:     "<EndInlineArgument>",
+			Position: lexer2.Position(),
+		})
+	}
+
 	beginSection := func() {
 		lexer.tokens = append(lexer.tokens, Token{
 			Type:     BeginSection,
@@ -118,6 +126,15 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		stack.Push(BeginDotSpaceArgument)
 	}
 
+	beginInlineArgument := func() {
+		lexer.tokens = append(lexer.tokens, Token{
+			Type:     BeginInlineArgument,
+			Text:     "<BeginInlineArgument>",
+			Position: lexer2.Position(),
+		})
+		stack.Push(BeginInlineArgument)
+	}
+
 	maybeEndSection := func() {
 		if !stack.IsEmpty() && stack.Peek() == BeginSection {
 			stack.Pop()
@@ -136,6 +153,13 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		if !stack.IsEmpty() && stack.Peek() == BeginDotSpaceArgument {
 			stack.Pop()
 			appendEndDotSpaceArgument()
+		}
+	}
+
+	maybeEndInlineArgument := func() {
+		if !stack.IsEmpty() && stack.Peek() == BeginInlineArgument {
+			stack.Pop()
+			appendEndInlineArgument()
 		}
 	}
 
@@ -184,6 +208,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 			beginSection()
 			appendNext()
 			appendNext()
+			beginInlineArgument()
 		} else if hasHas(Indent, DotSpace) {
 			skipNext()
 			skipNext()
@@ -227,11 +252,32 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 			}
 			skipNext()
 		} else if has(Newline) {
+			maybeEndInlineArgument()
 			skipNext()
+		} else if has(Comma) {
+			skipNext()
+			maybeEndInlineArgument()
+			beginInlineArgument()
 		} else {
 			appendNext()
 		}
 	}
+
+	cleanedTokens := make([]Token, 0)
+	j := 0
+
+	for j < len(lexer.tokens) {
+		cur := lexer.tokens[j]
+		j++
+		if cur.Type == BeginInlineArgument && j < len(lexer.tokens) && lexer.tokens[j].Type == EndInlineArgument {
+			j++
+			// skip the begin and end inline argument tokens because the argument is empty
+		} else {
+			cleanedTokens = append(cleanedTokens, cur)
+		}
+	}
+
+	lexer.tokens = cleanedTokens
 }
 
 func (lexer *phase3Lexer) HasNext() bool {

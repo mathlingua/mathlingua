@@ -65,7 +65,9 @@ a: xyz
 	<BeginSection>
 		a
 		:
-		xyz
+		<BeginInlineArgument>
+			xyz
+		<EndInlineArgument>
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -91,9 +93,12 @@ a: xyz, abc
 	<BeginSection>
 		a
 		:
+		<BeginInlineArgument>
 		xyz
-		,
+		<EndInlineArgument>
+		<BeginInlineArgument>
 		abc
+		<EndInlineArgument>
 	<EndSection>
 <EndTopLevelGroup>
 `, "\t", "")
@@ -464,16 +469,22 @@ c:
 				<BeginSection>
 					x
 					:
+					<BeginInlineArgument>
 					x1
-					,
+					<EndInlineArgument>
+					<BeginInlineArgument>
 					x2
-					,
+					<EndInlineArgument>
+					<BeginInlineArgument>
 					x3
+					<EndInlineArgument>
 				<EndSection>
 				<BeginSection>
 					y
 					:
+					<BeginInlineArgument>
 					y1
+					<EndInlineArgument>
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
@@ -486,9 +497,12 @@ c:
 				<BeginSection>
 					A
 					:
+					<BeginInlineArgument>
 					A1
-					,
+					<EndInlineArgument>
+					<BeginInlineArgument>
 					A2
+					<EndInlineArgument>
 				<EndSection>
 			<EndArgumentGroup>
 		<EndDotSpaceArgument>
@@ -505,7 +519,9 @@ c:
 				<BeginSection>
 					Q
 					:
+					<BeginInlineArgument>
 					Q1
+					<EndInlineArgument>
 				<EndSection>
 				<BeginSection>
 					R

@@ -70,6 +70,8 @@ const (
 	EndSection            TokenType = "EndSection"
 	BeginDotSpaceArgument TokenType = "BeginDotSpaceArgument"
 	EndDotSpaceArgument   TokenType = "EndDotSpaceArgument"
+	BeginInlineArgument   TokenType = "BeginInlineArgument"
+	EndInlineArgument     TokenType = "EndInlineArgument"
 	Operator              TokenType = "Operator"
 	LParen                TokenType = "LParen"
 	RParen                TokenType = "RParen"

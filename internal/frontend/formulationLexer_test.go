@@ -25,7 +25,7 @@ import (
 
 func TestFormulationLexer(t *testing.T) {
 	lexer := NewFormulationLexer(`
-xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something]
+xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name'
 `)
 
 	actual := "\n"
@@ -100,6 +100,8 @@ as As
 [ LSquare
 something Name
 ] RSquare
+*+ Name
+name' Name
 `
 
 	assert.Equal(t, expected, actual)

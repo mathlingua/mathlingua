@@ -93,6 +93,20 @@ func (lexer *formulationLexer) init(text string) {
 		return result, true
 	}
 
+	getStroppedName := func(start Char) string {
+		result := ""
+		for i < len(chars) && chars[i].Symbol != '"' {
+			result += string(chars[i].Symbol)
+			i++
+		}
+		if i < len(chars) && chars[i].Symbol == '"' {
+			i++ // move past the "
+		} else {
+			appendDiagnostic("Unterminated \"", start.Position)
+		}
+		return result
+	}
+
 	for i < len(chars) {
 		absorbWhitespace()
 		if i >= len(chars) {
@@ -186,6 +200,13 @@ func (lexer *formulationLexer) init(text string) {
 				Text:     "^",
 				Position: cur.Position,
 			})
+		case cur.Symbol == '"':
+			name := getStroppedName(cur)
+			appendToken(Token{
+				Type:     Name,
+				Text:     name,
+				Position: cur.Position,
+			})
 		case cur.Symbol == '.':
 			if i+1 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' {
 				i += 2 // skip the ..
@@ -275,7 +296,7 @@ func isWhitespace(c rune) bool {
 }
 
 func isNameSymbol(c rune) bool {
-	return unicode.IsLetter(c) || unicode.IsDigit(c)
+	return unicode.IsLetter(c) || unicode.IsDigit(c) || c == '`' || c == '\''
 }
 
 func isOperatorSymbol(c rune) bool {

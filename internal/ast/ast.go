@@ -349,6 +349,7 @@ type VarArgData struct {
 type Formulation struct {
 	RawText string
 	Root    FormulationType
+	Label   *string
 }
 
 type IfSection struct {

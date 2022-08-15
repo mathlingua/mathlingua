@@ -21,37 +21,21 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-type Phase3Lexer interface {
-	HasNext() bool
-	Next() Token
-	Peek() Token
-	Diagnostics() []Diagnostic
-}
-
-func NewPhase3Lexer(lexer Phase2Lexer) Phase3Lexer {
-	result := phase3Lexer{
-		index:       0,
-		tokens:      make([]Token, 0),
-		diagnostics: make([]Diagnostic, 0),
-	}
-	result.init(lexer)
-	return &result
+func NewPhase3Lexer(phase2Lexer Lexer) Lexer {
+	return NewLexer(getPhase3Tokens(phase2Lexer))
 }
 
 ////////////////////////////////////////////////////////////
 
-type phase3Lexer struct {
-	index       int
-	tokens      []Token
-	diagnostics []Diagnostic
-}
+func getPhase3Tokens(lexer2 Lexer) ([]Token, []Diagnostic) {
+	tokens := make([]Token, 0)
+	diagnostics := make([]Diagnostic, 0)
 
-func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
-	lexer.diagnostics = append(lexer.diagnostics, lexer2.Diagnostics()...)
+	diagnostics = append(diagnostics, lexer2.Diagnostics()...)
 	stack := mlglib.NewStack[TokenType]()
 
 	appendEndSection := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     EndSection,
 			Text:     "<EndSection>",
 			Position: lexer2.Position(),
@@ -59,7 +43,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	appendEndArgumentGroup := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     EndArgumentGroup,
 			Text:     "<EndArgumentGroup>",
 			Position: lexer2.Position(),
@@ -67,7 +51,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	appendEndTopLevelGroup := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     EndTopLevelGroup,
 			Text:     "<EndTopLevelGroup>",
 			Position: lexer2.Position(),
@@ -75,7 +59,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	appendEndDotSpaceArgument := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     EndDotSpaceArgument,
 			Text:     "<EndDotSpaceArgument>",
 			Position: lexer2.Position(),
@@ -83,7 +67,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	appendEndInlineArgument := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     EndInlineArgument,
 			Text:     "<EndInlineArgument>",
 			Position: lexer2.Position(),
@@ -91,7 +75,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	beginSection := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     BeginSection,
 			Text:     "<BeginSection>",
 			Position: lexer2.Position(),
@@ -100,7 +84,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	beginTopLevelGroup := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     BeginTopLevelGroup,
 			Text:     "<BeginTopLevelGroup>",
 			Position: lexer2.Position(),
@@ -109,7 +93,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	beginArgumentGroup := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     BeginArgumentGroup,
 			Text:     "<BeginArgumentGroup>",
 			Position: lexer2.Position(),
@@ -118,7 +102,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	beginDotSpaceArgument := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     BeginDotSpaceArgument,
 			Text:     "<BeginDotSpaceArgument>",
 			Position: lexer2.Position(),
@@ -127,7 +111,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	beginInlineArgument := func() {
-		lexer.tokens = append(lexer.tokens, Token{
+		tokens = append(tokens, Token{
 			Type:     BeginInlineArgument,
 			Text:     "<BeginInlineArgument>",
 			Position: lexer2.Position(),
@@ -164,7 +148,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	appendToken := func(tok Token) {
-		lexer.tokens = append(lexer.tokens, tok)
+		tokens = append(tokens, tok)
 	}
 
 	appendNext := func() {
@@ -176,7 +160,7 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	}
 
 	appendDiagnostic := func(message string, position Position) {
-		lexer.diagnostics = append(lexer.diagnostics, Diagnostic{
+		diagnostics = append(diagnostics, Diagnostic{
 			Type:     Error,
 			Origin:   Phase3LexerOrigin,
 			Message:  message,
@@ -268,10 +252,10 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 	cleanedTokens := make([]Token, 0)
 	j := 0
 
-	for j < len(lexer.tokens) {
-		cur := lexer.tokens[j]
+	for j < len(tokens) {
+		cur := tokens[j]
 		j++
-		if cur.Type == BeginInlineArgument && j < len(lexer.tokens) && lexer.tokens[j].Type == EndInlineArgument {
+		if cur.Type == BeginInlineArgument && j < len(tokens) && tokens[j].Type == EndInlineArgument {
 			j++
 			// skip the begin and end inline argument tokens because the argument is empty
 		} else {
@@ -279,23 +263,5 @@ func (lexer *phase3Lexer) init(lexer2 Phase2Lexer) {
 		}
 	}
 
-	lexer.tokens = cleanedTokens
-}
-
-func (lexer *phase3Lexer) HasNext() bool {
-	return lexer.index < len(lexer.tokens)
-}
-
-func (lexer *phase3Lexer) Next() Token {
-	peek := lexer.Peek()
-	lexer.index++
-	return peek
-}
-
-func (lexer *phase3Lexer) Peek() Token {
-	return lexer.tokens[lexer.index]
-}
-
-func (lexer *phase3Lexer) Diagnostics() []Diagnostic {
-	return lexer.diagnostics
+	return cleanedTokens, diagnostics
 }

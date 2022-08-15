@@ -22,44 +22,28 @@ import (
 	"unicode"
 )
 
-type Phase1Lexer interface {
-	HasNext() bool
-	Next() Token
-	Peek() Token
-	Diagnostics() []Diagnostic
-}
-
-func NewPhase1Lexer(text string) Phase1Lexer {
-	lexer := phase1Lexer{
-		index:       0,
-		tokens:      make([]Token, 0),
-		diagnostics: make([]Diagnostic, 0),
-	}
+func NewPhase1Lexer(text string) Lexer {
 	// ensure the text ends with enough newlines so that it
 	// terminates any sections and groups.  This makes parsing
 	// easier to implement.
-	lexer.init(text + "\n\n\n")
-	return &lexer
+	return NewLexer(getPhase1Tokens(text + "\n\n\n"))
 }
 
 ////////////////////////////////////////////////////
 
-type phase1Lexer struct {
-	index       int
-	tokens      []Token
-	diagnostics []Diagnostic
-}
-
-func (lexer *phase1Lexer) init(text string) {
+func getPhase1Tokens(text string) ([]Token, []Diagnostic) {
 	chars := GetChars(text)
 	i := 0
 
+	tokens := make([]Token, 0)
+	diagnostics := make([]Diagnostic, 0)
+
 	appendToken := func(token Token) {
-		lexer.tokens = append(lexer.tokens, token)
+		tokens = append(tokens, token)
 	}
 
 	appendDiagnostic := func(message string, position Position) {
-		lexer.diagnostics = append(lexer.diagnostics, Diagnostic{
+		diagnostics = append(diagnostics, Diagnostic{
 			Type:     Error,
 			Origin:   Phase1LexerOrigin,
 			Message:  message,
@@ -345,22 +329,6 @@ func (lexer *phase1Lexer) init(text string) {
 			appendDiagnostic(fmt.Sprintf("Unrecognized character '%c'", c.Symbol), c.Position)
 		}
 	}
-}
 
-func (lexer *phase1Lexer) HasNext() bool {
-	return lexer.index < len(lexer.tokens)
-}
-
-func (lexer *phase1Lexer) Next() Token {
-	peek := lexer.Peek()
-	lexer.index++
-	return peek
-}
-
-func (lexer *phase1Lexer) Peek() Token {
-	return lexer.tokens[lexer.index]
-}
-
-func (lexer *phase1Lexer) Diagnostics() []Diagnostic {
-	return lexer.diagnostics
+	return tokens, diagnostics
 }

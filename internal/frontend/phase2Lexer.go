@@ -18,40 +18,21 @@ package frontend
 
 import "fmt"
 
-type Phase2Lexer interface {
-	HasNext() bool
-	HasNextNext() bool
-	Next() Token
-	Peek() Token
-	PeekPeek() Token
-	Position() Position
-	Diagnostics() []Diagnostic
-}
-
-func NewPhase2Lexer(lexer Phase1Lexer) Phase2Lexer {
-	result := phase2Lexer{
-		index:       0,
-		tokens:      make([]Token, 0),
-		diagnostics: make([]Diagnostic, 0),
-	}
-	result.init(lexer)
-	return &result
+func NewPhase2Lexer(phase1Lexer Lexer) Lexer {
+	return NewLexer(getPhase2Tokens(phase1Lexer))
 }
 
 //////////////////////////////////////////////////////////////////
 
-type phase2Lexer struct {
-	index       int
-	tokens      []Token
-	diagnostics []Diagnostic
-}
+func getPhase2Tokens(lexer1 Lexer) ([]Token, []Diagnostic) {
+	tokens := make([]Token, 0)
+	diagnostics := make([]Diagnostic, 0)
 
-func (lexer *phase2Lexer) init(lexer1 Phase1Lexer) {
-	lexer.diagnostics = append(lexer.diagnostics, lexer1.Diagnostics()...)
+	diagnostics = append(diagnostics, lexer1.Diagnostics()...)
 	prevIndent := 0
 
 	appendToken := func(tok Token) {
-		lexer.tokens = append(lexer.tokens, tok)
+		tokens = append(tokens, tok)
 	}
 
 	handleIndentsOrUnIndents := func(curIndent int, position Position) {
@@ -103,7 +84,7 @@ func (lexer *phase2Lexer) init(lexer1 Phase1Lexer) {
 				numSpaces++
 			}
 			if numSpaces%2 == 1 {
-				lexer.diagnostics = append(lexer.diagnostics, Diagnostic{
+				diagnostics = append(diagnostics, Diagnostic{
 					Type:     Error,
 					Origin:   Phase2LexerOrigin,
 					Message:  fmt.Sprintf("Expected an even indent but found %d", numSpaces),
@@ -128,42 +109,6 @@ func (lexer *phase2Lexer) init(lexer1 Phase1Lexer) {
 			appendToken(cur)
 		}
 	}
-}
 
-func (lexer *phase2Lexer) HasNext() bool {
-	return lexer.index < len(lexer.tokens)
-}
-
-func (lexer *phase2Lexer) HasNextNext() bool {
-	return lexer.index+1 < len(lexer.tokens)
-}
-
-func (lexer *phase2Lexer) Next() Token {
-	peek := lexer.Peek()
-	lexer.index++
-	return peek
-}
-
-func (lexer *phase2Lexer) Peek() Token {
-	return lexer.tokens[lexer.index]
-}
-
-func (lexer *phase2Lexer) PeekPeek() Token {
-	return lexer.tokens[lexer.index+1]
-}
-
-func (lexer *phase2Lexer) Position() Position {
-	if lexer.HasNext() {
-		return lexer.Peek().Position
-	} else {
-		return Position{
-			Offset: -1,
-			Row:    -1,
-			Column: -1,
-		}
-	}
-}
-
-func (lexer *phase2Lexer) Diagnostics() []Diagnostic {
-	return lexer.diagnostics
+	return tokens, diagnostics
 }

@@ -18,6 +18,7 @@ package frontend
 
 import (
 	"fmt"
+	"mathlingua/internal/ast"
 	"mathlingua/internal/mlglib"
 )
 
@@ -27,7 +28,7 @@ type Lexer interface {
 	Next() Token
 	Peek() Token
 	PeekPeek() Token
-	Position() Position
+	Position() ast.Position
 	Snapshot() int
 	Commit(id int)
 	RollBack(id int)
@@ -79,11 +80,11 @@ func (lex *lexer) PeekPeek() Token {
 	return lex.tokens[lex.index+1]
 }
 
-func (lex *lexer) Position() Position {
+func (lex *lexer) Position() ast.Position {
 	if lex.HasNext() {
 		return lex.Peek().Position
 	} else {
-		return Position{
+		return ast.Position{
 			Offset: -1,
 			Row:    -1,
 			Column: -1,

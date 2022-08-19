@@ -16,6 +16,12 @@
 
 package ast
 
+type Position struct {
+	Offset int
+	Row    int
+	Column int
+}
+
 // all AST nodes are MlgNodes
 type NodeType interface {
 	NodeType()

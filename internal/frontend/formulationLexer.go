@@ -18,6 +18,7 @@ package frontend
 
 import (
 	"fmt"
+	"mathlingua/internal/ast"
 	"unicode"
 )
 
@@ -38,7 +39,7 @@ func getFormulationTokens(text string) ([]Token, []Diagnostic) {
 		tokens = append(tokens, token)
 	}
 
-	appendDiagnostic := func(message string, position Position) {
+	appendDiagnostic := func(message string, position ast.Position) {
 		diagnostics = append(diagnostics, Diagnostic{
 			Type:     Error,
 			Origin:   FormulationLexerOrigin,

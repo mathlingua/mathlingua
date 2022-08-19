@@ -16,6 +16,8 @@
 
 package frontend
 
+import "mathlingua/internal/ast"
+
 type DiagnosticType string
 
 const (
@@ -31,17 +33,11 @@ const (
 	FormulationLexerOrigin DiagnosticOrigin = "FormulationLexerOrigin"
 )
 
-type Position struct {
-	Offset int
-	Row    int
-	Column int
-}
-
 type Diagnostic struct {
 	Type     DiagnosticType
 	Origin   DiagnosticOrigin
 	Message  string
-	Position Position
+	Position ast.Position
 }
 
 type TokenType string
@@ -96,5 +92,5 @@ const (
 type Token struct {
 	Type     TokenType
 	Text     string
-	Position Position
+	Position ast.Position
 }

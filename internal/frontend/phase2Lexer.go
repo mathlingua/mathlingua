@@ -16,7 +16,10 @@
 
 package frontend
 
-import "fmt"
+import (
+	"fmt"
+	"mathlingua/internal/ast"
+)
 
 func NewPhase2Lexer(phase1Lexer Lexer) Lexer {
 	return NewLexer(getPhase2Tokens(phase1Lexer))
@@ -35,7 +38,7 @@ func getPhase2Tokens(lexer1 Lexer) ([]Token, []Diagnostic) {
 		tokens = append(tokens, tok)
 	}
 
-	handleIndentsOrUnIndents := func(curIndent int, position Position) {
+	handleIndentsOrUnIndents := func(curIndent int, position ast.Position) {
 		if curIndent > prevIndent {
 			for j := 0; j < curIndent-prevIndent; j++ {
 				appendToken(Token{

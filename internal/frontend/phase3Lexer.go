@@ -18,6 +18,7 @@ package frontend
 
 import (
 	"fmt"
+	"mathlingua/internal/ast"
 	"mathlingua/internal/mlglib"
 )
 
@@ -159,7 +160,7 @@ func getPhase3Tokens(lexer2 Lexer) ([]Token, []Diagnostic) {
 		lexer2.Next()
 	}
 
-	appendDiagnostic := func(message string, position Position) {
+	appendDiagnostic := func(message string, position ast.Position) {
 		diagnostics = append(diagnostics, Diagnostic{
 			Type:     Error,
 			Origin:   Phase3LexerOrigin,

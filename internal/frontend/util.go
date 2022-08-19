@@ -16,9 +16,11 @@
 
 package frontend
 
+import "mathlingua/internal/ast"
+
 type Char struct {
 	Symbol   rune
-	Position Position
+	Position ast.Position
 }
 
 func GetChars(text string) []Char {
@@ -36,7 +38,7 @@ func GetChars(text string) []Char {
 		prevPos = pos
 		chars = append(chars, Char{
 			Symbol: c,
-			Position: Position{
+			Position: ast.Position{
 				Offset: pos,
 				Row:    curRow,
 				Column: curColumn,

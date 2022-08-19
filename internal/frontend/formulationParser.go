@@ -19,6 +19,7 @@ package frontend
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"strings"
 )
 
 func ParseFormulation(text string) {
@@ -53,7 +54,13 @@ func (fp *formulationParser) NameForm() (ast.NameForm, bool) {
 		return ast.NameForm{}, false
 	}
 
-	nameToken := fp.next()
+	name := fp.next().Text
+	isStropped := false
+	if strings.HasPrefix(name, "\"") && strings.HasSuffix(name, "\"") {
+		isStropped = true
+		name = strings.TrimPrefix(strings.TrimSuffix(name, "\""), "\"")
+	}
+
 	isVarArg := false
 	var varArgCount *string = nil
 	hasQuestionMark := false
@@ -74,8 +81,8 @@ func (fp *formulationParser) NameForm() (ast.NameForm, bool) {
 	}
 
 	return ast.NameForm{
-		Text:            nameToken.Text,
-		IsStropped:      false, // TODO: Support this
+		Text:            name,
+		IsStropped:      isStropped,
 		HasQuestionMark: hasQuestionMark,
 		VarArg: ast.VarArgData{
 			IsVarArg:    isVarArg,

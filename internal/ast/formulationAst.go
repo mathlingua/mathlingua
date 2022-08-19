@@ -349,24 +349,3 @@ type VarArgData struct {
 	IsVarArg    bool
 	VarArgCount *string
 }
-
-///////////////////////////////////////////////////////////////////////////////
-
-type Formulation struct {
-	RawText string
-	Root    FormulationType
-	Label   *string
-}
-
-type IfSection struct {
-	Formulations []Formulation
-}
-
-type ThenSection struct {
-	Formulation []Formulation
-}
-
-type IfGroup struct {
-	If   IfSection
-	Then ThenSection
-}

@@ -21,41 +21,25 @@ import (
 	"unicode"
 )
 
-type FormulationLexer interface {
-	HasNext() bool
-	Next() Token
-	Peek() Token
-	Diagnostics() []Diagnostic
-}
-
-func NewFormulationLexer(text string) FormulationLexer {
-	lexer := formulationLexer{
-		index:       0,
-		tokens:      make([]Token, 0),
-		diagnostics: make([]Diagnostic, 0),
-	}
-	lexer.init(text)
-	return &lexer
+func NewFormulationLexer(text string) Lexer {
+	return NewLexer(getFormulationTokens(text))
 }
 
 //////////////////////////////////////////////////////////////
 
-type formulationLexer struct {
-	index       int
-	tokens      []Token
-	diagnostics []Diagnostic
-}
+func getFormulationTokens(text string) ([]Token, []Diagnostic) {
+	tokens := make([]Token, 0)
+	diagnostics := make([]Diagnostic, 0)
 
-func (lexer *formulationLexer) init(text string) {
 	chars := GetChars(text)
 	i := 0
 
 	appendToken := func(token Token) {
-		lexer.tokens = append(lexer.tokens, token)
+		tokens = append(tokens, token)
 	}
 
 	appendDiagnostic := func(message string, position Position) {
-		lexer.diagnostics = append(lexer.diagnostics, Diagnostic{
+		diagnostics = append(diagnostics, Diagnostic{
 			Type:     Error,
 			Origin:   FormulationLexerOrigin,
 			Message:  message,
@@ -104,7 +88,7 @@ func (lexer *formulationLexer) init(text string) {
 		} else {
 			appendDiagnostic("Unterminated \"", start.Position)
 		}
-		return result
+		return fmt.Sprintf("\"%s\"", result)
 	}
 
 	for i < len(chars) {
@@ -269,24 +253,8 @@ func (lexer *formulationLexer) init(text string) {
 			}
 		}
 	}
-}
 
-func (lexer *formulationLexer) HasNext() bool {
-	return lexer.index < len(lexer.tokens)
-}
-
-func (lexer *formulationLexer) Next() Token {
-	peek := lexer.Peek()
-	lexer.index++
-	return peek
-}
-
-func (lexer *formulationLexer) Peek() Token {
-	return lexer.tokens[lexer.index]
-}
-
-func (lexer *formulationLexer) Diagnostics() []Diagnostic {
-	return lexer.diagnostics
+	return tokens, diagnostics
 }
 
 ////////////////////////////////////////////////////////////////////////

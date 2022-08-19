@@ -100,7 +100,7 @@ as As
 [ LSquare
 something Name
 ] RSquare
-*+ Name
+"*+" Name
 name' Name
 `
 

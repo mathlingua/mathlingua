@@ -16,6 +16,11 @@
 
 package frontend
 
+import (
+	"fmt"
+	"mathlingua/internal/mlglib"
+)
+
 type Lexer interface {
 	HasNext() bool
 	HasNextNext() bool
@@ -23,6 +28,9 @@ type Lexer interface {
 	Peek() Token
 	PeekPeek() Token
 	Position() Position
+	Snapshot() int
+	Commit(id int)
+	RollBack(id int)
 	Diagnostics() []Diagnostic
 }
 
@@ -30,15 +38,22 @@ func NewLexer(tokens []Token, diagnostics []Diagnostic) Lexer {
 	return &lexer{
 		index:       0,
 		tokens:      tokens,
+		snapshots:   mlglib.NewStack[snapshot](),
 		diagnostics: diagnostics,
 	}
 }
 
 ///////////////////////////////////////////////////////////////
 
+type snapshot struct {
+	id         int
+	startIndex int
+}
+
 type lexer struct {
 	index       int
 	tokens      []Token
+	snapshots   mlglib.Stack[snapshot]
 	diagnostics []Diagnostic
 }
 
@@ -74,6 +89,33 @@ func (lex *lexer) Position() Position {
 			Column: -1,
 		}
 	}
+}
+
+func (lex *lexer) Snapshot() int {
+	id := 0
+	if !lex.snapshots.IsEmpty() {
+		id = lex.snapshots.Peek().id + 1
+	}
+	lex.snapshots.Push(snapshot{
+		id:         id,
+		startIndex: lex.index,
+	})
+	return id
+}
+
+func (lex *lexer) Commit(id int) {
+	if lex.snapshots.IsEmpty() || lex.snapshots.Peek().id != id {
+		panic(fmt.Sprintf("Lexer requested committing with id %d but expected %d", id, lex.snapshots.Peek().id))
+	}
+	lex.snapshots.Pop()
+}
+
+func (lex *lexer) RollBack(id int) {
+	if lex.snapshots.IsEmpty() || lex.snapshots.Peek().id != id {
+		panic(fmt.Sprintf("Lexer requested rolling back with id %d but expected %d", id, lex.snapshots.Peek().id))
+	}
+	top := lex.snapshots.Pop()
+	lex.index = top.startIndex
 }
 
 func (lex *lexer) Diagnostics() []Diagnostic {

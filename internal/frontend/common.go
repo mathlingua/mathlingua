@@ -27,10 +27,11 @@ const (
 type DiagnosticOrigin string
 
 const (
-	Phase1LexerOrigin      DiagnosticOrigin = "Phase1LexerOrigin"
-	Phase2LexerOrigin      DiagnosticOrigin = "Phase2LexerOrigin"
-	Phase3LexerOrigin      DiagnosticOrigin = "Phase3LexerOrigin"
-	FormulationLexerOrigin DiagnosticOrigin = "FormulationLexerOrigin"
+	Phase1LexerOrigin       DiagnosticOrigin = "Phase1LexerOrigin"
+	Phase2LexerOrigin       DiagnosticOrigin = "Phase2LexerOrigin"
+	Phase3LexerOrigin       DiagnosticOrigin = "Phase3LexerOrigin"
+	FormulationLexerOrigin  DiagnosticOrigin = "FormulationLexerOrigin"
+	FormulationParserOrigin DiagnosticOrigin = "FormulationParserOrigin"
 )
 
 type Diagnostic struct {

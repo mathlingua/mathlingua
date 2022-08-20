@@ -22,14 +22,14 @@ import (
 	"strings"
 )
 
-func ParseFormulation(text string) {
+func ParseFormulation(text string) (ast.NodeType, []Diagnostic, bool) {
 	lexer := NewFormulationLexer(text)
 	parser := formulationParser{
 		lexer:       lexer,
 		diagnostics: make([]Diagnostic, 0),
 	}
-	form, ok := parser.NameForm()
-	fmt.Printf("%+v, ok=%v\n", form, ok)
+	node, _ := parser.structuralForm()
+	return node, parser.diagnostics, len(parser.diagnostics) == 0
 }
 
 type formulationParser struct {
@@ -49,7 +49,38 @@ func (fp *formulationParser) next() Token {
 	return fp.lexer.Next()
 }
 
-func (fp *formulationParser) NameForm() (ast.NameForm, bool) {
+func (fp *formulationParser) error(message string) {
+	fp.diagnostics = append(fp.diagnostics, Diagnostic{
+		Type:     Error,
+		Origin:   FormulationParserOrigin,
+		Message:  message,
+		Position: fp.lexer.Position(),
+	})
+}
+
+func (fp *formulationParser) expect(tokenType TokenType) (Token, bool) {
+	if !fp.has(tokenType) {
+		fp.error(fmt.Sprintf("Expected a token of type %s", tokenType))
+		return Token{}, false
+	}
+	return fp.next(), true
+}
+
+func (fp *formulationParser) structuralForm() (ast.StructuralFormType, bool) {
+	fun, ok := fp.functionForm()
+	if ok {
+		return fun, true
+	}
+
+	name, ok := fp.nameForm()
+	if ok {
+		return name, true
+	}
+
+	return nil, false
+}
+
+func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 	if !fp.has(Name) {
 		return ast.NameForm{}, false
 	}
@@ -88,5 +119,64 @@ func (fp *formulationParser) NameForm() (ast.NameForm, bool) {
 			IsVarArg:    isVarArg,
 			VarArgCount: varArgCount,
 		},
+	}, true
+}
+
+func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
+	if !fp.has(DotDotDot) {
+		return ast.VarArgData{
+			IsVarArg:    false,
+			VarArgCount: nil,
+		}, false
+	}
+	fp.expect(DotDotDot)
+	var varArgCount *string = nil
+	if fp.hasHas(Operator, Name) && fp.lexer.Peek().Text == "#" {
+		text := fp.next().Text
+		varArgCount = &text
+	}
+	return ast.VarArgData{
+		IsVarArg:    true,
+		VarArgCount: varArgCount,
+	}, true
+}
+
+func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
+	if !fp.hasHas(Name, LParen) {
+		return ast.FunctionForm{}, false
+	}
+
+	target, ok := fp.nameForm()
+	if !ok {
+		return ast.FunctionForm{}, false
+	}
+
+	params := make([]ast.NameForm, 0)
+	fp.expect(LParen)
+	for fp.lexer.HasNext() {
+		if fp.has(RParen) {
+			break
+		}
+
+		if len(params) > 0 {
+			fp.expect(Comma)
+		}
+
+		param, ok := fp.nameForm()
+		if !ok {
+			fp.error("Expected a name")
+			// move past the unexpected token
+			fp.lexer.Next()
+		} else {
+			params = append(params, param)
+		}
+	}
+	fp.expect(RParen)
+
+	varArgData, _ := fp.varArgData()
+	return ast.FunctionForm{
+		Target: target,
+		Params: params,
+		VarArg: varArgData,
 	}, true
 }

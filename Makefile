@@ -13,7 +13,7 @@ vet:
 
 .PHONY: lint
 lint:
-	golangci-lint run --enable-all
+	golangci-lint run
 
 .PHONY: clean
 clean:

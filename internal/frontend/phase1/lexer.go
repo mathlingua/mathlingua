@@ -19,6 +19,7 @@ package phase1
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
 	"mathlingua/internal/mlglib"
 	"unicode"
@@ -33,21 +34,21 @@ func NewLexer(text string) shared.Lexer {
 
 ////////////////////////////////////////////////////
 
-func getTokens(text string) ([]shared.Token, []shared.Diagnostic) {
+func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 	chars := shared.GetChars(text)
 	i := 0
 
 	tokens := make([]shared.Token, 0)
-	diagnostics := make([]shared.Diagnostic, 0)
+	diagnostics := make([]frontend.Diagnostic, 0)
 
 	appendToken := func(token shared.Token) {
 		tokens = append(tokens, token)
 	}
 
 	appendDiagnostic := func(message string, position ast.Position) {
-		diagnostics = append(diagnostics, shared.Diagnostic{
-			Type:     shared.Error,
-			Origin:   shared.Phase1LexerOrigin,
+		diagnostics = append(diagnostics, frontend.Diagnostic{
+			Type:     frontend.Error,
+			Origin:   frontend.Phase1LexerOrigin,
 			Message:  message,
 			Position: position,
 		})

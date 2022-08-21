@@ -19,6 +19,7 @@ package phase2
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
 )
 
@@ -28,9 +29,9 @@ func NewLexer(phase1Lexer shared.Lexer) shared.Lexer {
 
 //////////////////////////////////////////////////////////////////
 
-func getTokens(lexer1 shared.Lexer) ([]shared.Token, []shared.Diagnostic) {
+func getTokens(lexer1 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 	tokens := make([]shared.Token, 0)
-	diagnostics := make([]shared.Diagnostic, 0)
+	diagnostics := make([]frontend.Diagnostic, 0)
 
 	diagnostics = append(diagnostics, lexer1.Diagnostics()...)
 	prevIndent := 0
@@ -88,9 +89,9 @@ func getTokens(lexer1 shared.Lexer) ([]shared.Token, []shared.Diagnostic) {
 				numSpaces++
 			}
 			if numSpaces%2 == 1 {
-				diagnostics = append(diagnostics, shared.Diagnostic{
-					Type:     shared.Error,
-					Origin:   shared.Phase2LexerOrigin,
+				diagnostics = append(diagnostics, frontend.Diagnostic{
+					Type:     frontend.Error,
+					Origin:   frontend.Phase2LexerOrigin,
 					Message:  fmt.Sprintf("Expected an even indent but found %d", numSpaces),
 					Position: cur.Position,
 				})

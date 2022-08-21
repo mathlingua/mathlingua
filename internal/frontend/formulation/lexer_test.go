@@ -18,7 +18,7 @@ package formulation
 
 import (
 	"fmt"
-	"mathlingua/internal/frontend/shared"
+	"mathlingua/internal/frontend"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -106,5 +106,5 @@ name' Name
 `
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer.Diagnostics())
 }

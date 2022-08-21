@@ -19,15 +19,16 @@ package formulation
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
 	"strings"
 )
 
-func Parse(text string) (ast.NodeType, []shared.Diagnostic, bool) {
+func Parse(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
 	lexer := NewLexer(text)
 	parser := formulationParser{
 		lexer:       lexer,
-		diagnostics: make([]shared.Diagnostic, 0),
+		diagnostics: make([]frontend.Diagnostic, 0),
 	}
 	node, _ := parser.structuralForm()
 	return node, parser.diagnostics, len(parser.diagnostics) == 0
@@ -35,7 +36,7 @@ func Parse(text string) (ast.NodeType, []shared.Diagnostic, bool) {
 
 type formulationParser struct {
 	lexer       shared.Lexer
-	diagnostics []shared.Diagnostic
+	diagnostics []frontend.Diagnostic
 }
 
 func (fp *formulationParser) has(tokenType shared.TokenType) bool {
@@ -51,9 +52,9 @@ func (fp *formulationParser) next() shared.Token {
 }
 
 func (fp *formulationParser) error(message string) {
-	fp.diagnostics = append(fp.diagnostics, shared.Diagnostic{
-		Type:     shared.Error,
-		Origin:   shared.FormulationParserOrigin,
+	fp.diagnostics = append(fp.diagnostics, frontend.Diagnostic{
+		Type:     frontend.Error,
+		Origin:   frontend.FormulationParserOrigin,
 		Message:  message,
 		Position: fp.lexer.Position(),
 	})

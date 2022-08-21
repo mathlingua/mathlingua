@@ -18,12 +18,12 @@ package formulation
 
 import (
 	"mathlingua/internal/ast"
-	"mathlingua/internal/frontend/shared"
+	"mathlingua/internal/frontend"
 )
 
 // Converts ["x", "+", "y", ",", "z"] to ["x + y", "z"]
 // If canMultiplex is true, converts
 // ["x", "y", "[in]", "Z"] to ["x, y [in] Z"]
-func Consolidate(nodes []ast.NodeType, canMultiplex bool) ([]ast.NodeType, []shared.Diagnostic) {
+func Consolidate(nodes []ast.NodeType, canMultiplex bool) ([]ast.NodeType, []frontend.Diagnostic) {
 	return nil, nil
 }

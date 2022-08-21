@@ -17,9 +17,9 @@
 package phase3
 
 import (
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase1"
 	"mathlingua/internal/frontend/phase2"
-	"mathlingua/internal/frontend/shared"
 	"strings"
 	"testing"
 
@@ -47,7 +47,7 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
@@ -74,7 +74,7 @@ a: xyz
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiArgs(t *testing.T) {
@@ -104,7 +104,7 @@ a: xyz, abc
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerIndentWithDoubleUnindent(t *testing.T) {
@@ -148,7 +148,7 @@ d:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerIndentWithDoubleUnindentMultiSections(t *testing.T) {
@@ -196,7 +196,7 @@ e:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiIndent(t *testing.T) {
@@ -236,7 +236,7 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiLineNonGroupArgs(t *testing.T) {
@@ -268,7 +268,7 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiGroupArgs(t *testing.T) {
@@ -308,7 +308,7 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiSections(t *testing.T) {
@@ -340,7 +340,7 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgs(t *testing.T) {
@@ -408,7 +408,7 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgsAndNonGroupArgs(t *testing.T) {
@@ -497,5 +497,5 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
 }

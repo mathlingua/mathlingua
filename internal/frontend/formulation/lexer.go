@@ -19,6 +19,7 @@ package formulation
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
 	"unicode"
 )
@@ -29,9 +30,9 @@ func NewLexer(text string) shared.Lexer {
 
 //////////////////////////////////////////////////////////////
 
-func getTokens(text string) ([]shared.Token, []shared.Diagnostic) {
+func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 	tokens := make([]shared.Token, 0)
-	diagnostics := make([]shared.Diagnostic, 0)
+	diagnostics := make([]frontend.Diagnostic, 0)
 
 	chars := shared.GetChars(text)
 	i := 0
@@ -41,9 +42,9 @@ func getTokens(text string) ([]shared.Token, []shared.Diagnostic) {
 	}
 
 	appendDiagnostic := func(message string, position ast.Position) {
-		diagnostics = append(diagnostics, shared.Diagnostic{
-			Type:     shared.Error,
-			Origin:   shared.FormulationLexerOrigin,
+		diagnostics = append(diagnostics, frontend.Diagnostic{
+			Type:     frontend.Error,
+			Origin:   frontend.FormulationLexerOrigin,
 			Message:  message,
 			Position: position,
 		})

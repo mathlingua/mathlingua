@@ -19,6 +19,7 @@ package shared
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/mlglib"
 )
 
@@ -32,10 +33,10 @@ type Lexer interface {
 	Snapshot() int
 	Commit(id int)
 	RollBack(id int)
-	Diagnostics() []Diagnostic
+	Diagnostics() []frontend.Diagnostic
 }
 
-func NewLexer(tokens []Token, diagnostics []Diagnostic) Lexer {
+func NewLexer(tokens []Token, diagnostics []frontend.Diagnostic) Lexer {
 	return &lexer{
 		index:       0,
 		tokens:      tokens,
@@ -55,7 +56,7 @@ type lexer struct {
 	index       int
 	tokens      []Token
 	snapshots   mlglib.Stack[snapshot]
-	diagnostics []Diagnostic
+	diagnostics []frontend.Diagnostic
 }
 
 func (lex *lexer) HasNext() bool {
@@ -119,6 +120,6 @@ func (lex *lexer) RollBack(id int) {
 	lex.index = top.startIndex
 }
 
-func (lex *lexer) Diagnostics() []Diagnostic {
+func (lex *lexer) Diagnostics() []frontend.Diagnostic {
 	return lex.diagnostics
 }

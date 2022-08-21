@@ -14,36 +14,29 @@
  * limitations under the License.
  */
 
-package shared
+package frontend
 
 import "mathlingua/internal/ast"
 
-type Char struct {
-	Symbol   rune
-	Position ast.Position
-}
+type DiagnosticType string
 
-func GetChars(text string) []Char {
-	chars := make([]Char, 0)
-	curRow := 0
-	curColumn := 0
-	prevPos := 0
-	for pos, c := range text {
-		if c == '\n' {
-			curRow++
-			curColumn = 0
-		} else {
-			curColumn += pos - prevPos
-		}
-		prevPos = pos
-		chars = append(chars, Char{
-			Symbol: c,
-			Position: ast.Position{
-				Offset: pos,
-				Row:    curRow,
-				Column: curColumn,
-			},
-		})
-	}
-	return chars
+const (
+	Error DiagnosticType = "Error"
+)
+
+type DiagnosticOrigin string
+
+const (
+	Phase1LexerOrigin       DiagnosticOrigin = "Phase1LexerOrigin"
+	Phase2LexerOrigin       DiagnosticOrigin = "Phase2LexerOrigin"
+	Phase3LexerOrigin       DiagnosticOrigin = "Phase3LexerOrigin"
+	FormulationLexerOrigin  DiagnosticOrigin = "FormulationLexerOrigin"
+	FormulationParserOrigin DiagnosticOrigin = "FormulationParserOrigin"
+)
+
+type Diagnostic struct {
+	Type     DiagnosticType
+	Origin   DiagnosticOrigin
+	Message  string
+	Position ast.Position
 }

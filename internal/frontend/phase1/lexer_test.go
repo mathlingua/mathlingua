@@ -17,7 +17,7 @@
 package phase1
 
 import (
-	"mathlingua/internal/frontend/shared"
+	"mathlingua/internal/frontend"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -67,5 +67,5 @@ abc
 `
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []shared.Diagnostic{}, lexer1.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, lexer1.Diagnostics())
 }

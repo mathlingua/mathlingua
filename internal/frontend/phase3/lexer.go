@@ -19,6 +19,7 @@ package phase3
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
 	"mathlingua/internal/mlglib"
 )
@@ -29,9 +30,9 @@ func NewLexer(phase2Lexer shared.Lexer) shared.Lexer {
 
 ////////////////////////////////////////////////////////////
 
-func getTokens(lexer2 shared.Lexer) ([]shared.Token, []shared.Diagnostic) {
+func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 	tokens := make([]shared.Token, 0)
-	diagnostics := make([]shared.Diagnostic, 0)
+	diagnostics := make([]frontend.Diagnostic, 0)
 
 	diagnostics = append(diagnostics, lexer2.Diagnostics()...)
 	stack := mlglib.NewStack[shared.TokenType]()
@@ -162,9 +163,9 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []shared.Diagnostic) {
 	}
 
 	appendDiagnostic := func(message string, position ast.Position) {
-		diagnostics = append(diagnostics, shared.Diagnostic{
-			Type:     shared.Error,
-			Origin:   shared.Phase3LexerOrigin,
+		diagnostics = append(diagnostics, frontend.Diagnostic{
+			Type:     frontend.Error,
+			Origin:   frontend.Phase3LexerOrigin,
 			Message:  message,
 			Position: position,
 		})

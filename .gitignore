@@ -1,4 +1,5 @@
 .DS_Store
 .idea
+.gitpod.yml
 .vscode
 mlg

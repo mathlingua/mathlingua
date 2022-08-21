@@ -14,13 +14,36 @@
  * limitations under the License.
  */
 
-package frontend
+package shared
 
 import "mathlingua/internal/ast"
 
-// Converts ["x", "+", "y", ",", "z"] to ["x + y", "z"]
-// If canMultiplex is true, converts
-// ["x", "y", "[in]", "Z"] to ["x, y [in] Z"]
-func Consolidate(nodes []ast.NodeType, canMultiplex bool) ([]ast.NodeType, []Diagnostic) {
-	return nil, nil
+type Char struct {
+	Symbol   rune
+	Position ast.Position
+}
+
+func GetChars(text string) []Char {
+	chars := make([]Char, 0)
+	curRow := 0
+	curColumn := 0
+	prevPos := 0
+	for pos, c := range text {
+		if c == '\n' {
+			curRow++
+			curColumn = 0
+		} else {
+			curColumn += pos - prevPos
+		}
+		prevPos = pos
+		chars = append(chars, Char{
+			Symbol: c,
+			Position: ast.Position{
+				Offset: pos,
+				Row:    curRow,
+				Column: curColumn,
+			},
+		})
+	}
+	return chars
 }

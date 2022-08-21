@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package frontend
+package phase3
 
 import (
+	"mathlingua/internal/frontend/phase1"
+	"mathlingua/internal/frontend/phase2"
+	"mathlingua/internal/frontend/shared"
 	"strings"
 	"testing"
 
@@ -24,11 +27,11 @@ import (
 )
 
 func TestPhase3LexerSingleSection(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -44,15 +47,15 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a: xyz
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -71,15 +74,15 @@ a: xyz
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiArgs(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a: xyz, abc
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -101,18 +104,18 @@ a: xyz, abc
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerIndentWithDoubleUnindent(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 . b:
   . c:
 d:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -145,19 +148,19 @@ d:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerIndentWithDoubleUnindentMultiSections(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 . b:
   . c:
 d:
 e:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -193,17 +196,17 @@ e:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiIndent(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 . b:
   . c:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -233,17 +236,17 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiLineNonGroupArgs(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 . b
 . c
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -265,17 +268,17 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiGroupArgs(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 . b:
 . c:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -305,17 +308,17 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiSections(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 b:
 c:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -337,11 +340,11 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgs(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 . x:
   y:
@@ -352,8 +355,8 @@ c:
   Q:
   R:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -405,11 +408,11 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgsAndNonGroupArgs(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
+	lexer1 := phase1.NewLexer(`
 a:
 . x:x1,x2,x3
   y:y1
@@ -420,8 +423,8 @@ c:
   Q:Q1
   R:
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
-	lexer3 := NewPhase3Lexer(lexer2)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := NewLexer(lexer2)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -494,5 +497,5 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer3.Diagnostics())
 }

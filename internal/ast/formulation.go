@@ -38,7 +38,7 @@ type StructuralFormType interface {
 	StructuralForm()
 }
 
-func (NameForm) StructuralForm()                {}
+func (NameForm) StructuralForm()               {}
 func (FunctionForm) StructuralForm()           {}
 func (FunctionExpressionForm) StructuralForm() {}
 func (TupleForm) StructuralForm()              {}
@@ -133,7 +133,7 @@ type ExpressionType interface {
 	ExpressionType()
 }
 
-func (NameForm) ExpressionType()                       {}
+func (NameForm) ExpressionType()                      {}
 func (FunctionForm) ExpressionType()                  {}
 func (FunctionCallExpression) ExpressionType()        {}
 func (TupleExpression) ExpressionType()               {}

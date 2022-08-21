@@ -14,35 +14,36 @@
  * limitations under the License.
  */
 
-package frontend
+package formulation
 
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend/shared"
 	"unicode"
 )
 
-func NewFormulationLexer(text string) Lexer {
-	return NewLexer(getFormulationTokens(text))
+func NewLexer(text string) shared.Lexer {
+	return shared.NewLexer(getTokens(text))
 }
 
 //////////////////////////////////////////////////////////////
 
-func getFormulationTokens(text string) ([]Token, []Diagnostic) {
-	tokens := make([]Token, 0)
-	diagnostics := make([]Diagnostic, 0)
+func getTokens(text string) ([]shared.Token, []shared.Diagnostic) {
+	tokens := make([]shared.Token, 0)
+	diagnostics := make([]shared.Diagnostic, 0)
 
-	chars := GetChars(text)
+	chars := shared.GetChars(text)
 	i := 0
 
-	appendToken := func(token Token) {
+	appendToken := func(token shared.Token) {
 		tokens = append(tokens, token)
 	}
 
 	appendDiagnostic := func(message string, position ast.Position) {
-		diagnostics = append(diagnostics, Diagnostic{
-			Type:     Error,
-			Origin:   FormulationLexerOrigin,
+		diagnostics = append(diagnostics, shared.Diagnostic{
+			Type:     shared.Error,
+			Origin:   shared.FormulationLexerOrigin,
 			Message:  message,
 			Position: position,
 		})
@@ -54,7 +55,7 @@ func getFormulationTokens(text string) ([]Token, []Diagnostic) {
 		}
 	}
 
-	getName := func(start Char) (string, bool) {
+	getName := func(start shared.Char) (string, bool) {
 		if i >= len(chars) || !isNameSymbol(start.Symbol) {
 			return "", false
 		}
@@ -66,7 +67,7 @@ func getFormulationTokens(text string) ([]Token, []Diagnostic) {
 		return result, true
 	}
 
-	getOperator := func(start Char) (string, bool) {
+	getOperator := func(start shared.Char) (string, bool) {
 		if i >= len(chars) || !isOperatorSymbol(start.Symbol) {
 			return "", false
 		}
@@ -78,7 +79,7 @@ func getFormulationTokens(text string) ([]Token, []Diagnostic) {
 		return result, true
 	}
 
-	getStroppedName := func(start Char) string {
+	getStroppedName := func(start shared.Char) string {
 		result := ""
 		for i < len(chars) && chars[i].Symbol != '"' {
 			result += string(chars[i].Symbol)
@@ -102,107 +103,107 @@ func getFormulationTokens(text string) ([]Token, []Diagnostic) {
 		i++
 		switch {
 		case cur.Symbol == ',':
-			appendToken(Token{
-				Type:     Comma,
+			appendToken(shared.Token{
+				Type:     shared.Comma,
 				Text:     ",",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '(':
-			appendToken(Token{
-				Type:     LParen,
+			appendToken(shared.Token{
+				Type:     shared.LParen,
 				Text:     "(",
 				Position: cur.Position,
 			})
 		case cur.Symbol == ')':
-			appendToken(Token{
-				Type:     RParen,
+			appendToken(shared.Token{
+				Type:     shared.RParen,
 				Text:     ")",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '[':
-			appendToken(Token{
-				Type:     LSquare,
+			appendToken(shared.Token{
+				Type:     shared.LSquare,
 				Text:     "[",
 				Position: cur.Position,
 			})
 		case cur.Symbol == ']':
-			appendToken(Token{
-				Type:     RSquare,
+			appendToken(shared.Token{
+				Type:     shared.RSquare,
 				Text:     "]",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '{':
-			appendToken(Token{
-				Type:     LCurly,
+			appendToken(shared.Token{
+				Type:     shared.LCurly,
 				Text:     "{",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '}':
-			appendToken(Token{
-				Type:     RCurly,
+			appendToken(shared.Token{
+				Type:     shared.RCurly,
 				Text:     "}",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '_':
-			appendToken(Token{
-				Type:     Underscore,
+			appendToken(shared.Token{
+				Type:     shared.Underscore,
 				Text:     "_",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '|':
-			appendToken(Token{
-				Type:     Bar,
+			appendToken(shared.Token{
+				Type:     shared.Bar,
 				Text:     "|",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '/':
-			appendToken(Token{
-				Type:     Slash,
+			appendToken(shared.Token{
+				Type:     shared.Slash,
 				Text:     "/",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '\\':
-			appendToken(Token{
-				Type:     BackSlash,
+			appendToken(shared.Token{
+				Type:     shared.BackSlash,
 				Text:     "\\",
 				Position: cur.Position,
 			})
 		case cur.Symbol == ';':
-			appendToken(Token{
-				Type:     Semicolon,
+			appendToken(shared.Token{
+				Type:     shared.Semicolon,
 				Text:     ";",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '?':
-			appendToken(Token{
-				Type:     QuestionMark,
+			appendToken(shared.Token{
+				Type:     shared.QuestionMark,
 				Text:     "?",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '^':
-			appendToken(Token{
-				Type:     Caret,
+			appendToken(shared.Token{
+				Type:     shared.Caret,
 				Text:     "^",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '"':
 			name := getStroppedName(cur)
-			appendToken(Token{
-				Type:     Name,
+			appendToken(shared.Token{
+				Type:     shared.Name,
 				Text:     name,
 				Position: cur.Position,
 			})
 		case cur.Symbol == '.':
 			if i+1 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' {
 				i += 2 // skip the ..
-				appendToken(Token{
-					Type:     DotDotDot,
+				appendToken(shared.Token{
+					Type:     shared.DotDotDot,
 					Text:     "...",
 					Position: cur.Position,
 				})
 			} else {
-				appendToken(Token{
-					Type:     Dot,
+				appendToken(shared.Token{
+					Type:     shared.Dot,
 					Text:     ".",
 					Position: cur.Position,
 				})
@@ -210,14 +211,14 @@ func getFormulationTokens(text string) ([]Token, []Diagnostic) {
 		case cur.Symbol == ':':
 			if i < len(chars) && chars[i].Symbol == '=' {
 				i++ // move past the =
-				appendToken(Token{
-					Type:     ColonEquals,
+				appendToken(shared.Token{
+					Type:     shared.ColonEquals,
 					Text:     ":=",
 					Position: cur.Position,
 				})
 			} else {
-				appendToken(Token{
-					Type:     Colon,
+				appendToken(shared.Token{
+					Type:     shared.Colon,
 					Text:     ":",
 					Position: cur.Position,
 				})
@@ -225,27 +226,27 @@ func getFormulationTokens(text string) ([]Token, []Diagnostic) {
 		default:
 			if name, ok := getName(cur); ok {
 				if name == "is" {
-					appendToken(Token{
-						Type:     Is,
+					appendToken(shared.Token{
+						Type:     shared.Is,
 						Text:     "is",
 						Position: cur.Position,
 					})
 				} else if name == "as" {
-					appendToken(Token{
-						Type:     As,
+					appendToken(shared.Token{
+						Type:     shared.As,
 						Text:     "as",
 						Position: cur.Position,
 					})
 				} else {
-					appendToken(Token{
-						Type:     Name,
+					appendToken(shared.Token{
+						Type:     shared.Name,
 						Text:     name,
 						Position: cur.Position,
 					})
 				}
 			} else if op, ok := getOperator(cur); ok {
-				appendToken(Token{
-					Type:     Operator,
+				appendToken(shared.Token{
+					Type:     shared.Operator,
 					Text:     op,
 					Position: cur.Position,
 				})

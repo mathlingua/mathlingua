@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package frontend
+package formulation
 
 import (
 	"fmt"
+	"mathlingua/internal/frontend/shared"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFormulationLexer(t *testing.T) {
-	lexer := NewFormulationLexer(`
+	lexer := NewLexer(`
 xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name'
 `)
 
@@ -105,5 +106,5 @@ name' Name
 `
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer.Diagnostics())
 }

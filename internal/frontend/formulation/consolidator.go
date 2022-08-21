@@ -14,4 +14,16 @@
  * limitations under the License.
  */
 
-package frontend
+package formulation
+
+import (
+	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend/shared"
+)
+
+// Converts ["x", "+", "y", ",", "z"] to ["x + y", "z"]
+// If canMultiplex is true, converts
+// ["x", "y", "[in]", "Z"] to ["x, y [in] Z"]
+func Consolidate(nodes []ast.NodeType, canMultiplex bool) ([]ast.NodeType, []shared.Diagnostic) {
+	return nil, nil
+}

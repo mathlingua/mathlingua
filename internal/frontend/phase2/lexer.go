@@ -14,43 +14,44 @@
  * limitations under the License.
  */
 
-package frontend
+package phase2
 
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend/shared"
 )
 
-func NewPhase2Lexer(phase1Lexer Lexer) Lexer {
-	return NewLexer(getPhase2Tokens(phase1Lexer))
+func NewLexer(phase1Lexer shared.Lexer) shared.Lexer {
+	return shared.NewLexer(getTokens(phase1Lexer))
 }
 
 //////////////////////////////////////////////////////////////////
 
-func getPhase2Tokens(lexer1 Lexer) ([]Token, []Diagnostic) {
-	tokens := make([]Token, 0)
-	diagnostics := make([]Diagnostic, 0)
+func getTokens(lexer1 shared.Lexer) ([]shared.Token, []shared.Diagnostic) {
+	tokens := make([]shared.Token, 0)
+	diagnostics := make([]shared.Diagnostic, 0)
 
 	diagnostics = append(diagnostics, lexer1.Diagnostics()...)
 	prevIndent := 0
 
-	appendToken := func(tok Token) {
+	appendToken := func(tok shared.Token) {
 		tokens = append(tokens, tok)
 	}
 
 	handleIndentsOrUnIndents := func(curIndent int, position ast.Position) {
 		if curIndent > prevIndent {
 			for j := 0; j < curIndent-prevIndent; j++ {
-				appendToken(Token{
-					Type:     Indent,
+				appendToken(shared.Token{
+					Type:     shared.Indent,
 					Text:     "<Indent>",
 					Position: position,
 				})
 			}
 		} else {
 			for j := 0; j < prevIndent-curIndent; j++ {
-				appendToken(Token{
-					Type:     UnIndent,
+				appendToken(shared.Token{
+					Type:     shared.UnIndent,
 					Text:     "<UnIndent>",
 					Position: position,
 				})
@@ -61,49 +62,49 @@ func getPhase2Tokens(lexer1 Lexer) ([]Token, []Diagnostic) {
 	for lexer1.HasNext() {
 		cur := lexer1.Next()
 
-		if cur.Type == Newline {
+		if cur.Type == shared.Newline {
 			appendToken(cur)
-			// if the Newline is followed by at least one more Newline
-			// also record a LineBreak
-			if lexer1.HasNext() && lexer1.Peek().Type == Newline {
-				for lexer1.HasNext() && lexer1.Peek().Type == Newline {
+			// if the shared.Newline is followed by at least one more shared.Newline
+			// also record a shared.LineBreak
+			if lexer1.HasNext() && lexer1.Peek().Type == shared.Newline {
+				for lexer1.HasNext() && lexer1.Peek().Type == shared.Newline {
 					lexer1.Next()
 				}
-				appendToken(Token{
-					Type:     LineBreak,
+				appendToken(shared.Token{
+					Type:     shared.LineBreak,
 					Text:     "<LineBreak>",
 					Position: cur.Position,
 				})
 			}
-			if lexer1.HasNext() && lexer1.Peek().Type != Space && lexer1.Peek().Type != DotSpace {
+			if lexer1.HasNext() && lexer1.Peek().Type != shared.Space && lexer1.Peek().Type != shared.DotSpace {
 				// since there isn't a space handle any unindents
 				handleIndentsOrUnIndents(0, cur.Position)
 				prevIndent = 0
 			}
-		} else if cur.Type == Space {
+		} else if cur.Type == shared.Space {
 			numSpaces := 1
-			for lexer1.HasNext() && lexer1.Peek().Type == Space {
+			for lexer1.HasNext() && lexer1.Peek().Type == shared.Space {
 				lexer1.Next()
 				numSpaces++
 			}
 			if numSpaces%2 == 1 {
-				diagnostics = append(diagnostics, Diagnostic{
-					Type:     Error,
-					Origin:   Phase2LexerOrigin,
+				diagnostics = append(diagnostics, shared.Diagnostic{
+					Type:     shared.Error,
+					Origin:   shared.Phase2LexerOrigin,
 					Message:  fmt.Sprintf("Expected an even indent but found %d", numSpaces),
 					Position: cur.Position,
 				})
 			}
 			curIndent := numSpaces / 2
-			if lexer1.HasNext() && lexer1.Peek().Type == DotSpace {
+			if lexer1.HasNext() && lexer1.Peek().Type == shared.DotSpace {
 				curIndent++
 			}
 			handleIndentsOrUnIndents(curIndent, cur.Position)
-			if lexer1.HasNext() && lexer1.Peek().Type == DotSpace {
+			if lexer1.HasNext() && lexer1.Peek().Type == shared.DotSpace {
 				appendToken(lexer1.Next())
 			}
 			prevIndent = curIndent
-		} else if cur.Type == DotSpace {
+		} else if cur.Type == shared.DotSpace {
 			curIndent := 1
 			handleIndentsOrUnIndents(curIndent, cur.Position)
 			appendToken(cur)

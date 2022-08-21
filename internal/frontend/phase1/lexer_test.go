@@ -14,51 +14,58 @@
  * limitations under the License.
  */
 
-package frontend
+package phase1
 
 import (
+	"mathlingua/internal/frontend/shared"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPhase2LexerIndent(t *testing.T) {
-	lexer1 := NewPhase1Lexer(`
-a:
-. b:
+func TestPhase1Lexer(t *testing.T) {
+	lexer1 := NewLexer(`
+a: x, y
+. b: 123
   . c:
-d:
+xyz: "abc",'123'
 `)
-	lexer2 := NewPhase2Lexer(lexer1)
 
 	actual := "\n"
-	for lexer2.HasNext() {
-		actual += lexer2.Next().Text + "\n"
+	for lexer1.HasNext() {
+		actual += lexer1.Next().Text + "\n"
 	}
 
 	expected := `
 <Newline>
 a
 :
+x
+,
+y
 <Newline>
-<Indent>
 <DotSpace>
 b
 :
+123
 <Newline>
-<Indent>
+<Space>
+<Space>
 <DotSpace>
 c
 :
 <Newline>
-<UnIndent>
-<UnIndent>
-d
+xyz
 :
+abc
+,
+123
 <Newline>
-<LineBreak>
+<Newline>
+<Newline>
+<Newline>
 `
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []Diagnostic{}, lexer2.Diagnostics())
+	assert.Equal(t, []shared.Diagnostic{}, lexer1.Diagnostics())
 }

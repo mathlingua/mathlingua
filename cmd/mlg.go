@@ -19,14 +19,14 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"mathlingua/internal/frontend"
+	"mathlingua/internal/frontend/formulation"
 	"os"
 )
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
 	line, _ := reader.ReadString('\n')
-	node, diagnostics, ok := frontend.ParseFormulation(line)
+	node, diagnostics, ok := formulation.Parse(line)
 	if ok {
 		fmt.Println("SUCCESS")
 	} else {

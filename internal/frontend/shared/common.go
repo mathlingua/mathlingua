@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package frontend
+package shared
 
 import "mathlingua/internal/ast"
 

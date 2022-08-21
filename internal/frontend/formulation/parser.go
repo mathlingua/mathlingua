@@ -14,54 +14,55 @@
  * limitations under the License.
  */
 
-package frontend
+package formulation
 
 import (
 	"fmt"
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend/shared"
 	"strings"
 )
 
-func ParseFormulation(text string) (ast.NodeType, []Diagnostic, bool) {
-	lexer := NewFormulationLexer(text)
+func Parse(text string) (ast.NodeType, []shared.Diagnostic, bool) {
+	lexer := NewLexer(text)
 	parser := formulationParser{
 		lexer:       lexer,
-		diagnostics: make([]Diagnostic, 0),
+		diagnostics: make([]shared.Diagnostic, 0),
 	}
 	node, _ := parser.structuralForm()
 	return node, parser.diagnostics, len(parser.diagnostics) == 0
 }
 
 type formulationParser struct {
-	lexer       Lexer
-	diagnostics []Diagnostic
+	lexer       shared.Lexer
+	diagnostics []shared.Diagnostic
 }
 
-func (fp *formulationParser) has(tokenType TokenType) bool {
+func (fp *formulationParser) has(tokenType shared.TokenType) bool {
 	return fp.lexer.HasNext() && fp.lexer.Peek().Type == tokenType
 }
 
-func (fp *formulationParser) hasHas(tokenType1 TokenType, tokenType2 TokenType) bool {
+func (fp *formulationParser) hasHas(tokenType1 shared.TokenType, tokenType2 shared.TokenType) bool {
 	return fp.lexer.HasNextNext() && fp.lexer.Peek().Type == tokenType1 && fp.lexer.PeekPeek().Type == tokenType2
 }
 
-func (fp *formulationParser) next() Token {
+func (fp *formulationParser) next() shared.Token {
 	return fp.lexer.Next()
 }
 
 func (fp *formulationParser) error(message string) {
-	fp.diagnostics = append(fp.diagnostics, Diagnostic{
-		Type:     Error,
-		Origin:   FormulationParserOrigin,
+	fp.diagnostics = append(fp.diagnostics, shared.Diagnostic{
+		Type:     shared.Error,
+		Origin:   shared.FormulationParserOrigin,
 		Message:  message,
 		Position: fp.lexer.Position(),
 	})
 }
 
-func (fp *formulationParser) expect(tokenType TokenType) (Token, bool) {
+func (fp *formulationParser) expect(tokenType shared.TokenType) (shared.Token, bool) {
 	if !fp.has(tokenType) {
 		fp.error(fmt.Sprintf("Expected a token of type %s", tokenType))
-		return Token{}, false
+		return shared.Token{}, false
 	}
 	return fp.next(), true
 }
@@ -81,7 +82,7 @@ func (fp *formulationParser) structuralForm() (ast.StructuralFormType, bool) {
 }
 
 func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
-	if !fp.has(Name) {
+	if !fp.has(shared.Name) {
 		return ast.NameForm{}, false
 	}
 
@@ -95,18 +96,18 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 	isVarArg := false
 	var varArgCount *string = nil
 	hasQuestionMark := false
-	if fp.has(DotDotDot) {
+	if fp.has(shared.DotDotDot) {
 		fp.next() // skip the ...
 		isVarArg = true
 
-		if fp.hasHas(Operator, Name) && fp.lexer.Peek().Text == "#" {
+		if fp.hasHas(shared.Operator, shared.Name) && fp.lexer.Peek().Text == "#" {
 			fp.next() // skip the #
 			text := fp.next().Text
 			varArgCount = &text
 		}
 	}
 
-	if fp.has(QuestionMark) {
+	if fp.has(shared.QuestionMark) {
 		fp.next() // skip the ?
 		hasQuestionMark = true
 	}
@@ -123,15 +124,15 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 }
 
 func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
-	if !fp.has(DotDotDot) {
+	if !fp.has(shared.DotDotDot) {
 		return ast.VarArgData{
 			IsVarArg:    false,
 			VarArgCount: nil,
 		}, false
 	}
-	fp.expect(DotDotDot)
+	fp.expect(shared.DotDotDot)
 	var varArgCount *string = nil
-	if fp.hasHas(Operator, Name) && fp.lexer.Peek().Text == "#" {
+	if fp.hasHas(shared.Operator, shared.Name) && fp.lexer.Peek().Text == "#" {
 		text := fp.next().Text
 		varArgCount = &text
 	}
@@ -142,7 +143,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 }
 
 func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
-	if !fp.hasHas(Name, LParen) {
+	if !fp.hasHas(shared.Name, shared.LParen) {
 		return ast.FunctionForm{}, false
 	}
 
@@ -152,14 +153,14 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 	}
 
 	params := make([]ast.NameForm, 0)
-	fp.expect(LParen)
+	fp.expect(shared.LParen)
 	for fp.lexer.HasNext() {
-		if fp.has(RParen) {
+		if fp.has(shared.RParen) {
 			break
 		}
 
 		if len(params) > 0 {
-			fp.expect(Comma)
+			fp.expect(shared.Comma)
 		}
 
 		param, ok := fp.nameForm()
@@ -171,7 +172,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 			params = append(params, param)
 		}
 	}
-	fp.expect(RParen)
+	fp.expect(shared.RParen)
 
 	varArgData, _ := fp.varArgData()
 	return ast.FunctionForm{

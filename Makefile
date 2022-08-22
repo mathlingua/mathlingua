@@ -3,6 +3,10 @@
 build:
 	go build ./...
 
+.PHONY: run
+run:
+	go run cmd/mlg.go
+
 .PHONY: test
 test:
 	go test ./...

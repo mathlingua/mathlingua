@@ -30,6 +30,7 @@ const (
 	Phase1LexerOrigin       DiagnosticOrigin = "Phase1LexerOrigin"
 	Phase2LexerOrigin       DiagnosticOrigin = "Phase2LexerOrigin"
 	Phase3LexerOrigin       DiagnosticOrigin = "Phase3LexerOrigin"
+	Phase4ParserOrigin      DiagnosticOrigin = "Phase4ParserOrigin"
 	FormulationLexerOrigin  DiagnosticOrigin = "FormulationLexerOrigin"
 	FormulationParserOrigin DiagnosticOrigin = "FormulationParserOrigin"
 )

@@ -158,40 +158,74 @@ func (p *phase4Parser) section() (Section, bool) {
 }
 
 func (p *phase4Parser) argument() (Argument, bool) {
+	if p.has(shared.BeginArgumentGroup) {
+		if p.has(shared.Id) {
+			id := p.lexer.Next()
+			idText := id.Text
+			if group, ok := p.argumentGroup(&idText); ok {
+				return Argument{
+					IsInline: false,
+					Arg:      group,
+					MetaData: Phase4MetaData{
+						Start: id.Position,
+					},
+				}, true
+			}
+
+			p.appendDiagnostic("Expected a group", id.Position)
+			return Argument{}, false
+		}
+
+		if group, ok := p.argumentGroup(nil); ok {
+			return Argument{
+				IsInline: false,
+				Arg:      group,
+				MetaData: Phase4MetaData{
+					Start: group.MetaData.Start,
+				},
+			}, true
+		}
+
+		p.appendDiagnostic("Expected a group", ast.Position{})
+		return Argument{}, false
+	}
+
+	if p.has(shared.BeginInlineArgument) {
+		start := p.lexer.Position()
+		if arg, ok := p.argumentData(); ok {
+			return Argument{
+				IsInline: true,
+				Arg:      arg,
+				MetaData: Phase4MetaData{
+					Start: start,
+				},
+			}, true
+		}
+
+		p.appendDiagnostic("Expected an argument", start)
+		return Argument{}, false
+	}
+
+	if p.has(shared.BeginDotSpaceArgument) {
+		start := p.lexer.Position()
+		if arg, ok := p.argumentData(); ok {
+			return Argument{
+				IsInline: false,
+				Arg:      arg,
+				MetaData: Phase4MetaData{
+					Start: start,
+				},
+			}, true
+		}
+
+		p.appendDiagnostic("Expected an argument", start)
+		return Argument{}, false
+	}
+
 	return Argument{}, false
 }
 
-func (p *phase4Parser) groupArgument() {
-	if !p.has(shared.BeginArgumentGroup) {
-	}
-}
-
-func (p *phase4Parser) dotSpaceArgument() {
-	if !p.has(shared.BeginDotSpaceArgument) {
-	}
-}
-
-func (p *phase4Parser) inlineArgument() {
-	if !p.has(shared.BeginInlineArgument) {
-	}
-}
-
 func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
-	/*
-		terminate := func(start ast.Position, terminator shared.TokenType) {
-			for p.lexer.HasNext() && !p.has(terminator) {
-				next := p.lexer.Next()
-				p.appendDiagnostic("Unexpected text", next.Position)
-			}
-
-			if p.has(terminator) {
-				p.lexer.Next() // move past the terminator
-			} else {
-				p.appendDiagnostic("Unterminated argument", start)
-			}
-		}
-	*/
-
 	if p.has(shared.ArgumentText) {
 		arg := p.lexer.Next()
 		return ArgumentTextArgumentData{

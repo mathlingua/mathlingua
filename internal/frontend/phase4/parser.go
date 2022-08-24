@@ -17,6 +17,7 @@
 package phase4
 
 import (
+	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
@@ -49,6 +50,19 @@ func (p *phase4Parser) appendDiagnostic(message string, position ast.Position) {
 
 func (p *phase4Parser) has(tokenType shared.TokenType) bool {
 	return p.lexer.HasNext() && p.lexer.Peek().Type == tokenType
+}
+
+func (p *phase4Parser) skipAheadPast(end shared.TokenType, unterminatedMessage string) {
+	for p.lexer.HasNext() && !p.has(end) {
+		next := p.lexer.Next()
+		p.appendDiagnostic(fmt.Sprintf("Unexpected text '%s'", next.Text), next.Position)
+	}
+
+	if p.has(end) {
+		p.lexer.Next() // absorb the end
+	} else {
+		p.appendDiagnostic(unterminatedMessage, p.lexer.Position())
+	}
 }
 
 func (p *phase4Parser) root() Root {
@@ -96,8 +110,8 @@ func (p *phase4Parser) group(id *string) (Group, bool) {
 		return Group{}, false
 	}
 
+	begin := p.lexer.Next() // skip the BeginGroup
 	sections := make([]Section, 0)
-	begin := p.lexer.Next() // skip the BeginTopLevelGroup
 	for p.lexer.HasNext() && !p.has(shared.EndGroup) {
 		if section, ok := p.section(); ok {
 			sections = append(sections, section)
@@ -107,11 +121,7 @@ func (p *phase4Parser) group(id *string) (Group, bool) {
 		}
 	}
 
-	if p.has(shared.EndGroup) {
-		p.lexer.Next() // move past then end of the group
-	} else {
-		p.appendDiagnostic("Unterminated group", begin.Position)
-	}
+	p.skipAheadPast(shared.EndGroup, "Unterminated group")
 
 	return Group{
 		Id:       id,
@@ -123,72 +133,79 @@ func (p *phase4Parser) group(id *string) (Group, bool) {
 }
 
 func (p *phase4Parser) section() (Section, bool) {
-	return Section{}, false
+	if !p.has(shared.BeginSection) {
+		return Section{}, false
+	}
+
+	begin := p.lexer.Next() // skip the BeginSection
+	var name string
+	if p.has(shared.Name) {
+		name = p.lexer.Next().Text
+	} else {
+		p.appendDiagnostic("Expected a <name>:", begin.Position)
+	}
+
+	args := make([]Argument, 0)
+	for p.lexer.HasNext() && !p.has(shared.EndSection) {
+		if arg, ok := p.argument(); ok {
+			args = append(args, arg)
+		} else {
+			next := p.lexer.Next()
+			p.appendDiagnostic(fmt.Sprintf("Expected an argument but found '%s'", next.Text), next.Position)
+		}
+	}
+
+	p.skipAheadPast(shared.EndSection, "Unterminated section")
+	return Section{
+		Name: name,
+		Args: args,
+		MetaData: Phase4MetaData{
+			Start: begin.Position,
+		},
+	}, true
 }
 
 func (p *phase4Parser) argument() (Argument, bool) {
-	if p.has(shared.BeginGroup) {
-		if p.has(shared.Id) {
-			id := p.lexer.Next()
-			idText := id.Text
-			if group, ok := p.group(&idText); ok {
-				return Argument{
-					IsInline: false,
-					Arg:      group,
-					MetaData: Phase4MetaData{
-						Start: id.Position,
-					},
-				}, true
-			}
-
-			p.appendDiagnostic("Expected a group", id.Position)
-			return Argument{}, false
-		}
-
-		if group, ok := p.group(nil); ok {
-			return Argument{
-				IsInline: false,
-				Arg:      group,
-				MetaData: Phase4MetaData{
-					Start: group.MetaData.Start,
-				},
-			}, true
-		}
-
-		p.appendDiagnostic("Expected a group", ast.Position{})
-		return Argument{}, false
-	}
-
 	if p.has(shared.BeginInlineArgument) {
+		p.lexer.Next() // skip the BeginInlineArgument
 		start := p.lexer.Position()
-		if arg, ok := p.argumentData(); ok {
-			return Argument{
+		var arg Argument
+		found := false
+		if data, ok := p.argumentData(); ok {
+			found = true
+			arg = Argument{
 				IsInline: true,
-				Arg:      arg,
+				Arg:      data,
 				MetaData: Phase4MetaData{
 					Start: start,
 				},
-			}, true
+			}
+		} else {
+			p.appendDiagnostic("Expected an argument", start)
 		}
-
-		p.appendDiagnostic("Expected an argument", start)
-		return Argument{}, false
+		p.skipAheadPast(shared.EndInlineArgument, "Unterminated argument")
+		return arg, found
 	}
 
 	if p.has(shared.BeginDotSpaceArgument) {
+		p.lexer.Next() // skip the BeginDotSpaceArgument
 		start := p.lexer.Position()
-		if arg, ok := p.argumentData(); ok {
-			return Argument{
+		var arg Argument
+		found := false
+		if data, ok := p.argumentData(); ok {
+			found = true
+			arg = Argument{
 				IsInline: false,
-				Arg:      arg,
+				Arg:      data,
 				MetaData: Phase4MetaData{
 					Start: start,
 				},
-			}, true
+			}
+		} else {
+			p.appendDiagnostic("Expected an argument", start)
 		}
-
-		p.appendDiagnostic("Expected an argument", start)
-		return Argument{}, false
+		p.skipAheadPast(shared.EndDotSpaceArgument, "Unterminated argument")
+		return arg, found
 	}
 
 	return Argument{}, false
@@ -225,5 +242,11 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 		}, true
 	}
 
-	return ArgumentTextArgumentData{}, false
+	if p.has(shared.Id) {
+		id := p.lexer.Next()
+		idText := id.Text
+		return p.group(&idText)
+	}
+
+	return p.group(nil)
 }

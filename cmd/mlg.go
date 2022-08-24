@@ -19,23 +19,35 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"mathlingua/internal/frontend/formulation"
+	"mathlingua/internal/frontend/phase1"
+	"mathlingua/internal/frontend/phase2"
+	"mathlingua/internal/frontend/phase3"
+	"mathlingua/internal/frontend/phase4"
 	"os"
+	"strings"
+
+	"github.com/kr/pretty"
 )
 
 func main() {
 	reader := bufio.NewReader(os.Stdin)
-	line, _ := reader.ReadString('\n')
-	node, diagnostics, ok := formulation.Parse(line)
-	if ok {
-		fmt.Println("SUCCESS")
-	} else {
-		fmt.Println("FAILURE")
+	text := ""
+	for !strings.HasSuffix(text, "\n\n\n") {
+		line, _ := reader.ReadString('\n')
+		text += line
 	}
 
-	fmt.Printf("%+v\n", node)
+	lexer1 := phase1.NewLexer(text)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := phase3.NewLexer(lexer2)
 
-	for _, diag := range diagnostics {
-		fmt.Println(diag)
+	root, diagnostics := phase4.Parse(lexer3)
+	fmt.Printf("%# v", pretty.Formatter(root))
+
+	if len(diagnostics) > 0 {
+		fmt.Println("\nDiagnostics:")
+		for _, diag := range diagnostics {
+			fmt.Printf("%#v\n", diag)
+		}
 	}
 }

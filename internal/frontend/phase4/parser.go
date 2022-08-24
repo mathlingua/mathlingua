@@ -58,13 +58,13 @@ func (p *phase4Parser) root() Root {
 		peek := p.lexer.Peek()
 		if peek.Type == shared.Id {
 			id := p.lexer.Next()
-			if group, ok := p.topLevelGroup(&id.Text); ok {
+			if group, ok := p.group(&id.Text); ok {
 				nodes = append(nodes, group)
 			} else {
 				p.appendDiagnostic("Expected a group to follow", id.Position)
 			}
-		} else if peek.Type == shared.BeginTopLevelGroup {
-			if group, ok := p.topLevelGroup(nil); ok {
+		} else if peek.Type == shared.BeginGroup {
+			if group, ok := p.group(nil); ok {
 				nodes = append(nodes, group)
 			} else {
 				p.appendDiagnostic("Expected a group", peek.Position)
@@ -91,14 +91,14 @@ func (p *phase4Parser) root() Root {
 	}
 }
 
-func (p *phase4Parser) topLevelGroup(id *string) (Group, bool) {
-	if !p.has(shared.BeginTopLevelGroup) {
+func (p *phase4Parser) group(id *string) (Group, bool) {
+	if !p.has(shared.BeginGroup) {
 		return Group{}, false
 	}
 
 	sections := make([]Section, 0)
 	begin := p.lexer.Next() // skip the BeginTopLevelGroup
-	for p.lexer.HasNext() && !p.has(shared.EndTopLevelGroup) {
+	for p.lexer.HasNext() && !p.has(shared.EndGroup) {
 		if section, ok := p.section(); ok {
 			sections = append(sections, section)
 		} else {
@@ -107,38 +107,7 @@ func (p *phase4Parser) topLevelGroup(id *string) (Group, bool) {
 		}
 	}
 
-	if p.has(shared.EndTopLevelGroup) {
-		p.lexer.Next() // move past then end of the group
-	} else {
-		p.appendDiagnostic("Unterminated group", begin.Position)
-	}
-
-	return Group{
-		Id:       id,
-		Sections: sections,
-		MetaData: Phase4MetaData{
-			Start: begin.Position,
-		},
-	}, true
-}
-
-func (p *phase4Parser) argumentGroup(id *string) (Group, bool) {
-	if !p.has(shared.BeginArgumentGroup) {
-		return Group{}, false
-	}
-
-	sections := make([]Section, 0)
-	begin := p.lexer.Next() // skip the BeginArgumentGroup
-	for p.lexer.HasNext() && !p.has(shared.EndArgumentGroup) {
-		if section, ok := p.section(); ok {
-			sections = append(sections, section)
-		} else {
-			next := p.lexer.Next()
-			p.appendDiagnostic("Expected a section", next.Position)
-		}
-	}
-
-	if p.has(shared.EndArgumentGroup) {
+	if p.has(shared.EndGroup) {
 		p.lexer.Next() // move past then end of the group
 	} else {
 		p.appendDiagnostic("Unterminated group", begin.Position)
@@ -158,11 +127,11 @@ func (p *phase4Parser) section() (Section, bool) {
 }
 
 func (p *phase4Parser) argument() (Argument, bool) {
-	if p.has(shared.BeginArgumentGroup) {
+	if p.has(shared.BeginGroup) {
 		if p.has(shared.Id) {
 			id := p.lexer.Next()
 			idText := id.Text
-			if group, ok := p.argumentGroup(&idText); ok {
+			if group, ok := p.group(&idText); ok {
 				return Argument{
 					IsInline: false,
 					Arg:      group,
@@ -176,7 +145,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 			return Argument{}, false
 		}
 
-		if group, ok := p.argumentGroup(nil); ok {
+		if group, ok := p.group(nil); ok {
 			return Argument{
 				IsInline: false,
 				Arg:      group,

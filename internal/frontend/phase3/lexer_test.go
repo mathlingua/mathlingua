@@ -39,11 +39,11 @@ a:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -63,14 +63,14 @@ a: xyz
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginInlineArgument>
 			xyz
 		<EndInlineArgument>
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -90,7 +90,7 @@ a: xyz, abc
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginInlineArgument>
@@ -100,7 +100,7 @@ a: xyz, abc
 		abc
 		<EndInlineArgument>
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -123,28 +123,28 @@ d:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					b
 					<BeginDotSpaceArgument>
-						<BeginArgumentGroup>
+						<BeginGroup>
 							<BeginSection>
 								c
 							<EndSection>
-						<EndArgumentGroup>
+						<EndGroup>
 					<EndDotSpaceArgument>
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		d
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -168,22 +168,22 @@ e:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					b
 					<BeginDotSpaceArgument>
-						<BeginArgumentGroup>
+						<BeginGroup>
 							<BeginSection>
 								c
 							<EndSection>
-						<EndArgumentGroup>
+						<EndGroup>
 					<EndDotSpaceArgument>
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
@@ -192,7 +192,7 @@ e:
 	<BeginSection>
 		e
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -214,25 +214,25 @@ a:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					b
 					<BeginDotSpaceArgument>
-						<BeginArgumentGroup>
+						<BeginGroup>
 							<BeginSection>
 								c
 							<EndSection>
-						<EndArgumentGroup>
+						<EndGroup>
 					<EndDotSpaceArgument>
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -254,7 +254,7 @@ a:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginDotSpaceArgument>
@@ -264,7 +264,7 @@ a:
 			c
 		<EndDotSpaceArgument>
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -286,25 +286,25 @@ a:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					b
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					c
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -326,7 +326,7 @@ c:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 	<EndSection>
@@ -336,7 +336,7 @@ c:
 	<BeginSection>
 		c
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -364,34 +364,34 @@ c:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					x
 				<EndSection>
 				<BeginSection>
 					y
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		b
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					A
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		c
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					P
 				<EndSection>
@@ -401,10 +401,10 @@ c:
 				<BeginSection>
 					R
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
@@ -432,11 +432,11 @@ c:
 	}
 
 	expected := strings.ReplaceAll(`
-<BeginTopLevelGroup>
+<BeginGroup>
 	<BeginSection>
 		a
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					x
 					<BeginInlineArgument>
@@ -455,13 +455,13 @@ c:
 						y1
 					<EndInlineArgument>
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		b
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					A
 					<BeginInlineArgument>
@@ -471,13 +471,13 @@ c:
 						A2
 					<EndInlineArgument>
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
 	<BeginSection>
 		c
 		<BeginDotSpaceArgument>
-			<BeginArgumentGroup>
+			<BeginGroup>
 				<BeginSection>
 					P
 				<EndSection>
@@ -490,10 +490,10 @@ c:
 				<BeginSection>
 					R
 				<EndSection>
-			<EndArgumentGroup>
+			<EndGroup>
 		<EndDotSpaceArgument>
 	<EndSection>
-<EndTopLevelGroup>
+<EndGroup>
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)

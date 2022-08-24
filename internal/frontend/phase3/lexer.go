@@ -45,18 +45,10 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 		})
 	}
 
-	appendEndArgumentGroup := func() {
+	appendEndGroup := func() {
 		tokens = append(tokens, shared.Token{
-			Type:     shared.EndArgumentGroup,
-			Text:     "<EndArgumentGroup>",
-			Position: lexer2.Position(),
-		})
-	}
-
-	appendEndTopLevelGroup := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.EndTopLevelGroup,
-			Text:     "<EndTopLevelGroup>",
+			Type:     shared.EndGroup,
+			Text:     "<EndGroup>",
 			Position: lexer2.Position(),
 		})
 	}
@@ -86,22 +78,13 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 		stack.Push(shared.BeginSection)
 	}
 
-	beginTopLevelGroup := func() {
+	beginGroup := func() {
 		tokens = append(tokens, shared.Token{
-			Type:     shared.BeginTopLevelGroup,
-			Text:     "<BeginTopLevelGroup>",
+			Type:     shared.BeginGroup,
+			Text:     "<BeginGroup>",
 			Position: lexer2.Position(),
 		})
-		stack.Push(shared.BeginTopLevelGroup)
-	}
-
-	beginArgumentGroup := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.BeginArgumentGroup,
-			Text:     "<BeginArgumentGroup>",
-			Position: lexer2.Position(),
-		})
-		stack.Push(shared.BeginArgumentGroup)
+		stack.Push(shared.BeginGroup)
 	}
 
 	beginDotSpaceArgument := func() {
@@ -129,10 +112,10 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	maybeEndArgumentGroup := func() {
-		if !stack.IsEmpty() && stack.Peek() == shared.BeginArgumentGroup {
+	maybeEndGroup := func() {
+		if !stack.IsEmpty() && stack.Peek() == shared.BeginGroup {
 			stack.Pop()
-			appendEndArgumentGroup()
+			appendEndGroup()
 		}
 	}
 
@@ -189,7 +172,7 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 	for lexer2.HasNext() {
 		if hasNameColon() {
 			if stack.IsEmpty() {
-				beginTopLevelGroup()
+				beginGroup()
 			}
 			maybeEndSection()
 			beginSection()
@@ -201,31 +184,29 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 			skipNext()
 			beginDotSpaceArgument()
 			if hasNameColon() {
-				beginArgumentGroup()
+				beginGroup()
 			}
 		} else if has(shared.DotSpace) {
 			skipNext()
 			maybeEndSection()
-			maybeEndArgumentGroup()
+			maybeEndGroup()
 			maybeEndDotSpaceArgument()
 			beginDotSpaceArgument()
 			if hasNameColon() {
-				beginArgumentGroup()
+				beginGroup()
 			}
 		} else if has(shared.UnIndent) {
 			skipNext()
 			maybeEndSection()
-			maybeEndArgumentGroup()
+			maybeEndGroup()
 			maybeEndDotSpaceArgument()
 		} else if has(shared.LineBreak) {
 			for !stack.IsEmpty() {
 				top := stack.Pop()
 				if top == shared.BeginSection {
 					appendEndSection()
-				} else if top == shared.BeginArgumentGroup {
-					appendEndArgumentGroup()
-				} else if top == shared.BeginTopLevelGroup {
-					appendEndTopLevelGroup()
+				} else if top == shared.BeginGroup {
+					appendEndGroup()
 				} else if top == shared.BeginDotSpaceArgument {
 					appendEndDotSpaceArgument()
 				} else if top == shared.BeginInlineArgument {

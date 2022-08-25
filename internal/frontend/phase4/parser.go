@@ -87,7 +87,7 @@ func (p *phase4Parser) root() Root {
 			textBlock := p.lexer.Next()
 			nodes = append(nodes, TextBlock{
 				Text: textBlock.Text,
-				MetaData: Phase4MetaData{
+				MetaData: MetaData{
 					Start: textBlock.Position,
 				},
 			})
@@ -99,7 +99,7 @@ func (p *phase4Parser) root() Root {
 	}
 	return Root{
 		Nodes: nodes,
-		MetaData: Phase4MetaData{
+		MetaData: MetaData{
 			Start: start,
 		},
 	}
@@ -126,7 +126,7 @@ func (p *phase4Parser) group(id *string) (Group, bool) {
 	return Group{
 		Id:       id,
 		Sections: sections,
-		MetaData: Phase4MetaData{
+		MetaData: MetaData{
 			Start: begin.Position,
 		},
 	}, true
@@ -159,7 +159,7 @@ func (p *phase4Parser) section() (Section, bool) {
 	return Section{
 		Name: name,
 		Args: args,
-		MetaData: Phase4MetaData{
+		MetaData: MetaData{
 			Start: begin.Position,
 		},
 	}, true
@@ -176,7 +176,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 			arg = Argument{
 				IsInline: true,
 				Arg:      data,
-				MetaData: Phase4MetaData{
+				MetaData: MetaData{
 					Start: start,
 				},
 			}
@@ -197,7 +197,7 @@ func (p *phase4Parser) argument() (Argument, bool) {
 			arg = Argument{
 				IsInline: false,
 				Arg:      data,
-				MetaData: Phase4MetaData{
+				MetaData: MetaData{
 					Start: start,
 				},
 			}
@@ -216,7 +216,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 		arg := p.lexer.Next()
 		return ArgumentTextArgumentData{
 			Text: arg.Text,
-			MetaData: Phase4MetaData{
+			MetaData: MetaData{
 				Start: arg.Position,
 			},
 		}, true
@@ -226,7 +226,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 		arg := p.lexer.Next()
 		return FormulationArgumentData{
 			Text: arg.Text,
-			MetaData: Phase4MetaData{
+			MetaData: MetaData{
 				Start: arg.Position,
 			},
 		}, true
@@ -236,7 +236,7 @@ func (p *phase4Parser) argumentData() (ArgumentDataType, bool) {
 		arg := p.lexer.Next()
 		return TextArgumentData{
 			Text: arg.Text,
-			MetaData: Phase4MetaData{
+			MetaData: MetaData{
 				Start: arg.Position,
 			},
 		}, true

@@ -18,41 +18,41 @@ package phase4
 
 import "mathlingua/internal/ast"
 
-type Phase4MetaData struct {
+type MetaData struct {
 	Start ast.Position
 }
 
 type Group struct {
 	Id       *string
 	Sections []Section
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type Section struct {
 	Name     string
 	Args     []Argument
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type Argument struct {
 	IsInline bool
 	Arg      ArgumentDataType
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type TextArgumentData struct {
 	Text     string
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type FormulationArgumentData struct {
 	Text     string
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type ArgumentTextArgumentData struct {
 	Text     string
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type ArgumentDataType interface {
@@ -66,12 +66,12 @@ func (ArgumentTextArgumentData) ArgumentDataType() {}
 
 type TextBlock struct {
 	Text     string
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type Root struct {
 	Nodes    []TopLevelNodeType
-	MetaData Phase4MetaData
+	MetaData MetaData
 }
 
 type TopLevelNodeType interface {

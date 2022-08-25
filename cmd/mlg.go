@@ -42,10 +42,17 @@ func main() {
 	lexer3 := phase3.NewLexer(lexer2)
 
 	root, diagnostics := phase4.Parse(lexer3)
-	fmt.Printf("%# v", pretty.Formatter(root))
+
+	fmt.Println("AST:")
+	fmt.Println("----")
+	fmt.Printf("%# v\n\n", pretty.Formatter(root))
+
+	fmt.Println("Generated Code:")
+	fmt.Println("---------------")
+	fmt.Println(root.ToCode())
 
 	if len(diagnostics) > 0 {
-		fmt.Println("\nDiagnostics:")
+		fmt.Println("\n\nDiagnostics:")
 		for _, diag := range diagnostics {
 			fmt.Printf("%#v\n", diag)
 		}

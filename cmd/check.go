@@ -23,9 +23,14 @@ import (
 )
 
 var checkCommand = &cobra.Command{
-	Use: "check",
+	Use:   "check [FILE...]",
+	Short: "Check MathLingua files for errors",
+	Long: "Checks the specified MathLingua (.math) files for errors, defaulting to all MathLingua " +
+		"files in the 'content' directory and all sub-directories if none are explicitly provided.",
+	Args: cobra.MinimumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("in check")
+		fmt.Println(args)
 	},
 }
 

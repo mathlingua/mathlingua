@@ -5,7 +5,7 @@ build:
 
 .PHONY: run
 run:
-	go run cmd/mlg.go
+	go run main.go
 
 .PHONY: test
 test:

@@ -14,10 +14,21 @@
  * limitations under the License.
  */
 
-package main
+package cmd
 
-import "mathlingua/cmd"
+import (
+	"fmt"
 
-func main() {
-	cmd.Execute()
+	"github.com/spf13/cobra"
+)
+
+var checkCommand = &cobra.Command{
+	Use: "check",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println("in check")
+	},
+}
+
+func init() {
+	rootCmd.AddCommand(checkCommand)
 }

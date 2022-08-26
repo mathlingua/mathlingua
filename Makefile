@@ -1,7 +1,7 @@
 
 .PHONY: build
 build:
-	go build ./...
+	go build -o mlg main.go
 
 .PHONY: run
 run:

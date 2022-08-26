@@ -17,7 +17,7 @@
 package cmd
 
 import (
-	"fmt"
+	"mathlingua/pkg/mlg"
 
 	"github.com/spf13/cobra"
 )
@@ -29,8 +29,7 @@ var checkCommand = &cobra.Command{
 		"files in the 'content' directory and all sub-directories if none are explicitly provided.",
 	Args: cobra.MinimumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("in check")
-		fmt.Println(args)
+		mlg.NewMlg(mlg.NewLogger()).Check()
 	},
 }
 

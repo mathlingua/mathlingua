@@ -17,11 +17,7 @@
 package cmd
 
 import (
-	"fmt"
-	"os"
-	"path"
-	"path/filepath"
-	"strings"
+	"mathlingua/pkg/mlg"
 
 	"github.com/spf13/cobra"
 )
@@ -32,44 +28,7 @@ var docCommand = &cobra.Command{
 	Long: "Generates HTML documents in the 'docs' directory for all MathLingua (.math) " +
 		"files in the 'content' directory and all sub-directories.",
 	Run: func(cmd *cobra.Command, args []string) {
-		err := filepath.Walk("contents", func(p string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if !info.IsDir() && strings.HasSuffix(p, ".math") {
-				bytes, err := os.ReadFile(p)
-				if err != nil {
-					fmt.Printf("ERROR: Failed to read '%s': %s\n", p, err)
-				} else {
-					htmlRelPath := strings.TrimSuffix(p, ".math") + ".html"
-					htmlDocPath := path.Join("docs", htmlRelPath)
-
-					output := fmt.Sprintf("<html><pre>%s</pre></html>", string(bytes))
-
-					base := path.Dir(htmlDocPath)
-					doWrite := true
-					if err := os.MkdirAll(base, 0700); err != nil {
-						if !os.IsExist(err) {
-							doWrite = false
-							fmt.Printf("ERROR: Failed to create the directory '%s': %s\n", base, err)
-						}
-					}
-
-					if doWrite {
-						if err := os.WriteFile(htmlDocPath, []byte(output), 0644); err != nil {
-							fmt.Printf("ERROR: Failed to generate '%s': %s\n", htmlDocPath, err)
-						}
-					}
-				}
-			}
-
-			return nil
-		})
-
-		if err != nil && !os.IsNotExist(err) {
-			fmt.Printf("ERROR: Failed to generate documentation: %s\n", err)
-		}
+		mlg.NewMlg(mlg.NewLogger()).Doc()
 	},
 }
 

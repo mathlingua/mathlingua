@@ -16,11 +16,18 @@
 
 package mlg
 
-import "fmt"
+import (
+	"fmt"
+
+	"github.com/fatih/color"
+)
 
 type Logger interface {
-	error(text string)
-	log(text string)
+	Error(text string)
+	Warning(text string)
+	Failure(text string)
+	Success(text string)
+	Log(text string)
 }
 
 func NewLogger() Logger {
@@ -29,12 +36,40 @@ func NewLogger() Logger {
 
 ////////////////////////////////////////////////
 
+var boldGreenColor = color.New(color.FgGreen, color.Bold)
+var boldRedColor = color.New(color.FgRed, color.Bold)
+var boldYellowColor = color.New(color.FgYellow, color.Bold)
+
 type logger struct{}
 
-func (lg *logger) error(text string) {
-	fmt.Println(text)
+func boldRed(text string) string {
+	return boldRedColor.Sprint(text)
 }
 
-func (lg *logger) log(text string) {
+func boldGreen(text string) string {
+	return boldGreenColor.Sprint(text)
+}
+
+func boldYellow(text string) string {
+	return boldYellowColor.Sprint(text)
+}
+
+func (lg *logger) Error(text string) {
+	fmt.Printf("%s %s\n", boldRed("ERROR:"), text)
+}
+
+func (lg *logger) Warning(text string) {
+	fmt.Printf("%s %s\n", boldYellow("WARNING:"), text)
+}
+
+func (lg *logger) Failure(text string) {
+	fmt.Printf("%s %s\n", boldRed("FAILURE:"), text)
+}
+
+func (lg *logger) Success(text string) {
+	fmt.Printf("%s %s\n", boldGreen("SUCCESS:"), text)
+}
+
+func (lg *logger) Log(text string) {
 	fmt.Println(text)
 }

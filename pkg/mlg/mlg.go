@@ -72,6 +72,14 @@ func parse(text string) (phase4.Root, []frontend.Diagnostic) {
 func (m *mlg) Check(paths []string) {
 	if len(paths) == 0 {
 		paths = append(paths, "contents")
+	} else {
+		for _, p := range paths {
+			stat, _ := os.Stat(p)
+			isDir := stat != nil && stat.IsDir()
+			if !isDir && !strings.HasSuffix(p, ".math") {
+				m.logger.Warning(fmt.Sprintf("File %s is not a MathLingua (.math) file and will be ignored", p))
+			}
+		}
 	}
 	numErrors := 0
 	numFilesProcessed := 0
@@ -105,9 +113,9 @@ func (m *mlg) Check(paths []string) {
 				// from other files that have already been reported
 				if index > 0 || numErrors > 0 {
 					// have a blank line between errors
-					m.logger.error("")
+					m.logger.Log("")
 				}
-				m.logger.error(fmt.Sprintf("ERROR: %s (%d, %d)\n%s", p, diag.Position.Row+1, diag.Position.Column+1, diag.Message))
+				m.logger.Error(fmt.Sprintf("%s (%d, %d)\n%s", p, diag.Position.Row+1, diag.Position.Column+1, diag.Message))
 			}
 			numErrors += len(diagnostics)
 
@@ -115,7 +123,7 @@ func (m *mlg) Check(paths []string) {
 		})
 
 		if err != nil {
-			m.logger.error(fmt.Sprintf("ERROR: %s", err))
+			m.logger.Error(err.Error())
 			continue
 		}
 	}
@@ -135,9 +143,10 @@ func (m *mlg) Check(paths []string) {
 	}
 
 	if numErrors > 0 {
-		m.logger.error(fmt.Sprintf("\nFAILURE: Processed %d %s and found %d %s", numFilesProcessed, filesText, numErrors, errorText))
+		m.logger.Log("")
+		m.logger.Failure(fmt.Sprintf("Processed %d %s and found %d %s", numFilesProcessed, filesText, numErrors, errorText))
 	} else {
-		m.logger.log(fmt.Sprintf("SUCCESS: Processed %d %s and found 0 errors", numFilesProcessed, filesText))
+		m.logger.Success(fmt.Sprintf("Processed %d %s and found 0 errors", numFilesProcessed, filesText))
 	}
 }
 
@@ -150,7 +159,7 @@ func (m *mlg) Doc() {
 		if !info.IsDir() && strings.HasSuffix(p, ".math") {
 			bytes, err := os.ReadFile(p)
 			if err != nil {
-				m.logger.error(fmt.Sprintf("ERROR: Failed to read '%s': %s", p, err))
+				m.logger.Error(fmt.Sprintf("Failed to read '%s': %s", p, err))
 			} else {
 				htmlRelPath := strings.TrimSuffix(p, ".math") + ".html"
 				htmlDocPath := path.Join("docs", htmlRelPath)
@@ -162,13 +171,13 @@ func (m *mlg) Doc() {
 				if err := os.MkdirAll(base, 0700); err != nil {
 					if !os.IsExist(err) {
 						doWrite = false
-						m.logger.error(fmt.Sprintf("ERROR: Failed to create the directory '%s': %s", base, err))
+						m.logger.Error(fmt.Sprintf("Failed to create the directory '%s': %s", base, err))
 					}
 				}
 
 				if doWrite {
 					if err := os.WriteFile(htmlDocPath, []byte(output), 0644); err != nil {
-						m.logger.error(fmt.Sprintf("ERROR: Failed to generate '%s': %s", htmlDocPath, err))
+						m.logger.Error(fmt.Sprintf("Failed to generate '%s': %s", htmlDocPath, err))
 					}
 				}
 			}
@@ -183,7 +192,7 @@ func (m *mlg) Doc() {
 }
 
 func (m *mlg) logCleanError(message string) {
-	m.logger.error(fmt.Sprintf("ERROR: Failed to delete the 'docs' directory: %s", message))
+	m.logger.Error(fmt.Sprintf("Failed to delete the 'docs' directory: %s", message))
 }
 
 func (m *mlg) Clean() {
@@ -208,6 +217,6 @@ func (m *mlg) Clean() {
 	if err := os.RemoveAll("docs"); err != nil {
 		m.logCleanError(err.Error())
 	} else {
-		m.logger.log("SUCCESS: Deleted the 'docs' directory.")
+		m.logger.Success("Deleted the 'docs' directory.")
 	}
 }

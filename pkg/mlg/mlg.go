@@ -71,7 +71,7 @@ func parse(text string) (phase4.Root, []frontend.Diagnostic) {
 
 func (m *mlg) Check(paths []string) {
 	if len(paths) == 0 {
-		paths = append(paths, "contents")
+		paths = append(paths, "content")
 	} else {
 		for _, p := range paths {
 			stat, _ := os.Stat(p)
@@ -151,7 +151,7 @@ func (m *mlg) Check(paths []string) {
 }
 
 func (m *mlg) Doc() {
-	err := filepath.Walk("contents", func(p string, info os.FileInfo, err error) error {
+	err := filepath.Walk("content", func(p string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

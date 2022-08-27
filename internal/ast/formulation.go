@@ -27,8 +27,38 @@ type NodeType interface {
 	NodeType()
 }
 
-func (NameForm) NodeType()     {}
-func (FunctionForm) NodeType() {}
+func (NameForm) NodeType()                      {}
+func (FunctionForm) NodeType()                  {}
+func (FunctionExpressionForm) NodeType()        {}
+func (TupleForm) NodeType()                     {}
+func (FixedSetForm) NodeType()                  {}
+func (ConditionalSetForm) NodeType()            {}
+func (ConditionalSetIdForm) NodeType()          {}
+func (FunctionCallExpression) NodeType()        {}
+func (TupleExpression) NodeType()               {}
+func (FixedSetExpression) NodeType()            {}
+func (ConditionalSetExpression) NodeType()      {}
+func (CommandExpression) NodeType()             {}
+func (CommandAtExpression) NodeType()           {}
+func (PrefixOperatorCallExpression) NodeType()  {}
+func (PostfixOperatorCallExpression) NodeType() {}
+func (InfixOperatorCallExpression) NodeType()   {}
+func (IsExpression) NodeType()                  {}
+func (AsExpression) NodeType()                  {}
+func (NameOrdinalCallExpression) NodeType()     {}
+func (ChainExpression) NodeType()               {}
+func (Signature) NodeType()                     {}
+func (MetaKinds) NodeType()                     {}
+func (StructuralColonEqualsForm) NodeType()     {}
+func (ExpressionColonEqualsItem) NodeType()     {}
+func (ExpressionColonEqualsIsItem) NodeType()   {}
+func (NonCommandOperatorTarget) NodeType()      {}
+func (CommandOperatorTarget) NodeType()         {}
+func (CommandId) NodeType()                     {}
+func (CommandAtId) NodeType()                   {}
+func (PrefixOperatorId) NodeType()              {}
+func (PostfixOperatorId) NodeType()             {}
+func (InfixOperatorId) NodeType()               {}
 
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 

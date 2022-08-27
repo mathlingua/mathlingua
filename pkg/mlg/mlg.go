@@ -18,6 +18,7 @@ package mlg
 
 import (
 	"fmt"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase1"
 	"mathlingua/internal/frontend/phase2"
 	"mathlingua/internal/frontend/phase3"
@@ -51,6 +52,23 @@ type mlg struct {
 	logger Logger
 }
 
+func parse(text string) (phase4.Root, []frontend.Diagnostic) {
+	allDiagnostics := make([]frontend.Diagnostic, 0)
+
+	lexer1 := phase1.NewLexer(text)
+	lexer2 := phase2.NewLexer(lexer1)
+	lexer3 := phase3.NewLexer(lexer2)
+
+	root, phase4Diagnostics := phase4.Parse(lexer3)
+
+	allDiagnostics = append(allDiagnostics, lexer1.Diagnostics()...)
+	allDiagnostics = append(allDiagnostics, lexer2.Diagnostics()...)
+	allDiagnostics = append(allDiagnostics, lexer3.Diagnostics()...)
+	allDiagnostics = append(allDiagnostics, phase4Diagnostics...)
+
+	return root, allDiagnostics
+}
+
 func (m *mlg) Check(paths []string) {
 	if len(paths) == 0 {
 		paths = append(paths, "contents")
@@ -60,11 +78,13 @@ func (m *mlg) Check(paths []string) {
 	for _, p := range paths {
 		err := filepath.Walk(p, func(p string, info os.FileInfo, err error) error {
 			if err != nil {
+				numErrors++
 				return err
 			}
 
 			stat, err := os.Stat(p)
 			if err != nil {
+				numErrors++
 				return err
 			}
 
@@ -74,15 +94,12 @@ func (m *mlg) Check(paths []string) {
 
 			bytes, err := os.ReadFile(p)
 			if err != nil {
+				numErrors++
 				return err
 			}
 
 			numFilesProcessed++
-			lexer1 := phase1.NewLexer(string(bytes))
-			lexer2 := phase2.NewLexer(lexer1)
-			lexer3 := phase3.NewLexer(lexer2)
-
-			_, diagnostics := phase4.Parse(lexer3)
+			_, diagnostics := parse(string(bytes))
 			for index, diag := range diagnostics {
 				// make sure there is a space between errors including errors
 				// from other files that have already been reported

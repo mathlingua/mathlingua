@@ -16,21 +16,131 @@
 
 package ast
 
-type Formulation struct {
+type Formulation[T NodeType] struct {
 	RawText string
-	Root    FormulationType
+	Root    T
 	Label   *string
 }
 
-type IfSection struct {
-	Formulations []Formulation
+type Clause = Formulation[NodeType]
+type Target = Formulation[NodeType]
+type Spec = Formulation[NodeType]
+
+type AndSection struct {
+	Clauses []Clause
+}
+
+type AndGroup struct {
+	And AndSection
+}
+
+type NotSection struct {
+	Clause Clause
+}
+
+type NotGroup struct {
+	Not NotSection
+}
+
+type OrSection struct {
+	Clauses []Clause
+}
+
+type OrGroup struct {
+	Or OrSection
+}
+
+type ExistsSection struct {
+	Targets []Target
+}
+
+type WhereSection struct {
+	Specs []Spec
+}
+
+type SuchThatSection struct {
+	Clauses []Clause
+}
+
+type ExistsGroup struct {
+	Exists   ExistsSection
+	Where    *WhereSection
+	SuchThat SuchThatSection
+}
+
+type ExistsUniqueSection struct {
+	Specs []Spec
+}
+
+type ExistsUniqueGroup struct {
+	ExistsUnique ExistsUniqueSection
+	Where        *WhereSection
+	SuchThat     SuchThatSection
+}
+
+type ForAllSection struct {
+	Targets []Target
 }
 
 type ThenSection struct {
-	Formulation []Formulation
+	Clauses []Clause
+}
+
+type ForAllGroup struct {
+	ForAll   ForAllSection
+	Where    *WhereSection
+	SuchThat *SuchThatSection
+	Then     ThenSection
+}
+
+type IfSection struct {
+	Clauses []Clause
 }
 
 type IfGroup struct {
 	If   IfSection
 	Then ThenSection
+}
+
+type IffSection struct {
+	Clauses []Clause
+}
+
+type IffGroup struct {
+	Iff  IffSection
+	Then ThenSection
+}
+
+type GeneratedSection struct{}
+
+type FromSection struct {
+	Items []NodeType
+}
+
+type WhenSection struct {
+	Items []NodeType
+}
+
+type GeneratedGroup struct {
+	Generated GeneratedSection
+	From      FromSection
+	When      *WhenSection
+}
+
+type PiecewiseSection struct {
+}
+
+type ElseSection struct {
+	Items []NodeType
+}
+
+type PiecewiseGroup struct {
+	Piecewise PiecewiseSection
+	When      *WhenSection
+	Then      *ThenSection
+	Else      *ElseSection
+}
+
+type MatchingSection struct {
+	Items []NodeType
 }

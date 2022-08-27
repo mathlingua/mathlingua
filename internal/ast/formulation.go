@@ -44,6 +44,7 @@ func (PrefixOperatorCallExpression) NodeType()  {}
 func (PostfixOperatorCallExpression) NodeType() {}
 func (InfixOperatorCallExpression) NodeType()   {}
 func (IsExpression) NodeType()                  {}
+func (IsNotExpression) NodeType()               {}
 func (AsExpression) NodeType()                  {}
 func (NameOrdinalCallExpression) NodeType()     {}
 func (ChainExpression) NodeType()               {}
@@ -232,6 +233,12 @@ type InfixOperatorCallExpression struct {
 
 // x is \y
 type IsExpression struct {
+	Lhs []ExpressionType
+	Rhs []KindType
+}
+
+// x isnot \y
+type IsNotExpression struct {
 	Lhs []ExpressionType
 	Rhs []KindType
 }

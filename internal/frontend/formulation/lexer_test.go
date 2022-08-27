@@ -26,7 +26,7 @@ import (
 
 func TestFormulationLexer(t *testing.T) {
 	lexer := NewLexer(`
-xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name'
+xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name' isnot
 `)
 
 	actual := "\n"
@@ -103,6 +103,7 @@ something Name
 ] RSquare
 "*+" Name
 name' Name
+isnot IsNot
 `
 
 	assert.Equal(t, expected, actual)

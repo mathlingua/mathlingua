@@ -232,6 +232,12 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 						Text:     "is",
 						Position: cur.Position,
 					})
+				} else if name == "isnot" {
+					appendToken(shared.Token{
+						Type:     shared.IsNot,
+						Text:     "isnot",
+						Position: cur.Position,
+					})
 				} else if name == "as" {
 					appendToken(shared.Token{
 						Type:     shared.As,

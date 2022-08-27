@@ -38,38 +38,12 @@ type StructuralFormType interface {
 	StructuralForm()
 }
 
-func (NameForm) StructuralForm()                      {}
-func (FunctionForm) StructuralForm()                  {}
-func (FunctionExpressionForm) StructuralForm()        {}
-func (TupleForm) StructuralForm()                     {}
-func (FixedSetForm) StructuralForm()                  {}
-func (ConditionalSetForm) StructuralForm()            {}
-func (ConditionalSetIdForm) StructuralForm()          {}
-func (FunctionCallExpression) StructuralForm()        {}
-func (TupleExpression) StructuralForm()               {}
-func (FixedSetExpression) StructuralForm()            {}
-func (ConditionalSetExpression) StructuralForm()      {}
-func (CommandExpression) StructuralForm()             {}
-func (CommandAtExpression) StructuralForm()           {}
-func (PrefixOperatorCallExpression) StructuralForm()  {}
-func (PostfixOperatorCallExpression) StructuralForm() {}
-func (InfixOperatorCallExpression) StructuralForm()   {}
-func (IsExpression) StructuralForm()                  {}
-func (AsExpression) StructuralForm()                  {}
-func (NameOrdinalCallExpression) StructuralForm()     {}
-func (ChainExpression) StructuralForm()               {}
-func (Signature) StructuralForm()                     {}
-func (MetaKinds) StructuralForm()                     {}
-func (StructuralColonEqualsForm) StructuralForm()     {}
-func (ExpressionColonEqualsItem) StructuralForm()     {}
-func (ExpressionColonEqualsIsItem) StructuralForm()   {}
-func (NonCommandOperatorTarget) StructuralForm()      {}
-func (CommandOperatorTarget) StructuralForm()         {}
-func (CommandId) StructuralForm()                     {}
-func (CommandAtId) StructuralForm()                   {}
-func (PrefixOperatorId) StructuralForm()              {}
-func (PostfixOperatorId) StructuralForm()             {}
-func (InfixOperatorId) StructuralForm()               {}
+func (NameForm) StructuralForm()               {}
+func (FunctionForm) StructuralForm()           {}
+func (FunctionExpressionForm) StructuralForm() {}
+func (TupleForm) StructuralForm()              {}
+func (FixedSetForm) StructuralForm()           {}
+func (ConditionalSetForm) StructuralForm()     {}
 
 // x
 type NameForm struct {

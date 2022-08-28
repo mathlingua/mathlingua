@@ -17,6 +17,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/spf13/cobra"
@@ -25,7 +26,10 @@ import (
 var rootCmd = &cobra.Command{
 	Use: "mlg",
 	Run: func(cmd *cobra.Command, args []string) {
-		cmd.Help()
+		err := cmd.Help()
+		if err != nil {
+			fmt.Println(err)
+		}
 	},
 }
 

@@ -30,3 +30,7 @@ format:
 .PHONY: deps
 deps:
 	go mod download
+
+.PHONY: setup
+setup:
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.49.0

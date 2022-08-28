@@ -119,6 +119,10 @@ func (m *mlg) Check(paths []string) {
 			}
 			numErrors += len(diagnostics)
 
+			// writer := phase4.NewTextCodeWriter()
+			// root.ToCode(writer)
+			// m.logger.Log(writer.String())
+
 			return nil
 		})
 

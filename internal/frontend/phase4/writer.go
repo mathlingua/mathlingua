@@ -18,23 +18,37 @@ package phase4
 
 type CodeWriter interface {
 	WriteIndent(indent int)
-	Write(text string)
+	WriteHeader(header string)
+	WriteId(id string)
+	WriteSpace()
+	WriteDotSpace()
+	WriteNewline()
+	WriteText(text string)
+	WriteFormulation(text string)
+	WriteDirect(text string)
+	WriteTextBlock(text string)
 	String() string
 }
 
-func NewCodeWriter() CodeWriter {
-	return &codeWriter{
+func NewTextCodeWriter() CodeWriter {
+	return &textCodeWriter{
+		text: "",
+	}
+}
+
+func NewHtmlCodeWriter() CodeWriter {
+	return &htmlCodeWriter{
 		text: "",
 	}
 }
 
 ///////////////////////////////////////////////////////////////
 
-type codeWriter struct {
+type textCodeWriter struct {
 	text string
 }
 
-func (w *codeWriter) WriteIndent(indent int) {
+func (w *textCodeWriter) WriteIndent(indent int) {
 	i := 0
 	for i < indent {
 		i++
@@ -42,10 +56,104 @@ func (w *codeWriter) WriteIndent(indent int) {
 	}
 }
 
-func (w *codeWriter) Write(text string) {
+func (w *textCodeWriter) Write(text string) {
 	w.text += text
 }
 
-func (w *codeWriter) String() string {
+func (w *textCodeWriter) WriteHeader(header string) {
+	w.WriteText(header)
+}
+
+func (w *textCodeWriter) WriteId(id string) {
+	w.WriteText(id)
+}
+
+func (w *textCodeWriter) WriteSpace() {
+	w.WriteText(" ")
+}
+
+func (w *textCodeWriter) WriteDotSpace() {
+	w.WriteText(". ")
+}
+
+func (w *textCodeWriter) WriteNewline() {
+	w.WriteText("\n")
+}
+
+func (w *textCodeWriter) WriteText(text string) {
+	w.WriteText(text)
+}
+
+func (w *textCodeWriter) WriteFormulation(text string) {
+	w.WriteText(text)
+}
+
+func (w *textCodeWriter) WriteDirect(text string) {
+	w.WriteText(text)
+}
+
+func (w *textCodeWriter) WriteTextBlock(text string) {
+	w.WriteText(text)
+}
+
+func (w *textCodeWriter) String() string {
+	return w.text
+}
+
+/////////////////////////////////////////////////////////
+
+type htmlCodeWriter struct {
+	text string
+}
+
+func (w *htmlCodeWriter) WriteIndent(indent int) {
+	i := 0
+	for i < indent {
+		i++
+		w.text += " "
+	}
+}
+
+func (w *htmlCodeWriter) Write(text string) {
+	w.text += text
+}
+
+func (w *htmlCodeWriter) WriteHeader(header string) {
+	w.WriteText(header)
+}
+
+func (w *htmlCodeWriter) WriteId(id string) {
+	w.WriteText(id)
+}
+
+func (w *htmlCodeWriter) WriteSpace() {
+	w.WriteText(" ")
+}
+
+func (w *htmlCodeWriter) WriteDotSpace() {
+	w.WriteText(". ")
+}
+
+func (w *htmlCodeWriter) WriteNewline() {
+	w.WriteText("\n")
+}
+
+func (w *htmlCodeWriter) WriteText(text string) {
+	w.WriteText(text)
+}
+
+func (w *htmlCodeWriter) WriteFormulation(text string) {
+	w.WriteText(text)
+}
+
+func (w *htmlCodeWriter) WriteDirect(text string) {
+	w.WriteText(text)
+}
+
+func (w *htmlCodeWriter) WriteTextBlock(text string) {
+	w.WriteText(text)
+}
+
+func (w *htmlCodeWriter) String() string {
 	return w.text
 }

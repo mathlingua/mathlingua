@@ -26,7 +26,7 @@ type MetaData struct {
 }
 
 type Node interface {
-	ToCode() string
+	ToCode(writer CodeWriter)
 	Size() int
 	ChildAt(index int) Node
 }
@@ -39,24 +39,21 @@ type Group struct {
 
 func (g Group) write(indent int, writer CodeWriter) {
 	if g.Id != nil {
-		writer.Write("[")
-		writer.Write(*g.Id)
-		writer.Write("]\n")
+		writer.WriteId(fmt.Sprintf("[%s]", *g.Id))
+		writer.WriteNewline()
 	}
 
 	for index, s := range g.Sections {
 		if index > 0 {
-			writer.Write("\n")
+			writer.WriteNewline()
 			writer.WriteIndent(indent)
 		}
 		s.write(indent, writer)
 	}
 }
 
-func (g Group) ToCode() string {
-	writer := NewCodeWriter()
+func (g Group) ToCode(writer CodeWriter) {
 	g.write(0, writer)
-	return writer.String()
 }
 
 func (g Group) Size() int {
@@ -74,33 +71,31 @@ type Section struct {
 }
 
 func (s Section) write(indent int, writer CodeWriter) {
-	writer.Write(s.Name)
-	writer.Write(":")
+	writer.WriteHeader(fmt.Sprintf("%s:", s.Name))
 
 	isFirstInline := true
 	for _, a := range s.Args {
 		if a.IsInline {
 			if isFirstInline {
-				writer.Write(" ")
+				writer.WriteSpace()
 			} else {
-				writer.Write(", ")
+				writer.WriteText(",")
+				writer.WriteSpace()
 			}
 			a.write(indent, writer)
 			isFirstInline = false
 		} else {
-			writer.Write("\n")
+			writer.WriteNewline()
 			writer.WriteIndent(indent)
-			writer.Write(". ")
+			writer.WriteDotSpace()
 			a.write(indent+2, writer)
 			isFirstInline = true
 		}
 	}
 }
 
-func (s Section) ToCode() string {
-	writer := NewCodeWriter()
+func (s Section) ToCode(writer CodeWriter) {
 	s.write(0, writer)
-	return writer.String()
 }
 
 func (s Section) Size() int {
@@ -132,10 +127,8 @@ func (a Argument) write(indent int, writer CodeWriter) {
 	}
 }
 
-func (a Argument) ToCode() string {
-	writer := NewCodeWriter()
+func (a Argument) ToCode(writer CodeWriter) {
 	a.write(0, writer)
-	return writer.String()
 }
 
 func (a Argument) Size() int {
@@ -152,13 +145,11 @@ type TextArgumentData struct {
 }
 
 func (t TextArgumentData) write(indent int, writer CodeWriter) {
-	writer.Write(fmt.Sprintf("\"%s\"", t.Text))
+	writer.WriteText(fmt.Sprintf("\"%s\"", t.Text))
 }
 
-func (t TextArgumentData) ToCode() string {
-	writer := NewCodeWriter()
+func (t TextArgumentData) ToCode(writer CodeWriter) {
 	t.write(0, writer)
-	return writer.String()
 }
 
 func (t TextArgumentData) Size() int {
@@ -175,13 +166,11 @@ type FormulationArgumentData struct {
 }
 
 func (f FormulationArgumentData) write(indent int, writer CodeWriter) {
-	writer.Write(fmt.Sprintf("'%s'", f.Text))
+	writer.WriteFormulation(fmt.Sprintf("'%s'", f.Text))
 }
 
-func (f FormulationArgumentData) ToCode() string {
-	writer := NewCodeWriter()
+func (f FormulationArgumentData) ToCode(writer CodeWriter) {
 	f.write(0, writer)
-	return writer.String()
 }
 
 func (f FormulationArgumentData) Size() int {
@@ -198,13 +187,11 @@ type ArgumentTextArgumentData struct {
 }
 
 func (a ArgumentTextArgumentData) write(indent int, writer CodeWriter) {
-	writer.Write(a.Text)
+	writer.WriteDirect(a.Text)
 }
 
-func (a ArgumentTextArgumentData) ToCode() string {
-	writer := NewCodeWriter()
+func (a ArgumentTextArgumentData) ToCode(writer CodeWriter) {
 	a.write(0, writer)
-	return writer.String()
 }
 
 func (a ArgumentTextArgumentData) Size() int {
@@ -230,15 +217,12 @@ type TextBlock struct {
 }
 
 func (t TextBlock) write(indent int, writer CodeWriter) {
-	writer.Write("::\n")
-	writer.Write(t.Text)
-	writer.Write("::\n")
+	writer.WriteTextBlock(fmt.Sprintf("::\n%s::", t.Text))
+	writer.WriteNewline()
 }
 
-func (t TextBlock) ToCode() string {
-	writer := NewCodeWriter()
+func (t TextBlock) ToCode(writer CodeWriter) {
 	t.write(0, writer)
-	return writer.String()
 }
 
 func (t TextBlock) Size() int {
@@ -256,16 +240,15 @@ type Root struct {
 
 func (r Root) write(indent int, writer CodeWriter) {
 	for _, node := range r.Nodes {
-		text := node.ToCode()
-		writer.Write(text)
-		writer.Write("\n\n\n")
+		node.ToCode(writer)
+		writer.WriteNewline()
+		writer.WriteNewline()
+		writer.WriteNewline()
 	}
 }
 
-func (r Root) ToCode() string {
-	writer := NewCodeWriter()
+func (r Root) ToCode(writer CodeWriter) {
 	r.write(0, writer)
-	return writer.String()
 }
 
 func (r Root) Size() int {

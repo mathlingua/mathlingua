@@ -107,7 +107,7 @@ func (m *mlg) Check(paths []string) {
 			}
 
 			numFilesProcessed++
-			root, diagnostics := parse(string(bytes))
+			_, diagnostics := parse(string(bytes))
 			for index, diag := range diagnostics {
 				// make sure there is a space between errors including errors
 				// from other files that have already been reported
@@ -118,10 +118,6 @@ func (m *mlg) Check(paths []string) {
 				m.logger.Error(fmt.Sprintf("%s (%d, %d)\n%s", p, diag.Position.Row+1, diag.Position.Column+1, diag.Message))
 			}
 			numErrors += len(diagnostics)
-
-			writer := phase4.NewTextCodeWriter()
-			root.ToCode(writer)
-			m.logger.Log(writer.String())
 
 			return nil
 		})

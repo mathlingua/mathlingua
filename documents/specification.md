@@ -581,3 +581,50 @@ TopLevelGroupOrTextBlock ::=
 Document ::= (TopLevelGroupOrTextBlock)*
 
 ```
+
+## New Specification Testbed:
+
+```yaml
+
+[id]
+Describes:
+extends?:
+satisfying?:
+Operations:
+. infix:
+  when:
+  states|expresses:
+  written?:
+. prefix:
+  when:
+  states|expresses:
+  written?:
+. postfix:
+  when:
+  states|expresses:
+  written?:
+
+[id]
+Declares:
+means?:
+satisfying?:
+Operations:
+. infix:
+  when:
+  states|expresses:
+  written?:
+. prefix:
+  when:
+  states|expresses:
+  written?:
+. postfix:
+  when:
+  states|expresses:
+  written?:
+
+[id]
+States:
+when:
+that:
+
+```

@@ -16,6 +16,11 @@
 
 package phase4
 
+import (
+	"fmt"
+	"strings"
+)
+
 type CodeWriter interface {
 	WriteIndent(indent int)
 	WriteHeader(header string)
@@ -52,20 +57,20 @@ func (w *textCodeWriter) WriteIndent(indent int) {
 	i := 0
 	for i < indent {
 		i++
-		w.text += " "
+		w.WriteSpace()
 	}
 }
 
-func (w *textCodeWriter) Write(text string) {
+func (w *textCodeWriter) write(text string) {
 	w.text += text
 }
 
 func (w *textCodeWriter) WriteHeader(header string) {
-	w.WriteText(header)
+	w.write(header)
 }
 
 func (w *textCodeWriter) WriteId(id string) {
-	w.WriteText(id)
+	w.write(id)
 }
 
 func (w *textCodeWriter) WriteSpace() {
@@ -73,23 +78,23 @@ func (w *textCodeWriter) WriteSpace() {
 }
 
 func (w *textCodeWriter) WriteDotSpace() {
-	w.WriteText(". ")
+	w.write(". ")
 }
 
 func (w *textCodeWriter) WriteNewline() {
-	w.WriteText("\n")
+	w.write("\n")
 }
 
 func (w *textCodeWriter) WriteText(text string) {
-	w.WriteText(text)
+	w.write(text)
 }
 
 func (w *textCodeWriter) WriteFormulation(text string) {
-	w.WriteText(text)
+	w.write(text)
 }
 
 func (w *textCodeWriter) WriteDirect(text string) {
-	w.WriteText(text)
+	w.write(text)
 }
 
 func (w *textCodeWriter) WriteTextBlock(text string) {
@@ -110,48 +115,52 @@ func (w *htmlCodeWriter) WriteIndent(indent int) {
 	i := 0
 	for i < indent {
 		i++
-		w.text += " "
+		w.WriteSpace()
 	}
 }
 
-func (w *htmlCodeWriter) Write(text string) {
+func (w *htmlCodeWriter) write(text string) {
 	w.text += text
 }
 
+func (w *htmlCodeWriter) writeElement(tag string, classname string, content string) {
+	w.write(fmt.Sprintf("<%s class='%s'>%s</%s>", tag, classname, content, tag))
+}
+
 func (w *htmlCodeWriter) WriteHeader(header string) {
-	w.WriteText(header)
+	w.writeElement("span", "mathlingua-header", header)
 }
 
 func (w *htmlCodeWriter) WriteId(id string) {
-	w.WriteText(id)
+	w.writeElement("span", "mathlingua-id", id)
 }
 
 func (w *htmlCodeWriter) WriteSpace() {
-	w.WriteText(" ")
+	w.write("&nbsp;")
 }
 
 func (w *htmlCodeWriter) WriteDotSpace() {
-	w.WriteText(". ")
+	w.write(".&nbsp;")
 }
 
 func (w *htmlCodeWriter) WriteNewline() {
-	w.WriteText("\n")
+	w.write("<br/>")
 }
 
 func (w *htmlCodeWriter) WriteText(text string) {
-	w.WriteText(text)
+	w.writeElement("span", "mathlingua-text", text)
 }
 
 func (w *htmlCodeWriter) WriteFormulation(text string) {
-	w.WriteText(text)
+	w.writeElement("span", "mathlingua-formulation", text)
 }
 
 func (w *htmlCodeWriter) WriteDirect(text string) {
-	w.WriteText(text)
+	w.write(text)
 }
 
 func (w *htmlCodeWriter) WriteTextBlock(text string) {
-	w.WriteText(text)
+	w.writeElement("span", "mathlingua-text-block", strings.ReplaceAll(text, "\n", "<br/>"))
 }
 
 func (w *htmlCodeWriter) String() string {

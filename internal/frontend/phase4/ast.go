@@ -217,7 +217,7 @@ type TextBlock struct {
 }
 
 func (t TextBlock) write(indent int, writer CodeWriter) {
-	writer.WriteTextBlock(fmt.Sprintf("::\n%s::", t.Text))
+	writer.WriteTextBlock(fmt.Sprintf("::%s::", t.Text))
 	writer.WriteNewline()
 }
 

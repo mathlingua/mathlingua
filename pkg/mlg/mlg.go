@@ -38,6 +38,7 @@ type Mlg interface {
 	Check(paths []string, dedug bool)
 	Doc()
 	Clean()
+	Version() string
 }
 
 func NewMlg(logger Logger) Mlg {
@@ -297,4 +298,8 @@ func (m *mlg) Clean() {
 	} else {
 		m.logger.Success("Deleted the 'docs' directory.")
 	}
+}
+
+func (m *mlg) Version() string {
+	return "v0.2"
 }

@@ -69,3 +69,17 @@ abc
 	assert.Equal(t, expected, actual)
 	assert.Equal(t, []frontend.Diagnostic{}, lexer1.Diagnostics())
 }
+
+func TestPhase1LexerParsesId(t *testing.T) {
+	lexer1 := NewLexer("[some[id[x]]]")
+
+	actual := "\n"
+	for lexer1.HasNext() {
+		actual += lexer1.Next().Text + "\n"
+	}
+
+	expected := "\nsome[id[x]]\n<Newline>\n<Newline>\n<Newline>\n"
+
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, []frontend.Diagnostic{}, lexer1.Diagnostics())
+}

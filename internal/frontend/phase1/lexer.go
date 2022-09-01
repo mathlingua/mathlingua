@@ -229,6 +229,7 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 	collectId := func(start shared.Char) {
 		result := ""
 		stack := mlglib.NewStack[rune]()
+		stack.Push(start.Symbol)
 		for i < len(chars) && chars[i].Symbol != '\n' {
 			c := chars[i]
 			i++

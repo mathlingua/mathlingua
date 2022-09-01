@@ -24,13 +24,18 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use: "mlg",
+	Use:  "mlg",
+	Long: "The MathLingua command line tool.",
 	Run: func(cmd *cobra.Command, args []string) {
 		err := cmd.Help()
 		if err != nil {
 			fmt.Println(err)
 		}
 	},
+}
+
+func init() {
+	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Show debug information")
 }
 
 func Execute() {

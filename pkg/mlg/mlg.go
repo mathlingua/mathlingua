@@ -35,7 +35,7 @@ type Mlg interface {
 	 * will be processed and for any directory, all `.math` files recursively
 	 * in the directory will be processed.
 	 */
-	Check(paths []string)
+	Check(paths []string, dedug bool)
 	Doc()
 	Clean()
 }
@@ -69,7 +69,7 @@ func parse(text string) (phase4.Root, []frontend.Diagnostic) {
 	return root, allDiagnostics
 }
 
-func (m *mlg) Check(paths []string) {
+func (m *mlg) Check(paths []string, debug bool) {
 	if len(paths) == 0 {
 		paths = append(paths, "content")
 	} else {
@@ -115,7 +115,13 @@ func (m *mlg) Check(paths []string) {
 					// have a blank line between errors
 					m.logger.Log("")
 				}
-				m.logger.Error(fmt.Sprintf("%s (%d, %d)\n%s", p, diag.Position.Row+1, diag.Position.Column+1, diag.Message))
+
+				debugInfo := ""
+				if debug {
+					debugInfo = fmt.Sprintf(" [%s]", diag.Origin)
+				}
+
+				m.logger.Error(fmt.Sprintf("%s (%d, %d)%s\n%s", p, diag.Position.Row+1, diag.Position.Column+1, debugInfo, diag.Message))
 			}
 			numErrors += len(diagnostics)
 

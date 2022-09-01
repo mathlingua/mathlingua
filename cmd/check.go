@@ -29,7 +29,8 @@ var checkCommand = &cobra.Command{
 		"files in the 'content' directory and all sub-directories if none are explicitly provided.",
 	Args: cobra.MinimumNArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		mlg.NewMlg(mlg.NewLogger()).Check(args)
+		debug, _ := rootCmd.PersistentFlags().GetBool("debug")
+		mlg.NewMlg(mlg.NewLogger()).Check(args, debug)
 	},
 }
 

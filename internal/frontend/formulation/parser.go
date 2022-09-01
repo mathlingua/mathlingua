@@ -30,7 +30,7 @@ func Parse(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
 		lexer:       lexer,
 		diagnostics: make([]frontend.Diagnostic, 0),
 	}
-	node, _ := parser.structuralForm()
+	node, _ := parser.structuralFormType()
 	return node, parser.diagnostics, len(parser.diagnostics) == 0
 }
 
@@ -68,15 +68,17 @@ func (fp *formulationParser) expect(tokenType shared.TokenType) (shared.Token, b
 	return fp.next(), true
 }
 
-func (fp *formulationParser) structuralForm() (ast.StructuralFormType, bool) {
-	fun, ok := fp.functionForm()
-	if ok {
+func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
+	if fun, ok := fp.functionForm(); ok {
 		return fun, true
 	}
 
-	name, ok := fp.nameForm()
-	if ok {
+	if name, ok := fp.nameForm(); ok {
 		return name, true
+	}
+
+	if tuple, ok := fp.tupleForm(); ok {
+		return tuple, true
 	}
 
 	return nil, false
@@ -180,5 +182,30 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 		Target: target,
 		Params: params,
 		VarArg: varArgData,
+	}, true
+}
+
+func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.expect(shared.LParen)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.TupleForm{}, false
+	}
+	params := make([]ast.StructuralFormType, 0)
+	for fp.lexer.HasNext() && !fp.has(shared.RParen) {
+		param, ok := fp.structuralFormType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.TupleForm{}, false
+		}
+		params = append(params, param)
+	}
+	fp.expect(shared.RParen)
+	varArg, _ := fp.varArgData()
+	fp.lexer.Commit(id)
+	return ast.TupleForm{
+		Params: params,
+		VarArg: varArg,
 	}, true
 }

@@ -27,10 +27,10 @@ type NodeType interface {
 	NodeType()
 }
 
-func (NameForm) NodeType()                      {}
-func (FunctionForm) NodeType()                  {}
+func (NameForm) NodeType()                      {} //
+func (FunctionForm) NodeType()                  {} //
 func (FunctionExpressionForm) NodeType()        {}
-func (TupleForm) NodeType()                     {}
+func (TupleForm) NodeType()                     {} //
 func (FixedSetForm) NodeType()                  {}
 func (ConditionalSetForm) NodeType()            {}
 func (ConditionalSetIdForm) NodeType()          {}
@@ -167,6 +167,7 @@ type ExpressionType interface {
 func (NameForm) ExpressionType()                      {}
 func (FunctionForm) ExpressionType()                  {}
 func (FunctionCallExpression) ExpressionType()        {}
+func (TupleForm) ExpressionType()                     {}
 func (TupleExpression) ExpressionType()               {}
 func (FixedSetExpression) ExpressionType()            {}
 func (CommandExpression) ExpressionType()             {}

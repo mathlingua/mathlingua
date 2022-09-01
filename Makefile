@@ -34,3 +34,7 @@ deps:
 .PHONY: setup
 setup:
 	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b ~/go/bin v1.49.0
+
+.PHONY: testbed
+testbed:
+	go build -o testbed/mlg && cd testbed && ./mlg $(args)

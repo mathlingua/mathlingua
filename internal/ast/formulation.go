@@ -169,6 +169,7 @@ func (FunctionForm) ExpressionType()                  {}
 func (FunctionCallExpression) ExpressionType()        {}
 func (TupleForm) ExpressionType()                     {}
 func (TupleExpression) ExpressionType()               {}
+func (FixedSetForm) ExpressionType()                  {}
 func (FixedSetExpression) ExpressionType()            {}
 func (CommandExpression) ExpressionType()             {}
 func (CommandAtExpression) ExpressionType()           {}

@@ -81,6 +81,10 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 		return tuple, true
 	}
 
+	if fixedSet, ok := fp.fixedSetForm(); ok {
+		return fixedSet, true
+	}
+
 	return nil, false
 }
 
@@ -205,6 +209,31 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 	varArg, _ := fp.varArgData()
 	fp.lexer.Commit(id)
 	return ast.TupleForm{
+		Params: params,
+		VarArg: varArg,
+	}, true
+}
+
+func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.expect(shared.LCurly)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.FixedSetForm{}, false
+	}
+	params := make([]ast.StructuralFormType, 0)
+	for fp.lexer.HasNext() && !fp.has(shared.RCurly) {
+		param, ok := fp.structuralFormType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.FixedSetForm{}, false
+		}
+		params = append(params, param)
+	}
+	fp.expect(shared.RCurly)
+	varArg, _ := fp.varArgData()
+	fp.lexer.Commit(id)
+	return ast.FixedSetForm{
 		Params: params,
 		VarArg: varArg,
 	}, true

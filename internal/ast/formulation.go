@@ -27,10 +27,10 @@ type NodeType interface {
 	NodeType()
 }
 
-func (NameForm) NodeType()                      {} //
-func (FunctionForm) NodeType()                  {} //
+func (NameForm) NodeType()                      {}
+func (FunctionForm) NodeType()                  {}
 func (FunctionExpressionForm) NodeType()        {}
-func (TupleForm) NodeType()                     {} //
+func (TupleForm) NodeType()                     {}
 func (FixedSetForm) NodeType()                  {}
 func (ConditionalSetForm) NodeType()            {}
 func (ConditionalSetIdForm) NodeType()          {}
@@ -76,6 +76,7 @@ func (TupleForm) StructuralForm()              {}
 func (FixedSetForm) StructuralForm()           {}
 func (ConditionalSetForm) StructuralForm()     {}
 
+// DONE
 // x
 type NameForm struct {
 	Text string
@@ -85,6 +86,7 @@ type NameForm struct {
 	VarArg          VarArgData
 }
 
+// DONE
 // f(x, y)
 type FunctionForm struct {
 	Target NameForm
@@ -92,6 +94,7 @@ type FunctionForm struct {
 	VarArg VarArgData
 }
 
+// DONE
 // f[x, y]
 type FunctionExpressionForm struct {
 	Target NameForm
@@ -99,18 +102,21 @@ type FunctionExpressionForm struct {
 	VarArg VarArgData
 }
 
+// DONE
 // (x, y)
 type TupleForm struct {
 	Params []StructuralFormType
 	VarArg VarArgData
 }
 
+// DONE
 // {x, y}
 type FixedSetForm struct {
 	Params []StructuralFormType
 	VarArg VarArgData
 }
 
+// DONE
 // {x | ...}
 type ConditionalSetForm struct {
 	Target StructuralFormType
@@ -166,11 +172,13 @@ type ExpressionType interface {
 
 func (NameForm) ExpressionType()                      {}
 func (FunctionForm) ExpressionType()                  {}
+func (FunctionExpressionForm) ExpressionType()        {}
 func (FunctionCallExpression) ExpressionType()        {}
 func (TupleForm) ExpressionType()                     {}
 func (TupleExpression) ExpressionType()               {}
 func (FixedSetForm) ExpressionType()                  {}
 func (FixedSetExpression) ExpressionType()            {}
+func (ConditionalSetForm) ExpressionType()            {}
 func (CommandExpression) ExpressionType()             {}
 func (CommandAtExpression) ExpressionType()           {}
 func (PrefixOperatorCallExpression) ExpressionType()  {}
@@ -180,17 +188,20 @@ func (AsExpression) ExpressionType()                  {}
 func (NameOrdinalCallExpression) ExpressionType()     {}
 func (ChainExpression) ExpressionType()               {}
 
+// DONE
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
 	Target ExpressionType
 	Args   []ExpressionType
 }
 
+// DONE
 // (x + y, z)
 type TupleExpression struct {
 	Args []ExpressionType
 }
 
+// DONE
 // {x + y, z}
 type FixedSetExpression struct {
 	Args []ExpressionType

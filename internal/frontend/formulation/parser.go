@@ -39,6 +39,13 @@ type formulationParser struct {
 	diagnostics []frontend.Diagnostic
 }
 
+func (fp *formulationParser) token(tokenType shared.TokenType) (shared.Token, bool) {
+	if !fp.has(tokenType) {
+		return shared.Token{}, false
+	}
+	return fp.lexer.Next(), true
+}
+
 func (fp *formulationParser) has(tokenType shared.TokenType) bool {
 	return fp.lexer.HasNext() && fp.lexer.Peek().Type == tokenType
 }
@@ -73,6 +80,10 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 		return fun, true
 	}
 
+	if funExp, ok := fp.functionExpressionForm(); ok {
+		return funExp, true
+	}
+
 	if name, ok := fp.nameForm(); ok {
 		return name, true
 	}
@@ -83,6 +94,10 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 
 	if fixedSet, ok := fp.fixedSetForm(); ok {
 		return fixedSet, true
+	}
+
+	if conditionalSet, ok := fp.conditionalSetForm(); ok {
+		return conditionalSet, true
 	}
 
 	return nil, false
@@ -189,15 +204,63 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 	}, true
 }
 
+func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionForm, bool) {
+	if !fp.hasHas(shared.Name, shared.LSquare) {
+		return ast.FunctionExpressionForm{}, false
+	}
+
+	target, ok := fp.nameForm()
+	if !ok {
+		return ast.FunctionExpressionForm{}, false
+	}
+
+	params := make([]ast.NameForm, 0)
+	fp.expect(shared.LSquare)
+	for fp.lexer.HasNext() {
+		if fp.has(shared.RSquare) {
+			break
+		}
+
+		if len(params) > 0 {
+			fp.expect(shared.Comma)
+		}
+
+		param, ok := fp.nameForm()
+		if !ok {
+			fp.error("Expected a name")
+			// move past the unexpected token
+			fp.lexer.Next()
+		} else {
+			params = append(params, param)
+		}
+	}
+	fp.expect(shared.RSquare)
+
+	varArgData, _ := fp.varArgData()
+	return ast.FunctionExpressionForm{
+		Target: target,
+		Params: params,
+		VarArg: varArgData,
+	}, true
+}
+
 func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 	id := fp.lexer.Snapshot()
-	_, ok := fp.expect(shared.LParen)
+	_, ok := fp.token(shared.LParen)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.TupleForm{}, false
 	}
 	params := make([]ast.StructuralFormType, 0)
-	for fp.lexer.HasNext() && !fp.has(shared.RParen) {
+	for fp.lexer.HasNext() {
+		if fp.has(shared.RParen) {
+			break
+		}
+
+		if len(params) > 0 {
+			fp.expect(shared.Comma)
+		}
+
 		param, ok := fp.structuralFormType()
 		if !ok {
 			fp.lexer.RollBack(id)
@@ -216,13 +279,21 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 
 func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 	id := fp.lexer.Snapshot()
-	_, ok := fp.expect(shared.LCurly)
+	_, ok := fp.token(shared.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.FixedSetForm{}, false
 	}
 	params := make([]ast.StructuralFormType, 0)
-	for fp.lexer.HasNext() && !fp.has(shared.RCurly) {
+	for fp.lexer.HasNext() {
+		if fp.has(shared.RParen) {
+			break
+		}
+
+		if len(params) > 0 {
+			fp.expect(shared.Comma)
+		}
+
 		param, ok := fp.structuralFormType()
 		if !ok {
 			fp.lexer.RollBack(id)
@@ -238,3 +309,150 @@ func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 		VarArg: varArg,
 	}, true
 }
+
+func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool) {
+	id := fp.lexer.Snapshot()
+	if _, ok := fp.token(shared.LCurly); !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetForm{}, false
+	}
+
+	target, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetForm{}, false
+	}
+
+	_, ok = fp.token(shared.Bar)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetForm{}, false
+	}
+
+	_, ok = fp.token(shared.DotDotDot)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetForm{}, false
+	}
+	fp.expect(shared.RCurly)
+	varArg, _ := fp.varArgData()
+	fp.lexer.Commit(id)
+	return ast.ConditionalSetForm{
+		Target: target,
+		VarArg: varArg,
+	}, true
+}
+
+func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
+	// TODO: implement this
+	return nil, false
+}
+
+func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpression, bool) {
+	if !fp.hasHas(shared.Name, shared.LParen) {
+		return ast.FunctionCallExpression{}, false
+	}
+
+	target, ok := fp.expressionType()
+	if !ok {
+		return ast.FunctionCallExpression{}, false
+	}
+
+	args := make([]ast.ExpressionType, 0)
+	fp.expect(shared.LParen)
+	for fp.lexer.HasNext() {
+		if fp.has(shared.RParen) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(shared.Comma)
+		}
+
+		arg, ok := fp.expressionType()
+		if !ok {
+			fp.error("Expected an expression")
+			// move past the unexpected token
+			fp.lexer.Next()
+		} else {
+			args = append(args, arg)
+		}
+	}
+	fp.expect(shared.RParen)
+	return ast.FunctionCallExpression{
+		Target: target,
+		Args:   args,
+	}, true
+}
+
+func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(shared.LParen)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.TupleExpression{}, false
+	}
+	args := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(shared.RParen) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(shared.Comma)
+		}
+
+		arg, ok := fp.expressionType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.TupleExpression{}, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(shared.RParen)
+	fp.lexer.Commit(id)
+	return ast.TupleExpression{
+		Args: args,
+	}, true
+}
+
+func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(shared.LCurly)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.FixedSetExpression{}, false
+	}
+	args := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(shared.RParen) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(shared.Comma)
+		}
+
+		arg, ok := fp.structuralFormType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.FixedSetExpression{}, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(shared.RCurly)
+	fp.lexer.Commit(id)
+	return ast.FixedSetExpression{
+		Args: args,
+	}, true
+}
+
+/*
+func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
+	id := fp.lexer.Snapshot()
+	parts := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		part, ok := fp.expressionType()
+	}
+}
+*/

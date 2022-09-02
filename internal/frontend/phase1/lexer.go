@@ -34,14 +34,14 @@ func NewLexer(text string) shared.Lexer {
 
 ////////////////////////////////////////////////////
 
-func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
-	chars := shared.GetChars(text)
+func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
+	chars := ast.GetChars(text)
 	i := 0
 
-	tokens := make([]shared.Token, 0)
+	tokens := make([]ast.Token, 0)
 	diagnostics := make([]frontend.Diagnostic, 0)
 
-	appendToken := func(token shared.Token) {
+	appendToken := func(token ast.Token) {
 		tokens = append(tokens, token)
 	}
 
@@ -54,7 +54,7 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		})
 	}
 
-	collectUntil := func(start shared.Char, terminator rune, allowsEscape bool) string {
+	collectUntil := func(start ast.Char, terminator rune, allowsEscape bool) string {
 		result := ""
 		terminatorFound := false
 		for i < len(chars) {
@@ -80,16 +80,16 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		for i < len(chars) && chars[i].Symbol == '\n' {
 			c := chars[i]
 			i++
-			appendToken(shared.Token{
-				Type:     shared.Newline,
+			appendToken(ast.Token{
+				Type:     ast.Newline,
 				Text:     "<Newline>",
 				Position: c.Position,
 			})
 			for i < len(chars) && chars[i].Symbol == ' ' {
 				c := chars[i]
 				i++
-				appendToken(shared.Token{
-					Type:     shared.Space,
+				appendToken(ast.Token{
+					Type:     ast.Space,
 					Text:     "<Space>",
 					Position: c.Position,
 				})
@@ -97,49 +97,49 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	collectEnclosedArgument := func() (shared.Token, bool) {
+	collectEnclosedArgument := func() (ast.Token, bool) {
 		for i < len(chars) && chars[i].Symbol == ' ' {
 			i++
 		}
 
 		if i >= len(chars) {
-			return shared.Token{}, false
+			return ast.Token{}, false
 		}
 
 		c := chars[i]
 		if c.Symbol == '"' {
 			i++
-			return shared.Token{
-				Type:     shared.Text,
+			return ast.Token{
+				Type:     ast.Text,
 				Text:     collectUntil(c, '"', true),
 				Position: c.Position,
 			}, true
 		} else if c.Symbol == '\'' {
 			i++
-			return shared.Token{
-				Type:     shared.Formulation,
+			return ast.Token{
+				Type:     ast.FormulationTokenType,
 				Text:     collectUntil(c, '\'', false),
 				Position: c.Position,
 			}, true
 		} else if c.Symbol == '`' {
 			i++
-			return shared.Token{
-				Type:     shared.Formulation,
+			return ast.Token{
+				Type:     ast.FormulationTokenType,
 				Text:     collectUntil(c, '`', false),
 				Position: c.Position,
 			}, true
 		} else {
-			return shared.Token{}, false
+			return ast.Token{}, false
 		}
 	}
 
-	collectNonEnclosedArgument := func() (shared.Token, bool) {
+	collectNonEnclosedArgument := func() (ast.Token, bool) {
 		for i < len(chars) && chars[i].Symbol == ' ' {
 			i++
 		}
 
 		if i >= len(chars) {
-			return shared.Token{}, false
+			return ast.Token{}, false
 		}
 
 		start := chars[i]
@@ -170,17 +170,17 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		}
 
 		if len(result) == 0 {
-			return shared.Token{}, false
+			return ast.Token{}, false
 		}
 
-		return shared.Token{
-			Type:     shared.ArgumentText,
+		return ast.Token{
+			Type:     ast.ArgumentText,
 			Text:     result,
 			Position: start.Position,
 		}, true
 	}
 
-	collectArgument := func() (shared.Token, bool) {
+	collectArgument := func() (ast.Token, bool) {
 		arg, ok := collectEnclosedArgument()
 		if ok {
 			return arg, true
@@ -200,8 +200,8 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 			} else if chars[i].Symbol == ',' {
 				start := chars[i]
 				i++
-				appendToken(shared.Token{
-					Type:     shared.Comma,
+				appendToken(ast.Token{
+					Type:     ast.Comma,
 					Text:     ",",
 					Position: start.Position,
 				})
@@ -213,20 +213,20 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	collectName := func(start shared.Char) {
+	collectName := func(start ast.Char) {
 		result := string(start.Symbol)
 		for i < len(chars) && unicode.IsLetter(chars[i].Symbol) {
 			result += string(chars[i].Symbol)
 			i++
 		}
-		appendToken(shared.Token{
-			Type:     shared.Name,
+		appendToken(ast.Token{
+			Type:     ast.Name,
 			Text:     result,
 			Position: start.Position,
 		})
 	}
 
-	collectId := func(start shared.Char) {
+	collectId := func(start ast.Char) {
 		result := ""
 		stack := mlglib.NewStack[rune]()
 		stack.Push(start.Symbol)
@@ -249,14 +249,14 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 				result += string(c.Symbol)
 			}
 		}
-		appendToken(shared.Token{
-			Type:     shared.Id,
+		appendToken(ast.Token{
+			Type:     ast.Id,
 			Text:     result,
 			Position: start.Position,
 		})
 	}
 
-	collectTexBlock := func(start shared.Char) {
+	collectTexBlock := func(start ast.Char) {
 		result := ""
 		for i < len(chars) {
 			c := chars[i]
@@ -269,8 +269,8 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 				result += string(c.Symbol)
 			}
 		}
-		appendToken(shared.Token{
-			Type:     shared.TextBlock,
+		appendToken(ast.Token{
+			Type:     ast.TextBlock,
 			Text:     result,
 			Position: start.Position,
 		})
@@ -305,8 +305,8 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 				collectTexBlock(c)
 			} else {
 				// the : is processed as being at the end of <name>:
-				appendToken(shared.Token{
-					Type:     shared.Colon,
+				appendToken(ast.Token{
+					Type:     ast.Colon,
 					Text:     ":",
 					Position: c.Position,
 				})
@@ -316,8 +316,8 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 			if i < len(chars) && chars[i].Symbol == ' ' {
 				// move past the space
 				i++
-				appendToken(shared.Token{
-					Type:     shared.DotSpace,
+				appendToken(ast.Token{
+					Type:     ast.DotSpace,
 					Text:     "<DotSpace>",
 					Position: c.Position,
 				})

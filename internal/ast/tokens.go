@@ -14,9 +14,7 @@
  * limitations under the License.
  */
 
-package shared
-
-import "mathlingua/internal/ast"
+package ast
 
 type TokenType string
 
@@ -24,7 +22,7 @@ const (
 	Name                  TokenType = "Name"
 	Colon                 TokenType = "Colon"
 	Text                  TokenType = "Text"
-	Formulation           TokenType = "Formulation"
+	FormulationTokenType  TokenType = "FormulationTokenType"
 	TextBlock             TokenType = "TextBlock"
 	Indent                TokenType = "Indent"
 	UnIndent              TokenType = "Unindent"
@@ -69,12 +67,12 @@ const (
 type Token struct {
 	Type     TokenType
 	Text     string
-	Position ast.Position
+	Position Position
 }
 
 type Char struct {
 	Symbol   rune
-	Position ast.Position
+	Position Position
 }
 
 func GetChars(text string) []Char {
@@ -92,7 +90,7 @@ func GetChars(text string) []Char {
 		prevPos = pos
 		chars = append(chars, Char{
 			Symbol: c,
-			Position: ast.Position{
+			Position: Position{
 				Offset: pos,
 				Row:    curRow,
 				Column: curColumn,

@@ -30,14 +30,14 @@ func NewLexer(text string) shared.Lexer {
 
 //////////////////////////////////////////////////////////////
 
-func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
-	tokens := make([]shared.Token, 0)
+func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
+	tokens := make([]ast.Token, 0)
 	diagnostics := make([]frontend.Diagnostic, 0)
 
-	chars := shared.GetChars(text)
+	chars := ast.GetChars(text)
 	i := 0
 
-	appendToken := func(token shared.Token) {
+	appendToken := func(token ast.Token) {
 		tokens = append(tokens, token)
 	}
 
@@ -56,7 +56,7 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	getName := func(start shared.Char) (string, bool) {
+	getName := func(start ast.Char) (string, bool) {
 		if i >= len(chars) || !isNameSymbol(start.Symbol) {
 			return "", false
 		}
@@ -68,7 +68,7 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		return result, true
 	}
 
-	getOperator := func(start shared.Char) (string, bool) {
+	getOperator := func(start ast.Char) (string, bool) {
 		if i >= len(chars) || !isOperatorSymbol(start.Symbol) {
 			return "", false
 		}
@@ -80,7 +80,7 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		return result, true
 	}
 
-	getStroppedName := func(start shared.Char) string {
+	getStroppedName := func(start ast.Char) string {
 		result := ""
 		for i < len(chars) && chars[i].Symbol != '"' {
 			result += string(chars[i].Symbol)
@@ -104,107 +104,107 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		i++
 		switch {
 		case cur.Symbol == ',':
-			appendToken(shared.Token{
-				Type:     shared.Comma,
+			appendToken(ast.Token{
+				Type:     ast.Comma,
 				Text:     ",",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '(':
-			appendToken(shared.Token{
-				Type:     shared.LParen,
+			appendToken(ast.Token{
+				Type:     ast.LParen,
 				Text:     "(",
 				Position: cur.Position,
 			})
 		case cur.Symbol == ')':
-			appendToken(shared.Token{
-				Type:     shared.RParen,
+			appendToken(ast.Token{
+				Type:     ast.RParen,
 				Text:     ")",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '[':
-			appendToken(shared.Token{
-				Type:     shared.LSquare,
+			appendToken(ast.Token{
+				Type:     ast.LSquare,
 				Text:     "[",
 				Position: cur.Position,
 			})
 		case cur.Symbol == ']':
-			appendToken(shared.Token{
-				Type:     shared.RSquare,
+			appendToken(ast.Token{
+				Type:     ast.RSquare,
 				Text:     "]",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '{':
-			appendToken(shared.Token{
-				Type:     shared.LCurly,
+			appendToken(ast.Token{
+				Type:     ast.LCurly,
 				Text:     "{",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '}':
-			appendToken(shared.Token{
-				Type:     shared.RCurly,
+			appendToken(ast.Token{
+				Type:     ast.RCurly,
 				Text:     "}",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '_':
-			appendToken(shared.Token{
-				Type:     shared.Underscore,
+			appendToken(ast.Token{
+				Type:     ast.Underscore,
 				Text:     "_",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '|':
-			appendToken(shared.Token{
-				Type:     shared.Bar,
+			appendToken(ast.Token{
+				Type:     ast.Bar,
 				Text:     "|",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '/':
-			appendToken(shared.Token{
-				Type:     shared.Slash,
+			appendToken(ast.Token{
+				Type:     ast.Slash,
 				Text:     "/",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '\\':
-			appendToken(shared.Token{
-				Type:     shared.BackSlash,
+			appendToken(ast.Token{
+				Type:     ast.BackSlash,
 				Text:     "\\",
 				Position: cur.Position,
 			})
 		case cur.Symbol == ';':
-			appendToken(shared.Token{
-				Type:     shared.Semicolon,
+			appendToken(ast.Token{
+				Type:     ast.Semicolon,
 				Text:     ";",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '?':
-			appendToken(shared.Token{
-				Type:     shared.QuestionMark,
+			appendToken(ast.Token{
+				Type:     ast.QuestionMark,
 				Text:     "?",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '^':
-			appendToken(shared.Token{
-				Type:     shared.Caret,
+			appendToken(ast.Token{
+				Type:     ast.Caret,
 				Text:     "^",
 				Position: cur.Position,
 			})
 		case cur.Symbol == '"':
 			name := getStroppedName(cur)
-			appendToken(shared.Token{
-				Type:     shared.Name,
+			appendToken(ast.Token{
+				Type:     ast.Name,
 				Text:     name,
 				Position: cur.Position,
 			})
 		case cur.Symbol == '.':
 			if i+1 < len(chars) && chars[i].Symbol == '.' && chars[i+1].Symbol == '.' {
 				i += 2 // skip the ..
-				appendToken(shared.Token{
-					Type:     shared.DotDotDot,
+				appendToken(ast.Token{
+					Type:     ast.DotDotDot,
 					Text:     "...",
 					Position: cur.Position,
 				})
 			} else {
-				appendToken(shared.Token{
-					Type:     shared.Dot,
+				appendToken(ast.Token{
+					Type:     ast.Dot,
 					Text:     ".",
 					Position: cur.Position,
 				})
@@ -212,14 +212,14 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		case cur.Symbol == ':':
 			if i < len(chars) && chars[i].Symbol == '=' {
 				i++ // move past the =
-				appendToken(shared.Token{
-					Type:     shared.ColonEquals,
+				appendToken(ast.Token{
+					Type:     ast.ColonEquals,
 					Text:     ":=",
 					Position: cur.Position,
 				})
 			} else {
-				appendToken(shared.Token{
-					Type:     shared.Colon,
+				appendToken(ast.Token{
+					Type:     ast.Colon,
 					Text:     ":",
 					Position: cur.Position,
 				})
@@ -227,33 +227,33 @@ func getTokens(text string) ([]shared.Token, []frontend.Diagnostic) {
 		default:
 			if name, ok := getName(cur); ok {
 				if name == "is" {
-					appendToken(shared.Token{
-						Type:     shared.Is,
+					appendToken(ast.Token{
+						Type:     ast.Is,
 						Text:     "is",
 						Position: cur.Position,
 					})
 				} else if name == "isnot" {
-					appendToken(shared.Token{
-						Type:     shared.IsNot,
+					appendToken(ast.Token{
+						Type:     ast.IsNot,
 						Text:     "isnot",
 						Position: cur.Position,
 					})
 				} else if name == "as" {
-					appendToken(shared.Token{
-						Type:     shared.As,
+					appendToken(ast.Token{
+						Type:     ast.As,
 						Text:     "as",
 						Position: cur.Position,
 					})
 				} else {
-					appendToken(shared.Token{
-						Type:     shared.Name,
+					appendToken(ast.Token{
+						Type:     ast.Name,
 						Text:     name,
 						Position: cur.Position,
 					})
 				}
 			} else if op, ok := getOperator(cur); ok {
-				appendToken(shared.Token{
-					Type:     shared.Operator,
+				appendToken(ast.Token{
+					Type:     ast.Operator,
 					Text:     op,
 					Position: cur.Position,
 				})

@@ -27,39 +27,42 @@ type NodeType interface {
 	NodeType()
 }
 
-func (NameForm) NodeType()                      {}
-func (FunctionForm) NodeType()                  {}
-func (FunctionExpressionForm) NodeType()        {}
-func (TupleForm) NodeType()                     {}
-func (FixedSetForm) NodeType()                  {}
-func (ConditionalSetForm) NodeType()            {}
-func (ConditionalSetIdForm) NodeType()          {}
-func (FunctionCallExpression) NodeType()        {}
-func (TupleExpression) NodeType()               {}
-func (FixedSetExpression) NodeType()            {}
-func (ConditionalSetExpression) NodeType()      {}
-func (CommandExpression) NodeType()             {}
-func (CommandAtExpression) NodeType()           {}
-func (PrefixOperatorCallExpression) NodeType()  {}
-func (PostfixOperatorCallExpression) NodeType() {}
-func (InfixOperatorCallExpression) NodeType()   {}
-func (IsExpression) NodeType()                  {}
-func (IsNotExpression) NodeType()               {}
-func (AsExpression) NodeType()                  {}
-func (NameOrdinalCallExpression) NodeType()     {}
-func (ChainExpression) NodeType()               {}
-func (Signature) NodeType()                     {}
-func (MetaKinds) NodeType()                     {}
-func (StructuralColonEqualsForm) NodeType()     {}
-func (ExpressionColonEqualsItem) NodeType()     {}
-func (ExpressionColonEqualsIsItem) NodeType()   {}
-func (NonCommandOperatorTarget) NodeType()      {}
-func (CommandOperatorTarget) NodeType()         {}
-func (CommandId) NodeType()                     {}
-func (CommandAtId) NodeType()                   {}
-func (PrefixOperatorId) NodeType()              {}
-func (PostfixOperatorId) NodeType()             {}
-func (InfixOperatorId) NodeType()               {}
+func (NameForm) NodeType()                            {}
+func (FunctionForm) NodeType()                        {}
+func (FunctionExpressionForm) NodeType()              {}
+func (TupleForm) NodeType()                           {}
+func (FixedSetForm) NodeType()                        {}
+func (ConditionalSetForm) NodeType()                  {}
+func (ConditionalSetIdForm) NodeType()                {}
+func (FunctionCallExpression) NodeType()              {}
+func (TupleExpression) NodeType()                     {}
+func (FixedSetExpression) NodeType()                  {}
+func (ConditionalSetExpression) NodeType()            {}
+func (CommandExpression) NodeType()                   {}
+func (CommandAtExpression) NodeType()                 {}
+func (PrefixOperatorCallExpression) NodeType()        {}
+func (PostfixOperatorCallExpression) NodeType()       {}
+func (InfixOperatorCallExpression) NodeType()         {}
+func (IsExpression) NodeType()                        {}
+func (IsNotExpression) NodeType()                     {}
+func (AsExpression) NodeType()                        {}
+func (NameOrdinalCallExpression) NodeType()           {}
+func (ChainExpression) NodeType()                     {}
+func (Signature) NodeType()                           {}
+func (MetaKinds) NodeType()                           {}
+func (StructuralColonEqualsForm) NodeType()           {}
+func (ExpressionColonEqualsItem) NodeType()           {}
+func (ExpressionColonEqualsIsItem) NodeType()         {}
+func (EnclosedNonCommandOperatorTarget) NodeType()    {}
+func (NonEnclosedNonCommandOperatorTarget) NodeType() {}
+func (CommandOperatorTarget) NodeType()               {}
+func (CommandId) NodeType()                           {}
+func (CommandAtId) NodeType()                         {}
+func (PrefixOperatorId) NodeType()                    {}
+func (PostfixOperatorId) NodeType()                   {}
+func (InfixOperatorId) NodeType()                     {}
+func (PseudoTokenNode) NodeType()                     {}
+func (PseudoExpression) NodeType()                    {}
 
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 
@@ -132,7 +135,7 @@ type LiteralFormType interface {
 
 // [x]{x | f[x]...}
 type ConditionalSetIdForm struct {
-	Symbols   []NameForm
+	Symbols   []StructuralFormType
 	Target    StructuralFormType
 	Condition FunctionExpressionForm
 }
@@ -163,6 +166,16 @@ type LiteralType interface {
 	LiteralType()
 }
 
+////////////////////////////////////// Pseudo Nodes ////////////////////////////
+
+type PseudoTokenNode struct {
+	Type TokenType
+}
+
+type PseudoExpression struct {
+	Children []NodeType
+}
+
 ///////////////////////////////////// Expressions /////////////////////////////
 
 type ExpressionType interface {
@@ -187,6 +200,8 @@ func (InfixOperatorCallExpression) ExpressionType()   {}
 func (AsExpression) ExpressionType()                  {}
 func (NameOrdinalCallExpression) ExpressionType()     {}
 func (ChainExpression) ExpressionType()               {}
+func (PseudoTokenNode) ExpressionType()               {}
+func (PseudoExpression) ExpressionType()              {}
 
 // DONE
 // f(x + y, z) or (f + g)(x)
@@ -214,9 +229,24 @@ type ConditionalSetExpression struct {
 	Conditions []ExpressionType
 }
 
+type SubSupArgs struct {
+	SquareArgs []StructuralFormType
+	SubArgs    []ExpressionType
+	SupArgs    []ExpressionType
+}
+
+type NamedArg struct {
+	Name NameForm
+	Args *[]ExpressionType
+}
+
 // \function:on{A}:to{B}
 type CommandExpression struct {
-	// TODO
+	Names      []NameForm
+	SubSupArgs *SubSupArgs
+	CurlyArgs  *[]ExpressionType
+	NamedArgs  *[]NamedArg
+	ParenArgs  *[]ExpressionType
 }
 
 // \set@[x]{x | x is \real ; x > 0}
@@ -262,12 +292,14 @@ type AsExpression struct {
 	Rhs Signature
 }
 
+// NONE
 // x{1}
 type NameOrdinalCallExpression struct {
 	Target NameForm
 	Arg    ExpressionType
 }
 
+// DONE
 // (x + y).z.a.b
 type ChainExpression struct {
 	Parts []ExpressionType
@@ -341,13 +373,18 @@ type OperatorType interface {
 	OperatorType()
 }
 
-func (NonCommandOperatorTarget) OperatorType() {}
-func (CommandOperatorTarget) OperatorType()    {}
+func (EnclosedNonCommandOperatorTarget) OperatorType()    {}
+func (NonEnclosedNonCommandOperatorTarget) OperatorType() {}
+func (CommandOperatorTarget) OperatorType()               {}
 
-// * or [x] or [x + y]
-type NonCommandOperatorTarget struct {
-	Target     ExpressionType
-	IsEnclosed bool // specifies if it is enclosed in [ and ]
+// [x] or [x + y]
+type EnclosedNonCommandOperatorTarget struct {
+	Target ExpressionType
+}
+
+// * or ++
+type NonEnclosedNonCommandOperatorTarget struct {
+	Text string
 }
 
 type CommandOperatorTarget struct {
@@ -361,8 +398,24 @@ type IdType interface {
 	IdType()
 }
 
+type SubSupParams struct {
+	SquareParams []StructuralFormType
+	SubParams    []StructuralFormType
+	SupParams    []StructuralFormType
+}
+
+type NamedParam struct {
+	Name   NameForm
+	Params *[]StructuralFormType
+}
+
 // \function:on{A}:to{B}
 type CommandId struct {
+	Names        []NameForm
+	SubSupParams *SubSupParams
+	CurlyParams  *[]StructuralFormType
+	NamedParams  *[]NamedParam
+	ParenParams  *[]NameForm
 }
 
 // \set@[x]{f[x] | g[x]}

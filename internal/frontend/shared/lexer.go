@@ -26,9 +26,9 @@ import (
 type Lexer interface {
 	HasNext() bool
 	HasNextNext() bool
-	Next() Token
-	Peek() Token
-	PeekPeek() Token
+	Next() ast.Token
+	Peek() ast.Token
+	PeekPeek() ast.Token
 	Position() ast.Position
 	Snapshot() int
 	Commit(id int)
@@ -36,7 +36,7 @@ type Lexer interface {
 	Diagnostics() []frontend.Diagnostic
 }
 
-func NewLexer(tokens []Token, diagnostics []frontend.Diagnostic) Lexer {
+func NewLexer(tokens []ast.Token, diagnostics []frontend.Diagnostic) Lexer {
 	return &lexer{
 		index:       0,
 		tokens:      tokens,
@@ -54,7 +54,7 @@ type snapshot struct {
 
 type lexer struct {
 	index       int
-	tokens      []Token
+	tokens      []ast.Token
 	snapshots   mlglib.Stack[snapshot]
 	diagnostics []frontend.Diagnostic
 }
@@ -67,17 +67,17 @@ func (lex *lexer) HasNextNext() bool {
 	return lex.index+1 < len(lex.tokens)
 }
 
-func (lex *lexer) Next() Token {
+func (lex *lexer) Next() ast.Token {
 	peek := lex.Peek()
 	lex.index++
 	return peek
 }
 
-func (lex *lexer) Peek() Token {
+func (lex *lexer) Peek() ast.Token {
 	return lex.tokens[lex.index]
 }
 
-func (lex *lexer) PeekPeek() Token {
+func (lex *lexer) PeekPeek() ast.Token {
 	return lex.tokens[lex.index+1]
 }
 

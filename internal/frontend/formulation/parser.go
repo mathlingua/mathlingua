@@ -39,22 +39,22 @@ type formulationParser struct {
 	diagnostics []frontend.Diagnostic
 }
 
-func (fp *formulationParser) token(tokenType shared.TokenType) (shared.Token, bool) {
+func (fp *formulationParser) token(tokenType ast.TokenType) (ast.Token, bool) {
 	if !fp.has(tokenType) {
-		return shared.Token{}, false
+		return ast.Token{}, false
 	}
 	return fp.lexer.Next(), true
 }
 
-func (fp *formulationParser) has(tokenType shared.TokenType) bool {
+func (fp *formulationParser) has(tokenType ast.TokenType) bool {
 	return fp.lexer.HasNext() && fp.lexer.Peek().Type == tokenType
 }
 
-func (fp *formulationParser) hasHas(tokenType1 shared.TokenType, tokenType2 shared.TokenType) bool {
+func (fp *formulationParser) hasHas(tokenType1 ast.TokenType, tokenType2 ast.TokenType) bool {
 	return fp.lexer.HasNextNext() && fp.lexer.Peek().Type == tokenType1 && fp.lexer.PeekPeek().Type == tokenType2
 }
 
-func (fp *formulationParser) next() shared.Token {
+func (fp *formulationParser) next() ast.Token {
 	return fp.lexer.Next()
 }
 
@@ -67,12 +67,157 @@ func (fp *formulationParser) error(message string) {
 	})
 }
 
-func (fp *formulationParser) expect(tokenType shared.TokenType) (shared.Token, bool) {
+func (fp *formulationParser) expect(tokenType ast.TokenType) (ast.Token, bool) {
 	if !fp.has(tokenType) {
 		fp.error(fmt.Sprintf("Expected a token of type %s", tokenType))
-		return shared.Token{}, false
+		return ast.Token{}, false
 	}
 	return fp.next(), true
+}
+
+func (fp *formulationParser) parenArgs() ([]ast.ExpressionType, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LParen)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return []ast.ExpressionType{}, false
+	}
+	args := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RParen) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.expressionType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return []ast.ExpressionType{}, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(ast.RParen)
+	fp.lexer.Commit(id)
+	return args, true
+}
+
+func (fp *formulationParser) curlyArgs() ([]ast.ExpressionType, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LCurly)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return []ast.ExpressionType{}, false
+	}
+	args := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RCurly) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.expressionType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return []ast.ExpressionType{}, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return args, true
+}
+
+func (fp *formulationParser) parenParams() ([]ast.StructuralFormType, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LParen)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return []ast.StructuralFormType{}, false
+	}
+	args := make([]ast.StructuralFormType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RParen) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.structuralFormType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return []ast.StructuralFormType{}, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(ast.RParen)
+	fp.lexer.Commit(id)
+	return args, true
+}
+
+func (fp *formulationParser) squareParams() ([]ast.StructuralFormType, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LSquare)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return []ast.StructuralFormType{}, false
+	}
+	args := make([]ast.StructuralFormType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RSquare) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.structuralFormType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return []ast.StructuralFormType{}, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(ast.RSquare)
+	fp.lexer.Commit(id)
+	return args, true
+}
+
+func (fp *formulationParser) curlyParams() ([]ast.StructuralFormType, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LCurly)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return []ast.StructuralFormType{}, false
+	}
+	args := make([]ast.StructuralFormType, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RCurly) {
+			break
+		}
+
+		if len(args) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		arg, ok := fp.structuralFormType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return []ast.StructuralFormType{}, false
+		}
+		args = append(args, arg)
+	}
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return args, true
 }
 
 func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
@@ -104,7 +249,7 @@ func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool)
 }
 
 func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
-	if !fp.has(shared.Name) {
+	if !fp.has(ast.Name) {
 		return ast.NameForm{}, false
 	}
 
@@ -118,18 +263,18 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 	isVarArg := false
 	var varArgCount *string = nil
 	hasQuestionMark := false
-	if fp.has(shared.DotDotDot) {
+	if fp.has(ast.DotDotDot) {
 		fp.next() // skip the ...
 		isVarArg = true
 
-		if fp.hasHas(shared.Operator, shared.Name) && fp.lexer.Peek().Text == "#" {
+		if fp.hasHas(ast.Operator, ast.Name) && fp.lexer.Peek().Text == "#" {
 			fp.next() // skip the #
 			text := fp.next().Text
 			varArgCount = &text
 		}
 	}
 
-	if fp.has(shared.QuestionMark) {
+	if fp.has(ast.QuestionMark) {
 		fp.next() // skip the ?
 		hasQuestionMark = true
 	}
@@ -146,15 +291,15 @@ func (fp *formulationParser) nameForm() (ast.NameForm, bool) {
 }
 
 func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
-	if !fp.has(shared.DotDotDot) {
+	if !fp.has(ast.DotDotDot) {
 		return ast.VarArgData{
 			IsVarArg:    false,
 			VarArgCount: nil,
 		}, false
 	}
-	fp.expect(shared.DotDotDot)
+	fp.expect(ast.DotDotDot)
 	var varArgCount *string = nil
-	if fp.hasHas(shared.Operator, shared.Name) && fp.lexer.Peek().Text == "#" {
+	if fp.hasHas(ast.Operator, ast.Name) && fp.lexer.Peek().Text == "#" {
 		text := fp.next().Text
 		varArgCount = &text
 	}
@@ -165,7 +310,7 @@ func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
 }
 
 func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
-	if !fp.hasHas(shared.Name, shared.LParen) {
+	if !fp.hasHas(ast.Name, ast.LParen) {
 		return ast.FunctionForm{}, false
 	}
 
@@ -175,14 +320,14 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 	}
 
 	params := make([]ast.NameForm, 0)
-	fp.expect(shared.LParen)
+	fp.expect(ast.LParen)
 	for fp.lexer.HasNext() {
-		if fp.has(shared.RParen) {
+		if fp.has(ast.RParen) {
 			break
 		}
 
 		if len(params) > 0 {
-			fp.expect(shared.Comma)
+			fp.expect(ast.Comma)
 		}
 
 		param, ok := fp.nameForm()
@@ -194,7 +339,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 			params = append(params, param)
 		}
 	}
-	fp.expect(shared.RParen)
+	fp.expect(ast.RParen)
 
 	varArgData, _ := fp.varArgData()
 	return ast.FunctionForm{
@@ -205,7 +350,7 @@ func (fp *formulationParser) functionForm() (ast.FunctionForm, bool) {
 }
 
 func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionForm, bool) {
-	if !fp.hasHas(shared.Name, shared.LSquare) {
+	if !fp.hasHas(ast.Name, ast.LSquare) {
 		return ast.FunctionExpressionForm{}, false
 	}
 
@@ -215,14 +360,14 @@ func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionFor
 	}
 
 	params := make([]ast.NameForm, 0)
-	fp.expect(shared.LSquare)
+	fp.expect(ast.LSquare)
 	for fp.lexer.HasNext() {
-		if fp.has(shared.RSquare) {
+		if fp.has(ast.RSquare) {
 			break
 		}
 
 		if len(params) > 0 {
-			fp.expect(shared.Comma)
+			fp.expect(ast.Comma)
 		}
 
 		param, ok := fp.nameForm()
@@ -234,7 +379,7 @@ func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionFor
 			params = append(params, param)
 		}
 	}
-	fp.expect(shared.RSquare)
+	fp.expect(ast.RSquare)
 
 	varArgData, _ := fp.varArgData()
 	return ast.FunctionExpressionForm{
@@ -246,19 +391,19 @@ func (fp *formulationParser) functionExpressionForm() (ast.FunctionExpressionFor
 
 func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 	id := fp.lexer.Snapshot()
-	_, ok := fp.token(shared.LParen)
+	_, ok := fp.token(ast.LParen)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.TupleForm{}, false
 	}
 	params := make([]ast.StructuralFormType, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(shared.RParen) {
+		if fp.has(ast.RParen) {
 			break
 		}
 
 		if len(params) > 0 {
-			fp.expect(shared.Comma)
+			fp.expect(ast.Comma)
 		}
 
 		param, ok := fp.structuralFormType()
@@ -268,7 +413,7 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 		}
 		params = append(params, param)
 	}
-	fp.expect(shared.RParen)
+	fp.expect(ast.RParen)
 	varArg, _ := fp.varArgData()
 	fp.lexer.Commit(id)
 	return ast.TupleForm{
@@ -279,19 +424,25 @@ func (fp *formulationParser) tupleForm() (ast.TupleForm, bool) {
 
 func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 	id := fp.lexer.Snapshot()
-	_, ok := fp.token(shared.LCurly)
+	_, ok := fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.FixedSetForm{}, false
 	}
 	params := make([]ast.StructuralFormType, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(shared.RParen) {
+		if fp.has(ast.RParen) {
 			break
 		}
 
 		if len(params) > 0 {
-			fp.expect(shared.Comma)
+			// if the input is of the form `{x |` then it is a
+			// conditional set and not a fixed set
+			if fp.has(ast.Bar) {
+				fp.lexer.RollBack(id)
+				return ast.FixedSetForm{}, false
+			}
+			fp.expect(ast.Comma)
 		}
 
 		param, ok := fp.structuralFormType()
@@ -301,7 +452,7 @@ func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 		}
 		params = append(params, param)
 	}
-	fp.expect(shared.RCurly)
+	fp.expect(ast.RCurly)
 	varArg, _ := fp.varArgData()
 	fp.lexer.Commit(id)
 	return ast.FixedSetForm{
@@ -312,7 +463,7 @@ func (fp *formulationParser) fixedSetForm() (ast.FixedSetForm, bool) {
 
 func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool) {
 	id := fp.lexer.Snapshot()
-	if _, ok := fp.token(shared.LCurly); !ok {
+	if _, ok := fp.token(ast.LCurly); !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetForm{}, false
 	}
@@ -323,18 +474,18 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 		return ast.ConditionalSetForm{}, false
 	}
 
-	_, ok = fp.token(shared.Bar)
+	_, ok = fp.token(ast.Bar)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetForm{}, false
 	}
 
-	_, ok = fp.token(shared.DotDotDot)
+	_, ok = fp.token(ast.DotDotDot)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.ConditionalSetForm{}, false
 	}
-	fp.expect(shared.RCurly)
+	fp.expect(ast.RCurly)
 	varArg, _ := fp.varArgData()
 	fp.lexer.Commit(id)
 	return ast.ConditionalSetForm{
@@ -349,7 +500,7 @@ func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
 }
 
 func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpression, bool) {
-	if !fp.hasHas(shared.Name, shared.LParen) {
+	if !fp.hasHas(ast.Name, ast.LParen) {
 		return ast.FunctionCallExpression{}, false
 	}
 
@@ -359,14 +510,14 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 	}
 
 	args := make([]ast.ExpressionType, 0)
-	fp.expect(shared.LParen)
+	fp.expect(ast.LParen)
 	for fp.lexer.HasNext() {
-		if fp.has(shared.RParen) {
+		if fp.has(ast.RParen) {
 			break
 		}
 
 		if len(args) > 0 {
-			fp.expect(shared.Comma)
+			fp.expect(ast.Comma)
 		}
 
 		arg, ok := fp.expressionType()
@@ -378,7 +529,7 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 			args = append(args, arg)
 		}
 	}
-	fp.expect(shared.RParen)
+	fp.expect(ast.RParen)
 	return ast.FunctionCallExpression{
 		Target: target,
 		Args:   args,
@@ -387,19 +538,19 @@ func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpressio
 
 func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 	id := fp.lexer.Snapshot()
-	_, ok := fp.token(shared.LParen)
+	_, ok := fp.token(ast.LParen)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.TupleExpression{}, false
 	}
 	args := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(shared.RParen) {
+		if fp.has(ast.RParen) {
 			break
 		}
 
 		if len(args) > 0 {
-			fp.expect(shared.Comma)
+			fp.expect(ast.Comma)
 		}
 
 		arg, ok := fp.expressionType()
@@ -409,7 +560,7 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 		}
 		args = append(args, arg)
 	}
-	fp.expect(shared.RParen)
+	fp.expect(ast.RParen)
 	fp.lexer.Commit(id)
 	return ast.TupleExpression{
 		Args: args,
@@ -418,19 +569,25 @@ func (fp *formulationParser) tupleExpression() (ast.TupleExpression, bool) {
 
 func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool) {
 	id := fp.lexer.Snapshot()
-	_, ok := fp.token(shared.LCurly)
+	_, ok := fp.token(ast.LCurly)
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.FixedSetExpression{}, false
 	}
 	args := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(shared.RParen) {
+		if fp.has(ast.RParen) {
 			break
 		}
 
 		if len(args) > 0 {
-			fp.expect(shared.Comma)
+			// if the input is of the form `{x |` then it is a
+			// conditional set and not a fixed set
+			if fp.has(ast.Bar) {
+				fp.lexer.RollBack(id)
+				return ast.FixedSetExpression{}, false
+			}
+			fp.expect(ast.Comma)
 		}
 
 		arg, ok := fp.structuralFormType()
@@ -440,19 +597,170 @@ func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool)
 		}
 		args = append(args, arg)
 	}
-	fp.expect(shared.RCurly)
+	fp.expect(ast.RCurly)
 	fp.lexer.Commit(id)
 	return ast.FixedSetExpression{
 		Args: args,
 	}, true
 }
 
-/*
 func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
 	id := fp.lexer.Snapshot()
 	parts := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
 		part, ok := fp.expressionType()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return ast.ChainExpression{}, false
+		}
+		parts = append(parts, part)
+		if fp.has(ast.Dot) {
+			fp.expect(ast.Dot)
+		} else {
+			break
+		}
+	}
+	if len(parts) < 2 {
+		fp.lexer.RollBack(id)
+		return ast.ChainExpression{}, false
+	}
+	return ast.ChainExpression{
+		Parts: parts,
+	}, true
+}
+
+func (fp *formulationParser) nameOrdinalCallExpression() (ast.NameOrdinalCallExpression, bool) {
+	id := fp.lexer.Snapshot()
+	name, ok := fp.nameForm()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.NameOrdinalCallExpression{}, false
+	}
+
+	_, ok = fp.token(ast.LCurly)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.NameOrdinalCallExpression{}, false
+	}
+
+	exp, ok := fp.expressionType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.NameOrdinalCallExpression{}, false
+	}
+
+	_, ok = fp.token(ast.RCurly)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.NameOrdinalCallExpression{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.NameOrdinalCallExpression{
+		Target: name,
+		Arg:    exp,
+	}, true
+}
+
+func (fp *formulationParser) pseudoToken(expectedType ast.TokenType) (ast.PseudoTokenNode, bool) {
+	tok, ok := fp.token(ast.As)
+	if !ok {
+		return ast.PseudoTokenNode{}, false
+	}
+	return ast.PseudoTokenNode{
+		Type: tok.Type,
+	}, true
+}
+
+func (fp *formulationParser) asKeyword() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.As)
+}
+
+func (fp *formulationParser) isKeyword() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.Is)
+}
+
+func (fp *formulationParser) isNotKeyword() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.IsNot)
+}
+
+func (fp *formulationParser) isQuestionMarkKeyword() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.QuestionMark)
+}
+
+func (fp *formulationParser) operatorToken() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.Operator)
+}
+
+func (fp *formulationParser) colonEqualsToken() (ast.PseudoTokenNode, bool) {
+	return fp.pseudoToken(ast.ColonEquals)
+}
+
+func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclosedNonCommandOperatorTarget, bool) {
+	if tok, ok := fp.token(ast.Operator); ok {
+		return ast.NonEnclosedNonCommandOperatorTarget{
+			Text: tok.Text,
+		}, true
+	}
+	return ast.NonEnclosedNonCommandOperatorTarget{}, false
+}
+
+func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNonCommandOperatorTarget, bool) {
+	id := fp.lexer.Snapshot()
+	if _, ok := fp.token(ast.LSquare); !ok {
+		fp.lexer.RollBack(id)
+		return ast.EnclosedNonCommandOperatorTarget{}, false
+	}
+
+	exp, ok := fp.expressionType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.EnclosedNonCommandOperatorTarget{}, false
+	}
+
+	if _, ok = fp.token(ast.RSquare); !ok {
+		fp.lexer.RollBack(id)
+		return ast.EnclosedNonCommandOperatorTarget{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.EnclosedNonCommandOperatorTarget{
+		Target: exp,
+	}, true
+}
+
+func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
+	if !fp.hasHas(ast.Colon, ast.Name) {
+		return ast.NamedArg{}, false
+	}
+	id := fp.lexer.Snapshot()
+	fp.expect(ast.Colon)
+	name, ok := fp.nameForm()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.NamedArg{}, false
+	}
+	var args *[]ast.ExpressionType = nil
+	if curlyArgs, ok := fp.curlyArgs(); ok {
+		args = &curlyArgs
+	}
+	return ast.NamedArg{
+		Name: name,
+		Args: args,
+	}, true
+}
+
+/*
+func (fp *formulationParser) subSupArgs() (ast.SubSupArgs, bool) {
+	id := fp.lexer.Snapshot()
+	squareParams, ok := fp.squareParams()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.SubSupArgs{}, false
+	}
+
+	subArgs := make([]ast.ExpressionType, 0)
+	if fp.has(ast.Underscore) {
 	}
 }
 */

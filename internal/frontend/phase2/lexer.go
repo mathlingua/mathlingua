@@ -29,30 +29,30 @@ func NewLexer(phase1Lexer shared.Lexer) shared.Lexer {
 
 //////////////////////////////////////////////////////////////////
 
-func getTokens(lexer1 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
-	tokens := make([]shared.Token, 0)
+func getTokens(lexer1 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
+	tokens := make([]ast.Token, 0)
 	diagnostics := make([]frontend.Diagnostic, 0)
 
 	diagnostics = append(diagnostics, lexer1.Diagnostics()...)
 	prevIndent := 0
 
-	appendToken := func(tok shared.Token) {
+	appendToken := func(tok ast.Token) {
 		tokens = append(tokens, tok)
 	}
 
 	handleIndentsOrUnIndents := func(curIndent int, position ast.Position) {
 		if curIndent > prevIndent {
 			for j := 0; j < curIndent-prevIndent; j++ {
-				appendToken(shared.Token{
-					Type:     shared.Indent,
+				appendToken(ast.Token{
+					Type:     ast.Indent,
 					Text:     "<Indent>",
 					Position: position,
 				})
 			}
 		} else {
 			for j := 0; j < prevIndent-curIndent; j++ {
-				appendToken(shared.Token{
-					Type:     shared.UnIndent,
+				appendToken(ast.Token{
+					Type:     ast.UnIndent,
 					Text:     "<UnIndent>",
 					Position: position,
 				})
@@ -63,28 +63,28 @@ func getTokens(lexer1 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 	for lexer1.HasNext() {
 		cur := lexer1.Next()
 
-		if cur.Type == shared.Newline {
+		if cur.Type == ast.Newline {
 			appendToken(cur)
-			// if the shared.Newline is followed by at least one more shared.Newline
-			// also record a shared.LineBreak
-			if lexer1.HasNext() && lexer1.Peek().Type == shared.Newline {
-				for lexer1.HasNext() && lexer1.Peek().Type == shared.Newline {
+			// if the ast.Newline is followed by at least one more ast.Newline
+			// also record a ast.LineBreak
+			if lexer1.HasNext() && lexer1.Peek().Type == ast.Newline {
+				for lexer1.HasNext() && lexer1.Peek().Type == ast.Newline {
 					lexer1.Next()
 				}
-				appendToken(shared.Token{
-					Type:     shared.LineBreak,
+				appendToken(ast.Token{
+					Type:     ast.LineBreak,
 					Text:     "<LineBreak>",
 					Position: cur.Position,
 				})
 			}
-			if lexer1.HasNext() && lexer1.Peek().Type != shared.Space && lexer1.Peek().Type != shared.DotSpace {
+			if lexer1.HasNext() && lexer1.Peek().Type != ast.Space && lexer1.Peek().Type != ast.DotSpace {
 				// since there isn't a space handle any unindents
 				handleIndentsOrUnIndents(0, cur.Position)
 				prevIndent = 0
 			}
-		} else if cur.Type == shared.Space {
+		} else if cur.Type == ast.Space {
 			numSpaces := 1
-			for lexer1.HasNext() && lexer1.Peek().Type == shared.Space {
+			for lexer1.HasNext() && lexer1.Peek().Type == ast.Space {
 				lexer1.Next()
 				numSpaces++
 			}
@@ -97,15 +97,15 @@ func getTokens(lexer1 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 				})
 			}
 			curIndent := numSpaces / 2
-			if lexer1.HasNext() && lexer1.Peek().Type == shared.DotSpace {
+			if lexer1.HasNext() && lexer1.Peek().Type == ast.DotSpace {
 				curIndent++
 			}
 			handleIndentsOrUnIndents(curIndent, cur.Position)
-			if lexer1.HasNext() && lexer1.Peek().Type == shared.DotSpace {
+			if lexer1.HasNext() && lexer1.Peek().Type == ast.DotSpace {
 				appendToken(lexer1.Next())
 			}
 			prevIndent = curIndent
-		} else if cur.Type == shared.DotSpace {
+		} else if cur.Type == ast.DotSpace {
 			curIndent := 1
 			handleIndentsOrUnIndents(curIndent, cur.Position)
 			appendToken(cur)

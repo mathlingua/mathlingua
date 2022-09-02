@@ -30,110 +30,110 @@ func NewLexer(phase2Lexer shared.Lexer) shared.Lexer {
 
 ////////////////////////////////////////////////////////////
 
-func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
-	tokens := make([]shared.Token, 0)
+func getTokens(lexer2 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
+	tokens := make([]ast.Token, 0)
 	diagnostics := make([]frontend.Diagnostic, 0)
 
 	diagnostics = append(diagnostics, lexer2.Diagnostics()...)
-	stack := mlglib.NewStack[shared.TokenType]()
+	stack := mlglib.NewStack[ast.TokenType]()
 
 	appendEndSection := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.EndSection,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.EndSection,
 			Text:     "<EndSection>",
 			Position: lexer2.Position(),
 		})
 	}
 
 	appendEndGroup := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.EndGroup,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.EndGroup,
 			Text:     "<EndGroup>",
 			Position: lexer2.Position(),
 		})
 	}
 
 	appendEndDotSpaceArgument := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.EndDotSpaceArgument,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.EndDotSpaceArgument,
 			Text:     "<EndDotSpaceArgument>",
 			Position: lexer2.Position(),
 		})
 	}
 
 	appendEndInlineArgument := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.EndInlineArgument,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.EndInlineArgument,
 			Text:     "<EndInlineArgument>",
 			Position: lexer2.Position(),
 		})
 	}
 
 	beginSection := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.BeginSection,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.BeginSection,
 			Text:     "<BeginSection>",
 			Position: lexer2.Position(),
 		})
-		stack.Push(shared.BeginSection)
+		stack.Push(ast.BeginSection)
 	}
 
 	beginGroup := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.BeginGroup,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.BeginGroup,
 			Text:     "<BeginGroup>",
 			Position: lexer2.Position(),
 		})
-		stack.Push(shared.BeginGroup)
+		stack.Push(ast.BeginGroup)
 	}
 
 	beginDotSpaceArgument := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.BeginDotSpaceArgument,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.BeginDotSpaceArgument,
 			Text:     "<BeginDotSpaceArgument>",
 			Position: lexer2.Position(),
 		})
-		stack.Push(shared.BeginDotSpaceArgument)
+		stack.Push(ast.BeginDotSpaceArgument)
 	}
 
 	beginInlineArgument := func() {
-		tokens = append(tokens, shared.Token{
-			Type:     shared.BeginInlineArgument,
+		tokens = append(tokens, ast.Token{
+			Type:     ast.BeginInlineArgument,
 			Text:     "<BeginInlineArgument>",
 			Position: lexer2.Position(),
 		})
-		stack.Push(shared.BeginInlineArgument)
+		stack.Push(ast.BeginInlineArgument)
 	}
 
 	maybeEndSection := func() {
-		if !stack.IsEmpty() && stack.Peek() == shared.BeginSection {
+		if !stack.IsEmpty() && stack.Peek() == ast.BeginSection {
 			stack.Pop()
 			appendEndSection()
 		}
 	}
 
 	maybeEndGroup := func() {
-		if !stack.IsEmpty() && stack.Peek() == shared.BeginGroup {
+		if !stack.IsEmpty() && stack.Peek() == ast.BeginGroup {
 			stack.Pop()
 			appendEndGroup()
 		}
 	}
 
 	maybeEndDotSpaceArgument := func() {
-		if !stack.IsEmpty() && stack.Peek() == shared.BeginDotSpaceArgument {
+		if !stack.IsEmpty() && stack.Peek() == ast.BeginDotSpaceArgument {
 			stack.Pop()
 			appendEndDotSpaceArgument()
 		}
 	}
 
 	maybeEndInlineArgument := func() {
-		if !stack.IsEmpty() && stack.Peek() == shared.BeginInlineArgument {
+		if !stack.IsEmpty() && stack.Peek() == ast.BeginInlineArgument {
 			stack.Pop()
 			appendEndInlineArgument()
 		}
 	}
 
-	appendToken := func(tok shared.Token) {
+	appendToken := func(tok ast.Token) {
 		tokens = append(tokens, tok)
 	}
 
@@ -156,14 +156,14 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 
 	hasNameColon := func() bool {
 		return lexer2.HasNextNext() &&
-			lexer2.Peek().Type == shared.Name && lexer2.PeekPeek().Type == shared.Colon
+			lexer2.Peek().Type == ast.Name && lexer2.PeekPeek().Type == ast.Colon
 	}
 
-	has := func(tokenType shared.TokenType) bool {
+	has := func(tokenType ast.TokenType) bool {
 		return lexer2.HasNext() && lexer2.Peek().Type == tokenType
 	}
 
-	hasHas := func(type1 shared.TokenType, type2 shared.TokenType) bool {
+	hasHas := func(type1 ast.TokenType, type2 ast.TokenType) bool {
 		return lexer2.HasNextNext() &&
 			lexer2.Peek().Type == type1 &&
 			lexer2.PeekPeek().Type == type2
@@ -179,14 +179,14 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 			appendNext() // append the name
 			skipNext()   // but skip the :
 			beginInlineArgument()
-		} else if hasHas(shared.Indent, shared.DotSpace) {
+		} else if hasHas(ast.Indent, ast.DotSpace) {
 			skipNext()
 			skipNext()
 			beginDotSpaceArgument()
 			if hasNameColon() {
 				beginGroup()
 			}
-		} else if has(shared.DotSpace) {
+		} else if has(ast.DotSpace) {
 			skipNext()
 			maybeEndSection()
 			maybeEndGroup()
@@ -195,36 +195,36 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 			if hasNameColon() {
 				beginGroup()
 			}
-		} else if has(shared.UnIndent) {
+		} else if has(ast.UnIndent) {
 			skipNext()
 			maybeEndSection()
 			maybeEndGroup()
 			maybeEndDotSpaceArgument()
-		} else if has(shared.LineBreak) {
+		} else if has(ast.LineBreak) {
 			for !stack.IsEmpty() {
 				top := stack.Pop()
-				if top == shared.BeginSection {
+				if top == ast.BeginSection {
 					appendEndSection()
-				} else if top == shared.BeginGroup {
+				} else if top == ast.BeginGroup {
 					appendEndGroup()
-				} else if top == shared.BeginDotSpaceArgument {
+				} else if top == ast.BeginDotSpaceArgument {
 					appendEndDotSpaceArgument()
-				} else if top == shared.BeginInlineArgument {
+				} else if top == ast.BeginInlineArgument {
 					appendEndInlineArgument()
 				} else {
 					panic(fmt.Sprintf("Unexpected structural type %s", top))
 				}
 			}
 			skipNext()
-		} else if has(shared.Indent) {
-			if !has(shared.DotSpace) {
+		} else if has(ast.Indent) {
+			if !has(ast.DotSpace) {
 				appendDiagnostic("Unexpected indent", lexer2.Position())
 			}
 			skipNext()
-		} else if has(shared.Newline) {
+		} else if has(ast.Newline) {
 			maybeEndInlineArgument()
 			skipNext()
-		} else if has(shared.Comma) {
+		} else if has(ast.Comma) {
 			skipNext()
 			maybeEndInlineArgument()
 			beginInlineArgument()
@@ -233,13 +233,13 @@ func getTokens(lexer2 shared.Lexer) ([]shared.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	cleanedTokens := make([]shared.Token, 0)
+	cleanedTokens := make([]ast.Token, 0)
 	j := 0
 
 	for j < len(tokens) {
 		cur := tokens[j]
 		j++
-		if cur.Type == shared.BeginInlineArgument && j < len(tokens) && tokens[j].Type == shared.EndInlineArgument {
+		if cur.Type == ast.BeginInlineArgument && j < len(tokens) && tokens[j].Type == ast.EndInlineArgument {
 			j++
 			// skip the begin and end inline argument tokens because the argument is empty
 		} else {

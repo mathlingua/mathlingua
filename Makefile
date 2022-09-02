@@ -1,7 +1,7 @@
 
 .PHONY: build
 build:
-	go build -o mlg main.go
+	go build -o testbed/mlg main.go
 
 .PHONY: run
 run:
@@ -37,4 +37,4 @@ setup:
 
 .PHONY: testbed
 testbed:
-	go build -o testbed/mlg && cd testbed && ./mlg $(args)
+	go build -o testbed/mlg main.go && cd testbed && ./mlg $(args)

@@ -252,7 +252,7 @@ type CommandExpression struct {
 // \set@[x]{x | x is \real ; x > 0}
 type CommandAtExpression struct {
 	Names      []NameForm
-	Expression []ExpressionType
+	Expression ExpressionType
 }
 
 // -x

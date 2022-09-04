@@ -495,8 +495,40 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 }
 
 func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
-	// TODO: implement this
-	return nil, false
+	return fp.pseudoExpression()
+}
+
+func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
+	children := make([]ast.NodeType, 0)
+	for {
+		if name, ok := fp.nameForm(); ok {
+			children = append(children, name)
+		} else if fun, ok := fp.functionForm(); ok {
+			children = append(children, fun)
+		} else if fun, ok := fp.functionExpressionForm(); ok {
+			children = append(children, fun)
+		} else if fun, ok := fp.functionCallExpression(); ok {
+			children = append(children, fun)
+		} else if tup, ok := fp.tupleForm(); ok {
+			children = append(children, tup)
+		} else if tup, ok := fp.tupleExpression(); ok {
+			children = append(children, tup)
+		} else if set, ok := fp.fixedSetForm(); ok {
+			children = append(children, set)
+		} else if set, ok := fp.fixedSetExpression(); ok {
+			children = append(children, set)
+		} else if set, ok := fp.conditionalSetForm(); ok {
+			children = append(children, set)
+		} else {
+			break
+		}
+	}
+	if len(children) == 0 {
+		return ast.PseudoExpression{}, false
+	}
+	return ast.PseudoExpression{
+		Children: children,
+	}, false
 }
 
 func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpression, bool) {
@@ -696,6 +728,34 @@ func (fp *formulationParser) colonEqualsToken() (ast.PseudoTokenNode, bool) {
 	return fp.pseudoToken(ast.ColonEquals)
 }
 
+func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
+	if as, ok := fp.asKeyword(); ok {
+		return as, ok
+	}
+
+	if is, ok := fp.isKeyword(); ok {
+		return is, ok
+	}
+
+	if isNot, ok := fp.isNotKeyword(); ok {
+		return isNot, ok
+	}
+
+	if question, ok := fp.isQuestionMarkKeyword(); ok {
+		return question, ok
+	}
+
+	if op, ok := fp.operatorToken(); ok {
+		return op, ok
+	}
+
+	if colonEquals, ok := fp.colonEqualsToken(); ok {
+		return colonEquals, ok
+	}
+
+	return ast.PseudoTokenNode{}, false
+}
+
 func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclosedNonCommandOperatorTarget, bool) {
 	if tok, ok := fp.token(ast.Operator); ok {
 		return ast.NonEnclosedNonCommandOperatorTarget{
@@ -750,17 +810,124 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 	}, true
 }
 
-/*
 func (fp *formulationParser) subSupArgs() (ast.SubSupArgs, bool) {
 	id := fp.lexer.Snapshot()
-	squareParams, ok := fp.squareParams()
+	squareArgs, ok := fp.squareParams()
 	if !ok {
 		fp.lexer.RollBack(id)
 		return ast.SubSupArgs{}, false
 	}
 
 	subArgs := make([]ast.ExpressionType, 0)
+	supArgs := make([]ast.ExpressionType, 0)
+
 	if fp.has(ast.Underscore) {
+		fp.expect(ast.Underscore)
+		subArgs, _ = fp.curlyArgs()
 	}
+
+	if fp.has(ast.Caret) {
+		fp.expect(ast.Caret)
+		supArgs, _ = fp.curlyArgs()
+	}
+
+	fp.lexer.Commit(id)
+	return ast.SubSupArgs{
+		SquareArgs: squareArgs,
+		SubArgs:    subArgs,
+		SupArgs:    supArgs,
+	}, true
 }
-*/
+
+func (fp *formulationParser) commandExpression() (ast.CommandExpression, bool) {
+	if !fp.hasHas(ast.BackSlash, ast.Name) {
+		return ast.CommandExpression{}, false
+	}
+
+	id := fp.lexer.Snapshot()
+	names := make([]ast.NameForm, 0)
+	for fp.lexer.HasNext() {
+		if name, ok := fp.nameForm(); ok {
+			names = append(names, name)
+		} else {
+			break
+		}
+		if fp.has(ast.Dot) {
+			fp.expect(ast.Dot)
+		} else {
+			break
+		}
+	}
+
+	if len(names) == 0 {
+		fp.lexer.RollBack(id)
+		return ast.CommandExpression{}, false
+	}
+
+	subSupArgs, _ := fp.subSupArgs()
+	curlyArgs, _ := fp.curlyArgs()
+
+	namedArgs := make([]ast.NamedArg, 0)
+	for fp.lexer.HasNext() {
+		if namedArg, ok := fp.namedArg(); ok {
+			namedArgs = append(namedArgs, namedArg)
+		} else {
+			break
+		}
+	}
+
+	parenArgs, _ := fp.parenArgs()
+
+	fp.lexer.Commit(id)
+	return ast.CommandExpression{
+		Names:      names,
+		SubSupArgs: &subSupArgs,
+		CurlyArgs:  &curlyArgs,
+		NamedArgs:  &namedArgs,
+		ParenArgs:  &parenArgs,
+	}, true
+}
+
+func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, bool) {
+	if !fp.hasHas(ast.BackSlash, ast.Name) {
+		return ast.CommandAtExpression{}, false
+	}
+
+	id := fp.lexer.Snapshot()
+	names := make([]ast.NameForm, 0)
+	for fp.lexer.HasNext() {
+		if name, ok := fp.nameForm(); ok {
+			names = append(names, name)
+		} else {
+			break
+		}
+		if fp.has(ast.Dot) {
+			fp.expect(ast.Dot)
+		} else {
+			break
+		}
+	}
+
+	if len(names) == 0 {
+		fp.lexer.RollBack(id)
+		return ast.CommandAtExpression{}, false
+	}
+
+	if !fp.has(ast.At) {
+		fp.lexer.RollBack(id)
+		return ast.CommandAtExpression{}, false
+	}
+
+	fp.expect(ast.At)
+	exp, ok := fp.expressionType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.CommandAtExpression{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.CommandAtExpression{
+		Names:      names,
+		Expression: exp,
+	}, true
+}

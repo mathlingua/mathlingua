@@ -103,6 +103,12 @@ func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
 		cur := chars[i]
 		i++
 		switch {
+		case cur.Symbol == '@':
+			appendToken(ast.Token{
+				Type:     ast.At,
+				Text:     "@",
+				Position: cur.Position,
+			})
 		case cur.Symbol == ',':
 			appendToken(ast.Token{
 				Type:     ast.Comma,

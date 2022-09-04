@@ -62,6 +62,7 @@ const (
 	IsNot                 TokenType = "IsNot"
 	As                    TokenType = "As"
 	Caret                 TokenType = "Caret"
+	At                    TokenType = "At"
 )
 
 type Token struct {

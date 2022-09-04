@@ -30,7 +30,7 @@ func Parse(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
 		lexer:       lexer,
 		diagnostics: make([]frontend.Diagnostic, 0),
 	}
-	node, _ := parser.structuralFormType()
+	node, _ := parser.expressionType()
 	return node, parser.diagnostics, len(parser.diagnostics) == 0
 }
 
@@ -619,8 +619,24 @@ func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
 
 func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 	children := make([]ast.NodeType, 0)
+	prevOffset := -1
 	for {
-		if name, ok := fp.nameForm(); ok {
+		if fp.lexer.HasNext() && fp.lexer.Peek().Position.Offset == prevOffset {
+			next := fp.lexer.Next()
+			fp.error(fmt.Sprintf("Unexpected text '%s'", next.Text))
+			prevOffset = next.Position.Offset
+			continue
+		}
+
+		if fp.lexer.HasNext() {
+			prevOffset = fp.lexer.Next().Position.Offset
+		}
+
+		if lit, ok := fp.literalExpressionType(); ok {
+			children = append(children, lit)
+		} else if lit, ok := fp.literalFormType(); ok {
+			children = append(children, lit)
+		} else if name, ok := fp.nameForm(); ok {
 			children = append(children, name)
 		} else if fun, ok := fp.functionForm(); ok {
 			children = append(children, fun)
@@ -648,9 +664,11 @@ func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 			children = append(children, chain)
 		} else if pseudoToken, ok := fp.pseudoTokenNode(); ok {
 			children = append(children, pseudoToken)
-		} else if pseudoExp, ok := fp.pseudoExpression(); ok {
-			children = append(children, pseudoExp)
 		} else {
+			if fp.lexer.HasNext() {
+				next := fp.lexer.Next()
+				fp.error(fmt.Sprintf("Unexpected text '%s'", next.Text))
+			}
 			break
 		}
 	}

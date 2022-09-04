@@ -211,7 +211,16 @@ Codified?:
 . written:
 . writing:
   as:
+. called:
 Documented?:
+. loosely?:
+. overview?:
+. motivation?:
+. history?:
+. examples?:
+. related?:
+. discovered?:
+. notes?:
 Justified?:
 References?:
 Metadata?:
@@ -224,6 +233,8 @@ when?:
 suchThat?:
 means?:
 defines?:
+Viewable?:
+Provides?:
 Using?:
 Codified?:
 Documented?:
@@ -237,8 +248,6 @@ given?:
 when?:
 suchThat?:
 that:
-Viewable?:
-Provides?:
 Using?:
 Codified?:
 Documented?:

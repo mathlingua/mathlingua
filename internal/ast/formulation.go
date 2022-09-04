@@ -66,18 +66,19 @@ func (PseudoExpression) NodeType()                    {}
 
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 
+// DONE
 type StructuralFormType interface {
 	NodeType       // any StructuralFormType is a NodeType
 	ExpressionType // any StructuralFormType is also an ExpressionType
 	StructuralForm()
 }
 
-func (NameForm) StructuralForm()               {}
-func (FunctionForm) StructuralForm()           {}
-func (FunctionExpressionForm) StructuralForm() {}
-func (TupleForm) StructuralForm()              {}
-func (FixedSetForm) StructuralForm()           {}
-func (ConditionalSetForm) StructuralForm()     {}
+func (NameForm) StructuralForm()               {} // DONE
+func (FunctionForm) StructuralForm()           {} // DONE
+func (FunctionExpressionForm) StructuralForm() {} // DONE
+func (TupleForm) StructuralForm()              {} // DONE
+func (FixedSetForm) StructuralForm()           {} // DONE
+func (ConditionalSetForm) StructuralForm()     {} // DONE
 
 // DONE
 // x
@@ -128,11 +129,13 @@ type ConditionalSetForm struct {
 
 //////////////////////////////////////////////////////////////////////
 
+// DONE
 type LiteralFormType interface {
 	NodeType
 	LiteralFormType()
 }
 
+// DONE
 // [x]{x | f[x]...}
 type ConditionalSetIdForm struct {
 	Symbols   []StructuralFormType
@@ -140,23 +143,24 @@ type ConditionalSetIdForm struct {
 	Condition FunctionExpressionForm
 }
 
-func (NameForm) LiteralFormType()             {}
-func (FunctionForm) LiteralFormType()         {}
-func (TupleForm) LiteralFormType()            {}
-func (FixedSetForm) LiteralFormType()         {}
-func (ConditionalSetIdForm) LiteralFormType() {}
+func (NameForm) LiteralFormType()             {} // DONE
+func (FunctionForm) LiteralFormType()         {} // DONE
+func (TupleForm) LiteralFormType()            {} // DONE
+func (FixedSetForm) LiteralFormType()         {} // DONE
+func (ConditionalSetIdForm) LiteralFormType() {} // DONE
 
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
+// DONE
 type LiteralExpressionType interface {
 	NodeType
 	LiteralExpressionType()
 }
 
-func (FunctionCallExpression) LiteralExpressionType()   {}
-func (TupleExpression) LiteralExpressionType()          {}
-func (FixedSetExpression) LiteralExpressionType()       {}
-func (ConditionalSetExpression) LiteralExpressionType() {}
+func (FunctionCallExpression) LiteralExpressionType()   {} // DONE
+func (TupleExpression) LiteralExpressionType()          {} // DONE
+func (FixedSetExpression) LiteralExpressionType()       {} // DONE
+func (ConditionalSetExpression) LiteralExpressionType() {} // DONE
 
 ///////////////////////////////////////////////////////////////////////////////////
 
@@ -183,25 +187,25 @@ type ExpressionType interface {
 	ExpressionType()
 }
 
-func (NameForm) ExpressionType()                      {}
-func (FunctionForm) ExpressionType()                  {}
-func (FunctionExpressionForm) ExpressionType()        {}
-func (FunctionCallExpression) ExpressionType()        {}
-func (TupleForm) ExpressionType()                     {}
-func (TupleExpression) ExpressionType()               {}
-func (FixedSetForm) ExpressionType()                  {}
-func (FixedSetExpression) ExpressionType()            {}
-func (ConditionalSetForm) ExpressionType()            {}
-func (CommandExpression) ExpressionType()             {}
-func (CommandAtExpression) ExpressionType()           {}
+func (NameForm) ExpressionType()                      {} // DONE
+func (FunctionForm) ExpressionType()                  {} // DONE
+func (FunctionExpressionForm) ExpressionType()        {} // DONE
+func (FunctionCallExpression) ExpressionType()        {} // DONE
+func (TupleForm) ExpressionType()                     {} // DONE
+func (TupleExpression) ExpressionType()               {} // DONE
+func (FixedSetForm) ExpressionType()                  {} // DONE
+func (FixedSetExpression) ExpressionType()            {} // DONE
+func (ConditionalSetForm) ExpressionType()            {} // DONE
+func (CommandExpression) ExpressionType()             {} // DONE
+func (CommandAtExpression) ExpressionType()           {} // DONE
 func (PrefixOperatorCallExpression) ExpressionType()  {}
 func (PostfixOperatorCallExpression) ExpressionType() {}
 func (InfixOperatorCallExpression) ExpressionType()   {}
 func (AsExpression) ExpressionType()                  {}
-func (NameOrdinalCallExpression) ExpressionType()     {}
-func (ChainExpression) ExpressionType()               {}
-func (PseudoTokenNode) ExpressionType()               {}
-func (PseudoExpression) ExpressionType()              {}
+func (NameOrdinalCallExpression) ExpressionType()     {} // DONE
+func (ChainExpression) ExpressionType()               {} // DONE
+func (PseudoTokenNode) ExpressionType()               {} // DONE
+func (PseudoExpression) ExpressionType()              {} // DONE
 
 // DONE
 // f(x + y, z) or (f + g)(x)
@@ -222,24 +226,28 @@ type FixedSetExpression struct {
 	Args []ExpressionType
 }
 
+// DONE
 // [x]{(x, x+1) | x is \real ; x > 0}
 type ConditionalSetExpression struct {
-	Symbols    []NameForm
+	Symbols    []StructuralFormType
 	Target     ExpressionType
 	Conditions []ExpressionType
 }
 
+// DONE
 type SubSupArgs struct {
 	SquareArgs []StructuralFormType
 	SubArgs    []ExpressionType
 	SupArgs    []ExpressionType
 }
 
+// DONE
 type NamedArg struct {
 	Name NameForm
 	Args *[]ExpressionType
 }
 
+// DONE
 // \function:on{A}:to{B}
 type CommandExpression struct {
 	Names      []NameForm
@@ -249,6 +257,7 @@ type CommandExpression struct {
 	ParenArgs  *[]ExpressionType
 }
 
+// DONE
 // \set@[x]{x | x is \real ; x > 0}
 type CommandAtExpression struct {
 	Names      []NameForm
@@ -307,6 +316,7 @@ type ChainExpression struct {
 
 ///////////////////////////////////////////////////////////////////////////////
 
+// \[a.b.c:x:y]
 type Signature struct {
 	MainNames       []string
 	NamedGroupNames []string
@@ -368,25 +378,29 @@ type ExpressionColonEqualsIsItem struct {
 
 ///////////////////////////// Operators ///////////////////////////////////////
 
+// DONE
 type OperatorType interface {
 	NodeType // any OperatorType is a NodeType
 	OperatorType()
 }
 
-func (EnclosedNonCommandOperatorTarget) OperatorType()    {}
-func (NonEnclosedNonCommandOperatorTarget) OperatorType() {}
-func (CommandOperatorTarget) OperatorType()               {}
+func (EnclosedNonCommandOperatorTarget) OperatorType()    {} // DONE
+func (NonEnclosedNonCommandOperatorTarget) OperatorType() {} // DONE
+func (CommandOperatorTarget) OperatorType()               {} // DONE
 
+// DONE
 // [x] or [x + y]
 type EnclosedNonCommandOperatorTarget struct {
 	Target ExpressionType
 }
 
+// DONE
 // * or ++
 type NonEnclosedNonCommandOperatorTarget struct {
 	Text string
 }
 
+// DONE
 type CommandOperatorTarget struct {
 	Command CommandExpression
 }
@@ -398,17 +412,26 @@ type IdType interface {
 	IdType()
 }
 
+func (CommandId) IdType()         {} // DONE
+func (CommandAtId) IdType()       {} // DONE
+func (PrefixOperatorId) IdType()  {}
+func (PostfixOperatorId) IdType() {}
+func (InfixOperatorId) IdType()   {}
+
+// DONE
 type SubSupParams struct {
 	SquareParams []StructuralFormType
 	SubParams    []StructuralFormType
 	SupParams    []StructuralFormType
 }
 
+// DONE
 type NamedParam struct {
 	Name   NameForm
 	Params *[]StructuralFormType
 }
 
+// DONE
 // \function:on{A}:to{B}
 type CommandId struct {
 	Names        []NameForm
@@ -418,10 +441,11 @@ type CommandId struct {
 	ParenParams  *[]NameForm
 }
 
+// DONE
 // \set@[x]{f[x] | g[x]}
 type CommandAtId struct {
 	Names []NameForm
-	Param ConditionalSetIdForm
+	Param LiteralFormType
 }
 
 // +x
@@ -453,6 +477,7 @@ type FormulationType interface {
 
 /////////////////////////// Support structures ////////////////////////////////
 
+// DONE
 type VarArgData struct {
 	IsVarArg    bool
 	VarArgCount *string

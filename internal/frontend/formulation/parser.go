@@ -162,6 +162,35 @@ func (fp *formulationParser) parenParams() ([]ast.StructuralFormType, bool) {
 	return args, true
 }
 
+func (fp *formulationParser) nameParams() ([]ast.NameForm, bool) {
+	id := fp.lexer.Snapshot()
+	_, ok := fp.token(ast.LParen)
+	if !ok {
+		fp.lexer.RollBack(id)
+		return []ast.NameForm{}, false
+	}
+	names := make([]ast.NameForm, 0)
+	for fp.lexer.HasNext() {
+		if fp.has(ast.RParen) {
+			break
+		}
+
+		if len(names) > 0 {
+			fp.expect(ast.Comma)
+		}
+
+		name, ok := fp.nameForm()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return []ast.NameForm{}, false
+		}
+		names = append(names, name)
+	}
+	fp.expect(ast.RParen)
+	fp.lexer.Commit(id)
+	return names, true
+}
+
 func (fp *formulationParser) squareParams() ([]ast.StructuralFormType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LSquare)
@@ -221,16 +250,16 @@ func (fp *formulationParser) curlyParams() ([]ast.StructuralFormType, bool) {
 }
 
 func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
+	if name, ok := fp.nameForm(); ok {
+		return name, true
+	}
+
 	if fun, ok := fp.functionForm(); ok {
 		return fun, true
 	}
 
 	if funExp, ok := fp.functionExpressionForm(); ok {
 		return funExp, true
-	}
-
-	if name, ok := fp.nameForm(); ok {
-		return name, true
 	}
 
 	if tuple, ok := fp.tupleForm(); ok {
@@ -494,6 +523,96 @@ func (fp *formulationParser) conditionalSetForm() (ast.ConditionalSetForm, bool)
 	}, true
 }
 
+func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, bool) {
+	id := fp.lexer.Snapshot()
+	symbols, ok := fp.squareParams()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetIdForm{}, false
+	}
+
+	if !fp.has(ast.LCurly) {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetIdForm{}, false
+	}
+
+	fp.expect(ast.LCurly)
+	target, ok := fp.structuralFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetIdForm{}, false
+	}
+
+	if !fp.has(ast.Bar) {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetIdForm{}, false
+	}
+
+	fp.expect(ast.Bar)
+	condition, ok := fp.functionExpressionForm()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetIdForm{}, false
+	}
+
+	if !fp.has(ast.RCurly) {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetIdForm{}, false
+	}
+
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return ast.ConditionalSetIdForm{
+		Symbols:   symbols,
+		Target:    target,
+		Condition: condition,
+	}, true
+}
+
+func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
+	if name, ok := fp.nameForm(); ok {
+		return name, ok
+	}
+
+	if fun, ok := fp.functionForm(); ok {
+		return fun, ok
+	}
+
+	if tup, ok := fp.tupleForm(); ok {
+		return tup, ok
+	}
+
+	if set, ok := fp.fixedSetForm(); ok {
+		return set, ok
+	}
+
+	if set, ok := fp.conditionalSetIdForm(); ok {
+		return set, ok
+	}
+
+	return nil, false
+}
+
+func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType, bool) {
+	if fun, ok := fp.functionCallExpression(); ok {
+		return fun, ok
+	}
+
+	if tup, ok := fp.tupleExpression(); ok {
+		return tup, ok
+	}
+
+	if set, ok := fp.fixedSetExpression(); ok {
+		return set, ok
+	}
+
+	if set, ok := fp.conditionalSetExpression(); ok {
+		return set, ok
+	}
+
+	return nil, false
+}
+
 func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
 	return fp.pseudoExpression()
 }
@@ -519,6 +638,18 @@ func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 			children = append(children, set)
 		} else if set, ok := fp.conditionalSetForm(); ok {
 			children = append(children, set)
+		} else if cmd, ok := fp.commandExpression(); ok {
+			children = append(children, cmd)
+		} else if cmd, ok := fp.commandAtExpression(); ok {
+			children = append(children, cmd)
+		} else if ord, ok := fp.nameOrdinalCallExpression(); ok {
+			children = append(children, ord)
+		} else if chain, ok := fp.chainExpression(); ok {
+			children = append(children, chain)
+		} else if pseudoToken, ok := fp.pseudoTokenNode(); ok {
+			children = append(children, pseudoToken)
+		} else if pseudoExp, ok := fp.pseudoExpression(); ok {
+			children = append(children, pseudoExp)
 		} else {
 			break
 		}
@@ -633,6 +764,62 @@ func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool)
 	fp.lexer.Commit(id)
 	return ast.FixedSetExpression{
 		Args: args,
+	}, true
+}
+
+func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpression, bool) {
+	id := fp.lexer.Snapshot()
+	symbols, ok := fp.squareParams()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetExpression{}, false
+	}
+
+	if !fp.has(ast.LCurly) {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetExpression{}, false
+	}
+
+	fp.expect(ast.LCurly)
+	target, ok := fp.expressionType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetExpression{}, false
+	}
+
+	if !fp.has(ast.Bar) {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetExpression{}, false
+	}
+
+	fp.expect(ast.Bar)
+	conditions := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		condition, ok := fp.expressionType()
+		if ok {
+			conditions = append(conditions, condition)
+		} else {
+			break
+		}
+
+		if fp.has(ast.Semicolon) {
+			fp.expect(ast.Semicolon)
+		} else {
+			break
+		}
+	}
+
+	if !fp.has(ast.RCurly) {
+		fp.lexer.RollBack(id)
+		return ast.ConditionalSetExpression{}, false
+	}
+
+	fp.expect(ast.RCurly)
+	fp.lexer.Commit(id)
+	return ast.ConditionalSetExpression{
+		Symbols:    symbols,
+		Target:     target,
+		Conditions: conditions,
 	}, true
 }
 
@@ -756,6 +943,22 @@ func (fp *formulationParser) pseudoTokenNode() (ast.PseudoTokenNode, bool) {
 	return ast.PseudoTokenNode{}, false
 }
 
+func (fp *formulationParser) operatorType() (ast.OperatorType, bool) {
+	if enclosed, ok := fp.enclosedNonCommandOperatorTarget(); ok {
+		return enclosed, ok
+	}
+
+	if nonEnclosed, ok := fp.nonEnclosedNonCommandOperatorTarget(); ok {
+		return nonEnclosed, ok
+	}
+
+	if cmd, ok := fp.commandOperatorTarget(); ok {
+		return cmd, ok
+	}
+
+	return nil, false
+}
+
 func (fp *formulationParser) nonEnclosedNonCommandOperatorTarget() (ast.NonEnclosedNonCommandOperatorTarget, bool) {
 	if tok, ok := fp.token(ast.Operator); ok {
 		return ast.NonEnclosedNonCommandOperatorTarget{
@@ -786,6 +989,25 @@ func (fp *formulationParser) enclosedNonCommandOperatorTarget() (ast.EnclosedNon
 	fp.lexer.Commit(id)
 	return ast.EnclosedNonCommandOperatorTarget{
 		Target: exp,
+	}, true
+}
+
+func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget, bool) {
+	id := fp.lexer.Snapshot()
+	cmd, ok := fp.commandExpression()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.CommandOperatorTarget{}, false
+	}
+
+	if !fp.has(ast.Slash) {
+		fp.lexer.RollBack(id)
+		return ast.CommandOperatorTarget{}, false
+	}
+
+	fp.expect(ast.Slash)
+	return ast.CommandOperatorTarget{
+		Command: cmd,
 	}, true
 }
 
@@ -929,5 +1151,160 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 	return ast.CommandAtExpression{
 		Names:      names,
 		Expression: exp,
+	}, true
+}
+
+func (fp *formulationParser) idType() (ast.IdType, bool) {
+	if cmd, ok := fp.commandId(); ok {
+		return cmd, ok
+	}
+
+	if cmd, ok := fp.commandAtId(); ok {
+		return cmd, ok
+	}
+
+	return nil, false
+}
+
+func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
+	if !fp.hasHas(ast.Colon, ast.Name) {
+		return ast.NamedParam{}, false
+	}
+	id := fp.lexer.Snapshot()
+	fp.expect(ast.Colon)
+	name, ok := fp.nameForm()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.NamedParam{}, false
+	}
+	var params *[]ast.StructuralFormType = nil
+	if curlyParams, ok := fp.curlyParams(); ok {
+		params = &curlyParams
+	}
+	return ast.NamedParam{
+		Name:   name,
+		Params: params,
+	}, true
+}
+
+func (fp *formulationParser) subSupParams() (ast.SubSupParams, bool) {
+	id := fp.lexer.Snapshot()
+	squareParams, ok := fp.squareParams()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.SubSupParams{}, false
+	}
+
+	subParams := make([]ast.StructuralFormType, 0)
+	supParams := make([]ast.StructuralFormType, 0)
+
+	if fp.has(ast.Underscore) {
+		fp.expect(ast.Underscore)
+		subParams, _ = fp.curlyParams()
+	}
+
+	if fp.has(ast.Caret) {
+		fp.expect(ast.Caret)
+		supParams, _ = fp.curlyParams()
+	}
+
+	fp.lexer.Commit(id)
+	return ast.SubSupParams{
+		SquareParams: squareParams,
+		SubParams:    subParams,
+		SupParams:    supParams,
+	}, true
+}
+
+func (fp *formulationParser) commandId() (ast.CommandId, bool) {
+	if !fp.hasHas(ast.BackSlash, ast.Name) {
+		return ast.CommandId{}, false
+	}
+
+	id := fp.lexer.Snapshot()
+	names := make([]ast.NameForm, 0)
+	for fp.lexer.HasNext() {
+		if name, ok := fp.nameForm(); ok {
+			names = append(names, name)
+		} else {
+			break
+		}
+		if fp.has(ast.Dot) {
+			fp.expect(ast.Dot)
+		} else {
+			break
+		}
+	}
+
+	if len(names) == 0 {
+		fp.lexer.RollBack(id)
+		return ast.CommandId{}, false
+	}
+
+	subSupParams, _ := fp.subSupParams()
+	curlyParams, _ := fp.curlyParams()
+
+	namedParams := make([]ast.NamedParam, 0)
+	for fp.lexer.HasNext() {
+		if namedParam, ok := fp.namedParam(); ok {
+			namedParams = append(namedParams, namedParam)
+		} else {
+			break
+		}
+	}
+
+	parenParams, _ := fp.nameParams()
+
+	fp.lexer.Commit(id)
+	return ast.CommandId{
+		Names:        names,
+		SubSupParams: &subSupParams,
+		CurlyParams:  &curlyParams,
+		NamedParams:  &namedParams,
+		ParenParams:  &parenParams,
+	}, true
+}
+
+func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
+	if !fp.hasHas(ast.BackSlash, ast.Name) {
+		return ast.CommandAtId{}, false
+	}
+
+	id := fp.lexer.Snapshot()
+	names := make([]ast.NameForm, 0)
+	for fp.lexer.HasNext() {
+		if name, ok := fp.nameForm(); ok {
+			names = append(names, name)
+		} else {
+			break
+		}
+		if fp.has(ast.Dot) {
+			fp.expect(ast.Dot)
+		} else {
+			break
+		}
+	}
+
+	if len(names) == 0 {
+		fp.lexer.RollBack(id)
+		return ast.CommandAtId{}, false
+	}
+
+	if !fp.has(ast.At) {
+		fp.lexer.RollBack(id)
+		return ast.CommandAtId{}, false
+	}
+
+	fp.expect(ast.At)
+	literal, ok := fp.literalFormType()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return ast.CommandAtId{}, false
+	}
+
+	fp.lexer.Commit(id)
+	return ast.CommandAtId{
+		Names: names,
+		Param: literal,
 	}, true
 }

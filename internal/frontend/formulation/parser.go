@@ -250,16 +250,16 @@ func (fp *formulationParser) curlyParams() ([]ast.StructuralFormType, bool) {
 }
 
 func (fp *formulationParser) structuralFormType() (ast.StructuralFormType, bool) {
-	if name, ok := fp.nameForm(); ok {
-		return name, true
-	}
-
 	if fun, ok := fp.functionForm(); ok {
 		return fun, true
 	}
 
 	if funExp, ok := fp.functionExpressionForm(); ok {
 		return funExp, true
+	}
+
+	if name, ok := fp.nameForm(); ok {
+		return name, true
 	}
 
 	if tuple, ok := fp.tupleForm(); ok {
@@ -629,21 +629,21 @@ func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 		}
 
 		if fp.lexer.HasNext() {
-			prevOffset = fp.lexer.Next().Position.Offset
+			prevOffset = fp.lexer.Peek().Position.Offset
 		}
 
 		if lit, ok := fp.literalExpressionType(); ok {
 			children = append(children, lit)
 		} else if lit, ok := fp.literalFormType(); ok {
 			children = append(children, lit)
-		} else if name, ok := fp.nameForm(); ok {
-			children = append(children, name)
 		} else if fun, ok := fp.functionForm(); ok {
 			children = append(children, fun)
 		} else if fun, ok := fp.functionExpressionForm(); ok {
 			children = append(children, fun)
 		} else if fun, ok := fp.functionCallExpression(); ok {
 			children = append(children, fun)
+		} else if name, ok := fp.nameForm(); ok {
+			children = append(children, name)
 		} else if tup, ok := fp.tupleForm(); ok {
 			children = append(children, tup)
 		} else if tup, ok := fp.tupleExpression(); ok {
@@ -677,7 +677,7 @@ func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 	}
 	return ast.PseudoExpression{
 		Children: children,
-	}, false
+	}, true
 }
 
 func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpression, bool) {

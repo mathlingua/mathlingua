@@ -26,12 +26,12 @@ type Clause = Formulation[NodeType]
 type Target = Formulation[NodeType]
 type Spec = Formulation[NodeType]
 
-type AndSection struct {
+type AllOfSection struct {
 	Clauses []Clause
 }
 
-type AndGroup struct {
-	And AndSection
+type AllOfGroup struct {
+	AllOf AllOfSection
 }
 
 type NotSection struct {
@@ -141,6 +141,178 @@ type PiecewiseGroup struct {
 	Else      *ElseSection
 }
 
-type MatchingSection struct {
-	Items []NodeType
-}
+/*
+
+allOf:
+
+anyOf:
+
+oneOf:
+
+not:
+
+exists:
+where?:
+suchThat?:
+
+existsUnique:
+where?:
+suchThat?:
+
+forAll:
+where?:
+suchThat?:
+then:
+
+if:
+then:
+
+iff:
+then:
+
+generated:
+from:
+when?:
+
+piecewise:
+if:
+then:
+else:
+
+[]
+Describes:
+with?:
+given?:
+when?:
+suchThat?:
+extends?:
+satisfies?:
+Viewable?:
+. as:
+  via:
+. as:
+  through:
+  as?:
+  states?:
+Provides?:
+. infix:
+  when?:
+  states|defines:
+. prefix:
+  when?:
+  states|defines:
+. postfix:
+  when?:
+  states|defines:
+. symbol:
+  defines:
+Using?:
+Codified?:
+. written:
+. writing:
+  as:
+Documented?:
+Justified?:
+References?:
+Metadata?:
+
+[]
+Declares:
+with?:
+given?:
+when?:
+suchThat?:
+means?:
+defines?:
+Viewable?:
+Provides?:
+Using?:
+Codified?:
+Documented?:
+Justified?:
+References?:
+Metadata?:
+
+[]
+States:
+given?:
+when?:
+suchThat?:
+that:
+Viewable?:
+Provides?:
+Using?:
+Codified?:
+Documented?:
+Justified?:
+References?:
+Metadata?:
+
+[]
+Proof:
+of:
+content:
+References?:
+Metadata:
+
+[]
+Axiom:
+given?:
+where?:
+suchThat?:
+then:
+iff?:
+Using?:
+Proof:
+Documented?:
+References?:
+Metadata?:
+
+[]
+Conjecture:
+given?:
+where?:
+suchThat?:
+then:
+iff?:
+Using?:
+Proof:
+Documented?:
+References?:
+Metadata?:
+
+[]
+Theorem:
+given?:
+where?:
+suchThat?:
+then:
+iff?:
+Using?:
+Proof:
+Documented?:
+References?:
+Metadata?:
+
+[]
+Topic:
+content:
+References?:
+Metadata:
+
+Note:
+content:
+Metadata?:
+
+Specify:
+. zero:
+  is|defines:
+. positiveInt:
+  is:
+. negativeInt:
+  is:
+. positiveFloat:
+  is:
+. negativeFloat:
+
+*/

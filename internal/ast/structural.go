@@ -224,8 +224,6 @@ when?:
 suchThat?:
 means?:
 defines?:
-Viewable?:
-Provides?:
 Using?:
 Codified?:
 Documented?:

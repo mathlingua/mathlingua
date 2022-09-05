@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-func Parse(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
+func PreParse(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
 	lexer := NewLexer(text)
 	parser := formulationParser{
 		lexer:       lexer,

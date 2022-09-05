@@ -173,6 +173,7 @@ type LiteralType interface {
 ////////////////////////////////////// Pseudo Nodes ////////////////////////////
 
 type PseudoTokenNode struct {
+	Text string
 	Type TokenType
 }
 
@@ -196,6 +197,7 @@ func (TupleExpression) ExpressionType()               {} // DONE
 func (FixedSetForm) ExpressionType()                  {} // DONE
 func (FixedSetExpression) ExpressionType()            {} // DONE
 func (ConditionalSetForm) ExpressionType()            {} // DONE
+func (ConditionalSetExpression) ExpressionType()      {}
 func (CommandExpression) ExpressionType()             {} // DONE
 func (CommandAtExpression) ExpressionType()           {} // DONE
 func (PrefixOperatorCallExpression) ExpressionType()  {}

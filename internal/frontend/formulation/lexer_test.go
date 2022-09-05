@@ -110,3 +110,22 @@ isnot IsNot
 	assert.Equal(t, expected, actual)
 	assert.Equal(t, []frontend.Diagnostic{}, lexer.Diagnostics())
 }
+
+func TestFormulationLexerMultiNames(t *testing.T) {
+	lexer := NewLexer("a b c")
+
+	actual := "\n"
+	for lexer.HasNext() {
+		next := lexer.Next()
+		actual += fmt.Sprintf("%s %s\n", next.Text, next.Type)
+	}
+
+	expected := `
+a Name
+b Name
+c Name
+`
+
+	assert.Equal(t, expected, actual)
+	assert.Equal(t, []frontend.Diagnostic{}, lexer.Diagnostics())
+}

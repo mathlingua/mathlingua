@@ -31,6 +31,15 @@ func Parse(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
 		diagnostics: make([]frontend.Diagnostic, 0),
 	}
 	node, _ := parser.expressionType()
+	for lexer.HasNext() {
+		next := lexer.Next()
+		parser.diagnostics = append(parser.diagnostics, frontend.Diagnostic{
+			Type:     frontend.Error,
+			Origin:   frontend.FormulationParserOrigin,
+			Message:  fmt.Sprintf("Unexpected token '%s'", next.Text),
+			Position: next.Position,
+		})
+	}
 	return node, parser.diagnostics, len(parser.diagnostics) == 0
 }
 
@@ -620,7 +629,7 @@ func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
 func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
 	children := make([]ast.NodeType, 0)
 	prevOffset := -1
-	for {
+	for fp.lexer.HasNext() {
 		if fp.lexer.HasNext() && fp.lexer.Peek().Position.Offset == prevOffset {
 			next := fp.lexer.Next()
 			fp.error(fmt.Sprintf("Unexpected text '%s'", next.Text))

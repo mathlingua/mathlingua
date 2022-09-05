@@ -57,7 +57,7 @@ func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
 	}
 
 	getName := func(start ast.Char) (string, bool) {
-		if i >= len(chars) || !isNameSymbol(start.Symbol) {
+		if i > len(chars) || !isNameSymbol(start.Symbol) {
 			return "", false
 		}
 		result := string(start.Symbol)
@@ -69,7 +69,7 @@ func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
 	}
 
 	getOperator := func(start ast.Char) (string, bool) {
-		if i >= len(chars) || !isOperatorSymbol(start.Symbol) {
+		if i > len(chars) || !isOperatorSymbol(start.Symbol) {
 			return "", false
 		}
 		result := string(start.Symbol)

@@ -790,7 +790,7 @@ func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool)
 	}
 	args := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
-		if fp.has(ast.RParen) {
+		if fp.has(ast.RCurly) {
 			break
 		}
 
@@ -804,7 +804,7 @@ func (fp *formulationParser) fixedSetExpression() (ast.FixedSetExpression, bool)
 			fp.expect(ast.Comma)
 		}
 
-		arg, ok := fp.structuralFormType()
+		arg, ok := fp.expressionType()
 		if !ok {
 			fp.lexer.RollBack(id)
 			return ast.FixedSetExpression{}, false

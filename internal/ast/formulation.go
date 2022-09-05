@@ -68,8 +68,7 @@ func (PseudoExpression) NodeType()                    {}
 
 // DONE
 type StructuralFormType interface {
-	NodeType       // any StructuralFormType is a NodeType
-	ExpressionType // any StructuralFormType is also an ExpressionType
+	NodeType // any StructuralFormType is a NodeType
 	StructuralForm()
 }
 
@@ -189,14 +188,9 @@ type ExpressionType interface {
 }
 
 func (NameForm) ExpressionType()                      {} // DONE
-func (FunctionForm) ExpressionType()                  {} // DONE
-func (FunctionExpressionForm) ExpressionType()        {} // DONE
 func (FunctionCallExpression) ExpressionType()        {} // DONE
-func (TupleForm) ExpressionType()                     {} // DONE
 func (TupleExpression) ExpressionType()               {} // DONE
-func (FixedSetForm) ExpressionType()                  {} // DONE
 func (FixedSetExpression) ExpressionType()            {} // DONE
-func (ConditionalSetForm) ExpressionType()            {} // DONE
 func (ConditionalSetExpression) ExpressionType()      {}
 func (CommandExpression) ExpressionType()             {} // DONE
 func (CommandAtExpression) ExpressionType()           {} // DONE

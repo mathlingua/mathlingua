@@ -875,6 +875,10 @@ func (fp *formulationParser) conditionalSetExpression() (ast.ConditionalSetExpre
 }
 
 func (fp *formulationParser) chainExpressionPart() (ast.ExpressionType, bool) {
+	if fun, ok := fp.functionCallExpression(); ok {
+		return fun, ok
+	}
+
 	if name, ok := fp.nameForm(); ok {
 		return name, ok
 	}

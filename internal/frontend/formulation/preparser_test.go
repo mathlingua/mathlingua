@@ -25,7 +25,7 @@ import (
 )
 
 func runTest(t *testing.T, text string, expected ast.NodeType) {
-	actual, diagnostics, ok := PreParse(text)
+	actual, diagnostics, ok := PreParseExpression(text)
 	assert.True(t, ok)
 	assert.Equal(t, 0, len(diagnostics))
 

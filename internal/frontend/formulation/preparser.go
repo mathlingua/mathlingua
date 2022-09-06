@@ -31,21 +31,35 @@ func PreParseExpression(text string) (ast.NodeType, []frontend.Diagnostic, bool)
 		diagnostics: make([]frontend.Diagnostic, 0),
 	}
 	node, _ := parser.expressionType()
-	for lexer.HasNext() {
-		next := lexer.Next()
-		parser.diagnostics = append(parser.diagnostics, frontend.Diagnostic{
-			Type:     frontend.Error,
-			Origin:   frontend.FormulationParserOrigin,
-			Message:  fmt.Sprintf("Unexpected token '%s'", next.Text),
-			Position: next.Position,
-		})
-	}
+	parser.finalize()
 	return node, parser.diagnostics, len(parser.diagnostics) == 0
 }
 
 type formulationParser struct {
 	lexer       shared.Lexer
 	diagnostics []frontend.Diagnostic
+}
+
+func ParseForm(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
+	lexer := NewLexer(text)
+	parser := formulationParser{
+		lexer:       lexer,
+		diagnostics: make([]frontend.Diagnostic, 0),
+	}
+	node, _ := parser.form()
+	parser.finalize()
+	return node, parser.diagnostics, len(parser.diagnostics) == 0
+}
+
+func ParseId(text string) (ast.IdType, []frontend.Diagnostic, bool) {
+	lexer := NewLexer(text)
+	parser := formulationParser{
+		lexer:       lexer,
+		diagnostics: make([]frontend.Diagnostic, 0),
+	}
+	node, _ := parser.idType()
+	parser.finalize()
+	return node, parser.diagnostics, len(parser.diagnostics) == 0
 }
 
 ////////////////////// utility functions ////////////////////////////////////
@@ -76,6 +90,13 @@ func (fp *formulationParser) error(message string) {
 		Message:  message,
 		Position: fp.lexer.Position(),
 	})
+}
+
+func (fp *formulationParser) finalize() {
+	for fp.lexer.HasNext() {
+		next := fp.lexer.Next()
+		fp.error(fmt.Sprintf("Unexpected token '%s'", next.Text))
+	}
 }
 
 func (fp *formulationParser) expect(tokenType ast.TokenType) (ast.Token, bool) {
@@ -799,6 +820,32 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 
 /////////////////////////// forms ///////////////////////////////////////
 
+func (fp *formulationParser) form() (ast.NodeType, bool) {
+	id := fp.lexer.Snapshot()
+	name, ok := fp.nameForm()
+	if !ok {
+		fp.lexer.RollBack(id)
+		return nil, false
+	}
+
+	if !fp.has(ast.ColonEquals) {
+		fp.lexer.Commit(id)
+		return name, true
+	}
+
+	fp.expect(ast.ColonEquals)
+	rhs, ok := fp.structuralFormType()
+	if !ok {
+		fp.error("Expected an item on the righ-hand-side of :=")
+		return nil, false
+	}
+
+	return ast.StructuralColonEqualsForm{
+		Lhs: name,
+		Rhs: rhs,
+	}, true
+}
+
 func (fp *formulationParser) parenParams() ([]ast.StructuralFormType, bool) {
 	id := fp.lexer.Snapshot()
 	_, ok := fp.token(ast.LParen)
@@ -1196,6 +1243,18 @@ func (fp *formulationParser) literalFormType() (ast.LiteralFormType, bool) {
 
 ////////////////////////////// id forms //////////////////////////////////
 
+func (fp *formulationParser) idType() (ast.IdType, bool) {
+	if cmd, ok := fp.commandId(); ok {
+		return cmd, ok
+	}
+
+	if cmd, ok := fp.commandAtId(); ok {
+		return cmd, ok
+	}
+
+	return nil, false
+}
+
 func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, bool) {
 	id := fp.lexer.Snapshot()
 	symbols, ok := fp.squareParams()
@@ -1240,18 +1299,6 @@ func (fp *formulationParser) conditionalSetIdForm() (ast.ConditionalSetIdForm, b
 		Target:    target,
 		Condition: condition,
 	}, true
-}
-
-func (fp *formulationParser) idType() (ast.IdType, bool) {
-	if cmd, ok := fp.commandId(); ok {
-		return cmd, ok
-	}
-
-	if cmd, ok := fp.commandAtId(); ok {
-		return cmd, ok
-	}
-
-	return nil, false
 }
 
 func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
@@ -1309,6 +1356,7 @@ func (fp *formulationParser) commandId() (ast.CommandId, bool) {
 		return ast.CommandId{}, false
 	}
 
+	fp.expect(ast.BackSlash)
 	id := fp.lexer.Snapshot()
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
@@ -1358,6 +1406,7 @@ func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 		return ast.CommandAtId{}, false
 	}
 
+	fp.expect(ast.BackSlash)
 	id := fp.lexer.Snapshot()
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {

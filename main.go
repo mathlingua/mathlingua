@@ -16,8 +16,30 @@
 
 package main
 
-import "mathlingua/cmd"
+import (
+	"fmt"
+	"mathlingua/cmd"
+	"mathlingua/internal/frontend/formulation"
+	"os"
+
+	"github.com/kr/pretty"
+)
 
 func main() {
-	cmd.Execute()
+	if len(os.Getenv("TESTBED")) > 0 {
+		if len(os.Args) != 2 {
+			fmt.Println("Expected a single argument that is the text to process")
+			os.Exit(1)
+		}
+		text := os.Args[1]
+		fmt.Println(text)
+		node, diags, ok := formulation.ParseId(text) // formulation.PreParseExpression(text)
+		fmt.Println("ok=", ok)
+		fmt.Printf("%s\n", pretty.Sprintf("%# v", node))
+		for _, d := range diags {
+			fmt.Printf("%#v\n", d)
+		}
+	} else {
+		cmd.Execute()
+	}
 }

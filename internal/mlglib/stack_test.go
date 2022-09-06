@@ -14,32 +14,31 @@
  * limitations under the License.
  */
 
-package main
+package mlglib
 
 import (
-	"fmt"
-	"mathlingua/cmd"
-	"mathlingua/internal/frontend/formulation"
-	"os"
+	"testing"
 
-	"github.com/kr/pretty"
+	"github.com/stretchr/testify/assert"
 )
 
-func main() {
-	if len(os.Getenv("TESTBED")) > 0 {
-		if len(os.Args) != 2 {
-			fmt.Println("Expected a single argument that is the text to process")
-			os.Exit(1)
-		}
-		text := os.Args[1]
-		fmt.Println(text)
-		node, diags, ok := formulation.PreParseExpression(text)
-		fmt.Println("ok=", ok)
-		fmt.Printf("%s\n", pretty.Sprintf("%# v", node))
-		for _, d := range diags {
-			fmt.Printf("%#v\n", d)
-		}
-	} else {
-		cmd.Execute()
-	}
+func TestStack(t *testing.T) {
+	stack := NewStack[int]()
+	stack.Push(1)
+	stack.Push(2)
+	stack.Push(3)
+
+	assert.Equal(t, 3, stack.Peek())
+	assert.Equal(t, false, stack.IsEmpty())
+	assert.Equal(t, 3, stack.Pop())
+
+	assert.Equal(t, 2, stack.Peek())
+	assert.Equal(t, false, stack.IsEmpty())
+	assert.Equal(t, 2, stack.Pop())
+
+	assert.Equal(t, 1, stack.Peek())
+	assert.Equal(t, false, stack.IsEmpty())
+	assert.Equal(t, 1, stack.Pop())
+
+	assert.Equal(t, true, stack.IsEmpty())
 }

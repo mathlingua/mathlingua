@@ -24,15 +24,16 @@ import (
 	"strings"
 )
 
-func PreParseExpression(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
-	lexer := NewLexer(text)
+func PreParseExpression(text string, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
+	numDiagBefore := tracker.Length()
+	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:       lexer,
 		diagnostics: make([]frontend.Diagnostic, 0),
 	}
 	node, _ := parser.expressionType()
 	parser.finalize()
-	return node, parser.diagnostics, len(parser.diagnostics) == 0
+	return node, tracker.Length() == numDiagBefore
 }
 
 type formulationParser struct {
@@ -40,26 +41,28 @@ type formulationParser struct {
 	diagnostics []frontend.Diagnostic
 }
 
-func ParseForm(text string) (ast.NodeType, []frontend.Diagnostic, bool) {
-	lexer := NewLexer(text)
+func ParseForm(text string, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
+	numDiagBefore := tracker.Length()
+	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:       lexer,
 		diagnostics: make([]frontend.Diagnostic, 0),
 	}
 	node, _ := parser.form()
 	parser.finalize()
-	return node, parser.diagnostics, len(parser.diagnostics) == 0
+	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseId(text string) (ast.IdType, []frontend.Diagnostic, bool) {
-	lexer := NewLexer(text)
+func ParseId(text string, tracker frontend.DiagnosticTracker) (ast.IdType, bool) {
+	numDiagBefore := tracker.Length()
+	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:       lexer,
 		diagnostics: make([]frontend.Diagnostic, 0),
 	}
 	node, _ := parser.idType()
 	parser.finalize()
-	return node, parser.diagnostics, len(parser.diagnostics) == 0
+	return node, tracker.Length() == numDiagBefore
 }
 
 ////////////////////// utility functions ////////////////////////////////////

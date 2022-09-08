@@ -25,13 +25,14 @@ import (
 )
 
 func TestPhase2LexerIndent(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
   . c:
 d:
-`)
-	lexer2 := NewLexer(lexer1)
+`, tracker)
+	lexer2 := NewLexer(lexer1, tracker)
 
 	actual := "\n"
 	for lexer2.HasNext() {
@@ -62,5 +63,5 @@ d
 `
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer2.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }

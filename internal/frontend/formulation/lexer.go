@@ -24,16 +24,14 @@ import (
 	"unicode"
 )
 
-func NewLexer(text string) shared.Lexer {
-	return shared.NewLexer(getTokens(text))
+func NewLexer(text string, tracker frontend.DiagnosticTracker) shared.Lexer {
+	return shared.NewLexer(getTokens(text, tracker))
 }
 
 //////////////////////////////////////////////////////////////
 
-func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
+func getTokens(text string, tracker frontend.DiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
-	diagnostics := make([]frontend.Diagnostic, 0)
-
 	chars := ast.GetChars(text)
 	i := 0
 
@@ -42,7 +40,7 @@ func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
 	}
 
 	appendDiagnostic := func(message string, position ast.Position) {
-		diagnostics = append(diagnostics, frontend.Diagnostic{
+		tracker.Append(frontend.Diagnostic{
 			Type:     frontend.Error,
 			Origin:   frontend.FormulationLexerOrigin,
 			Message:  message,
@@ -269,7 +267,7 @@ func getTokens(text string) ([]ast.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	return tokens, diagnostics
+	return tokens
 }
 
 ////////////////////////////////////////////////////////////////////////

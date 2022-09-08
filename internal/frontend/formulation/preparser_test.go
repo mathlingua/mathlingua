@@ -18,6 +18,7 @@ package formulation
 
 import (
 	"mathlingua/internal/ast"
+	"mathlingua/internal/frontend"
 	"testing"
 
 	"github.com/kr/pretty"
@@ -25,9 +26,10 @@ import (
 )
 
 func runTest(t *testing.T, text string, expected ast.NodeType) {
-	actual, diagnostics, ok := PreParseExpression(text)
+	tracker := frontend.NewDiagnosticTracker()
+	actual, ok := PreParseExpression(text, tracker)
 	assert.True(t, ok)
-	assert.Equal(t, 0, len(diagnostics))
+	assert.Equal(t, 0, tracker.Length())
 
 	actualStr := pretty.Sprintf("%# v", actual)
 	expectedStr := pretty.Sprintf("%# v", expected)

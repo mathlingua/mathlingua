@@ -27,11 +27,12 @@ import (
 )
 
 func TestPhase3LexerSingleSection(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -47,15 +48,16 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithSingleArg(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a: xyz
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -74,15 +76,16 @@ a: xyz
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiArgs(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a: xyz, abc
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -104,18 +107,19 @@ a: xyz, abc
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerIndentWithDoubleUnindent(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
   . c:
 d:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -148,19 +152,20 @@ d:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerIndentWithDoubleUnindentMultiSections(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
   . c:
 d:
 e:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -196,17 +201,18 @@ e:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerMultiIndent(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
   . c:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -236,17 +242,18 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiLineNonGroupArgs(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b
 . c
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -268,17 +275,18 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerSingleSectionWithMultiGroupArgs(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . b:
 . c:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -308,17 +316,18 @@ a:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerMultiSections(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 b:
 c:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -340,10 +349,11 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgs(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . x:
@@ -354,9 +364,9 @@ c:
 . P:
   Q:
   R:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -408,10 +418,11 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestPhase3LexerMultiSectionsWithGroupArgsAndNonGroupArgs(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer1 := phase1.NewLexer(`
 a:
 . x:x1,x2,x3
@@ -422,9 +433,9 @@ c:
 . P:
   Q:Q1
   R:
-`)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := NewLexer(lexer2)
+`, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := NewLexer(lexer2, tracker)
 
 	actual := "\n"
 	for lexer3.HasNext() {
@@ -497,5 +508,5 @@ c:
 `, "\t", "")
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer3.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }

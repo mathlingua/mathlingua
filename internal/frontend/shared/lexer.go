@@ -19,7 +19,6 @@ package shared
 import (
 	"fmt"
 	"mathlingua/internal/ast"
-	"mathlingua/internal/frontend"
 	"mathlingua/internal/mlglib"
 )
 
@@ -33,15 +32,13 @@ type Lexer interface {
 	Snapshot() int
 	Commit(id int)
 	RollBack(id int)
-	Diagnostics() []frontend.Diagnostic
 }
 
-func NewLexer(tokens []ast.Token, diagnostics []frontend.Diagnostic) Lexer {
+func NewLexer(tokens []ast.Token) Lexer {
 	return &lexer{
-		index:       0,
-		tokens:      tokens,
-		snapshots:   mlglib.NewStack[snapshot](),
-		diagnostics: diagnostics,
+		index:     0,
+		tokens:    tokens,
+		snapshots: mlglib.NewStack[snapshot](),
 	}
 }
 
@@ -53,10 +50,9 @@ type snapshot struct {
 }
 
 type lexer struct {
-	index       int
-	tokens      []ast.Token
-	snapshots   mlglib.Stack[snapshot]
-	diagnostics []frontend.Diagnostic
+	index     int
+	tokens    []ast.Token
+	snapshots mlglib.Stack[snapshot]
 }
 
 func (lex *lexer) HasNext() bool {
@@ -118,8 +114,4 @@ func (lex *lexer) RollBack(id int) {
 	}
 	top := lex.snapshots.Pop()
 	lex.index = top.startIndex
-}
-
-func (lex *lexer) Diagnostics() []frontend.Diagnostic {
-	return lex.diagnostics
 }

@@ -24,17 +24,14 @@ import (
 	"mathlingua/internal/mlglib"
 )
 
-func NewLexer(phase2Lexer shared.Lexer) shared.Lexer {
-	return shared.NewLexer(getTokens(phase2Lexer))
+func NewLexer(phase2Lexer shared.Lexer, tracker frontend.DiagnosticTracker) shared.Lexer {
+	return shared.NewLexer(getTokens(phase2Lexer, tracker))
 }
 
 ////////////////////////////////////////////////////////////
 
-func getTokens(lexer2 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
+func getTokens(lexer2 shared.Lexer, tracker frontend.DiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
-	diagnostics := make([]frontend.Diagnostic, 0)
-
-	diagnostics = append(diagnostics, lexer2.Diagnostics()...)
 	stack := mlglib.NewStack[ast.TokenType]()
 
 	appendEndSection := func() {
@@ -146,7 +143,7 @@ func getTokens(lexer2 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
 	}
 
 	appendDiagnostic := func(message string, position ast.Position) {
-		diagnostics = append(diagnostics, frontend.Diagnostic{
+		tracker.Append(frontend.Diagnostic{
 			Type:     frontend.Error,
 			Origin:   frontend.Phase3LexerOrigin,
 			Message:  message,
@@ -247,5 +244,5 @@ func getTokens(lexer2 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	return cleanedTokens, diagnostics
+	return cleanedTokens
 }

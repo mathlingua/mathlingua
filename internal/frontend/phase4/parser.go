@@ -23,24 +23,23 @@ import (
 	"mathlingua/internal/frontend/shared"
 )
 
-func Parse(lexer3 shared.Lexer) (Root, []frontend.Diagnostic) {
+func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Root {
 	parser := phase4Parser{
-		lexer:       lexer3,
-		diagnostics: make([]frontend.Diagnostic, 0),
+		lexer: lexer3,
 	}
 	root := parser.root()
-	return root, parser.diagnostics
+	return root
 }
 
 ///////////////////////////////////////////////////////////////
 
 type phase4Parser struct {
-	lexer       shared.Lexer
-	diagnostics []frontend.Diagnostic
+	lexer   shared.Lexer
+	tracker frontend.DiagnosticTracker
 }
 
 func (p *phase4Parser) appendDiagnostic(message string, position ast.Position) {
-	p.diagnostics = append(p.diagnostics, frontend.Diagnostic{
+	p.tracker.Append(frontend.Diagnostic{
 		Type:     frontend.Error,
 		Origin:   frontend.Phase4ParserOrigin,
 		Message:  message,

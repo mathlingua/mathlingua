@@ -41,3 +41,33 @@ type Diagnostic struct {
 	Message  string
 	Position ast.Position
 }
+
+type DiagnosticTracker interface {
+	Append(diagnostic Diagnostic)
+	Length() int
+	Diagnostics() []Diagnostic
+}
+
+func NewDiagnosticTracker() DiagnosticTracker {
+	return &diagnosticTracker{
+		diagnostics: make([]Diagnostic, 0),
+	}
+}
+
+//////////////////////////////////////////////////////////////////////
+
+type diagnosticTracker struct {
+	diagnostics []Diagnostic
+}
+
+func (dt *diagnosticTracker) Append(diagnostic Diagnostic) {
+	dt.diagnostics = append(dt.diagnostics, diagnostic)
+}
+
+func (dt *diagnosticTracker) Diagnostics() []Diagnostic {
+	return dt.diagnostics
+}
+
+func (dt *diagnosticTracker) Length() int {
+	return len(dt.diagnostics)
+}

@@ -54,20 +54,15 @@ type mlg struct {
 }
 
 func parse(text string) (phase4.Root, []frontend.Diagnostic) {
-	allDiagnostics := make([]frontend.Diagnostic, 0)
+	tracker := frontend.NewDiagnosticTracker()
 
-	lexer1 := phase1.NewLexer(text)
-	lexer2 := phase2.NewLexer(lexer1)
-	lexer3 := phase3.NewLexer(lexer2)
+	lexer1 := phase1.NewLexer(text, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := phase3.NewLexer(lexer2, tracker)
 
-	root, phase4Diagnostics := phase4.Parse(lexer3)
+	root := phase4.Parse(lexer3, tracker)
 
-	allDiagnostics = append(allDiagnostics, lexer1.Diagnostics()...)
-	allDiagnostics = append(allDiagnostics, lexer2.Diagnostics()...)
-	allDiagnostics = append(allDiagnostics, lexer3.Diagnostics()...)
-	allDiagnostics = append(allDiagnostics, phase4Diagnostics...)
-
-	return root, allDiagnostics
+	return root, tracker.Diagnostics()
 }
 
 func (m *mlg) Check(paths []string, debug bool) {

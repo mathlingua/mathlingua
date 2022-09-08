@@ -23,17 +23,14 @@ import (
 	"mathlingua/internal/frontend/shared"
 )
 
-func NewLexer(phase1Lexer shared.Lexer) shared.Lexer {
-	return shared.NewLexer(getTokens(phase1Lexer))
+func NewLexer(phase1Lexer shared.Lexer, tracker frontend.DiagnosticTracker) shared.Lexer {
+	return shared.NewLexer(getTokens(phase1Lexer, tracker))
 }
 
 //////////////////////////////////////////////////////////////////
 
-func getTokens(lexer1 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
+func getTokens(lexer1 shared.Lexer, tracker frontend.DiagnosticTracker) []ast.Token {
 	tokens := make([]ast.Token, 0)
-	diagnostics := make([]frontend.Diagnostic, 0)
-
-	diagnostics = append(diagnostics, lexer1.Diagnostics()...)
 	prevIndent := 0
 
 	appendToken := func(tok ast.Token) {
@@ -89,7 +86,7 @@ func getTokens(lexer1 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
 				numSpaces++
 			}
 			if numSpaces%2 == 1 {
-				diagnostics = append(diagnostics, frontend.Diagnostic{
+				tracker.Append(frontend.Diagnostic{
 					Type:     frontend.Error,
 					Origin:   frontend.Phase2LexerOrigin,
 					Message:  fmt.Sprintf("Expected an even indent but found %d", numSpaces),
@@ -115,5 +112,5 @@ func getTokens(lexer1 shared.Lexer) ([]ast.Token, []frontend.Diagnostic) {
 		}
 	}
 
-	return tokens, diagnostics
+	return tokens
 }

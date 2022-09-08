@@ -25,9 +25,10 @@ import (
 )
 
 func TestFormulationLexer(t *testing.T) {
+	tracker := frontend.NewDiagnosticTracker()
 	lexer := NewLexer(`
 xyzABC123 +*-? f(x, y, z) [x]{(a, b) | a ; b} f(x...) \command[x]_{a}^{b}:f{x}(y) x.y x is \something/ x as \[something] "*+" name' isnot @
-`)
+`, tracker)
 
 	actual := "\n"
 	for lexer.HasNext() {
@@ -108,11 +109,12 @@ isnot IsNot
 `
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }
 
 func TestFormulationLexerMultiNames(t *testing.T) {
-	lexer := NewLexer("a b c")
+	tracker := frontend.NewDiagnosticTracker()
+	lexer := NewLexer("a b c", tracker)
 
 	actual := "\n"
 	for lexer.HasNext() {
@@ -127,5 +129,5 @@ c Name
 `
 
 	assert.Equal(t, expected, actual)
-	assert.Equal(t, []frontend.Diagnostic{}, lexer.Diagnostics())
+	assert.Equal(t, []frontend.Diagnostic{}, tracker.Diagnostics())
 }

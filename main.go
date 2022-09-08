@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"mathlingua/cmd"
+	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/formulation"
 	"os"
 
@@ -33,10 +34,11 @@ func main() {
 		}
 		text := os.Args[1]
 		fmt.Println(text)
-		node, diags, ok := formulation.PreParseExpression(text)
+		tracker := frontend.NewDiagnosticTracker()
+		node, ok := formulation.PreParseExpression(text, tracker)
 		fmt.Println("ok=", ok)
 		fmt.Printf("%s\n", pretty.Sprintf("%# v", node))
-		for _, d := range diags {
+		for _, d := range tracker.Diagnostics() {
 			fmt.Printf("%#v\n", d)
 		}
 	} else {

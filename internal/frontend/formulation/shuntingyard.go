@@ -66,6 +66,7 @@ type Associativity string
 const (
 	LeftAssociative  Associativity = "LeftAssociative"
 	RightAssociative Associativity = "RightAssociative"
+	NotAssociative   Associativity = "NotAssociative"
 )
 
 type ItemType string

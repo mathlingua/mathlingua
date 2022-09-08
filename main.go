@@ -19,6 +19,7 @@ package main
 import (
 	"fmt"
 	"mathlingua/cmd"
+	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/formulation"
 	"os"
@@ -40,6 +41,13 @@ func main() {
 		fmt.Printf("%s\n", pretty.Sprintf("%# v", node))
 		for _, d := range tracker.Diagnostics() {
 			fmt.Printf("%#v\n", d)
+		}
+
+		switch node := node.(type) {
+		case ast.PseudoExpression:
+			root, ok := formulation.Consolidate(node.Children, tracker)
+			fmt.Println("ok=", ok)
+			fmt.Printf("%s\n", pretty.Sprintf("%# v", root))
 		}
 	} else {
 		cmd.Execute()

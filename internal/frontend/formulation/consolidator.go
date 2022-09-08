@@ -32,105 +32,7 @@ func Consolidate(nodes []ast.NodeType, tracker frontend.DiagnosticTracker) (ast.
 
 	stack := mlglib.NewStack[ast.NodeType]()
 	for !items.IsEmpty() {
-		rawTop := items.Pop()
-		top := rawTop.Item
-		switch top := top.(type) {
-		case ast.PrefixOperatorCallExpression:
-			// prefix operators
-			top.Arg = items.Pop().Item.(ast.ExpressionType)
-			stack.Push(top)
-		case ast.PostfixOperatorCallExpression:
-			// postfix operators
-			top.Arg = items.Pop().Item.(ast.ExpressionType)
-			stack.Push(top)
-		case ast.InfixOperatorCallExpression:
-			// infix operators
-			top.Lhs = items.Pop().Item.(ast.ExpressionType)
-			top.Rhs = items.Pop().Item.(ast.ExpressionType)
-			stack.Push(top)
-		case ast.EnclosedNonCommandOperatorTarget:
-			// for example [x]
-			target := top
-			lhs := items.Pop().Item.(ast.ExpressionType)
-			rhs := items.Pop().Item.(ast.ExpressionType)
-			stack.Push(ast.InfixOperatorCallExpression{
-				Target: target,
-				Lhs:    rhs,
-				Rhs:    lhs,
-			})
-		case ast.NonEnclosedNonCommandOperatorTarget:
-			// for example + or **
-			target := top
-			if rawTop.ItemType == PrefixOperatorType {
-				fmt.Printf("PEEEEEKING: %s\n", items.Peek().Item)
-				arg := items.Pop().Item.(ast.ExpressionType)
-				stack.Push(ast.PrefixOperatorCallExpression{
-					Target: target,
-					Arg:    arg,
-				})
-			} else if rawTop.ItemType == PostfixOperatorType {
-				arg := items.Pop().Item.(ast.ExpressionType)
-				stack.Push(ast.PostfixOperatorCallExpression{
-					Target: target,
-					Arg:    arg,
-				})
-			} else {
-				// it is an infix
-				lhs := items.Pop().Item.(ast.ExpressionType)
-				rhs := items.Pop().Item.(ast.ExpressionType)
-				stack.Push(ast.InfixOperatorCallExpression{
-					Target: target,
-					Lhs:    rhs,
-					Rhs:    lhs,
-				})
-			}
-		case ast.CommandOperatorTarget:
-			// for example \f/
-			target := top
-			lhs := items.Pop().Item.(ast.ExpressionType)
-			rhs := items.Pop().Item.(ast.ExpressionType)
-			stack.Push(ast.InfixOperatorCallExpression{
-				Target: target,
-				Lhs:    rhs,
-				Rhs:    lhs,
-			})
-		case ast.PseudoTokenNode:
-			// a token, for example :=, is, isnot
-			switch {
-			case top.Type == ast.ColonEquals:
-				lhs := items.Pop().Item.(ast.StructuralFormType)
-				rhs := items.Pop().Item.(ast.ExpressionType)
-				stack.Push(ast.ExpressionColonEqualsItem{
-					Lhs: lhs,
-					Rhs: rhs,
-				})
-			case top.Type == ast.Is:
-				lhs := items.Pop().Item.(ast.ExpressionType)
-				rhs := items.Pop().Item.(ast.KindType)
-				stack.Push(ast.IsExpression{
-					Lhs: []ast.ExpressionType{lhs},
-					Rhs: []ast.KindType{rhs},
-				})
-			case top.Type == ast.IsNot:
-				lhs := items.Pop().Item.(ast.ExpressionType)
-				rhs := items.Pop().Item.(ast.KindType)
-				stack.Push(ast.IsNotExpression{
-					Lhs: []ast.ExpressionType{lhs},
-					Rhs: []ast.KindType{rhs},
-				})
-			case top.Type == ast.As:
-				lhs := items.Pop().Item.(ast.ExpressionType)
-				rhs := items.Pop().Item.(ast.Signature)
-				stack.Push(ast.AsExpression{
-					Lhs: lhs,
-					Rhs: rhs,
-				})
-			default:
-				stack.Push(top)
-			}
-		default:
-			stack.Push(top)
-		}
+		stack.Push(toNode(items))
 	}
 
 	if stack.IsEmpty() {
@@ -139,6 +41,111 @@ func Consolidate(nodes []ast.NodeType, tracker frontend.DiagnosticTracker) (ast.
 
 	top := stack.Pop()
 	return top, stack.IsEmpty()
+}
+
+func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
+	if items.IsEmpty() {
+		return nil
+	}
+
+	rawTop := items.Pop()
+	top := rawTop.Item
+	switch top := top.(type) {
+	case ast.PrefixOperatorCallExpression:
+		// prefix operators
+		top.Arg = toNode(items).(ast.ExpressionType)
+		return top
+	case ast.PostfixOperatorCallExpression:
+		// postfix operators
+		top.Arg = toNode(items).(ast.ExpressionType)
+		return top
+	case ast.InfixOperatorCallExpression:
+		// infix operators
+		top.Lhs = toNode(items).(ast.ExpressionType)
+		top.Rhs = toNode(items).(ast.ExpressionType)
+		return top
+	case ast.EnclosedNonCommandOperatorTarget:
+		// for example [x]
+		target := top
+		lhs := toNode(items).(ast.ExpressionType)
+		rhs := toNode(items).(ast.ExpressionType)
+		return ast.InfixOperatorCallExpression{
+			Target: target,
+			Lhs:    rhs,
+			Rhs:    lhs,
+		}
+	case ast.NonEnclosedNonCommandOperatorTarget:
+		// for example + or **
+		target := top
+		if rawTop.ItemType == PrefixOperatorType {
+			arg := toNode(items).(ast.ExpressionType)
+			return ast.PrefixOperatorCallExpression{
+				Target: target,
+				Arg:    arg,
+			}
+		} else if rawTop.ItemType == PostfixOperatorType {
+			arg := toNode(items).(ast.ExpressionType)
+			return ast.PostfixOperatorCallExpression{
+				Target: target,
+				Arg:    arg,
+			}
+		} else {
+			// it is an infix
+			lhs := toNode(items).(ast.ExpressionType)
+			rhs := toNode(items).(ast.ExpressionType)
+			return ast.InfixOperatorCallExpression{
+				Target: target,
+				Lhs:    rhs,
+				Rhs:    lhs,
+			}
+		}
+	case ast.CommandOperatorTarget:
+		// for example \f/
+		target := top
+		lhs := toNode(items).(ast.ExpressionType)
+		rhs := toNode(items).(ast.ExpressionType)
+		return ast.InfixOperatorCallExpression{
+			Target: target,
+			Lhs:    rhs,
+			Rhs:    lhs,
+		}
+	case ast.PseudoTokenNode:
+		// a token, for example :=, is, isnot
+		switch {
+		case top.Type == ast.ColonEquals:
+			lhs := toNode(items).(ast.StructuralFormType)
+			rhs := toNode(items).(ast.ExpressionType)
+			return ast.ExpressionColonEqualsItem{
+				Lhs: lhs,
+				Rhs: rhs,
+			}
+		case top.Type == ast.Is:
+			lhs := toNode(items).(ast.ExpressionType)
+			rhs := toNode(items).(ast.KindType)
+			return ast.IsExpression{
+				Lhs: []ast.ExpressionType{lhs},
+				Rhs: []ast.KindType{rhs},
+			}
+		case top.Type == ast.IsNot:
+			lhs := toNode(items).(ast.ExpressionType)
+			rhs := toNode(items).(ast.KindType)
+			return ast.IsNotExpression{
+				Lhs: []ast.ExpressionType{lhs},
+				Rhs: []ast.KindType{rhs},
+			}
+		case top.Type == ast.As:
+			lhs := toNode(items).(ast.ExpressionType)
+			rhs := toNode(items).(ast.Signature)
+			return ast.AsExpression{
+				Lhs: lhs,
+				Rhs: rhs,
+			}
+		default:
+			return top
+		}
+	default:
+		return top
+	}
 }
 
 func toShuntingYardItems(nodes []ast.NodeType) []ShuntingYardItem[ast.NodeType] {

@@ -36,7 +36,7 @@ func main() {
 		text := os.Args[1]
 		fmt.Println(text)
 		tracker := frontend.NewDiagnosticTracker()
-		node, ok := formulation.PreParseExpression(text, tracker)
+		node, ok := formulation.ParseExpression(text, tracker)
 		fmt.Println("ok=", ok)
 		fmt.Printf("%s\n", pretty.Sprintf("%# v", node))
 		for _, d := range tracker.Diagnostics() {

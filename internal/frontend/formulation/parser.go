@@ -24,7 +24,7 @@ import (
 	"strings"
 )
 
-func PreParseExpression(text string, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
+func ParseExpression(text string, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{

@@ -27,7 +27,7 @@ import (
 
 func runTest(t *testing.T, text string, expected ast.NodeType) {
 	tracker := frontend.NewDiagnosticTracker()
-	actual, ok := PreParseExpression(text, tracker)
+	actual, ok := ParseExpression(text, tracker)
 	assert.True(t, ok)
 	assert.Equal(t, 0, tracker.Length())
 

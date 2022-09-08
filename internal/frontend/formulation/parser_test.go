@@ -38,186 +38,152 @@ func runTest(t *testing.T, text string, expected ast.NodeType) {
 }
 
 func TestIdentifier(t *testing.T) {
-	runTest(t, "x", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "x",
-				IsStropped:      false,
-				HasQuestionMark: false,
-				VarArg:          ast.VarArgData{},
-			},
-		},
-	})
+	runTest(t, "x",
+		ast.NameForm{
+			Text:            "x",
+			IsStropped:      false,
+			HasQuestionMark: false,
+			VarArg:          ast.VarArgData{},
+		})
 }
 
 func TestMultiCharIdentifier(t *testing.T) {
-	runTest(t, "abc", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "abc",
-				IsStropped:      false,
-				HasQuestionMark: false,
-				VarArg:          ast.VarArgData{},
-			},
-		},
-	})
+	runTest(t, "abc",
+		ast.NameForm{
+			Text:            "abc",
+			IsStropped:      false,
+			HasQuestionMark: false,
+			VarArg:          ast.VarArgData{},
+		})
 }
 
 func TestIdentifierQuestion(t *testing.T) {
-	runTest(t, "x?", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "x",
-				IsStropped:      false,
-				HasQuestionMark: true,
-				VarArg:          ast.VarArgData{},
-			},
-		},
-	})
+	runTest(t, "x?",
+		ast.NameForm{
+			Text:            "x",
+			IsStropped:      false,
+			HasQuestionMark: true,
+			VarArg:          ast.VarArgData{},
+		})
 }
 
 func TestStroppedIdentifier(t *testing.T) {
-	runTest(t, "\"ab c\"", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "ab c",
-				IsStropped:      true,
-				HasQuestionMark: false,
-				VarArg:          ast.VarArgData{},
-			},
-		},
-	})
+	runTest(t, "\"ab c\"",
+		ast.NameForm{
+			Text:            "ab c",
+			IsStropped:      true,
+			HasQuestionMark: false,
+			VarArg:          ast.VarArgData{},
+		})
 }
 
 func TestStroppedIdentifierQuestion(t *testing.T) {
-	runTest(t, "\"ab c\"?", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "ab c",
-				IsStropped:      true,
-				HasQuestionMark: true,
-				VarArg:          ast.VarArgData{},
-			},
-		},
-	})
+	runTest(t, "\"ab c\"?",
+		ast.NameForm{
+			Text:            "ab c",
+			IsStropped:      true,
+			HasQuestionMark: true,
+			VarArg:          ast.VarArgData{},
+		})
 }
 
 func TestVarArgIdentifier(t *testing.T) {
-	runTest(t, "abc...", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "abc",
-				IsStropped:      false,
-				HasQuestionMark: false,
-				VarArg: ast.VarArgData{
-					IsVarArg:    true,
-					VarArgCount: nil,
-				},
+	runTest(t, "abc...",
+		ast.NameForm{
+			Text:            "abc",
+			IsStropped:      false,
+			HasQuestionMark: false,
+			VarArg: ast.VarArgData{
+				IsVarArg:    true,
+				VarArgCount: nil,
 			},
-		},
-	})
+		})
 }
 
 func TestStroppedVarArgIdentifier(t *testing.T) {
-	runTest(t, "\"ab c\"...", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "ab c",
-				IsStropped:      true,
-				HasQuestionMark: false,
-				VarArg: ast.VarArgData{
-					IsVarArg:    true,
-					VarArgCount: nil,
-				},
+	runTest(t, "\"ab c\"...",
+		ast.NameForm{
+			Text:            "ab c",
+			IsStropped:      true,
+			HasQuestionMark: false,
+			VarArg: ast.VarArgData{
+				IsVarArg:    true,
+				VarArgCount: nil,
 			},
-		},
-	})
+		})
 }
 
 func TestStroppedVarArgIdentifierQuestion(t *testing.T) {
-	runTest(t, "\"ab c\"...?", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.NameForm{
-				Text:            "ab c",
-				IsStropped:      true,
-				HasQuestionMark: true,
-				VarArg: ast.VarArgData{
-					IsVarArg:    true,
-					VarArgCount: nil,
-				},
+	runTest(t, "\"ab c\"...?",
+		ast.NameForm{
+			Text:            "ab c",
+			IsStropped:      true,
+			HasQuestionMark: true,
+			VarArg: ast.VarArgData{
+				IsVarArg:    true,
+				VarArgCount: nil,
 			},
-		},
-	})
+		})
 }
 
 func TestChainExpressionWithNames(t *testing.T) {
-	runTest(t, "a.b.c", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.ChainExpression{
-				Parts: []ast.ExpressionType{
-					ast.NameForm{
-						Text:            "a",
-						IsStropped:      false,
-						HasQuestionMark: false,
-						VarArg:          ast.VarArgData{},
-					},
-					ast.NameForm{
-						Text:            "b",
-						IsStropped:      false,
-						HasQuestionMark: false,
-						VarArg:          ast.VarArgData{},
-					},
-					ast.NameForm{
-						Text:            "c",
-						IsStropped:      false,
-						HasQuestionMark: false,
-						VarArg:          ast.VarArgData{},
-					},
+	runTest(t, "a.b.c",
+		ast.ChainExpression{
+			Parts: []ast.ExpressionType{
+				ast.NameForm{
+					Text:            "a",
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
+				},
+				ast.NameForm{
+					Text:            "b",
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
+				},
+				ast.NameForm{
+					Text:            "c",
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
 				},
 			},
-		},
-	})
+		})
 }
 
 func TestChainExpressionWithFunctionCall(t *testing.T) {
-	runTest(t, "a.f(b).c", ast.PseudoExpression{
-		Children: []ast.NodeType{
-			ast.ChainExpression{
-				Parts: []ast.ExpressionType{
-					ast.NameForm{
-						Text:            "a",
+	runTest(t, "a.f(b).c",
+		ast.ChainExpression{
+			Parts: []ast.ExpressionType{
+				ast.NameForm{
+					Text:            "a",
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
+				},
+				ast.FunctionCallExpression{
+					Target: ast.NameForm{
+						Text:            "f",
 						IsStropped:      false,
 						HasQuestionMark: false,
 						VarArg:          ast.VarArgData{},
 					},
-					ast.FunctionCallExpression{
-						Target: ast.NameForm{
-							Text:            "f",
+					Args: []ast.ExpressionType{
+						ast.NameForm{
+							Text:            "b",
 							IsStropped:      false,
 							HasQuestionMark: false,
 							VarArg:          ast.VarArgData{},
 						},
-						Args: []ast.ExpressionType{
-							ast.PseudoExpression{
-								Children: []ast.NodeType{
-									ast.NameForm{
-										Text:            "b",
-										IsStropped:      false,
-										HasQuestionMark: false,
-										VarArg:          ast.VarArgData{},
-									},
-								},
-							},
-						},
-					},
-					ast.NameForm{
-						Text:            "c",
-						IsStropped:      false,
-						HasQuestionMark: false,
-						VarArg:          ast.VarArgData{},
 					},
 				},
+				ast.NameForm{
+					Text:            "c",
+					IsStropped:      false,
+					HasQuestionMark: false,
+					VarArg:          ast.VarArgData{},
+				},
 			},
-		},
-	})
+		})
 }

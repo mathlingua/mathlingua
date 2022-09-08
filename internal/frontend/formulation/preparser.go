@@ -28,25 +28,20 @@ func PreParseExpression(text string, tracker frontend.DiagnosticTracker) (ast.No
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
-		lexer:       lexer,
-		diagnostics: make([]frontend.Diagnostic, 0),
+		lexer:   lexer,
+		tracker: tracker,
 	}
 	node, _ := parser.expressionType()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
 
-type formulationParser struct {
-	lexer       shared.Lexer
-	diagnostics []frontend.Diagnostic
-}
-
 func ParseForm(text string, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
-		lexer:       lexer,
-		diagnostics: make([]frontend.Diagnostic, 0),
+		lexer:   lexer,
+		tracker: tracker,
 	}
 	node, _ := parser.form()
 	parser.finalize()
@@ -57,8 +52,8 @@ func ParseId(text string, tracker frontend.DiagnosticTracker) (ast.IdType, bool)
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
-		lexer:       lexer,
-		diagnostics: make([]frontend.Diagnostic, 0),
+		lexer:   lexer,
+		tracker: tracker,
 	}
 	node, _ := parser.idType()
 	parser.finalize()
@@ -66,6 +61,11 @@ func ParseId(text string, tracker frontend.DiagnosticTracker) (ast.IdType, bool)
 }
 
 ////////////////////// utility functions ////////////////////////////////////
+
+type formulationParser struct {
+	lexer   shared.Lexer
+	tracker frontend.DiagnosticTracker
+}
 
 func (fp *formulationParser) token(tokenType ast.TokenType) (ast.Token, bool) {
 	if !fp.has(tokenType) {
@@ -87,7 +87,7 @@ func (fp *formulationParser) next() ast.Token {
 }
 
 func (fp *formulationParser) error(message string) {
-	fp.diagnostics = append(fp.diagnostics, frontend.Diagnostic{
+	fp.tracker.Append(frontend.Diagnostic{
 		Type:     frontend.Error,
 		Origin:   frontend.FormulationParserOrigin,
 		Message:  message,
@@ -210,7 +210,11 @@ func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType,
 }
 
 func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {
-	return fp.pseudoExpression()
+	if exp, ok := fp.pseudoExpression(); ok {
+		res, consolidateOk := Consolidate(exp.Children, fp.tracker)
+		return res.(ast.ExpressionType), consolidateOk
+	}
+	return nil, true
 }
 
 func (fp *formulationParser) isExpressionTerminator(tokenType ast.TokenType) bool {

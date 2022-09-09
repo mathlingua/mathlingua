@@ -52,7 +52,6 @@ func (Signature) NodeType()                              {}
 func (MetaKinds) NodeType()                              {}
 func (StructuralColonEqualsForm) NodeType()              {}
 func (ExpressionColonEqualsItem) NodeType()              {}
-func (ExpressionColonEqualsIsItem) NodeType()            {}
 func (EnclosedNonCommandOperatorTarget) NodeType()       {}
 func (NonEnclosedNonCommandOperatorTarget) NodeType()    {}
 func (CommandOperatorTarget) NodeType()                  {}
@@ -206,6 +205,7 @@ func (PseudoExpression) ExpressionType()                       {} // DONE
 func (IsExpression) ExpressionType()                           {}
 func (IsNotExpression) ExpressionType()                        {}
 func (MultiplexedInfixOperatorCallExpression) ExpressionType() {}
+func (ExpressionColonEqualsItem) ExpressionType()              {}
 
 // DONE
 // f(x + y, z) or (f + g)(x)
@@ -357,9 +357,8 @@ type ColonEqualsType interface {
 	ColonEqualsType()
 }
 
-func (StructuralColonEqualsForm) ColonEqualsType()   {}
-func (ExpressionColonEqualsItem) ColonEqualsType()   {}
-func (ExpressionColonEqualsIsItem) ColonEqualsType() {}
+func (StructuralColonEqualsForm) ColonEqualsType() {}
+func (ExpressionColonEqualsItem) ColonEqualsType() {}
 
 // X := (a, b)
 type StructuralColonEqualsForm struct {
@@ -371,13 +370,6 @@ type StructuralColonEqualsForm struct {
 type ExpressionColonEqualsItem struct {
 	Lhs StructuralFormType
 	Rhs ExpressionType
-}
-
-// f(x) := x + 1 is \function
-type ExpressionColonEqualsIsItem struct {
-	Lhs    StructuralFormType
-	Middle ExpressionType
-	Rhs    []KindType
 }
 
 ///////////////////////////////////////////////////////////////////////////////

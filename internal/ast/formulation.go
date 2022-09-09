@@ -27,42 +27,43 @@ type NodeType interface {
 	NodeType()
 }
 
-func (NameForm) NodeType()                            {}
-func (FunctionForm) NodeType()                        {}
-func (FunctionExpressionForm) NodeType()              {}
-func (TupleForm) NodeType()                           {}
-func (FixedSetForm) NodeType()                        {}
-func (ConditionalSetForm) NodeType()                  {}
-func (ConditionalSetIdForm) NodeType()                {}
-func (FunctionCallExpression) NodeType()              {}
-func (TupleExpression) NodeType()                     {}
-func (FixedSetExpression) NodeType()                  {}
-func (ConditionalSetExpression) NodeType()            {}
-func (CommandExpression) NodeType()                   {}
-func (CommandAtExpression) NodeType()                 {}
-func (PrefixOperatorCallExpression) NodeType()        {}
-func (PostfixOperatorCallExpression) NodeType()       {}
-func (InfixOperatorCallExpression) NodeType()         {}
-func (IsExpression) NodeType()                        {}
-func (IsNotExpression) NodeType()                     {}
-func (AsExpression) NodeType()                        {}
-func (NameOrdinalCallExpression) NodeType()           {}
-func (ChainExpression) NodeType()                     {}
-func (Signature) NodeType()                           {}
-func (MetaKinds) NodeType()                           {}
-func (StructuralColonEqualsForm) NodeType()           {}
-func (ExpressionColonEqualsItem) NodeType()           {}
-func (ExpressionColonEqualsIsItem) NodeType()         {}
-func (EnclosedNonCommandOperatorTarget) NodeType()    {}
-func (NonEnclosedNonCommandOperatorTarget) NodeType() {}
-func (CommandOperatorTarget) NodeType()               {}
-func (CommandId) NodeType()                           {}
-func (CommandAtId) NodeType()                         {}
-func (PrefixOperatorId) NodeType()                    {}
-func (PostfixOperatorId) NodeType()                   {}
-func (InfixOperatorId) NodeType()                     {}
-func (PseudoTokenNode) NodeType()                     {}
-func (PseudoExpression) NodeType()                    {}
+func (NameForm) NodeType()                               {}
+func (FunctionForm) NodeType()                           {}
+func (FunctionExpressionForm) NodeType()                 {}
+func (TupleForm) NodeType()                              {}
+func (FixedSetForm) NodeType()                           {}
+func (ConditionalSetForm) NodeType()                     {}
+func (ConditionalSetIdForm) NodeType()                   {}
+func (FunctionCallExpression) NodeType()                 {}
+func (TupleExpression) NodeType()                        {}
+func (FixedSetExpression) NodeType()                     {}
+func (ConditionalSetExpression) NodeType()               {}
+func (CommandExpression) NodeType()                      {}
+func (CommandAtExpression) NodeType()                    {}
+func (PrefixOperatorCallExpression) NodeType()           {}
+func (PostfixOperatorCallExpression) NodeType()          {}
+func (InfixOperatorCallExpression) NodeType()            {}
+func (IsExpression) NodeType()                           {}
+func (IsNotExpression) NodeType()                        {}
+func (AsExpression) NodeType()                           {}
+func (NameOrdinalCallExpression) NodeType()              {}
+func (ChainExpression) NodeType()                        {}
+func (Signature) NodeType()                              {}
+func (MetaKinds) NodeType()                              {}
+func (StructuralColonEqualsForm) NodeType()              {}
+func (ExpressionColonEqualsItem) NodeType()              {}
+func (ExpressionColonEqualsIsItem) NodeType()            {}
+func (EnclosedNonCommandOperatorTarget) NodeType()       {}
+func (NonEnclosedNonCommandOperatorTarget) NodeType()    {}
+func (CommandOperatorTarget) NodeType()                  {}
+func (CommandId) NodeType()                              {}
+func (CommandAtId) NodeType()                            {}
+func (PrefixOperatorId) NodeType()                       {}
+func (PostfixOperatorId) NodeType()                      {}
+func (InfixOperatorId) NodeType()                        {}
+func (PseudoTokenNode) NodeType()                        {}
+func (PseudoExpression) NodeType()                       {}
+func (MultiplexedInfixOperatorCallExpression) NodeType() {}
 
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 
@@ -187,23 +188,24 @@ type ExpressionType interface {
 	ExpressionType()
 }
 
-func (NameForm) ExpressionType()                      {} // DONE
-func (FunctionCallExpression) ExpressionType()        {} // DONE
-func (TupleExpression) ExpressionType()               {} // DONE
-func (FixedSetExpression) ExpressionType()            {} // DONE
-func (ConditionalSetExpression) ExpressionType()      {}
-func (CommandExpression) ExpressionType()             {} // DONE
-func (CommandAtExpression) ExpressionType()           {} // DONE
-func (PrefixOperatorCallExpression) ExpressionType()  {}
-func (PostfixOperatorCallExpression) ExpressionType() {}
-func (InfixOperatorCallExpression) ExpressionType()   {}
-func (AsExpression) ExpressionType()                  {}
-func (NameOrdinalCallExpression) ExpressionType()     {} // DONE
-func (ChainExpression) ExpressionType()               {} // DONE
-func (PseudoTokenNode) ExpressionType()               {} // DONE
-func (PseudoExpression) ExpressionType()              {} // DONE
-func (IsExpression) ExpressionType()                  {}
-func (IsNotExpression) ExpressionType()               {}
+func (NameForm) ExpressionType()                               {} // DONE
+func (FunctionCallExpression) ExpressionType()                 {} // DONE
+func (TupleExpression) ExpressionType()                        {} // DONE
+func (FixedSetExpression) ExpressionType()                     {} // DONE
+func (ConditionalSetExpression) ExpressionType()               {}
+func (CommandExpression) ExpressionType()                      {} // DONE
+func (CommandAtExpression) ExpressionType()                    {} // DONE
+func (PrefixOperatorCallExpression) ExpressionType()           {}
+func (PostfixOperatorCallExpression) ExpressionType()          {}
+func (InfixOperatorCallExpression) ExpressionType()            {}
+func (AsExpression) ExpressionType()                           {}
+func (NameOrdinalCallExpression) ExpressionType()              {} // DONE
+func (ChainExpression) ExpressionType()                        {} // DONE
+func (PseudoTokenNode) ExpressionType()                        {} // DONE
+func (PseudoExpression) ExpressionType()                       {} // DONE
+func (IsExpression) ExpressionType()                           {}
+func (IsNotExpression) ExpressionType()                        {}
+func (MultiplexedInfixOperatorCallExpression) ExpressionType() {}
 
 // DONE
 // f(x + y, z) or (f + g)(x)
@@ -279,6 +281,12 @@ type InfixOperatorCallExpression struct {
 	Target OperatorType
 	Lhs    ExpressionType
 	Rhs    ExpressionType
+}
+
+type MultiplexedInfixOperatorCallExpression struct {
+	Target OperatorType
+	Lhs    []ExpressionType
+	Rhs    []ExpressionType
 }
 
 // x is \y

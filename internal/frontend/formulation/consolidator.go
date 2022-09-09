@@ -43,6 +43,16 @@ func Consolidate(nodes []ast.NodeType, tracker frontend.DiagnosticTracker) (ast.
 	return top, stack.IsEmpty()
 }
 
+func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
+	if _, infixOk := node.(ast.InfixOperatorCallExpression); !infixOk {
+		return -1, false
+	}
+	precedence, _ := getPrecedenceAssociativity(node, InfixOperatorType)
+	return precedence, true
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+
 func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
 	if items.IsEmpty() {
 		return nil

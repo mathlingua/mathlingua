@@ -18,6 +18,7 @@ package formulation
 
 import (
 	"fmt"
+	"math"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/shared"
@@ -236,6 +237,11 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 
 	isIndex := -1
 	isNotIndex := -1
+
+	minPrecIndexMinIndex := math.MaxInt
+	minPrecIndexMaxIndex := -1
+	minPrec := math.MinInt
+
 	for i, item := range items {
 		_, isOk := item.(ast.IsExpression)
 		if isOk {
@@ -251,6 +257,45 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 				fp.error("'isnot' statements cannot be nested")
 			}
 			isNotIndex = i
+		}
+
+		prec, isInfix := GetPrecedenceAndIfInfix(item)
+		if isInfix {
+			if prec >= minPrec {
+				minPrec = prec
+				minPrecIndexMinIndex = min(minPrecIndexMinIndex, i)
+				minPrecIndexMaxIndex = max(minPrecIndexMaxIndex, i)
+			}
+		}
+	}
+
+	// if there isn't an 'is' or 'isnot' statement and there
+	// is at least one infix operator
+	if isIndex == -1 && isNotIndex == -1 && minPrecIndexMaxIndex >= 0 {
+		if minPrecIndexMinIndex != minPrecIndexMaxIndex {
+			fp.error("A multiplexed operator can only be used if exactly one operator has minimum precedence")
+			return nil, false
+		} else {
+			lhs := make([]ast.ExpressionType, 0)
+			rhs := make([]ast.ExpressionType, 0)
+			i := 0
+			for i < minPrecIndexMinIndex {
+				lhs = append(lhs, items[i])
+				i++
+			}
+			opExp := items[minPrecIndexMinIndex].(ast.InfixOperatorCallExpression)
+			lhs = append(lhs, opExp.Lhs)
+			rhs = append(rhs, opExp.Rhs)
+			i = minPrecIndexMinIndex + 1
+			for i < len(items) {
+				rhs = append(rhs, items[i])
+				i++
+			}
+			return ast.MultiplexedInfixOperatorCallExpression{
+				Target: opExp.Target,
+				Lhs:    lhs,
+				Rhs:    rhs,
+			}, true
 		}
 	}
 
@@ -302,6 +347,22 @@ func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bo
 		}, true
 	} else {
 		panic("Unreachable code")
+	}
+}
+
+func min(x, y int) int {
+	if x < y {
+		return x
+	} else {
+		return y
+	}
+}
+
+func max(x, y int) int {
+	if x > y {
+		return x
+	} else {
+		return y
 	}
 }
 

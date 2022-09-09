@@ -31,7 +31,7 @@ func ParseExpression(text string, tracker frontend.DiagnosticTracker) (ast.NodeT
 		lexer:   lexer,
 		tracker: tracker,
 	}
-	node, _ := parser.expressionType()
+	node, _ := parser.multiplexedExpressionType()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
@@ -207,6 +207,102 @@ func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType,
 	}
 
 	return nil, false
+}
+
+func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bool) {
+	items := make([]ast.ExpressionType, 0)
+	for fp.lexer.HasNext() {
+		if len(items) > 0 {
+			if fp.has(ast.Comma) {
+				fp.expect(ast.Comma)
+			} else {
+				break
+			}
+		}
+		arg, ok := fp.expressionType()
+		if !ok {
+			break
+		}
+		items = append(items, arg)
+	}
+
+	if len(items) == 0 {
+		return nil, false
+	}
+
+	if len(items) == 1 {
+		return items[0], true
+	}
+
+	isIndex := -1
+	isNotIndex := -1
+	for i, item := range items {
+		_, isOk := item.(ast.IsExpression)
+		if isOk {
+			if isIndex >= 0 {
+				fp.error("'is' statements cannot be nested")
+			}
+			isIndex = i
+		}
+
+		_, isNotOk := item.(ast.IsNotExpression)
+		if isNotOk {
+			if isNotIndex >= 0 {
+				fp.error("'isnot' statements cannot be nested")
+			}
+			isNotIndex = i
+		}
+	}
+
+	if isIndex >= 0 && isNotIndex >= 0 {
+		fp.error("'is' and 'isnot' statements cannot be used together")
+		return nil, false
+	} else if isIndex == -1 && isNotIndex == -1 {
+		fp.error("multiple comma separated expressions is not supported in this context")
+		return nil, false
+	} else if isIndex >= 0 {
+		lhs := make([]ast.ExpressionType, 0)
+		rhs := make([]ast.KindType, 0)
+		i := 0
+		for i < isIndex {
+			lhs = append(lhs, items[i])
+			i++
+		}
+		isExp := items[isIndex].(ast.IsExpression)
+		lhs = append(lhs, isExp.Lhs...)
+		rhs = append(rhs, isExp.Rhs...)
+		i = isIndex + 1
+		for i < len(items) {
+			rhs = append(rhs, items[i].(ast.KindType))
+			i++
+		}
+		return ast.IsExpression{
+			Lhs: lhs,
+			Rhs: rhs,
+		}, true
+	} else if isNotIndex >= 0 {
+		lhs := make([]ast.ExpressionType, 0)
+		rhs := make([]ast.KindType, 0)
+		i := 0
+		for i < isNotIndex {
+			lhs = append(lhs, items[i])
+			i++
+		}
+		isExp := items[isNotIndex].(ast.IsNotExpression)
+		lhs = append(lhs, isExp.Lhs...)
+		rhs = append(rhs, isExp.Rhs...)
+		i = isNotIndex + 1
+		for i < len(items) {
+			rhs = append(rhs, items[i].(ast.KindType))
+			i++
+		}
+		return ast.IsNotExpression{
+			Lhs: lhs,
+			Rhs: rhs,
+		}, true
+	} else {
+		panic("Unreachable code")
+	}
 }
 
 func (fp *formulationParser) expressionType() (ast.ExpressionType, bool) {

@@ -120,15 +120,15 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
 				Rhs: rhs,
 			}
 		case top.Type == ast.Is:
-			lhs := toNode(items).(ast.ExpressionType)
 			rhs := toNode(items).(ast.KindType)
+			lhs := toNode(items).(ast.ExpressionType)
 			return ast.IsExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.IsNot:
-			lhs := toNode(items).(ast.ExpressionType)
 			rhs := toNode(items).(ast.KindType)
+			lhs := toNode(items).(ast.ExpressionType)
 			return ast.IsNotExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},

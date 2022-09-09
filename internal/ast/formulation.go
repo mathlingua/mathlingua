@@ -202,6 +202,8 @@ func (NameOrdinalCallExpression) ExpressionType()     {} // DONE
 func (ChainExpression) ExpressionType()               {} // DONE
 func (PseudoTokenNode) ExpressionType()               {} // DONE
 func (PseudoExpression) ExpressionType()              {} // DONE
+func (IsExpression) ExpressionType()                  {}
+func (IsNotExpression) ExpressionType()               {}
 
 // DONE
 // f(x + y, z) or (f + g)(x)

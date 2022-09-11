@@ -22,11 +22,14 @@ type Formulation[T NodeType] struct {
 	Label   *string
 }
 
+type TextItem struct {
+	RawText string
+}
+
 type IdItem = Formulation[NodeType]
 type Clause = Formulation[NodeType]
 type Target = Formulation[NodeType]
 type Spec = Formulation[NodeType]
-type TextItem = Formulation[NodeType]
 
 //////////////////////////////////////////////////////////////////////////////
 

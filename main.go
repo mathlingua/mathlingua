@@ -22,13 +22,18 @@ import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/formulation"
+	"mathlingua/internal/frontend/phase1"
+	"mathlingua/internal/frontend/phase2"
+	"mathlingua/internal/frontend/phase3"
+	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/frontend/phase5"
 	"os"
 
 	"github.com/kr/pretty"
 )
 
 func main() {
-	if len(os.Getenv("TESTBED")) > 0 {
+	if len(os.Getenv("TESTBED1")) > 0 {
 		if len(os.Args) != 2 {
 			fmt.Println("Expected a single argument that is the text to process")
 			os.Exit(1)
@@ -48,6 +53,27 @@ func main() {
 			root, ok := formulation.Consolidate(node.Children, tracker)
 			fmt.Println("ok=", ok)
 			fmt.Printf("%s\n", pretty.Sprintf("%# v", root))
+		}
+	} else if len(os.Getenv("TESTBED2")) > 0 {
+		text := `
+allOf: 'a'
+. 'a + b'
+`
+		tracker := frontend.NewDiagnosticTracker()
+
+		lexer1 := phase1.NewLexer(text, tracker)
+		lexer2 := phase2.NewLexer(lexer1, tracker)
+		lexer3 := phase3.NewLexer(lexer2, tracker)
+
+		root := phase4.Parse(lexer3, tracker)
+		group := root.Nodes[0].(phase4.Group)
+
+		grp, ok := phase5.ToAllOfGroup(group, tracker)
+		fmt.Println("ok=", ok)
+		fmt.Printf("%s\n", pretty.Sprintf("%# v", grp))
+
+		for _, diag := range tracker.Diagnostics() {
+			fmt.Println(diag.Message)
 		}
 	} else {
 		cmd.Execute()

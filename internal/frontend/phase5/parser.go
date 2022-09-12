@@ -37,7 +37,7 @@ func ToAllOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.A
 
 func toAllOfSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.AllOfSection {
 	return ast.AllOfSection{
-		Clauses: oneOrMore(toClauses(section.Args, tracker), tracker, section.MetaData.Start),
+		Clauses: oneOrMoreClause(section, tracker),
 	}
 }
 
@@ -55,7 +55,7 @@ func toNotGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.Not
 
 func toNotSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.NotSection {
 	return ast.NotSection{
-		Clause: exactlyOne(toClauses(section.Args, tracker), tracker, ast.Clause{}, section.MetaData.Start),
+		Clause: exactlyOneClause(section, tracker),
 	}
 }
 
@@ -73,7 +73,7 @@ func toAnyOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.A
 
 func toAnyOfSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.AnyOfSection {
 	return ast.AnyOfSection{
-		Clauses: oneOrMore(toClauses(section.Args, tracker), tracker, section.MetaData.Start),
+		Clauses: oneOrMoreClause(section, tracker),
 	}
 }
 
@@ -91,7 +91,7 @@ func toOneOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.O
 
 func toOneOfSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.OneOfSection {
 	return ast.OneOfSection{
-		Clauses: oneOrMore(toClauses(section.Args, tracker), tracker, section.MetaData.Start),
+		Clauses: oneOrMoreClause(section, tracker),
 	}
 }
 
@@ -213,6 +213,16 @@ func toTextItems(args []phase4.Argument, tracker frontend.DiagnosticTracker) []a
 		result = append(result, toTextItem(arg, tracker))
 	}
 	return result
+}
+
+/////////////////////////////////////////////////////////////////////////
+
+func oneOrMoreClause(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Clause {
+	return oneOrMore(toClauses(section.Args, tracker), tracker, section.MetaData.Start)
+}
+
+func exactlyOneClause(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Clause {
+	return exactlyOne(toClauses(section.Args, tracker), tracker, ast.Clause{}, section.MetaData.Start)
 }
 
 ////////////////////////// support functions ////////////////////////////

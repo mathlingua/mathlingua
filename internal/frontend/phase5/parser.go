@@ -43,9 +43,16 @@ func (p *parser) ToAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
 		return ast.AllOfGroup{}, false
 	}
 	return ast.AllOfGroup{
-		AllOf: ast.AllOfSection{
-			Clauses: p.oneOrMoreClause(sections["allOf"]),
-		},
+		AllOf: required(p.toAllOfSection(getSection(sections, "allOf"))),
+	}, true
+}
+
+func (p *parser) toAllOfSection(section phase4.Section, ok bool) (ast.AllOfSection, bool) {
+	if !ok {
+		return ast.AllOfSection{}, false
+	}
+	return ast.AllOfSection{
+		Clauses: required(p.oneOrMoreClause(section, ok)),
 	}, true
 }
 
@@ -57,9 +64,16 @@ func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
 		return ast.NotGroup{}, false
 	}
 	return ast.NotGroup{
-		Not: ast.NotSection{
-			Clause: p.exactlyOneClause(sections["not"]),
-		},
+		Not: required(p.toNotSection(getSection(sections, "not"))),
+	}, true
+}
+
+func (p *parser) toNotSection(section phase4.Section, ok bool) (ast.NotSection, bool) {
+	if !ok {
+		return ast.NotSection{}, false
+	}
+	return ast.NotSection{
+		Clause: required(p.exactlyOneClause(section, ok)),
 	}, true
 }
 
@@ -71,9 +85,16 @@ func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
 		return ast.AnyOfGroup{}, false
 	}
 	return ast.AnyOfGroup{
-		AnyOf: ast.AnyOfSection{
-			Clauses: p.oneOrMoreClause(sections["anyOf"]),
-		},
+		AnyOf: required(p.toAnyOfSection(getSection(sections, "anyOf"))),
+	}, true
+}
+
+func (p *parser) toAnyOfSection(section phase4.Section, ok bool) (ast.AnyOfSection, bool) {
+	if !ok {
+		return ast.AnyOfSection{}, false
+	}
+	return ast.AnyOfSection{
+		Clauses: required(p.oneOrMoreClause(section, ok)),
 	}, true
 }
 
@@ -85,9 +106,16 @@ func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
 		return ast.OneOfGroup{}, false
 	}
 	return ast.OneOfGroup{
-		OneOf: ast.OneOfSection{
-			Clauses: p.oneOrMoreClause(sections["oneOf"]),
-		},
+		OneOf: required(p.toOneOfSection(getSection(sections, "oneOf"))),
+	}, true
+}
+
+func (p *parser) toOneOfSection(section phase4.Section, ok bool) (ast.OneOfSection, bool) {
+	if !ok {
+		return ast.OneOfSection{}, false
+	}
+	return ast.OneOfSection{
+		Clauses: required(p.oneOrMoreClause(section, ok)),
 	}, true
 }
 
@@ -223,31 +251,31 @@ func (p *parser) toTextItems(args []phase4.Argument) []ast.TextItem {
 
 /////////////////////////////////////////////////////////////////////////
 
-func (p *parser) oneOrMoreClause(section phase4.Section) []ast.Clause {
-	return oneOrMore(p.toClauses(section.Args), section.MetaData.Start, p.tracker)
+func (p *parser) oneOrMoreClause(section phase4.Section, ok bool) ([]ast.Clause, bool) {
+	return oneOrMore(p.toClauses(section.Args), ok, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
+func (p *parser) exactlyOneClause(section phase4.Section, ok bool) (ast.Clause, bool) {
 	var def ast.Clause = ast.Formulation[ast.NodeType]{}
-	return exactlyOne(p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p.toClauses(section.Args), ok, def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMoreSpecs(section phase4.Section) []ast.Spec {
-	return oneOrMore(p.toSpecs(section.Args), section.MetaData.Start, p.tracker)
+func (p *parser) oneOrMoreSpecs(section phase4.Section, ok bool) ([]ast.Spec, bool) {
+	return oneOrMore(p.toSpecs(section.Args), ok, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneSpec(section phase4.Section) ast.Spec {
+func (p *parser) exactlyOneSpec(section phase4.Section, ok bool) (ast.Spec, bool) {
 	var def ast.Spec = ast.Formulation[ast.NodeType]{}
-	return exactlyOne(p.toSpecs(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p.toSpecs(section.Args), ok, def, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) oneOrMoreTargets(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Target {
-	return oneOrMore(p.toTargets(section.Args), section.MetaData.Start, p.tracker)
+func (p *parser) oneOrMoreTargets(section phase4.Section, ok bool) ([]ast.Target, bool) {
+	return oneOrMore(p.toTargets(section.Args), ok, section.MetaData.Start, p.tracker)
 }
 
-func (p *parser) exactlyOneTarget(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Target {
+func (p *parser) exactlyOneTarget(section phase4.Section, ok bool) (ast.Target, bool) {
 	var def ast.Target = ast.Formulation[ast.NodeType]{}
-	return exactlyOne(p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
+	return exactlyOne(p.toTargets(section.Args), ok, def, section.MetaData.Start, p.tracker)
 }
 
 ////////////////////////// support functions ////////////////////////////
@@ -256,25 +284,37 @@ func required[T any](value T, ok bool) T {
 	return value
 }
 
-func optional[T any](value T, ok bool) T {
-	return value
+func optional[T any](value T, ok bool) *T {
+	if ok {
+		return &value
+	} else {
+		return nil
+	}
 }
 
-func oneOrMore[T any](items []T, position ast.Position, tracker frontend.DiagnosticTracker) []T {
+func oneOrMore[T any](items []T, ok bool, position ast.Position, tracker frontend.DiagnosticTracker) ([]T, bool) {
+	if !ok {
+		return []T{}, false
+	}
 	if len(items) == 0 {
 		tracker.Append(newError("Expected at least one item", position))
+		return []T{}, false
 	}
-	return items
+	return items, true
 }
 
-func exactlyOne[T any](items []T, defaultItem T, position ast.Position, tracker frontend.DiagnosticTracker) T {
+func exactlyOne[T any](items []T, ok bool, defaultItem T, position ast.Position, tracker frontend.DiagnosticTracker) (T, bool) {
+	if !ok {
+		return defaultItem, false
+	}
 	if len(items) != 0 {
 		tracker.Append(newError("Expected at exactly one item", position))
+		return defaultItem, false
 	}
 	if len(items) == 0 {
-		return defaultItem
+		return defaultItem, true
 	}
-	return items[0]
+	return items[0], true
 }
 
 /*
@@ -292,6 +332,11 @@ func hasSections(group phase4.Group, names ...string) bool {
 	return true
 }
 */
+
+func getSection(sections map[string]phase4.Section, name string) (phase4.Section, bool) {
+	sec, ok := sections[name]
+	return sec, ok
+}
 
 func newError(message string, position ast.Position) frontend.Diagnostic {
 	return frontend.Diagnostic{

@@ -68,7 +68,8 @@ allOf: 'a'
 		root := phase4.Parse(lexer3, tracker)
 		group := root.Nodes[0].(phase4.Group)
 
-		grp, ok := phase5.ToAllOfGroup(group, tracker)
+		parser := phase5.NewPhase5Parser(tracker)
+		grp, ok := parser.ToAllOfGroup(group)
 		fmt.Println("ok=", ok)
 		fmt.Printf("%s\n", pretty.Sprintf("%# v", grp))
 

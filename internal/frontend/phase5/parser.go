@@ -23,68 +23,80 @@ import (
 	"mathlingua/internal/frontend/phase4"
 )
 
+func NewPhase5Parser(tracker frontend.DiagnosticTracker) parser {
+	return parser{
+		tracker: tracker,
+	}
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+type parser struct {
+	tracker frontend.DiagnosticTracker
+}
+
 /////////////////////////// allOf ///////////////////////////////////////
 
-func ToAllOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.AllOfGroup, bool) {
-	sections, ok := IdentifySections(group.Sections, tracker, "allOf")
+func (p *parser) ToAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "allOf")
 	if !ok {
 		return ast.AllOfGroup{}, false
 	}
 	return ast.AllOfGroup{
 		AllOf: ast.AllOfSection{
-			Clauses: oneOrMoreClause(sections["allOf"], tracker),
+			Clauses: p.oneOrMoreClause(sections["allOf"]),
 		},
 	}, true
 }
 
 /////////////////////////////// not //////////////////////////////////////
 
-func toNotGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.NotGroup, bool) {
-	sections, ok := IdentifySections(group.Sections, tracker, "not")
+func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "not")
 	if !ok {
 		return ast.NotGroup{}, false
 	}
 	return ast.NotGroup{
 		Not: ast.NotSection{
-			Clause: exactlyOneClause(sections["not"], tracker),
+			Clause: p.exactlyOneClause(sections["not"]),
 		},
 	}, true
 }
 
 //////////////////////////////////// anyOf ////////////////////////////////
 
-func toAnyOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.AnyOfGroup, bool) {
-	sections, ok := IdentifySections(group.Sections, tracker, "anyOf")
+func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "anyOf")
 	if !ok {
 		return ast.AnyOfGroup{}, false
 	}
 	return ast.AnyOfGroup{
 		AnyOf: ast.AnyOfSection{
-			Clauses: oneOrMoreClause(sections["anyOf"], tracker),
+			Clauses: p.oneOrMoreClause(sections["anyOf"]),
 		},
 	}, true
 }
 
 ////////////////////////////////////// oneOf /////////////////////////////
 
-func toOneOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.OneOfGroup, bool) {
-	sections, ok := IdentifySections(group.Sections, tracker, "oneOf")
+func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "oneOf")
 	if !ok {
 		return ast.OneOfGroup{}, false
 	}
 	return ast.OneOfGroup{
 		OneOf: ast.OneOfSection{
-			Clauses: oneOrMoreClause(sections["oneOf"], tracker),
+			Clauses: p.oneOrMoreClause(sections["oneOf"]),
 		},
 	}, true
 }
 
 ////////////////////////// arguments ////////////////////////////////////
 
-func toClause(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Clause {
+func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, p.tracker); ok {
 			return ast.Formulation[ast.NodeType]{
 				RawText: data.Text,
 				Root:    node,
@@ -94,25 +106,25 @@ func toClause(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Claus
 			return ast.Formulation[ast.NodeType]{}
 		}
 	case phase4.Group:
-		if grp, ok := ToAllOfGroup(data, tracker); ok {
+		if grp, ok := p.ToAllOfGroup(data); ok {
 			return grp
-		} else if grp, ok := toNotGroup(data, tracker); ok {
+		} else if grp, ok := p.toNotGroup(data); ok {
 			return grp
-		} else if grp, ok := toAnyOfGroup(data, tracker); ok {
+		} else if grp, ok := p.toAnyOfGroup(data); ok {
 			return grp
-		} else if grp, ok := toOneOfGroup(data, tracker); ok {
+		} else if grp, ok := p.toOneOfGroup(data); ok {
 			return grp
 		}
 	}
 
-	tracker.Append(newError("Expected a clause", arg.MetaData.Start))
+	p.tracker.Append(newError("Expected a clause", arg.MetaData.Start))
 	return ast.Formulation[ast.NodeType]{}
 }
 
-func toSpec(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Spec {
+func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, p.tracker); ok {
 			return ast.Spec{
 				RawText: data.Text,
 				Root:    node,
@@ -122,15 +134,15 @@ func toSpec(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Spec {
 			return ast.Spec{}
 		}
 	default:
-		tracker.Append(newError("Expected a specification", arg.MetaData.Start))
+		p.tracker.Append(newError("Expected a specification", arg.MetaData.Start))
 		return ast.Spec{}
 	}
 }
 
-func toTarget(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Target {
+func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	switch data := arg.Arg.(type) {
 	case phase4.ArgumentTextArgumentData:
-		if node, ok := formulation.ParseForm(data.Text, tracker); ok {
+		if node, ok := formulation.ParseForm(data.Text, p.tracker); ok {
 			return ast.Target{
 				RawText: data.Text,
 				Root:    node,
@@ -140,15 +152,15 @@ func toTarget(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Targe
 			return ast.Target{}
 		}
 	default:
-		tracker.Append(newError("Expected a target", arg.MetaData.Start))
+		p.tracker.Append(newError("Expected a target", arg.MetaData.Start))
 		return ast.Target{}
 	}
 }
 
-func toIdItem(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.IdItem {
+func (p *parser) toIdItem(arg phase4.Argument) ast.IdItem {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseId(data.Text, tracker); ok {
+		if node, ok := formulation.ParseId(data.Text, p.tracker); ok {
 			return ast.IdItem{
 				RawText: data.Text,
 				Root:    node,
@@ -158,84 +170,84 @@ func toIdItem(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.IdIte
 			return ast.IdItem{}
 		}
 	default:
-		tracker.Append(newError("Expected an id", arg.MetaData.Start))
+		p.tracker.Append(newError("Expected an id", arg.MetaData.Start))
 		return ast.IdItem{}
 	}
 }
 
-func toTextItem(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.TextItem {
+func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 	switch data := arg.Arg.(type) {
 	case phase4.TextArgumentData:
 		return ast.TextItem{
 			RawText: data.Text,
 		}
 	default:
-		tracker.Append(newError("Expected a text item", arg.MetaData.Start))
+		p.tracker.Append(newError("Expected a text item", arg.MetaData.Start))
 		return ast.TextItem{}
 	}
 }
 
 //////////////////////// argument lists /////////////////////////////////
 
-func toClauses(args []phase4.Argument, tracker frontend.DiagnosticTracker) []ast.Clause {
+func (p *parser) toClauses(args []phase4.Argument) []ast.Clause {
 	result := make([]ast.Clause, 0)
 	for _, arg := range args {
-		result = append(result, toClause(arg, tracker))
+		result = append(result, p.toClause(arg))
 	}
 	return result
 }
 
-func toSpecs(args []phase4.Argument, tracker frontend.DiagnosticTracker) []ast.Spec {
+func (p *parser) toSpecs(args []phase4.Argument) []ast.Spec {
 	result := make([]ast.Spec, 0)
 	for _, arg := range args {
-		result = append(result, toSpec(arg, tracker))
+		result = append(result, p.toSpec(arg))
 	}
 	return result
 }
 
-func toTargets(args []phase4.Argument, tracker frontend.DiagnosticTracker) []ast.Target {
+func (p *parser) toTargets(args []phase4.Argument) []ast.Target {
 	result := make([]ast.Target, 0)
 	for _, arg := range args {
-		result = append(result, toTarget(arg, tracker))
+		result = append(result, p.toTarget(arg))
 	}
 	return result
 }
 
-func toTextItems(args []phase4.Argument, tracker frontend.DiagnosticTracker) []ast.TextItem {
+func (p *parser) toTextItems(args []phase4.Argument) []ast.TextItem {
 	result := make([]ast.TextItem, 0)
 	for _, arg := range args {
-		result = append(result, toTextItem(arg, tracker))
+		result = append(result, p.toTextItem(arg))
 	}
 	return result
 }
 
 /////////////////////////////////////////////////////////////////////////
 
-func oneOrMoreClause(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Clause {
-	return oneOrMore(toClauses(section.Args, tracker), tracker, section.MetaData.Start)
+func (p *parser) oneOrMoreClause(section phase4.Section) []ast.Clause {
+	return oneOrMore(p.toClauses(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func exactlyOneClause(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Clause {
+func (p *parser) exactlyOneClause(section phase4.Section) ast.Clause {
 	var def ast.Clause = ast.Formulation[ast.NodeType]{}
-	return exactlyOne(toClauses(section.Args, tracker), tracker, def, section.MetaData.Start)
+	return exactlyOne(p.toClauses(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func oneOrMoreSpecs(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Spec {
-	return oneOrMore(toSpecs(section.Args, tracker), tracker, section.MetaData.Start)
+func (p *parser) oneOrMoreSpecs(section phase4.Section) []ast.Spec {
+	return oneOrMore(p.toSpecs(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func exactlyOneSpec(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Spec {
+func (p *parser) exactlyOneSpec(section phase4.Section) ast.Spec {
 	var def ast.Spec = ast.Formulation[ast.NodeType]{}
-	return exactlyOne(toSpecs(section.Args, tracker), tracker, def, section.MetaData.Start)
+	return exactlyOne(p.toSpecs(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
-func oneOrMoreTargets(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Target {
-	return oneOrMore(toTargets(section.Args, tracker), tracker, section.MetaData.Start)
+func (p *parser) oneOrMoreTargets(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Target {
+	return oneOrMore(p.toTargets(section.Args), section.MetaData.Start, p.tracker)
 }
 
-func exactlyOneTarget(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Target {
+func (p *parser) exactlyOneTarget(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Target {
 	var def ast.Target = ast.Formulation[ast.NodeType]{}
-	return exactlyOne(toTargets(section.Args, tracker), tracker, def, section.MetaData.Start)
+	return exactlyOne(p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 ////////////////////////// support functions ////////////////////////////
@@ -248,14 +260,14 @@ func optional[T any](value T, ok bool) T {
 	return value
 }
 
-func oneOrMore[T any](items []T, tracker frontend.DiagnosticTracker, position ast.Position) []T {
+func oneOrMore[T any](items []T, position ast.Position, tracker frontend.DiagnosticTracker) []T {
 	if len(items) == 0 {
 		tracker.Append(newError("Expected at least one item", position))
 	}
 	return items
 }
 
-func exactlyOne[T any](items []T, tracker frontend.DiagnosticTracker, defaultItem T, position ast.Position) T {
+func exactlyOne[T any](items []T, defaultItem T, position ast.Position, tracker frontend.DiagnosticTracker) T {
 	if len(items) != 0 {
 		tracker.Append(newError("Expected at exactly one item", position))
 	}

@@ -27,9 +27,20 @@ type TextItem struct {
 }
 
 type IdItem = Formulation[NodeType]
-type Clause = Formulation[NodeType]
 type Target = Formulation[NodeType]
 type Spec = Formulation[NodeType]
+
+//////////////////////////////////////////////////////////////////////////////
+
+type Clause interface {
+	Clause()
+}
+
+func (Formulation[NodeType]) Clause() {}
+func (AllOfGroup) Clause()            {}
+func (NotGroup) Clause()              {}
+func (AnyOfGroup) Clause()            {}
+func (OneOfGroup) Clause()            {}
 
 //////////////////////////////////////////////////////////////////////////////
 

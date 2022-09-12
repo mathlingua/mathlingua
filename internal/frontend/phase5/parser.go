@@ -31,14 +31,10 @@ func ToAllOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.A
 		return ast.AllOfGroup{}, false
 	}
 	return ast.AllOfGroup{
-		AllOf: toAllOfSection(sections["allOf"], tracker),
+		AllOf: ast.AllOfSection{
+			Clauses: oneOrMoreClause(sections["allOf"], tracker),
+		},
 	}, true
-}
-
-func toAllOfSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.AllOfSection {
-	return ast.AllOfSection{
-		Clauses: oneOrMoreClause(section, tracker),
-	}
 }
 
 /////////////////////////////// not //////////////////////////////////////
@@ -49,14 +45,10 @@ func toNotGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.Not
 		return ast.NotGroup{}, false
 	}
 	return ast.NotGroup{
-		Not: toNotSection(sections["not"], tracker),
+		Not: ast.NotSection{
+			Clause: exactlyOneClause(sections["not"], tracker),
+		},
 	}, true
-}
-
-func toNotSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.NotSection {
-	return ast.NotSection{
-		Clause: exactlyOneClause(section, tracker),
-	}
 }
 
 //////////////////////////////////// anyOf ////////////////////////////////
@@ -67,14 +59,10 @@ func toAnyOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.A
 		return ast.AnyOfGroup{}, false
 	}
 	return ast.AnyOfGroup{
-		AnyOf: toAnyOfSection(sections["anyOf"], tracker),
+		AnyOf: ast.AnyOfSection{
+			Clauses: oneOrMoreClause(sections["anyOf"], tracker),
+		},
 	}, true
-}
-
-func toAnyOfSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.AnyOfSection {
-	return ast.AnyOfSection{
-		Clauses: oneOrMoreClause(section, tracker),
-	}
 }
 
 ////////////////////////////////////// oneOf /////////////////////////////
@@ -85,14 +73,10 @@ func toOneOfGroup(group phase4.Group, tracker frontend.DiagnosticTracker) (ast.O
 		return ast.OneOfGroup{}, false
 	}
 	return ast.OneOfGroup{
-		OneOf: toOneOfSection(sections["oneOf"], tracker),
+		OneOf: ast.OneOfSection{
+			Clauses: oneOrMoreClause(sections["oneOf"], tracker),
+		},
 	}, true
-}
-
-func toOneOfSection(section phase4.Section, tracker frontend.DiagnosticTracker) ast.OneOfSection {
-	return ast.OneOfSection{
-		Clauses: oneOrMoreClause(section, tracker),
-	}
 }
 
 ////////////////////////// arguments ////////////////////////////////////
@@ -101,18 +85,28 @@ func toClause(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Claus
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
 		if node, ok := formulation.ParseExpression(data.Text, tracker); ok {
-			return ast.Clause{
+			return ast.Formulation[ast.NodeType]{
 				RawText: data.Text,
 				Root:    node,
 				Label:   nil,
 			}
 		} else {
-			return ast.Clause{}
+			return ast.Formulation[ast.NodeType]{}
 		}
-	default:
-		tracker.Append(newError("Expected a clause", arg.MetaData.Start))
-		return ast.Clause{}
+	case phase4.Group:
+		if grp, ok := ToAllOfGroup(data, tracker); ok {
+			return grp
+		} else if grp, ok := toNotGroup(data, tracker); ok {
+			return grp
+		} else if grp, ok := toAnyOfGroup(data, tracker); ok {
+			return grp
+		} else if grp, ok := toOneOfGroup(data, tracker); ok {
+			return grp
+		}
 	}
+
+	tracker.Append(newError("Expected a clause", arg.MetaData.Start))
+	return ast.Formulation[ast.NodeType]{}
 }
 
 func toSpec(arg phase4.Argument, tracker frontend.DiagnosticTracker) ast.Spec {
@@ -192,7 +186,7 @@ func toClauses(args []phase4.Argument, tracker frontend.DiagnosticTracker) []ast
 }
 
 func toSpecs(args []phase4.Argument, tracker frontend.DiagnosticTracker) []ast.Spec {
-	result := make([]ast.Clause, 0)
+	result := make([]ast.Spec, 0)
 	for _, arg := range args {
 		result = append(result, toSpec(arg, tracker))
 	}
@@ -222,7 +216,8 @@ func oneOrMoreClause(section phase4.Section, tracker frontend.DiagnosticTracker)
 }
 
 func exactlyOneClause(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Clause {
-	return exactlyOne(toClauses(section.Args, tracker), tracker, ast.Clause{}, section.MetaData.Start)
+	var def ast.Clause = ast.Formulation[ast.NodeType]{}
+	return exactlyOne(toClauses(section.Args, tracker), tracker, def, section.MetaData.Start)
 }
 
 ////////////////////////// support functions ////////////////////////////

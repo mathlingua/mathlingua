@@ -225,6 +225,24 @@ func exactlyOneClause(section phase4.Section, tracker frontend.DiagnosticTracker
 	return exactlyOne(toClauses(section.Args, tracker), tracker, ast.Clause{}, section.MetaData.Start)
 }
 
+func oneOrMoreSpecs(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Spec {
+	return oneOrMore(toSpecs(section.Args, tracker), tracker, section.MetaData.Start)
+}
+
+func exactlyOneSpec(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Spec {
+	var def ast.Spec = ast.Formulation[ast.NodeType]{}
+	return exactlyOne(toSpecs(section.Args, tracker), tracker, def, section.MetaData.Start)
+}
+
+func oneOrMoreTargets(section phase4.Section, tracker frontend.DiagnosticTracker) []ast.Target {
+	return oneOrMore(toTargets(section.Args, tracker), tracker, section.MetaData.Start)
+}
+
+func exactlyOneTarget(section phase4.Section, tracker frontend.DiagnosticTracker) ast.Target {
+	var def ast.Target = ast.Formulation[ast.NodeType]{}
+	return exactlyOne(toTargets(section.Args, tracker), tracker, def, section.MetaData.Start)
+}
+
 ////////////////////////// support functions ////////////////////////////
 
 func required[T any](value T, ok bool) T {

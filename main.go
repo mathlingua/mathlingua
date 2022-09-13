@@ -56,8 +56,7 @@ func main() {
 		}
 	} else if len(os.Getenv("TESTBED2")) > 0 {
 		text := `
-allOf: 'a'
-. 'a + b'
+exists: f(x)
 `
 		tracker := frontend.NewDiagnosticTracker()
 
@@ -69,7 +68,7 @@ allOf: 'a'
 		group := root.Nodes[0].(phase4.Group)
 
 		parser := phase5.NewPhase5Parser(tracker)
-		grp, ok := parser.ToAllOfGroup(group)
+		grp, ok := parser.ToExistsGroup(group)
 		fmt.Println("ok=", ok)
 		fmt.Printf("%s\n", pretty.Sprintf("%# v", grp))
 

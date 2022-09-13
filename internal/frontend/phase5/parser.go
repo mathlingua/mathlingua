@@ -37,19 +37,19 @@ type parser struct {
 
 /////////////////////////// allOf ///////////////////////////////////////
 
-func (p *parser) ToAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
+func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
 	sections, ok := IdentifySections(group.Sections, p.tracker, "allOf")
 	if !ok {
 		return ast.AllOfGroup{}, false
 	}
 	return ast.AllOfGroup{
-		AllOf: p.toAllOfSection(sections["allOf"]),
+		AllOf: *p.toAllOfSection(sections["allOf"]),
 	}, true
 }
 
-func (p *parser) toAllOfSection(section phase4.Section) ast.AllOfSection {
-	return ast.AllOfSection{
-		Clauses: p.oneOrMoreClause(section),
+func (p *parser) toAllOfSection(section phase4.Section) *ast.AllOfSection {
+	return &ast.AllOfSection{
+		Clauses: p.oneOrMoreClauses(section),
 	}
 }
 
@@ -61,12 +61,12 @@ func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
 		return ast.NotGroup{}, false
 	}
 	return ast.NotGroup{
-		Not: p.toNotSection(sections["not"]),
+		Not: *p.toNotSection(sections["not"]),
 	}, true
 }
 
-func (p *parser) toNotSection(section phase4.Section) ast.NotSection {
-	return ast.NotSection{
+func (p *parser) toNotSection(section phase4.Section) *ast.NotSection {
+	return &ast.NotSection{
 		Clause: p.exactlyOneClause(section),
 	}
 }
@@ -79,13 +79,13 @@ func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
 		return ast.AnyOfGroup{}, false
 	}
 	return ast.AnyOfGroup{
-		AnyOf: p.toAnyOfSection(sections["anyOf"]),
+		AnyOf: *p.toAnyOfSection(sections["anyOf"]),
 	}, true
 }
 
-func (p *parser) toAnyOfSection(section phase4.Section) ast.AnyOfSection {
-	return ast.AnyOfSection{
-		Clauses: p.oneOrMoreClause(section),
+func (p *parser) toAnyOfSection(section phase4.Section) *ast.AnyOfSection {
+	return &ast.AnyOfSection{
+		Clauses: p.oneOrMoreClauses(section),
 	}
 }
 
@@ -97,23 +97,23 @@ func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
 		return ast.OneOfGroup{}, false
 	}
 	return ast.OneOfGroup{
-		OneOf: p.toOneOfSection(sections["oneOf"]),
+		OneOf: *p.toOneOfSection(sections["oneOf"]),
 	}, true
 }
 
-func (p *parser) toOneOfSection(section phase4.Section) ast.OneOfSection {
-	return ast.OneOfSection{
-		Clauses: p.oneOrMoreClause(section),
+func (p *parser) toOneOfSection(section phase4.Section) *ast.OneOfSection {
+	return &ast.OneOfSection{
+		Clauses: p.oneOrMoreClauses(section),
 	}
 }
 
 /////////////////////////////// exists //////////////////////////////////
 
-func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
+func (p *parser) ToExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"exists",
 		"where?",
-		"suchThat")
+		"suchThat?")
 	if !ok {
 		return ast.ExistsGroup{}, false
 	}
@@ -147,7 +147,7 @@ func (p *parser) toWhereSection(section phase4.Section) *ast.WhereSection {
 
 func (p *parser) toSuchThatSection(section phase4.Section) *ast.SuchThatSection {
 	return &ast.SuchThatSection{
-		Clauses: p.oneOrMoreClause(section),
+		Clauses: p.oneOrMoreClauses(section),
 	}
 }
 
@@ -166,13 +166,15 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 			return ast.Formulation[ast.NodeType]{}
 		}
 	case phase4.Group:
-		if grp, ok := p.ToAllOfGroup(data); ok {
+		if grp, ok := p.toAllOfGroup(data); ok {
 			return grp
 		} else if grp, ok := p.toNotGroup(data); ok {
 			return grp
 		} else if grp, ok := p.toAnyOfGroup(data); ok {
 			return grp
 		} else if grp, ok := p.toOneOfGroup(data); ok {
+			return grp
+		} else if grp, ok := p.ToExistsGroup(data); ok {
 			return grp
 		}
 	}
@@ -283,7 +285,7 @@ func (p *parser) toTextItems(args []phase4.Argument) []ast.TextItem {
 
 /////////////////////////////////////////////////////////////////////////
 
-func (p *parser) oneOrMoreClause(section phase4.Section) []ast.Clause {
+func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.Clause {
 	return oneOrMore(p.toClauses(section.Args), section.MetaData.Start, p.tracker)
 }
 

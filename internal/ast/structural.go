@@ -134,7 +134,7 @@ type ExistsUniqueGroup struct {
 }
 
 type ExistsUniqueSection struct {
-	Specs []Spec
+	Targets []Target
 }
 
 //////////////////////////////////////////////////////////////////////////////

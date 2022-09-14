@@ -151,6 +151,121 @@ func (p *parser) toSuchThatSection(section phase4.Section) *ast.SuchThatSection 
 	}
 }
 
+/////////////////////////////// exists //////////////////////////////////
+
+func (p *parser) ToExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"existsUnique",
+		"where?",
+		"suchThat?")
+	if !ok {
+		return ast.ExistsUniqueGroup{}, false
+	}
+	existsUnique := *p.toExistsUniqueSection(sections["existsUnique"])
+	var where *ast.WhereSection
+	if sect, ok := sections["where"]; ok {
+		where = p.toWhereSection(sect)
+	}
+	var suchThat *ast.SuchThatSection
+	if sect, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sect)
+	}
+	return ast.ExistsUniqueGroup{
+		ExistsUnique: existsUnique,
+		Where:        where,
+		SuchThat:     suchThat,
+	}, true
+}
+
+func (p *parser) toExistsUniqueSection(section phase4.Section) *ast.ExistsUniqueSection {
+	return &ast.ExistsUniqueSection{
+		Targets: p.oneOrMoreTargets(section),
+	}
+}
+
+///////////////////////// forAll /////////////////////////////////////////
+
+func (p *parser) ToForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"forAll",
+		"where?",
+		"suchThat?",
+		"then")
+	if !ok {
+		return ast.ForAllGroup{}, false
+	}
+	forAll := *p.toForAllSection(sections["forAll"])
+	var where *ast.WhereSection
+	if sec, ok := sections["where"]; ok {
+		where = p.toWhereSection(sec)
+	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
+	then := *p.toThenSection(sections["then"])
+	return ast.ForAllGroup{
+		ForAll:   forAll,
+		Where:    where,
+		SuchThat: suchThat,
+		Then:     then,
+	}, true
+}
+
+func (p *parser) toForAllSection(section phase4.Section) *ast.ForAllSection {
+	return &ast.ForAllSection{
+		Targets: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toThenSection(section phase4.Section) *ast.ThenSection {
+	return &ast.ThenSection{
+		Clauses: p.oneOrMoreClauses(section),
+	}
+}
+
+/////////////////////////////// if ///////////////////////////////////////
+
+func (p *parser) ToIfGroup(group phase4.Group) (ast.IfGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"if",
+		"then")
+	if !ok {
+		return ast.IfGroup{}, false
+	}
+	return ast.IfGroup{
+		If:   *p.toIfSection(sections["if"]),
+		Then: *p.toThenSection(sections["then"]),
+	}, true
+}
+
+func (p *parser) toIfSection(section phase4.Section) *ast.IfSection {
+	return &ast.IfSection{
+		Clauses: p.oneOrMoreClauses(section),
+	}
+}
+
+/////////////////////////////// iff ///////////////////////////////////////
+
+func (p *parser) ToIffGroup(group phase4.Group) (ast.IffGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"iff",
+		"then")
+	if !ok {
+		return ast.IffGroup{}, false
+	}
+	return ast.IffGroup{
+		Iff:  *p.toIffSection(sections["iff"]),
+		Then: *p.toThenSection(sections["then"]),
+	}, true
+}
+
+func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
+	return &ast.IffSection{
+		Clauses: p.oneOrMoreClauses(section),
+	}
+}
+
 ////////////////////////// arguments ////////////////////////////////////
 
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {

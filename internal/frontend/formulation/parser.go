@@ -61,6 +61,18 @@ func ParseId(text string, tracker frontend.DiagnosticTracker) (ast.IdType, bool)
 	return node, tracker.Length() == numDiagBefore
 }
 
+func ParseSignature(text string, tracker frontend.DiagnosticTracker) (ast.Signature, bool) {
+	numDiagBefore := tracker.Length()
+	lexer := NewLexer(text, tracker)
+	parser := formulationParser{
+		lexer:   lexer,
+		tracker: tracker,
+	}
+	node, _ := parser.signature()
+	parser.finalize()
+	return node, tracker.Length() == numDiagBefore
+}
+
 ////////////////////// utility functions ////////////////////////////////////
 
 type formulationParser struct {
@@ -1607,5 +1619,56 @@ func (fp *formulationParser) commandAtId() (ast.CommandAtId, bool) {
 	return ast.CommandAtId{
 		Names: names,
 		Param: literal,
+	}, true
+}
+
+//////////////////////////////// signature ////////////////////////////////////////////
+
+func (fp *formulationParser) signature() (ast.Signature, bool) {
+	if !fp.hasHas(ast.BackSlash, ast.LSquare) {
+		return ast.Signature{}, false
+	}
+	fp.expect(ast.BackSlash)
+	fp.expect(ast.LSquare)
+	mainNames := make([]string, 0)
+	namedGroupNames := make([]string, 0)
+	hasAtSymbol := false
+	for fp.lexer.HasNext() && !fp.has(ast.LSquare) {
+		if fp.has(ast.At) || fp.has(ast.Colon) {
+			break
+		}
+		name, ok := fp.nameForm()
+		if !ok {
+			fp.error("Expected a name")
+			break
+		}
+		mainNames = append(mainNames, name.Text)
+	}
+	if fp.has(ast.At) {
+		fp.expect(ast.At)
+		hasAtSymbol = true
+	}
+	if !hasAtSymbol {
+		for fp.lexer.HasNext() && !fp.has(ast.LSquare) {
+			_, ok := fp.expect(ast.Colon)
+			if !ok {
+				break
+			}
+			name, ok := fp.nameForm()
+			if !ok {
+				break
+			}
+			namedGroupNames = append(namedGroupNames, name.Text)
+		}
+	}
+	for fp.lexer.HasNext() && !fp.has(ast.LSquare) {
+		fp.error("Unexpected text")
+		fp.lexer.Next()
+	}
+	fp.expect(ast.LSquare)
+	return ast.Signature{
+		MainNames:       mainNames,
+		NamedGroupNames: namedGroupNames,
+		HasAtSymbol:     hasAtSymbol,
 	}, true
 }

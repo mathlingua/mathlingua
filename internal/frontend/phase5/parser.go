@@ -17,6 +17,7 @@
 package phase5
 
 import (
+	"fmt"
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/formulation"
@@ -151,7 +152,7 @@ func (p *parser) toSuchThatSection(section phase4.Section) *ast.SuchThatSection 
 	}
 }
 
-/////////////////////////////// exists //////////////////////////////////
+/////////////////////////////// existsUnique //////////////////////////////////
 
 func (p *parser) ToExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup, bool) {
 	sections, ok := IdentifySections(group.Sections, p.tracker,
@@ -266,6 +267,195 @@ func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
 	}
 }
 
+/////////////////////////// generated ////////////////////////////////////
+
+func (p *parser) ToGeneratedGroup(group phase4.Group) (ast.GeneratedGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"generated",
+		"from",
+		"when?")
+	if !ok {
+		return ast.GeneratedGroup{}, false
+	}
+	generated := *p.toGeneratedSection(sections["generated"])
+	from := *p.toFromSection(sections["from"])
+	var when *ast.WhenSection
+	if sec, ok := sections["when"]; ok {
+		when = p.toWhenSection(sec)
+	}
+	return ast.GeneratedGroup{
+		Generated: generated,
+		From:      from,
+		When:      when,
+	}, true
+}
+
+func (p *parser) toGeneratedSection(section phase4.Section) *ast.GeneratedSection {
+	p.verifyNoArgs(section)
+	return &ast.GeneratedSection{}
+}
+
+func (p *parser) toFromSection(section phase4.Section) *ast.FromSection {
+	return &ast.FromSection{
+		Items: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
+	return &ast.WhenSection{
+		Items: p.oneOrMoreClauses(section),
+	}
+}
+
+///////////////////////////// piecewise /////////////////////////////////
+
+func (p *parser) ToPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool) {
+	sections := group.Sections
+	if len(sections) == 0 || sections[0].Name != "piecewise" {
+		return ast.PiecewiseGroup{}, false
+	}
+	piecewise := *p.toPiecewiseSection(sections[0])
+	ifThens := make([]ast.IfThen, 0)
+	i := 1
+	for i < len(sections) {
+		section1 := sections[i]
+		if section1.Name == "else" {
+			break
+		}
+		i++
+		if section1.Name != "if" {
+			p.tracker.Append(newError(fmt.Sprintf("Expected section 'if' but found '%s'", section1.Name), section1.MetaData.Start))
+			return ast.PiecewiseGroup{}, false
+		}
+		if i >= len(sections) {
+			p.tracker.Append(newError("Expected section 'then' to follow an 'if' section", section1.MetaData.Start))
+			return ast.PiecewiseGroup{}, false
+		}
+		section2 := sections[i]
+		i++
+		if section2.Name != "else" {
+			p.tracker.Append(newError(fmt.Sprintf("Expected section 'then' but found '%s'", section2.Name), section2.MetaData.Start))
+			return ast.PiecewiseGroup{}, false
+		}
+		ifThens = append(ifThens, ast.IfThen{
+			If:   *p.toIfSection(section1),
+			Then: *p.toThenSection(section2),
+		})
+	}
+	var elseSec *ast.ElseSection
+	if i < len(sections) && sections[i].Name == "else" {
+		elseSec = p.toElseSection(sections[i])
+		i++
+	}
+	invalid := i < len(sections)
+	for i < len(sections) {
+		sec := sections[i]
+		i++
+		p.tracker.Append(newError(fmt.Sprintf("Unexpected section '%s'", sec.Name), sec.MetaData.Start))
+	}
+	if invalid {
+		return ast.PiecewiseGroup{}, false
+	}
+	return ast.PiecewiseGroup{
+		Piecewise: piecewise,
+		IfThen:    ifThens,
+		Else:      elseSec,
+	}, true
+}
+
+func (p *parser) toPiecewiseSection(section phase4.Section) *ast.PiecewiseSection {
+	p.verifyNoArgs(section)
+	return &ast.PiecewiseSection{}
+}
+
+func (p *parser) toElseSection(section phase4.Section) *ast.ElseSection {
+	return &ast.ElseSection{
+		Items: p.oneOrMoreClauses(section),
+	}
+}
+
+/////////////////////////////// as via ///////////////////////////////////
+
+func (p *parser) ToAsViaGroup(group phase4.Group) (ast.AsViaGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"as",
+		"via")
+	if !ok {
+		return ast.AsViaGroup{}, false
+	}
+	return ast.AsViaGroup{
+		As:  *p.toAsSection(sections["as"]),
+		Via: *p.toViaSection(sections["via"]),
+	}, true
+}
+
+func (p *parser) toAsSection(section phase4.Section) *ast.AsSection {
+	return &ast.AsSection{
+		As: p.exactlyOneSignatureItem(section),
+	}
+}
+
+func (p *parser) toViaSection(section phase4.Section) *ast.ViaSection {
+	return &ast.ViaSection{
+		Via: p.exactlyOneClause(section),
+	}
+}
+
+////////////////////////// as through ////////////////////////////////////
+
+func (p *parser) ToAsThroughGroup(group phase4.Group) (ast.AsThroughGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"as",
+		"through",
+		"as?",
+		"states?")
+	if !ok {
+		return ast.AsThroughGroup{}, false
+	}
+	as := *p.toAsSection(sections["as"])
+	through := *p.toThroughSection(sections["through"])
+	var throughAs *ast.AsSection
+	if sec, ok := sections["as1"]; ok {
+		throughAs = p.toAsSection(sec)
+	}
+	var states *ast.AsStatesSection
+	if sec, ok := sections["states"]; ok {
+		states = p.toAsStatesSection(sec)
+	}
+	return ast.AsThroughGroup{
+		As:        as,
+		Through:   through,
+		ThroughAs: throughAs,
+		States:    states,
+	}, true
+}
+
+func (p *parser) toThroughSection(section phase4.Section) *ast.ThroughSection {
+	return &ast.ThroughSection{
+		Through: p.exactlyOneSpec(section),
+	}
+}
+
+func (p *parser) toAsStatesSection(section phase4.Section) *ast.AsStatesSection {
+	return &ast.AsStatesSection{
+		As: p.exactlyOneSignatureItem(section),
+	}
+}
+
+////////////////////////////// viewable type ///////////////////////////
+
+func (p *parser) ToViewableType(group phase4.Group) (ast.ViewableType, bool) {
+	if grp, ok := p.ToAsViaGroup(group); ok {
+		return grp, true
+	}
+
+	if grp, ok := p.ToAsThroughGroup(group); ok {
+		return grp, true
+	}
+
+	return nil, false
+}
+
 ////////////////////////// arguments ////////////////////////////////////
 
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {
@@ -364,6 +554,24 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 	}
 }
 
+func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signature] {
+	switch data := arg.Arg.(type) {
+	case phase4.FormulationArgumentData:
+		if node, ok := formulation.ParseSignature(data.Text, p.tracker); ok {
+			return ast.Formulation[ast.Signature]{
+				RawText: data.Text,
+				Root:    node,
+				Label:   nil,
+			}
+		} else {
+			return ast.Formulation[ast.Signature]{}
+		}
+	}
+
+	p.tracker.Append(newError("Expected a signature", arg.MetaData.Start))
+	return ast.Formulation[ast.Signature]{}
+}
+
 //////////////////////// argument lists /////////////////////////////////
 
 func (p *parser) toClauses(args []phase4.Argument) []ast.Clause {
@@ -398,7 +606,21 @@ func (p *parser) toTextItems(args []phase4.Argument) []ast.TextItem {
 	return result
 }
 
+func (p *parser) toSignaturesItems(args []phase4.Argument) []ast.Formulation[ast.Signature] {
+	result := make([]ast.Formulation[ast.Signature], 0)
+	for _, arg := range args {
+		result = append(result, p.toSignatureItem(arg))
+	}
+	return result
+}
+
 /////////////////////////////////////////////////////////////////////////
+
+func (p *parser) verifyNoArgs(section phase4.Section) {
+	if len(section.Args) > 0 {
+		p.tracker.Append(newError("Expected no arguments", section.MetaData.Start))
+	}
+}
 
 func (p *parser) oneOrMoreClauses(section phase4.Section) []ast.Clause {
 	return oneOrMore(p.toClauses(section.Args), section.MetaData.Start, p.tracker)
@@ -425,6 +647,11 @@ func (p *parser) oneOrMoreTargets(section phase4.Section) []ast.Target {
 func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {
 	var def ast.Target = ast.Formulation[ast.NodeType]{}
 	return exactlyOne(p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) exactlyOneSignatureItem(section phase4.Section) ast.Formulation[ast.Signature] {
+	var def ast.Formulation[ast.Signature] = ast.Formulation[ast.Signature]{}
+	return exactlyOne(p.toSignaturesItems(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
 ////////////////////////// support functions ////////////////////////////

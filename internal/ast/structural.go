@@ -363,6 +363,7 @@ type ProvidesDefinesSection struct {
 //////////////////////////////////////////////////////////////////////////////
 
 type CodifiedSection struct {
+	Codified []CodifiedType
 }
 
 type CodifiedType interface {
@@ -732,6 +733,7 @@ type ProofGroup struct {
 }
 
 type ProofSection struct {
+	Proof TextItem
 }
 
 type OfSection struct {

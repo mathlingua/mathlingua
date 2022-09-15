@@ -456,6 +456,658 @@ func (p *parser) ToViewableType(group phase4.Group) (ast.ViewableType, bool) {
 	return nil, false
 }
 
+////////////////////// infix, prefix, postfix, symbol ///////////////////
+
+func (p *parser) toProvidesStatesSection(section phase4.Section) *ast.ProvidesStatesSection {
+	return &ast.ProvidesStatesSection{
+		Clause: p.exactlyOneClause(section),
+	}
+}
+
+func (p *parser) toProvidesDefinesSection(section phase4.Section) *ast.ProvidesDefinesSection {
+	return &ast.ProvidesDefinesSection{
+		Clause: p.exactlyOneClause(section),
+	}
+}
+
+func (p *parser) toProvidesStatesDefinesType(section phase4.Section) (ast.ProvidesStatesDefinesType, bool) {
+	if section.Name == "states" {
+		return *p.toProvidesStatesSection(section), true
+	} else if section.Name == "defines" {
+		return *p.toProvidesDefinesSection(section), true
+	} else {
+		return nil, false
+	}
+}
+
+func (p *parser) toInfixSection(section phase4.Section) *ast.InfixSection {
+	return &ast.InfixSection{
+		Infix: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toPrefixSection(section phase4.Section) *ast.PrefixSection {
+	return &ast.PrefixSection{
+		Prefix: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toPostfixSection(section phase4.Section) *ast.PostfixSection {
+	return &ast.PostfixSection{
+		Postfix: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
+	return &ast.SymbolSection{
+		Symbol: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toInfixGroup(group phase4.Group) (ast.InfixGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"infix",
+		"when?",
+		"states")
+	if ok {
+		infix := *p.toInfixSection(sections["infix"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		states := *p.toProvidesStatesSection(sections["states"])
+		return ast.InfixGroup{
+			Infix:         infix,
+			When:          when,
+			StatesDefines: states,
+		}, true
+	}
+
+	sections, ok = IdentifySections(group.Sections, p.tracker,
+		"infix",
+		"when?",
+		"defines")
+	if ok {
+		infix := *p.toInfixSection(sections["infix"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		defines := *p.toProvidesDefinesSection(sections["defines"])
+		return ast.InfixGroup{
+			Infix:         infix,
+			When:          when,
+			StatesDefines: defines,
+		}, true
+	}
+
+	return ast.InfixGroup{}, false
+}
+
+func (p *parser) toPrefixGroup(group phase4.Group) (ast.PrefixGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"prefix",
+		"when?",
+		"states")
+	if ok {
+		prefix := *p.toPrefixSection(sections["prefix"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		states := *p.toProvidesStatesSection(sections["states"])
+		return ast.PrefixGroup{
+			Prefix:        prefix,
+			When:          when,
+			StatesDefines: states,
+		}, true
+	}
+
+	sections, ok = IdentifySections(group.Sections, p.tracker,
+		"prefix",
+		"when?",
+		"defines")
+	if ok {
+		prefix := *p.toPrefixSection(sections["prefix"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		defines := *p.toProvidesDefinesSection(sections["defines"])
+		return ast.PrefixGroup{
+			Prefix:        prefix,
+			When:          when,
+			StatesDefines: defines,
+		}, true
+	}
+
+	return ast.PrefixGroup{}, false
+}
+
+func (p *parser) toPostfixGroup(group phase4.Group) (ast.PostfixGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"postfix",
+		"when?",
+		"states")
+	if ok {
+		postfix := *p.toPostfixSection(sections["postfix"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		states := *p.toProvidesStatesSection(sections["states"])
+		return ast.PostfixGroup{
+			Postfix:       postfix,
+			When:          when,
+			StatesDefines: states,
+		}, true
+	}
+
+	sections, ok = IdentifySections(group.Sections, p.tracker,
+		"postfix",
+		"when?",
+		"defines")
+	if ok {
+		postfix := *p.toPostfixSection(sections["postfix"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		defines := *p.toProvidesDefinesSection(sections["defines"])
+		return ast.PostfixGroup{
+			Postfix:       postfix,
+			When:          when,
+			StatesDefines: defines,
+		}, true
+	}
+
+	return ast.PostfixGroup{}, false
+}
+
+func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"symbol",
+		"when?",
+		"states")
+	if ok {
+		symbol := *p.toSymbolSection(sections["symbol"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		states := *p.toProvidesStatesSection(sections["states"])
+		return ast.SymbolGroup{
+			Symbol:        symbol,
+			When:          when,
+			StatesDefines: states,
+		}, true
+	}
+
+	sections, ok = IdentifySections(group.Sections, p.tracker,
+		"symbol",
+		"when?",
+		"defines")
+	if ok {
+		symbol := *p.toSymbolSection(sections["symbol"])
+		var when *ast.WhenSection
+		if sec, ok := sections["when"]; ok {
+			when = p.toWhenSection(sec)
+		}
+		defines := *p.toProvidesDefinesSection(sections["defines"])
+		return ast.SymbolGroup{
+			Symbol:        symbol,
+			When:          when,
+			StatesDefines: defines,
+		}, true
+	}
+
+	return ast.SymbolGroup{}, false
+}
+
+////////////////////////////// codified /////////////////////////////////
+
+func (p *parser) toCodifiedSection() *ast.CodifiedSection {
+	return &ast.CodifiedSection{}
+}
+
+func (p *parser) oneOrMoreCodifiedType(section phase4.Section) []ast.CodifiedType {
+	return oneOrMore(p.toCodifiedTypes(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) toCodifiedTypes(args []phase4.Argument) []ast.CodifiedType {
+	result := make([]ast.CodifiedType, 0)
+	for _, arg := range args {
+		if codeType, ok := p.toCodifiedTypeFromArg(arg); ok {
+			result = append(result, codeType)
+		}
+	}
+	return result
+}
+
+func (p *parser) toCodifiedTypeFromArg(arg phase4.Argument) (ast.CodifiedType, bool) {
+	group, ok := arg.Arg.(phase4.Group)
+	if !ok {
+		return nil, false
+	}
+	return p.toCodifiedTypeFromGroup(group)
+}
+
+func (p *parser) toCodifiedTypeFromGroup(group phase4.Group) (ast.CodifiedType, bool) {
+	if grp, ok := p.toWrittenGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toCalledGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toWritingGroup(group); ok {
+		return grp, true
+	} else {
+		return nil, false
+	}
+}
+
+func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "written")
+	if !ok {
+		return ast.WrittenGroup{}, false
+	}
+	return ast.WrittenGroup{
+		Written: *p.toWrittenSection(sections["written"]),
+	}, true
+}
+
+func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
+	return &ast.WrittenSection{
+		Written: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toCalledGroup(group phase4.Group) (ast.CalledGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "called")
+	if !ok {
+		return ast.CalledGroup{}, false
+	}
+	return ast.CalledGroup{
+		Called: *p.toCalledSection(sections["called"]),
+	}, true
+}
+
+func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
+	return &ast.CalledSection{
+		Called: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"writing",
+		"as")
+	if !ok {
+		return ast.WritingGroup{}, false
+	}
+	writing := *p.toWritingSection(sections["writing"])
+	as := *p.toWritingAsSection(sections["as"])
+	return ast.WritingGroup{
+		Writing: writing,
+		As:      as,
+	}, true
+}
+
+func (p *parser) toWritingSection(section phase4.Section) *ast.WritingSection {
+	return &ast.WritingSection{
+		Writing: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSection {
+	return &ast.WritingAsSection{
+		As: p.oneOrMoreTextItems(section),
+	}
+}
+
+////////////////////////// documented ////////////////////////////////////
+
+func (p *parser) toDocumentedType() (ast.DocumentedType, bool) {
+	return nil, false
+}
+
+func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSection {
+	return nil
+}
+
+// TODO: finish this
+
+/////////////////////////// viewable /////////////////////////////////////
+
+// TODO: finish this
+
+////////////////////////// provides //////////////////////////////////////
+
+func (p *parser) toProvidesSection(section phase4.Section) *ast.ProvidesSection {
+	return nil
+}
+
+// TODO: finish this
+
+////////////////////////// using ////////////////////////////////////////
+
+func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
+	return nil
+}
+
+// TODO: finish this
+
+////////////////////////// justified ////////////////////////////////////
+
+func (p *parser) toJustifiedSection(section phase4.Section) *ast.JustifiedSection {
+	return nil
+}
+
+// TODO: finish this
+
+////////////////////////// references ///////////////////////////////////
+
+func (p *parser) toReferencesSection(section phase4.Section) *ast.ReferencesSection {
+	return nil
+}
+
+// TODO: finish this
+
+///////////////////////// metadata //////////////////////////////////////
+
+func (p *parser) toMetadataSection(section phase4.Section) *ast.MetadataSection {
+	return nil
+}
+
+// TODO: finish this
+
+//////////////////////// describes //////////////////////////////////////
+
+// TODO: finish this
+
+/////////////////////// declares ////////////////////////////////////////
+
+// TODO: finish this
+
+/////////////////////// states //////////////////////////////////////////
+
+// TODO: finish this
+
+/////////////////////// proof ///////////////////////////////////////////
+
+// TODO: finish this
+
+/////////////////////// axiom ///////////////////////////////////////////
+
+// TODO: finish this
+
+func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
+	id := p.getId(group, false)
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"Axiom",
+		"given?",
+		"where?",
+		"suchThat?",
+		"then",
+		"iff?",
+		"Using?",
+		"Documented?",
+		"References?",
+		"Metadata?")
+	if !ok {
+		return ast.AxiomGroup{}, false
+	}
+	axiom := *p.toAxiomSection(sections["Axiom"])
+	var given *ast.GivenSection
+	if sec, ok := sections["given"]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var where *ast.WhereSection
+	if sec, ok := sections["where"]; ok {
+		where = p.toWhereSection(sec)
+	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
+	then := *p.toThenSection(sections["then"])
+	var iff *ast.IffSection
+	if sec, ok := sections["iff"]; ok {
+		iff = p.toIffSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections["Using"]; ok {
+		using = p.toUsingSection(sec)
+	}
+	var documented *ast.DocumentedSection
+	if sec, ok := sections["Documented"]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections["References"]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metadata *ast.MetadataSection
+	if sec, ok := sections["Metadata"]; ok {
+		metadata = p.toMetadataSection(sec)
+	}
+	return ast.AxiomGroup{
+		Id:         id,
+		Axiom:      axiom,
+		Given:      given,
+		Where:      where,
+		SuchThat:   suchThat,
+		Then:       then,
+		Iff:        iff,
+		Using:      using,
+		Documented: documented,
+		References: references,
+		Metadata:   metadata,
+	}, true
+}
+
+func (p *parser) toAxiomSection(section phase4.Section) *ast.AxiomSection {
+	return &ast.AxiomSection{
+		Axiom: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toGivenSection(section phase4.Section) *ast.GivenSection {
+	return &ast.GivenSection{
+		Given: p.oneOrMoreTargets(section),
+	}
+}
+
+/////////////////////// conjecture //////////////////////////////////////
+
+func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, bool) {
+	id := p.getId(group, false)
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"Conjecture",
+		"given?",
+		"where?",
+		"suchThat?",
+		"then",
+		"iff?",
+		"Using?",
+		"Documented?",
+		"References?",
+		"Metadata?")
+	if !ok {
+		return ast.ConjectureGroup{}, false
+	}
+	conjecture := *p.toConjectureSection(sections["Conjecture"])
+	var given *ast.GivenSection
+	if sec, ok := sections["given"]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var where *ast.WhereSection
+	if sec, ok := sections["where"]; ok {
+		where = p.toWhereSection(sec)
+	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
+	then := *p.toThenSection(sections["then"])
+	var iff *ast.IffSection
+	if sec, ok := sections["iff"]; ok {
+		iff = p.toIffSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections["Using"]; ok {
+		using = p.toUsingSection(sec)
+	}
+	var documented *ast.DocumentedSection
+	if sec, ok := sections["Documented"]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections["References"]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metadata *ast.MetadataSection
+	if sec, ok := sections["Metadata"]; ok {
+		metadata = p.toMetadataSection(sec)
+	}
+	return ast.ConjectureGroup{
+		Id:         id,
+		Conjecture: conjecture,
+		Given:      given,
+		Where:      where,
+		SuchThat:   suchThat,
+		Then:       then,
+		Iff:        iff,
+		Using:      using,
+		Documented: documented,
+		References: references,
+		Metadata:   metadata,
+	}, true
+}
+
+func (p *parser) toConjectureSection(section phase4.Section) *ast.ConjectureSection {
+	return &ast.ConjectureSection{
+		Conjecture: p.oneOrMoreTextItems(section),
+	}
+}
+
+/////////////////////// theorem /////////////////////////////////////////
+
+func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
+	id := p.getId(group, false)
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"Theorem",
+		"given?",
+		"where?",
+		"suchThat?",
+		"then",
+		"iff?",
+		"Using?",
+		"Proof",
+		"Documented?",
+		"References?",
+		"Metadata?")
+	if !ok {
+		return ast.TheoremGroup{}, false
+	}
+	theorem := *p.toTheoremSection(sections["Theorem"])
+	var given *ast.GivenSection
+	if sec, ok := sections["given"]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var where *ast.WhereSection
+	if sec, ok := sections["where"]; ok {
+		where = p.toWhereSection(sec)
+	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
+	then := *p.toThenSection(sections["then"])
+	var iff *ast.IffSection
+	if sec, ok := sections["iff"]; ok {
+		iff = p.toIffSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections["Using"]; ok {
+		using = p.toUsingSection(sec)
+	}
+	var proof *ast.ProofSection
+	if sec, ok := sections["Proof"]; ok {
+		proof = p.toProofSection(sec)
+	}
+	var documented *ast.DocumentedSection
+	if sec, ok := sections["Documented"]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections["References"]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metadata *ast.MetadataSection
+	if sec, ok := sections["Metadata"]; ok {
+		metadata = p.toMetadataSection(sec)
+	}
+	return ast.TheoremGroup{
+		Id:         id,
+		Theorem:    theorem,
+		Given:      given,
+		Where:      where,
+		SuchThat:   suchThat,
+		Then:       then,
+		Iff:        iff,
+		Using:      using,
+		Proof:      proof,
+		Documented: documented,
+		References: references,
+		Metadata:   metadata,
+	}, true
+}
+
+func (p *parser) toTheoremSection(section phase4.Section) *ast.TheoremSection {
+	return &ast.TheoremSection{
+		Theorem: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
+	return &ast.ProofSection{
+		Proof: p.exactlyOneTextItem(section),
+	}
+}
+
+////////////////////// topic ////////////////////////////////////////////
+
+// TODO: finish this
+
+////////////////////// note /////////////////////////////////////////////
+
+// TODO: finish this
+
+////////////////////// specify //////////////////////////////////////////
+
+// TODO: finish this
+
+///////////////////////////// id ////////////////////////////////////////
+
+func (p *parser) toIdItem(text string) *ast.IdItem {
+	if node, ok := formulation.ParseId(text, p.tracker); ok {
+		return &ast.IdItem{
+			RawText: text,
+			Root:    node,
+			Label:   nil,
+		}
+	} else {
+		return nil
+	}
+}
+
+func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
+	if required && group.Id == nil {
+		p.tracker.Append(newError("Expected an id", group.MetaData.Start))
+		return nil
+	}
+	return p.toIdItem(*group.Id)
+}
+
 ////////////////////////// arguments ////////////////////////////////////
 
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {
@@ -521,24 +1173,6 @@ func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	default:
 		p.tracker.Append(newError("Expected a target", arg.MetaData.Start))
 		return ast.Target{}
-	}
-}
-
-func (p *parser) toIdItem(arg phase4.Argument) ast.IdItem {
-	switch data := arg.Arg.(type) {
-	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseId(data.Text, p.tracker); ok {
-			return ast.IdItem{
-				RawText: data.Text,
-				Root:    node,
-				Label:   nil,
-			}
-		} else {
-			return ast.IdItem{}
-		}
-	default:
-		p.tracker.Append(newError("Expected an id", arg.MetaData.Start))
-		return ast.IdItem{}
 	}
 }
 
@@ -644,6 +1278,10 @@ func (p *parser) oneOrMoreTargets(section phase4.Section) []ast.Target {
 	return oneOrMore(p.toTargets(section.Args), section.MetaData.Start, p.tracker)
 }
 
+func (p *parser) oneOrMoreTextItems(section phase4.Section) []ast.TextItem {
+	return oneOrMore(p.toTextItems(section.Args), section.MetaData.Start, p.tracker)
+}
+
 func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {
 	var def ast.Target = ast.Formulation[ast.NodeType]{}
 	return exactlyOne(p.toTargets(section.Args), def, section.MetaData.Start, p.tracker)
@@ -652,6 +1290,10 @@ func (p *parser) exactlyOneTarget(section phase4.Section) ast.Target {
 func (p *parser) exactlyOneSignatureItem(section phase4.Section) ast.Formulation[ast.Signature] {
 	var def ast.Formulation[ast.Signature] = ast.Formulation[ast.Signature]{}
 	return exactlyOne(p.toSignaturesItems(section.Args), def, section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) exactlyOneTextItem(section phase4.Section) ast.TextItem {
+	return exactlyOne(p.toTextItems(section.Args), ast.TextItem{}, section.MetaData.Start, p.tracker)
 }
 
 ////////////////////////// support functions ////////////////////////////

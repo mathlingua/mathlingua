@@ -666,7 +666,7 @@ func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
 
 ////////////////////////////// codified /////////////////////////////////
 
-func (p *parser) toCodifiedSection() *ast.CodifiedSection {
+func (p *parser) toCodifiedSection(section phase4.Section) *ast.CodifiedSection {
 	return &ast.CodifiedSection{}
 }
 
@@ -829,15 +829,90 @@ func (p *parser) toMetadataSection(section phase4.Section) *ast.MetadataSection 
 
 /////////////////////// states //////////////////////////////////////////
 
-// TODO: finish this
+func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
+	id := p.getId(group, true)
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"States",
+		"given?",
+		"when?",
+		"suchThat?",
+		"that",
+		"Using?",
+		"Codified",
+		"Documented?",
+		"Justified?",
+		"References?",
+		"Metadata?")
+	if !ok || id == nil {
+		return ast.StatesGroup{}, false
+	}
+	states := *p.toStatesSection(sections["States"])
+	var given *ast.GivenSection
+	if sec, ok := sections["given"]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var when *ast.WhenSection
+	if sec, ok := sections["when"]; ok {
+		when = p.toWhenSection(sec)
+	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
+	that := *p.toThatSection(sections["that"])
+	var using *ast.UsingSection
+	if sec, ok := sections["Using"]; ok {
+		using = p.toUsingSection(sec)
+	}
+	codified := *p.toCodifiedSection(sections["Codified"])
+	var documented *ast.DocumentedSection
+	if sec, ok := sections["Documented"]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var justified *ast.JustifiedSection
+	if sec, ok := sections["Justified"]; ok {
+		justified = p.toJustifiedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections["References"]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metadata *ast.MetadataSection
+	if sec, ok := sections["Metadata"]; ok {
+		metadata = p.toMetadataSection(sec)
+	}
+	return ast.StatesGroup{
+		Id:         *id,
+		States:     states,
+		Given:      given,
+		When:       when,
+		SuchThat:   suchThat,
+		That:       that,
+		Using:      using,
+		Codified:   codified,
+		Documented: documented,
+		Justified:  justified,
+		References: references,
+		Metadata:   metadata,
+	}, true
+}
+
+func (p *parser) toStatesSection(section phase4.Section) *ast.StatesSection {
+	p.verifyNoArgs(section)
+	return &ast.StatesSection{}
+}
+
+func (p *parser) toThatSection(section phase4.Section) *ast.ThatSection {
+	return &ast.ThatSection{
+		That: p.oneOrMoreClauses(section),
+	}
+}
 
 /////////////////////// proof ///////////////////////////////////////////
 
 // TODO: finish this
 
 /////////////////////// axiom ///////////////////////////////////////////
-
-// TODO: finish this
 
 func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	id := p.getId(group, false)

@@ -463,7 +463,7 @@ type RelatedGroup struct {
 }
 
 type RelatedSection struct {
-	Related []Signature
+	Related []Formulation[Signature]
 }
 
 type DiscoveredGroup struct {
@@ -471,7 +471,7 @@ type DiscoveredGroup struct {
 }
 
 type DiscoveredSection struct {
-	Discovered TextItem
+	Discovered []TextItem
 }
 
 type NotesGroup struct {
@@ -639,7 +639,7 @@ defines?:
 Viewable?:
 Provides?:
 Using?:
-Codified?:
+Codified:
 Documented?:
 Justified?:
 References?:
@@ -941,3 +941,26 @@ type SpecifyGroup struct {
 }
 
 //////////////////////////////////////////////////////////////////////////////
+
+type TextBlockItem struct {
+	Text string
+}
+
+type TopLevelItemType interface {
+	TopLevelItemType()
+}
+
+func (TextBlockItem) TopLevelItemType()   {}
+func (DeclaresGroup) TopLevelItemType()   {}
+func (DescribesGroup) TopLevelItemType()  {}
+func (StatesGroup) TopLevelItemType()     {}
+func (AxiomGroup) TopLevelItemType()      {}
+func (ConjectureGroup) TopLevelItemType() {}
+func (TheoremGroup) TopLevelItemType()    {}
+func (SpecifyGroup) TopLevelItemType()    {}
+func (NoteGroup) TopLevelItemType()       {}
+func (TopicGroup) TopLevelItemType()      {}
+
+type Document struct {
+	Items []TopLevelItemType
+}

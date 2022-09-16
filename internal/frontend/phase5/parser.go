@@ -444,6 +444,10 @@ func (p *parser) toAsStatesSection(section phase4.Section) *ast.AsStatesSection 
 
 ////////////////////////////// viewable type ///////////////////////////
 
+func (p *parser) toViewableSection(section phase4.Section) *ast.ViewableSection {
+	return nil
+}
+
 func (p *parser) ToViewableType(group phase4.Group) (ast.ViewableType, bool) {
 	if grp, ok := p.ToAsViaGroup(group); ok {
 		return grp, true
@@ -667,7 +671,9 @@ func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
 ////////////////////////////// codified /////////////////////////////////
 
 func (p *parser) toCodifiedSection(section phase4.Section) *ast.CodifiedSection {
-	return &ast.CodifiedSection{}
+	return &ast.CodifiedSection{
+		Codified: p.oneOrMoreCodifiedType(section),
+	}
 }
 
 func (p *parser) oneOrMoreCodifiedType(section phase4.Section) []ast.CodifiedType {
@@ -765,15 +771,165 @@ func (p *parser) toWritingAsSection(section phase4.Section) *ast.WritingAsSectio
 
 ////////////////////////// documented ////////////////////////////////////
 
-func (p *parser) toDocumentedType() (ast.DocumentedType, bool) {
+func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSection {
+	return &ast.DocumentedSection{
+		Documented: p.oneOrMoreDocumentedTypes(section),
+	}
+}
+
+func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool) {
+	switch group := arg.Arg.(type) {
+	case phase4.Group:
+		if grp, ok := p.toLooselyGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toOverviewGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toMotivationGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toHistoryGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toExamplesGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toRelatedGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toDiscoveredGroup(group); ok {
+			return grp, true
+		} else if grp, ok := p.toNotesGroup(group); ok {
+			return grp, true
+		}
+	}
+
+	p.tracker.Append(newError("Expected a documented item", arg.MetaData.Start))
 	return nil, false
 }
 
-func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSection {
-	return nil
+func (p *parser) toLooselyGroup(group phase4.Group) (ast.LooselyGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "loosely")
+	if !ok {
+		return ast.LooselyGroup{}, false
+	}
+	return ast.LooselyGroup{
+		Loosely: *p.toLooselySection(sections["loosely"]),
+	}, true
 }
 
-// TODO: finish this
+func (p *parser) toLooselySection(section phase4.Section) *ast.LooselySection {
+	return &ast.LooselySection{
+		Loosely: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toOverviewGroup(group phase4.Group) (ast.OverviewGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "overview")
+	if !ok {
+		return ast.OverviewGroup{}, false
+	}
+	return ast.OverviewGroup{
+		Overview: *p.toOverviewSection(sections["overview"]),
+	}, true
+}
+
+func (p *parser) toOverviewSection(section phase4.Section) *ast.OverviewSection {
+	return &ast.OverviewSection{
+		Overview: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toMotivationGroup(group phase4.Group) (ast.MotivationGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "motivation")
+	if !ok {
+		return ast.MotivationGroup{}, false
+	}
+	return ast.MotivationGroup{
+		Motivation: *p.toMotivationSection(sections["motivation"]),
+	}, true
+}
+
+func (p *parser) toMotivationSection(section phase4.Section) *ast.MotivationSection {
+	return &ast.MotivationSection{
+		Motivation: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toHistoryGroup(group phase4.Group) (ast.HistoryGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "history")
+	if !ok {
+		return ast.HistoryGroup{}, false
+	}
+	return ast.HistoryGroup{
+		History: *p.toHistorySection(sections["history"]),
+	}, true
+}
+
+func (p *parser) toHistorySection(section phase4.Section) *ast.HistorySection {
+	return &ast.HistorySection{
+		History: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toExamplesGroup(group phase4.Group) (ast.ExamplesGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "examples")
+	if !ok {
+		return ast.ExamplesGroup{}, false
+	}
+	return ast.ExamplesGroup{
+		Examples: *p.toExamplesSection(sections["examples"]),
+	}, true
+}
+
+func (p *parser) toExamplesSection(section phase4.Section) *ast.ExamplesSection {
+	return &ast.ExamplesSection{
+		Examples: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "related")
+	if !ok {
+		return ast.RelatedGroup{}, false
+	}
+	return ast.RelatedGroup{
+		Related: *p.toRelatedSection(sections["related"]),
+	}, true
+}
+
+func (p *parser) toRelatedSection(section phase4.Section) *ast.RelatedSection {
+	return &ast.RelatedSection{
+		Related: p.oneOrMoreSignatureItems(section),
+	}
+}
+
+func (p *parser) toDiscoveredGroup(group phase4.Group) (ast.DiscoveredGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "discovered")
+	if !ok {
+		return ast.DiscoveredGroup{}, false
+	}
+	return ast.DiscoveredGroup{
+		Discovered: *p.toDiscoveredSection(sections["discovered"]),
+	}, true
+}
+
+func (p *parser) toDiscoveredSection(section phase4.Section) *ast.DiscoveredSection {
+	return &ast.DiscoveredSection{
+		Discovered: p.oneOrMoreTextItems(section),
+	}
+}
+
+func (p *parser) toNotesGroup(group phase4.Group) (ast.NotesGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "notes")
+	if !ok {
+		return ast.NotesGroup{}, false
+	}
+	return ast.NotesGroup{
+		Notes: *p.toNotesSection(sections["notes"]),
+	}, true
+}
+
+func (p *parser) toNotesSection(section phase4.Section) *ast.NotesSection {
+	return &ast.NotesSection{
+		Notes: p.oneOrMoreTextItems(section),
+	}
+}
 
 /////////////////////////// viewable /////////////////////////////////////
 
@@ -782,34 +938,137 @@ func (p *parser) toDocumentedSection(section phase4.Section) *ast.DocumentedSect
 ////////////////////////// provides //////////////////////////////////////
 
 func (p *parser) toProvidesSection(section phase4.Section) *ast.ProvidesSection {
-	return nil
+	return &ast.ProvidesSection{
+		Provides: p.oneOrMoreProvidesType(section),
+	}
 }
 
-// TODO: finish this
+func (p *parser) oneOrMoreProvidesType(section phase4.Section) []ast.ProvidesType {
+	return oneOrMore(p.toProvidesTypes(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) toProvidesTypes(args []phase4.Argument) []ast.ProvidesType {
+	result := make([]ast.ProvidesType, 0)
+	for _, arg := range args {
+		if providesType, ok := p.toProvidesTypeFromArg(arg); ok {
+			result = append(result, providesType)
+		}
+	}
+	return result
+}
+
+func (p *parser) toProvidesTypeFromArg(arg phase4.Argument) (ast.ProvidesType, bool) {
+	group, ok := arg.Arg.(phase4.Group)
+	if !ok {
+		return nil, false
+	}
+	return p.toProvidesTypeFromGroup(group)
+}
+
+func (p *parser) toProvidesTypeFromGroup(group phase4.Group) (ast.ProvidesType, bool) {
+	if grp, ok := p.toInfixGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toPrefixGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toPostfixGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toSymbolGroup(group); ok {
+		return grp, true
+	} else {
+		return nil, false
+	}
+}
 
 ////////////////////////// using ////////////////////////////////////////
 
 func (p *parser) toUsingSection(section phase4.Section) *ast.UsingSection {
-	return nil
+	return &ast.UsingSection{
+		Using: p.oneOrMoreClauses(section),
+	}
 }
-
-// TODO: finish this
 
 ////////////////////////// justified ////////////////////////////////////
 
 func (p *parser) toJustifiedSection(section phase4.Section) *ast.JustifiedSection {
-	return nil
+	return &ast.JustifiedSection{
+		Justified: p.oneOrMoreJustifiedType(section),
+	}
 }
 
-// TODO: finish this
+func (p *parser) oneOrMoreJustifiedType(section phase4.Section) []ast.JustifiedType {
+	return oneOrMore(p.toJustifiedTypes(section.Args), section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) toJustifiedTypes(args []phase4.Argument) []ast.JustifiedType {
+	result := make([]ast.JustifiedType, 0)
+	for _, arg := range args {
+		if justifiedType, ok := p.toJustifiedTypeFromArg(arg); ok {
+			result = append(result, justifiedType)
+		}
+	}
+	return result
+}
+
+func (p *parser) toJustifiedTypeFromArg(arg phase4.Argument) (ast.JustifiedType, bool) {
+	group, ok := arg.Arg.(phase4.Group)
+	if !ok {
+		return nil, false
+	}
+	return p.toJustifiedTypeFromGroup(group)
+}
+
+func (p *parser) toJustifiedTypeFromGroup(group phase4.Group) (ast.JustifiedType, bool) {
+	if grp, ok := p.toLabelGroup(group); ok {
+		return grp, true
+	} else if grp, ok := p.toByGroup(group); ok {
+		return grp, true
+	} else {
+		return nil, false
+	}
+}
+
+func (p *parser) toLabelSection(section phase4.Section) *ast.LabelSection {
+	return &ast.LabelSection{
+		Label: p.exactlyOneTextItem(section),
+	}
+}
+
+func (p *parser) toLabelGroup(group phase4.Group) (ast.LabelGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"label",
+		"by")
+	if !ok {
+		return ast.LabelGroup{}, false
+	}
+	return ast.LabelGroup{
+		Label: *p.toLabelSection(sections["label"]),
+		By:    *p.toBySection(sections["by"]),
+	}, true
+}
+
+func (p *parser) toByGroup(group phase4.Group) (ast.ByGroup, bool) {
+	sections, ok := IdentifySections(group.Sections, p.tracker, "by")
+	if !ok {
+		return ast.ByGroup{}, false
+	}
+	return ast.ByGroup{
+		By: *p.toBySection(sections["by"]),
+	}, true
+}
+
+func (p *parser) toBySection(section phase4.Section) *ast.BySection {
+	return &ast.BySection{
+		By: p.oneOrMoreTextItems(section),
+	}
+}
 
 ////////////////////////// references ///////////////////////////////////
 
 func (p *parser) toReferencesSection(section phase4.Section) *ast.ReferencesSection {
-	return nil
+	return &ast.ReferencesSection{
+		References: p.oneOrMoreTextItems(section),
+	}
 }
-
-// TODO: finish this
 
 ///////////////////////// metadata //////////////////////////////////////
 
@@ -821,11 +1080,239 @@ func (p *parser) toMetadataSection(section phase4.Section) *ast.MetadataSection 
 
 //////////////////////// describes //////////////////////////////////////
 
-// TODO: finish this
+func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool) {
+	id := p.getId(group, true)
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"Describes",
+		"with?",
+		"given?",
+		"when?",
+		"suchThat?",
+		"extends?",
+		"satisfies?",
+		"Viewable?",
+		"Provides?",
+		"Using?",
+		"Codified",
+		"Documented?",
+		"Justified?",
+		"References?",
+		"Metadata?")
+	if !ok || id == nil {
+		return ast.DescribesGroup{}, false
+	}
+	describes := *p.toDescribesSection(sections["Describes"])
+	var with *ast.WithSection
+	if sec, ok := sections["with"]; ok {
+		with = p.toWithSection(sec)
+	}
+	var given *ast.GivenSection
+	if sec, ok := sections["given"]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var when *ast.WhenSection
+	if sec, ok := sections["when"]; ok {
+		when = p.toWhenSection(sec)
+	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
+	var extends *ast.ExtendsSection
+	if sec, ok := sections["extends"]; ok {
+		extends = p.toExtendsSection(sec)
+	}
+	var satisfies *ast.SatisfiesSection
+	if sec, ok := sections["satisfies"]; ok {
+		satisfies = p.toSatisfiesSection(sec)
+	}
+	var viewable *ast.ViewableSection
+	if sec, ok := sections["Viewable"]; ok {
+		viewable = p.toViewableSection(sec)
+	}
+	var provides *ast.ProvidesSection
+	if sec, ok := sections["Provides"]; ok {
+		provides = p.toProvidesSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections["Using"]; ok {
+		using = p.toUsingSection(sec)
+	}
+	codified := *p.toCodifiedSection(sections["Codified"])
+	var documented *ast.DocumentedSection
+	if sec, ok := sections["Documented"]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var justified *ast.JustifiedSection
+	if sec, ok := sections["Justified"]; ok {
+		justified = p.toJustifiedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections["Justified"]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metadata *ast.MetadataSection
+	if sec, ok := sections["Metadata"]; ok {
+		metadata = p.toMetadataSection(sec)
+	}
+	return ast.DescribesGroup{
+		Id:         *id,
+		Describes:  describes,
+		With:       with,
+		Given:      given,
+		When:       when,
+		SuchThat:   suchThat,
+		Extends:    extends,
+		Satisfies:  satisfies,
+		Viewable:   viewable,
+		Provides:   provides,
+		Using:      using,
+		Codified:   codified,
+		Documented: documented,
+		Justified:  justified,
+		References: references,
+		Metadata:   metadata,
+	}, true
+}
+
+func (p *parser) toDescribesSection(section phase4.Section) *ast.DescribesSection {
+	return &ast.DescribesSection{
+		Describes: p.exactlyOneTarget(section),
+	}
+}
+
+func (p *parser) toExtendsSection(section phase4.Section) *ast.ExtendsSection {
+	return &ast.ExtendsSection{
+		Extends: p.oneOrMoreClauses(section),
+	}
+}
+
+func (p *parser) toSatisfiesSection(section phase4.Section) *ast.SatisfiesSection {
+	return &ast.SatisfiesSection{
+		Satisfies: p.oneOrMoreClauses(section),
+	}
+}
 
 /////////////////////// declares ////////////////////////////////////////
 
-// TODO: finish this
+func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
+	id := p.getId(group, true)
+	sections, ok := IdentifySections(group.Sections, p.tracker,
+		"Declares",
+		"with?",
+		"given?",
+		"when?",
+		"suchThat?",
+		"means?",
+		"defines?",
+		"Viewable?",
+		"Provides?",
+		"Using?",
+		"Codified",
+		"Documented?",
+		"Justified?",
+		"References?",
+		"Metadata?")
+	if !ok || id == nil {
+		return ast.DeclaresGroup{}, false
+	}
+	declares := *p.toDeclaresSection(sections["Declares"])
+	var with *ast.WithSection
+	if sec, ok := sections["with"]; ok {
+		with = p.toWithSection(sec)
+	}
+	var given *ast.GivenSection
+	if sec, ok := sections["given"]; ok {
+		given = p.toGivenSection(sec)
+	}
+	var when *ast.WhenSection
+	if sec, ok := sections["when"]; ok {
+		when = p.toWhenSection(sec)
+	}
+	var suchThat *ast.SuchThatSection
+	if sec, ok := sections["suchThat"]; ok {
+		suchThat = p.toSuchThatSection(sec)
+	}
+	var means *ast.MeansSection
+	if sec, ok := sections["means"]; ok {
+		means = p.toMeansSection(sec)
+	}
+	var defines *ast.DefinesSection
+	if sec, ok := sections["defines"]; ok {
+		defines = p.toDefinesSection(sec)
+	}
+	var viewable *ast.ViewableSection
+	if sec, ok := sections["Viewable"]; ok {
+		viewable = p.toViewableSection(sec)
+	}
+	var provides *ast.ProvidesSection
+	if sec, ok := sections["Provides"]; ok {
+		provides = p.toProvidesSection(sec)
+	}
+	var using *ast.UsingSection
+	if sec, ok := sections["Using"]; ok {
+		using = p.toUsingSection(sec)
+	}
+	codified := *p.toCodifiedSection(sections["Codified"])
+	var documented *ast.DocumentedSection
+	if sec, ok := sections["Documented"]; ok {
+		documented = p.toDocumentedSection(sec)
+	}
+	var justified *ast.JustifiedSection
+	if sec, ok := sections["Justified"]; ok {
+		justified = p.toJustifiedSection(sec)
+	}
+	var references *ast.ReferencesSection
+	if sec, ok := sections["Justified"]; ok {
+		references = p.toReferencesSection(sec)
+	}
+	var metadata *ast.MetadataSection
+	if sec, ok := sections["Metadata"]; ok {
+		metadata = p.toMetadataSection(sec)
+	}
+	return ast.DeclaresGroup{
+		Id:         *id,
+		Declares:   declares,
+		With:       with,
+		Given:      given,
+		When:       when,
+		SuchThat:   suchThat,
+		Means:      means,
+		Defines:    defines,
+		Viewable:   viewable,
+		Provides:   provides,
+		Using:      using,
+		Codified:   codified,
+		Documented: documented,
+		Justified:  justified,
+		References: references,
+		Metadata:   metadata,
+	}, true
+}
+
+func (p *parser) toDeclaresSection(section phase4.Section) *ast.DeclaresSection {
+	return &ast.DeclaresSection{
+		Declares: p.exactlyOneTarget(section),
+	}
+}
+
+func (p *parser) toWithSection(section phase4.Section) *ast.WithSection {
+	return &ast.WithSection{
+		With: p.oneOrMoreTargets(section),
+	}
+}
+
+func (p *parser) toMeansSection(section phase4.Section) *ast.MeansSection {
+	return &ast.MeansSection{
+		Means: p.exactlyOneClause(section),
+	}
+}
+
+func (p *parser) toDefinesSection(section phase4.Section) *ast.DefinesSection {
+	return &ast.DefinesSection{
+		Defines: p.oneOrMoreClauses(section),
+	}
+}
 
 /////////////////////// states //////////////////////////////////////////
 
@@ -1161,6 +1648,12 @@ func (p *parser) toProofSection(section phase4.Section) *ast.ProofSection {
 
 // TODO: finish this
 
+///////////////////////////// document ///////////////////////////////////
+
+func (p *parser) toDocument(root phase4.Root) (*ast.Document, bool) {
+	return nil, false
+}
+
 ///////////////////////////// id ////////////////////////////////////////
 
 func (p *parser) toIdItem(text string) *ast.IdItem {
@@ -1323,6 +1816,18 @@ func (p *parser) toSignaturesItems(args []phase4.Argument) []ast.Formulation[ast
 	return result
 }
 
+func (p *parser) toDocumentedTypes(args []phase4.Argument) []ast.DocumentedType {
+	result := make([]ast.DocumentedType, 0)
+	for _, arg := range args {
+		if doc, ok := p.toDocumentedType(arg); ok {
+			result = append(result, doc)
+		} else {
+			p.tracker.Append(newError("Expected a documented type", arg.MetaData.Start))
+		}
+	}
+	return result
+}
+
 /////////////////////////////////////////////////////////////////////////
 
 func (p *parser) verifyNoArgs(section phase4.Section) {
@@ -1367,8 +1872,16 @@ func (p *parser) exactlyOneSignatureItem(section phase4.Section) ast.Formulation
 	return exactlyOne(p.toSignaturesItems(section.Args), def, section.MetaData.Start, p.tracker)
 }
 
+func (p *parser) oneOrMoreSignatureItems(section phase4.Section) []ast.Formulation[ast.Signature] {
+	return oneOrMore(p.toSignaturesItems(section.Args), section.MetaData.Start, p.tracker)
+}
+
 func (p *parser) exactlyOneTextItem(section phase4.Section) ast.TextItem {
 	return exactlyOne(p.toTextItems(section.Args), ast.TextItem{}, section.MetaData.Start, p.tracker)
+}
+
+func (p *parser) oneOrMoreDocumentedTypes(section phase4.Section) []ast.DocumentedType {
+	return oneOrMore(p.toDocumentedTypes(section.Args), section.MetaData.Start, p.tracker)
 }
 
 ////////////////////////// support functions ////////////////////////////

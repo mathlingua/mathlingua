@@ -17,6 +17,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"mathlingua/cmd"
 	"mathlingua/internal/ast"
@@ -28,6 +29,7 @@ import (
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/frontend/phase5"
 	"os"
+	"strings"
 
 	"github.com/kr/pretty"
 )
@@ -55,9 +57,22 @@ func main() {
 			fmt.Printf("%s\n", pretty.Sprintf("%# v", root))
 		}
 	} else if len(os.Getenv("TESTBED2")) > 0 {
-		text := `
-exists: f(x)
-`
+		fmt.Println("Enter the MathLingua text to process followed by ctrl+]")
+		scan := bufio.NewScanner(os.Stdin)
+		text := ""
+		for !strings.HasSuffix(text, "\n\n") && scan.Scan() {
+			line := scan.Text()
+			if len(text) > 0 {
+				text += "\n"
+			}
+			text += line
+		}
+
+		fmt.Println("Processing:")
+		fmt.Println(text)
+		fmt.Println()
+		fmt.Println()
+
 		tracker := frontend.NewDiagnosticTracker()
 
 		lexer1 := phase1.NewLexer(text, tracker)
@@ -65,15 +80,21 @@ exists: f(x)
 		lexer3 := phase3.NewLexer(lexer2, tracker)
 
 		root := phase4.Parse(lexer3, tracker)
-		group := root.Nodes[0].(phase4.Group)
+		doc, ok := phase5.Parse(root, tracker)
 
-		parser := phase5.NewPhase5Parser(tracker)
-		grp, ok := parser.ToExistsGroup(group)
-		fmt.Println("ok=", ok)
-		fmt.Printf("%s\n", pretty.Sprintf("%# v", grp))
+		fmt.Println("Valid:", ok)
+		fmt.Printf("%s\n\n", pretty.Sprintf("%# v", doc))
 
-		for _, diag := range tracker.Diagnostics() {
-			fmt.Println(diag.Message)
+		diags := tracker.Diagnostics()
+		if len(diags) > 0 {
+			fmt.Println("Diagnostics:")
+		}
+		for _, diag := range diags {
+			fmt.Printf("%s (%d, %d): %s\n",
+				diag.Type,
+				(diag.Position.Row + 1),
+				(diag.Position.Column + 1),
+				diag.Message)
 		}
 	} else {
 		cmd.Execute()

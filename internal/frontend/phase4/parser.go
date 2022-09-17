@@ -25,7 +25,8 @@ import (
 
 func Parse(lexer3 shared.Lexer, tracker frontend.DiagnosticTracker) Root {
 	parser := phase4Parser{
-		lexer: lexer3,
+		lexer:   lexer3,
+		tracker: tracker,
 	}
 	root := parser.root()
 	return root

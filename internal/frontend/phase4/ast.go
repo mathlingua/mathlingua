@@ -64,6 +64,10 @@ func (g Group) ChildAt(index int) Node {
 	return g.Sections[index]
 }
 
+func (g Group) Start() ast.Position {
+	return g.MetaData.Start
+}
+
 type Section struct {
 	Name     string
 	Args     []Argument
@@ -233,6 +237,10 @@ func (t TextBlock) ChildAt(index int) Node {
 	panic("Cannot get children of an TextBlock")
 }
 
+func (t TextBlock) Start() ast.Position {
+	return t.MetaData.Start
+}
+
 type Root struct {
 	Nodes    []TopLevelNodeType
 	MetaData MetaData
@@ -262,6 +270,7 @@ func (r Root) ChildAt(index int) Node {
 type TopLevelNodeType interface {
 	Node
 	TopLevelNodeType()
+	Start() ast.Position
 }
 
 func (TextBlock) TopLevelNodeType() {}

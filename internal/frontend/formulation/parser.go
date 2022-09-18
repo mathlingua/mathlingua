@@ -997,29 +997,33 @@ func (fp *formulationParser) commandAtExpression() (ast.CommandAtExpression, boo
 /////////////////////////// forms ///////////////////////////////////////
 
 func (fp *formulationParser) form() (ast.NodeType, bool) {
-	id := fp.lexer.Snapshot()
-	name, ok := fp.nameForm()
-	if !ok {
-		fp.lexer.RollBack(id)
-		return nil, false
-	}
+	if fp.hasHas(ast.Name, ast.ColonEquals) {
+		id := fp.lexer.Snapshot()
+		name, ok := fp.nameForm()
+		if !ok {
+			fp.lexer.RollBack(id)
+			return nil, false
+		}
 
-	if !fp.has(ast.ColonEquals) {
-		fp.lexer.Commit(id)
-		return name, true
-	}
+		if !fp.has(ast.ColonEquals) {
+			fp.lexer.Commit(id)
+			return name, true
+		}
 
-	fp.expect(ast.ColonEquals)
-	rhs, ok := fp.structuralFormType()
-	if !ok {
-		fp.error("Expected an item on the righ-hand-side of :=")
-		return nil, false
-	}
+		fp.expect(ast.ColonEquals)
+		rhs, ok := fp.structuralFormType()
+		if !ok {
+			fp.error("Expected an item on the righ-hand-side of :=")
+			return nil, false
+		}
 
-	return ast.StructuralColonEqualsForm{
-		Lhs: name,
-		Rhs: rhs,
-	}, true
+		return ast.StructuralColonEqualsForm{
+			Lhs: name,
+			Rhs: rhs,
+		}, true
+	} else {
+		return fp.structuralFormType()
+	}
 }
 
 func (fp *formulationParser) parenParams() ([]ast.StructuralFormType, bool) {

@@ -680,6 +680,7 @@ func (fp *formulationParser) chainExpression() (ast.ChainExpression, bool) {
 		fp.lexer.RollBack(id)
 		return ast.ChainExpression{}, false
 	}
+	fp.lexer.Commit(id)
 	return ast.ChainExpression{
 		Parts: parts,
 	}, true
@@ -844,6 +845,7 @@ func (fp *formulationParser) commandOperatorTarget() (ast.CommandOperatorTarget,
 	}
 
 	fp.expect(ast.Slash)
+	fp.lexer.Commit(id)
 	return ast.CommandOperatorTarget{
 		Command: cmd,
 	}, true
@@ -864,6 +866,7 @@ func (fp *formulationParser) namedArg() (ast.NamedArg, bool) {
 	if curlyArgs, ok := fp.curlyArgs(); ok {
 		args = &curlyArgs
 	}
+	fp.lexer.Commit(id)
 	return ast.NamedArg{
 		Name: name,
 		Args: args,
@@ -1005,18 +1008,15 @@ func (fp *formulationParser) form() (ast.NodeType, bool) {
 			return nil, false
 		}
 
-		if !fp.has(ast.ColonEquals) {
-			fp.lexer.Commit(id)
-			return name, true
-		}
-
 		fp.expect(ast.ColonEquals)
 		rhs, ok := fp.structuralFormType()
 		if !ok {
+			fp.lexer.RollBack(id)
 			fp.error("Expected an item on the righ-hand-side of :=")
 			return nil, false
 		}
 
+		fp.lexer.Commit(id)
 		return ast.StructuralColonEqualsForm{
 			Lhs: name,
 			Rhs: rhs,
@@ -1496,6 +1496,7 @@ func (fp *formulationParser) namedParam() (ast.NamedParam, bool) {
 	if curlyParams, ok := fp.curlyParams(); ok {
 		params = &curlyParams
 	}
+	fp.lexer.Commit(id)
 	return ast.NamedParam{
 		Name:   name,
 		Params: params,
@@ -1536,8 +1537,8 @@ func (fp *formulationParser) commandId() (ast.CommandId, bool) {
 		return ast.CommandId{}, false
 	}
 
-	fp.expect(ast.BackSlash)
 	id := fp.lexer.Snapshot()
+	fp.expect(ast.BackSlash)
 	names := make([]ast.NameForm, 0)
 	for fp.lexer.HasNext() {
 		if name, ok := fp.nameForm(); ok {

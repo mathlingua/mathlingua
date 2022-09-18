@@ -35,7 +35,9 @@ var rootCmd = &cobra.Command{
 }
 
 func init() {
-	rootCmd.PersistentFlags().BoolP("debug", "d", false, "Show debug information")
+	flags := rootCmd.PersistentFlags()
+	flags.BoolP("debug", "d", false, "Show debug information")
+	flags.MarkHidden("debug")
 }
 
 func Execute() {

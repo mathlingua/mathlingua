@@ -17,9 +17,10 @@
 package formulation
 
 import (
+	"fmt"
+	"mathlingua/internal/mlglib"
 	"testing"
 
-	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -54,15 +55,40 @@ func TestPlusMultiply(t *testing.T) {
 
 	actual := "\n"
 	for _, res := range result {
-		actual += pretty.Sprintf("%# v\n", res)
+		actual += fmt.Sprintf("%s\n", mlglib.PrettyPrint(res))
 	}
 
 	expected := `
-formulation.ShuntingYardItem[string]{Item:"x", ItemType:"OperandType", Precedence:0, Associativity:""}
-formulation.ShuntingYardItem[string]{Item:"y", ItemType:"OperandType", Precedence:0, Associativity:""}
-formulation.ShuntingYardItem[string]{Item:"z", ItemType:"OperandType", Precedence:0, Associativity:""}
-formulation.ShuntingYardItem[string]{Item:"*", ItemType:"InfixOperatorType", Precedence:2, Associativity:"LeftAssociative"}
-formulation.ShuntingYardItem[string]{Item:"+", ItemType:"InfixOperatorType", Precedence:1, Associativity:"LeftAssociative"}
+formulation.ShuntingYardItem[string]{
+  Item: "x",
+  ItemType: "OperandType",
+  Precedence: 0,
+  Associativity: "",
+}
+formulation.ShuntingYardItem[string]{
+  Item: "y",
+  ItemType: "OperandType",
+  Precedence: 0,
+  Associativity: "",
+}
+formulation.ShuntingYardItem[string]{
+  Item: "z",
+  ItemType: "OperandType",
+  Precedence: 0,
+  Associativity: "",
+}
+formulation.ShuntingYardItem[string]{
+  Item: "*",
+  ItemType: "InfixOperatorType",
+  Precedence: 2,
+  Associativity: "LeftAssociative",
+}
+formulation.ShuntingYardItem[string]{
+  Item: "+",
+  ItemType: "InfixOperatorType",
+  Precedence: 1,
+  Associativity: "LeftAssociative",
+}
 `
 
 	assert.Equal(t, expected, actual)
@@ -95,14 +121,34 @@ func TestXSquared(t *testing.T) {
 
 	actual := "\n"
 	for _, res := range result {
-		actual += pretty.Sprintf("%# v\n", res)
+		actual += fmt.Sprintf("%s\n", mlglib.PrettyPrint(res))
 	}
 
 	expected := `
-formulation.ShuntingYardItem[string]{Item:"x", ItemType:"OperandType", Precedence:0, Associativity:""}
-formulation.ShuntingYardItem[string]{Item:"2", ItemType:"OperandType", Precedence:0, Associativity:""}
-formulation.ShuntingYardItem[string]{Item:"^", ItemType:"InfixOperatorType", Precedence:2, Associativity:"RightAssociative"}
-formulation.ShuntingYardItem[string]{Item:"-", ItemType:"PrefixOperatorType", Precedence:1, Associativity:"RightAssociative"}
+formulation.ShuntingYardItem[string]{
+  Item: "x",
+  ItemType: "OperandType",
+  Precedence: 0,
+  Associativity: "",
+}
+formulation.ShuntingYardItem[string]{
+  Item: "2",
+  ItemType: "OperandType",
+  Precedence: 0,
+  Associativity: "",
+}
+formulation.ShuntingYardItem[string]{
+  Item: "^",
+  ItemType: "InfixOperatorType",
+  Precedence: 2,
+  Associativity: "RightAssociative",
+}
+formulation.ShuntingYardItem[string]{
+  Item: "-",
+  ItemType: "PrefixOperatorType",
+  Precedence: 1,
+  Associativity: "RightAssociative",
+}
 `
 
 	assert.Equal(t, expected, actual)

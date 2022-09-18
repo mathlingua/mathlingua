@@ -28,10 +28,9 @@ import (
 	"mathlingua/internal/frontend/phase3"
 	"mathlingua/internal/frontend/phase4"
 	"mathlingua/internal/frontend/phase5"
+	"mathlingua/internal/mlglib"
 	"os"
 	"strings"
-
-	"github.com/kr/pretty"
 )
 
 func main() {
@@ -45,7 +44,7 @@ func main() {
 		tracker := frontend.NewDiagnosticTracker()
 		node, ok := formulation.ParseExpression(text, tracker)
 		fmt.Println("ok=", ok)
-		fmt.Printf("%s\n", pretty.Sprintf("%# v", node))
+		fmt.Printf("%s\n", mlglib.PrettyPrint(node))
 		for _, d := range tracker.Diagnostics() {
 			fmt.Printf("%#v\n", d)
 		}
@@ -54,7 +53,7 @@ func main() {
 		case ast.PseudoExpression:
 			root, ok := formulation.Consolidate(node.Children, tracker)
 			fmt.Println("ok=", ok)
-			fmt.Printf("%s\n", pretty.Sprintf("%# v", root))
+			fmt.Printf("%s\n", mlglib.PrettyPrint(root))
 		}
 	} else if len(os.Getenv("TESTBED2")) > 0 {
 		fmt.Println("Enter the MathLingua text to process followed by ctrl+]")
@@ -83,7 +82,7 @@ func main() {
 		doc, ok := phase5.Parse(root, tracker)
 
 		fmt.Println("Valid:", ok)
-		fmt.Printf("%s\n\n", pretty.Sprintf("%# v", doc))
+		fmt.Println(mlglib.PrettyPrint(doc))
 
 		diags := tracker.Diagnostics()
 		if len(diags) > 0 {

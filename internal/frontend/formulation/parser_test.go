@@ -19,9 +19,9 @@ package formulation
 import (
 	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
+	"mathlingua/internal/mlglib"
 	"testing"
 
-	"github.com/kr/pretty"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -31,8 +31,8 @@ func runTest(t *testing.T, text string, expected ast.NodeType) {
 	assert.True(t, ok)
 	assert.Equal(t, 0, tracker.Length())
 
-	actualStr := pretty.Sprintf("%# v", actual)
-	expectedStr := pretty.Sprintf("%# v", expected)
+	actualStr := mlglib.PrettyPrint(actual)
+	expectedStr := mlglib.PrettyPrint(expected)
 
 	assert.Equal(t, expectedStr, actualStr)
 }

@@ -32,7 +32,7 @@ func Consolidate(nodes []ast.NodeType, tracker frontend.DiagnosticTracker) (ast.
 
 	stack := mlglib.NewStack[ast.NodeType]()
 	for !items.IsEmpty() {
-		stack.Push(toNode(items))
+		stack.Push(toNode(items, tracker))
 	}
 
 	if stack.IsEmpty() {
@@ -53,7 +53,12 @@ func GetPrecedenceAndIfInfix(node ast.ExpressionType) (int, bool) {
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////
 
-func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
+var default_expression ast.ExpressionType = ast.NameForm{}
+var default_structural_form ast.StructuralFormType = ast.NameForm{}
+var default_kind_type ast.KindType = ast.NameForm{}
+var default_signature ast.Signature = ast.Signature{}
+
+func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]], tracker frontend.DiagnosticTracker) ast.NodeType {
 	if items.IsEmpty() {
 		return nil
 	}
@@ -63,22 +68,22 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
 	switch top := top.(type) {
 	case ast.PrefixOperatorCallExpression:
 		// prefix operators
-		top.Arg = toNode(items).(ast.ExpressionType)
+		top.Arg = checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 		return top
 	case ast.PostfixOperatorCallExpression:
 		// postfix operators
-		top.Arg = toNode(items).(ast.ExpressionType)
+		top.Arg = checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 		return top
 	case ast.InfixOperatorCallExpression:
 		// infix operators
-		top.Lhs = toNode(items).(ast.ExpressionType)
-		top.Rhs = toNode(items).(ast.ExpressionType)
+		top.Lhs = checkType(toNode(items, tracker), default_expression, "Expression", tracker)
+		top.Rhs = checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 		return top
 	case ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
 		target := top
-		lhs := toNode(items).(ast.ExpressionType)
-		rhs := toNode(items).(ast.ExpressionType)
+		lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
+		rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 		return ast.InfixOperatorCallExpression{
 			Target: target,
 			Lhs:    rhs,
@@ -88,21 +93,21 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
 		// for example + or **
 		target := top
 		if rawTop.ItemType == PrefixOperatorType {
-			arg := toNode(items).(ast.ExpressionType)
+			arg := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 			return ast.PrefixOperatorCallExpression{
 				Target: target,
 				Arg:    arg,
 			}
 		} else if rawTop.ItemType == PostfixOperatorType {
-			arg := toNode(items).(ast.ExpressionType)
+			arg := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 			return ast.PostfixOperatorCallExpression{
 				Target: target,
 				Arg:    arg,
 			}
 		} else {
 			// it is an infix
-			lhs := toNode(items).(ast.ExpressionType)
-			rhs := toNode(items).(ast.ExpressionType)
+			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
+			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 			return ast.InfixOperatorCallExpression{
 				Target: target,
 				Lhs:    rhs,
@@ -112,8 +117,8 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
 	case ast.CommandOperatorTarget:
 		// for example \f/
 		target := top
-		lhs := toNode(items).(ast.ExpressionType)
-		rhs := toNode(items).(ast.ExpressionType)
+		lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
+		rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 		return ast.InfixOperatorCallExpression{
 			Target: target,
 			Lhs:    rhs,
@@ -123,29 +128,29 @@ func toNode(items mlglib.Stack[ShuntingYardItem[ast.NodeType]]) ast.NodeType {
 		// a token, for example :=, is, isnot
 		switch {
 		case top.Type == ast.ColonEquals:
-			lhs := toNode(items).(ast.StructuralFormType)
-			rhs := toNode(items).(ast.ExpressionType)
+			lhs := checkType(toNode(items, tracker), default_structural_form, "Structural Form", tracker)
+			rhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 			return ast.ExpressionColonEqualsItem{
 				Lhs: lhs,
 				Rhs: rhs,
 			}
 		case top.Type == ast.Is:
-			rhs := toNode(items).(ast.KindType)
-			lhs := toNode(items).(ast.ExpressionType)
+			rhs := checkType(toNode(items, tracker), default_kind_type, "Kind Type", tracker)
+			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 			return ast.IsExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.IsNot:
-			rhs := toNode(items).(ast.KindType)
-			lhs := toNode(items).(ast.ExpressionType)
+			rhs := checkType(toNode(items, tracker), default_kind_type, "Kind Type", tracker)
+			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
 			return ast.IsNotExpression{
 				Lhs: []ast.ExpressionType{lhs},
 				Rhs: []ast.KindType{rhs},
 			}
 		case top.Type == ast.As:
-			lhs := toNode(items).(ast.ExpressionType)
-			rhs := toNode(items).(ast.Signature)
+			lhs := checkType(toNode(items, tracker), default_expression, "Expression", tracker)
+			rhs := checkType(toNode(items, tracker), default_signature, "Signature", tracker)
 			return ast.AsExpression{
 				Lhs: lhs,
 				Rhs: rhs,
@@ -374,5 +379,24 @@ func getPrecedenceAssociativity(node ast.NodeType, itemType ItemType) (int, Asso
 		return getOperatorPrecedenceAssociativityByText(node.Text, itemType)
 	default:
 		return -1, NotAssociative
+	}
+}
+
+func checkType[T any](node ast.NodeType, def T, typeName string, tracker frontend.DiagnosticTracker) T {
+	cast, ok := node.(T)
+	if ok {
+		return cast
+	} else {
+		tracker.Append(frontend.Diagnostic{
+			Type:    frontend.Error,
+			Origin:  frontend.FormulationConsolidatorOrigin,
+			Message: fmt.Sprintf("Expected a %s", typeName),
+			Position: ast.Position{
+				Offset: -1,
+				Row:    -1,
+				Column: -1,
+			},
+		})
+		return def
 	}
 }

@@ -42,6 +42,8 @@ func (NotGroup) Clause()              {}
 func (AnyOfGroup) Clause()            {}
 func (OneOfGroup) Clause()            {}
 func (ExistsGroup) Clause()           {}
+func (ExistsUniqueGroup) Clause()     {}
+func (ForAllGroup) Clause()           {}
 
 //////////////////////////////////////////////////////////////////////////////
 

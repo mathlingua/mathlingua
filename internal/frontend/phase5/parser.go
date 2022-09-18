@@ -40,6 +40,10 @@ type parser struct {
 /////////////////////////// allOf ///////////////////////////////////////
 
 func (p *parser) toAllOfGroup(group phase4.Group) (ast.AllOfGroup, bool) {
+	if !hasSections(group, "allOf") {
+		return ast.AllOfGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "allOf")
 	if !ok {
 		return ast.AllOfGroup{}, false
@@ -58,6 +62,10 @@ func (p *parser) toAllOfSection(section phase4.Section) *ast.AllOfSection {
 /////////////////////////////// not //////////////////////////////////////
 
 func (p *parser) toNotGroup(group phase4.Group) (ast.NotGroup, bool) {
+	if !hasSections(group, "not") {
+		return ast.NotGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "not")
 	if !ok {
 		return ast.NotGroup{}, false
@@ -76,6 +84,10 @@ func (p *parser) toNotSection(section phase4.Section) *ast.NotSection {
 //////////////////////////////////// anyOf ////////////////////////////////
 
 func (p *parser) toAnyOfGroup(group phase4.Group) (ast.AnyOfGroup, bool) {
+	if !hasSections(group, "anyOf") {
+		return ast.AnyOfGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "anyOf")
 	if !ok {
 		return ast.AnyOfGroup{}, false
@@ -94,6 +106,10 @@ func (p *parser) toAnyOfSection(section phase4.Section) *ast.AnyOfSection {
 ////////////////////////////////////// oneOf /////////////////////////////
 
 func (p *parser) toOneOfGroup(group phase4.Group) (ast.OneOfGroup, bool) {
+	if !hasSections(group, "oneOf") {
+		return ast.OneOfGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "oneOf")
 	if !ok {
 		return ast.OneOfGroup{}, false
@@ -112,6 +128,10 @@ func (p *parser) toOneOfSection(section phase4.Section) *ast.OneOfSection {
 /////////////////////////////// exists //////////////////////////////////
 
 func (p *parser) toExistsGroup(group phase4.Group) (ast.ExistsGroup, bool) {
+	if !hasSections(group, "exists") {
+		return ast.ExistsGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"exists",
 		"where?",
@@ -156,6 +176,10 @@ func (p *parser) toSuchThatSection(section phase4.Section) *ast.SuchThatSection 
 /////////////////////////////// existsUnique //////////////////////////////////
 
 func (p *parser) toExistsUniqueGroup(group phase4.Group) (ast.ExistsUniqueGroup, bool) {
+	if !hasSections(group, "existsUnique") {
+		return ast.ExistsUniqueGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"existsUnique",
 		"where?",
@@ -188,6 +212,10 @@ func (p *parser) toExistsUniqueSection(section phase4.Section) *ast.ExistsUnique
 ///////////////////////// forAll /////////////////////////////////////////
 
 func (p *parser) toForAllGroup(group phase4.Group) (ast.ForAllGroup, bool) {
+	if !hasSections(group, "forAll") {
+		return ast.ForAllGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"forAll",
 		"where?",
@@ -229,6 +257,10 @@ func (p *parser) toThenSection(section phase4.Section) *ast.ThenSection {
 /////////////////////////////// if ///////////////////////////////////////
 
 func (p *parser) toIfGroup(group phase4.Group) (ast.IfGroup, bool) {
+	if !hasSections(group, "if") {
+		return ast.IfGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"if",
 		"then")
@@ -250,6 +282,10 @@ func (p *parser) toIfSection(section phase4.Section) *ast.IfSection {
 /////////////////////////////// iff ///////////////////////////////////////
 
 func (p *parser) toIffGroup(group phase4.Group) (ast.IffGroup, bool) {
+	if !hasSections(group, "iff") {
+		return ast.IffGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"iff",
 		"then")
@@ -271,6 +307,10 @@ func (p *parser) toIffSection(section phase4.Section) *ast.IffSection {
 /////////////////////////// generated ////////////////////////////////////
 
 func (p *parser) toGeneratedGroup(group phase4.Group) (ast.GeneratedGroup, bool) {
+	if !hasSections(group, "generated") {
+		return ast.GeneratedGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"generated",
 		"from",
@@ -311,6 +351,10 @@ func (p *parser) toWhenSection(section phase4.Section) *ast.WhenSection {
 ///////////////////////////// piecewise /////////////////////////////////
 
 func (p *parser) toPiecewiseGroup(group phase4.Group) (ast.PiecewiseGroup, bool) {
+	if !hasSections(group, "piecewise") {
+		return ast.PiecewiseGroup{}, false
+	}
+
 	sections := group.Sections
 	if len(sections) == 0 || sections[0].Name != "piecewise" {
 		return ast.PiecewiseGroup{}, false
@@ -378,6 +422,10 @@ func (p *parser) toElseSection(section phase4.Section) *ast.ElseSection {
 /////////////////////////////// as via ///////////////////////////////////
 
 func (p *parser) toAsViaGroup(group phase4.Group) (ast.AsViaGroup, bool) {
+	if !hasSections(group, "view", "as") {
+		return ast.AsViaGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"as",
 		"via")
@@ -405,6 +453,10 @@ func (p *parser) toViaSection(section phase4.Section) *ast.ViaSection {
 ////////////////////////// as through ////////////////////////////////////
 
 func (p *parser) toAsThroughGroup(group phase4.Group) (ast.AsThroughGroup, bool) {
+	if !hasSections(group, "as", "through") {
+		return ast.AsThroughGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"as",
 		"through",
@@ -510,6 +562,10 @@ func (p *parser) toSymbolSection(section phase4.Section) *ast.SymbolSection {
 }
 
 func (p *parser) toInfixGroup(group phase4.Group) (ast.InfixGroup, bool) {
+	if !hasSections(group, "infix") {
+		return ast.InfixGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"infix",
 		"when?",
@@ -550,6 +606,10 @@ func (p *parser) toInfixGroup(group phase4.Group) (ast.InfixGroup, bool) {
 }
 
 func (p *parser) toPrefixGroup(group phase4.Group) (ast.PrefixGroup, bool) {
+	if !hasSections(group, "prefix") {
+		return ast.PrefixGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"prefix",
 		"when?",
@@ -590,6 +650,10 @@ func (p *parser) toPrefixGroup(group phase4.Group) (ast.PrefixGroup, bool) {
 }
 
 func (p *parser) toPostfixGroup(group phase4.Group) (ast.PostfixGroup, bool) {
+	if !hasSections(group, "postfix") {
+		return ast.PostfixGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"postfix",
 		"when?",
@@ -630,6 +694,10 @@ func (p *parser) toPostfixGroup(group phase4.Group) (ast.PostfixGroup, bool) {
 }
 
 func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
+	if !hasSections(group, "symbol") {
+		return ast.SymbolGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"symbol",
 		"when?",
@@ -712,6 +780,10 @@ func (p *parser) toCodifiedTypeFromGroup(group phase4.Group) (ast.CodifiedType, 
 }
 
 func (p *parser) toWrittenGroup(group phase4.Group) (ast.WrittenGroup, bool) {
+	if !hasSections(group, "written") {
+		return ast.WrittenGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "written")
 	if !ok {
 		return ast.WrittenGroup{}, false
@@ -728,6 +800,10 @@ func (p *parser) toWrittenSection(section phase4.Section) *ast.WrittenSection {
 }
 
 func (p *parser) toCalledGroup(group phase4.Group) (ast.CalledGroup, bool) {
+	if !hasSections(group, "called") {
+		return ast.CalledGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "called")
 	if !ok {
 		return ast.CalledGroup{}, false
@@ -744,6 +820,10 @@ func (p *parser) toCalledSection(section phase4.Section) *ast.CalledSection {
 }
 
 func (p *parser) toWritingGroup(group phase4.Group) (ast.WritingGroup, bool) {
+	if !hasSections(group, "writing") {
+		return ast.WritingGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"writing",
 		"as")
@@ -805,6 +885,10 @@ func (p *parser) toDocumentedType(arg phase4.Argument) (ast.DocumentedType, bool
 }
 
 func (p *parser) toLooselyGroup(group phase4.Group) (ast.LooselyGroup, bool) {
+	if !hasSections(group, "loosely") {
+		return ast.LooselyGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "loosely")
 	if !ok {
 		return ast.LooselyGroup{}, false
@@ -821,6 +905,10 @@ func (p *parser) toLooselySection(section phase4.Section) *ast.LooselySection {
 }
 
 func (p *parser) toOverviewGroup(group phase4.Group) (ast.OverviewGroup, bool) {
+	if !hasSections(group, "overview") {
+		return ast.OverviewGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "overview")
 	if !ok {
 		return ast.OverviewGroup{}, false
@@ -837,6 +925,10 @@ func (p *parser) toOverviewSection(section phase4.Section) *ast.OverviewSection 
 }
 
 func (p *parser) toMotivationGroup(group phase4.Group) (ast.MotivationGroup, bool) {
+	if !hasSections(group, "motivation") {
+		return ast.MotivationGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "motivation")
 	if !ok {
 		return ast.MotivationGroup{}, false
@@ -853,6 +945,10 @@ func (p *parser) toMotivationSection(section phase4.Section) *ast.MotivationSect
 }
 
 func (p *parser) toHistoryGroup(group phase4.Group) (ast.HistoryGroup, bool) {
+	if !hasSections(group, "history") {
+		return ast.HistoryGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "history")
 	if !ok {
 		return ast.HistoryGroup{}, false
@@ -869,6 +965,10 @@ func (p *parser) toHistorySection(section phase4.Section) *ast.HistorySection {
 }
 
 func (p *parser) toExamplesGroup(group phase4.Group) (ast.ExamplesGroup, bool) {
+	if !hasSections(group, "examples") {
+		return ast.ExamplesGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "examples")
 	if !ok {
 		return ast.ExamplesGroup{}, false
@@ -885,6 +985,10 @@ func (p *parser) toExamplesSection(section phase4.Section) *ast.ExamplesSection 
 }
 
 func (p *parser) toRelatedGroup(group phase4.Group) (ast.RelatedGroup, bool) {
+	if !hasSections(group, "related") {
+		return ast.RelatedGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "related")
 	if !ok {
 		return ast.RelatedGroup{}, false
@@ -901,6 +1005,10 @@ func (p *parser) toRelatedSection(section phase4.Section) *ast.RelatedSection {
 }
 
 func (p *parser) toDiscoveredGroup(group phase4.Group) (ast.DiscoveredGroup, bool) {
+	if !hasSections(group, "discovered") {
+		return ast.DiscoveredGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "discovered")
 	if !ok {
 		return ast.DiscoveredGroup{}, false
@@ -917,6 +1025,10 @@ func (p *parser) toDiscoveredSection(section phase4.Section) *ast.DiscoveredSect
 }
 
 func (p *parser) toNotesGroup(group phase4.Group) (ast.NotesGroup, bool) {
+	if !hasSections(group, "notes") {
+		return ast.NotesGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "notes")
 	if !ok {
 		return ast.NotesGroup{}, false
@@ -1035,6 +1147,10 @@ func (p *parser) toLabelSection(section phase4.Section) *ast.LabelSection {
 }
 
 func (p *parser) toLabelGroup(group phase4.Group) (ast.LabelGroup, bool) {
+	if !hasSections(group, "label") {
+		return ast.LabelGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker,
 		"label",
 		"by")
@@ -1048,6 +1164,10 @@ func (p *parser) toLabelGroup(group phase4.Group) (ast.LabelGroup, bool) {
 }
 
 func (p *parser) toByGroup(group phase4.Group) (ast.ByGroup, bool) {
+	if !hasSections(group, "by") {
+		return ast.ByGroup{}, false
+	}
+
 	sections, ok := IdentifySections(group.Sections, p.tracker, "by")
 	if !ok {
 		return ast.ByGroup{}, false
@@ -1081,7 +1201,7 @@ func (p *parser) toMetadataSection(section phase4.Section) *ast.MetadataSection 
 
 //////////////////////// describes //////////////////////////////////////
 
-func (p *parser) checkDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool) {
+func (p *parser) toDescribesGroup(group phase4.Group) (ast.DescribesGroup, bool) {
 	if !hasSections(group, "Describes") {
 		return ast.DescribesGroup{}, false
 	}
@@ -1200,7 +1320,7 @@ func (p *parser) toSatisfiesSection(section phase4.Section) *ast.SatisfiesSectio
 
 /////////////////////// declares ////////////////////////////////////////
 
-func (p *parser) checkDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
+func (p *parser) toDeclaresGroup(group phase4.Group) (ast.DeclaresGroup, bool) {
 	if !hasSections(group, "Declares") {
 		return ast.DeclaresGroup{}, false
 	}
@@ -1325,7 +1445,7 @@ func (p *parser) toDefinesSection(section phase4.Section) *ast.DefinesSection {
 
 /////////////////////// states //////////////////////////////////////////
 
-func (p *parser) checkStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
+func (p *parser) toStatesGroup(group phase4.Group) (ast.StatesGroup, bool) {
 	if !hasSections(group, "States") {
 		return ast.StatesGroup{}, false
 	}
@@ -1414,7 +1534,7 @@ func (p *parser) toThatSection(section phase4.Section) *ast.ThatSection {
 
 /////////////////////// axiom ///////////////////////////////////////////
 
-func (p *parser) checkAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
+func (p *parser) toAxiomGroup(group phase4.Group) (ast.AxiomGroup, bool) {
 	if !hasSections(group, "Axiom") {
 		return ast.AxiomGroup{}, false
 	}
@@ -1497,7 +1617,7 @@ func (p *parser) toGivenSection(section phase4.Section) *ast.GivenSection {
 
 /////////////////////// conjecture //////////////////////////////////////
 
-func (p *parser) checkConjectureGroup(group phase4.Group) (ast.ConjectureGroup, bool) {
+func (p *parser) toConjectureGroup(group phase4.Group) (ast.ConjectureGroup, bool) {
 	if !hasSections(group, "Conjecture") {
 		return ast.ConjectureGroup{}, false
 	}
@@ -1574,7 +1694,7 @@ func (p *parser) toConjectureSection(section phase4.Section) *ast.ConjectureSect
 
 /////////////////////// theorem /////////////////////////////////////////
 
-func (p *parser) checkTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
+func (p *parser) toTheoremGroup(group phase4.Group) (ast.TheoremGroup, bool) {
 	if !hasSections(group, "Theorem") {
 		return ast.TheoremGroup{}, false
 	}
@@ -1671,7 +1791,7 @@ func (p *parser) toTextBlockItem(block phase4.TextBlock) *ast.TextBlockItem {
 
 ///////////////////////////////// specify /////////////////////////////////
 
-func (p *parser) checkSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
+func (p *parser) toSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) {
 	if !hasSections(group, "Specify") {
 		return ast.SpecifyGroup{}, false
 	}
@@ -1681,7 +1801,7 @@ func (p *parser) checkSpecifyGroup(group phase4.Group) (ast.SpecifyGroup, bool) 
 
 ///////////////////////////////// topic ////////////////////////////////////
 
-func (p *parser) checkTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
+func (p *parser) toTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 	if !hasSections(group, "Topic") {
 		return ast.TopicGroup{}, false
 	}
@@ -1691,7 +1811,7 @@ func (p *parser) checkTopicGroup(group phase4.Group) (ast.TopicGroup, bool) {
 
 //////////////////////////////////// note //////////////////////////////////
 
-func (p *parser) checkNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
+func (p *parser) toNoteGroup(group phase4.Group) (ast.NoteGroup, bool) {
 	if !hasSections(group, "Note") {
 		return ast.NoteGroup{}, false
 	}
@@ -1706,27 +1826,27 @@ func (p *parser) toTopLevelItemType(item phase4.TopLevelNodeType) (ast.TopLevelI
 	case phase4.TextBlock:
 		return p.toTextBlockItem(item), true
 	case phase4.Group:
-		if grp, ok := p.checkDeclaresGroup(item); ok {
+		if grp, ok := p.toDeclaresGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkDescribesGroup(item); ok {
+		} else if grp, ok := p.toDescribesGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkStatesGroup(item); ok {
+		} else if grp, ok := p.toStatesGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkAxiomGroup(item); ok {
+		} else if grp, ok := p.toAxiomGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkConjectureGroup(item); ok {
+		} else if grp, ok := p.toConjectureGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkTheoremGroup(item); ok {
+		} else if grp, ok := p.toTheoremGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkSpecifyGroup(item); ok {
+		} else if grp, ok := p.toSpecifyGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkNoteGroup(item); ok {
+		} else if grp, ok := p.toNoteGroup(item); ok {
 			return grp, true
-		} else if grp, ok := p.checkTopicGroup(item); ok {
+		} else if grp, ok := p.toTopicGroup(item); ok {
 			return grp, ok
 		}
 	}
-	p.tracker.Append(newError("Unexpected top level item", item.Start()))
+	p.tracker.Append(newError("Invalid top level item", item.Start()))
 	return nil, false
 }
 
@@ -1792,7 +1912,11 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 			return grp
 		} else if grp, ok := p.toOneOfGroup(data); ok {
 			return grp
+		} else if grp, ok := p.toForAllGroup(data); ok {
+			return grp
 		} else if grp, ok := p.toExistsGroup(data); ok {
+			return grp
+		} else if grp, ok := p.toExistsUniqueGroup(data); ok {
 			return grp
 		}
 	}

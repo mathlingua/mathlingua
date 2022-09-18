@@ -18,11 +18,13 @@ package mlg
 
 import (
 	"fmt"
+	"mathlingua/internal/ast"
 	"mathlingua/internal/frontend"
 	"mathlingua/internal/frontend/phase1"
 	"mathlingua/internal/frontend/phase2"
 	"mathlingua/internal/frontend/phase3"
 	"mathlingua/internal/frontend/phase4"
+	"mathlingua/internal/frontend/phase5"
 	"os"
 	"path"
 	"path/filepath"
@@ -65,6 +67,19 @@ func parse(text string) (phase4.Root, []frontend.Diagnostic) {
 	return root, tracker.Diagnostics()
 }
 
+func parseDocument(text string) (ast.Document, []frontend.Diagnostic) {
+	tracker := frontend.NewDiagnosticTracker()
+
+	lexer1 := phase1.NewLexer(text, tracker)
+	lexer2 := phase2.NewLexer(lexer1, tracker)
+	lexer3 := phase3.NewLexer(lexer2, tracker)
+
+	root := phase4.Parse(lexer3, tracker)
+	doc, _ := phase5.Parse(root, tracker)
+
+	return doc, tracker.Diagnostics()
+}
+
 func (m *mlg) Check(paths []string, debug bool) {
 	if len(paths) == 0 {
 		paths = append(paths, "content")
@@ -103,7 +118,7 @@ func (m *mlg) Check(paths []string, debug bool) {
 			}
 
 			numFilesProcessed++
-			_, diagnostics := parse(string(bytes))
+			_, diagnostics := parseDocument(string(bytes))
 			for index, diag := range diagnostics {
 				// make sure there is a space between errors including errors
 				// from other files that have already been reported

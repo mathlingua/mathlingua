@@ -194,6 +194,7 @@ func (fp *formulationParser) curlyArgs() ([]ast.ExpressionType, bool) {
 }
 
 func (fp *formulationParser) varArgData() (ast.VarArgData, bool) {
+	start := fp.lexer.Position()
 	if !fp.has(ast.DotDotDot) {
 		return ast.VarArgData{
 			IsVarArg:    false,
@@ -233,6 +234,7 @@ func (fp *formulationParser) literalExpressionType() (ast.LiteralExpressionType,
 }
 
 func (fp *formulationParser) multiplexedExpressionType() (ast.ExpressionType, bool) {
+	start := fp.lexer.Position()
 	items := make([]ast.ExpressionType, 0)
 	for fp.lexer.HasNext() {
 		if len(items) > 0 {
@@ -405,6 +407,7 @@ func (fp *formulationParser) isExpressionTerminator(tokenType ast.TokenType) boo
 }
 
 func (fp *formulationParser) pseudoExpression() (ast.PseudoExpression, bool) {
+	start := fp.lexer.Position()
 	children := make([]ast.NodeType, 0)
 	prevOffset := -1
 	for fp.lexer.HasNext() {
@@ -486,6 +489,7 @@ func (fp *formulationParser) functionCallExpressionTarget() (ast.ExpressionType,
 }
 
 func (fp *formulationParser) functionCallExpression() (ast.FunctionCallExpression, bool) {
+	start := fp.lexer.Position()
 	if !fp.hasHas(ast.Name, ast.LParen) {
 		return ast.FunctionCallExpression{}, false
 	}

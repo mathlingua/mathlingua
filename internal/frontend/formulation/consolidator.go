@@ -388,14 +388,10 @@ func checkType[T any](node ast.NodeType, def T, typeName string, tracker fronten
 		return cast
 	} else {
 		tracker.Append(frontend.Diagnostic{
-			Type:    frontend.Error,
-			Origin:  frontend.FormulationConsolidatorOrigin,
-			Message: fmt.Sprintf("Expected a %s", typeName),
-			Position: ast.Position{
-				Offset: -1,
-				Row:    -1,
-				Column: -1,
-			},
+			Type:     frontend.Error,
+			Origin:   frontend.FormulationConsolidatorOrigin,
+			Message:  fmt.Sprintf("Expected a %s", typeName),
+			Position: node.Start(),
 		})
 		return def
 	}

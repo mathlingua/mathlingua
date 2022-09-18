@@ -22,6 +22,10 @@ type Formulation[T NodeType] struct {
 	Label   *string
 }
 
+type MetaData struct {
+	Start Position
+}
+
 type TextItem struct {
 	RawText string
 }

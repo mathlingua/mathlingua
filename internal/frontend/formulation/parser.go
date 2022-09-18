@@ -25,48 +25,52 @@ import (
 	"strings"
 )
 
-func ParseExpression(text string, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
+func ParseExpression(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
+		start:   start,
 	}
 	node, _ := parser.multiplexedExpressionType()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseForm(text string, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
+func ParseForm(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.NodeType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
+		start:   start,
 	}
 	node, _ := parser.form()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseId(text string, tracker frontend.DiagnosticTracker) (ast.IdType, bool) {
+func ParseId(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.IdType, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
+		start:   start,
 	}
 	node, _ := parser.idType()
 	parser.finalize()
 	return node, tracker.Length() == numDiagBefore
 }
 
-func ParseSignature(text string, tracker frontend.DiagnosticTracker) (ast.Signature, bool) {
+func ParseSignature(text string, start ast.Position, tracker frontend.DiagnosticTracker) (ast.Signature, bool) {
 	numDiagBefore := tracker.Length()
 	lexer := NewLexer(text, tracker)
 	parser := formulationParser{
 		lexer:   lexer,
 		tracker: tracker,
+		start:   start,
 	}
 	node, _ := parser.signature()
 	parser.finalize()
@@ -78,6 +82,7 @@ func ParseSignature(text string, tracker frontend.DiagnosticTracker) (ast.Signat
 type formulationParser struct {
 	lexer   shared.Lexer
 	tracker frontend.DiagnosticTracker
+	start   ast.Position
 }
 
 func (fp *formulationParser) token(tokenType ast.TokenType) (ast.Token, bool) {
@@ -100,11 +105,16 @@ func (fp *formulationParser) next() ast.Token {
 }
 
 func (fp *formulationParser) error(message string) {
+	position := fp.lexer.Position()
 	fp.tracker.Append(frontend.Diagnostic{
-		Type:     frontend.Error,
-		Origin:   frontend.FormulationParserOrigin,
-		Message:  message,
-		Position: fp.lexer.Position(),
+		Type:    frontend.Error,
+		Origin:  frontend.FormulationParserOrigin,
+		Message: message,
+		Position: ast.Position{
+			Offset: position.Offset + fp.start.Offset,
+			Row:    position.Row + fp.start.Row,
+			Column: position.Column + fp.start.Column,
+		},
 	})
 }
 

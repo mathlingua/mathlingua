@@ -1867,8 +1867,8 @@ func (p *parser) toDocument(root phase4.Root) (ast.Document, bool) {
 
 ///////////////////////////// id ////////////////////////////////////////
 
-func (p *parser) toIdItem(text string) *ast.IdItem {
-	if node, ok := formulation.ParseId(text, p.tracker); ok {
+func (p *parser) toIdItem(text string, position ast.Position) *ast.IdItem {
+	if node, ok := formulation.ParseId(text, position, p.tracker); ok {
 		return &ast.IdItem{
 			RawText: text,
 			Root:    node,
@@ -1886,7 +1886,7 @@ func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 	} else if group.Id == nil {
 		return nil
 	}
-	return p.toIdItem(*group.Id)
+	return p.toIdItem(*group.Id, group.MetaData.Start)
 }
 
 ////////////////////////// arguments ////////////////////////////////////
@@ -1894,7 +1894,7 @@ func (p *parser) getId(group phase4.Group, required bool) *ast.IdItem {
 func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, p.tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
 			return ast.Formulation[ast.NodeType]{
 				RawText: data.Text,
 				Root:    node,
@@ -1928,7 +1928,7 @@ func (p *parser) toClause(arg phase4.Argument) ast.Clause {
 func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseExpression(data.Text, p.tracker); ok {
+		if node, ok := formulation.ParseExpression(data.Text, arg.MetaData.Start, p.tracker); ok {
 			return ast.Spec{
 				RawText: data.Text,
 				Root:    node,
@@ -1946,7 +1946,7 @@ func (p *parser) toSpec(arg phase4.Argument) ast.Spec {
 func (p *parser) toTarget(arg phase4.Argument) ast.Target {
 	switch data := arg.Arg.(type) {
 	case phase4.ArgumentTextArgumentData:
-		if node, ok := formulation.ParseForm(data.Text, p.tracker); ok {
+		if node, ok := formulation.ParseForm(data.Text, arg.MetaData.Start, p.tracker); ok {
 			return ast.Target{
 				RawText: data.Text,
 				Root:    node,
@@ -1976,7 +1976,7 @@ func (p *parser) toTextItem(arg phase4.Argument) ast.TextItem {
 func (p *parser) toSignatureItem(arg phase4.Argument) ast.Formulation[ast.Signature] {
 	switch data := arg.Arg.(type) {
 	case phase4.FormulationArgumentData:
-		if node, ok := formulation.ParseSignature(data.Text, p.tracker); ok {
+		if node, ok := formulation.ParseSignature(data.Text, arg.MetaData.Start, p.tracker); ok {
 			return ast.Formulation[ast.Signature]{
 				RawText: data.Text,
 				Root:    node,

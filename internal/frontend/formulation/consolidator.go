@@ -289,66 +289,66 @@ func getGeneralOperatorType(prevType generalItemType, curType generalItemType, n
 	}
 }
 
-const IS_NOT_IS_PRECEDENCE = 1
-const AS_PRECEDENCE = 2
-const COLON_EQUAL_PRECEDENCE = 3
-const EQUAL_LIKE_PRECEDENCE = 4
-const ENCLOSED_INFIX_PRECEDENCE = 5
-const COMMAND_INFIX_PRECEDENCE = 6
-const OTHER_SPECIAL_INFIX_PRECEDENCE = 7
-const OTHER_SPECIAL_PREFIX_PRECEDENCE = 8
-const OTHER_SPECIAL_POSTFIX_PRECEDENCE = 9
-const PLUS_MINUS_PRECEDENCE = 7
-const TIMES_DIVIDE_PRECEDENCE = 10
-const CARET_PRECEDENCE = 11
+const is_not_is_precedence = 1
+const as_precedence = 2
+const colon_equal_precedence = 3
+const equal_like_precedence = 4
+const enclosed_infix_precedence = 5
+const command_infix_precedence = 6
+const other_special_infix_precedence = 7
+const other_special_prefix_precedence = 8
+const other_special_postfix_precedence = 9
+const plus_minus_precedence = 7
+const times_divide_precedence = 10
+const caret_precedence = 11
 
-const IS_NOT_IS_ASSOCIATIVITY = LeftAssociative
-const AS_ASSOCIATIVITY = LeftAssociative
-const COLON_EQUAL_ASSOCIATIVITY = RightAssociative
-const EQUAL_LIKE_ASSOCIATIVITY = RightAssociative
-const ENCLOSED_INFIX_ASSOCIATIVITY = LeftAssociative
-const COMMAND_INFIX_ASSOCIATIVITY = LeftAssociative
-const OTHER_SPECIAL_INFIX_ASSOCIATIVITY = LeftAssociative
-const OTHER_SPECIAL_PREFIX_ASSOCIATIVITY = LeftAssociative
-const OTHER_SPECIAL_POSTFIX_ASSOCIATIVITY = RightAssociative
-const PLUS_MINUS_ASSOCIATIVITY = LeftAssociative
-const TIMES_DIVIDEASSOCIATIVITY = LeftAssociative
-const CARET_ASSOCIATIVITY = RightAssociative
+const is_not_is_associativity = LeftAssociative
+const as_associativity = LeftAssociative
+const colon_equal_associativity = RightAssociative
+const equal_like_associativity = RightAssociative
+const enclosed_infix_associativity = LeftAssociative
+const command_infix_associativity = LeftAssociative
+const other_special_infix_associativity = LeftAssociative
+const other_special_prefix_associativity = LeftAssociative
+const other_special_postfix_associativity = RightAssociative
+const plus_minus_associativity = LeftAssociative
+const times_divides_associativity = LeftAssociative
+const caret_associativity = RightAssociative
 
 func getOperatorPrecedenceAssociativityByText(text string, itemType ItemType) (int, Associativity) {
 	switch {
 	case itemType == PrefixOperatorType:
-		return OTHER_SPECIAL_PREFIX_PRECEDENCE, OTHER_SPECIAL_PREFIX_ASSOCIATIVITY
+		return other_special_prefix_precedence, other_special_prefix_associativity
 	case itemType == PostfixOperatorType:
-		return OTHER_SPECIAL_POSTFIX_PRECEDENCE, OTHER_SPECIAL_POSTFIX_ASSOCIATIVITY
+		return other_special_postfix_precedence, other_special_postfix_associativity
 	case text == ":=":
-		return COLON_EQUAL_PRECEDENCE, COLON_EQUAL_ASSOCIATIVITY
+		return colon_equal_precedence, colon_equal_associativity
 	case strings.Contains(text, "!="):
-		return EQUAL_LIKE_PRECEDENCE, EQUAL_LIKE_ASSOCIATIVITY
+		return equal_like_precedence, equal_like_associativity
 	case strings.Contains(text, "="):
-		return EQUAL_LIKE_PRECEDENCE, EQUAL_LIKE_ASSOCIATIVITY
+		return equal_like_precedence, equal_like_associativity
 	case strings.Contains(text, "<"):
-		return EQUAL_LIKE_PRECEDENCE, EQUAL_LIKE_ASSOCIATIVITY
+		return equal_like_precedence, equal_like_associativity
 	case strings.Contains(text, ">"):
-		return EQUAL_LIKE_PRECEDENCE, EQUAL_LIKE_ASSOCIATIVITY
+		return equal_like_precedence, equal_like_associativity
 	case text == "+" && itemType == InfixOperatorType:
-		return PLUS_MINUS_PRECEDENCE, PLUS_MINUS_ASSOCIATIVITY
+		return plus_minus_precedence, plus_minus_associativity
 	case text == "-" && itemType == InfixOperatorType:
-		return PLUS_MINUS_PRECEDENCE, PLUS_MINUS_ASSOCIATIVITY
+		return plus_minus_precedence, plus_minus_associativity
 	case text == "*" && itemType == InfixOperatorType:
-		return TIMES_DIVIDE_PRECEDENCE, TIMES_DIVIDEASSOCIATIVITY
+		return times_divide_precedence, times_divides_associativity
 	case text == "/" && itemType == InfixOperatorType:
-		return TIMES_DIVIDE_PRECEDENCE, TIMES_DIVIDEASSOCIATIVITY
+		return times_divide_precedence, times_divides_associativity
 	case text == "^" && itemType == InfixOperatorType:
-		return CARET_PRECEDENCE, CARET_ASSOCIATIVITY
+		return caret_precedence, caret_associativity
 	case text == "is":
-		return IS_NOT_IS_PRECEDENCE, IS_NOT_IS_ASSOCIATIVITY
+		return is_not_is_precedence, is_not_is_associativity
 	case text == "isnot":
-		return IS_NOT_IS_PRECEDENCE, IS_NOT_IS_ASSOCIATIVITY
+		return is_not_is_precedence, is_not_is_associativity
 	case text == "as":
-		return AS_PRECEDENCE, AS_ASSOCIATIVITY
+		return as_precedence, as_associativity
 	case itemType == InfixOperatorType:
-		return OTHER_SPECIAL_INFIX_PRECEDENCE, OTHER_SPECIAL_INFIX_ASSOCIATIVITY
+		return other_special_infix_precedence, other_special_infix_associativity
 	default:
 		return -1, NotAssociative
 	}
@@ -367,13 +367,13 @@ func getPrecedenceAssociativity(node ast.NodeType, itemType ItemType) (int, Asso
 		return getPrecedenceAssociativity(node.Target, itemType)
 	case ast.EnclosedNonCommandOperatorTarget:
 		// for example [x]
-		return ENCLOSED_INFIX_PRECEDENCE, ENCLOSED_INFIX_ASSOCIATIVITY
+		return enclosed_infix_precedence, enclosed_infix_associativity
 	case ast.NonEnclosedNonCommandOperatorTarget:
 		// for example + or **
 		return getOperatorPrecedenceAssociativityByText(node.Text, itemType)
 	case ast.CommandOperatorTarget:
 		// for example \f/
-		return COMMAND_INFIX_PRECEDENCE, COMMAND_INFIX_ASSOCIATIVITY
+		return command_infix_precedence, command_infix_associativity
 	case ast.PseudoTokenNode:
 		// a token, for example :=, is, isnot
 		return getOperatorPrecedenceAssociativityByText(node.Text, itemType)

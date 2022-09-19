@@ -232,14 +232,7 @@ func parseForStructural(text string) (ast.Document, frontend.DiagnosticTracker) 
 }
 
 func createTestCaseForStructural(input string) (string, string, bool) {
-	doc, tracker := parseForStructural(input)
-	diagnostics := tracker.Diagnostics()
-	if len(diagnostics) > 0 {
-		return "", "Diagnostics exist: Cannot create test case", false
-	}
-	expectedOutput := mlglib.PrettyPrint(doc)
-
-	testcase := fmt.Sprintf(`
+	parseCode := `
 func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 
@@ -252,23 +245,10 @@ func parse(text string) (ast.Document, frontend.DiagnosticTracker) {
 
 	return doc, tracker
 }
-
-func runTest(t *testing.T, input string, expected string) {
-	doc, tracker := parse(input)
-	actual := mlglib.PrettyPrint(doc)
-
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, 0, len(tracker.Diagnostics()))
-}
-
-func Test_____(t *testing.T) {
-	input := ` + "`" + input + "`" + `
-	expected := ` + "`" + expectedOutput + "`" + `
-	runTest(t, input, expected)
-}
-
-`)
-	return testcase, test_case_success_message, true
+`
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+		return parseForStructural(input)
+	}, parseCode)
 }
 
 /////////////////////////// formulation ///////////////////////////////////////////
@@ -280,36 +260,16 @@ func parseForFormulation(text string) (ast.NodeType, frontend.DiagnosticTracker)
 }
 
 func createTestCaseForFormulation(input string) (string, string, bool) {
-	doc, tracker := parseForFormulation(input)
-	diagnostics := tracker.Diagnostics()
-	if len(diagnostics) > 0 {
-		return "", "Diagnostics exist: Cannot create test case", false
-	}
-	expectedOutput := mlglib.PrettyPrint(doc)
-
-	testcase := fmt.Sprintf(`
+	parseCode := `
 func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseExpression(text, ast.Position{}, tracker)
 	return node, tracker
 }
-
-func runTest(t *testing.T, input string, expected string) {
-	doc, tracker := parse(input)
-	actual := mlglib.PrettyPrint(doc)
-
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, 0, len(tracker.Diagnostics()))
-}
-
-func Test_____(t *testing.T) {
-	input := ` + "`" + input + "`" + `
-	expected := ` + "`" + expectedOutput + "`" + `
-	runTest(t, input, expected)
-}
-
-`)
-	return testcase, test_case_success_message, true
+`
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+		return parseForFormulation(input)
+	}, parseCode)
 }
 
 /////////////////////////// form ///////////////////////////////////////////
@@ -321,36 +281,16 @@ func parseForForm(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 }
 
 func createTestCaseForForm(input string) (string, string, bool) {
-	doc, tracker := parseForForm(input)
-	diagnostics := tracker.Diagnostics()
-	if len(diagnostics) > 0 {
-		return "", "Diagnostics exist: Cannot create test case", false
-	}
-	expectedOutput := mlglib.PrettyPrint(doc)
-
-	testcase := fmt.Sprintf(`
+	parseCode := `
 func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseForm(text, ast.Position{}, tracker)
 	return node, tracker
 }
-
-func runTest(t *testing.T, input string, expected string) {
-	doc, tracker := parse(input)
-	actual := mlglib.PrettyPrint(doc)
-
-	assert.Equal(t, expected, actual)
-	assert.Equal(t, 0, len(tracker.Diagnostics()))
-}
-
-func Test_____(t *testing.T) {
-	input := ` + "`" + input + "`" + `
-	expected := ` + "`" + expectedOutput + "`" + `
-	runTest(t, input, expected)
-}
-
-`)
-	return testcase, test_case_success_message, true
+`
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+		return parseForForm(input)
+	}, parseCode)
 }
 
 /////////////////////////// id ///////////////////////////////////////////
@@ -362,19 +302,29 @@ func parseForId(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 }
 
 func createTestCaseForId(input string) (string, string, bool) {
-	doc, tracker := parseForFormulation(input)
-	diagnostics := tracker.Diagnostics()
-	if len(diagnostics) > 0 {
-		return "", "Diagnostics exist: Cannot create test case", false
-	}
-	expectedOutput := mlglib.PrettyPrint(doc)
-
-	testcase := fmt.Sprintf(`
+	parseCode := `
 func parse(text string) (ast.NodeType, frontend.DiagnosticTracker) {
 	tracker := frontend.NewDiagnosticTracker()
 	node, _ := formulation.ParseId(text, ast.Position{}, tracker)
 	return node, tracker
 }
+`
+	return createGeneralTestCase(input, func(input string) (any, frontend.DiagnosticTracker) {
+		return parseForId(input)
+	}, parseCode)
+}
+
+//////////////////////////////////////////////////////////////////////////
+
+func createGeneralTestCase(input string, parseFn func(input string) (any, frontend.DiagnosticTracker), parseCode string) (string, string, bool) {
+	data, tracker := parseFn(input)
+	diagnostics := tracker.Diagnostics()
+	if len(diagnostics) > 0 {
+		return "", "Diagnostics exist: Cannot create test case", false
+	}
+	expectedOutput := mlglib.PrettyPrint(data)
+
+	testcase := fmt.Sprintf(parseCode + `
 
 func runTest(t *testing.T, input string, expected string) {
 	doc, tracker := parse(input)

@@ -566,40 +566,44 @@ func (p *parser) toInfixGroup(group phase4.Group) (ast.InfixGroup, bool) {
 		return ast.InfixGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"infix",
-		"when?",
-		"states")
-	if ok {
-		infix := *p.toInfixSection(sections["infix"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "infix", "when", "states") || hasSections(group, "infix", "states") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"infix",
+			"when?",
+			"states")
+		if ok {
+			infix := *p.toInfixSection(sections["infix"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			states := *p.toProvidesStatesSection(sections["states"])
+			return ast.InfixGroup{
+				Infix:         infix,
+				When:          when,
+				StatesDefines: states,
+			}, true
 		}
-		states := *p.toProvidesStatesSection(sections["states"])
-		return ast.InfixGroup{
-			Infix:         infix,
-			When:          when,
-			StatesDefines: states,
-		}, true
 	}
 
-	sections, ok = IdentifySections(group.Sections, p.tracker,
-		"infix",
-		"when?",
-		"defines")
-	if ok {
-		infix := *p.toInfixSection(sections["infix"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "infix", "when", "defines") || hasSections(group, "infix", "defines") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"infix",
+			"when?",
+			"defines")
+		if ok {
+			infix := *p.toInfixSection(sections["infix"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			defines := *p.toProvidesDefinesSection(sections["defines"])
+			return ast.InfixGroup{
+				Infix:         infix,
+				When:          when,
+				StatesDefines: defines,
+			}, true
 		}
-		defines := *p.toProvidesDefinesSection(sections["defines"])
-		return ast.InfixGroup{
-			Infix:         infix,
-			When:          when,
-			StatesDefines: defines,
-		}, true
 	}
 
 	return ast.InfixGroup{}, false
@@ -610,40 +614,44 @@ func (p *parser) toPrefixGroup(group phase4.Group) (ast.PrefixGroup, bool) {
 		return ast.PrefixGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"prefix",
-		"when?",
-		"states")
-	if ok {
-		prefix := *p.toPrefixSection(sections["prefix"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "prefix", "when", "states") || hasSections(group, "prefix", "states") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"prefix",
+			"when?",
+			"states")
+		if ok {
+			prefix := *p.toPrefixSection(sections["prefix"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			states := *p.toProvidesStatesSection(sections["states"])
+			return ast.PrefixGroup{
+				Prefix:        prefix,
+				When:          when,
+				StatesDefines: states,
+			}, true
 		}
-		states := *p.toProvidesStatesSection(sections["states"])
-		return ast.PrefixGroup{
-			Prefix:        prefix,
-			When:          when,
-			StatesDefines: states,
-		}, true
 	}
 
-	sections, ok = IdentifySections(group.Sections, p.tracker,
-		"prefix",
-		"when?",
-		"defines")
-	if ok {
-		prefix := *p.toPrefixSection(sections["prefix"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "prefix", "when", "defines") || hasSections(group, "prefix", "defines") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"prefix",
+			"when?",
+			"defines")
+		if ok {
+			prefix := *p.toPrefixSection(sections["prefix"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			defines := *p.toProvidesDefinesSection(sections["defines"])
+			return ast.PrefixGroup{
+				Prefix:        prefix,
+				When:          when,
+				StatesDefines: defines,
+			}, true
 		}
-		defines := *p.toProvidesDefinesSection(sections["defines"])
-		return ast.PrefixGroup{
-			Prefix:        prefix,
-			When:          when,
-			StatesDefines: defines,
-		}, true
 	}
 
 	return ast.PrefixGroup{}, false
@@ -654,40 +662,44 @@ func (p *parser) toPostfixGroup(group phase4.Group) (ast.PostfixGroup, bool) {
 		return ast.PostfixGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"postfix",
-		"when?",
-		"states")
-	if ok {
-		postfix := *p.toPostfixSection(sections["postfix"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "postfix", "when", "states") || hasSections(group, "postfix", "states") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"postfix",
+			"when?",
+			"states")
+		if ok {
+			postfix := *p.toPostfixSection(sections["postfix"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			states := *p.toProvidesStatesSection(sections["states"])
+			return ast.PostfixGroup{
+				Postfix:       postfix,
+				When:          when,
+				StatesDefines: states,
+			}, true
 		}
-		states := *p.toProvidesStatesSection(sections["states"])
-		return ast.PostfixGroup{
-			Postfix:       postfix,
-			When:          when,
-			StatesDefines: states,
-		}, true
 	}
 
-	sections, ok = IdentifySections(group.Sections, p.tracker,
-		"postfix",
-		"when?",
-		"defines")
-	if ok {
-		postfix := *p.toPostfixSection(sections["postfix"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "postfix", "when", "defines") || hasSections(group, "postfix", "defines") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"postfix",
+			"when?",
+			"defines")
+		if ok {
+			postfix := *p.toPostfixSection(sections["postfix"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			defines := *p.toProvidesDefinesSection(sections["defines"])
+			return ast.PostfixGroup{
+				Postfix:       postfix,
+				When:          when,
+				StatesDefines: defines,
+			}, true
 		}
-		defines := *p.toProvidesDefinesSection(sections["defines"])
-		return ast.PostfixGroup{
-			Postfix:       postfix,
-			When:          when,
-			StatesDefines: defines,
-		}, true
 	}
 
 	return ast.PostfixGroup{}, false
@@ -698,40 +710,44 @@ func (p *parser) toSymbolGroup(group phase4.Group) (ast.SymbolGroup, bool) {
 		return ast.SymbolGroup{}, false
 	}
 
-	sections, ok := IdentifySections(group.Sections, p.tracker,
-		"symbol",
-		"when?",
-		"states")
-	if ok {
-		symbol := *p.toSymbolSection(sections["symbol"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "symbol", "when", "states") || hasSections(group, "symbol", "states") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"symbol",
+			"when?",
+			"states")
+		if ok {
+			symbol := *p.toSymbolSection(sections["symbol"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			states := *p.toProvidesStatesSection(sections["states"])
+			return ast.SymbolGroup{
+				Symbol:        symbol,
+				When:          when,
+				StatesDefines: states,
+			}, true
 		}
-		states := *p.toProvidesStatesSection(sections["states"])
-		return ast.SymbolGroup{
-			Symbol:        symbol,
-			When:          when,
-			StatesDefines: states,
-		}, true
 	}
 
-	sections, ok = IdentifySections(group.Sections, p.tracker,
-		"symbol",
-		"when?",
-		"defines")
-	if ok {
-		symbol := *p.toSymbolSection(sections["symbol"])
-		var when *ast.WhenSection
-		if sec, ok := sections["when"]; ok {
-			when = p.toWhenSection(sec)
+	if hasSections(group, "symbol", "when", "defines") || hasSections(group, "symbol", "defines") {
+		sections, ok := IdentifySections(group.Sections, p.tracker,
+			"symbol",
+			"when?",
+			"defines")
+		if ok {
+			symbol := *p.toSymbolSection(sections["symbol"])
+			var when *ast.WhenSection
+			if sec, ok := sections["when"]; ok {
+				when = p.toWhenSection(sec)
+			}
+			defines := *p.toProvidesDefinesSection(sections["defines"])
+			return ast.SymbolGroup{
+				Symbol:        symbol,
+				When:          when,
+				StatesDefines: defines,
+			}, true
 		}
-		defines := *p.toProvidesDefinesSection(sections["defines"])
-		return ast.SymbolGroup{
-			Symbol:        symbol,
-			When:          when,
-			StatesDefines: defines,
-		}, true
 	}
 
 	return ast.SymbolGroup{}, false

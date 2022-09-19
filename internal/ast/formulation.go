@@ -25,6 +25,7 @@ type Position struct {
 // all AST nodes are MlgNodes
 type NodeType interface {
 	NodeType()
+	Start() Position
 }
 
 func (NameForm) NodeType()                               {}
@@ -64,6 +65,43 @@ func (PseudoTokenNode) NodeType()                        {}
 func (PseudoExpression) NodeType()                       {}
 func (MultiplexedInfixOperatorCallExpression) NodeType() {}
 
+func (n NameForm) Start() Position                               { return n.MetaData.Start }
+func (n FunctionForm) Start() Position                           { return n.MetaData.Start }
+func (n FunctionExpressionForm) Start() Position                 { return n.MetaData.Start }
+func (n TupleForm) Start() Position                              { return n.MetaData.Start }
+func (n FixedSetForm) Start() Position                           { return n.MetaData.Start }
+func (n ConditionalSetForm) Start() Position                     { return n.MetaData.Start }
+func (n ConditionalSetIdForm) Start() Position                   { return n.MetaData.Start }
+func (n FunctionCallExpression) Start() Position                 { return n.MetaData.Start }
+func (n TupleExpression) Start() Position                        { return n.MetaData.Start }
+func (n FixedSetExpression) Start() Position                     { return n.MetaData.Start }
+func (n ConditionalSetExpression) Start() Position               { return n.MetaData.Start }
+func (n CommandExpression) Start() Position                      { return n.MetaData.Start }
+func (n CommandAtExpression) Start() Position                    { return n.MetaData.Start }
+func (n PrefixOperatorCallExpression) Start() Position           { return n.MetaData.Start }
+func (n PostfixOperatorCallExpression) Start() Position          { return n.MetaData.Start }
+func (n InfixOperatorCallExpression) Start() Position            { return n.MetaData.Start }
+func (n IsExpression) Start() Position                           { return n.MetaData.Start }
+func (n IsNotExpression) Start() Position                        { return n.MetaData.Start }
+func (n AsExpression) Start() Position                           { return n.MetaData.Start }
+func (n NameOrdinalCallExpression) Start() Position              { return n.MetaData.Start }
+func (n ChainExpression) Start() Position                        { return n.MetaData.Start }
+func (n Signature) Start() Position                              { return n.MetaData.Start }
+func (n MetaKinds) Start() Position                              { return n.MetaData.Start }
+func (n StructuralColonEqualsForm) Start() Position              { return n.MetaData.Start }
+func (n ExpressionColonEqualsItem) Start() Position              { return n.MetaData.Start }
+func (n EnclosedNonCommandOperatorTarget) Start() Position       { return n.MetaData.Start }
+func (n NonEnclosedNonCommandOperatorTarget) Start() Position    { return n.MetaData.Start }
+func (n CommandOperatorTarget) Start() Position                  { return n.MetaData.Start }
+func (n CommandId) Start() Position                              { return n.MetaData.Start }
+func (n CommandAtId) Start() Position                            { return n.MetaData.Start }
+func (n PrefixOperatorId) Start() Position                       { return n.MetaData.Start }
+func (n PostfixOperatorId) Start() Position                      { return n.MetaData.Start }
+func (n InfixOperatorId) Start() Position                        { return n.MetaData.Start }
+func (n PseudoTokenNode) Start() Position                        { return n.MetaData.Start }
+func (n PseudoExpression) Start() Position                       { return n.MetaData.Start }
+func (n MultiplexedInfixOperatorCallExpression) Start() Position { return n.MetaData.Start }
+
 ///////////////////////// Structural Forms ///////////////////////////////////////////
 
 // DONE
@@ -87,43 +125,49 @@ type NameForm struct {
 	IsStropped      bool
 	HasQuestionMark bool
 	VarArg          VarArgData
+	MetaData        MetaData
 }
 
 // DONE
 // f(x, y)
 type FunctionForm struct {
-	Target NameForm
-	Params []NameForm
-	VarArg VarArgData
+	Target   NameForm
+	Params   []NameForm
+	VarArg   VarArgData
+	MetaData MetaData
 }
 
 // DONE
 // f[x, y]
 type FunctionExpressionForm struct {
-	Target NameForm
-	Params []NameForm
-	VarArg VarArgData
+	Target   NameForm
+	Params   []NameForm
+	VarArg   VarArgData
+	MetaData MetaData
 }
 
 // DONE
 // (x, y)
 type TupleForm struct {
-	Params []StructuralFormType
-	VarArg VarArgData
+	Params   []StructuralFormType
+	VarArg   VarArgData
+	MetaData MetaData
 }
 
 // DONE
 // {x, y}
 type FixedSetForm struct {
-	Params []StructuralFormType
-	VarArg VarArgData
+	Params   []StructuralFormType
+	VarArg   VarArgData
+	MetaData MetaData
 }
 
 // DONE
 // {x | ...}
 type ConditionalSetForm struct {
-	Target StructuralFormType
-	VarArg VarArgData
+	Target   StructuralFormType
+	VarArg   VarArgData
+	MetaData MetaData
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -140,6 +184,7 @@ type ConditionalSetIdForm struct {
 	Symbols   []StructuralFormType
 	Target    StructuralFormType
 	Condition FunctionExpressionForm
+	MetaData  MetaData
 }
 
 func (NameForm) LiteralFormType()             {} // DONE
@@ -172,12 +217,14 @@ type LiteralType interface {
 ////////////////////////////////////// Pseudo Nodes ////////////////////////////
 
 type PseudoTokenNode struct {
-	Text string
-	Type TokenType
+	Text     string
+	Type     TokenType
+	MetaData MetaData
 }
 
 type PseudoExpression struct {
 	Children []NodeType
+	MetaData MetaData
 }
 
 ///////////////////////////////////// Expressions /////////////////////////////
@@ -210,20 +257,23 @@ func (ExpressionColonEqualsItem) ExpressionType()              {}
 // DONE
 // f(x + y, z) or (f + g)(x)
 type FunctionCallExpression struct {
-	Target ExpressionType
-	Args   []ExpressionType
+	Target   ExpressionType
+	Args     []ExpressionType
+	MetaData MetaData
 }
 
 // DONE
 // (x + y, z)
 type TupleExpression struct {
-	Args []ExpressionType
+	Args     []ExpressionType
+	MetaData MetaData
 }
 
 // DONE
 // {x + y, z}
 type FixedSetExpression struct {
-	Args []ExpressionType
+	Args     []ExpressionType
+	MetaData MetaData
 }
 
 // DONE
@@ -232,6 +282,7 @@ type ConditionalSetExpression struct {
 	Symbols    []StructuralFormType
 	Target     ExpressionType
 	Conditions []ExpressionType
+	MetaData   MetaData
 }
 
 // DONE
@@ -239,12 +290,14 @@ type SubSupArgs struct {
 	SquareArgs []StructuralFormType
 	SubArgs    []ExpressionType
 	SupArgs    []ExpressionType
+	MetaData   MetaData
 }
 
 // DONE
 type NamedArg struct {
-	Name NameForm
-	Args *[]ExpressionType
+	Name     NameForm
+	Args     *[]ExpressionType
+	MetaData MetaData
 }
 
 // DONE
@@ -255,6 +308,7 @@ type CommandExpression struct {
 	CurlyArgs  *[]ExpressionType
 	NamedArgs  *[]NamedArg
 	ParenArgs  *[]ExpressionType
+	MetaData   MetaData
 }
 
 // DONE
@@ -262,62 +316,72 @@ type CommandExpression struct {
 type CommandAtExpression struct {
 	Names      []NameForm
 	Expression ExpressionType
+	MetaData   MetaData
 }
 
 // -x
 type PrefixOperatorCallExpression struct {
-	Target OperatorType
-	Arg    ExpressionType
+	Target   OperatorType
+	Arg      ExpressionType
+	MetaData MetaData
 }
 
 // x!
 type PostfixOperatorCallExpression struct {
-	Target OperatorType
-	Arg    ExpressionType
+	Target   OperatorType
+	Arg      ExpressionType
+	MetaData MetaData
 }
 
 // x + y
 type InfixOperatorCallExpression struct {
-	Target OperatorType
-	Lhs    ExpressionType
-	Rhs    ExpressionType
+	Target   OperatorType
+	Lhs      ExpressionType
+	Rhs      ExpressionType
+	MetaData MetaData
 }
 
 type MultiplexedInfixOperatorCallExpression struct {
-	Target OperatorType
-	Lhs    []ExpressionType
-	Rhs    []ExpressionType
+	Target   OperatorType
+	Lhs      []ExpressionType
+	Rhs      []ExpressionType
+	MetaData MetaData
 }
 
 // x is \y
 type IsExpression struct {
-	Lhs []ExpressionType
-	Rhs []KindType
+	Lhs      []ExpressionType
+	Rhs      []KindType
+	MetaData MetaData
 }
 
 // x isnot \y
 type IsNotExpression struct {
-	Lhs []ExpressionType
-	Rhs []KindType
+	Lhs      []ExpressionType
+	Rhs      []KindType
+	MetaData MetaData
 }
 
 // x as \[y]
 type AsExpression struct {
-	Lhs ExpressionType
-	Rhs Signature
+	Lhs      ExpressionType
+	Rhs      Signature
+	MetaData MetaData
 }
 
 // NONE
 // x{1}
 type NameOrdinalCallExpression struct {
-	Target NameForm
-	Arg    ExpressionType
+	Target   NameForm
+	Arg      ExpressionType
+	MetaData MetaData
 }
 
 // DONE
 // (x + y).z.a.b
 type ChainExpression struct {
-	Parts []ExpressionType
+	Parts    []ExpressionType
+	MetaData MetaData
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -327,6 +391,7 @@ type Signature struct {
 	MainNames       []string
 	NamedGroupNames []string
 	HasAtSymbol     bool
+	MetaData        MetaData
 }
 
 /////////////////////////////// Kinds /////////////////////////////////////////
@@ -338,7 +403,8 @@ type KindType interface {
 
 // [: specification, states :]
 type MetaKinds struct {
-	Kinds []string
+	Kinds    []string
+	MetaData MetaData
 }
 
 func (NameForm) KindType()                      {} // x could refer to a type
@@ -362,14 +428,16 @@ func (ExpressionColonEqualsItem) ColonEqualsType() {}
 
 // X := (a, b)
 type StructuralColonEqualsForm struct {
-	Lhs NameForm
-	Rhs StructuralFormType
+	Lhs      NameForm
+	Rhs      StructuralFormType
+	MetaData MetaData
 }
 
 // f(x) := x + 1
 type ExpressionColonEqualsItem struct {
-	Lhs StructuralFormType
-	Rhs ExpressionType
+	Lhs      StructuralFormType
+	Rhs      ExpressionType
+	MetaData MetaData
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -389,18 +457,21 @@ func (CommandOperatorTarget) OperatorType()               {} // DONE
 // DONE
 // [x] or [x + y]
 type EnclosedNonCommandOperatorTarget struct {
-	Target ExpressionType
+	Target   ExpressionType
+	MetaData MetaData
 }
 
 // DONE
 // * or ++
 type NonEnclosedNonCommandOperatorTarget struct {
-	Text string
+	Text     string
+	MetaData MetaData
 }
 
 // DONE
 type CommandOperatorTarget struct {
-	Command CommandExpression
+	Command  CommandExpression
+	MetaData MetaData
 }
 
 ///////////////////////////////////////// Ids ///////////////////////////////////
@@ -421,12 +492,14 @@ type SubSupParams struct {
 	SquareParams []StructuralFormType
 	SubParams    []StructuralFormType
 	SupParams    []StructuralFormType
+	MetaData     MetaData
 }
 
 // DONE
 type NamedParam struct {
-	Name   NameForm
-	Params *[]StructuralFormType
+	Name     NameForm
+	Params   *[]StructuralFormType
+	MetaData MetaData
 }
 
 // DONE
@@ -437,25 +510,29 @@ type CommandId struct {
 	CurlyParams  *[]StructuralFormType
 	NamedParams  *[]NamedParam
 	ParenParams  *[]NameForm
+	MetaData     MetaData
 }
 
 // DONE
 // \set@[x]{f[x] | g[x]}
 type CommandAtId struct {
-	Names []NameForm
-	Param LiteralFormType
+	Names    []NameForm
+	Param    LiteralFormType
+	MetaData MetaData
 }
 
 // +x
 type PrefixOperatorId struct {
 	Operator NameForm
 	Param    StructuralFormType
+	MetaData MetaData
 }
 
 // -x
 type PostfixOperatorId struct {
 	Operator NameForm
 	Param    StructuralFormType
+	MetaData MetaData
 }
 
 // A \subset/ B
@@ -463,6 +540,7 @@ type InfixOperatorId struct {
 	Lhs      StructuralFormType
 	Operator CommandId
 	Rhs      StructuralFormType
+	MetaData MetaData
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -479,4 +557,5 @@ type FormulationType interface {
 type VarArgData struct {
 	IsVarArg    bool
 	VarArgCount *string
+	MetaData    MetaData
 }
